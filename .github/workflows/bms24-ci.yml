@@ -1,0 +1,97 @@
+name: BMS24 CI
+
+on:
+  push:
+    branches:
+      - main
+      - "feature/**"
+      - "reconcile/**"
+      - "release/**"
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: bms24-ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  static-qa:
+    name: Static QA (PHP 7.4)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: "7.4"
+          coverage: none
+          tools: none
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Reject forbidden repository files
+        shell: bash
+        run: |
+          set -euo pipefail
+          forbidden=$(git ls-files | grep -Ei '(^|/)(config\.php|\.env($|\.)|.*\.sql$|moodledata/|.*ftp.*pass.*|.*ftp.*credential.*|.*webhook.*secret.*|.*webhook.*token.*)' || true)
+          if [ -n "$forbidden" ]; then
+            echo "$forbidden"
+            exit 1
+          fi
+
+      - name: Run static QA
+        run: python scripts/qa_local.py
+
+      - name: Check changed-line whitespace
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            git diff --check "${{ github.event.pull_request.base.sha }}...HEAD"
+          elif git rev-parse HEAD^ >/dev/null 2>&1; then
+            git diff --check HEAD^ HEAD
+          else
+            git diff --check
+          fi
+
+  build-release:
+    name: Build release package
+    needs: static-qa
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: "7.4"
+          coverage: none
+          tools: none
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Build release kit
+        run: python scripts/build_release.py --skip-preflight
+
+      - name: Upload release artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: bms24-release-${{ github.ref_name }}-${{ github.sha }}
+          path: release/**
+          if-no-files-found: error
+          retention-days: 14
