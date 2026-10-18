@@ -43,8 +43,8 @@ jobs:
         run: |
           set -euo pipefail
           python scripts/prepare_release.py --summary "$RELEASE_SUMMARY" | tee /tmp/release-meta.txt
-          grep '^new_build=' /tmp/release-meta.txt | cut -d= -f2 >> "$GITHUB_OUTPUT"
-          grep '^release=' /tmp/release-meta.txt | cut -d= -f2 >> "$GITHUB_OUTPUT"
+          grep '^new_build=' /tmp/release-meta.txt >> "$GITHUB_OUTPUT"
+          grep '^release=' /tmp/release-meta.txt >> "$GITHUB_OUTPUT"
 
       - name: Run static QA
         run: python scripts/qa_local.py
