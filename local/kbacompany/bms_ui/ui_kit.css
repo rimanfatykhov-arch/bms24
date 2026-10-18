@@ -91,6 +91,9 @@
 .bms24-app .bms24-ui-status--returned,
 .bms24-app .bms24-content .bms-tui .bms-tui-state-returned {background:#FDECEC;color:#982C2C;}
 .bms24-app .bms24-ui-status--paused {background:#F0EAF9;color:#613C9A;}
+.bms24-app .bms24-ui-status--draft {background:#EDF2F5;color:#354D5B;}
+.bms24-app .bms24-ui-status--active {background:#E7F5EE;color:#126447;}
+.bms24-app .bms24-ui-status--archived {background:#F2F2F0;color:#5A5A52;}
 .bms24-app .bms24-ui-tabs {display:flex;align-items:center;gap:6px;flex-wrap:wrap;border-bottom:1px solid var(--bms24-border);margin:8px 0 16px;}
 .bms24-app .bms24-ui-tab {display:inline-flex;padding:10px 13px;min-height:40px;border-bottom:3px solid transparent;color:var(--bms24-color-text-muted);font-size:14px;font-weight:600;text-decoration:none;}
 .bms24-app .bms24-ui-tab:hover {color:var(--bms24-color-primary);background:var(--bms24-surface-mint);text-decoration:none;}

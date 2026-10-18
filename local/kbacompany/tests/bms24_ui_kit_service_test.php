@@ -32,6 +32,13 @@ class bms24_ui_kit_service_test extends \advanced_testcase {
         $this->assertStringNotContainsString('<svg', $table);
     }
 
+    public function test_recurring_series_statuses_are_typed_variants(): void {
+        $this->resetAfterTest();
+        $this->assertStringContainsString('bms24-ui-status--draft', kit::status('Draft', 'draft'));
+        $this->assertStringContainsString('bms24-ui-status--active', kit::status('Active', 'active'));
+        $this->assertStringContainsString('bms24-ui-status--archived', kit::status('Archived', 'archived'));
+    }
+
     public function test_filter_field_name_validation(): void {
         $this->resetAfterTest();
         try {
