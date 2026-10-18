@@ -39,3 +39,5 @@ vendor/
 
 # Node dependencies
 node_modules/
+# Generated release packages
+release/
