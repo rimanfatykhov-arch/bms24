@@ -87,6 +87,24 @@
         "panel": "shared",
         "clear": true
       }
+    },
+    {
+      "label": "BMS24: Download Latest Release",
+      "type": "shell",
+      "command": "powershell",
+      "args": [
+        "-ExecutionPolicy",
+        "Bypass",
+        "-File",
+        "${workspaceFolder}\\scripts\\download_latest_release.ps1"
+      ],
+      "problemMatcher": [],
+      "group": "build",
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared",
+        "clear": true
+      }
     }
   ],
   "inputs": [
