@@ -64,10 +64,11 @@ jobs:
           BRANCH="release/${SAFE_RELEASE}-build${BUILD}"
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git checkout -b "$BRANCH"
+          git checkout -B "$BRANCH"
           git add local/kbacompany/version.php local/kbacompany/db/upgrade.php local/kbacompany/RELEASE_NOTES_*_BUILD_${BUILD}.md
           git commit -m "Prepare ${RELEASE} build${BUILD} release"
-          git push origin "$BRANCH"
+          git fetch origin "$BRANCH:refs/remotes/origin/$BRANCH" || true
+          git push --force-with-lease origin "$BRANCH"
           echo "branch=$BRANCH" >> "$GITHUB_OUTPUT"
 
       - name: Create pull request
