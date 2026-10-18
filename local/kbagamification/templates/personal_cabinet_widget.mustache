@@ -1,0 +1,56 @@
+{{!
+    @template local_kbagamification/personal_cabinet_widget
+
+    Compact Gamification summary embedded into the existing KBA Personal Cabinet.
+}}
+<section class="kba-personal-gamification" aria-label="{{#str}}personalcabinettitle, local_kbagamification{{/str}}">
+    <div class="kba-personal-gamification__header">
+        <div>
+            <span class="kba-personal-gamification__eyebrow">{{#str}}personalcabineteyebrow, local_kbagamification{{/str}}</span>
+            <h2 class="kba-personal-gamification__title">{{#str}}personalcabinettitle, local_kbagamification{{/str}}</h2>
+        </div>
+        <a class="kba-personal-gamification__details" href="{{profileurl}}">{{#str}}personalcabinetdetails, local_kbagamification{{/str}} →</a>
+    </div>
+
+    <div class="kba-personal-gamification__stats">
+        <a class="kba-personal-gamification__stat" href="{{profileurl}}">
+            <span class="kba-personal-gamification__stat-icon" aria-hidden="true">★</span>
+            <span>
+                <strong>{{levelname}}</strong>
+                <small>{{#str}}currentlevel, local_kbagamification{{/str}}</small>
+            </span>
+        </a>
+        <a class="kba-personal-gamification__stat" href="{{profileurl}}">
+            <span class="kba-personal-gamification__stat-value">{{xp}}</span>
+            <span><strong>KBA XP</strong><small>{{#str}}experience, local_kbagamification{{/str}}</small></span>
+        </a>
+        {{#showcoins}}
+        <a class="kba-personal-gamification__stat" href="{{profileurl}}">
+            <span class="kba-personal-gamification__stat-value">{{coins}}</span>
+            <span><strong>{{#str}}coins, local_kbagamification{{/str}}</strong><small>{{#str}}availablebalance, local_kbagamification{{/str}}</small></span>
+        </a>
+        {{/showcoins}}
+        <a class="kba-personal-gamification__stat" href="{{achievementsurl}}">
+            <span class="kba-personal-gamification__stat-value">{{achievementcount}}</span>
+            <span><strong>{{#str}}achievements, local_kbagamification{{/str}}</strong><small>{{#str}}earnedachievements, local_kbagamification{{/str}}</small></span>
+        </a>
+    </div>
+
+    {{#hasnextlevel}}
+    <div class="kba-personal-gamification__level-progress">
+        <div class="kba-personal-gamification__progressmeta">
+            <span>{{#str}}nextlevel, local_kbagamification{{/str}}: <strong>{{nextlevelname}}</strong></span>
+            <span>{{xptogo}} {{#str}}xptogo_short, local_kbagamification{{/str}}</span>
+        </div>
+        <div class="kba-personal-gamification__track" role="progressbar" aria-valuenow="{{progress}}" aria-valuemin="0" aria-valuemax="100">
+            <span style="width: {{progress}}%;"></span>
+        </div>
+    </div>
+    {{/hasnextlevel}}
+
+    <div class="kba-personal-gamification__actions">
+        <a href="{{achievementsurl}}">{{#str}}navachievements, local_kbagamification{{/str}}</a>
+        {{#showleaderboards}}<a href="{{leaderboardsurl}}">{{#str}}navleaderboards, local_kbagamification{{/str}}</a>{{/showleaderboards}}
+        {{#showrewards}}<a href="{{rewardsurl}}">{{#str}}navrewards, local_kbagamification{{/str}}</a>{{/showrewards}}
+    </div>
+</section>

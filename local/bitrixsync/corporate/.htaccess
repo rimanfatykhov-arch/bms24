@@ -1,0 +1,5 @@
+<IfModule mod_rewrite.c>
+RewriteEngine On
+RewriteRule ^pair$ pair/index.php [L]
+RewriteRule ^connection/status$ connection/status/index.php [L]
+</IfModule>

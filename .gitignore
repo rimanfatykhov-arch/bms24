@@ -1,0 +1,37 @@
+# OS / IDE
+.DS_Store
+Thumbs.db
+.vscode/
+
+# Logs
+*.log
+
+# Temporary
+*.tmp
+*.bak
+*.swp
+
+# Archives
+*.zip
+*.rar
+*.7z
+
+# Secrets
+config.php
+.env
+.env.*
+*.sql
+
+# Moodle runtime data - never commit
+moodledata/
+cache/
+localcache/
+sessions/
+temp/
+trashdir/
+
+# PHP dependencies if generated locally
+vendor/
+
+# Node dependencies
+node_modules/

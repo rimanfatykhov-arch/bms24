@@ -1,0 +1,1294 @@
+{
+  "schema": "kba-bms-tools",
+  "version": "1.0",
+  "framework": {
+    "code": "BMS-COMP-2026-V1"
+  },
+  "tools": [
+    {
+      "tool_code": "BMS-CRS-OWN-MBS-001",
+      "name": "Точка А — Оценка системы и роль собственника",
+      "type": "audit",
+      "scale": "0-9",
+      "areas": [
+        {
+          "area_code": "AREA-001",
+          "name": "0. СОБСТВЕННИК: ЛПФ И ЦЕЛИ ВЛАДЕНИЯ"
+        },
+        {
+          "area_code": "AREA-002",
+          "name": "0.1 Личные цели собственника на 1, 3 и 5 лет"
+        },
+        {
+          "area_code": "AREA-003",
+          "name": "0.2 Профессиональные цели и желаемая роль"
+        },
+        {
+          "area_code": "AREA-004",
+          "name": "0.3 Финансовые цели: доход, капитал и ликвидность"
+        },
+        {
+          "area_code": "AREA-005",
+          "name": "0.4 Осознанная потребность в доходе"
+        },
+        {
+          "area_code": "AREA-006",
+          "name": "0.5 Согласованность личных, профессиональных и финансовых целей"
+        },
+        {
+          "area_code": "AREA-007",
+          "name": "0.6 Цели владения бизнесом"
+        },
+        {
+          "area_code": "AREA-008",
+          "name": "0.7 Роль бизнеса в достижении ЛПФ-целей"
+        },
+        {
+          "area_code": "AREA-009",
+          "name": "0.8 Требования к прибыли, дивидендам, капиталу и риску"
+        },
+        {
+          "area_code": "AREA-010",
+          "name": "0.9 Целевая роль собственника"
+        },
+        {
+          "area_code": "AREA-011",
+          "name": "0.10 Зарезервированные решения и границы вмешательства"
+        },
+        {
+          "area_code": "AREA-012",
+          "name": "0.11 Допустимая и недопустимая цена достижения целей"
+        },
+        {
+          "area_code": "AREA-013",
+          "name": "0.12 Согласованность совладельцев"
+        },
+        {
+          "area_code": "AREA-014",
+          "name": "0.13 Перевод собственнических требований в стратегию"
+        },
+        {
+          "area_code": "AREA-015",
+          "name": "0.14 Пересмотр собственнического замысла"
+        }
+      ],
+      "criteria": [
+        {
+          "criterion_code": "BMS-AUD-CHK-001-001",
+          "area_code": "AREA-015",
+          "name": "ФИЛОСОФИЯ",
+          "scale": {
+            "min": 0,
+            "max": 9
+          }
+        },
+        {
+          "criterion_code": "BMS-AUD-CHK-001-002",
+          "area_code": "AREA-015",
+          "name": "1.1 Миссия компании",
+          "scale": {
+            "min": 0,
+            "max": 9
+          }
+        },
+        {
+          "criterion_code": "BMS-AUD-CHK-001-003",
+          "area_code": "AREA-015",
+          "name": "1.2 Предназначение бизнеса",
+          "scale": {
+            "min": 0,
+            "max": 9
+          }
+        },
+        {
+          "criterion_code": "BMS-AUD-CHK-001-004",
+          "area_code": "AREA-015",
+          "name": "1.3 Долгосрочное видение",
+          "scale": {
+            "min": 0,
+            "max": 9
+          }
+        },
+        {
+          "criterion_code": "BMS-AUD-CHK-001-005",
+          "area_code": "AREA-015",
+          "name": "1.4 Принципы принятия решений",
+          "scale": {
+            "min": 0,
+            "max": 9
+          }
+        },
+        {
+          "criterion_code": "BMS-AUD-CHK-001-006",
+          "area_code": "AREA-015",
+          "name": "1.5 Руководители разделяют философию",
+          "scale": {
+            "min": 0,
+            "max": 9
+          }
+        },
+        {
+          "criterion_code": "BMS-AUD-CHK-001-007",
+          "area_code": "AREA-015",
+          "name": "1.6 Философия транслируется сотрудникам",
+          "scale": {
+            "min": 0,
+            "max": 9
+          }
+        },
+        {
+          "criterion_code": "BMS-AUD-CHK-001-008",
+          "area_code": "AREA-015",
+          "name": "1.7 Философия отражается в продуктах",
+          "scale": {
+            "min": 0,
+            "max": 9
+          }
+        },
+        {
+          "criterion_code": "BMS-AUD-CHK-001-009",
+          "area_code": "AREA-015",
+          "name": "1.8 Философия отражается в отношениях с клиентами",
+          "scale": {
+            "min": 0,
+            "max": 9
+          }
+        },
+        {
+          "criterion_code": "BMS-AUD-CHK-001-010",
+          "area_code": "AREA-015",
+          "name": "2.1 Спрос на продукцию на рынке",
+          "scale": {
+            "min": 0,
+            "max": 9
+          }
+        },
+        {
+          "criterion_code": "BMS-AUD-CHK-001-011",
+          "area_code": "AREA-015",
+          "name": "2.2 Обеспеченность клиентами",
+          "scale": {
+            "min": 0,
+            "max": 9
+          }
+        },
+        {
+          "criterion_code": "BMS-AUD-CHK-001-012",
+          "area_code": "AREA-015",
+          "name": "2.3 Рентабельность продаж",
+          "scale": {
+            "min": 0,
+            "max": 9
+          }
+        },
+        {
+          "criterion_code": "BMS-AUD-CHK-001-013",
+          "area_code": "AREA-015",
+          "name": "Умение продавать",
+          "scale": {
+            "min": 0,
+            "max": 9
+          }
+        },
+        {
+          "criterion_code": "BMS-AUD-CHK-001-014",
+          "area_code": "AREA-015",
+          "name": "2.5 Организация продаж, технология",
+          "scale": {
+            "min": 0,
+            "max": 9
+          }
+        },
+        {
+          "criterion_code": "BMS-AUD-CHK-001-015",
+          "area_code": "AREA-015",
+          "name": "2.6 Привлекательность для клиентов",
+          "scale": {
+            "min": 0,
+            "max": 9
+          }
+        },
+        {
+          "criterion_code": "BMS-AUD-CHK-001-016",
+          "area_code": "AREA-015",
+          "name": "2.7 Знание рынка и его тенденций",
+          "scale": {
+            "min": 0,
+            "max": 9
+          }
+        },
+        {
+          "criterion_code": "BMS-AUD-CHK-001-017",
+          "area_code": "AREA-015",
+          "name": "Развитие продаж, динамика",
+          "scale": {
+            "min": 0,
+            "max": 9
+          }
+        },
+        {
+          "criterion_code": "BMS-AUD-CHK-001-018",
+          "area_code": "AREA-015",
+          "name": "БИЗНЕС-МОДЕЛЬ",
+          "scale": {
+            "min": 0,
+            "max": 9
+          }
+        },
+        {
+          "criterion_code": "BMS-AUD-CHK-001-019",
+          "area_code": "AREA-015",
+          "name": "3.1 Описана бизнес-модель компании",
+          "scale": {
+            "min": 0,
+            "max": 9
+          }
+        },
+        {
+          "criterion_code": "BMS-AUD-CHK-001-020",
+          "area_code": "AREA-015",
+          "name": "3.2 Целевая аудитория",
+          "scale": {
+            "min": 0,
+            "max": 9
+          }
+        },
+        {
+          "criterion_code": "BMS-AUD-CHK-001-021",
+          "area_code": "AREA-015",
+          "name": "3.3 Ценностное предложение",
+          "scale": {
+            "min": 0,
+            "max": 9
+          }
+        },
+        {
+          "criterion_code": "BMS-AUD-CHK-001-022",
+          "area_code": "AREA-015",
+          "name": "3.4 Юнит-экономика",
+          "scale": {
+            "min": 0,
+            "max": 9
+          }
+        },
+        {
+          "criterion_code": "BMS-AUD-CHK-001-023",
+          "area_code": "AREA-015",
+          "name": "3.5 Каналы продаж",
+          "scale": {
+            "min": 0,
+            "max": 9
+          }
+        },
+        {
+          "criterion_code": "BMS-AUD-CHK-001-024",
+          "area_code": "AREA-015",
+          "name": "3.6 Известна экономика клиента",
+          "scale": {
+            "min": 0,
+            "max": 9
+          }
+        },
+        {
+          "criterion_code": "BMS-AUD-CHK-001-025",
+          "area_code": "AREA-015",
+          "name": "3.7 Масштабирование",
+          "scale": {
+            "min": 0,
+            "max": 9
+          }
+        },
+        {
+          "criterion_code": "BMS-AUD-CHK-001-026",
+          "area_code": "AREA-015",
+          "name": "План развития бизнес-модели",
+          "scale": {
+            "min": 0,
+            "max": 9
+          }
+        },
+        {
+          "criterion_code": "BMS-AUD-CHK-001-027",
+          "area_code": "AREA-015",
+          "name": "ЦЕЛИ И СТРАТЕГИЯ",
+          "scale": {
+            "min": 0,
+            "max": 9
+          }
+        },
+        {
+          "criterion_code": "BMS-AUD-CHK-001-028",
+          "area_code": "AREA-015",
+          "name": "4.1 Есть стратегические цели на 3 года",
+          "scale": {
+            "min": 0,
+            "max": 9
+          }
+        },
+        {
+          "criterion_code": "BMS-AUD-CHK-001-029",
+          "area_code": "AREA-015",
+          "name": "4.2 Есть годовые цели",
+          "scale": {
+            "min": 0,
+            "max": 9
+          }
+        },
+        {
+          "criterion_code": "BMS-AUD-CHK-001-030",
+          "area_code": "AREA-015",
+          "name": "4.3 Есть квартальные цели",
+          "scale": {
+            "min": 0,
+            "max": 9
+          }
+        },
+        {
+          "criterion_code": "BMS-AUD-CHK-001-031",
+          "area_code": "AREA-015",
+          "name": "4.4 Цели декомпозированы по подразделениям",
+          "scale": {
+            "min": 0,
+            "max": 9
+          }
+        },
+        {
+          "criterion_code": "BMS-AUD-CHK-001-032",
+          "area_code": "AREA-015",
+          "name": "4.5 Есть стратегические инициативы",
+          "scale": {
+            "min": 0,
+            "max": 9
+          }
+        },
+        {
+          "criterion_code": "BMS-AUD-CHK-001-033",
+          "area_code": "AREA-015",
+          "name": "4.6 Проводятся стратегические сессии",
+          "scale": {
+            "min": 0,
+            "max": 9
+          }
+        },
+        {
+          "criterion_code": "BMS-AUD-CHK-001-034",
+          "area_code": "AREA-015",
+          "name": "4.7 Знание целей руководителями",
+          "scale": {
+            "min": 0,
+            "max": 9
+          }
+        },
+        {
+          "criterion_code": "BMS-AUD-CHK-001-035",
+          "area_code": "AREA-015",
+          "name": "4.8 Понимание приоритетов сотрудниками",
+          "scale": {
+            "min": 0,
+            "max": 9
+          }
+        },
+        {
+          "criterion_code": "BMS-AUD-CHK-001-036",
+          "area_code": "AREA-015",
+          "name": "СТРУКТУРА ОРГАНИЗАЦИИ",
+          "scale": {
+            "min": 0,
+            "max": 9
+          }
+        },
+        {
+          "criterion_code": "BMS-AUD-CHK-001-037",
+          "area_code": "AREA-015",
+          "name": "5.1 Оргструктура компании",
+          "scale": {
+            "min": 0,
+            "max": 9
+          }
+        },
+        {
+          "criterion_code": "BMS-AUD-CHK-001-038",
+          "area_code": "AREA-015",
+          "name": "5.2 Подразделения",
+          "scale": {
+            "min": 0,
+            "max": 9
+          }
+        },
+        {
+          "criterion_code": "BMS-AUD-CHK-001-039",
+          "area_code": "AREA-015",
+          "name": "5.3 Руководители",
+          "scale": {
+            "min": 0,
+            "max": 9
+          }
+        },
+        {
+          "criterion_code": "BMS-AUD-CHK-001-040",
+          "area_code": "AREA-015",
+          "name": "5.4 Понятны линии подчинения",
+          "scale": {
+            "min": 0,
+            "max": 9
+          }
+        },
+        {
+          "criterion_code": "BMS-AUD-CHK-001-041",
+          "area_code": "AREA-015",
+          "name": "5.5 Дублирование функций",
+          "scale": {
+            "min": 0,
+            "max": 9
+          }
+        },
+        {
+          "criterion_code": "BMS-AUD-CHK-001-042",
+          "area_code": "AREA-015",
+          "name": "5.6 Собственник не является узким горлышком",
+          "scale": {
+            "min": 0,
+            "max": 9
+          }
+        },
+        {
+          "criterion_code": "BMS-AUD-CHK-001-043",
+          "area_code": "AREA-015",
+          "name": "5.7 Структура соответствует масштабу бизнеса",
+          "scale": {
+            "min": 0,
+            "max": 9
+          }
+        },
+        {
+          "criterion_code": "BMS-AUD-CHK-001-044",
+          "area_code": "AREA-015",
+          "name": "5.8 Структура регулярно пересматривается",
+          "scale": {
+            "min": 0,
+            "max": 9
+          }
+        },
+        {
+          "criterion_code": "BMS-AUD-CHK-001-045",
+          "area_code": "AREA-015",
+          "name": "КОРПОРАТИВНЫЕ ПРАВИЛА",
+          "scale": {
+            "min": 0,
+            "max": 9
+          }
+        },
+        {
+          "criterion_code": "BMS-AUD-CHK-001-046",
+          "area_code": "AREA-015",
+          "name": "6.1 Есть корпоративный кодекс",
+          "scale": {
+            "min": 0,
+            "max": 9
+          }
+        },
+        {
+          "criterion_code": "BMS-AUD-CHK-001-047",
+          "area_code": "AREA-015",
+          "name": "6.2 Есть регламенты работы",
+          "scale": {
+            "min": 0,
+            "max": 9
+          }
+        },
+        {
+          "criterion_code": "BMS-AUD-CHK-001-048",
+          "area_code": "AREA-015",
+          "name": "6.3 Есть стандарты взаимодействия",
+          "scale": {
+            "min": 0,
+            "max": 9
+          }
+        },
+        {
+          "criterion_code": "BMS-AUD-CHK-001-049",
+          "area_code": "AREA-015",
+          "name": "6.4 Есть правила принятия решений",
+          "scale": {
+            "min": 0,
+            "max": 9
+          }
+        },
+        {
+          "criterion_code": "BMS-AUD-CHK-001-050",
+          "area_code": "AREA-015",
+          "name": "6.5 Есть правила работы с клиентами",
+          "scale": {
+            "min": 0,
+            "max": 9
+          }
+        },
+        {
+          "criterion_code": "BMS-AUD-CHK-001-051",
+          "area_code": "AREA-015",
+          "name": "6.6 Есть правила внутренней коммуникации",
+          "scale": {
+            "min": 0,
+            "max": 9
+          }
+        },
+        {
+          "criterion_code": "BMS-AUD-CHK-001-052",
+          "area_code": "AREA-015",
+          "name": "6.7 Сотрудники ознакомлены с правилами",
+          "scale": {
+            "min": 0,
+            "max": 9
+          }
+        },
+        {
+          "criterion_code": "BMS-AUD-CHK-001-053",
+          "area_code": "AREA-015",
+          "name": "Правила реально соблюдаются",
+          "scale": {
+            "min": 0,
+            "max": 9
+          }
+        },
+        {
+          "criterion_code": "BMS-AUD-CHK-001-054",
+          "area_code": "AREA-015",
+          "name": "ДОЛЖНОСТНОЙ ФУНКЦИОНАЛ",
+          "scale": {
+            "min": 0,
+            "max": 9
+          }
+        },
+        {
+          "criterion_code": "BMS-AUD-CHK-001-055",
+          "area_code": "AREA-015",
+          "name": "7.1 Должностные инструкции",
+          "scale": {
+            "min": 0,
+            "max": 9
+          }
+        },
+        {
+          "criterion_code": "BMS-AUD-CHK-001-056",
+          "area_code": "AREA-015",
+          "name": "7.2 Определены обязанности",
+          "scale": {
+            "min": 0,
+            "max": 9
+          }
+        },
+        {
+          "criterion_code": "BMS-AUD-CHK-001-057",
+          "area_code": "AREA-015",
+          "name": "7.3 Полномочия",
+          "scale": {
+            "min": 0,
+            "max": 9
+          }
+        },
+        {
+          "criterion_code": "BMS-AUD-CHK-001-058",
+          "area_code": "AREA-015",
+          "name": "7.4 Определены зоны ответственности",
+          "scale": {
+            "min": 0,
+            "max": 9
+          }
+        },
+        {
+          "criterion_code": "BMS-AUD-CHK-001-059",
+          "area_code": "AREA-015",
+          "name": "7.5 Понимание задач сотрудниками",
+          "scale": {
+            "min": 0,
+            "max": 9
+          }
+        },
+        {
+          "criterion_code": "BMS-AUD-CHK-001-060",
+          "area_code": "AREA-015",
+          "name": "7.6 Есть матрица ответственности",
+          "scale": {
+            "min": 0,
+            "max": 9
+          }
+        },
+        {
+          "criterion_code": "BMS-AUD-CHK-001-061",
+          "area_code": "AREA-015",
+          "name": "7.7 Регулярно пересматриваются должности",
+          "scale": {
+            "min": 0,
+            "max": 9
+          }
+        },
+        {
+          "criterion_code": "BMS-AUD-CHK-001-062",
+          "area_code": "AREA-015",
+          "name": "УПРАВЛЕНИЕ ПРОЦЕССАМИ И ПРОЕКТАМИ",
+          "scale": {
+            "min": 0,
+            "max": 9
+          }
+        },
+        {
+          "criterion_code": "BMS-AUD-CHK-001-063",
+          "area_code": "AREA-015",
+          "name": "8.1 Описание процессов",
+          "scale": {
+            "min": 0,
+            "max": 9
+          }
+        },
+        {
+          "criterion_code": "BMS-AUD-CHK-001-064",
+          "area_code": "AREA-015",
+          "name": "8.2 Владельцы процессов",
+          "scale": {
+            "min": 0,
+            "max": 9
+          }
+        },
+        {
+          "criterion_code": "BMS-AUD-CHK-001-065",
+          "area_code": "AREA-015",
+          "name": "8.3 Процессы регулярно обновляются/актуализируются",
+          "scale": {
+            "min": 0,
+            "max": 9
+          }
+        },
+        {
+          "criterion_code": "BMS-AUD-CHK-001-066",
+          "area_code": "AREA-015",
+          "name": "8.4 Проектное управление",
+          "scale": {
+            "min": 0,
+            "max": 9
+          }
+        },
+        {
+          "criterion_code": "BMS-AUD-CHK-001-067",
+          "area_code": "AREA-015",
+          "name": "8.5 Система контроля проектов",
+          "scale": {
+            "min": 0,
+            "max": 9
+          }
+        },
+        {
+          "criterion_code": "BMS-AUD-CHK-001-068",
+          "area_code": "AREA-015",
+          "name": "8.6 Есть стандарты выполнения работ",
+          "scale": {
+            "min": 0,
+            "max": 9
+          }
+        },
+        {
+          "criterion_code": "BMS-AUD-CHK-001-069",
+          "area_code": "AREA-015",
+          "name": "8.7 Анализируются узкие места",
+          "scale": {
+            "min": 0,
+            "max": 9
+          }
+        },
+        {
+          "criterion_code": "BMS-AUD-CHK-001-070",
+          "area_code": "AREA-015",
+          "name": "Определены KPI компании",
+          "scale": {
+            "min": 0,
+            "max": 9
+          }
+        },
+        {
+          "criterion_code": "BMS-AUD-CHK-001-071",
+          "area_code": "AREA-015",
+          "name": "9.2 Определены KPI подразделений",
+          "scale": {
+            "min": 0,
+            "max": 9
+          }
+        },
+        {
+          "criterion_code": "BMS-AUD-CHK-001-072",
+          "area_code": "AREA-015",
+          "name": "9.3 Определены KPI руководителей",
+          "scale": {
+            "min": 0,
+            "max": 9
+          }
+        },
+        {
+          "criterion_code": "BMS-AUD-CHK-001-073",
+          "area_code": "AREA-015",
+          "name": "9.4 Определены KPI сотрудников",
+          "scale": {
+            "min": 0,
+            "max": 9
+          }
+        },
+        {
+          "criterion_code": "BMS-AUD-CHK-001-074",
+          "area_code": "AREA-015",
+          "name": "9.5 Показатели измеряются",
+          "scale": {
+            "min": 0,
+            "max": 9
+          }
+        },
+        {
+          "criterion_code": "BMS-AUD-CHK-001-075",
+          "area_code": "AREA-015",
+          "name": "9.6 Есть визуальная отчетность",
+          "scale": {
+            "min": 0,
+            "max": 9
+          }
+        },
+        {
+          "criterion_code": "BMS-AUD-CHK-001-076",
+          "area_code": "AREA-015",
+          "name": "9.7 KPI связаны с мотивацией",
+          "scale": {
+            "min": 0,
+            "max": 9
+          }
+        },
+        {
+          "criterion_code": "BMS-AUD-CHK-001-077",
+          "area_code": "AREA-015",
+          "name": "ФИНАНСОВОЕ ПЛАНИРОВАНИЕ И ЭКОНОМИКА",
+          "scale": {
+            "min": 0,
+            "max": 9
+          }
+        },
+        {
+          "criterion_code": "BMS-AUD-CHK-001-078",
+          "area_code": "AREA-015",
+          "name": "10.1 Финансовый (управленческий) учет",
+          "scale": {
+            "min": 0,
+            "max": 9
+          }
+        },
+        {
+          "criterion_code": "BMS-AUD-CHK-001-079",
+          "area_code": "AREA-015",
+          "name": "10.2 Есть БДДС",
+          "scale": {
+            "min": 0,
+            "max": 9
+          }
+        },
+        {
+          "criterion_code": "BMS-AUD-CHK-001-080",
+          "area_code": "AREA-015",
+          "name": "10.3 Есть БДР",
+          "scale": {
+            "min": 0,
+            "max": 9
+          }
+        },
+        {
+          "criterion_code": "BMS-AUD-CHK-001-081",
+          "area_code": "AREA-015",
+          "name": "10.4 Есть платежный календарь",
+          "scale": {
+            "min": 0,
+            "max": 9
+          }
+        },
+        {
+          "criterion_code": "BMS-AUD-CHK-001-082",
+          "area_code": "AREA-015",
+          "name": "10.5 Есть финансовый план на год",
+          "scale": {
+            "min": 0,
+            "max": 9
+          }
+        },
+        {
+          "criterion_code": "BMS-AUD-CHK-001-083",
+          "area_code": "AREA-015",
+          "name": "10.6 Есть финансовый план на месяц",
+          "scale": {
+            "min": 0,
+            "max": 9
+          }
+        },
+        {
+          "criterion_code": "BMS-AUD-CHK-001-084",
+          "area_code": "AREA-015",
+          "name": "10.7 Финансовое планирование и бюджетирование",
+          "scale": {
+            "min": 0,
+            "max": 9
+          }
+        },
+        {
+          "criterion_code": "BMS-AUD-CHK-001-085",
+          "area_code": "AREA-015",
+          "name": "Известна точка безубыточности",
+          "scale": {
+            "min": 0,
+            "max": 9
+          }
+        },
+        {
+          "criterion_code": "BMS-AUD-CHK-001-086",
+          "area_code": "AREA-015",
+          "name": "10.9 Анализируется прибыльность направлений",
+          "scale": {
+            "min": 0,
+            "max": 9
+          }
+        },
+        {
+          "criterion_code": "BMS-AUD-CHK-001-087",
+          "area_code": "AREA-015",
+          "name": "10.10 Бухгалтерский учет",
+          "scale": {
+            "min": 0,
+            "max": 9
+          }
+        },
+        {
+          "criterion_code": "BMS-AUD-CHK-001-088",
+          "area_code": "AREA-015",
+          "name": "10.11 Рентабельность компании",
+          "scale": {
+            "min": 0,
+            "max": 9
+          }
+        },
+        {
+          "criterion_code": "BMS-AUD-CHK-001-089",
+          "area_code": "AREA-015",
+          "name": "10.12 Прибыль",
+          "scale": {
+            "min": 0,
+            "max": 9
+          }
+        },
+        {
+          "criterion_code": "BMS-AUD-CHK-001-090",
+          "area_code": "AREA-015",
+          "name": "10.13 Себестоимость",
+          "scale": {
+            "min": 0,
+            "max": 9
+          }
+        },
+        {
+          "criterion_code": "BMS-AUD-CHK-001-091",
+          "area_code": "AREA-015",
+          "name": "10.14 Технология работы",
+          "scale": {
+            "min": 0,
+            "max": 9
+          }
+        },
+        {
+          "criterion_code": "BMS-AUD-CHK-001-092",
+          "area_code": "AREA-015",
+          "name": "10.15 Ответственность за финансовый результат",
+          "scale": {
+            "min": 0,
+            "max": 9
+          }
+        },
+        {
+          "criterion_code": "BMS-AUD-CHK-001-093",
+          "area_code": "AREA-015",
+          "name": "УПРАВЛЕНИЕ КОММУНИКАЦИЯМИ",
+          "scale": {
+            "min": 0,
+            "max": 9
+          }
+        },
+        {
+          "criterion_code": "BMS-AUD-CHK-001-094",
+          "area_code": "AREA-015",
+          "name": "11.1 Есть регулярные планерки",
+          "scale": {
+            "min": 0,
+            "max": 9
+          }
+        },
+        {
+          "criterion_code": "BMS-AUD-CHK-001-095",
+          "area_code": "AREA-015",
+          "name": "11.2 Есть еженедельные управленческие совещания",
+          "scale": {
+            "min": 0,
+            "max": 9
+          }
+        },
+        {
+          "criterion_code": "BMS-AUD-CHK-001-096",
+          "area_code": "AREA-015",
+          "name": "Определены каналы коммуникации",
+          "scale": {
+            "min": 0,
+            "max": 9
+          }
+        },
+        {
+          "criterion_code": "BMS-AUD-CHK-001-097",
+          "area_code": "AREA-015",
+          "name": "11.4 Есть регламент постановки задач",
+          "scale": {
+            "min": 0,
+            "max": 9
+          }
+        },
+        {
+          "criterion_code": "BMS-AUD-CHK-001-098",
+          "area_code": "AREA-015",
+          "name": "11.5 Есть регламент контроля задач",
+          "scale": {
+            "min": 0,
+            "max": 9
+          }
+        },
+        {
+          "criterion_code": "BMS-AUD-CHK-001-099",
+          "area_code": "AREA-015",
+          "name": "Решения фиксируются письменно",
+          "scale": {
+            "min": 0,
+            "max": 9
+          }
+        },
+        {
+          "criterion_code": "BMS-AUD-CHK-001-100",
+          "area_code": "AREA-015",
+          "name": "11.7 Единая система управления задачами",
+          "scale": {
+            "min": 0,
+            "max": 9
+          }
+        },
+        {
+          "criterion_code": "BMS-AUD-CHK-001-101",
+          "area_code": "AREA-015",
+          "name": "Потери информации между сотрудниками",
+          "scale": {
+            "min": 0,
+            "max": 9
+          }
+        },
+        {
+          "criterion_code": "BMS-AUD-CHK-001-102",
+          "area_code": "AREA-015",
+          "name": "МОТИВАЦИЯ, СТИМУЛИРОВАНИЕ И ОПЛАТА ТРУДА",
+          "scale": {
+            "min": 0,
+            "max": 9
+          }
+        },
+        {
+          "criterion_code": "BMS-AUD-CHK-001-103",
+          "area_code": "AREA-015",
+          "name": "12.1 Система оплаты труда",
+          "scale": {
+            "min": 0,
+            "max": 9
+          }
+        },
+        {
+          "criterion_code": "BMS-AUD-CHK-001-104",
+          "area_code": "AREA-015",
+          "name": "12.2 Переменная часть дохода",
+          "scale": {
+            "min": 0,
+            "max": 9
+          }
+        },
+        {
+          "criterion_code": "BMS-AUD-CHK-001-105",
+          "area_code": "AREA-015",
+          "name": "12.3 Сотрудники понимают правила начисления",
+          "scale": {
+            "min": 0,
+            "max": 9
+          }
+        },
+        {
+          "criterion_code": "BMS-AUD-CHK-001-106",
+          "area_code": "AREA-015",
+          "name": "12.4 Оплата связана с результатом",
+          "scale": {
+            "min": 0,
+            "max": 9
+          }
+        },
+        {
+          "criterion_code": "BMS-AUD-CHK-001-107",
+          "area_code": "AREA-015",
+          "name": "12.5 Есть нематериальная мотивация",
+          "scale": {
+            "min": 0,
+            "max": 9
+          }
+        },
+        {
+          "criterion_code": "BMS-AUD-CHK-001-108",
+          "area_code": "AREA-015",
+          "name": "12.6 Есть система признания достижений",
+          "scale": {
+            "min": 0,
+            "max": 9
+          }
+        },
+        {
+          "criterion_code": "BMS-AUD-CHK-001-109",
+          "area_code": "AREA-015",
+          "name": "12.7 Текучесть персонала контролируется",
+          "scale": {
+            "min": 0,
+            "max": 9
+          }
+        },
+        {
+          "criterion_code": "BMS-AUD-CHK-001-110",
+          "area_code": "AREA-015",
+          "name": "12.8 Проводится анализ удовлетворенности сотрудников",
+          "scale": {
+            "min": 0,
+            "max": 9
+          }
+        },
+        {
+          "criterion_code": "BMS-AUD-CHK-001-111",
+          "area_code": "AREA-015",
+          "name": "12.9 Привлекательность как работодателя",
+          "scale": {
+            "min": 0,
+            "max": 9
+          }
+        },
+        {
+          "criterion_code": "BMS-AUD-CHK-001-112",
+          "area_code": "AREA-015",
+          "name": "12.10 Компания обеспечена персоналом",
+          "scale": {
+            "min": 0,
+            "max": 9
+          }
+        },
+        {
+          "criterion_code": "BMS-AUD-CHK-001-113",
+          "area_code": "AREA-015",
+          "name": "12.11 Квалификация персонала",
+          "scale": {
+            "min": 0,
+            "max": 9
+          }
+        },
+        {
+          "criterion_code": "BMS-AUD-CHK-001-114",
+          "area_code": "AREA-015",
+          "name": "ПРОИЗВОДСТВО И ПРОЦЕССЫ",
+          "scale": {
+            "min": 0,
+            "max": 9
+          }
+        },
+        {
+          "criterion_code": "BMS-AUD-CHK-001-115",
+          "area_code": "AREA-015",
+          "name": "13.1 Производственная технология",
+          "scale": {
+            "min": 0,
+            "max": 9
+          }
+        },
+        {
+          "criterion_code": "BMS-AUD-CHK-001-116",
+          "area_code": "AREA-015",
+          "name": "13.2 Потери в производстве",
+          "scale": {
+            "min": 0,
+            "max": 9
+          }
+        },
+        {
+          "criterion_code": "BMS-AUD-CHK-001-117",
+          "area_code": "AREA-015",
+          "name": "13.3 Оперативное производственное планирование и учет",
+          "scale": {
+            "min": 0,
+            "max": 9
+          }
+        },
+        {
+          "criterion_code": "BMS-AUD-CHK-001-118",
+          "area_code": "AREA-015",
+          "name": "13.4 Ритмичность производства",
+          "scale": {
+            "min": 0,
+            "max": 9
+          }
+        },
+        {
+          "criterion_code": "BMS-AUD-CHK-001-119",
+          "area_code": "AREA-015",
+          "name": "13.5 Основные технологические процессы формализованы и выполняются",
+          "scale": {
+            "min": 0,
+            "max": 9
+          }
+        },
+        {
+          "criterion_code": "BMS-AUD-CHK-001-120",
+          "area_code": "AREA-015",
+          "name": "13.6 Вспомогательные процессы формализованы",
+          "scale": {
+            "min": 0,
+            "max": 9
+          }
+        },
+        {
+          "criterion_code": "BMS-AUD-CHK-001-121",
+          "area_code": "AREA-015",
+          "name": "13.7 Качество продукции",
+          "scale": {
+            "min": 0,
+            "max": 9
+          }
+        },
+        {
+          "criterion_code": "BMS-AUD-CHK-001-122",
+          "area_code": "AREA-015",
+          "name": "13.8 Гибкость производства",
+          "scale": {
+            "min": 0,
+            "max": 9
+          }
+        },
+        {
+          "criterion_code": "BMS-AUD-CHK-001-123",
+          "area_code": "AREA-015",
+          "name": "13.9 Работа над снижением потерь, качеством, ритмичностью",
+          "scale": {
+            "min": 0,
+            "max": 9
+          }
+        },
+        {
+          "criterion_code": "BMS-AUD-CHK-001-124",
+          "area_code": "AREA-015",
+          "name": "РАЗВИТИЕ КОМПЕТЕНЦИЙ И   КОРПОРАТИВНОЙ КУЛЬТУРЫ",
+          "scale": {
+            "min": 0,
+            "max": 9
+          }
+        },
+        {
+          "criterion_code": "BMS-AUD-CHK-001-125",
+          "area_code": "AREA-015",
+          "name": "14.1 Ценности компании",
+          "scale": {
+            "min": 0,
+            "max": 9
+          }
+        },
+        {
+          "criterion_code": "BMS-AUD-CHK-001-126",
+          "area_code": "AREA-015",
+          "name": "14.2 Сотрудники знают ценности и разделяют",
+          "scale": {
+            "min": 0,
+            "max": 9
+          }
+        },
+        {
+          "criterion_code": "BMS-AUD-CHK-001-127",
+          "area_code": "AREA-015",
+          "name": "14.3 Система подбора, приема и адаптации    новых сотрудников",
+          "scale": {
+            "min": 0,
+            "max": 9
+          }
+        },
+        {
+          "criterion_code": "BMS-AUD-CHK-001-128",
+          "area_code": "AREA-015",
+          "name": "14.4 Внутреннее обучение сотрудников",
+          "scale": {
+            "min": 0,
+            "max": 9
+          }
+        },
+        {
+          "criterion_code": "BMS-AUD-CHK-001-129",
+          "area_code": "AREA-015",
+          "name": "14.5 Индивидуальные планы развития",
+          "scale": {
+            "min": 0,
+            "max": 9
+          }
+        },
+        {
+          "criterion_code": "BMS-AUD-CHK-001-130",
+          "area_code": "AREA-015",
+          "name": "14.6 Наставничество руководителей",
+          "scale": {
+            "min": 0,
+            "max": 9
+          }
+        },
+        {
+          "criterion_code": "BMS-AUD-CHK-001-131",
+          "area_code": "AREA-015",
+          "name": "14.7 Проводится оценка компетенций",
+          "scale": {
+            "min": 0,
+            "max": 9
+          }
+        },
+        {
+          "criterion_code": "BMS-AUD-CHK-001-132",
+          "area_code": "AREA-015",
+          "name": "14.8 Кадровый резерв",
+          "scale": {
+            "min": 0,
+            "max": 9
+          }
+        },
+        {
+          "criterion_code": "BMS-AUD-CHK-001-133",
+          "area_code": "AREA-015",
+          "name": "14.9 Организационная культура",
+          "scale": {
+            "min": 0,
+            "max": 9
+          }
+        },
+        {
+          "criterion_code": "BMS-AUD-CHK-001-134",
+          "area_code": "AREA-015",
+          "name": "14.10 Стиль руководства",
+          "scale": {
+            "min": 0,
+            "max": 9
+          }
+        },
+        {
+          "criterion_code": "BMS-AUD-CHK-001-135",
+          "area_code": "AREA-015",
+          "name": "14.11 Ключевые руководители , специалисты",
+          "scale": {
+            "min": 0,
+            "max": 9
+          }
+        }
+      ]
+    }
+  ]
+}

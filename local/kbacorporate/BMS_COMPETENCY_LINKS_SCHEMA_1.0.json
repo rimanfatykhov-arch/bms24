@@ -1,0 +1,14 @@
+{
+  "schema": "kba-bms-competency-links",
+  "version": "1.0",
+  "links": [
+    {
+      "tool_code": "BMS-OWN-001",
+      "criterion_code": "OWN-001-01",
+      "competency_code": "KBA-MGT-STRATEGY",
+      "target_level": 4,
+      "priority": "critical",
+      "mandatory": true
+    }
+  ]
+}

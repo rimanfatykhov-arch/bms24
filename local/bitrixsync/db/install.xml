@@ -1,0 +1,126 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<XMLDB PATH="local/bitrixsync/db" VERSION="2026083625" COMMENT="KBA Connect Real Data Layer">
+<TABLES>
+<TABLE NAME="local_bitrixsync_runs" COMMENT="Execution runs">
+<FIELDS>
+<FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true"/>
+<FIELD NAME="deal_id" TYPE="int" LENGTH="10" NOTNULL="true"/>
+<FIELD NAME="run_id" TYPE="char" LENGTH="128" NOTNULL="true"/>
+<FIELD NAME="status" TYPE="char" LENGTH="50" NOTNULL="true"/>
+<FIELD NAME="timecreated" TYPE="int" LENGTH="10" NOTNULL="true"/>
+</FIELDS>
+<KEYS>
+<KEY NAME="primary" TYPE="primary" FIELDS="id"/>
+</KEYS>
+</TABLE>
+<TABLE NAME="local_bitrixsync_events" COMMENT="Execution events">
+<FIELDS>
+<FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true"/>
+<FIELD NAME="run_id" TYPE="char" LENGTH="128" NOTNULL="true"/>
+<FIELD NAME="event" TYPE="char" LENGTH="100" NOTNULL="true"/>
+<FIELD NAME="status" TYPE="char" LENGTH="50" NOTNULL="true"/>
+<FIELD NAME="timecreated" TYPE="int" LENGTH="10" NOTNULL="true"/>
+</FIELDS>
+<KEYS>
+<KEY NAME="primary" TYPE="primary" FIELDS="id"/>
+</KEYS>
+</TABLE>
+
+<TABLE NAME="local_bitrixsync_pairing" COMMENT="One-time Corporate Dashboard pairing codes">
+<FIELDS>
+<FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true"/>
+<FIELD NAME="codehash" TYPE="char" LENGTH="64" NOTNULL="true"/>
+<FIELD NAME="environment" TYPE="char" LENGTH="20" NOTNULL="true" DEFAULT="production"/>
+<FIELD NAME="timecreated" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0"/>
+<FIELD NAME="timeexpires" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0"/>
+<FIELD NAME="timeused" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0"/>
+<FIELD NAME="used" TYPE="int" LENGTH="1" NOTNULL="true" DEFAULT="0"/>
+<FIELD NAME="attempts" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0"/>
+<FIELD NAME="lastattempt" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0"/>
+</FIELDS>
+<KEYS><KEY NAME="primary" TYPE="primary" FIELDS="id"/></KEYS>
+<INDEXES><INDEX NAME="codehash_uix" UNIQUE="true" FIELDS="codehash"/><INDEX NAME="active_idx" UNIQUE="false" FIELDS="used,timeexpires"/></INDEXES>
+</TABLE>
+<TABLE NAME="local_bitrixsync_corpconn" COMMENT="Revocable Corporate Dashboard integration connections">
+<FIELDS>
+<FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true"/>
+<FIELD NAME="connectionid" TYPE="char" LENGTH="128" NOTNULL="true"/>
+<FIELD NAME="component" TYPE="char" LENGTH="100" NOTNULL="true" DEFAULT="local_kbacorporate"/>
+<FIELD NAME="environment" TYPE="char" LENGTH="20" NOTNULL="true" DEFAULT="production"/>
+<FIELD NAME="tokenhash" TYPE="char" LENGTH="64" NOTNULL="true"/>
+<FIELD NAME="tokenfingerprint" TYPE="char" LENGTH="16" NOTNULL="true" DEFAULT=""/>
+<FIELD NAME="clientversion" TYPE="char" LENGTH="50" NOTNULL="true" DEFAULT=""/>
+<FIELD NAME="apiversion" TYPE="char" LENGTH="20" NOTNULL="true" DEFAULT=""/>
+<FIELD NAME="timecreated" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0"/>
+<FIELD NAME="lastseen" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0"/>
+<FIELD NAME="revoked" TYPE="int" LENGTH="1" NOTNULL="true" DEFAULT="0"/>
+<FIELD NAME="timerevoked" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0"/>
+</FIELDS>
+<KEYS><KEY NAME="primary" TYPE="primary" FIELDS="id"/></KEYS>
+<INDEXES><INDEX NAME="connid_uix" UNIQUE="true" FIELDS="connectionid"/><INDEX NAME="tokenhash_uix" UNIQUE="true" FIELDS="tokenhash"/><INDEX NAME="active_idx" UNIQUE="false" FIELDS="revoked,environment"/></INDEXES>
+</TABLE>
+<TABLE NAME="local_bitrixsync_pairattempt" COMMENT="Pairing endpoint IP rate limiting state">
+<FIELDS>
+<FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true"/>
+<FIELD NAME="iphash" TYPE="char" LENGTH="64" NOTNULL="true"/>
+<FIELD NAME="windowstart" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0"/>
+<FIELD NAME="attempts" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0"/>
+<FIELD NAME="blockeduntil" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0"/>
+<FIELD NAME="timemodified" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0"/>
+</FIELDS>
+<KEYS><KEY NAME="primary" TYPE="primary" FIELDS="id"/></KEYS>
+<INDEXES><INDEX NAME="iphash_uix" UNIQUE="true" FIELDS="iphash"/></INDEXES>
+</TABLE>
+
+<TABLE NAME="local_bitrixsync_catmap" COMMENT="Moodle category to Bitrix catalog section mapping">
+<FIELDS>
+<FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true"/>
+<FIELD NAME="categoryid" TYPE="int" LENGTH="10" NOTNULL="true"/>
+<FIELD NAME="bitrix_section_id" TYPE="int" LENGTH="10" NOTNULL="false"/>
+<FIELD NAME="bitrix_parent_section_id" TYPE="int" LENGTH="10" NOTNULL="false"/>
+<FIELD NAME="iblockid" TYPE="int" LENGTH="10" NOTNULL="false"/>
+<FIELD NAME="name" TYPE="char" LENGTH="255" NOTNULL="true" DEFAULT=""/>
+<FIELD NAME="status" TYPE="char" LENGTH="30" NOTNULL="true" DEFAULT="mapped"/>
+<FIELD NAME="last_sync" TYPE="int" LENGTH="10" NOTNULL="false"/>
+<FIELD NAME="error" TYPE="text" NOTNULL="false"/>
+<FIELD NAME="timecreated" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0"/>
+<FIELD NAME="timemodified" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0"/>
+</FIELDS>
+<KEYS>
+<KEY NAME="primary" TYPE="primary" FIELDS="id"/>
+</KEYS>
+<INDEXES>
+<INDEX NAME="category_idx" UNIQUE="true" FIELDS="categoryid"/>
+<INDEX NAME="section_idx" UNIQUE="false" FIELDS="bitrix_section_id"/>
+</INDEXES>
+</TABLE>
+
+<TABLE NAME="local_bitrixsync_productmap" COMMENT="Moodle course to Bitrix catalog product mapping">
+<FIELDS>
+<FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true"/>
+<FIELD NAME="bitrix_product_id" TYPE="int" LENGTH="10" NOTNULL="true"/>
+<FIELD NAME="courseid" TYPE="int" LENGTH="10" NOTNULL="true"/>
+<FIELD NAME="coursecode" TYPE="char" LENGTH="100" NOTNULL="false"/>
+<FIELD NAME="categoryid" TYPE="int" LENGTH="10" NOTNULL="false"/>
+<FIELD NAME="bitrix_section_id" TYPE="int" LENGTH="10" NOTNULL="false"/>
+<FIELD NAME="iblockid" TYPE="int" LENGTH="10" NOTNULL="false"/>
+<FIELD NAME="source" TYPE="char" LENGTH="20" NOTNULL="true" DEFAULT="moodle"/>
+<FIELD NAME="status" TYPE="char" LENGTH="30" NOTNULL="true" DEFAULT="mapped"/>
+<FIELD NAME="last_sync" TYPE="int" LENGTH="10" NOTNULL="false"/>
+<FIELD NAME="error" TYPE="text" NOTNULL="false"/>
+<FIELD NAME="active" TYPE="int" LENGTH="1" NOTNULL="true" DEFAULT="1"/>
+<FIELD NAME="timecreated" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0"/>
+<FIELD NAME="timemodified" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0"/>
+</FIELDS>
+<KEYS>
+<KEY NAME="primary" TYPE="primary" FIELDS="id"/>
+</KEYS>
+<INDEXES>
+<INDEX NAME="product_idx" UNIQUE="false" FIELDS="bitrix_product_id"/>
+<INDEX NAME="course_idx" UNIQUE="false" FIELDS="courseid"/>
+<INDEX NAME="active_idx" UNIQUE="false" FIELDS="active"/>
+</INDEXES>
+</TABLE>
+
+</TABLES>
+</XMLDB>

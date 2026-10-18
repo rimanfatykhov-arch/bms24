@@ -1,0 +1,8 @@
+BETA_ACCEPTANCE_1.1.0.md
+CHANGELOG.md
+RELEASE_NOTES_1.1.0-beta1.md
+classes/local/calendar_workspace_service.php
+lang/en/local_kbacompany.php
+lang/ru/local_kbacompany.php
+styles.css
+version.php

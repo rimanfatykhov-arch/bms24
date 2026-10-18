@@ -1,0 +1,111 @@
+/* v0.14.0 Gamification engagement UX. */
+.kbacorp-gamification-latest-grid,
+.kbacorp-gamification-top-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 12px;
+    margin: .8rem 0 1.4rem;
+}
+.kbacorp-gamification-latest-card,
+.kbacorp-gamification-top-card {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 14px;
+    border: 1px solid #d8e6d9;
+    border-radius: 13px;
+    background: #f7fbf7;
+    color: #172117;
+    text-decoration: none;
+    transition: transform .16s ease, border-color .16s ease, box-shadow .16s ease, background-color .16s ease;
+}
+.kbacorp-gamification-latest-card:hover,
+.kbacorp-gamification-latest-card:focus,
+.kbacorp-gamification-top-card:hover,
+.kbacorp-gamification-top-card:focus {
+    transform: translateY(-1px);
+    border-color: #9fcba3;
+    box-shadow: 0 8px 20px rgba(8,108,12,.08);
+    background: #fff;
+    color: #172117;
+    text-decoration: none;
+}
+.kbacorp-gamification-latest-icon {
+    display: grid;
+    place-items: center;
+    width: 38px;
+    height: 38px;
+    flex: 0 0 38px;
+    border-radius: 11px;
+    background: #e7f5e8;
+    color: #08720d;
+    font-size: 20px;
+}
+.kbacorp-gamification-latest-body {
+    min-width: 0;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+.kbacorp-gamification-latest-body strong {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.kbacorp-gamification-latest-user,
+.kbacorp-gamification-latest-date {
+    color: #6a756d;
+    font-size: .78rem;
+}
+.kbacorp-gamification-latest-arrow {
+    color: #08720d;
+    font-weight: 800;
+}
+.kbacorp-gamification-top-card {
+    position: relative;
+    display: block;
+    padding: 16px;
+}
+.kbacorp-gamification-rank {
+    position: absolute;
+    right: 14px;
+    top: 12px;
+    color: #08720d;
+    font-size: 1.05rem;
+    font-weight: 800;
+}
+.kbacorp-gamification-top-name {
+    display: block;
+    padding-right: 38px;
+    font-size: 1rem;
+}
+.kbacorp-gamification-top-level {
+    margin-top: 3px;
+    color: #5d6a61;
+    font-size: .82rem;
+}
+.kbacorp-gamification-top-stats {
+    display: flex;
+    gap: 12px;
+    margin-top: 12px;
+    color: #08720d;
+    font-weight: 700;
+    font-size: .82rem;
+}
+.kbacorp-gamification-employee-latest {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    max-width: 640px;
+    margin: 0 0 1rem;
+    padding: 12px 14px;
+    border: 1px solid #d8e6d9;
+    border-radius: 12px;
+    background: #f7fbf7;
+}
+@media (max-width: 991.98px) {
+    .kbacorp-gamification-latest-grid,
+    .kbacorp-gamification-top-grid {
+        grid-template-columns: 1fr;
+    }
+}

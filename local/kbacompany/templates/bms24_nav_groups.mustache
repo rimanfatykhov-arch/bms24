@@ -1,0 +1,20 @@
+{{#sidebar.groups}}
+<details class="bms24-navgroup" {{#expanded}}open{{/expanded}}>
+  <summary>{{label}}</summary>
+  <nav aria-label="{{label}}">
+    {{#items}}
+    <a href="{{url}}" class="bms24-navitem{{#active}} is-active{{/active}}" {{#active}}aria-current="page"{{/active}}>
+      {{#iconhtml}}<span class="bms24-navicon" aria-hidden="true">{{{iconhtml}}}</span>{{/iconhtml}}
+      <span class="bms24-navlabel">{{label}}</span>
+      {{#badge}}<span class="bms24-count">{{value}}</span>{{/badge}}
+    </a>
+    {{/items}}
+  </nav>
+</details>
+{{/sidebar.groups}}
+{{#sidebar.utilityitems}}
+<a href="{{url}}" class="bms24-navitem{{#active}} is-active{{/active}}" {{#active}}aria-current="page"{{/active}}>
+  {{#iconhtml}}<span class="bms24-navicon" aria-hidden="true">{{{iconhtml}}}</span>{{/iconhtml}}
+  <span class="bms24-navlabel">{{label}}</span>
+</a>
+{{/sidebar.utilityitems}}

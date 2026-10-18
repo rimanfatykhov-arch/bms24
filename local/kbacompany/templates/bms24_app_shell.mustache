@@ -1,0 +1,29 @@
+<div class="bms24-app" data-bms24-owned-shell="1">
+  <a class="bms24-skip" href="#bms24-main">{{#str}}bms24_skip_content, local_kbacompany{{/str}}</a>
+  <aside class="bms24-sidebar" aria-label="{{sidebar.arialabel}}">
+    <div class="bms24-brand">{{{sidebar.brandmarkhtml}}}<span class="bms24-brandcompany">{{sidebar.brandlabel}}</span></div>
+    {{> local_kbacompany/bms24_nav_groups}}
+    <div class="bms24-sidebarfooter">{{{sidebar.footerhtml}}}</div>
+  </aside>
+  <section class="bms24-frame">
+    <header class="bms24-topbar">
+      <details class="bms24-mobilemenu"><summary>{{topbar.mobilemenulabel}}</summary>
+        <nav aria-label="{{sidebar.arialabel}}">{{> local_kbacompany/bms24_nav_groups}}</nav>
+      </details>
+      <nav class="bms24-crumbs" aria-label="{{#str}}bms24_breadcrumbs, local_kbacompany{{/str}}">
+        {{#topbar.breadcrumbs.items}}<span>{{#url}}<a href="{{url}}">{{label}}</a>{{/url}}{{^url}}{{label}}{{/url}}</span>{{/topbar.breadcrumbs.items}}
+      </nav>
+      <div class="bms24-topactions">{{{topbar.quickactionhtml}}} {{{topbar.planhtml}}} {{{topbar.notificationshtml}}}</div>
+      <div class="bms24-usermenu">{{{topbar.usermenuhtml}}}</div>
+    </header>
+    <main id="bms24-main" class="bms24-main" tabindex="-1">
+      {{#header}}<section class="bms24-pageintro">
+        {{#eyebrow}}<p class="bms24-eyebrow">{{eyebrow}}</p>{{/eyebrow}}
+        <h1>{{title}}</h1>{{#description}}<p>{{description}}</p>{{/description}}
+        {{#meta.items}}<span class="bms24-metalabel">{{label}}: <strong>{{value}}</strong></span>{{/meta.items}}
+        {{#actions.items}}<a href="{{url}}" class="bms24-button bms24-button-secondary">{{label}}</a>{{/actions.items}}
+      </section>{{/header}}
+      <div class="bms24-content">{{{contenthtml}}}</div>
+    </main>
+  </section>
+</div>
