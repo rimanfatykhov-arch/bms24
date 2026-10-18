@@ -25,6 +25,20 @@ class task_ui_service {
         ]);
     }
 
+    /** Task detail header only: subtitle HTML is built from escaped service helpers. */
+    private static function detail_heading(string $title, string $subtitlehtml, string $statushtml = '',
+            string $actionshtml = ''): string {
+        if (!self::owned()) {
+            return bms_workspace_ux_service::record_header(s($title), $subtitlehtml, '',
+                $statushtml, $actionshtml);
+        }
+        return bms24_shell_service::fragment('task_header', [
+            'title' => $title, 'subtitle' => '', 'subtitlehtml' => $subtitlehtml,
+            // These slots are produced by this service's escaped, typed helpers only.
+            'statushtml' => $statushtml, 'actionshtml' => $actionshtml,
+        ]);
+    }
+
     private static function tabs(array $items, string $active, string $label): string {
         if (!self::owned()) {
             return bms_workspace_ux_service::view_switcher($items, $active);
@@ -356,7 +370,9 @@ class task_ui_service {
         }
         $buttons=$primary.(!empty($actions['save'])?self::link(self::url($company,['task'=>$id,'view'=>'edit']),self::tr('taskcenter_edit')):'').
             self::menu($menu).self::link(self::url($company),self::tr('tui_back_list'));
-        $html=self::heading((string)$task['title'],self::tr('taskcenter_assignee').': '.($task['assignee_name']?:self::tr('tui_unavailable')),self::badge($task['status']),$buttons);
+        $assigneehtml = s(self::tr('taskcenter_assignee')).': '.
+            self::employee_link($company, (int)$task['assignee_id'], (string)$task['assignee_name']);
+        $html=self::detail_heading((string)$task['title'],$assigneehtml,self::badge($task['status']),$buttons);
         $nav=[];foreach(['overview','checklist','result','files','discussion','history'] as $t){$nav[$t]=['label'=>self::tr('tui_tab_'.$t),'url'=>self::url($company,['task'=>$id,'tab'=>$t])];}
         $html.=self::toolbar('',self::tabs($nav,$tab,self::tr('taskcenter_title')));
         if($tab==='overview'){
