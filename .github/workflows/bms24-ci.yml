@@ -1,0 +1,106 @@
+name: BMS24 CI
+
+on:
+  push:
+    branches:
+      - main
+      - "feature/**"
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: bms24-ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  static-qa:
+    name: Static QA (PHP 7.4)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up PHP 7.4
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: "7.4"
+          coverage: none
+          tools: none
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Show toolchain
+        run: |
+          git --version
+          php -v
+          python --version
+
+      - name: Reject forbidden repository files
+        shell: bash
+        run: |
+          set -euo pipefail
+          forbidden=$(git ls-files | grep -Ei '(^|/)(config\.php|\.env($|\.)|.*\.sql$|moodledata/|.*ftp.*pass.*|.*ftp.*credential.*|.*webhook.*secret.*|.*webhook.*token.*)' || true)
+          if [ -n "$forbidden" ]; then
+            echo "Forbidden/sensitive paths are tracked:"
+            echo "$forbidden"
+            exit 1
+          fi
+
+      - name: Run BMS24 local QA
+        run: python scripts/qa_local.py
+
+      - name: PHP lint plugin source
+        shell: bash
+        run: |
+          set -euo pipefail
+          count=0
+          while IFS= read -r -d '' file; do
+            php -l "$file" >/dev/null
+            count=$((count + 1))
+          done < <(find local/kbacompany -type f -name '*.php' -print0)
+          echo "PHP lint PASS: $count files"
+
+      - name: Check XML syntax
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import xml.etree.ElementTree as ET
+          files = list(Path("local/kbacompany").rglob("*.xml"))
+          for f in files:
+              ET.parse(f)
+          print(f"XML parse PASS: {len(files)} files")
+          PY
+
+      - name: Check whitespace in changed lines
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            git diff --check "${{ github.event.pull_request.base.sha }}...HEAD"
+          elif git rev-parse HEAD^ >/dev/null 2>&1; then
+            git diff --check HEAD^ HEAD
+          else
+            git diff --check
+          fi
+
+      - name: Summary
+        if: always()
+        run: |
+          echo "### BMS24 CI" >> "$GITHUB_STEP_SUMMARY"
+          echo "- PHP: 7.4" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Python: 3.13" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Scope: static QA only" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Live Moodle DB/browser/cron/RBAC/company-isolation acceptance is still required." >> "$GITHUB_STEP_SUMMARY"
