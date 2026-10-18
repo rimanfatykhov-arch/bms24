@@ -104,3 +104,56 @@ jobs:
           echo "- Python: 3.13" >> "$GITHUB_STEP_SUMMARY"
           echo "- Scope: static QA only" >> "$GITHUB_STEP_SUMMARY"
           echo "- Live Moodle DB/browser/cron/RBAC/company-isolation acceptance is still required." >> "$GITHUB_STEP_SUMMARY"
+
+
+  build-release:
+    name: Build release package
+    needs: static-qa
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up PHP 7.4
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: "7.4"
+          coverage: none
+          tools: none
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Build BMS24 release kit
+        run: python scripts/build_release.py
+
+      - name: Show release contents
+        shell: bash
+        run: |
+          set -euo pipefail
+          find release -maxdepth 2 -type f -print | sort
+
+      - name: Upload release artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: bms24-release-${{ github.ref_name }}-${{ github.sha }}
+          path: release/**
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Release summary
+        if: always()
+        shell: bash
+        run: |
+          echo "### BMS24 Release Artifact" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Source ref: \`${{ github.ref_name }}\`" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Commit: \`${{ github.sha }}\`" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Artifact retention: 14 days" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Install through Moodle Plugin Installer after live acceptance review." >> "$GITHUB_STEP_SUMMARY"
