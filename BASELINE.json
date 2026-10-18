@@ -1,0 +1,14 @@
+{
+  "pack_version": "2.0",
+  "generated_utc_date": "2026-10-18",
+  "plugin": "local_kbacompany",
+  "source_zip": "SOURCE_local_kbacompany_v1.1.0-rc29_build2026101642.zip",
+  "plugin_version": 2026101642,
+  "plugin_release": "1.1.0-rc29",
+  "moodle_requires_build": 2022041900,
+  "deployment_status": "staging candidate; runtime acceptance pending",
+  "ui_shell_mode_default": "legacy",
+  "ui_shell_mode_opt_in": "owned",
+  "next_planned_phase": "BMS-UI-ARCH W3.2 Recurring Tasks visual migration after repository audit",
+  "important": "This pack does not contain runtime source code or credentials"
+}

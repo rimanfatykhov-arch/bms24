@@ -6,31 +6,96 @@ defined('MOODLE_INTERNAL') || die();
 /** BMS CRUD presentation of canonical tasks. No persistence or new task ownership. */
 class task_ui_service {
     public static function tr(string $key, $a = null): string { return get_string($key, 'local_kbacompany', $a); }
+
+    /** Task Center's presentation-only boundary; no changes to actions, ACL or models. */
+    private static function owned(): bool {
+        return bms24_shell_service::is_enabled();
+    }
+
+    /** Native BMS24 headings/tabs in opt-in owned mode. Legacy markup is unchanged. */
+    private static function heading(string $title, string $subtitle = '', string $statushtml = '',
+            string $actionshtml = ''): string {
+        if (!self::owned()) {
+            return bms_workspace_ux_service::record_header(s($title), s($subtitle), '', $statushtml, $actionshtml);
+        }
+        return bms24_shell_service::fragment('task_header', [
+            'title' => $title, 'subtitle' => $subtitle,
+            // These slots are produced by this service's escaped, typed helpers only.
+            'statushtml' => $statushtml, 'actionshtml' => $actionshtml,
+        ]);
+    }
+
+    private static function tabs(array $items, string $active, string $label): string {
+        if (!self::owned()) {
+            return bms_workspace_ux_service::view_switcher($items, $active);
+        }
+        $tabs = [];
+        foreach ($items as $key => $item) {
+            if (!($item['url'] instanceof \moodle_url)) {
+                throw new \coding_exception('Task Center tab URL must be moodle_url');
+            }
+            $tabs[] = [
+                'label' => (string)$item['label'], 'url' => $item['url']->out(false),
+                'active' => (string)$key === $active,
+            ];
+        }
+        return bms24_shell_service::fragment('task_tabs', ['label' => $label, 'items' => $tabs]);
+    }
+
+    private static function toolbar(string $left, string $right): string {
+        if (!self::owned()) {
+            return bms_workspace_ux_service::action_bar($left, $right);
+        }
+        return bms24_shell_service::fragment('task_toolbar', [
+            'lefthtml' => $left, 'righthtml' => $right,
+        ]);
+    }
+
     public static function url(string $company, array $params = []): \moodle_url {
         return new \moodle_url('/local/kbacompany/tasks.php', ['uuid'=>$company] + $params);
     }
     public static function link($url, string $label, bool $primary = false): string {
+        if (self::owned()) {
+            if (!($url instanceof \moodle_url)) {
+                throw new \coding_exception('Task Center link URL must be moodle_url');
+            }
+            return bms24_ui_kit_service::button($url, $label, $primary ? 'primary' : 'secondary');
+        }
         return \html_writer::link($url, s($label), ['class'=>'btn '.($primary?'btn-primary':'btn-outline-secondary')]);
     }
     public static function hidden(array $values): string {
         $html=''; foreach ($values as $name=>$value) { $html.=\html_writer::empty_tag('input', ['type'=>'hidden','name'=>$name,'value'=>$value]); } return $html;
     }
-    public static function note(string $text): string { return \html_writer::tag('p', s($text), ['class'=>'bms-tui-note']); }
+    public static function note(string $text): string {
+        return \html_writer::tag('p', s($text), ['class'=>self::owned()?'bms24-task-note':'bms-tui-note']);
+    }
     public static function badge(string $status): string {
         if (!in_array($status, task_service::STATUSES, true)) { return s(self::tr('tui_not_set')); }
+        if (self::owned()) {
+            return bms24_ui_kit_service::status(self::tr('taskcenter_status_'.$status), $status);
+        }
         return \html_writer::tag('span',s(self::tr('taskcenter_status_'.$status)),['class'=>'bms-tui-badge bms-tui-state-'.$status]);
     }
     public static function panel(string $title, string $body, string $actions = ''): string {
+        if (self::owned()) {
+            return bms24_shell_service::fragment('task_panel', [
+                'title'=>$title, 'actionshtml'=>$actions, 'bodyhtml'=>$body,
+            ]);
+        }
         return \html_writer::tag('section', \html_writer::div(\html_writer::tag('h2',s($title)).$actions,'bms-tui-panel-head').$body,
             ['class'=>'bms-crm-section bms-tui-panel']);
     }
     public static function table(array $headers, array $rows, string $label): string {
-        $table=new \html_table(); $table->head=$headers; $table->data=$rows; $table->attributes['class']='table bms-tui-table';
-        return \html_writer::div(\html_writer::table($table),'bms-tui-table-wrap',['role'=>'region','aria-label'=>$label,'tabindex'=>'0']);
+        $table=new \html_table(); $table->head=$headers; $table->data=$rows;
+        $table->attributes['class']=self::owned()?'bms24-task-table':'table bms-tui-table';
+        return \html_writer::div(\html_writer::table($table),
+            self::owned()?'bms24-task-table-wrap':'bms-tui-table-wrap',
+            ['role'=>'region','aria-label'=>$label,'tabindex'=>'0']);
     }
     public static function control(string $name, array $spec, $value = '', string $error = ''): string {
         $id='tui_'.preg_replace('/[^a-z0-9_]/i','_',$name); $type=$spec['type']??'text';
-        $attrs=['id'=>$id,'name'=>$name,'class'=>'form-control'.($error!==''?' is-invalid':'')];
+        $controlclass=self::owned()?($type==='textarea'?'bms24-ui-textarea':(isset($spec['options'])?'bms24-ui-select':'bms24-ui-input')):'form-control';
+        $attrs=['id'=>$id,'name'=>$name,'class'=>$controlclass.($error!==''?' is-invalid':'')];
         foreach (['maxlength','min','max','step','accept'] as $key) { if(isset($spec[$key])) { $attrs[$key]=$spec[$key]; } }
         if (!empty($spec['required'])) { $attrs['required']='required'; }
         $descs=[]; if(!empty($spec['help'])){$descs[]=$id.'_help';}
@@ -44,11 +109,12 @@ class task_ui_service {
         $html=\html_writer::label(s($label),$id).$input;
         if(!empty($spec['help'])){$html.=\html_writer::tag('small',s(self::tr($spec['help'])),['id'=>$id.'_help','class'=>'bms-tui-note']);}
         if($error!==''){$html.=\html_writer::tag('div',s($error),['id'=>$id.'_error','class'=>'invalid-feedback d-block']);}
-        return \html_writer::div($html,'bms-tui-control'.(!empty($spec['wide'])?' bms-tui-wide':''));
+        return \html_writer::div($html,(self::owned()?'bms24-task-control':'bms-tui-control').(!empty($spec['wide'])?' bms-tui-wide':''));
     }
     private static function battle_plan_control(array $plans, string $value = '', string $error = ''): string {
         $id = 'tui_battleplanuuid';
-        $attrs = ['id'=>$id, 'name'=>'battleplanuuid', 'class'=>'form-control'.($error!==''?' is-invalid':'')];
+        $attrs = ['id'=>$id, 'name'=>'battleplanuuid',
+            'class'=>(self::owned()?'bms24-ui-select':'form-control').($error!==''?' is-invalid':'')];
         $descs = [$id.'_help'];
         if ($error !== '') { $attrs['aria-invalid']='true'; $descs[]=$id.'_error'; }
         $attrs['aria-describedby'] = implode(' ', $descs);
@@ -75,15 +141,20 @@ class task_ui_service {
         $html = \html_writer::label(s(self::tr('taskcenter_create_battleplan')), $id).\html_writer::tag('select', $options, $attrs);
         $html .= \html_writer::tag('small', s(self::tr('taskcenter_create_battleplan_hint')), ['id'=>$id.'_help','class'=>'bms-tui-note']);
         if ($error !== '') { $html .= \html_writer::tag('div', s($error), ['id'=>$id.'_error','class'=>'invalid-feedback d-block']); }
-        return \html_writer::div($html, 'bms-tui-control');
+        return \html_writer::div($html, self::owned()?'bms24-task-control':'bms-tui-control');
     }
 
     private static function field(string $label, string $value, bool $html = false): string {
-        return \html_writer::tag('dl',\html_writer::tag('dt',s(self::tr($label))).\html_writer::tag('dd',$html?$value:s($value!==''?$value:self::tr('tui_not_set'))),['class'=>'bms-tui-field']);
+        return \html_writer::tag('dl',\html_writer::tag('dt',s(self::tr($label))).\html_writer::tag('dd',$html?$value:s($value!==''?$value:self::tr('tui_not_set'))),['class'=>self::owned()?'bms24-task-field':'bms-tui-field']);
     }
     public static function menu(array $items, string $label = 'tui_actions'): string {
         if(!$items){return '';}
         $html=''; foreach($items as $item){$html.=\html_writer::link($item['url'],s($item['label']));}
+        if (self::owned()) {
+            return \html_writer::tag('details',
+                \html_writer::tag('summary',s(self::tr($label)),['class'=>'bms24-ui-btn']).
+                \html_writer::div($html,'bms24-task-menu-items'),['class'=>'bms24-task-menu']);
+        }
         return \html_writer::tag('details',\html_writer::tag('summary',s(self::tr($label)),['class'=>'btn btn-outline-secondary']).
             \html_writer::div($html,'bms-tui-menu-items'),['class'=>'bms-tui-menu']);
     }
@@ -106,25 +177,37 @@ class task_ui_service {
     }
     public static function listing(string $company, array $model, array $filters, string $display): string {
         $actions=self::link(self::url($company,['view'=>'create']),self::tr('taskcenter_create'),true).self::tools($company,$model['can_manage']);
-        $html=bms_workspace_ux_service::record_header(self::tr('taskcenter_title'),self::tr('tui_intro'),'','',$actions);
+        $html=self::heading(self::tr('taskcenter_title'),self::tr('tui_intro'),'', $actions);
         $tabs=[];foreach(['my','created','review','watching','overdue','all'] as $scope){
             if($scope==='all'&&!$model['can_manage']){continue;}
             $tabs[$scope]=['label'=>self::tr('taskcenter_scope_'.$scope),'url'=>self::url($company,array_merge($filters,['scope'=>$scope,'display'=>$display]))];
         }
-        $html.=bms_workspace_ux_service::action_bar('',bms_workspace_ux_service::view_switcher($tabs,$filters['scope']));
+        $html.=self::toolbar('',self::tabs($tabs,$filters['scope'],self::tr('taskcenter_title')));
         $states=[''=>self::tr('tui_all_states')];foreach(task_service::STATUSES as $v){if($v!=='deleted'){$states[$v]=self::tr('taskcenter_status_'.$v);}}
         $streams=[''=>self::tr('tui_all_streams')];foreach(task_service::STREAMS as $v){$streams[$v]=self::tr('taskcenter_stream_'.$v);}
         $sources=[''=>self::tr('tui_all_sources')];foreach(task_service::SOURCE_KINDS as $v){$sources[$v]=self::tr('taskcenter_source_'.$v);}
-        $form=self::hidden(['uuid'=>$company,'scope'=>$filters['scope'],'display'=>$display]).
-            self::control('q',['label'=>'tui_search','type'=>'search','maxlength'=>200],$filters['q']).
-            self::control('status',['label'=>'taskcenter_status','options'=>$states],$filters['status']).
-            self::control('stream',['label'=>'taskcenter_stream','options'=>$streams],$filters['stream']).
-            self::control('sourcekind',['label'=>'taskcenter_source','options'=>$sources],$filters['sourcekind']).
-            \html_writer::div(\html_writer::tag('button',self::tr('tui_apply'),['type'=>'submit','class'=>'btn btn-primary']).
-                self::link(self::url($company,['scope'=>$filters['scope']]),self::tr('tui_reset')),'bms-tui-actions');
-        $html.=\html_writer::tag('form',$form,['method'=>'get','action'=>self::url($company)->out(false),'class'=>'bms-tui-filters']);
+        if (self::owned()) {
+            $filterfields=[
+                ['id'=>'tui_q','name'=>'q','label'=>self::tr('tui_search'),'type'=>'search','value'=>$filters['q'],'maxlength'=>200],
+                ['id'=>'tui_status','name'=>'status','label'=>self::tr('taskcenter_status'),'type'=>'select','value'=>$filters['status'],'options'=>$states],
+                ['id'=>'tui_stream','name'=>'stream','label'=>self::tr('taskcenter_stream'),'type'=>'select','value'=>$filters['stream'],'options'=>$streams],
+                ['id'=>'tui_sourcekind','name'=>'sourcekind','label'=>self::tr('taskcenter_source'),'type'=>'select','value'=>$filters['sourcekind'],'options'=>$sources],
+            ];
+            $html.=bms24_ui_kit_service::filterbar(self::url($company), self::tr('taskcenter_title'),
+                $filterfields,['uuid'=>$company,'scope'=>$filters['scope'],'display'=>$display],
+                self::url($company,['scope'=>$filters['scope']]),self::tr('tui_apply'),self::tr('tui_reset'));
+        } else {
+            $form=self::hidden(['uuid'=>$company,'scope'=>$filters['scope'],'display'=>$display]).
+                self::control('q',['label'=>'tui_search','type'=>'search','maxlength'=>200],$filters['q']).
+                self::control('status',['label'=>'taskcenter_status','options'=>$states],$filters['status']).
+                self::control('stream',['label'=>'taskcenter_stream','options'=>$streams],$filters['stream']).
+                self::control('sourcekind',['label'=>'taskcenter_source','options'=>$sources],$filters['sourcekind']).
+                \html_writer::div(\html_writer::tag('button',self::tr('tui_apply'),['type'=>'submit','class'=>'btn btn-primary']).
+                    self::link(self::url($company,['scope'=>$filters['scope']]),self::tr('tui_reset')),'bms-tui-actions');
+            $html.=\html_writer::tag('form',$form,['method'=>'get','action'=>self::url($company)->out(false),'class'=>'bms-tui-filters']);
+        }
         $views=[];foreach(['list','kanban','analytics'] as $mode){$views[$mode]=['label'=>self::tr('tui_view_'.$mode),'url'=>self::url($company,$filters+['display'=>$mode])];}
-        $html.=bms_workspace_ux_service::action_bar(self::note(self::tr('tui_found',$model['total'])),bms_workspace_ux_service::view_switcher($views,$display));
+        $html.=self::toolbar(self::note(self::tr('tui_found',$model['total'])),self::tabs($views,$display,self::tr('tui_view_list')));
         if(!$model['total']){return $html.self::panel(self::tr('tui_empty'),self::note(self::tr('tui_empty_help')).self::link(self::url($company,['view'=>'create']),self::tr('taskcenter_create'),true));}
         if($display==='analytics'){
             $cards='';foreach(['total','open','review','overdue','done'] as $k){$cards.=\html_writer::div(\html_writer::tag('strong',(string)$model['counts'][$k]).s(self::tr('tui_count_'.$k)),'bms-tui-stat');}
@@ -167,7 +250,7 @@ class task_ui_service {
     public static function edit_form(string $company, array $model, array $values, array $errors, string $requestkey): string {
         $task=$model['selected'];$editing=$task!==null;
         $title=self::tr($editing?'taskcenter_edit':'taskcenter_create');
-        $html=bms_workspace_ux_service::record_header($title,self::tr('tui_form_help'));
+        $html=self::heading($title,self::tr('tui_form_help'));
         $people=[0=>self::tr('tui_choose_person')]+$model['employees'];$optional=[0=>self::tr('tui_not_set')]+$model['employees'];
         $canclassify = task_service::can_manage($company, (int)$GLOBALS['USER']->id);
         $dutyoptions = [];
@@ -273,9 +356,9 @@ class task_ui_service {
         }
         $buttons=$primary.(!empty($actions['save'])?self::link(self::url($company,['task'=>$id,'view'=>'edit']),self::tr('taskcenter_edit')):'').
             self::menu($menu).self::link(self::url($company),self::tr('tui_back_list'));
-        $html=bms_workspace_ux_service::record_header(s($task['title']),s(self::tr('taskcenter_assignee').': '.($task['assignee_name']?:self::tr('tui_unavailable'))),'',self::badge($task['status']),$buttons);
+        $html=self::heading((string)$task['title'],self::tr('taskcenter_assignee').': '.($task['assignee_name']?:self::tr('tui_unavailable')),self::badge($task['status']),$buttons);
         $nav=[];foreach(['overview','checklist','result','files','discussion','history'] as $t){$nav[$t]=['label'=>self::tr('tui_tab_'.$t),'url'=>self::url($company,['task'=>$id,'tab'=>$t])];}
-        $html.=bms_workspace_ux_service::action_bar('',bms_workspace_ux_service::view_switcher($nav,$tab));
+        $html.=self::toolbar('',self::tabs($nav,$tab,self::tr('taskcenter_title')));
         if($tab==='overview'){
             $dutylabel = !empty($task['duty_position_uuid'])
                 ? self::tr('coverage_task_position_duty') : self::tr('coverage_task_personal');
@@ -386,7 +469,7 @@ class task_ui_service {
     }
     public static function action_form(string $company, array $model, string $operation, array $values, array $errors, string $requestkey): string {
         $task=$model['selected'];$label=self::action_label($operation,$task);
-        $html=bms_workspace_ux_service::record_header(s($label),s($task['title']),'',self::badge($task['status']));
+        $html=self::heading($label,(string)$task['title'],self::badge($task['status']));
         $form=self::hidden(['uuid'=>$company,'task'=>$task['uuid'],'view'=>'action','operation'=>$operation,'action'=>$operation,
             'revision'=>$values['revision']??$task['revision'],'sesskey'=>sesskey(),'requestkey'=>$requestkey]);
         if($operation==='submit'){

@@ -4883,5 +4883,13 @@ function xmldb_local_kbacompany_upgrade(int $oldversion): bool {
         // Plugin-owned UI shell and design tokens; opt-in only, no schema change.
         upgrade_plugin_savepoint(true, 2026101640, 'local', 'kbacompany');
     }
+    if ($oldversion < 2026101641) {
+        // BMS24 UI Kit 1.0: scoped presentation components only, no DDL.
+        upgrade_plugin_savepoint(true, 2026101641, 'local', 'kbacompany');
+    }
+    if ($oldversion < 2026101642) {
+        // BMS24 W3 Task Center owns its presentation fragments; no DDL or ACL changes.
+        upgrade_plugin_savepoint(true, 2026101642, 'local', 'kbacompany');
+    }
     return true;
 }

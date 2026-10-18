@@ -214,7 +214,8 @@ $PAGE->set_title(ui::tr('taskcenter_title'));
 $PAGE->set_heading(ui::tr('pluginname'));
 $PAGE->requires->js(new moodle_url('/local/kbacompany/js/task_ui.js'));
 $shell=\local_kbacompany\local\bms_page_shell_service::begin($uuid,$actor,'tasks',ui::tr('taskcenter_title'));
-echo html_writer::start_div('bms-tui',['data-task-create-url'=>ui::url($uuid,['view'=>'create'])->out(false)]);
+echo html_writer::start_div(\local_kbacompany\local\bms24_shell_service::is_enabled() ? 'bms-tui bms24-task-center' : 'bms-tui',
+    ['data-task-create-url'=>ui::url($uuid,['view'=>'create'])->out(false)]);
 if($error!==''){echo html_writer::div(s($error),'alert alert-danger',['role'=>'alert']);}
 if($view==='list'){
     $list=task_service::list_page($uuid,$actor,$filters,optional_param('page',0,PARAM_INT));
