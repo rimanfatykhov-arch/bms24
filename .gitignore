@@ -35,3 +35,4 @@ vendor/
 
 # Node dependencies
 node_modules/
+release/
