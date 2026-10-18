@@ -21,6 +21,10 @@ config.php
 .env
 .env.*
 *.sql
+*ftp*pass*
+*ftp*credential*
+*webhook*secret*
+*webhook*token*
 
 # Moodle runtime data - never commit
 moodledata/
