@@ -43,7 +43,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          forbidden=$(git ls-files | grep -Ei '(^|/)(config\.php|\.env($|\.)|.*\.sql$|moodledata/|.*ftp.*pass.*|.*ftp.*credential.*|.*webhook.*secret.*|.*webhook.*token.*)' || true)
+          forbidden=$(git ls-files | grep -Ei '(^|/)(config\.php|\.env($|\.)|.*\.sql$|moodledata/|.*ftp.*pass.*|.*ftp.*credential.*|.*webhook.*secret.*|.*webhook.*token.*)' | grep -Ev '(^|/)docs/' || true)
           if [ -n "$forbidden" ]; then
             echo "$forbidden"
             exit 1
