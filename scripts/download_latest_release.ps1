@@ -43,17 +43,26 @@ if (-not $runs -or $runs.Count -eq 0) {
 $selectedRun = $null
 $artifactName = $null
 
+$repoInfoJson = & gh repo view --json nameWithOwner
+if ($LASTEXITCODE -ne 0) {
+    throw "Unable to determine current GitHub repository."
+}
+$repoNameWithOwner = ($repoInfoJson | ConvertFrom-Json).nameWithOwner
+
 foreach ($run in $runs) {
-    $artifactsJson = & gh api "repos/{owner}/{repo}/actions/runs/$($run.databaseId)/artifacts"
+    $artifactsJson = & gh api "repos/$repoNameWithOwner/actions/runs/$($run.databaseId)/artifacts"
     if ($LASTEXITCODE -ne 0) {
         continue
     }
-    $artifacts = ($artifactsJson | ConvertFrom-Json).artifacts |
-        Where-Object { -not $_.expired -and $_.name -like "bms24-release-*" }
 
-    if ($artifacts -and $artifacts.Count -gt 0) {
+    $artifactResponse = $artifactsJson | ConvertFrom-Json
+    $artifacts = @($artifactResponse.artifacts | Where-Object {
+        -not $_.expired -and $_.name -like "bms24-release-*"
+    })
+
+    if ($artifacts.Count -gt 0) {
         $selectedRun = $run
-        $artifactName = ($artifacts | Select-Object -First 1).name
+        $artifactName = $artifacts[0].name
         break
     }
 }
