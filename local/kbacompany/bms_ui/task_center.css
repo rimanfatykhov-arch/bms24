@@ -47,6 +47,30 @@
 .bms24-app .bms24-task-center .bms-tui-panel:not(.bms24-task-panel) {border-color:var(--bms24-border);border-radius:14px;box-shadow:none;background:#fff;}
 .bms24-app .bms24-task-center .bms-tui-stat strong {color:var(--bms24-color-navy);}
 .bms24-app .bms24-task-center .bms-tui-overdue {color:#a82929;}
+.bms24-app .bms24-recurring-center .bms-rt-page-intro {margin:0;color:var(--bms24-color-text-muted);}
+.bms24-app .bms24-recurring-center .bms-rt-status-filter {margin:0;}
+.bms24-app .bms24-recurring-center .bms-recurring-form-owned {display:grid;gap:16px;margin:0;padding:20px;}
+.bms24-app .bms24-recurring-center .bms-rt-section {display:grid;gap:14px;min-width:0;}
+.bms24-app .bms24-recurring-center .bms-rt-section + .bms-rt-section,
+.bms24-app .bms24-recurring-center .bms-rt-advanced {margin-top:4px;}
+.bms24-app .bms24-recurring-center .bms-rt-section-heading {font-size:18px;line-height:1.4;margin:0;color:var(--bms24-color-navy);}
+.bms24-app .bms24-recurring-center .bms-rt-field {display:grid;gap:6px;min-width:0;}
+.bms24-app .bms24-recurring-center .bms-rt-weekdays {border:0;padding:0;margin:0;}
+.bms24-app .bms24-recurring-center .bms-rt-weekdays legend {font-size:13px;color:var(--bms24-color-navy);margin-bottom:6px;}
+.bms24-app .bms24-recurring-center .bms-rt-advanced {border:1px solid var(--bms24-border);border-radius:12px;padding:12px 14px;background:#fff;}
+.bms24-app .bms24-recurring-center .bms-rt-advanced summary {cursor:pointer;color:var(--bms24-color-navy);}
+.bms24-app .bms24-recurring-center .bms-rt-advanced-inner {display:grid;gap:14px;margin-top:12px;}
+.bms24-app .bms24-recurring-center .bms-rt-save-note {font-size:13px;color:var(--bms24-color-text-muted);}
+.bms24-app .bms24-recurring-center .bms-rt-form-actions,
+.bms24-app .bms24-recurring-center .bms-rt-detail-actions,
+.bms24-app .bms24-recurring-center .bms-rt-occurrence-pager,
+.bms24-app .bms24-recurring-center .bms-rt-history-pager {display:flex;flex-wrap:wrap;gap:8px;align-items:center;}
+.bms24-app .bms24-recurring-center .bms-rt-detail-grid {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px 18px;margin:0;}
+.bms24-app .bms24-recurring-center .bms-rt-detail-field {margin:0;min-width:0;}
+.bms24-app .bms24-recurring-center .bms-rt-detail-field dt {font-size:12px;font-weight:650;color:var(--bms24-color-text-muted);margin:0 0 3px;}
+.bms24-app .bms24-recurring-center .bms-rt-detail-field dd {margin:0;white-space:pre-wrap;overflow-wrap:anywhere;}
+.bms24-app .bms24-recurring-center .bms-rt-history-entry {padding:12px 0;border-top:1px solid var(--bms24-border);}
+.bms24-app .bms24-recurring-center .bms-rt-history-entry:first-child {border-top:0;padding-top:0;}
 @media(max-width:900px) { .bms24-app .bms24-task-center .bms-task2-layout {grid-template-columns:minmax(0,1fr);} }
 @media(max-width:720px) {
   .bms24-app .bms24-task-header {padding:16px;}
@@ -54,4 +78,5 @@
   .bms24-app .bms24-task-center .bms-tui-grid {grid-template-columns:minmax(0,1fr);}
   .bms24-app .bms24-task-table {min-width:660px;}
   .bms24-app .bms24-task-center .bms-tui-footer .bms24-ui-btn {flex:1 1 140px;}
+  .bms24-app .bms24-recurring-center .bms-rt-detail-grid {grid-template-columns:minmax(0,1fr);}
 }

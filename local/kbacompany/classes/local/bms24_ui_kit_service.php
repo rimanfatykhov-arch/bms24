@@ -15,7 +15,8 @@ final class bms24_ui_kit_service {
         'ui_tabs', 'ui_pagination', 'ui_alert',
     ];
     private const VARIANTS = ['primary', 'secondary', 'quiet', 'danger'];
-    private const STATES = ['new', 'open', 'doing', 'review', 'done', 'returned', 'cancelled', 'deleted', 'paused'];
+    private const STATES = ['new', 'open', 'doing', 'review', 'done', 'returned', 'cancelled', 'deleted', 'paused',
+        'draft', 'active', 'archived'];
     private const ALERTS = ['info', 'warning', 'error', 'success'];
 
     public static function fragment(string $name, array $data): string {
