@@ -192,10 +192,11 @@ $weekdaylabels = [];
 for ($day = 1; $day <= 7; $day++) { $weekdaylabels[$day] = get_string('recurringtask_weekday_' . $day, 'local_kbacompany'); }
 $monthweeks = [0 => get_string('recurringtask_monthweek_none', 'local_kbacompany')];
 for ($week = 1; $week <= 5; $week++) { $monthweeks[$week] = get_string('recurringtask_monthweek_' . $week, 'local_kbacompany'); }
+$ownedpresentation = \local_kbacompany\local\bms24_shell_service::is_enabled();
 
 $renderform = static function(?array $series = null, array $posted = []) use ($hidden, $input, $textarea, $assignees, $reviewers,
         $streams, $priorities, $cadences, $weekdaylabels, $monthweeks, $defaultstream, $planowner, $uuid, $originparams,
-        $planuuid, $splitlibrarydescription, $data, $USER): void {
+        $planuuid, $splitlibrarydescription, $data, $USER, $ownedpresentation): void {
     $editing = $series !== null;
     // Never expose SHA256/source provenance in the ordinary Description textarea.
     // Raw provenance remains stored unchanged in the canonical series revision.
@@ -222,7 +223,8 @@ $renderform = static function(?array $series = null, array $posted = []) use ($h
     if (isset($posted['weekdaymask'])) { $daymask = (int)$posted['weekdaymask']; }
     $defaultassignee = $planowner > 0 && isset($assignees[$planowner]) ? $planowner : 0;
     $assignee = (int)$formvalues['assigneeid'] > 0 ? (int)$formvalues['assigneeid'] : $defaultassignee;
-    $formclass = 'kbacompany-form bms-recurring-form border rounded mb-4';
+    $formclass = $ownedpresentation ? 'kbacompany-form bms-recurring-form bms-recurring-form-owned bms24-task-panel' :
+        'kbacompany-form bms-recurring-form border rounded mb-4';
     echo html_writer::start_tag('form', ['method' => 'post', 'class' => $formclass]);
     echo $hidden($editing ? 'save' : 'create', $editing ? $series['uuid'] : '', $editing ? $series['revision'] : 0);
     // BMS-UX-CRUD-001: single-column form, labels above controls, groups instead of a two-column global form grid.
@@ -364,11 +366,38 @@ $PAGE->requires->js_init_code("(function(){var c=document.getElementById('rt_cad
 
 $bmsshell = \local_kbacompany\local\bms_page_shell_service::begin(
     $uuid, (int)$USER->id, 'recurring', get_string('recurringtask_title', 'local_kbacompany'));
+if ($ownedpresentation) {
+    echo html_writer::start_div('bms-tui bms24-task-center bms24-recurring-center');
+}
 $tr=static function(string $key): string { return get_string($key,'local_kbacompany'); };
 $url=static function(array $params=[]) use ($uuid,$originparams,$seriesstatus): moodle_url {
     $filterparams = $seriesstatus !== 'all' ? ['status' => $seriesstatus] : [];
     return new moodle_url('/local/kbacompany/recurring_tasks.php',
         array_merge(['uuid'=>$uuid],$originparams,$filterparams,$params));
+};
+$button = static function(moodle_url $target, string $label, bool $primary = false) use ($ownedpresentation): string {
+    if ($ownedpresentation) {
+        return \local_kbacompany\local\bms24_ui_kit_service::button($target, $label,
+            $primary ? 'primary' : 'secondary');
+    }
+    return html_writer::link($target, $label, ['class' => 'btn ' .
+        ($primary ? 'btn-primary' : 'btn-outline-secondary') . ' mr-2 mb-3']);
+};
+$statusbadge = static function(string $status) use ($tr, $ownedpresentation): string {
+    $label = $tr('recurringtask_status_' . $status);
+    if ($ownedpresentation && in_array($status, recurring_task_service::STATUSES, true)) {
+        return \local_kbacompany\local\bms24_ui_kit_service::status($label, $status);
+    }
+    return s($label);
+};
+$panel = static function(string $title, string $body, array $attrs = []) use ($ownedpresentation): string {
+    if ($ownedpresentation) {
+        $html = \local_kbacompany\local\bms24_shell_service::fragment('task_panel', [
+            'title' => $title, 'bodyhtml' => $body, 'actionshtml' => '',
+        ]);
+        return $attrs ? html_writer::tag('div', $html, $attrs) : $html;
+    }
+    return html_writer::tag('section', html_writer::tag('h3', $title, ['class' => 'h5']) . $body, $attrs);
 };
 $empty=$tr('recurringtask_empty_value');
 $format=static function(string $s) use ($empty): string { return $s!==''?$s:$empty; };
@@ -389,11 +418,43 @@ $cadencelabel=static function(array $series) use ($tr,$weekdaylabels): string {
     }
     return $description;
 };
-echo $OUTPUT->heading($view==='list'?$tr('recurringtask_registry'):
-    ($view==='create'?$tr('recurringtask_new_series'):
-    ($view==='edit'?$tr('recurringtask_edit'):$tr('recurringtask_detail'))));
-echo html_writer::tag('p',$tr('recurringtask_series_intro'),['class'=>'bms-rt-page-intro text-muted']);
-if (!empty($error)) { echo $OUTPUT->notification(s($error),'error'); }
+$pagetitle = $view==='list' ? $tr('recurringtask_registry') :
+    ($view==='create' ? $tr('recurringtask_new_series') :
+    ($view==='edit' ? $tr('recurringtask_edit') : $tr('recurringtask_detail')));
+$statushtml = '';
+if ($ownedpresentation && $view === 'detail' && $selectedseries) {
+    $pagetitle = (string)$selectedseries['title'];
+    $statushtml = $statusbadge((string)$selectedseries['status']);
+}
+$actionshtml = '';
+if ($ownedpresentation) {
+    if ($planuuid!=='') {
+        $actionshtml .= $button(new moodle_url('/local/kbacompany/battle_plan.php',
+            ['uuid'=>$uuid,'plan'=>$planuuid,'tab'=>'tasks']), $tr('recurringtask_back_to_plan'));
+    }
+    $actionshtml .= $button($url(['view'=>'list']), $tr('recurringtask_back_to_registry'));
+    if ($view!=='create') {
+        $actionshtml .= $button($url(['view'=>'create','stream'=>$defaultstream]),
+            $tr('recurringtask_new_series'), true);
+    }
+    $actionshtml .= $button(new moodle_url('/local/kbacompany/recurring_task_library.php',
+        array_merge(['uuid'=>$uuid],$originparams)), $tr('recurringtask_library_title'));
+    echo \local_kbacompany\local\bms24_shell_service::fragment('task_header', [
+        'title' => $pagetitle,
+        'subtitle' => $tr('recurringtask_series_intro'),
+        'statushtml' => $statushtml,
+        'actionshtml' => $actionshtml,
+    ]);
+    if (!empty($error)) {
+        echo \local_kbacompany\local\bms24_ui_kit_service::alert($error, 'error');
+    }
+    if ($planuuid!=='') {
+        echo html_writer::tag('p',$tr('battleplan_title').' - '.s($planperiod),['class'=>'text-muted']);
+    }
+} else {
+    echo $OUTPUT->heading($pagetitle);
+    echo html_writer::tag('p',$tr('recurringtask_series_intro'),['class'=>'bms-rt-page-intro text-muted']);
+    if (!empty($error)) { echo $OUTPUT->notification(s($error),'error'); }
 if ($planuuid!=='') {
     echo html_writer::tag('p',$tr('battleplan_title').' · '.s($planperiod),['class'=>'text-muted']);
     echo html_writer::link(new moodle_url('/local/kbacompany/battle_plan.php',
@@ -409,6 +470,7 @@ if ($view!=='create') {
 echo html_writer::link(new moodle_url('/local/kbacompany/recurring_task_library.php',
     array_merge(['uuid'=>$uuid],$originparams)),$tr('recurringtask_library_title'),
     ['class'=>'btn btn-outline-secondary mr-2 mb-3']);
+}
 if ($view==='create') {
     if ($planuuid!=='') {
         echo html_writer::tag('p',$tr('recurringtask_active_plan_warning'),['class'=>'alert alert-info']);
@@ -427,6 +489,26 @@ if ($view==='create') {
         $statusoptions[$seriesstate] = $tr('recurringtask_status_' . $seriesstate) .
             ' (' . $statuscounts[$seriesstate] . ')';
     }
+    if ($ownedpresentation) {
+        $hiddenfields = ['uuid' => $uuid, 'view' => 'list'];
+        if ($planuuid !== '') { $hiddenfields['plan'] = $planuuid; }
+        echo \local_kbacompany\local\bms24_ui_kit_service::filterbar(
+            new moodle_url('/local/kbacompany/recurring_tasks.php'),
+            $tr('recurringtask_status_label'),
+            [[
+                'id' => 'rt_status_filter',
+                'name' => 'status',
+                'label' => $tr('recurringtask_status_label'),
+                'type' => 'select',
+                'value' => $seriesstatus,
+                'options' => $statusoptions,
+            ]],
+            $hiddenfields,
+            $url(['view' => 'list', 'status' => 'all']),
+            $tr('recurringtask_filter_apply'),
+            $tr('recurringtask_filter_reset')
+        );
+    } else {
     $filterhtml = html_writer::start_tag('form', [
         'method' => 'get', 'action' => (new moodle_url('/local/kbacompany/recurring_tasks.php'))->out(false),
         'class' => 'bms-rt-status-filter', 'role' => 'search',
@@ -453,11 +535,13 @@ if ($view==='create') {
     }
     $filterhtml .= html_writer::end_tag('form');
     echo $filterhtml;
+    }
     $filteredseries = array_values(array_filter($data['series'], static function(array $row) use ($seriesstatus): bool {
         return $seriesstatus === 'all' || (string)$row['status'] === $seriesstatus;
     }));
     $table=new html_table();
-    $table->attributes['class']='table table-striped bms-rt-registry';
+    $table->attributes['class']=$ownedpresentation ? 'bms24-task-table bms24-recurring-table' :
+        'table table-striped bms-rt-registry';
     $table->head=[$tr('taskcenter_task'),$tr('recurringtask_cadence'),$tr('taskcenter_assignee'),
         $tr('recurringtask_next'),$tr('recurringtask_status_label')];
     foreach ($filteredseries as $series) {
@@ -467,10 +551,11 @@ if ($view==='create') {
         $dates=$upcoming($series);
         $next=$series['status']==='active' && $dates?date('d.m.Y',strtotime($dates[0])):'—';
         $table->data[]=[$title,s($cadencelabel($series)),s($series['assignee_name']),$next,
-            $tr('recurringtask_status_'.$series['status'])];
+            $statusbadge((string)$series['status'])];
     }
     if ($filteredseries) {
-        echo html_writer::div(html_writer::table($table), 'bms-rt-registry-scroll');
+        echo html_writer::div(html_writer::table($table),
+            $ownedpresentation ? 'bms24-task-table-wrap bms24-recurring-table-wrap' : 'bms-rt-registry-scroll');
     } else {
         $emptytext = $seriesstatus === 'all' ? $tr('recurringtask_empty') :
             $tr('recurringtask_filter_empty');
@@ -485,9 +570,11 @@ if ($view==='create') {
     $renderform($selectedseries,$formpayload);
 } else if ($view==='detail') {
     $series=$selectedseries;
-    echo html_writer::tag('h2',s($series['title']),['class'=>'h4 mt-3']);
-    echo html_writer::tag('p',$tr('recurringtask_status_label').': '.
-        html_writer::tag('strong',$tr('recurringtask_status_'.$series['status'])),['class'=>'mb-3']);
+    if (!$ownedpresentation) {
+        echo html_writer::tag('h2',s($series['title']),['class'=>'h4 mt-3']);
+        echo html_writer::tag('p',$tr('recurringtask_status_label').': '.
+            html_writer::tag('strong',$tr('recurringtask_status_'.$series['status'])),['class'=>'mb-3']);
+    }
     $field=static function(string $label,string $val) use($empty): string {
         return html_writer::div(html_writer::tag('dt',s($label)).
             html_writer::tag('dd',nl2br(s($val!==''?$val:$empty))),'bms-rt-detail-field');
@@ -528,7 +615,7 @@ if ($view==='create') {
     $details.=$field($tr('taskcenter_priority'),$tr('taskcenter_priority_'.$series['priority']));
     $details.=$field($tr('taskcenter_reviewer'),(string)$series['reviewer_name']);
     if ($userdescription !== '') { $details.=$field($tr('taskcenter_description'),$userdescription); }
-    echo html_writer::tag('section',html_writer::tag('h3',$tr('recurringtask_record_details'),['class'=>'h5']).
+    echo $panel($tr('recurringtask_record_details'),
         html_writer::tag('dl',$details,['class'=>'bms-rt-detail-grid']),
         ['class'=>'bms-rt-detail-panel border rounded p-3 mb-3']);
     if ($caneditselected && ($series['template_key'] !== '' || $provenance !== '')) {
@@ -577,7 +664,8 @@ if ($view==='create') {
         $journalbody = html_writer::tag('p', $tr('recurringtask_occurrences_empty'), ['class' => 'text-muted']);
     } else {
         $table = new html_table();
-        $table->attributes['class'] = 'table bms-rt-occurrence-table';
+        $table->attributes['class'] = $ownedpresentation ? 'bms24-task-table bms-rt-occurrence-table' :
+            'table bms-rt-occurrence-table';
         $table->head = [$tr('recurringtask_occurrences_date'), $tr('taskcenter_task'),
             $tr('taskcenter_assignee'), $tr('recurringtask_occurrences_status'),
             $tr('recurringtask_occurrences_plans')];
@@ -608,7 +696,8 @@ if ($view==='create') {
             $table->data[] = [$datecell, $name, s($entry['assignee_name']), $status, $planscell];
         }
         if ($journal['items']) {
-            $journalbody .= html_writer::div(html_writer::table($table), 'bms-rt-occurrence-scroll');
+            $journalbody .= html_writer::div(html_writer::table($table),
+                $ownedpresentation ? 'bms24-task-table-wrap bms-rt-occurrence-scroll' : 'bms-rt-occurrence-scroll');
         } else {
             $journalbody .= html_writer::tag('p', $tr('recurringtask_occurrences_page_empty'),
                 ['class' => 'text-muted']);
@@ -626,8 +715,7 @@ if ($view==='create') {
         }
         if ($pager !== '') { $journalbody .= html_writer::div($pager, 'bms-rt-occurrence-pager'); }
     }
-    echo html_writer::tag('section',
-        html_writer::tag('h3', $tr('recurringtask_occurrences_heading'), ['class' => 'h5']) .
+    echo $panel($tr('recurringtask_occurrences_heading'),
         html_writer::tag('p', $tr('recurringtask_occurrences_hint'), ['class' => 'text-muted small']) . $journalbody,
         ['id' => 'rt-occurrences', 'class' => 'bms-rt-detail-panel border rounded p-3 mb-3']);
     // Append-only definition history: compare genuine DB revisions, not mutable Task occurrences.
@@ -730,8 +818,7 @@ if ($view==='create') {
             $tr('recurringtask_occurrences_next'), ['class' => 'btn btn-outline-secondary btn-sm']);
     }
     if ($historypager !== '') { $historybody .= html_writer::div($historypager, 'bms-rt-history-pager'); }
-    echo html_writer::tag('section',
-        html_writer::tag('h3', $tr('recurringtask_history_title'), ['class' => 'h5']) .
+    echo $panel($tr('recurringtask_history_title'),
         html_writer::tag('p', $tr('recurringtask_history_hint'), ['class' => 'small text-muted']) . $historybody,
         ['id' => 'rt-history', 'class' => 'bms-rt-detail-panel border rounded p-3 mb-3']);
     if ($caneditselected) {
@@ -803,5 +890,8 @@ if ($view==='create') {
             echo html_writer::end_tag('div');
         }
     }
+}
+if ($ownedpresentation) {
+    echo html_writer::end_div();
 }
 \local_kbacompany\local\bms_page_shell_service::finish($bmsshell);

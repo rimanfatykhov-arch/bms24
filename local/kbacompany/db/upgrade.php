@@ -4891,5 +4891,9 @@ function xmldb_local_kbacompany_upgrade(int $oldversion): bool {
         // BMS24 W3 Task Center owns its presentation fragments; no DDL or ACL changes.
         upgrade_plugin_savepoint(true, 2026101642, 'local', 'kbacompany');
     }
+    if ($oldversion < 2026101643) {
+        // BMS24 W3.2 Recurring series owned UI presentation; no DDL or ACL changes.
+        upgrade_plugin_savepoint(true, 2026101643, 'local', 'kbacompany');
+    }
     return true;
 }
