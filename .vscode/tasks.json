@@ -2,6 +2,25 @@
   "version": "2.0.0",
   "tasks": [
     {
+      "label": "BMS24: New Feature + Codex Prompt",
+      "type": "shell",
+      "command": "powershell",
+      "args": [
+        "-ExecutionPolicy",
+        "Bypass",
+        "-File",
+        "${workspaceFolder}\\scripts\\new_feature_codex.ps1",
+        "${input:featureName}",
+        "${input:featureDescription}"
+      ],
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared",
+        "clear": true
+      }
+    },
+    {
       "label": "BMS24: Start Feature",
       "type": "shell",
       "command": "powershell",
@@ -76,6 +95,12 @@
       "type": "promptString",
       "description": "Название feature-задачи, например task-assignee-employee-card",
       "default": "task-assignee-employee-card"
+    },
+    {
+      "id": "featureDescription",
+      "type": "promptString",
+      "description": "Кратко опишите задачу для Codex Architect",
+      "default": "В карточке задачи имя исполнителя должно открывать каноническую карточку сотрудника BMS24."
     }
   ]
 }
