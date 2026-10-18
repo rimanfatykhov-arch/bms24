@@ -40,5 +40,3 @@ release/
 # Local Codex working prompts
 .codex/
 
-# Downloaded GitHub Actions release artifacts
-downloads/
