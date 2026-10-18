@@ -4901,5 +4901,11 @@ function xmldb_local_kbacompany_upgrade(int $oldversion): bool {
         upgrade_plugin_savepoint(true, 2026101644, 'local', 'kbacompany');
     }
 
+    if ($oldversion < 2026101645) {
+        // Release checkpoint: Описание релиза
+        // No DDL is performed by this checkpoint itself.
+        upgrade_plugin_savepoint(true, 2026101645, 'local', 'kbacompany');
+    }
+
     return true;
 }
