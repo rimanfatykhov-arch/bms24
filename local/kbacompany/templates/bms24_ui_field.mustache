@@ -1,0 +1,8 @@
+<div class="bms24-ui-field{{#haserror}} has-error{{/haserror}}">
+<label class="bms24-ui-label" for="{{id}}">{{label}}{{#required}} <span class="bms24-ui-required" aria-hidden="true">*</span>{{/required}}</label>
+{{#isselect}}<select class="bms24-ui-select" id="{{id}}" name="{{name}}"{{#required}} required{{/required}}{{#describedby}} aria-describedby="{{describedby}}"{{/describedby}}{{#haserror}} aria-invalid="true"{{/haserror}}>{{#options}}<option value="{{value}}"{{#selected}} selected{{/selected}}>{{label}}</option>{{/options}}</select>{{/isselect}}
+{{#istext}}<input class="bms24-ui-input" type="{{type}}" id="{{id}}" name="{{name}}" value="{{value}}"{{#maxlength}} maxlength="{{maxlength}}"{{/maxlength}}{{#placeholder}} placeholder="{{placeholder}}"{{/placeholder}}{{#required}} required{{/required}}{{#describedby}} aria-describedby="{{describedby}}"{{/describedby}}{{#haserror}} aria-invalid="true"{{/haserror}}>{{/istext}}
+{{#istextarea}}<textarea class="bms24-ui-textarea" id="{{id}}" name="{{name}}"{{#maxlength}} maxlength="{{maxlength}}"{{/maxlength}}{{#describedby}} aria-describedby="{{describedby}}"{{/describedby}}{{#haserror}} aria-invalid="true"{{/haserror}}>{{value}}</textarea>{{/istextarea}}
+{{#help}}<small class="bms24-ui-help" id="{{id}}-help">{{help}}</small>{{/help}}
+{{#error}}<small class="bms24-ui-error" id="{{id}}-error">{{error}}</small>{{/error}}
+</div>

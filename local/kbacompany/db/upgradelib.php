@@ -1,0 +1,222 @@
+<?php
+// This file is part of Moodle - http://moodle.org/
+//
+// Moodle is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+
+/**
+ * Frozen, upgrade-only helpers for local_kbacompany.
+ *
+ * @package local_kbacompany
+ * @license http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
+defined('MOODLE_INTERNAL') || die();
+
+/**
+ * Make the six legacy quantitative fields nullable without losing the norm index.
+ *
+ * Moodle checks index dependencies even for change_field_notnull(). Only the
+ * known non-unique norm_ix may be temporarily dropped. Unknown dependencies or
+ * an altered/ambiguous definition stop the upgrade, never discard custom indexes.
+ *
+ * Every call inspects fresh metadata. The norm index is restored even when a
+ * previous process stopped after ALTER and the field is already nullable. No
+ * business rows are read or written. Do not call from a web page or cron task.
+ *
+ * @param int $targetversion Upgrade savepoint used only in diagnostics.
+ * @return void
+ */
+function local_kbacompany_upgrade_deviation_nullable_2026092505(int $targetversion): void {
+    global $DB;
+
+    $dbman = $DB->get_manager();
+    $normtable = 'local_kbacompany_deviation';
+    $normfields = ['companyuuid', 'normuuid'];
+    $normindex = new xmldb_index('norm_ix', XMLDB_INDEX_NOTUNIQUE, $normfields);
+    $pending = [];
+
+    // Validate both tables and all pending dependencies BEFORE dropping anything.
+    foreach ([$normtable, 'local_kbacompany_devcheck'] as $name) {
+        $table = new xmldb_table($name);
+        if (!$dbman->table_exists($table)) {
+            throw new ddl_table_missing_exception($name);
+        }
+        $columns = $DB->get_columns($name, false);
+        $pending[$name] = [];
+        foreach (['approvaluuid' => '36', 'normuuid' => '36', 'actual' => '32'] as $column => $length) {
+            if (!isset($columns[$column])) {
+                throw new ddl_field_missing_exception($column, $name);
+            }
+            if ($columns[$column]->not_null) {
+                $pending[$name][$column] = $length;
+            }
+        }
+        $normmatches = 0;
+        foreach ($DB->get_indexes($name, false) as $indexname => $index) {
+            $fields = array_values($index['columns']);
+            // XMLDB index_exists/drop_index match sets of columns, ignoring order
+            // and uniqueness. Reject ambiguity before delegating to those methods.
+            $normmatch = $name === $normtable && count($fields) === count($normfields) &&
+                !array_diff($fields, $normfields) && !array_diff($normfields, $fields);
+            if ($normmatch) {
+                $normmatches++;
+                if ($fields !== $normfields || (bool)$index['unique'] || $normmatches > 1) {
+                    throw new upgrade_exception('local_kbacompany', $targetversion,
+                        'Deviation upgrade stopped: unexpected or ambiguous norm index definition. ' .
+                        'No norm index was dropped. Inspect ' . $name . '.' . $indexname);
+                }
+            }
+            foreach (array_keys($pending[$name]) as $column) {
+                if (in_array($column, $fields, true) && !$normmatch) {
+                    throw new ddl_dependency_exception('column', $name . '->' . $column,
+                        'index', $indexname . ' (' . implode(', ', $fields) . ')');
+                }
+            }
+        }
+    }
+
+    foreach ($pending as $name => $fields) {
+        $table = new xmldb_table($name);
+        foreach ($fields as $column => $length) {
+            if ($name === $normtable && $column === 'normuuid' && $dbman->index_exists($table, $normindex)) {
+                $dbman->drop_index($table, $normindex);
+            }
+            $field = new xmldb_field($column, XMLDB_TYPE_CHAR, $length, null, null, null, null);
+            $dbman->change_field_notnull($table, $field);
+            // Minimise the interval without the index. A crash here is also safe
+            // to retry: the unconditional reconciliation below knows its definition.
+            if ($name === $normtable && $column === 'normuuid' && !$dbman->index_exists($table, $normindex)) {
+                $dbman->add_index($table, $normindex);
+            }
+        }
+    }
+    $table = new xmldb_table($normtable);
+    if (!$dbman->index_exists($table, $normindex)) {
+        $dbman->add_index($table, $normindex);
+    }
+
+    // A successful API return is insufficient: verify the persisted metadata.
+    foreach (array_keys($pending) as $name) {
+        $columns = $DB->get_columns($name, false);
+        foreach (['approvaluuid', 'normuuid', 'actual'] as $column) {
+            if (!isset($columns[$column]) || $columns[$column]->not_null) {
+                throw new upgrade_exception('local_kbacompany', $targetversion,
+                    'Deviation upgrade incomplete: expected nullable ' . $name . '.' . $column);
+            }
+        }
+    }
+    $found = false;
+    foreach ($DB->get_indexes($normtable, false) as $index) {
+        if (array_values($index['columns']) === $normfields && !(bool)$index['unique']) {
+            $found = true;
+            break;
+        }
+    }
+    if (!$found) {
+        throw new upgrade_exception('local_kbacompany', $targetversion,
+            'Deviation upgrade incomplete: missing non-unique norm_ix (companyuuid, normuuid)');
+    }
+}
+
+/**
+ * Rebind active staffing assignments from archived-plan slots to compatible slots
+ * of the current approved version. This repairs the rc10/rc11 behaviour where a
+ * new staffing version generated fresh slot UUIDs and factual assignments appeared
+ * to disappear from the staffing placement UI.
+ *
+ * Identity/history policy: keep the PositionAssignment row and dates unchanged;
+ * only move its slot pointer when canonical position and FTE are identical.
+ * Incompatible assignments are deliberately left untouched for explicit manager resolution.
+ */
+function local_kbacompany_upgrade_carry_staffing_assignments_2026101230(): void {
+    global $DB;
+
+    $plansql = "SELECT p.*
+                  FROM {local_kbacompany_staffplan} p
+                 WHERE p.status = :status
+              ORDER BY p.companyuuid, p.branchuuid, p.timeapproved DESC, p.id DESC";
+    $seen = [];
+    foreach ($DB->get_records_sql($plansql, ['status' => 'approved']) as $plan) {
+        $branchkey = (string)$plan->companyuuid . ':' . (string)$plan->branchuuid;
+        if (isset($seen[$branchkey])) {
+            continue;
+        }
+        $seen[$branchkey] = true;
+
+        $positions = [];
+        foreach ($DB->get_records('local_kbacompany_staffline', [
+                'companyuuid' => (string)$plan->companyuuid,
+                'planuuid' => (string)$plan->uuid,
+            ], 'id ASC', 'positionuuid') as $line) {
+            $positions[(string)$line->positionuuid] = true;
+        }
+        if (!$positions) {
+            continue;
+        }
+
+        $available = [];
+        foreach ($DB->get_records('local_kbacompany_staffslot', [
+                'companyuuid' => (string)$plan->companyuuid,
+                'planuuid' => (string)$plan->uuid,
+                'active' => 1,
+            ], 'positionuuid ASC, code ASC') as $slot) {
+            if ($DB->record_exists('local_kbacompany_posassign', [
+                    'companyuuid' => (string)$plan->companyuuid,
+                    'slotuuid' => (string)$slot->uuid,
+                    'active' => 1,
+                ])) {
+                continue;
+            }
+            $ftekey = number_format((float)$slot->fte, 2, '.', '');
+            $available[(string)$slot->positionuuid][$ftekey][] = $slot;
+        }
+        if (!$available) {
+            continue;
+        }
+
+        list($positionsql, $positionparams) = $DB->get_in_or_equal(array_keys($positions),
+            SQL_PARAMS_NAMED, 'upgradeposition');
+        $sql = "SELECT a.id AS assignmentid, a.slotuuid, a.positionuuid, s.fte AS slotfte
+                  FROM {local_kbacompany_posassign} a
+                  JOIN {local_kbacompany_staffslot} s
+                    ON s.companyuuid = a.companyuuid
+                   AND s.uuid = a.slotuuid
+                 WHERE a.companyuuid = :companyuuid
+                   AND a.active = 1
+                   AND a.slotuuid <> ''
+                   AND a.positionuuid $positionsql
+                   AND s.planuuid <> :currentplan
+              ORDER BY a.positionuuid ASC, s.code ASC, a.id ASC";
+        $params = array_merge([
+            'companyuuid' => (string)$plan->companyuuid,
+            'currentplan' => (string)$plan->uuid,
+        ], $positionparams);
+        foreach ($DB->get_records_sql($sql, $params) as $assignment) {
+            $positionuuid = (string)$assignment->positionuuid;
+            $ftekey = number_format((float)$assignment->slotfte, 2, '.', '');
+            if (empty($available[$positionuuid][$ftekey])) {
+                continue;
+            }
+            $slot = array_shift($available[$positionuuid][$ftekey]);
+            $DB->set_field('local_kbacompany_posassign', 'slotuuid', (string)$slot->uuid, [
+                'id' => (int)$assignment->assignmentid,
+                'companyuuid' => (string)$plan->companyuuid,
+                'active' => 1,
+            ]);
+            $DB->set_field('local_kbacompany_posassign', 'timemodified', time(), [
+                'id' => (int)$assignment->assignmentid,
+                'companyuuid' => (string)$plan->companyuuid,
+            ]);
+            $DB->set_field('local_kbacompany_staffslot', 'status', 'occupied', [
+                'companyuuid' => (string)$plan->companyuuid,
+                'uuid' => (string)$slot->uuid,
+            ]);
+            $DB->set_field('local_kbacompany_staffslot', 'timemodified', time(), [
+                'companyuuid' => (string)$plan->companyuuid,
+                'uuid' => (string)$slot->uuid,
+            ]);
+        }
+    }
+}

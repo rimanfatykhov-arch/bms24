@@ -1,0 +1,20 @@
+<div class="kbacompany-bms-fallback">
+    <header class="mb-3">
+        <div class="text-muted small">{{#str}}bmsworkspace_nav, local_kbacompany{{/str}}</div>
+        <h1>{{#str}}bmsworkspace_focus_title, local_kbacompany{{/str}}</h1>
+        <p class="lead">{{description}}</p>
+        <a class="btn btn-outline-primary" href="{{widgetsurl}}">{{#str}}bmswidgets_title, local_kbacompany{{/str}}</a>
+    </header>
+    <div class="row">
+        <aside class="col-lg-3 mb-4"><nav class="card p-3" aria-label="{{#str}}bmsworkspace_sidebar_label, local_kbacompany{{/str}}">
+            {{#groups}}
+            <details class="mb-2"{{#expanded}} open{{/expanded}}>
+                <summary class="font-weight-bold text-muted py-2">{{label}}</summary>
+                {{#items}}<a class="d-block py-2" href="{{url}}">{{label}}</a>{{/items}}
+            </details>
+            {{/groups}}
+            <a class="d-block py-2" href="{{preferencesurl}}">{{#str}}bmsmain_change, local_kbacompany{{/str}}</a>
+        </nav></aside>
+        <main class="col-lg-9">{{{focushtml}}}{{{widgetcontenthtml}}}</main>
+    </div>
+</div>

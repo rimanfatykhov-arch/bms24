@@ -1,0 +1,33 @@
+{
+  "release": "1.1.0-rc29",
+  "build": 2026101831,
+  "module": "local_kbacompany",
+  "feature": "Canonical Task Center Subtasks 1.0",
+  "source_build": 2026101830,
+  "db_changes": false,
+  "ui_route": "/local/kbacompany/tasks.php",
+  "service_changes": [
+    "can_add_subtasks",
+    "subtasks_page",
+    "subtask_candidates",
+    "link_subtask"
+  ],
+  "rules": [
+    "No duplicate task rows",
+    "Only active editable parent",
+    "Only unparented active manually-created task may be attached",
+    "One parent per task",
+    "Company and task access always validated",
+    "Revision and cycle checks",
+    "POST with sesskey",
+    "Existing Battle Plan memberships retained",
+    "Child listings show accessible tasks only"
+  ],
+  "pending": [
+    "Moodle PHP 8.1 test",
+    "Live ACL test on two companies",
+    "Live UI test long task list",
+    "Live task link with Battle Plan",
+    "Parent progress roll-up in next release"
+  ]
+}

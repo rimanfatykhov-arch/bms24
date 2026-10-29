@@ -1,0 +1,33 @@
+/* BMS24 Design Tokens v1.0 — Opt-in. Owned BMS24 shell only. */
+:where(.bms24-app) {
+  --bms24-color-navy: #0B2B41;
+  --bms24-color-navy-800: #163A50;
+  --bms24-color-primary: #0C6C52;
+  --bms24-color-primary-hover: #095741;
+  --bms24-color-secondary: #0F8065;
+  --bms24-color-text: #1D2937;
+  --bms24-color-text-muted: #526673;
+  --bms24-color-info: #1777B5;
+  --bms24-color-agent: #6B43B5;
+  --bms24-color-warning: #B15F00;
+  --bms24-color-danger: #BC3030;
+  --bms24-surface: #FFFFFF;
+  --bms24-surface-mint: #ECF7F3;
+  --bms24-surface-sky: #E4F2FB;
+  --bms24-surface-sand: #FDF6ED;
+  --bms24-border: #D9E5E9;
+  --bms24-radius-card: 14px;
+  --bms24-radius-control: 9px;
+  --bms24-space-1: 4px;
+  --bms24-space-2: 8px;
+  --bms24-space-3: 12px;
+  --bms24-space-4: 16px;
+  --bms24-space-6: 24px;
+  --bms24-font: Inter, system-ui, -apple-system, 'Segoe UI', Arial, sans-serif;
+  color: var(--bms24-color-text);
+  font-family: var(--bms24-font);
+}
+.bms24-app .bms24-card {background:var(--bms24-surface);border:1px solid var(--bms24-border);border-radius:var(--bms24-radius-card);padding:var(--bms24-space-6);}
+.bms24-app .bms24-btn-primary {background:var(--bms24-color-primary);color:#fff;border:1px solid transparent;border-radius:var(--bms24-radius-control);padding:10px 16px;min-height:40px;font-weight:600;}
+.bms24-app .bms24-btn-primary:hover {background:var(--bms24-color-primary-hover);}
+.bms24-app .bms24-btn-primary:focus-visible {outline:3px solid var(--bms24-color-info);outline-offset:3px;}

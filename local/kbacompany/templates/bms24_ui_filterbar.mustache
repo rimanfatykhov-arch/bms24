@@ -1,0 +1,5 @@
+<form class="bms24-ui-filterbar" method="get" action="{{action}}" aria-label="{{label}}">
+{{#hidden}}<input type="hidden" name="{{name}}" value="{{value}}">{{/hidden}}
+<div class="bms24-ui-fieldgrid">{{#fields}}{{> local_kbacompany/bms24_ui_field}}{{/fields}}</div>
+<div class="bms24-ui-filter-actions"><button class="bms24-ui-btn bms24-ui-btn--primary" type="submit">{{submitlabel}}</button><a class="bms24-ui-btn" href="{{reseturl}}">{{resetlabel}}</a></div>
+</form>

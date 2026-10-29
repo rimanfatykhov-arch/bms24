@@ -1,0 +1,15 @@
+.env
+.env.*
+config.php
+moodledata/
+__pycache__/
+*.pyc
+*.zip
+*.bundle
+*.sqlite
+*.sql.gz
+release-builds/
+artifacts/
+.idea/
+.vscode/
+.DS_Store
