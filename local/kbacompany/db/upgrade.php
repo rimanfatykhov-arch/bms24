@@ -6060,6 +6060,12 @@ function xmldb_local_kbacompany_upgrade(int $oldversion): bool {
         upgrade_plugin_savepoint(true, 2026101871, 'local', 'kbacompany');
     }
 
+    // build1872: Dev AI source governance & deterministic packaging.
+    // No DDL or business data changes.
+    if ($oldversion < 2026101872) {
+        upgrade_plugin_savepoint(true, 2026101872, 'local', 'kbacompany');
+    }
+
     return true;
 }
 

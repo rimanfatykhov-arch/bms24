@@ -1,0 +1,44 @@
+name: BMS24 Dev AI checks
+on:
+  pull_request:
+  push:
+    branches: [main]
+permissions:
+  contents: read
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.1'
+          tools: none
+          coverage: none
+      - name: Agent policy and build tests
+        run: |
+          python tools/dev_ai_gate.py
+          python tools/test_dev_ai_tools.py
+      - name: Moodle static checks
+        run: |
+          python local/kbacompany/cli/check_upgrade_sequence.py
+          python local/kbacompany/cli/check_xmldb_schema_names.py
+          python local/kbacompany/cli/check_php81_compat.py
+          python local/kbacompany/cli/check_rc29_regression_gate.py
+          python local/kbacompany/cli/test_rc30_offline_1871.py
+      - name: PHP syntax
+        run: find local/kbacompany -name '*.php' -type f -print0 | xargs -0 -n1 -P8 php -l > /tmp/bms-php-lint.txt
+      - name: JS syntax
+        run: find local/kbacompany -name '*.js' -type f -print0 | xargs -0 -n1 node --check
+      - name: Deterministic candidate ZIP
+        run: |
+          python tools/build_install.py --output /tmp/bms-a.zip
+          python tools/build_install.py --output /tmp/bms-b.zip
+          cmp /tmp/bms-a.zip /tmp/bms-b.zip
+          sha256sum /tmp/bms-a.zip

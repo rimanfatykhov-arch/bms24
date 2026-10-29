@@ -1,15 +1,22 @@
+# Never commit a Moodle installation or credentials.
 .env
 .env.*
 config.php
 moodledata/
+.phpunit-watcher.yml
+vendor/
+node_modules/
 __pycache__/
 *.pyc
+*.pyo
 *.zip
 *.bundle
 *.sqlite
 *.sql.gz
 release-builds/
 artifacts/
+.coverage
 .idea/
 .vscode/
 .DS_Store
+Thumbs.db
