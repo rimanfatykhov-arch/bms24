@@ -6066,6 +6066,12 @@ function xmldb_local_kbacompany_upgrade(int $oldversion): bool {
         upgrade_plugin_savepoint(true, 2026101872, 'local', 'kbacompany');
     }
 
+    // build1873: offline BMS Dev AI task workflow and independent review contracts.
+    // Only a version checkpoint; no schema, ACL or business-data migrations.
+    if ($oldversion < 2026101873) {
+        upgrade_plugin_savepoint(true, 2026101873, 'local', 'kbacompany');
+    }
+
     return true;
 }
 

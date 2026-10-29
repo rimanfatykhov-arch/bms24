@@ -1,4 +1,4 @@
-# BMS Dev AI — architecture baseline, build2026101872
+# BMS Dev AI — architecture baseline, build2026101873
 
 ## Purpose
 A governed software-delivery department of AI roles that designs, implements,
@@ -46,3 +46,11 @@ reproducibility tests. Moodle business UI, DB schema and user roles unchanged.
 **Not implemented:** hosted Git remote, credentials, CI run on GitHub,
 agent execution, orchestration, production deploy, staging Moodle PHPUnit,
 Behat, MySQL/PHP 8.1 runtime verification or RC30 acceptance.
+
+## Increment build1873
+**Implemented:** local machine-checkable task JSON, approved scope, branch/worktree
+creation, repeatable change fingerprint, separate QA/Security reviewer records.
+**Trust boundary:** reviewer identities in JSON are not authenticated. This
+is a pre-PR workflow, not an autonomous AI model execution runtime, not an
+independently verified security approval or a production deployment mechanism.
+See `docs/AI_TASK_LIFECYCLE.md`.

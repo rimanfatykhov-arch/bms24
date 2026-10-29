@@ -1,4 +1,4 @@
-# BMS24 Dev AI — instructions for code agents (build2026101872)
+# BMS24 Dev AI — instructions for code agents (build2026101873)
 
 ## Product ownership
 The product owner approves scope, architecture-breaking changes and releases.
@@ -14,6 +14,11 @@ client data without a separate authorized procedure.
 - `dev_ai/agents.json` is the policy registry. It is not an agent runtime.
 - `docs/BMS_DEV_AI_ARCHITECTURE.md` defines boundaries and context.
 
+## Dev AI task contract
+For changes initiated by AI developer roles, follow `docs/AI_TASK_LIFECYCLE.md`.
+Tasks require an approved scope, isolated worktree, QA + Security reviews and
+a human decision. Never let a code author self-certify production readiness.
+
 ## Before changing code
 1. Read `version.php`, `db/upgrade.php`, existing domain services and relevant
    CRUD/UI standards. Identify company scope, permission checks and side effects.
@@ -27,6 +32,7 @@ client data without a separate authorized procedure.
 ## Required checks
 - `python tools/dev_ai_gate.py`
 - `python tools/test_dev_ai_tools.py`
+- `python tools/test_dev_ai_cycle.py`
 - `python local/kbacompany/cli/check_upgrade_sequence.py`
 - `python local/kbacompany/cli/check_xmldb_schema_names.py`
 - `python local/kbacompany/cli/check_php81_compat.py`

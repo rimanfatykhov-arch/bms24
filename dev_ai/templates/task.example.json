@@ -1,0 +1,19 @@
+{
+  "schema_version": 1,
+  "id": "BMS-EXAMPLE",
+  "title": "Пример задачи: уточнить сообщения в модуле задач",
+  "product_goal": "Сделать ошибки пользователя понятнее без изменения прав доступа",
+  "developer_id": "developer-agent-01",
+  "status": "draft",
+  "approval": null,
+  "risk": "low",
+  "base_branch": "main",
+  "allowed_paths": [
+    "local/kbacompany/classes/local/",
+    "local/kbacompany/tests/"
+  ],
+  "acceptance_criteria": [
+    "Нет регрессий управления задачами и изоляции компаний",
+    "Поведение подтверждено автоматическим тестом"
+  ]
+}

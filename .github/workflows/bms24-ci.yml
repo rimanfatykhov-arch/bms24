@@ -25,6 +25,8 @@ jobs:
         run: |
           python tools/dev_ai_gate.py
           python tools/test_dev_ai_tools.py
+          python tools/test_dev_ai_cycle.py
+          python tools/dev_ai_cycle.py validate --task dev_ai/templates/task.example.json
       - name: Moodle static checks
         run: |
           python local/kbacompany/cli/check_upgrade_sequence.py
