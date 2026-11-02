@@ -2,6 +2,11 @@
 // BMS24 stage 1881.16: explicit compatibility bridge for one staging company.
 // No Moodle core changes; dry-run by default. Never schedule as a cron task.
 
+// CLI files live in the Moodle webroot; never allow direct web execution.
+if (PHP_SAPI !== 'cli') {
+    http_response_code(403);
+    exit;
+}
 define('CLI_SCRIPT', true);
 require(__DIR__ . '/../../../config.php');
 require_once($CFG->libdir . '/clilib.php');
