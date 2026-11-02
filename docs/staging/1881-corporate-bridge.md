@@ -171,3 +171,9 @@ grant privileges or disable permission checks just to pass this test.
 
 A CLI access service assertion is not proof that the authenticated browser
 session works. Never turn on public Moodle debugging to inspect errors.
+
+Stage 1881.19 installer additionally performs an unauthenticated HTTPS login
+smoke against the local reverse proxy using certificate verification and
+`curl --resolve`. It fails on HTTP 5xx or a `localhost` redirect, but does not
+claim that a successful login occurred. Both temporary PHP CLIs refuse direct
+HTTP execution (PHP_SAPI must equal `cli`).
