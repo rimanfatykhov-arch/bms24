@@ -15,8 +15,8 @@ import subprocess
 import sys
 import tempfile
 
-EXPECTED_VERSION = 2026101877
-DEFAULT_BRANCH = "import/build2026101877"
+EXPECTED_VERSION = 2026101878
+DEFAULT_BRANCH = "import/build2026101878"
 SOURCE_REF = "refs/heads/main"
 MAX_SOURCE_FILES = 20000
 
@@ -102,7 +102,7 @@ def run(bundle: Path, remote: str, branch: str, *, push: bool = False) -> dict:
         # git commit-tree requires a message via -m. Two-parent commit retains
         # old GitHub history AND all source bundle commits without force push.
         commit_sha = git(local, "commit-tree", tree_sha, "-p", base_sha, "-p", source_sha,
-                         "-m", "import: BMS24 build2026101877 full source (review required)", env=environ)
+                         "-m", "import: BMS24 build2026101878 full source (review required)", env=environ)
         git(local, "update-ref", "refs/heads/" + branch, commit_sha)
         out = {"status": "PREPARED", "build": EXPECTED_VERSION, "branch": branch,
                "base": base_sha, "source": source_sha, "commit": commit_sha,

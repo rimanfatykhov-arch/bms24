@@ -1,6 +1,6 @@
 # BMS24 Dev AI — source repository skeleton
 
-**Release:** local_kbacompany `1.1.0-rc29`, build `2026101877`.
+**Release:** local_kbacompany `1.1.0-rc29`, build `2026101878`.
 
 - `local/kbacompany` — installable Moodle plugin (full cumulative source).
 - `AGENTS.md` — mandatory guidelines for AI coding agents.

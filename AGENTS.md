@@ -1,4 +1,4 @@
-# BMS24 Dev AI — instructions for code agents (build2026101876)
+# BMS24 Dev AI — instructions for code agents (build2026101878)
 
 ## Product ownership
 The product owner approves scope, architecture-breaking changes and releases.
@@ -63,3 +63,9 @@ without evidence. Update release notes, tests, checksum and human sign-off.
   `tools/test_battleplan_date_1875.py` and `tools/test_business_dates_1876.py`.
 - Do not alter existing human-facing `userdate()` labels; keep the domain's
   strict `YYYY-MM-DD` validators and timezone-aware `core_date` semantics.
+
+## GitHub review candidate (build1878)
+
+- Every PR should pass `tools/check_workflow_policy.py` and `tools/test_workflow_policy_1878.py`.
+- CI artifacts can be generated for PR review, but are NOT authorized production releases.
+- Keep remote `main` unchanged until source-history reconciliation, CI, Moodle staging and human approval.

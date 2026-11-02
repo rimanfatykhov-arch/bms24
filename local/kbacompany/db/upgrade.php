@@ -6096,6 +6096,12 @@ function xmldb_local_kbacompany_upgrade(int $oldversion): bool {
         upgrade_plugin_savepoint(true, 2026101877, 'local', 'kbacompany');
     }
 
+    // build1878: reviewable GitHub PR candidate artifacts and workflow policy gate.
+    // Version checkpoint only; no schema, ACL or business-data migrations.
+    if ($oldversion < 2026101878) {
+        upgrade_plugin_savepoint(true, 2026101878, 'local', 'kbacompany');
+    }
+
     return true;
 }
 

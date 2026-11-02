@@ -42,7 +42,7 @@ class GitHubImportTest(unittest.TestCase):
             "AGENTS.md":"# agents\n",
             "tools/dev_ai_gate.py":"# checker\n",
             "local/kbacompany/db/upgrade.php":"<?php // checkpoint\n",
-            "local/kbacompany/version.php":"<?php\n$plugin->version = 2026101877;\n",
+            "local/kbacompany/version.php":"<?php\n$plugin->version = 2026101878;\n",
             "README.md":"# BMS24 latest\n",
         }.items():
             file = self.src / name
