@@ -161,9 +161,10 @@ if (!$outsiderid) {
     echo "Create an ordinary test user via approved staging process and rerun --outsideruserid=ID.\n";
     exit(4);
 }
+$outsidervisible = $access::get_allowed_companies($outsiderid);
 if ($access::has_full_company_access($companyid, $outsiderid) ||
     $access::can_manage_company_implementation($companyid, $outsiderid) ||
-    isset($access::get_allowed_companies($outsiderid)[$companyid])) {
+    isset($outsidervisible[$companyid])) {
     cli_error('FAIL: unrelated user can access target corporate company.');
 }
 echo "PASS: unrelated-user denial (user id: $outsiderid)\n";
