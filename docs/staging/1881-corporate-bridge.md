@@ -46,3 +46,28 @@ back the applied bridge; do not casually delete corporate rows because other
 corporate tables may reference them.
 
 No production deployment or test-server installation is included in this PR.
+
+## Stage 1881.17: guarded installer (dry-run only)
+
+The GitHub branch contains `tools/staging/install_corporate_bridge_staging.sh`.
+To install without WinSCP, fetch the branch and load the installer onto the
+staging VDS (run as root). Inspect the file before executing:
+
+    REPO=/srv/bms24-staging/workspace/bms24
+    BRANCH=fix/1881-corporate-staging-bridge
+    runuser -u bmsdev -- git -C "$REPO" fetch --no-tags origin \
+      "refs/heads/$BRANCH:refs/remotes/origin/$BRANCH"
+    runuser -u bmsdev -- git -C "$REPO" show \
+      "refs/remotes/origin/$BRANCH:tools/staging/install_corporate_bridge_staging.sh" \
+      > /tmp/bms24-stage1881-install.sh
+    bash -n /tmp/bms24-stage1881-install.sh
+    bash /tmp/bms24-stage1881-install.sh
+
+The installer backs up any existing staging CLI file outside the webroot,
+installs only the bridge CLI, runs PHP syntax check **inside** the Docker
+webserver, and performs the read-only dry-run. On failure after installation,
+it restores the former CLI file. **It never executes --apply**.
+
+Do not interpret `DRY_RUN_OK` as proof that `implementation.php` works.
+The existing staging snapshot shows the corporate registry empty, so a
+legitimate, reviewed `--apply` and browser ACL checks are still necessary.
