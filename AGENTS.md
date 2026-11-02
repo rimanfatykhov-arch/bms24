@@ -1,4 +1,4 @@
-# BMS24 Dev AI — instructions for code agents (build2026101875)
+# BMS24 Dev AI — instructions for code agents (build2026101876)
 
 ## Product ownership
 The product owner approves scope, architecture-breaking changes and releases.
@@ -52,3 +52,14 @@ without evidence. Update release notes, tests, checksum and human sign-off.
   the production Moodle ZIP; keep them in the Git source repository.
 - `tools/verify_install.py` verifies the install archive and its manifest.
 - Timeweb staging preparation is manual and requires independent server review.
+
+
+## Machine dates and timezone contract (build1876)
+
+- For DB date keys, date controls, calendar projections, task SLA or 
+  HTML `datetime-local` values, call `business_date_service::day()`,
+  `::datetime_local()` or `::yesterday()`; never use localized `userdate()` output.
+- The prior `battleplan_date` incident (Nov 2 2026) is covered by both 
+  `tools/test_battleplan_date_1875.py` and `tools/test_business_dates_1876.py`.
+- Do not alter existing human-facing `userdate()` labels; keep the domain's
+  strict `YYYY-MM-DD` validators and timezone-aware `core_date` semantics.

@@ -40,6 +40,8 @@ jobs:
           python local/kbacompany/cli/test_rc30_offline_1871.py
       - name: Workspace Battle Plan date hotfix regression
         run: python tools/test_battleplan_date_1875.py
+      - name: Machine-date ISO regression (week, dates, calendar)
+        run: python tools/test_business_dates_1876.py
       - name: PHP 8.1 syntax
         run: find local/kbacompany -name '*.php' -type f -print0 | xargs -0 -n1 -P8 php -l > /tmp/bms-php-lint.txt
       - name: JavaScript syntax
@@ -49,11 +51,11 @@ jobs:
       - name: Build and verify deterministic candidate
         run: |
           mkdir -p artifacts
-          python tools/build_install.py --output artifacts/INSTALL_local_kbacompany_1.1.0-rc29_build2026101875.zip --manifest artifacts/MANIFEST_build2026101875.json
+          python tools/build_install.py --output artifacts/INSTALL_local_kbacompany_1.1.0-rc29_build2026101876.zip --manifest artifacts/MANIFEST_build2026101876.json
           python tools/build_install.py --output artifacts/repeat.zip
-          cmp artifacts/INSTALL_local_kbacompany_1.1.0-rc29_build2026101875.zip artifacts/repeat.zip
-          python tools/verify_install.py --zip artifacts/INSTALL_local_kbacompany_1.1.0-rc29_build2026101875.zip --manifest artifacts/MANIFEST_build2026101875.json --expected-version 2026101875
-          sha256sum artifacts/INSTALL_local_kbacompany_1.1.0-rc29_build2026101875.zip > artifacts/SHA256SUMS.txt
+          cmp artifacts/INSTALL_local_kbacompany_1.1.0-rc29_build2026101876.zip artifacts/repeat.zip
+          python tools/verify_install.py --zip artifacts/INSTALL_local_kbacompany_1.1.0-rc29_build2026101876.zip --manifest artifacts/MANIFEST_build2026101876.json --expected-version 2026101876
+          sha256sum artifacts/INSTALL_local_kbacompany_1.1.0-rc29_build2026101876.zip > artifacts/SHA256SUMS.txt
           rm artifacts/repeat.zip
       # No deployment job or credentials in CI. Artifacts are release CANDIDATES,
       # require Moodle staging acceptance and explicit human authorization.
@@ -61,10 +63,10 @@ jobs:
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         uses: actions/upload-artifact@v4
         with:
-          name: bms24-candidate-build2026101875
+          name: bms24-candidate-build2026101876
           path: |
-            artifacts/INSTALL_local_kbacompany_1.1.0-rc29_build2026101875.zip
-            artifacts/MANIFEST_build2026101875.json
+            artifacts/INSTALL_local_kbacompany_1.1.0-rc29_build2026101876.zip
+            artifacts/MANIFEST_build2026101876.json
             artifacts/SHA256SUMS.txt
           if-no-files-found: error
           retention-days: 14

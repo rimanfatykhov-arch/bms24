@@ -283,10 +283,10 @@ class communication_center_ui_service {
         $messagehtml = '';
         $previousday = null;
         foreach ($visiblemessages as $message) {
-            $day = userdate((int)$message['time_created'], '%Y-%m-%d');
+            $day = business_date_service::day((int)$message['time_created']);
             if ($day !== $previousday) {
-                $today = userdate(time(), '%Y-%m-%d');
-                $yesterday = userdate(time() - DAYSECS, '%Y-%m-%d');
+                $today = business_date_service::day(time());
+                $yesterday = business_date_service::yesterday();
                 $label = $day === $today ? self::tr('bmscomm3_today') :
                     ($day === $yesterday ? self::tr('bmscomm3_yesterday') :
                     userdate((int)$message['time_created'], '%d.%m.%Y'));

@@ -90,7 +90,7 @@ class task_service {
      * @return array{today: string, until: string} Seven dates including today.
      */
     public static function reporting_dates(?int $timestamp = null): array {
-        $today = userdate($timestamp ?? time(), '%Y-%m-%d');
+        $today = business_date_service::day($timestamp ?? time());
         $base = \DateTimeImmutable::createFromFormat('!Y-m-d', $today, new \DateTimeZone('UTC'));
         if ($base === false) {
             throw new \coding_exception('Task Center expected an ISO local calendar date');

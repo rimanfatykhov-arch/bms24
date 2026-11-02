@@ -291,7 +291,7 @@ if (empty($data['position_indicators'])) {
         if ($canwritefact) {
             $chosen = (string)optional_param('fact', '', PARAM_RAW_TRIMMED) === (string)$m['bind_uuid'] ||
                 ($action === 'indicatorfact' && (string)($values['binduuid'] ?? '') === (string)$m['bind_uuid']);
-            $today = userdate(time(), '%Y-%m-%d');
+            $today = \local_kbacompany\local\business_date_service::day(time());
             $defaultdate = $today < $plan['period_start'] ? $plan['period_start'] :
                 ($today > $plan['period_end'] ? $plan['period_end'] : $today);
             $querydate = optional_param('factdate', '', PARAM_RAW_TRIMMED);
