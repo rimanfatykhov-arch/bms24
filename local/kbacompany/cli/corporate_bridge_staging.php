@@ -72,6 +72,18 @@ if ($legacy && !(int)$legacy->active) {
 if (!$legacy && $DB->count_records('local_kbacorp_company') !== 0) {
     cli_error('STOP: unmapped corporate companies exist; manual reconciliation required.');
 }
+if ($legacy) {
+    // Prevent two canonical companies from silently sharing one legacy tenant.
+    $bindings = $DB->get_records('local_kbacompany_company', ['legacycompanyid' => $legacyid]);
+    if (count($bindings) !== 1 || !isset($bindings[$company->id])) {
+        cli_error('STOP: ambiguous legacycompanyid mapping across canonical companies.');
+    }
+} else {
+    // The corporate schema stores CHAR(255), while canonical primaryactivity is TEXT.
+    if (core_text::strlen((string)($company->primaryactivity ?? '')) > 255) {
+        cli_error('STOP: canonical primaryactivity cannot fit in legacy CHAR(255).');
+    }
+}
 
 $expectedroles = static function(stdClass $m): array {
     return [
@@ -125,6 +137,20 @@ try {
     }
     if ($legacy && $DB->count_records('local_kbacorp_member', ['companyid' => $legacyid]) !== count($existingmembers)) {
         cli_error('STOP: legacy membership count changed since preflight.');
+    }
+    $freshmembers = $DB->get_records('local_kbacompany_member', [
+        'companyuuid' => $uuid, 'active' => 1,
+    ]);
+    if (count($freshmembers) !== count($members)) {
+        cli_error('STOP: canonical membership count changed since preflight.');
+    }
+    foreach ($freshmembers as $id => $fresh) {
+        if (!isset($members[$id]) || (int)$fresh->userid !== (int)$members[$id]->userid ||
+            $expectedroles($fresh) !== $expectedroles($members[$id]) ||
+            (int)$fresh->effectivefrom !== (int)$members[$id]->effectivefrom ||
+            (int)$fresh->effectiveto !== (int)$members[$id]->effectiveto) {
+            cli_error('STOP: canonical membership changed since preflight.');
+        }
     }
     $transaction = $DB->start_delegated_transaction();
     if (!$legacy) {
