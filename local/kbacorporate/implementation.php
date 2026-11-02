@@ -10,13 +10,29 @@ if ($companyid <= 0) {
     if (!$canmethodology && !$canscopedimplementation) {
         require_capability('local/kbacorporate:managecompanyimplementation', $context);
     }
-    $companies = \local_kbacorporate\local\access::get_allowed_companies((int)$USER->id);
-    $companies = array_filter($companies, static function($company) use ($USER) {
-        return \local_kbacorporate\local\access::has_full_company_access(
-            (int)$company->id, (int)$USER->id);
-    });
+    $companies = \local_kbacorporate\local\implementation_entry_service::manageable_companies(
+        (int)$USER->id);
     if (!$companies) {
-        throw new moodle_exception('companynotallowed', 'local_kbacorporate');
+        // Authorised user with no company context: explain the next step,
+        // but never grant access or create a corporate company implicitly.
+        $PAGE->set_context($context);
+        $PAGE->set_url(new moodle_url('/local/kbacorporate/implementation.php'));
+        $PAGE->set_pagelayout('standard');
+        $PAGE->set_title(get_string('bmsimplementation', 'local_kbacorporate'));
+        $PAGE->set_heading(get_string('bmsimplementation', 'local_kbacorporate'));
+        echo $OUTPUT->header();
+        echo $OUTPUT->heading(get_string('bmsimplementation', 'local_kbacorporate'));
+        echo $OUTPUT->notification(get_string('implementationnocompany', 'local_kbacorporate'), 'info');
+        echo html_writer::div(
+            html_writer::link(
+                new moodle_url('/local/kbacompany/index.php', ['list' => 1]),
+                get_string('implementationopencompanylist', 'local_kbacorporate'),
+                ['class' => 'btn btn-primary']
+            ),
+            'mt-3'
+        );
+        echo $OUTPUT->footer();
+        exit;
     }
     if (count($companies) === 1) {
         $onlycompany = reset($companies);
