@@ -57,7 +57,7 @@ foreach ($canonical as $m) {
     }
     $userid = (int)$m->userid;
     if (isset($active[$userid]) ||
-        !$DB->record_exists('user', ['id' => $userid, 'deleted' => 0])) {
+        !$DB->record_exists('user', ['id' => $userid, 'deleted' => 0, 'suspended' => 0])) {
         cli_error('FAIL: duplicate or invalid canonical member.');
     }
     $active[$userid] = $m;
@@ -143,6 +143,10 @@ if ($outsiderid === 0) {
                 has_capability('local/kbacorporate:viewallcompanies', $context, $candidate)) {
                 continue;
             }
+            $candidatecompanies = $access::get_allowed_companies($candidate);
+            if (isset($candidatecompanies[$companyid])) {
+                continue; // Not an unrelated user: might be a legitimate department manager.
+            }
             $outsiderid = $candidate;
             break;
         }
@@ -154,6 +158,10 @@ if ($outsiderid === 0) {
         isset($active[$outsiderid]) || is_siteadmin($outsiderid) ||
         has_capability('local/kbacorporate:viewallcompanies', $context, $outsiderid)) {
         cli_error('STOP: requested outsider is invalid, privileged or a company member.');
+    }
+    $requestedvisible = $access::get_allowed_companies($outsiderid);
+    if (isset($requestedvisible[$companyid])) {
+        cli_error('STOP: requested outsider has existing company visibility; choose an unrelated test user.');
     }
 }
 if (!$outsiderid) {
