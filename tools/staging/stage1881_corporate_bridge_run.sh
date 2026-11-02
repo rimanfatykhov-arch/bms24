@@ -61,6 +61,21 @@ case "$MODE" in
         ' | gzip -1 > "$TMP"
         test -s "$TMP"
         gzip -t "$TMP"
+        # Do not treat a valid but empty SQL dump as a useful recovery point.
+        python3 - "$TMP" <<'PY'
+import gzip
+import sys
+required = {'local_kbacompany_company', 'local_kbacorp_company'}
+found = set()
+with gzip.open(sys.argv[1], 'rt', encoding='utf-8', errors='replace') as source:
+    for line in source:
+        if 'CREATE TABLE' in line:
+            found.update(name for name in required if name in line)
+if found != required:
+    raise SystemExit('STOP: DB dump missing required company schemas: ' +
+                     ', '.join(sorted(required - found)))
+print('STAGE1881_BACKUP_SCHEMA_OK')
+PY
         chmod 600 "$TMP"
         mv "$TMP" "$BACKUP"
         echo "STAGE1881_DATABASE_BACKUP_OK: $BACKUP"
