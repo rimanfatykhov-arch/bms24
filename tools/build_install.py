@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Deterministic, read-only packager for the full BMS24 Moodle plugin.
+"""Deterministic packager for production BMS24 Moodle plugin artifacts.
 
 Stable output across machines and builds for the *same source bytes*:
 canonical path ordering, fixed ZIP timestamps, normalized modes and encoding.
@@ -17,6 +17,10 @@ import zipfile
 ROOT = Path(__file__).resolve().parents[1]
 EXCLUDE_DIRS = {".git", ".idea", "__pycache__"}
 EXCLUDE_FILES = {".DS_Store", "Thumbs.db"}
+# Python under local/kbacompany/cli/ consists exclusively of development
+# linters, contract tests and legacy packaging tools. Moodle does not run it.
+# Keep those files in source control, never install them on PHP hosting.
+DEV_ONLY_SUFFIXES = {".py", ".pyc", ".pyo"}
 FORBIDDEN_FILES = {"config.php", ".env", "id_rsa", "id_ed25519"}
 ZIP_DATE = (1980, 1, 1, 0, 0, 0)
 
@@ -43,7 +47,7 @@ def collect_files(source: Path):
             continue
         if file.name in FORBIDDEN_FILES or file.name.startswith(".env."):
             raise ValueError("sensitive filename detected in source")
-        if file.name in EXCLUDE_FILES or file.suffix.lower() in {".pyc", ".zip"}:
+        if file.name in EXCLUDE_FILES or file.suffix.lower() in DEV_ONLY_SUFFIXES | {".zip"}:
             continue
         if ".tmp." in file.name:
             continue

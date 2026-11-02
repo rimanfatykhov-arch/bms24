@@ -6072,6 +6072,12 @@ function xmldb_local_kbacompany_upgrade(int $oldversion): bool {
         upgrade_plugin_savepoint(true, 2026101873, 'local', 'kbacompany');
     }
 
+    // build1874: production archive hygiene and GitHub candidate delivery.
+    // Version checkpoint only; no schema, ACL or business-data changes.
+    if ($oldversion < 2026101874) {
+        upgrade_plugin_savepoint(true, 2026101874, 'local', 'kbacompany');
+    }
+
     return true;
 }
 

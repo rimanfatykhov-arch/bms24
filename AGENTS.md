@@ -1,4 +1,4 @@
-# BMS24 Dev AI — instructions for code agents (build2026101873)
+# BMS24 Dev AI — instructions for code agents (build2026101874)
 
 ## Product ownership
 The product owner approves scope, architecture-breaking changes and releases.
@@ -44,3 +44,11 @@ a human decision. Never let a code author self-certify production readiness.
 Create candidate ZIP through `python tools/build_install.py --output artifacts/INSTALL.zip`.
 Never claim a live install, real PHPUnit, production acceptance, or approval
 without evidence. Update release notes, tests, checksum and human sign-off.
+
+## Infrastructure and distribution (1874)
+- GitHub Actions builds **candidate** archives only. No CI job has production
+  credentials or writes to the production Moodle instance.
+- `tools/build_install.py` excludes development-only Python `.py` files from
+  the production Moodle ZIP; keep them in the Git source repository.
+- `tools/verify_install.py` verifies the install archive and its manifest.
+- Timeweb staging preparation is manual and requires independent server review.

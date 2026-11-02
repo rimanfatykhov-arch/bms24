@@ -5,10 +5,13 @@ on:
     branches: [main]
 permissions:
   contents: read
+concurrency:
+  group: bms24-ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 jobs:
   checks:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 25
     steps:
       - uses: actions/checkout@v4
         with:
@@ -21,11 +24,12 @@ jobs:
           php-version: '8.1'
           tools: none
           coverage: none
-      - name: Agent policy and build tests
+      - name: Agent policy and packaging tests
         run: |
           python tools/dev_ai_gate.py
           python tools/test_dev_ai_tools.py
           python tools/test_dev_ai_cycle.py
+          python tools/test_ci_artifact.py
           python tools/dev_ai_cycle.py validate --task dev_ai/templates/task.example.json
       - name: Moodle static checks
         run: |
@@ -34,13 +38,31 @@ jobs:
           python local/kbacompany/cli/check_php81_compat.py
           python local/kbacompany/cli/check_rc29_regression_gate.py
           python local/kbacompany/cli/test_rc30_offline_1871.py
-      - name: PHP syntax
+      - name: PHP 8.1 syntax
         run: find local/kbacompany -name '*.php' -type f -print0 | xargs -0 -n1 -P8 php -l > /tmp/bms-php-lint.txt
-      - name: JS syntax
+      - name: JavaScript syntax
         run: find local/kbacompany -name '*.js' -type f -print0 | xargs -0 -n1 node --check
-      - name: Deterministic candidate ZIP
+      - name: Shell syntax (Timeweb host inspection)
+        run: bash -n infra/timeweb/staging-preflight.sh
+      - name: Build and verify deterministic candidate
         run: |
-          python tools/build_install.py --output /tmp/bms-a.zip
-          python tools/build_install.py --output /tmp/bms-b.zip
-          cmp /tmp/bms-a.zip /tmp/bms-b.zip
-          sha256sum /tmp/bms-a.zip
+          mkdir -p artifacts
+          python tools/build_install.py --output artifacts/INSTALL_local_kbacompany_1.1.0-rc29_build2026101874.zip --manifest artifacts/MANIFEST_build2026101874.json
+          python tools/build_install.py --output artifacts/repeat.zip
+          cmp artifacts/INSTALL_local_kbacompany_1.1.0-rc29_build2026101874.zip artifacts/repeat.zip
+          python tools/verify_install.py --zip artifacts/INSTALL_local_kbacompany_1.1.0-rc29_build2026101874.zip --manifest artifacts/MANIFEST_build2026101874.json --expected-version 2026101874
+          sha256sum artifacts/INSTALL_local_kbacompany_1.1.0-rc29_build2026101874.zip > artifacts/SHA256SUMS.txt
+          rm artifacts/repeat.zip
+      # No deployment job or credentials in CI. Artifacts are release CANDIDATES,
+      # require Moodle staging acceptance and explicit human authorization.
+      - name: Upload candidate artifact (main only)
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        uses: actions/upload-artifact@v4
+        with:
+          name: bms24-candidate-build2026101874
+          path: |
+            artifacts/INSTALL_local_kbacompany_1.1.0-rc29_build2026101874.zip
+            artifacts/MANIFEST_build2026101874.json
+            artifacts/SHA256SUMS.txt
+          if-no-files-found: error
+          retention-days: 14
