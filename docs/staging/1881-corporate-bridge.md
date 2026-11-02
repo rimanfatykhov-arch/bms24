@@ -115,3 +115,59 @@ Finally run authenticated browser checks on
 `/local/kbacorporate/implementation.php` with an entitled company manager
 and with an unrelated user. The latter must **not** gain access. These UX checks
 cannot be replaced by unauthenticated HTTP status codes.
+
+## Stage 1881.19 — ACL acceptance (read-only)
+
+New files:
+- `local/kbacompany/cli/corporate_acl_acceptance_staging.php`
+- `tools/staging/stage1881_acl_acceptance.sh`
+
+The acceptance script **only queries** the staging Moodle database. It refuses to
+run outside the configured `https://test.bms24.online` environment. It checks:
+- One-to-one canonical company UUID to legacy numeric company ID
+- Active memberships and all five member role flags match
+- Each canonical company manager is granted both company-wide visibility and
+  `managecompanyimplementation` (or `manageimplementationaudits`) capability
+- Non-manager employees do not inadvertently obtain full implementation access
+- An unrelated, nonprivileged Moodle user cannot access the target company
+
+It does not create users, change roles, alter capabilities, or perform DB migrations.
+
+### Staging execution
+
+After stage 1881.18 has completed and printed `STAGE1881_APPLY_AND_VERIFY_OK`:
+
+```bash
+REPO=/srv/bms24-staging/workspace/bms24
+BRANCH=fix/1881-corporate-staging-bridge
+runuser -u bmsdev -- git -C "$REPO" fetch --no-tags origin \
+  "refs/heads/$BRANCH:refs/remotes/origin/$BRANCH"
+runuser -u bmsdev -- git -C "$REPO" show \
+  "refs/remotes/origin/$BRANCH:tools/staging/stage1881_acl_acceptance.sh" \
+  > /tmp/bms24-stage1881-acl.sh
+bash -n /tmp/bms24-stage1881-acl.sh
+bash /tmp/bms24-stage1881-acl.sh
+```
+
+Expected after full test data setup:
+`STAGE1881_ACL_ACCEPTANCE_OK` and `STAGE1881_ACL_PHP_ACCEPTANCE_COMPLETED`.
+
+If there is no unrelated active Moodle user, the script returns exit code 4 and
+`ACCEPTANCE_PARTIAL`; create a normal unrelated **test** account via the
+approved Moodle admin interface and rerun the audit. Do not artificially
+grant privileges or disable permission checks just to pass this test.
+
+### Mandatory browser checks (not automatable from CLI alone)
+
+1. Login as test manager/admin. Open
+   `https://test.bms24.online/local/kbacorporate/implementation.php`,
+   confirm it loads and routes to the mapped company.
+2. Login as an unrelated ordinary test user and verify that the same company
+   ID URL is denied.
+3. Verify the BMS Company Core index and workspace still work, with no
+   `localhost:18080` redirects or PHP stack traces.
+4. Report results in the staging release checklist. Do not merge PR #17 or
+   deploy to production until all tests are documented.
+
+A CLI access service assertion is not proof that the authenticated browser
+session works. Never turn on public Moodle debugging to inspect errors.
