@@ -17,6 +17,12 @@ final class bms24_shell_service_test extends \advanced_testcase {
         $this->assertFalse(bms24_shell_service::is_enabled());
     }
 
+
+    public function test_owned_shell_uses_standalone_moodle_layout_contract(): void {
+        $this->assertSame('embedded', bms24_shell_service::OWNED_PAGE_LAYOUT);
+        $this->assertSame('bms24-owned-page', bms24_shell_service::OWNED_BODY_CLASS);
+    }
+
     public function test_unknown_component_is_rejected(): void {
         $this->expectException(\coding_exception::class);
         bms24_shell_service::fragment('../../theme_kba/bms/app_shell', []);

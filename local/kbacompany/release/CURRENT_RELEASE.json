@@ -1,0 +1,22 @@
+{
+    "component": "local_kbacompany",
+    "release": "1.1.0-rc29",
+    "build": 2026101839,
+    "documentation_layout": {
+        "technical": "docs/",
+        "release": "release/"
+    },
+    "google_drive": {
+        "master_context": "https://docs.google.com/document/d/1x4_0DyL8T2V2tHMEizIUdu0RWQD10yGbQZzZt_9EfFE/edit",
+        "roadmap": "https://docs.google.com/document/d/1HlfPe-8CygWFL8j-zrx4rKOPD0alCMTxKhIM6KqutdM/edit",
+        "release_register": "https://docs.google.com/document/d/1vOlKC_Jayerh0KSuQDzHeACN5IAvAW_VV0uxGGqhib4/edit",
+        "master_list": "https://docs.google.com/spreadsheets/d/1XqK0hvZ3QAkB7JarwrtwagniywUd2dRsBAHBDZcCM5c/edit"
+    },
+    "summary": "Task Center local calendar consistency for overdue and next seven days; no schema change",
+    "code_status": "Locally checked PHP syntax and isolated timezone/render smoke; Moodle live acceptance pending",
+    "live_acceptance": "NOT RUN",
+    "release_notes": "RELEASE_NOTES_TASK_CALENDAR_2026101839.md",
+    "documentation_checkpoint": "DOCUMENTATION_CHECKPOINT_2026101835.json",
+    "generated_at": "2026-10-27T05:34:37.115923+00:00",
+    "test_report": "TEST_REPORT_TASK_CALENDAR_2026101839.md"
+}

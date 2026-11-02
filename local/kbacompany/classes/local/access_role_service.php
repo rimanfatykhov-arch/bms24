@@ -64,6 +64,29 @@ final class access_role_service {
         return self::department_userids($companyuuid, $actor);
     }
 
+    /**
+     * Task listing must include department work which this actor may view, edit or
+     * approve. All three grants are checked in this company, for active roles,
+     * and expanded ONLY to employees in organisation units managed by the actor.
+     * This makes SQL list/readable_projection match can_view_row(), not broader.
+     */
+    public static function department_task_visibility_userids(string $companyuuid, int $actor): array {
+        global $DB;
+        company_context_service::context($companyuuid, $actor);
+        if (!has_capability('local/kbacompany:viewowncompany', \context_system::instance(), $actor)
+                && !is_siteadmin($actor)) { return []; }
+        $sql = "SELECT g.id FROM {local_kbacompany_aclgrant} g
+                  JOIN {local_kbacompany_aclrole} r ON r.id=g.roleid AND r.companyuuid=g.companyuuid
+                  JOIN {local_kbacompany_aclassign} a ON a.roleid=r.id AND a.companyuuid=r.companyuuid
+                 WHERE g.companyuuid=:company AND a.userid=:userid AND r.active=1
+                   AND g.objecttype='task' AND g.actionname IN ('view','edit','approve')
+                   AND g.scope='department'";
+        if (!$DB->record_exists_sql($sql, ['company'=>$companyuuid, 'userid'=>$actor])) {
+            return [];
+        }
+        return self::department_userids($companyuuid, $actor);
+    }
+
     /** A department-scoped creation grant never implies editing existing plans. */
     public static function department_plan_create_userids(string $companyuuid, int $actor): array {
         global $DB;
@@ -314,9 +337,12 @@ final class access_role_service {
         global $DB;
         self::require_administrator($companyuuid, $actor);
         self::own_role($companyuuid, $roleid);
-        if ($userid <= 0 || !$DB->record_exists('user',
+        // Enabling access requires an active, verified member. Disabling access
+        // must also work for suspended/deleted users or withdrawn memberships;
+        // otherwise a stale ACL assignment could survive until reactivation.
+        if ($userid <= 0 || ($enabled && (!$DB->record_exists('user',
                 ['id' => $userid, 'deleted' => 0, 'suspended' => 0]) ||
-                !self::is_company_member($companyuuid, $userid)) {
+                !self::is_company_member($companyuuid, $userid)))) {
             throw new \invalid_parameter_exception('User is not an active member of this company');
         }
         $conditions = ['companyuuid' => $companyuuid, 'roleid' => $roleid, 'userid' => $userid];
@@ -324,11 +350,13 @@ final class access_role_service {
         $existing = $DB->get_record(self::ASSIGN_TABLE, $conditions);
         if ($enabled && !$existing) {
             $DB->insert_record(self::ASSIGN_TABLE, (object)($conditions + ['assignedby' => $actor, 'timecreated' => time()]));
-        } else if ($enabled && $existing && (string)$existing->scope !== $scope) {
-            $existing->scope = $scope;
-            $DB->update_record(self::GRANT_TABLE, $existing);
         } else if (!$enabled && $existing) {
             $DB->delete_records(self::ASSIGN_TABLE, $conditions);
+        } else {
+            // Repeating the same assignment state is idempotent. Scope belongs
+            // to aclgrant, not aclassign; do not write a nonexistent field.
+            $tx->allow_commit();
+            return;
         }
         self::audit($companyuuid, $actor, $enabled ? 'assignment_created' : 'assignment_revoked', $roleid,
             'userid=' . $userid);

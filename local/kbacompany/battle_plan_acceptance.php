@@ -3,6 +3,7 @@ require_once(__DIR__ . '/../../config.php');
 
 use local_kbacompany\local\battle_plan_service;
 use local_kbacompany\local\weekly_management_acceptance_service;
+use local_kbacompany\local\bms24_ui_kit_service;
 
 require_login();
 $uuid = required_param('uuid', PARAM_ALPHANUMEXT);
@@ -31,14 +32,18 @@ echo html_writer::link(new moodle_url('/local/kbacompany/battle_plan_overview.ph
 
 $nodeopts=[''=>get_string('battleplan_overview_all_units','local_kbacompany')];
 foreach($data['orgnodes'] as $node){$nodeopts[$node['uuid']]=$node['name'];}
-echo html_writer::start_tag('form',['method'=>'get','class'=>'form-inline my-3']);
-echo html_writer::empty_tag('input',['type'=>'hidden','name'=>'uuid','value'=>$uuid]);
-echo html_writer::label(get_string('battleplan_week','local_kbacompany'),'bpac_week',false,['class'=>'mr-2']);
-echo html_writer::empty_tag('input',['type'=>'date','id'=>'bpac_week','name'=>'week','value'=>$data['week_start'],'class'=>'form-control mr-3']);
-echo html_writer::label(get_string('battleplan_overview_unit','local_kbacompany'),'bpac_unit',false,['class'=>'mr-2']);
-echo html_writer::select($nodeopts,'orgnode',$data['orgnode_filter'],false,['id'=>'bpac_unit','class'=>'form-control mr-3']);
-echo html_writer::tag('button',get_string('battleplan_show','local_kbacompany'),['type'=>'submit','class'=>'btn btn-primary']);
-echo html_writer::end_tag('form');
+echo bms24_ui_kit_service::filterbar(
+    new moodle_url('/local/kbacompany/battle_plan_acceptance.php'),
+    get_string('battleplan_acceptance_title','local_kbacompany'),
+    [
+        ['id'=>'bpac_week','name'=>'week','label'=>get_string('battleplan_week','local_kbacompany'),'type'=>'date','value'=>$data['week_start']],
+        ['id'=>'bpac_unit','name'=>'orgnode','label'=>get_string('battleplan_overview_unit','local_kbacompany'),'type'=>'select','value'=>$data['orgnode_filter'],'options'=>$nodeopts],
+    ],
+    ['uuid'=>$uuid],
+    new moodle_url('/local/kbacompany/battle_plan_acceptance.php',['uuid'=>$uuid]),
+    get_string('battleplan_show','local_kbacompany'),
+    get_string('reset','core')
+);
 echo html_writer::tag('p',s(battle_plan_service::period_label($data['week_start'],$data['week_end'])),['class'=>'text-muted']);
 
 $stateclass = $data['state']==='accepted' ? 'alert alert-success' : ($data['state']==='blocked' ? 'alert alert-danger' : 'alert alert-warning');

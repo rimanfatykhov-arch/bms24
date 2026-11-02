@@ -1,5 +1,5 @@
 <?xml version='1.0' encoding='UTF-8'?>
-<XMLDB xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" PATH="local/kbacompany/db" VERSION="2026101636" COMMENT="XMLDB file for KBA Company Core" xsi:noNamespaceSchemaLocation="../../../lib/xmldb/xmldb.xsd">
+<XMLDB xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" PATH="local/kbacompany/db" VERSION="2026101863" COMMENT="XMLDB file for KBA Company Core" xsi:noNamespaceSchemaLocation="../../../lib/xmldb/xmldb.xsd">
   <TABLES>
     <TABLE NAME="local_kbacompany_philosophy" COMMENT="Versioned company philosophy: purpose, mission and long-term vision">
       <FIELDS>
@@ -557,6 +557,7 @@
         <FIELD NAME="cause" TYPE="text" NOTNULL="false" SEQUENCE="false" />
         <FIELD NAME="status" TYPE="char" LENGTH="20" NOTNULL="true" SEQUENCE="false" DEFAULT="open" />
         <FIELD NAME="revision" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false" DEFAULT="1" />
+        <FIELD NAME="executionstatus" TYPE="char" LENGTH="16" NOTNULL="true" SEQUENCE="false" DEFAULT="pending" />
         <FIELD NAME="createdby" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false" DEFAULT="0" />
         <FIELD NAME="analysedby" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false" DEFAULT="0" />
         <FIELD NAME="closedby" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false" DEFAULT="0" />
@@ -1807,6 +1808,8 @@
         <FIELD NAME="status" TYPE="char" LENGTH="16" NOTNULL="true" DEFAULT="open" SEQUENCE="false" />
         <FIELD NAME="startdate" TYPE="char" LENGTH="10" NOTNULL="true" DEFAULT="" SEQUENCE="false" />
         <FIELD NAME="duedate" TYPE="char" LENGTH="10" NOTNULL="true" DEFAULT="" SEQUENCE="false" />
+        <FIELD NAME="starttime" TYPE="char" LENGTH="5" NOTNULL="true" DEFAULT="" SEQUENCE="false" />
+        <FIELD NAME="duetime" TYPE="char" LENGTH="5" NOTNULL="true" DEFAULT="" SEQUENCE="false" />
         <FIELD NAME="planminutes" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false" />
         <FIELD NAME="factminutes" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false" />
         <FIELD NAME="result" TYPE="text" NOTNULL="false" SEQUENCE="false" />
@@ -1828,6 +1831,7 @@
         <INDEX NAME="observer_ix" UNIQUE="false" FIELDS="companyuuid, observerid, status" />
         <INDEX NAME="source_ix" UNIQUE="false" FIELDS="companyuuid, sourcekind, sourceuuid, sourcerevision" />
         <INDEX NAME="due_ix" UNIQUE="false" FIELDS="companyuuid, duedate, status" />
+        <INDEX NAME="status_due_ix" UNIQUE="false" FIELDS="companyuuid, status, duedate" />
         <INDEX NAME="parent_ix" UNIQUE="false" FIELDS="companyuuid, parentuuid" />
         <INDEX NAME="context_ix" UNIQUE="false" FIELDS="companyuuid, contextkind, contextuuid, contextrevision" />
       </INDEXES>
@@ -1870,6 +1874,7 @@
       </KEYS>
       <INDEXES>
         <INDEX NAME="task_ix" UNIQUE="false" FIELDS="companyuuid, taskuuid, timecreated" />
+        <INDEX NAME="lastlog_ix" UNIQUE="false" FIELDS="companyuuid, taskuuid, id" />
         <INDEX NAME="actor_ix" UNIQUE="false" FIELDS="actorid, timecreated" />
       </INDEXES>
     </TABLE>
@@ -1930,6 +1935,8 @@
         <INDEX NAME="uuid_uix" UNIQUE="true" FIELDS="uuid" />
         <INDEX NAME="reference_uix" UNIQUE="true" FIELDS="companyuuid, planuuid, provider, externalid" />
         <INDEX NAME="stream_ix" UNIQUE="false" FIELDS="companyuuid, planuuid, stream" />
+        <INDEX NAME="legacy_task_ix" UNIQUE="false" FIELDS="companyuuid, provider, taskuuid" />
+        <INDEX NAME="provider_ref_ix" UNIQUE="false" FIELDS="companyuuid, provider, externalid" />
       </INDEXES>
     </TABLE>
     <TABLE NAME="local_kbacompany_bplanrev" COMMENT="Append-only Battle Plan approval and correction review events">
@@ -2044,7 +2051,7 @@
         <INDEX NAME="user_ix" UNIQUE="false" FIELDS="companyuuid, userid, active" />
       </INDEXES>
     </TABLE>
-    <TABLE NAME="local_kbacompany_commmsg" COMMENT="Append-only BMS communication messages">
+    <TABLE NAME="local_kbacompany_commmsg" COMMENT="BMS communication messages with audited author corrections">
       <FIELDS>
         <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true" />
         <FIELD NAME="companyuuid" TYPE="char" LENGTH="36" NOTNULL="true" SEQUENCE="false" />
@@ -2065,6 +2072,24 @@
         <INDEX NAME="thread_ix" UNIQUE="false" FIELDS="companyuuid, threaduuid, timecreated" />
         <INDEX NAME="author_ix" UNIQUE="false" FIELDS="companyuuid, authorid, timecreated" />
         <INDEX NAME="task_ix" UNIQUE="false" FIELDS="companyuuid, taskuuid" />
+      </INDEXES>
+    </TABLE>
+    <TABLE NAME="local_kbacompany_commrev" COMMENT="Private audit of message changes, not exposed in the messenger">
+      <FIELDS>
+        <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true" />
+        <FIELD NAME="companyuuid" TYPE="char" LENGTH="36" NOTNULL="true" SEQUENCE="false" />
+        <FIELD NAME="messageuuid" TYPE="char" LENGTH="36" NOTNULL="true" SEQUENCE="false" />
+        <FIELD NAME="actorid" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false" />
+        <FIELD NAME="action" TYPE="char" LENGTH="16" NOTNULL="true" SEQUENCE="false" />
+        <FIELD NAME="oldbody" TYPE="text" NOTNULL="true" SEQUENCE="false" />
+        <FIELD NAME="timecreated" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false" />
+      </FIELDS>
+      <KEYS>
+        <KEY NAME="primary" TYPE="primary" FIELDS="id" />
+      </KEYS>
+      <INDEXES>
+        <INDEX NAME="message_ix" UNIQUE="false" FIELDS="companyuuid, messageuuid" />
+        <INDEX NAME="actor_ix" UNIQUE="false" FIELDS="actorid" />
       </INDEXES>
     </TABLE>
     <TABLE NAME="local_kbacompany_commread" COMMENT="Per-user last read message for communication threads">
@@ -3486,6 +3511,97 @@
       </FIELDS>
       <KEYS><KEY NAME="primary" TYPE="primary" FIELDS="id" /></KEYS>
       <INDEXES><INDEX NAME="company_user_uix" UNIQUE="true" FIELDS="companyuuid,userid" /></INDEXES>
+    </TABLE>
+    <TABLE NAME="local_kbacompany_bp_proto" COMMENT="Append-only task-linked weekly coordination protocol revisions">
+      <FIELDS>
+        <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true" />
+        <FIELD NAME="companyuuid" TYPE="char" LENGTH="36" NOTNULL="true" SEQUENCE="false" />
+        <FIELD NAME="weekstart" TYPE="char" LENGTH="10" NOTNULL="true" SEQUENCE="false" />
+        <FIELD NAME="taskuuid" TYPE="char" LENGTH="36" NOTNULL="true" SEQUENCE="false" />
+        <FIELD NAME="revision" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false" DEFAULT="1" />
+        <FIELD NAME="reason" TYPE="text" NOTNULL="true" SEQUENCE="false" />
+        <FIELD NAME="decisiontext" TYPE="text" NOTNULL="true" SEQUENCE="false" />
+        <FIELD NAME="owneruserid" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false" DEFAULT="0" />
+        <FIELD NAME="duedate" TYPE="char" LENGTH="10" NOTNULL="true" SEQUENCE="false" DEFAULT="" />
+        <FIELD NAME="executionstatus" TYPE="char" LENGTH="16" NOTNULL="true" SEQUENCE="false" DEFAULT="pending" />
+        <FIELD NAME="createdby" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false" DEFAULT="0" />
+        <FIELD NAME="timecreated" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false" DEFAULT="0" />
+      </FIELDS>
+      <KEYS><KEY NAME="primary" TYPE="primary" FIELDS="id" /></KEYS>
+      <INDEXES>
+        <INDEX NAME="task_revision_uix" UNIQUE="true" FIELDS="companyuuid,weekstart,taskuuid,revision" />
+        <INDEX NAME="company_week_ix" UNIQUE="false" FIELDS="companyuuid,weekstart" />
+      </INDEXES>
+    </TABLE>
+    <TABLE NAME="local_kbacompany_bp_baudit" COMMENT="Immutable log of confirmed decision bulk operations">
+      <FIELDS>
+        <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true" />
+        <FIELD NAME="companyuuid" TYPE="char" LENGTH="36" NOTNULL="true" SEQUENCE="false" />
+        <FIELD NAME="actoruserid" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false" />
+        <FIELD NAME="operation" TYPE="char" LENGTH="16" NOTNULL="true" SEQUENCE="false" />
+        <FIELD NAME="selectedcount" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false" DEFAULT="0" />
+        <FIELD NAME="updatedcount" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false" DEFAULT="0" />
+        <FIELD NAME="skippedcount" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false" DEFAULT="0" />
+        <FIELD NAME="detailspayload" TYPE="text" NOTNULL="false" SEQUENCE="false" />
+        <FIELD NAME="timecreated" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false" DEFAULT="0" />
+      </FIELDS>
+      <KEYS><KEY NAME="primary" TYPE="primary" FIELDS="id" /></KEYS>
+      <INDEXES>
+        <INDEX NAME="company_time_ix" UNIQUE="false" FIELDS="companyuuid,timecreated" />
+      </INDEXES>
+    </TABLE>
+    <TABLE NAME="local_kbacompany_implproj" COMMENT="Explicit mapping of paid Corporate implementation program to existing BMS admin project">
+      <FIELDS>
+        <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true" />
+        <FIELD NAME="companyuuid" TYPE="char" LENGTH="36" NOTNULL="true" />
+        <FIELD NAME="corporatecompanyid" TYPE="int" LENGTH="10" NOTNULL="true" />
+        <FIELD NAME="programid" TYPE="int" LENGTH="10" NOTNULL="true" />
+        <FIELD NAME="projectuuid" TYPE="char" LENGTH="36" NOTNULL="true" />
+        <FIELD NAME="createdby" TYPE="int" LENGTH="10" NOTNULL="true" />
+        <FIELD NAME="timecreated" TYPE="int" LENGTH="10" NOTNULL="true" />
+      </FIELDS>
+      <KEYS>
+        <KEY NAME="primary" TYPE="primary" FIELDS="id" />
+      </KEYS>
+      <INDEXES>
+        <INDEX NAME="program_uix" UNIQUE="true" FIELDS="companyuuid,programid" />
+        <INDEX NAME="project_uix" UNIQUE="true" FIELDS="companyuuid,projectuuid" />
+      </INDEXES>
+    </TABLE>
+    <TABLE NAME="local_kbacompany_taskbundle" COMMENT="Company task bundle templates with immutable captured content">
+      <FIELDS>
+        <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true" />
+        <FIELD NAME="companyuuid" TYPE="char" LENGTH="36" NOTNULL="true" SEQUENCE="false" />
+        <FIELD NAME="uuid" TYPE="char" LENGTH="36" NOTNULL="true" SEQUENCE="false" />
+        <FIELD NAME="title" TYPE="char" LENGTH="255" NOTNULL="true" SEQUENCE="false" />
+        <FIELD NAME="payload" TYPE="text" NOTNULL="true" SEQUENCE="false" />
+        <FIELD NAME="status" TYPE="char" LENGTH="12" NOTNULL="true" DEFAULT="active" SEQUENCE="false" />
+        <FIELD NAME="createdby" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false" />
+        <FIELD NAME="timecreated" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false" />
+        <FIELD NAME="timemodified" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false" />
+      </FIELDS>
+      <KEYS><KEY NAME="primary" TYPE="primary" FIELDS="id" /></KEYS>
+      <INDEXES>
+        <INDEX NAME="uuid_uix" UNIQUE="true" FIELDS="uuid" />
+        <INDEX NAME="company_status_ix" UNIQUE="false" FIELDS="companyuuid, status" />
+      </INDEXES>
+    </TABLE>
+    <TABLE NAME="local_kbacompany_taskbrun" COMMENT="Idempotency receipts for atomic task template launches">
+      <FIELDS>
+        <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true" />
+        <FIELD NAME="companyuuid" TYPE="char" LENGTH="36" NOTNULL="true" SEQUENCE="false" />
+        <FIELD NAME="requestkey" TYPE="char" LENGTH="32" NOTNULL="true" SEQUENCE="false" />
+        <FIELD NAME="fingerprint" TYPE="char" LENGTH="64" NOTNULL="true" SEQUENCE="false" />
+        <FIELD NAME="templateuuid" TYPE="char" LENGTH="36" NOTNULL="true" SEQUENCE="false" />
+        <FIELD NAME="parentuuid" TYPE="char" LENGTH="36" NOTNULL="true" SEQUENCE="false" />
+        <FIELD NAME="createdby" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false" />
+        <FIELD NAME="timecreated" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false" />
+      </FIELDS>
+      <KEYS><KEY NAME="primary" TYPE="primary" FIELDS="id" /></KEYS>
+      <INDEXES>
+        <INDEX NAME="company_request_uix" UNIQUE="true" FIELDS="companyuuid, requestkey" />
+        <INDEX NAME="template_ix" UNIQUE="false" FIELDS="companyuuid, templateuuid" />
+      </INDEXES>
     </TABLE>
   </TABLES>
 </XMLDB>

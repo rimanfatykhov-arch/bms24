@@ -1,0 +1,12 @@
+{
+    "component": "local_kbacompany",
+    "release": "1.1.0-rc29",
+    "build": 2026101816,
+    "summary": "Explicit Corporate implementation program to existing BMS project mapping",
+    "code_status": "Code ready",
+    "live_acceptance": "HOLD pending Moodle 4.1 PHP 8.1 multi-company acceptance",
+    "release_notes": "RELEASE_NOTES_RC29_BMS_IMPL_PROJECT_LINK_2026101816.md",
+    "register": "RELEASE_REGISTER_LOCAL.md",
+    "generated_at": "2026-10-25T20:24:12+00:00",
+    "guard": "Packaging must fail when cli/release_docs_checkpoint.php --check exits non-zero."
+}

@@ -195,8 +195,8 @@ class battle_plan_coverage_service {
                     'count' => 1,
                     'details' => '',
                     'action_url' => (new \moodle_url('/local/kbacompany/battle_plan.php', [
-                        'uuid' => $companyuuid, 'user' => (int)$assignment->userid,
-                        'position' => (string)$assignment->positionuuid, 'week' => $weekstart,
+                        'uuid' => $companyuuid, 'view' => 'create', 'contextual' => 1,
+                        'user' => (int)$assignment->userid, 'position' => (string)$assignment->positionuuid, 'week' => $weekstart,
                     ]))->out(false),
                     'action_kind' => 'battleplan',
                 ];

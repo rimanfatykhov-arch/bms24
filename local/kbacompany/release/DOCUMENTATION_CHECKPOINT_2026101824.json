@@ -1,0 +1,12 @@
+{
+    "component": "local_kbacompany",
+    "release": "1.1.0-rc29",
+    "build": 2026101824,
+    "summary": "Communication Center 3.1: safe bounded live-refresh without page reload",
+    "code_status": "Code ready",
+    "live_acceptance": "NOT RUN: Moodle 4.1 / PHP 8.1 / MySQL 5.7",
+    "release_notes": "RELEASE_NOTES_RC29_COMMUNICATION_LIVE_2026101824.md",
+    "register": "RELEASE_REGISTER_LOCAL.md",
+    "generated_at": "2026-10-26T08:49:09+00:00",
+    "guard": "Packaging must fail when cli/release_docs_checkpoint.php --check exits non-zero."
+}

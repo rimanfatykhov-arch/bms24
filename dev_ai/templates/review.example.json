@@ -1,0 +1,10 @@
+{
+  "schema_version": 1,
+  "task_id": "BMS-EXAMPLE",
+  "role": "qa",
+  "reviewer_id": "qa-agent-01",
+  "result": "HOLD",
+  "head_sha": "replace-with-inspection-head-sha",
+  "change_sha256": "replace-with-inspection-change-sha256",
+  "evidence": ["Команды тестов и их фактические результаты; не заполнять вымышленными данными"]
+}

@@ -112,7 +112,7 @@ class calendar_workspace_service {
                     continue;
                 }
                 $source = self::event_source_label($event, $courses, $scope);
-                $daykey = userdate($eventstart, '%Y-%m-%d');
+                $daykey = business_date_service::day($eventstart);
                 $generated = self::is_generated_event($event);
                 $name = format_string((string)($event->name ?? ''));
                 if ($kind === 'manual' && $generated) {
@@ -209,7 +209,7 @@ class calendar_workspace_service {
             $add($events,[
                 'id'=>0,'name'=>$prefix.': '.(string)$task['title'],'course_id'=>0,
                 'course_name'=>calendar_workspace_ui_service::text('bmscalendar_source_task'),'group_id'=>0,'module'=>'','event_type'=>'task',
-                'time_start'=>$ts,'duration'=>0,'day_key'=>userdate($ts,'%Y-%m-%d'),'time_label'=>calendar_workspace_ui_service::text('bmscalendar_all_day'),
+                'time_start'=>$ts,'duration'=>0,'day_key'=>business_date_service::day($ts),'time_label'=>calendar_workspace_ui_service::text('bmscalendar_all_day'),
                 'date_label'=>userdate($ts,get_string('strftimedaydate')),'generated'=>false,'source_kind'=>'task','source_label'=>calendar_workspace_ui_service::text('bmscalendar_source_task'),
                 'all_day'=>true,'kind_label'=>calendar_workspace_ui_service::text('bmscalendar_kind_task'),'url'=>(new \moodle_url('/local/kbacompany/tasks.php',['uuid'=>$companyuuid,'task'=>$task['uuid'],'view'=>'detail']))->out(false),
                 'moodle_url'=>'','can_manage'=>false,'status'=>(string)$task['status'],
@@ -223,7 +223,7 @@ class calendar_workspace_service {
             $duration=max(0,(int)$meeting['ends_at']-$ts);
             $add($events,[
                 'id'=>0,'name'=>(string)$meeting['title'],'course_id'=>0,'course_name'=>calendar_workspace_ui_service::text('bmscalendar_source_meeting'),
-                'group_id'=>0,'module'=>'','event_type'=>'meeting','time_start'=>$ts,'duration'=>$duration,'day_key'=>userdate($ts,'%Y-%m-%d'),
+                'group_id'=>0,'module'=>'','event_type'=>'meeting','time_start'=>$ts,'duration'=>$duration,'day_key'=>business_date_service::day($ts),
                 'time_label'=>userdate($ts,get_string('strftimetime')),'date_label'=>userdate($ts,get_string('strftimedaydate')),'generated'=>false,
                 'source_kind'=>'meeting','source_label'=>calendar_workspace_ui_service::text('bmscalendar_source_meeting'),'all_day'=>false,
                 'kind_label'=>calendar_workspace_ui_service::text('bmscalendar_kind_meeting'),'url'=>(new \moodle_url('/local/kbacompany/meetings.php',['uuid'=>$companyuuid,'meeting'=>$meeting['uuid']]))->out(false),
@@ -239,7 +239,7 @@ class calendar_workspace_service {
             if(trim((string)$plan['employee'])!==''){$name.=' · '.(string)$plan['employee'];}
             $add($events,[
                 'id'=>0,'name'=>$name,'course_id'=>0,'course_name'=>calendar_workspace_ui_service::text('bmscalendar_source_battleplan'),'group_id'=>0,
-                'module'=>'','event_type'=>'battleplan','time_start'=>$ts,'duration'=>0,'day_key'=>userdate($ts,'%Y-%m-%d'),'time_label'=>calendar_workspace_ui_service::text('bmscalendar_all_day'),
+                'module'=>'','event_type'=>'battleplan','time_start'=>$ts,'duration'=>0,'day_key'=>business_date_service::day($ts),'time_label'=>calendar_workspace_ui_service::text('bmscalendar_all_day'),
                 'date_label'=>userdate($ts,get_string('strftimedaydate')),'generated'=>false,'source_kind'=>'battleplan','source_label'=>calendar_workspace_ui_service::text('bmscalendar_source_battleplan'),
                 'all_day'=>true,'kind_label'=>calendar_workspace_ui_service::text('bmscalendar_kind_battleplan'),'url'=>(new \moodle_url('/local/kbacompany/battle_plan.php',['uuid'=>$companyuuid,'plan'=>$plan['uuid'],'view'=>'detail']))->out(false),
                 'moodle_url'=>'','can_manage'=>false,'status'=>(string)$plan['status'],
@@ -252,7 +252,7 @@ class calendar_workspace_service {
                 $ts=(int)$checkpoint['planned_at']; if($ts<=0){continue;}
                 $add($events,[
                     'id'=>0,'name'=>(string)$checkpoint['title'],'course_id'=>0,'course_name'=>calendar_workspace_ui_service::text('bmscalendar_source_checkpoint'),'group_id'=>0,
-                    'module'=>'','event_type'=>'checkpoint','time_start'=>$ts,'duration'=>0,'day_key'=>userdate($ts,'%Y-%m-%d'),'time_label'=>userdate($ts,get_string('strftimetime')),
+                    'module'=>'','event_type'=>'checkpoint','time_start'=>$ts,'duration'=>0,'day_key'=>business_date_service::day($ts),'time_label'=>userdate($ts,get_string('strftimetime')),
                     'date_label'=>userdate($ts,get_string('strftimedaydate')),'generated'=>false,'source_kind'=>'checkpoint','source_label'=>calendar_workspace_ui_service::text('bmscalendar_source_checkpoint'),
                     'all_day'=>false,'kind_label'=>calendar_workspace_ui_service::text('bmscalendar_kind_checkpoint'),'url'=>(new \moodle_url('/local/kbacompany/management_cycles.php',['uuid'=>$companyuuid,'cycle'=>$checkpoint['cycle_uuid'],'tab'=>'checkpoints']))->out(false),
                     'moodle_url'=>'','can_manage'=>false,'status'=>(string)$checkpoint['status'],
@@ -277,7 +277,7 @@ class calendar_workspace_service {
                 $name = $templatelabel . ': ' . (string)$cycle['title'];
                 $add($events,[
                     'id'=>0,'name'=>$name,'course_id'=>0,'course_name'=>calendar_workspace_ui_service::text('bmscalendar_source_cycle'),'group_id'=>0,
-                    'module'=>'','event_type'=>'cycle','time_start'=>$ts,'duration'=>0,'day_key'=>userdate($ts,'%Y-%m-%d'),
+                    'module'=>'','event_type'=>'cycle','time_start'=>$ts,'duration'=>0,'day_key'=>business_date_service::day($ts),
                     'time_label'=>calendar_workspace_ui_service::text('bmscalendar_all_day'),'date_label'=>userdate($ts,get_string('strftimedaydate')),
                     'generated'=>false,'source_kind'=>'cycle','source_label'=>calendar_workspace_ui_service::text('bmscalendar_source_cycle'),
                     'all_day'=>true,'kind_label'=>$templatelabel,'url'=>(new \moodle_url('/local/kbacompany/management_cycles.php',[
@@ -323,7 +323,7 @@ class calendar_workspace_service {
 
         $days = [];
         $cursor = $startdt;
-        $today = userdate(time(), '%Y-%m-%d');
+        $today = business_date_service::day(time());
         while ($cursor <= $enddt) {
             $key = $cursor->format('Y-m-d');
             $days[] = [
@@ -567,7 +567,7 @@ equired_capability_exception $e) {
         foreach ($events as $event) {
             $byday[(string)$event['day_key']][] = $event;
         }
-        $today = userdate(time(), '%Y-%m-%d');
+        $today = business_date_service::day(time());
         $displaydays = [];
         $cursor = $startdt;
         while ($cursor <= $enddt) {
@@ -1014,13 +1014,13 @@ equired_capability_exception $e) {
             $slots[] = [
                 'start'=>$start,
                 'end'=>$end,
-                'start_value'=>userdate($start, '%Y-%m-%dT%H:%M'),
-                'end_value'=>userdate($end, '%Y-%m-%dT%H:%M'),
+                'start_value'=>business_date_service::datetime_local($start),
+                'end_value'=>business_date_service::datetime_local($end),
                 'label'=>userdate($start, get_string('strftimetime')).' — '.userdate($end, get_string('strftimetime')),
                 'meeting_url'=>(new \moodle_url('/local/kbacompany/meetings.php', [
                     'uuid'=>$companyuuid,
-                    'prefillstart'=>userdate($start, '%Y-%m-%dT%H:%M'),
-                    'prefillend'=>userdate($end, '%Y-%m-%dT%H:%M'),
+                    'prefillstart'=>business_date_service::datetime_local($start),
+                    'prefillend'=>business_date_service::datetime_local($end),
                     'prefillparticipantscsv'=>implode(',', $participants),
                 ]))->out(false),
             ];
@@ -1369,7 +1369,7 @@ equired_capability_exception $e) {
             string $action = 'new', int $eventid = 0, string $date = ''): array {
         $scope = ($scope === 'company') ? 'company' : 'my';
         $targets = self::create_targets($companyuuid, $userid, $scope);
-        $defaultstart = userdate(time() + HOURSECS, '%Y-%m-%dT%H:00');
+        $defaultstart = business_date_service::datetime_local(time() + HOURSECS, true);
         if (preg_match('/^\d{4}-\d{2}-\d{2}$/D', $date)) {
             $defaultstart = $date . 'T09:00';
         } else if (preg_match('/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/D', $date)) {
@@ -1391,7 +1391,7 @@ equired_capability_exception $e) {
             $values['eventid'] = (int)$record->id;
             $values['name'] = (string)$record->name;
             $values['description'] = (string)($record->description ?? '');
-            $values['start'] = userdate((int)$record->timestart, '%Y-%m-%dT%H:%M');
+            $values['start'] = business_date_service::datetime_local((int)$record->timestart);
             $values['duration'] = max(0, (int)round(((int)$record->timeduration) / MINSECS));
             if ((int)$record->userid === $userid && (int)$record->courseid <= SITEID) {
                 $values['target'] = 'personal';

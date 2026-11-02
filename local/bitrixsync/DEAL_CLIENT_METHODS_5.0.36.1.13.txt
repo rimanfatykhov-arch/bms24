@@ -1,6 +1,0 @@
-__construct
-get_company
-get_contact
-get_deal
-get_deal_contacts
-get_product_rows

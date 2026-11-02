@@ -1,9 +1,11 @@
-/* BMS24 owned shell W1. All selectors scoped: no Moodle/Bootstrap global override. */
-.bms24-app {--bms24-sidebar:#0B2B41;display:grid;grid-template-columns:258px minmax(0,1fr);min-height:70vh;background:var(--bms24-surface-sky);font-family:var(--bms24-font);color:var(--bms24-color-text);border:1px solid var(--bms24-border);border-radius:16px;overflow:clip;}
+/* BMS24 owned shell standalone hardening. Host Moodle uses the embedded layout;
+   the body class is plugin-owned and is only present in owned mode. */
+body.bms24-owned-page {margin:0;background:var(--bms24-surface-sky);}
+.bms24-app {--bms24-sidebar:#0B2B41;display:grid;grid-template-columns:258px minmax(0,1fr);min-height:100vh;background:var(--bms24-surface-sky);font-family:var(--bms24-font);color:var(--bms24-color-text);border:0;border-radius:0;overflow:clip;}
 .bms24-app * {box-sizing:border-box;}
 .bms24-app a {text-decoration:none;}
 .bms24-app a:hover {text-decoration:underline;}
-.bms24-app .bms24-sidebar {min-width:0;padding:18px 12px 12px;background:var(--bms24-sidebar);color:#e2f3eb;display:flex;flex-direction:column;gap:9px;}
+.bms24-app .bms24-sidebar {min-width:0;padding:18px 12px 12px;background:var(--bms24-sidebar);color:#e2f3eb;display:flex;flex-direction:column;gap:9px;position:sticky;top:0;height:100vh;overflow-y:auto;overscroll-behavior:contain;}
 .bms24-app .bms24-brand {display:grid;gap:3px;padding:8px 11px 22px;border-bottom:1px solid #FFFFFF26;margin-bottom:7px;}
 .bms24-app .bms24-brand a {color:#fff;font-weight:800;font-size:26px;letter-spacing:-.04em;}
 .bms24-app .bms24-brandcompany {color:#c6e7dd;font-size:12px;}
@@ -14,11 +16,16 @@
 .bms24-app .bms24-navitem {display:flex;gap:10px;align-items:center;color:#e9f9f3;padding:10px 12px;min-height:40px;border-radius:9px;font-size:14px;}
 .bms24-app .bms24-navitem:hover {background:#ffffff16;color:#fff;text-decoration:none;}
 .bms24-app .bms24-navitem.is-active {background:#176046;border-left:3px solid #50dc94;color:#fff;font-weight:700;}
-.bms24-app .bms24-navicon {display:flex;align-items:center;justify-content:center;min-width:18px;}
-.bms24-app .bms24-navicon svg,.bms24-app .bms24-navicon img {max-height:18px;max-width:18px;}
+/* Owned shell must size the plugin-owned inline SVG icon wrapper itself.
+   Legacy icon rules are scoped to .kba-bms-sidebar and therefore do not apply
+   once BMS24 renders in Moodle embedded/standalone mode. */
+.bms24-app .bms24-navicon {display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;min-width:18px;flex:0 0 18px;color:currentColor;}
+.bms24-app .bms24-navicon .bms-nav-svg {display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;min-width:18px;margin:0;opacity:.9;}
+.bms24-app .bms24-navitem:hover .bms-nav-svg,.bms24-app .bms24-navitem.is-active .bms-nav-svg {opacity:1;}
+.bms24-app .bms24-navicon .bms-nav-svg svg,.bms24-app .bms24-navicon > svg,.bms24-app .bms24-navicon img {display:block;width:18px;height:18px;max-width:18px;max-height:18px;}
 .bms24-app .bms24-count {margin-left:auto;padding:2px 6px;background:#ffffff25;border-radius:50px;font-size:11px;}
-.bms24-app .bms24-frame {min-width:0;}
-.bms24-app .bms24-topbar {display:flex;align-items:center;gap:12px;min-height:74px;background:#fff;padding:12px 22px;border-bottom:1px solid var(--bms24-border);}
+.bms24-app .bms24-frame {min-width:0;background:var(--bms24-surface-sky);}
+.bms24-app .bms24-topbar {display:flex;align-items:center;gap:12px;min-height:74px;background:#fff;padding:12px 22px;border-bottom:1px solid var(--bms24-border);position:sticky;top:0;z-index:20;box-shadow:0 2px 10px #0b2b4108;}
 .bms24-app .bms24-crumbs {display:flex;gap:6px;flex:1;min-width:0;flex-wrap:wrap;font-size:12px;color:var(--bms24-color-text-muted);}
 .bms24-app .bms24-crumbs span+span::before {content:'/';padding-right:6px;color:#97aeb7;}
 .bms24-app .bms24-crumbs a {color:var(--bms24-color-text-muted);}
@@ -26,11 +33,20 @@
 .bms24-app .bms24-topactions .kba-bms-button,.bms24-app .bms24-button {display:inline-flex;align-items:center;justify-content:center;padding:8px 13px;border:1px solid var(--bms24-border);border-radius:9px;background:#fff;color:var(--bms24-color-navy);font-size:13px;font-weight:650;min-height:38px;}
 .bms24-app .bms24-topactions .kba-bms-button--primary,.bms24-app .bms24-button-primary {background:var(--bms24-color-primary);border-color:var(--bms24-color-primary);color:#fff;}
 .bms24-app .bms24-topactions .kba-bms-button--plan {background:var(--bms24-surface-mint);color:var(--bms24-color-primary);border-color:#b9dfd1;}
-.bms24-app .bms24-main {padding:24px;min-width:0;}
-.bms24-app .bms24-pageintro {margin-bottom:20px;}
+.bms24-app .bms24-main {padding:26px;min-width:0;}
+.bms24-app .bms24-pageintro {margin-bottom:20px;display:grid;gap:4px;}
 .bms24-app .bms24-pageintro h1 {font-size:25px;color:var(--bms24-color-navy);margin:6px 0;}
-.bms24-app .bms24-pageintro p {color:var(--bms24-color-text-muted);}
+.bms24-app .bms24-pageintro p {color:var(--bms24-color-text-muted);margin:0 0 8px;}
 .bms24-app .bms24-eyebrow {color:var(--bms24-color-primary);font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;}
+
+.bms24-app .bms24-usermenu {flex:0 0 auto;min-width:0;white-space:nowrap;}
+.bms24-app .bms24-pageintrobar {display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-top:8px;}
+.bms24-app .bms24-pagemeta {display:flex;align-items:center;gap:8px;flex-wrap:wrap;min-width:0;}
+.bms24-app .bms24-metalabel {display:inline-flex;align-items:center;gap:4px;min-height:32px;padding:5px 9px;border:1px solid var(--bms24-border);border-radius:9px;background:#fff;color:var(--bms24-color-text-muted);font-size:12px;}
+.bms24-app .bms24-metalabel strong {color:var(--bms24-color-navy);font-weight:750;}
+.bms24-app .bms24-pageactions {display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+.bms24-app .bms24-pageactions:empty,.bms24-app .bms24-pagemeta:empty {display:none;}
+.bms24-app .bms24-navlabel {min-width:0;overflow-wrap:anywhere;}
 .bms24-app .bms24-content {min-width:0;}
 .bms24-app .bms24-content .row > [class*="col-"] {min-width:0;}
 .bms24-app .bms24-card,.bms24-app .bms24-stat {background:#fff;border:1px solid var(--bms24-border);border-radius:14px;padding:20px;box-shadow:0 3px 14px #0b2b4109;min-width:0;}
@@ -52,5 +68,380 @@
 .bms24-app .bms24-mobilemenu {display:none;}
 .bms24-app .bms24-skip {position:absolute;transform:translateY(-200%);background:#fff;color:#000;padding:8px;z-index:99;}.bms24-app .bms24-skip:focus {transform:none;}
 @media(max-width:1100px) {.bms24-app {grid-template-columns:220px minmax(0,1fr);}.bms24-app .bms24-topbar {flex-wrap:wrap;}.bms24-app .bms24-topactions {order:3;width:100%;}}
-@media(max-width:860px) {.bms24-app {display:block;}.bms24-app .bms24-sidebar {display:none;}.bms24-app .bms24-mobilemenu {display:block;position:relative;}.bms24-app .bms24-mobilemenu summary {padding:8px 12px;border:1px solid var(--bms24-border);border-radius:9px;cursor:pointer;}.bms24-app .bms24-mobilemenu nav {position:absolute;top:100%;left:0;z-index:30;width:min(90vw,320px);max-height:70vh;overflow:auto;background:var(--bms24-sidebar);padding:12px;border-radius:12px;box-shadow:0 8px 24px #0003;}.bms24-app .bms24-splitview {display:block;}.bms24-app .bms24-splitnav {margin-bottom:15px;}}
-@media(max-width:520px) {.bms24-app .bms24-main {padding:14px;}.bms24-app .bms24-topbar {padding:10px;}.bms24-app .bms24-pageintro h1 {font-size:21px;}.bms24-app .bms24-topactions {gap:5px;}.bms24-app .bms24-topactions .kba-bms-button {padding:6px 9px;font-size:12px;}}
+@media(max-width:860px) {.bms24-app {display:block;}.bms24-app .bms24-sidebar {display:none;position:static;height:auto;overflow:visible;}.bms24-app .bms24-mobilemenu {display:block;position:relative;}.bms24-app .bms24-mobilemenu summary {padding:8px 12px;border:1px solid var(--bms24-border);border-radius:9px;cursor:pointer;}.bms24-app .bms24-mobilemenu nav {position:absolute;top:100%;left:0;z-index:30;width:min(90vw,320px);max-height:70vh;overflow:auto;background:var(--bms24-sidebar);padding:12px;border-radius:12px;box-shadow:0 8px 24px #0003;}.bms24-app .bms24-splitview {display:block;}.bms24-app .bms24-splitnav {margin-bottom:15px;}}
+@media(max-width:520px) {.bms24-app .bms24-main {padding:14px;}.bms24-app .bms24-pageintrobar {align-items:stretch;}.bms24-app .bms24-pageactions {width:100%;}.bms24-app .bms24-pageactions .bms24-button {flex:1 1 auto;}.bms24-app .bms24-topbar {padding:10px;}.bms24-app .bms24-pageintro h1 {font-size:21px;}.bms24-app .bms24-topactions {gap:5px;}.bms24-app .bms24-topactions .kba-bms-button {padding:6px 9px;font-size:12px;}}
+
+/* RC29 build 2026101661: Battle Plan management overview action-first UX. */
+.bms24-app .bms24-overview-kpis .bms24-overview-kpi {display:flex;flex-direction:column;gap:3px;color:inherit;text-decoration:none;transition:transform .12s ease,box-shadow .12s ease,border-color .12s ease;}
+.bms24-app .bms24-overview-kpis .bms24-overview-kpi:hover {text-decoration:none;transform:translateY(-1px);box-shadow:0 7px 18px #0b2b4112;border-color:#b7d4ca;}
+.bms24-app .bms24-overview-kpis .bms24-overview-kpi:focus-visible {outline:3px solid var(--bms24-color-info);outline-offset:2px;}
+.bms24-app .bms24-overview-attention-list {display:grid;gap:0;}
+.bms24-app .bms24-overview-attention-row {display:flex;align-items:center;justify-content:space-between;gap:16px;padding:13px 0;border-top:1px solid var(--bms24-border);}
+.bms24-app .bms24-overview-attention-row:first-child {border-top:0;padding-top:2px;}
+.bms24-app .bms24-overview-attention-main {min-width:0;display:grid;gap:4px;}
+.bms24-app .bms24-overview-person {font-weight:750;color:var(--bms24-color-navy);}
+.bms24-app .bms24-overview-meta,.bms24-app .bms24-overview-signals {font-size:12px;color:var(--bms24-color-text-muted);}
+.bms24-app .bms24-overview-signals {color:#6f4a1f;}
+.bms24-app .bms24-overview-attention-actions {display:flex;align-items:center;justify-content:flex-end;gap:9px;flex-wrap:wrap;}
+.bms24-app .bms24-overview-aggregate td:not(:first-child),.bms24-app .bms24-overview-aggregate th:not(:first-child) {text-align:center;}
+.bms24-app .bms24-overview-aggregate td a {font-weight:700;}
+@media(max-width:720px) {.bms24-app .bms24-overview-attention-row {align-items:flex-start;flex-direction:column;}.bms24-app .bms24-overview-attention-actions {width:100%;justify-content:space-between;}}
+
+/* RC29 build 2026101682: team productivity/effectiveness management view. */
+.bms24-app .bms24-teamperf-grid {display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;margin-top:14px;}
+.bms24-app .bms24-teamperf-card {display:grid;gap:7px;padding:14px;border:1px solid var(--bms24-border);border-radius:12px;background:var(--bms24-surface-subtle,#f8fafc);min-width:0;}
+.bms24-app .bms24-teamperf-label {font-size:.82rem;color:var(--bms24-text-muted);}
+.bms24-app .bms24-teamperf-value {font-size:1.45rem;line-height:1.1;}
+.bms24-app .bms24-teamperf-track {height:7px;border-radius:999px;overflow:hidden;background:var(--bms24-border);}
+.bms24-app .bms24-teamperf-fill {height:100%;background:currentColor;border-radius:inherit;}
+.bms24-app .bms24-teamperf-table td,.bms24-app .bms24-teamperf-table th {vertical-align:middle;}
+@media(max-width:900px) {.bms24-app .bms24-teamperf-grid {grid-template-columns:1fr;}.bms24-app .bms24-teamperf-table {display:block;overflow-x:auto;white-space:nowrap;}}
+
+/* RC29 build 2026101683: team performance attention UX. */
+.bms24-app .bms24-teamattention-grid {display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin:14px 0 16px;}
+.bms24-app .bms24-teamattention-card {display:flex;align-items:baseline;gap:8px;padding:11px 12px;border:1px solid var(--bms24-border);border-radius:10px;background:var(--bms24-surface,#fff);}
+.bms24-app .bms24-teamattention-card strong {font-size:1.25rem;line-height:1;}
+.bms24-app .bms24-teamattention-card span {font-size:.82rem;color:var(--bms24-text-muted);}
+.bms24-app .bms24-teamattention-badge {display:inline-flex;align-items:center;padding:4px 8px;border-radius:999px;font-size:.76rem;font-weight:700;border:1px solid var(--bms24-border);white-space:nowrap;}
+.bms24-app .bms24-teamattention-badge.is-attention {background:#fff1f0;color:#9f2115;border-color:#f5b8b2;}
+.bms24-app .bms24-teamattention-badge.is-insufficient {background:#fff8e6;color:#775800;border-color:#eed691;}
+.bms24-app .bms24-teamattention-badge.is-improving {background:#eefbf4;color:#17613a;border-color:#b8e5cc;}
+.bms24-app .bms24-teamattention-badge.is-stable {background:#f3f6f8;color:#43515c;}
+@media(max-width:900px) {.bms24-app .bms24-teamattention-grid {grid-template-columns:repeat(2,minmax(0,1fr));}}
+@media(max-width:560px) {.bms24-app .bms24-teamattention-grid {grid-template-columns:1fr;}}
+
+/* RC29 build 2026101684: team attention drill-down. */
+.bms24-app a.bms24-teamattention-card {color:inherit;text-decoration:none;transition:border-color .15s ease,box-shadow .15s ease,transform .15s ease;}
+.bms24-app a.bms24-teamattention-card:hover,.bms24-app a.bms24-teamattention-card:focus {text-decoration:none;border-color:var(--bms24-color-green,#0f8b5f);box-shadow:0 0 0 2px rgba(15,139,95,.10);transform:translateY(-1px);}
+.bms24-app .bms24-teamattention-card.is-selected {border-color:var(--bms24-color-green,#0f8b5f);box-shadow:0 0 0 2px rgba(15,139,95,.12);}
+.bms24-app .bms24-teamattention-filter {display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+.bms24-app .bms24-teamattention-signal-link {display:inline-block;color:inherit;text-decoration:none;}
+.bms24-app .bms24-teamattention-signal-link:hover .bms24-teamattention-badge,.bms24-app .bms24-teamattention-signal-link:focus .bms24-teamattention-badge {text-decoration:underline;}
+.bms24-app .bms24-teamattention-focus {margin-left:6px;white-space:nowrap;}
+
+
+/* RC29 build 2026101686: team attention task feedback loop. */
+.bms24-app .bms24-teamtask-context {min-width:220px;margin-bottom:8px;padding:9px 10px;border:1px solid var(--bms24-border);border-radius:10px;background:var(--bms24-surface-subtle,#f8fafc);}
+.bms24-app .bms24-teamtask-context > strong {display:block;font-size:.82rem;margin-bottom:2px;}
+.bms24-app .bms24-teamtask-item {display:flex;align-items:center;justify-content:space-between;gap:8px;padding-top:6px;font-size:.78rem;}
+.bms24-app .bms24-teamtask-item a {min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.bms24-app .bms24-teamtask-status {flex:0 0 auto;padding:2px 6px;border-radius:999px;background:var(--bms24-surface,#fff);border:1px solid var(--bms24-border);font-size:.68rem;color:var(--bms24-text-muted);}
+.bms24-app .bms24-teamtask-actions {display:inline-block;margin-right:4px;}
+
+
+/* RC29 build 2026101687: factual management-action follow-up. */
+.bms24-app .bms24-teamimpact {margin-top:9px;padding-top:9px;border-top:1px solid var(--bms24-border);display:grid;gap:5px;}
+.bms24-app .bms24-teamimpact-head {display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;}
+.bms24-app .bms24-teamimpact-head strong {font-size:.78rem;}
+.bms24-app .bms24-teamimpact-badge {display:inline-flex;align-items:center;padding:2px 7px;border-radius:999px;border:1px solid var(--bms24-border);font-size:.68rem;font-weight:700;}
+.bms24-app .bms24-teamimpact-badge.is-improving {background:#eefbf4;color:#17613a;border-color:#b8e5cc;}
+.bms24-app .bms24-teamimpact-badge.is-worsening {background:#fff1f0;color:#9f2115;border-color:#f5b8b2;}
+.bms24-app .bms24-teamimpact-badge.is-unchanged,.bms24-app .bms24-teamimpact-badge.is-neutral {background:#f3f6f8;color:#43515c;}
+
+/* RC29 build 2026101688: department-level management action feedback. */
+.bms24-app .bms24-teamimpact-summary {padding-top:16px;border-top:1px solid var(--bms24-border);}
+.bms24-app .bms24-teamimpact-summary-head {display:flex;align-items:flex-end;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:10px;}
+.bms24-app .bms24-teamimpact-unit-table td,.bms24-app .bms24-teamimpact-unit-table th {vertical-align:middle;}
+.bms24-app .bms24-teamimpact-deltas {display:block;line-height:1.55;white-space:nowrap;}
+@media(max-width:900px) {.bms24-app .bms24-teamimpact-unit-table {display:block;overflow-x:auto;white-space:nowrap;}}
+
+
+/* RC29 build 2026101689: compact two-column management overview filters. */
+.bms24-app .bms24-filter-panel,
+.bms24-app .bms24-overview-filters {display:grid;gap:12px;padding:14px 16px;border:1px solid var(--bms24-border);border-radius:12px;background:#fff;}
+.bms24-app .bms24-filter-grid,
+.bms24-app .bms24-overview-filtergrid {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px 18px;}
+.bms24-app .bms24-filter-field,
+.bms24-app .bms24-overview-filterfield {display:grid;gap:5px;min-width:0;align-content:start;}
+.bms24-app .bms24-filter-field label,
+.bms24-app .bms24-overview-filterfield label {margin:0;font-size:12px;font-weight:650;color:var(--bms24-color-navy);}
+.bms24-app .bms24-filter-field .form-control,
+.bms24-app .bms24-overview-filterfield .form-control {width:100%;max-width:none;margin:0;min-height:40px;}
+.bms24-app .bms24-filter-actions,
+.bms24-app .bms24-overview-filteractions {display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+.bms24-app .bms24-filter-actions {padding-top:2px;}
+.bms24-app .bms24-filter-note {margin:0;color:var(--bms24-color-muted);font-size:13px;line-height:1.45;}
+@media(max-width:720px) {
+  .bms24-app .bms24-filter-grid,
+  .bms24-app .bms24-overview-filtergrid {grid-template-columns:1fr;}
+  .bms24-app .bms24-filter-actions .btn,
+  .bms24-app .bms24-overview-filteractions .btn {flex:1 1 auto;}
+}
+
+
+/* RC29 build 2026101690 — department action-first focus cards. */
+.bms24-app .bms24-unitfocus-grid {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;}
+.bms24-app .bms24-unitfocus-card {border:1px solid var(--bms24-border);border-radius:12px;background:var(--bms24-surface,#fff);padding:14px;display:grid;gap:10px;min-width:0;}
+.bms24-app .bms24-unitfocus-head {display:flex;justify-content:space-between;align-items:flex-start;gap:10px;flex-wrap:wrap;}
+.bms24-app .bms24-unitfocus-name {font-weight:700;color:inherit;text-decoration:none;}
+.bms24-app .bms24-unitfocus-name:hover,.bms24-app .bms24-unitfocus-name:focus {text-decoration:underline;}
+.bms24-app .bms24-unitfocus-signals {display:flex;flex-wrap:wrap;gap:6px;}
+.bms24-app .bms24-unitfocus-badge {display:inline-flex;align-items:center;padding:3px 8px;border-radius:999px;border:1px solid var(--bms24-border);font-size:.74rem;font-weight:700;}
+.bms24-app .bms24-unitfocus-badge.is-danger {background:#fff1f0;color:#9f2115;border-color:#f5b8b2;}
+.bms24-app .bms24-unitfocus-badge.is-warning {background:#fff8e6;color:#775800;border-color:#eed691;}
+.bms24-app .bms24-unitfocus-badge.is-info {background:#eef6fb;color:#24556f;border-color:#c5dce8;}
+.bms24-app .bms24-unitfocus-performance {color:var(--bms24-text-muted);line-height:1.45;}
+.bms24-app .bms24-unitfocus-actions {display:flex;gap:10px;flex-wrap:wrap;align-items:center;}
+@media(max-width:900px) {.bms24-app .bms24-unitfocus-grid {grid-template-columns:1fr;}}
+
+
+/* RC29 build 2026101696 — weekly management coordination agenda. */
+.bms24-app .bms24-weekcoord-kpis {display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;}
+.bms24-app .bms24-weekcoord-kpi {display:grid;gap:3px;padding:13px 14px;border:1px solid var(--bms24-border);border-radius:12px;background:var(--bms24-surface,#fff);color:inherit;text-decoration:none;}
+.bms24-app .bms24-weekcoord-kpi:hover,.bms24-app .bms24-weekcoord-kpi:focus {border-color:var(--bms24-color-green,#0f8b5f);text-decoration:none;box-shadow:0 0 0 2px rgba(15,139,95,.08);}
+.bms24-app .bms24-weekcoord-kpi strong {font-size:1.45rem;line-height:1;color:var(--bms24-color-navy);}
+.bms24-app .bms24-weekcoord-kpi span {font-size:.78rem;color:var(--bms24-text-muted);}
+.bms24-app .bms24-weekcoord-performance-grid {display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;}
+.bms24-app .bms24-weekcoord-performance-card {display:grid;gap:4px;padding:12px;border:1px solid var(--bms24-border);border-radius:10px;background:var(--bms24-surface-subtle,#f8fafc);}
+.bms24-app .bms24-weekcoord-performance-card strong {font-size:1.35rem;color:var(--bms24-color-navy);}
+.bms24-app .bms24-weekcoord-agenda-list {display:grid;gap:8px;}
+.bms24-app .bms24-weekcoord-agenda-row {display:grid;grid-template-columns:minmax(0,1fr) auto;gap:12px;align-items:center;padding:11px 12px;border:1px solid var(--bms24-border);border-radius:10px;color:inherit;text-decoration:none;background:var(--bms24-surface,#fff);}
+.bms24-app .bms24-weekcoord-agenda-row:hover,.bms24-app .bms24-weekcoord-agenda-row:focus {border-color:var(--bms24-color-green,#0f8b5f);text-decoration:none;}
+.bms24-app .bms24-weekcoord-agenda-main {display:flex;align-items:center;gap:8px;min-width:0;}
+.bms24-app .bms24-weekcoord-agenda-title {color:inherit;text-decoration:none;min-width:0;}
+.bms24-app .bms24-weekcoord-agenda-title:hover,.bms24-app .bms24-weekcoord-agenda-title:focus {text-decoration:underline;}
+.bms24-app .bms24-weekcoord-actions {display:flex;gap:6px;justify-content:flex-end;flex-wrap:wrap;align-items:center;}
+.bms24-app .bms24-weekcoord-actions .btn {white-space:nowrap;}
+.bms24-app .bms24-weekcoord-kind {display:inline-flex;align-items:center;flex:0 0 auto;padding:3px 7px;border-radius:999px;border:1px solid var(--bms24-border);font-size:.68rem;font-weight:700;background:#f3f6f8;color:#43515c;}
+.bms24-app .bms24-weekcoord-kind.is-decision,.bms24-app .bms24-weekcoord-kind.is-overdue {background:#fff1f0;color:#9f2115;border-color:#f5b8b2;}
+.bms24-app .bms24-weekcoord-kind.is-critical,.bms24-app .bms24-weekcoord-kind.is-blocked {background:#fff8e6;color:#775800;border-color:#eed691;}
+.bms24-app .bms24-weekcoord-kind.is-missing_plan,.bms24-app .bms24-weekcoord-kind.is-submitted {background:#eef6fb;color:#24556f;border-color:#c5dce8;}
+.bms24-app .bms24-weekcoord-unit-grid {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;}
+.bms24-app .bms24-weekcoord-unit {display:grid;gap:7px;padding:13px;border:1px solid var(--bms24-border);border-radius:12px;background:var(--bms24-surface,#fff);color:inherit;text-decoration:none;}
+.bms24-app .bms24-weekcoord-unit:hover,.bms24-app .bms24-weekcoord-unit:focus {border-color:var(--bms24-color-green,#0f8b5f);text-decoration:none;}
+.bms24-app .bms24-weekcoord-unit-head {display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;}
+.bms24-app .bms24-weekcoord-unit-metrics,.bms24-app .bms24-weekcoord-unit-signals {line-height:1.45;color:var(--bms24-text-muted);}
+@media(max-width:900px) {.bms24-app .bms24-weekcoord-kpis {grid-template-columns:repeat(2,minmax(0,1fr));}.bms24-app .bms24-weekcoord-unit-grid {grid-template-columns:1fr;}}
+@media(max-width:560px) {.bms24-app .bms24-weekcoord-kpis,.bms24-app .bms24-weekcoord-performance-grid {grid-template-columns:1fr;}.bms24-app .bms24-weekcoord-agenda-row {grid-template-columns:1fr;}.bms24-app .bms24-weekcoord-agenda-main {align-items:flex-start;flex-wrap:wrap;}.bms24-app .bms24-weekcoord-actions {justify-content:flex-start;}}
+.bms24-app .bms24-weekcoord-followup-main {display:grid;gap:4px;min-width:0;}
+.bms24-app .bms24-weekcoord-followup .bms24-weekcoord-agenda-row {align-items:start;}
+
+/* RC29 build 2026101707 — factual result feedback after a completed pattern task. */
+.bms24-app .bms24-weekcoord-pattern-result {padding:10px 12px;border:1px solid var(--bms24-border);border-radius:10px;background:var(--bms24-surface-subtle,#f8fafc);overflow-x:auto;}
+.bms24-app .bms24-weekcoord-pattern-result .table {min-width:620px;margin-top:8px;background:transparent;}
+.bms24-app .bms24-weekcoord-pattern-result .table th {font-size:.72rem;color:var(--bms24-text-muted);font-weight:700;vertical-align:bottom;}
+.bms24-app .bms24-weekcoord-pattern-result .table td {font-size:.82rem;vertical-align:middle;}
+
+/* Compact shared shell navigation is controlled by bms_shell_navigation AMD on every BMS route. */
+
+/* RC29/1731: align menu toggle before BMS24 title across the shared shell. */
+.bms24-app .bms-shell-nav-header,
+.kba-bms > .kba-bms-sidebar .bms-shell-nav-header {
+  display:flex; flex-direction:row; align-items:center; gap:10px;
+  width:100%; min-width:0; padding:4px 0 12px;
+}
+.bms24-app .bms-shell-nav-header .bms-shell-nav-toggle,
+.kba-bms > .kba-bms-sidebar .bms-shell-nav-header .bms-shell-nav-toggle {
+  position:static; margin:0; flex:0 0 38px;
+}
+.bms24-app .bms-shell-nav-header .bms24-brand,
+.kba-bms > .kba-bms-sidebar .bms-shell-nav-header > :not(.bms-shell-nav-toggle) {
+  flex:1 1 auto; min-width:0; margin:0; padding:0;
+}
+.bms24-app .bms-shell-nav-header .bms24-brand {display:flex;align-items:center;gap:6px;border:0;}
+.bms24-app .bms-shell-nav-header .bms24-brand a {font-size:23px;white-space:nowrap;}
+.bms24-app.bms-shell-nav-compact .bms-shell-nav-header,
+.kba-bms.bms-shell-nav-compact > .kba-bms-sidebar .bms-shell-nav-header {justify-content:center;padding-bottom:10px;}
+.bms24-app.bms-shell-nav-compact .bms-shell-nav-header > :not(.bms-shell-nav-toggle),
+.kba-bms.bms-shell-nav-compact > .kba-bms-sidebar .bms-shell-nav-header > :not(.bms-shell-nav-toggle) {display:none!important;}
+@media(max-width:860px){
+ .bms24-app .bms-shell-nav-header {gap:6px;}
+}
+
+
+/* RC29/1732: sidebar top row like Bitrix24 — menu icon first, then BMS24 title on one line. */
+.bms24-app .bms-shell-nav-header,
+.kba-bms > .kba-bms-sidebar .bms-shell-nav-header {
+  display:flex; align-items:center; gap:12px; width:100%; min-width:0;
+  padding:6px 8px 14px; margin:0 0 6px; border-bottom:1px solid rgba(255,255,255,.10);
+}
+.bms24-app .bms-shell-nav-toggle,
+.kba-bms > .kba-bms-sidebar .bms-shell-nav-toggle {
+  position:static; top:auto; left:auto; width:32px; height:32px; flex:0 0 32px;
+  margin:0; padding:0; border:0; border-radius:8px; background:transparent; color:#fff;
+  box-shadow:none; font-size:22px; line-height:1;
+}
+.bms24-app .bms-shell-nav-toggle:hover,
+.kba-bms > .kba-bms-sidebar .bms-shell-nav-toggle:hover { background:rgba(255,255,255,.10); }
+.bms24-app .bms-shell-nav-toggle:focus-visible,
+.kba-bms > .kba-bms-sidebar .bms-shell-nav-toggle:focus-visible {
+  outline:2px solid rgba(255,255,255,.9); outline-offset:2px;
+}
+
+.bms24-app .bms-shell-nav-brand,
+.kba-bms > .kba-bms-sidebar .bms-shell-nav-brand,
+.kba-bms > .kba-bms-sidebar .bms-shell-nav-header > .kba-bms-sidebar__brand,
+.kba-bms > .kba-bms-sidebar .bms-shell-nav-header > .kba-bms-brand,
+.kba-bms > .kba-bms-sidebar .bms-shell-nav-header > .kba-bms-sidebar-brand,
+.kba-bms > .kba-bms-sidebar .bms-shell-nav-header > [data-kba-bms-brand] {
+  flex:1 1 auto; min-width:0; margin:0; padding:0; border:0; display:flex; align-items:center; gap:8px;
+}
+.bms24-app .bms-shell-nav-brand a,
+.kba-bms > .kba-bms-sidebar .bms-shell-nav-header a.bms-brand-home-link,
+.kba-bms > .kba-bms-sidebar .bms-shell-nav-brand a {
+  color:#fff; text-decoration:none; font-weight:800; font-size:18px; line-height:1.15; white-space:nowrap;
+}
+.bms24-app .bms-shell-nav-brand a:hover,
+.kba-bms > .kba-bms-sidebar .bms-shell-nav-header a.bms-brand-home-link:hover,
+.kba-bms > .kba-bms-sidebar .bms-shell-nav-brand a:hover { text-decoration:none; }
+.bms24-app .bms-shell-nav-brand .bms24-brandcompany,
+.kba-bms > .kba-bms-sidebar .bms-shell-nav-header .kba-bms-sidebar__brandlabel,
+.kba-bms > .kba-bms-sidebar .bms-shell-nav-brand .kba-bms-sidebar__brandlabel { display:none !important; }
+
+.bms24-app .bms24-brand,
+.bms24-app .bms-shell-nav-brand { justify-content:flex-start; }
+.bms24-app .bms-shell-nav-brand .bms24-brandcompany { display:none !important; }
+.bms24-app .bms-shell-nav-brand .bms-sidebar-brandmark-text,
+.kba-bms > .kba-bms-sidebar .bms-shell-nav-brand .bms-sidebar-brandmark-text { font-size:18px; }
+
+/* compact mode: only menu button stays in the top row */
+.bms24-app.bms-shell-nav-compact .bms-shell-nav-header,
+.kba-bms.bms-shell-nav-compact > .kba-bms-sidebar .bms-shell-nav-header {
+  justify-content:flex-start; padding:6px 6px 12px; gap:0;
+}
+.bms24-app.bms-shell-nav-compact .bms-shell-nav-header > :not(.bms-shell-nav-toggle),
+.kba-bms.bms-shell-nav-compact > .kba-bms-sidebar .bms-shell-nav-header > :not(.bms-shell-nav-toggle) { display:none !important; }
+.bms24-app.bms-shell-nav-compact .bms-shell-nav-toggle,
+.kba-bms.bms-shell-nav-compact > .kba-bms-sidebar .bms-shell-nav-toggle { margin:0 auto; }
+
+/* RC29/1733: restore the BMS24 wordmark ONLY in expanded shared shell. */
+.bms24-app:not(.bms-shell-nav-compact) .bms-shell-nav-header .bms-sidebar-brandmark-text,
+.kba-bms:not(.bms-shell-nav-compact) > .kba-bms-sidebar .bms-shell-nav-header .bms-sidebar-brandmark-text {
+  display:inline !important; font-size:18px !important; line-height:1.15; color:#fff;
+  font-weight:800; white-space:nowrap; width:auto; height:auto;
+}
+.bms24-app:not(.bms-shell-nav-compact) .bms-shell-nav-header .bms-shell-nav-brand,
+.kba-bms:not(.bms-shell-nav-compact) > .kba-bms-sidebar .bms-shell-nav-header .bms-shell-nav-brand {
+  display:flex !important; align-items:center; min-width:0; white-space:nowrap;
+}
+.bms24-app.bms-shell-nav-compact .bms-shell-nav-header > .bms-shell-nav-brand,
+.kba-bms.bms-shell-nav-compact > .kba-bms-sidebar .bms-shell-nav-header > .bms-shell-nav-brand {display:none !important;}
+
+
+/* RC29/1734: approved brand block variant — large BMS24 with second-line subtitle. */
+.bms24-app .bms-shell-nav-header,
+.kba-bms > .kba-bms-sidebar .bms-shell-nav-header {
+  align-items:flex-start;
+  gap:12px;
+  padding:8px 8px 14px;
+}
+.bms24-app .bms-shell-nav-toggle,
+.kba-bms > .kba-bms-sidebar .bms-shell-nav-toggle {
+  flex:0 0 32px;
+  width:32px;
+  height:32px;
+  margin-top:4px;
+}
+.bms24-app .bms-shell-nav-header .bms24-brand,
+.bms24-app .bms-shell-nav-header .bms-shell-nav-brand,
+.kba-bms > .kba-bms-sidebar .bms-shell-nav-header > .kba-bms-sidebar__brand,
+.kba-bms > .kba-bms-sidebar .bms-shell-nav-header > .kba-bms-brand,
+.kba-bms > .kba-bms-sidebar .bms-shell-nav-header > .kba-bms-sidebar-brand,
+.kba-bms > .kba-bms-sidebar .bms-shell-nav-header > [data-kba-bms-brand],
+.kba-bms > .kba-bms-sidebar .bms-shell-nav-header > .bms-shell-nav-brand {
+  display:flex !important;
+  flex-direction:column;
+  align-items:flex-start;
+  justify-content:center;
+  gap:4px;
+  min-width:0;
+  white-space:normal;
+}
+.bms24-app .bms-shell-nav-header .bms24-brand a,
+.bms24-app .bms-shell-nav-header .bms-shell-nav-brand a,
+.kba-bms > .kba-bms-sidebar .bms-shell-nav-header a.bms-brand-home-link,
+.kba-bms > .kba-bms-sidebar .bms-shell-nav-header .bms-shell-nav-brand a {
+  display:block;
+  color:#fff;
+  font-weight:800;
+  font-size:34px;
+  line-height:1;
+  letter-spacing:-.03em;
+  white-space:nowrap;
+}
+.bms24-app .bms-shell-nav-header .bms24-brandcompany,
+.bms24-app .bms-shell-nav-header .bms-shell-nav-brand .bms24-brandcompany,
+.kba-bms > .kba-bms-sidebar .bms-shell-nav-header .kba-bms-sidebar__brandlabel,
+.kba-bms > .kba-bms-sidebar .bms-shell-nav-header .bms-shell-nav-brand .kba-bms-sidebar__brandlabel {
+  display:block !important;
+  margin:0;
+  color:#cfe4de !important;
+  font-size:12px;
+  line-height:1.25;
+  font-weight:500;
+  white-space:normal;
+  opacity:.96;
+}
+.bms24-app .bms-shell-nav-header .bms-sidebar-brandmark-text,
+.kba-bms > .kba-bms-sidebar .bms-shell-nav-header .bms-sidebar-brandmark-text {
+  display:inline !important;
+  font-size:inherit !important;
+  line-height:inherit !important;
+  color:inherit !important;
+  font-weight:inherit !important;
+  white-space:inherit;
+}
+.bms24-app.bms-shell-nav-compact .bms-shell-nav-header,
+.kba-bms.bms-shell-nav-compact > .kba-bms-sidebar .bms-shell-nav-header {
+  align-items:center;
+  justify-content:center;
+  gap:0;
+  padding:6px 6px 12px;
+}
+.bms24-app.bms-shell-nav-compact .bms-shell-nav-header > :not(.bms-shell-nav-toggle),
+.kba-bms.bms-shell-nav-compact > .kba-bms-sidebar .bms-shell-nav-header > :not(.bms-shell-nav-toggle) {
+  display:none !important;
+}
+@media (max-width: 860px) {
+  .bms24-app .bms-shell-nav-header .bms24-brand a,
+  .bms24-app .bms-shell-nav-header .bms-shell-nav-brand a,
+  .kba-bms > .kba-bms-sidebar .bms-shell-nav-header a.bms-brand-home-link,
+  .kba-bms > .kba-bms-sidebar .bms-shell-nav-header .bms-shell-nav-brand a {
+    font-size:30px;
+  }
+}
+
+/* RC29/1735: fix cached-missing language key and restore approved large wordmark. */
+.bms24-app:not(.bms-shell-nav-compact) .bms-shell-nav-header .bms-shell-nav-brand,
+.kba-bms:not(.bms-shell-nav-compact) > .kba-bms-sidebar .bms-shell-nav-header .bms-shell-nav-brand {
+  display:flex !important; flex-direction:column !important; align-items:flex-start !important;
+  justify-content:center !important; gap:3px !important; min-width:0; flex:1 1 auto;
+  margin:0 !important; padding:0 !important; text-align:left !important;
+}
+.bms24-app:not(.bms-shell-nav-compact) .bms-shell-nav-header .bms-shell-nav-brand .bms-sidebar-brandmark-text,
+.kba-bms:not(.bms-shell-nav-compact) > .kba-bms-sidebar .bms-shell-nav-header .bms-shell-nav-brand .bms-sidebar-brandmark-text {
+  display:inline !important; font-size:32px !important; line-height:1.08 !important;
+  font-weight:800 !important; letter-spacing:-.03em !important; color:#fff !important;
+  white-space:nowrap !important;
+}
+.bms24-app:not(.bms-shell-nav-compact) .bms-shell-nav-header .bms-shell-nav-brand .bms24-brandcompany,
+.kba-bms:not(.bms-shell-nav-compact) > .kba-bms-sidebar .bms-shell-nav-header .bms-shell-nav-brand .kba-bms-sidebar__brandlabel {
+  display:block !important; position:static !important; margin:0 !important; padding:0 !important;
+  font-size:10px !important; line-height:1.3 !important; font-weight:500 !important;
+  color:#cfe4de !important; text-align:left !important; white-space:nowrap !important;
+}
+.bms24-app.bms-shell-nav-compact .bms-shell-nav-header > .bms-shell-nav-brand,
+.kba-bms.bms-shell-nav-compact > .kba-bms-sidebar .bms-shell-nav-header > .bms-shell-nav-brand {display:none !important;}
+
+/* RC29 1762: compact weekly protocol disclosure */
+.bms24-protocol-compact > summary {cursor:pointer;list-style-position:inside;}
+.bms24-protocol-compact > summary:hover {background:rgba(19,112,93,.055);}
+.bms24-protocol-compact[open] > summary {border-bottom:1px solid rgba(80,100,110,.16);}
+.bms24-protocol-focused {outline:2px solid #147d65;outline-offset:1px;}
+
+/* build2026101794: compact approval queue preview. */
+.bms24-approval-inline-preview summary { cursor: pointer; font-size: .875rem; color: #155d57; }
+.bms24-approval-inline-preview summary:focus-visible { outline: 2px solid #155d57; outline-offset: 2px; }
+.bms24-approval-queue-back { margin-bottom: .75rem; }
+
+/* RC29 build2026101795: concise weekly approval outcome tiles. */
+.bms24-weekly-outcome-grid {display:grid;grid-template-columns:repeat(auto-fit,minmax(125px,1fr));gap:.65rem;margin-top:1rem;}
+.bms24-weekly-outcome-card {background:rgba(11,49,62,.055);border:1px solid rgba(11,49,62,.12);border-radius:.65rem;padding:.8rem;min-width:0;}
+.bms24-weekly-outcome-table {width:100%;}
+
+
+/* 1808 workspace density: precise modifiers only, no changes to shared card styling. */
+.bms24-app .bms-workspace-1808 .bms-workspace-widget--overview .bms24-card {padding:14px 16px}
+.bms24-app .bms-workspace-1808 .bms-workspace-widget--overview .bms24-stat {padding:12px 14px;box-shadow:none}
+.bms24-app .bms-workspace-1808 .bms-workspace-widget--overview .bms24-statvalue {font-size:24px}
+.bms24-app .bms-workspace-1808 .bms-workspace-widget--today .bms-workspace-today-strip {box-shadow:0 2px 10px #0b2b4108}

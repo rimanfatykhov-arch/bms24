@@ -1,0 +1,10 @@
+{
+  "component": "local_kbacompany",
+  "build": 2026101833,
+  "previous_build": 2026101832,
+  "scope": "Task Card 3.0 layout only",
+  "code_status": "Staging QA required",
+  "database_changes": false,
+  "corporate_changes": false,
+  "runtime_tests": false
+}

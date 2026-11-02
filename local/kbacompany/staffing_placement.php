@@ -130,8 +130,8 @@ if ($canmanage) {
     $selectedemployee = $editing ? (int)$editing['employee_id'] : 0;
     $selectedtype = $editing ? $editing['type'] : 'primary';
     $selectedfte = $editing ? format_float($editing['fte'], 2, false, false) : '1.00';
-    $fromvalue = $editing && $editing['effective_from'] ? userdate($editing['effective_from'], '%Y-%m-%d') : userdate(time(), '%Y-%m-%d');
-    $tovalue = $editing && $editing['effective_to'] ? userdate($editing['effective_to'], '%Y-%m-%d') : '';
+    $fromvalue = $editing && $editing['effective_from'] ? \local_kbacompany\local\business_date_service::day($editing['effective_from']) : \local_kbacompany\local\business_date_service::day(time());
+    $tovalue = $editing && $editing['effective_to'] ? \local_kbacompany\local\business_date_service::day($editing['effective_to']) : '';
 
     echo html_writer::start_div('bms-staffing-assignment-grid');
     $field = function($label, $control, $help = '') {
