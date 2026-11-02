@@ -7,16 +7,19 @@ Git source history is preserved as the second parent of an import commit.
 from __future__ import annotations
 
 import argparse
+import hashlib
+import hmac
 import json
 import os
 from pathlib import Path
+import zipfile
 import re
 import subprocess
 import sys
 import tempfile
 
-EXPECTED_VERSION = 2026101878
-DEFAULT_BRANCH = "import/build2026101878"
+EXPECTED_VERSION = 2026101879
+DEFAULT_BRANCH = "import/build2026101879"
 SOURCE_REF = "refs/heads/main"
 MAX_SOURCE_FILES = 20000
 
@@ -65,7 +68,49 @@ def verify_tree(repo: Path, source_sha: str) -> int:
     return len(names)
 
 
-def run(bundle: Path, remote: str, branch: str, *, push: bool = False) -> dict:
+def verify_candidate(repo: Path, source_sha: str, install_zip: Path, expected_sha256: str) -> dict:
+    """Rebuild an installable Moodle ZIP from the exact Git source tree.
+
+    The builder is code shipped with this trusted tool, NOT a script executed
+    from the untrusted imported bundle. No Moodle, network or credentials.
+    """
+    if not re.fullmatch(r"[0-9a-fA-F]{64}", expected_sha256):
+        raise ImportHold("expected SHA-256 must contain 64 hex characters")
+    if not install_zip.is_file() or install_zip.is_symlink():
+        raise ImportHold("reviewed install ZIP is missing or is a symlink")
+    try:
+        with zipfile.ZipFile(install_zip) as zf:
+            if zf.testzip() is not None:
+                raise ImportHold("reviewed install ZIP is damaged")
+    except (zipfile.BadZipFile, OSError):
+        raise ImportHold("reviewed install ZIP is invalid") from None
+    digest = hashlib.sha256(install_zip.read_bytes()).hexdigest()
+    if not hmac.compare_digest(digest, expected_sha256.lower()):
+        raise ImportHold("reviewed install ZIP does not match approved SHA-256")
+    # Worktree reads the source commit without altering branch HEAD or main.
+    from build_install import build
+    with tempfile.TemporaryDirectory(prefix="bms24-verify-source-") as folder:
+        root = Path(folder)
+        tree = root / "src"
+        git(repo, "worktree", "add", "--quiet", "--detach", str(tree), source_sha)
+        check = root / "verified.zip"
+        try:
+            summary = build(tree / "local" / "kbacompany", check)
+        except (OSError, ValueError, RuntimeError, zipfile.BadZipFile):
+            raise ImportHold("source cannot be built as an installable ZIP") from None
+        if summary["version"] != EXPECTED_VERSION:
+            raise ImportHold("reviewed install version differs from expected build")
+        if not hmac.compare_digest(summary["zip_sha256"], digest):
+            raise ImportHold("Git bundle source differs from reviewed INSTALL ZIP")
+        return {"zip_sha256": digest, "install_files": summary["files"]}
+
+
+def run(bundle: Path, remote: str, branch: str, *, push: bool = False,
+        install_zip: Path | None = None, approved_sha256: str | None = None) -> dict:
+    if push and (install_zip is None or approved_sha256 is None):
+        raise ImportHold("push requires a reviewed INSTALL ZIP and approved SHA-256")
+    if (install_zip is None) != (approved_sha256 is None):
+        raise ImportHold("INSTALL ZIP and approved SHA-256 must be supplied together")
     if not bundle.is_file():
         raise ImportHold("Git bundle not found")
     if not re.fullmatch(r"import/build[0-9]{10}", branch):
@@ -85,6 +130,8 @@ def run(bundle: Path, remote: str, branch: str, *, push: bool = False) -> dict:
         if version_from_commit(local, source_sha) != EXPECTED_VERSION:
             raise ImportHold("bundle does not contain the expected BMS24 build")
         count = verify_tree(local, source_sha)
+        candidate = (verify_candidate(local, source_sha, install_zip, approved_sha256)
+                     if install_zip is not None and approved_sha256 is not None else None)
         # Only existing approved base branches; never modify origin/main.
         old_base = "refs/remotes/origin/import/build2026101876"
         exists = subprocess.run(["git", "-C", str(local), "show-ref", "--verify", "--quiet", old_base], check=False).returncode == 0
@@ -102,11 +149,14 @@ def run(bundle: Path, remote: str, branch: str, *, push: bool = False) -> dict:
         # git commit-tree requires a message via -m. Two-parent commit retains
         # old GitHub history AND all source bundle commits without force push.
         commit_sha = git(local, "commit-tree", tree_sha, "-p", base_sha, "-p", source_sha,
-                         "-m", "import: BMS24 build2026101878 full source (review required)", env=environ)
+                         "-m", "import: BMS24 build2026101879 full source (review required)", env=environ)
         git(local, "update-ref", "refs/heads/" + branch, commit_sha)
         out = {"status": "PREPARED", "build": EXPECTED_VERSION, "branch": branch,
                "base": base_sha, "source": source_sha, "commit": commit_sha,
-               "source_files": count, "pushed": False, "main_unchanged": True}
+               "source_files": count, "pushed": False, "main_unchanged": True,
+               "candidate_verified": candidate is not None}
+        if candidate is not None:
+            out.update(candidate)
         if push:
             git(local, "push", "origin", "refs/heads/" + branch + ":refs/heads/" + branch)
             out["pushed"] = True
@@ -120,9 +170,12 @@ def main() -> None:
     parser.add_argument("--remote", required=True, help="Git remote URL or local bare repo")
     parser.add_argument("--branch", default=DEFAULT_BRANCH)
     parser.add_argument("--push", action="store_true", help="Explicitly publish only the import branch; never main")
+    parser.add_argument("--install-zip", type=Path, help="Reviewed install ZIP; mandatory for --push")
+    parser.add_argument("--approved-sha256", help="SHA-256 of approved install ZIP; mandatory for --push")
     opts = parser.parse_args()
     try:
-        print(json.dumps(run(opts.bundle, opts.remote, opts.branch, push=opts.push), ensure_ascii=False, sort_keys=True))
+        print(json.dumps(run(opts.bundle, opts.remote, opts.branch, push=opts.push,
+                             install_zip=opts.install_zip, approved_sha256=opts.approved_sha256), ensure_ascii=False, sort_keys=True))
     except (ImportHold, OSError, ValueError) as exc:
         print(json.dumps({"status": "HOLD", "reason": str(exc)}, ensure_ascii=False), file=sys.stderr)
         sys.exit(2)

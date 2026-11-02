@@ -6102,6 +6102,12 @@ function xmldb_local_kbacompany_upgrade(int $oldversion): bool {
         upgrade_plugin_savepoint(true, 2026101878, 'local', 'kbacompany');
     }
 
+    // build1879: enforce verified Git source/install artifact provenance.
+    // Version checkpoint only; no schema or business-data changes.
+    if ($oldversion < 2026101879) {
+        upgrade_plugin_savepoint(true, 2026101879, 'local', 'kbacompany');
+    }
+
     return true;
 }
 

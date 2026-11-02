@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """No-network regression for the BMS24 GitHub branch import contract."""
 import io
+import hashlib
 import json
 import os
 from pathlib import Path
@@ -12,6 +13,7 @@ from contextlib import redirect_stdout
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import github_import as gi
+from build_install import build
 
 
 def run(*args, cwd=None):
@@ -42,16 +44,18 @@ class GitHubImportTest(unittest.TestCase):
             "AGENTS.md":"# agents\n",
             "tools/dev_ai_gate.py":"# checker\n",
             "local/kbacompany/db/upgrade.php":"<?php // checkpoint\n",
-            "local/kbacompany/version.php":"<?php\n$plugin->version = 2026101878;\n",
+            "local/kbacompany/version.php":"<?php\n$plugin->version = 2026101879;\n",
             "README.md":"# BMS24 latest\n",
         }.items():
             file = self.src / name
             file.parent.mkdir(parents=True,exist_ok=True)
             file.write_text(content)
         run("-C", self.src, "add", ".")
-        run("-C", self.src, "commit", "-m", "latest 1877")
+        run("-C", self.src, "commit", "-m", "latest 1879")
         self.bundle = self.root / "source.bundle"
         run("-C", self.src, "bundle", "create", self.bundle, "main")
+        self.install = self.root / "reviewed-install.zip"
+        self.approved_sha = build(self.src / "local" / "kbacompany", self.install)["zip_sha256"]
 
     def test_default_does_not_push(self):
         out = gi.run(self.bundle, str(self.remote), gi.DEFAULT_BRANCH)
@@ -61,7 +65,8 @@ class GitHubImportTest(unittest.TestCase):
         self.assertNotIn("refs/heads/import/", run("-C", self.remote, "show-ref"))
 
     def test_explicit_push_preserves_both_histories(self):
-        out = gi.run(self.bundle, str(self.remote), gi.DEFAULT_BRANCH, push=True)
+        out = gi.run(self.bundle, str(self.remote), gi.DEFAULT_BRANCH, push=True,
+                      install_zip=self.install, approved_sha256=self.approved_sha)
         self.assertTrue(out["pushed"])
         self.assertEqual(run("-C", self.remote, "rev-parse", "refs/heads/main"),self.mainsha)
         head=run("-C", self.remote,"rev-parse", "refs/heads/"+gi.DEFAULT_BRANCH)
@@ -73,9 +78,11 @@ class GitHubImportTest(unittest.TestCase):
         self.assertEqual(run("-C",self.remote,"rev-parse",head+"^{tree}"),run("-C",self.src,"rev-parse","HEAD^{tree}"))
 
     def test_existing_import_branch_is_never_overwritten(self):
-        gi.run(self.bundle, str(self.remote), gi.DEFAULT_BRANCH, push=True)
+        gi.run(self.bundle, str(self.remote), gi.DEFAULT_BRANCH, push=True,
+                      install_zip=self.install, approved_sha256=self.approved_sha)
         with self.assertRaisesRegex(gi.ImportHold,"already exists"):
-            gi.run(self.bundle, str(self.remote), gi.DEFAULT_BRANCH, push=True)
+            gi.run(self.bundle, str(self.remote), gi.DEFAULT_BRANCH, push=True,
+                      install_zip=self.install, approved_sha256=self.approved_sha)
 
     def test_uses_previous_import_branch_as_base(self):
         run("-C",self.orig,"checkout","-b","import/build2026101876")
@@ -107,7 +114,7 @@ class GitHubImportTest(unittest.TestCase):
 
     def test_rejects_main_as_target(self):
         with self.assertRaisesRegex(gi.ImportHold,"branch must"):
-            gi.run(self.bundle,str(self.remote),"main",push=True)
+            gi.run(self.bundle,str(self.remote),"main",push=False)
 
     def test_no_credentials_in_urls(self):
         with self.assertRaisesRegex(gi.ImportHold,"credential"):
@@ -118,10 +125,12 @@ class GitHubImportTest(unittest.TestCase):
             gi.run(self.root/"no.bundle",str(self.remote),gi.DEFAULT_BRANCH)
 
     def test_read_only_actions_on_failed_push(self):
-        gi.run(self.bundle,str(self.remote),gi.DEFAULT_BRANCH,push=True)
+        gi.run(self.bundle,str(self.remote),gi.DEFAULT_BRANCH,push=True,
+                       install_zip=self.install, approved_sha256=self.approved_sha)
         self.assertEqual(run("-C", self.remote,"rev-parse", "refs/heads/main"),self.mainsha)
         with self.assertRaises(gi.ImportHold):
-            gi.run(self.bundle,str(self.remote),gi.DEFAULT_BRANCH,push=True)
+            gi.run(self.bundle,str(self.remote),gi.DEFAULT_BRANCH,push=True,
+                       install_zip=self.install, approved_sha256=self.approved_sha)
         self.assertEqual(run("-C", self.remote,"rev-parse", "refs/heads/main"),self.mainsha)
 
     def _repack(self):
