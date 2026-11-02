@@ -79,6 +79,19 @@ class battle_plan_service {
             '-' . substr($hex, 16, 4) . '-' . substr($hex, 20);
     }
 
+    /**
+     * Current civil date in the Moodle user's timezone, always Gregorian ISO 8601.
+     *
+     * userdate() is intended for locale-facing display and may not give an ASCII
+     * Y-m-d value on every calendar/locale configuration. Business-date keys
+     * must not depend on translated formatting (battleplan_date on workspace).
+     * $timestamp is injectable so timezone and UTC-midnight transitions can be tested.
+     */
+    public static function user_today(?int $timestamp = null): string {
+        $instant = new \DateTimeImmutable('@' . ($timestamp ?? time()));
+        return $instant->setTimezone(\core_date::get_user_timezone_object())->format('Y-m-d');
+    }
+
     public static function week_start(string $date): string {
         $d = \DateTimeImmutable::createFromFormat('!Y-m-d', $date, new \DateTimeZone('UTC'));
         if (!$d || $d->format('Y-m-d') !== $date) { self::fail('date'); }
@@ -294,6 +307,22 @@ class battle_plan_service {
         }
     }
 
+    /** Resolve an already existing weekly plan after validating the requested create context. */
+    public static function existing_plan_for_context(string $companyuuid, int $actor, int $userid, string $positionuuid,
+            string $periodstart): string {
+        global $DB;
+        $context = self::form_context($companyuuid, $actor, $userid, $positionuuid);
+        if ((int)$context['target_user'] !== $userid || (string)$context['position_uuid'] !== $positionuuid) {
+            self::fail('permission');
+        }
+        $periodstart = self::week_start($periodstart);
+        $record = $DB->get_record('local_kbacompany_bplan', [
+            'companyuuid' => $companyuuid, 'userid' => $userid, 'positionuuid' => $positionuuid,
+            'periodstart' => $periodstart,
+        ], 'uuid', IGNORE_MISSING);
+        return $record ? (string)$record->uuid : '';
+    }
+
     public static function create_plan(string $companyuuid, int $actor, int $userid, string $positionuuid,
             string $periodstart, int $reviewerid, int $observerid = 0, string $templateuuid = '', string $normuuid = ''): string {
         $canmanage = self::authorise_target($companyuuid, $actor, $userid);
@@ -481,11 +510,17 @@ class battle_plan_service {
         $plan = self::plan($companyuuid, $planuuid, $actor);
         self::assert_draft_access($companyuuid, $actor, $plan);
         $task = task_service::readable_projection($companyuuid, $actor, $taskuuid);
-        if (!$task || (int)$task['assignee_id'] !== (int)$plan->userid || in_array($task['status'], ['done', 'cancelled'], true)) {
+        if (!$task || (int)$task['assignee_id'] !== (int)$plan->userid ||
+                in_array($task['status'], ['done', 'cancelled'], true)) {
             self::fail('task');
         }
-        if ($DB->record_exists('local_kbacompany_bplanitem', [
-            'companyuuid' => $companyuuid, 'planuuid' => $planuuid, 'provider' => 'bms', 'externalid' => $taskuuid,
+        // Older BMS plan items may identify their task only via taskuuid.
+        // A repeated add must not create a second item for the same canonical task.
+        if ($DB->record_exists_sql("SELECT bi.id FROM {local_kbacompany_bplanitem} bi
+                WHERE bi.companyuuid=:linkcompany AND bi.planuuid=:linkplan AND bi.provider='bms'
+                  AND (bi.externalid=:linkexternal OR bi.taskuuid=:linklegacy)", [
+            'linkcompany'=>$companyuuid, 'linkplan'=>$planuuid,
+            'linkexternal'=>$taskuuid, 'linklegacy'=>$taskuuid,
         ])) { return; }
         $DB->insert_record('local_kbacompany_bplanitem', (object)[
             'companyuuid' => $companyuuid, 'uuid' => self::uuid(), 'planuuid' => $planuuid, 'taskuuid' => $taskuuid,
@@ -537,6 +572,139 @@ class battle_plan_service {
         if ((int)$plan->userid !== $assigneeid) {
             throw new \moodle_exception('taskcenter_battleplan_assignee_mismatch', 'local_kbacompany');
         }
+    }
+
+    /** Battle Plans that may receive a newly-created manual Task Center task. */
+    public static function manual_task_plan_options(string $companyuuid, int $actor): array {
+        global $DB;
+        company_context_service::context($companyuuid, $actor);
+        $canmanage = self::can_manage($companyuuid, $actor);
+        $employees = self::employees($companyuuid, $actor);
+        $positioncache = [];
+        $out = [];
+        $sql = "SELECT bp.* FROM {local_kbacompany_bplan} bp
+                  WHERE bp.companyuuid = :mtcompany AND bp.status IN ('draft','active')
+                    AND EXISTS (SELECT u.id FROM {user} u WHERE u.id = bp.userid AND u.deleted = 0 AND u.suspended = 0)
+               ORDER BY bp.periodstart DESC, bp.id DESC";
+        foreach ($DB->get_records_sql($sql, ['mtcompany'=>$companyuuid], 0, 100) as $plan) {
+            $userid = (int)$plan->userid;
+            if (!$canmanage && $userid !== $actor &&
+                    !access_role_service::may_edit_department_plan($companyuuid, $actor, $userid)) {
+                continue;
+            }
+            if (!isset($employees[$userid])) { continue; }
+            if (!array_key_exists($userid, $positioncache)) {
+                $positioncache[$userid] = self::current_positions($companyuuid, $actor, $userid);
+            }
+            $positionname = $positioncache[$userid][(string)$plan->positionuuid] ?? '';
+            $periodlabel = self::period_label((string)$plan->periodstart, (string)$plan->periodend);
+            $statuslabel = get_string('battleplan_status_' . (string)$plan->status, 'local_kbacompany');
+            $out[(string)$plan->uuid] = [
+                'uuid'=>(string)$plan->uuid, 'user_id'=>$userid,
+                'employee_name'=>(string)$employees[$userid], 'position_name'=>(string)$positionname,
+                'period_start'=>(string)$plan->periodstart, 'period_end'=>(string)$plan->periodend,
+                'period_label'=>$periodlabel, 'status'=>(string)$plan->status,
+                'label'=>(string)$employees[$userid] . ($positionname !== '' ? ' · ' . $positionname : '') .
+                    ' · ' . $periodlabel . ' · ' . $statuslabel,
+            ];
+        }
+        return $out;
+    }
+
+    /** Validate a draft/active Battle Plan before Task Center creates and links a manual task. */
+    public static function validate_manual_task_plan_target(string $companyuuid, int $actor, string $planuuid,
+            int $assigneeid): void {
+        company_context_service::context($companyuuid, $actor);
+        $plan = self::plan($companyuuid, $planuuid, $actor);
+        $canmanage = self::can_manage($companyuuid, $actor);
+        if (!in_array((string)$plan->status, ['draft', 'active'], true)) { self::fail('state'); }
+        if (!$canmanage && (int)$plan->userid !== $actor &&
+                !access_role_service::may_edit_department_plan($companyuuid, $actor, (int)$plan->userid)) {
+            self::fail('permission');
+        }
+        if ((int)$plan->userid !== $assigneeid) {
+            throw new \moodle_exception('taskcenter_battleplan_assignee_mismatch', 'local_kbacompany');
+        }
+    }
+
+    /** Visible Battle Plans available as a Task Center list filter. */
+    public static function task_filter_plan_options(string $companyuuid, int $actor): array {
+        global $DB;
+        company_context_service::context($companyuuid, $actor);
+        $canmanage = self::can_manage($companyuuid, $actor);
+        $employees = self::employees($companyuuid, $actor);
+        $positioncache = [];
+        $conditions = 'bp.companyuuid=:tfcompany';
+        $params = ['tfcompany'=>$companyuuid];
+        if (!$canmanage) {
+            $conditions .= ' AND (bp.userid=:tfowner OR bp.reviewerid=:tfreviewer OR bp.observerid=:tfobserver)';
+            $params += ['tfowner'=>$actor, 'tfreviewer'=>$actor, 'tfobserver'=>$actor];
+        }
+        $out = [];
+        foreach ($DB->get_records_sql("SELECT bp.* FROM {local_kbacompany_bplan} bp WHERE $conditions
+                ORDER BY bp.periodstart DESC,bp.id DESC", $params, 0, 100) as $plan) {
+            $userid = (int)$plan->userid;
+            if (!isset($employees[$userid])) { continue; }
+            if (!array_key_exists($userid, $positioncache)) {
+                $positioncache[$userid] = self::current_positions($companyuuid, $actor, $userid);
+            }
+            $positionname = (string)($positioncache[$userid][(string)$plan->positionuuid] ?? '');
+            $periodlabel = self::period_label((string)$plan->periodstart, (string)$plan->periodend);
+            $label = (string)$employees[$userid] . ($positionname !== '' ? ' · ' . $positionname : '') . ' · ' . $periodlabel;
+            $out[(string)$plan->uuid] = $label;
+        }
+        return $out;
+    }
+
+    /**
+     * Batch-read Battle Plan membership for already-visible canonical BMS tasks.
+     *
+     * This is a presentation/read-model helper for Task Center lists. It never grants task or plan access:
+     * callers must pass tasks they already may see, and non-managers only receive plans where they are
+     * owner/reviewer/observer. The relation remains owned by local_kbacompany_bplanitem.
+     *
+     * @param string $companyuuid
+     * @param int $actor
+     * @param array $taskuuids
+     * @return array<string,array<int,array<string,mixed>>>
+     */
+    public static function task_plan_memberships(string $companyuuid, int $actor, array $taskuuids): array {
+        global $DB;
+        company_context_service::context($companyuuid, $actor);
+        $taskuuids = array_values(array_unique(array_filter(array_map(static function($value): string {
+            return trim((string)$value);
+        }, $taskuuids), static function(string $value): bool { return $value !== ''; })));
+        if (!$taskuuids) { return []; }
+        // The Task Center page is bounded, but keep this helper independently bounded as well.
+        $taskuuids = array_slice($taskuuids, 0, 100);
+        [$externalinsql, $externalparams] = $DB->get_in_or_equal($taskuuids, SQL_PARAMS_NAMED, 'bplist_ext');
+        [$legacyinsql, $legacyparams] = $DB->get_in_or_equal($taskuuids, SQL_PARAMS_NAMED, 'bplist_task');
+        $params = ['bplist_company'=>$companyuuid] + $externalparams + $legacyparams;
+        $visibility = '';
+        if (!self::can_manage($companyuuid, $actor)) {
+            $visibility = ' AND (bp.userid=:bplist_owner OR bp.reviewerid=:bplist_reviewer OR bp.observerid=:bplist_observer)';
+            $params += ['bplist_owner'=>$actor, 'bplist_reviewer'=>$actor, 'bplist_observer'=>$actor];
+        }
+        $sql = "SELECT i.id,i.externalid,i.taskuuid,i.stream,bp.uuid AS planuuid,bp.periodstart,bp.periodend,bp.status
+                  FROM {local_kbacompany_bplanitem} i
+                  JOIN {local_kbacompany_bplan} bp ON bp.companyuuid=i.companyuuid AND bp.uuid=i.planuuid
+                 WHERE i.companyuuid=:bplist_company AND i.provider='bms'
+                   AND (i.externalid $externalinsql OR i.taskuuid $legacyinsql)$visibility
+              ORDER BY bp.periodstart DESC,bp.id DESC,i.id DESC";
+        $out = [];
+        foreach ($DB->get_records_sql($sql, $params) as $row) {
+            $taskuuid = trim((string)$row->externalid) !== '' ? (string)$row->externalid : (string)$row->taskuuid;
+            if ($taskuuid === '') { continue; }
+            $out[$taskuuid][] = [
+                'uuid'=>(string)$row->planuuid,
+                'period_start'=>(string)$row->periodstart,
+                'period_end'=>(string)$row->periodend,
+                'period_label'=>self::period_label((string)$row->periodstart, (string)$row->periodend),
+                'status'=>(string)$row->status,
+                'stream'=>(string)$row->stream,
+            ];
+        }
+        return $out;
     }
 
     /** Return Battle Plan choices for a visible canonical task without duplicating task data. */
@@ -614,7 +782,8 @@ class battle_plan_service {
         $plan = self::plan($companyuuid, $planuuid, $actor);
         self::assert_draft_access($companyuuid, $actor, $plan);
         $task = task_provider_service::get_task($companyuuid, $actor, $provider, $externalid);
-        if (!$task || (int)$task['assignee_id'] !== (int)$plan->userid || in_array($task['status'], ['done', 'cancelled'], true)) {
+        if (!$task || ($provider === 'kbacorporate_impl' && empty($task['attachable'])) ||
+                (int)$task['assignee_id'] !== (int)$plan->userid || in_array($task['status'], ['done', 'cancelled'], true)) {
             self::fail('task');
         }
         if ($DB->record_exists('local_kbacompany_bplanitem', [
@@ -747,6 +916,7 @@ class battle_plan_service {
                 $weekstate = self::week_workspace_payload((string)($plan->statepayload ?? ''));
                 $carried = array_flip(array_map('strval', (array)($weekstate['rollover']['itemuuids'] ?? [])));
                 $targetplanuuid = trim((string)($weekstate['rollover']['targetplanuuid'] ?? ''));
+                $closedsnapshot = ['version' => 1, 'capturedat' => time(), 'items' => []];
                 foreach ($DB->get_records('local_kbacompany_bplanitem', [
                     'companyuuid' => $companyuuid, 'planuuid' => $planuuid,
                 ]) as $item) {
@@ -759,16 +929,33 @@ class battle_plan_service {
                         $task = task_provider_service::get_task($companyuuid, $actor, $provider, $externalid);
                         $finished = $task && in_array($task['status'], ['done', 'cancelled'], true);
                     }
-                    if ($finished) { continue; }
-                    $rolled = isset($carried[(string)$item->uuid]) && $targetplanuuid !== '' &&
+                    $rolled = $finished ? false : (isset($carried[(string)$item->uuid]) && $targetplanuuid !== '' &&
                         $DB->record_exists('local_kbacompany_bplanitem', [
                             'companyuuid'=>$companyuuid,'planuuid'=>$targetplanuuid,
                             'provider'=>$provider,'externalid'=>$externalid,
-                        ]);
-                    if (!$rolled) { self::fail('unfinished'); }
+                        ]));
+                    $closedsnapshot['items'][] = [
+                        'itemuuid' => (string)$item->uuid,
+                        'provider' => $provider,
+                        'externalid' => $externalid,
+                        'status' => (string)($provider === 'bms' ? ($task->status ?? 'missing') : ($task['status'] ?? 'missing')),
+                        'carried' => (bool)$rolled,
+                    ];
+                    if (!$finished && !$rolled) { self::fail('unfinished'); }
                 }
+                $payload = self::state_payload_array((string)($plan->statepayload ?? ''));
+                $payload['closure_snapshot'] = $closedsnapshot;
+                $plan->statepayload = json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
                 $plan->status = 'closed'; $plan->closedat = time();
             } else { self::fail('invalid'); }
+            // Keep a durable event for every successful review transition.
+            // This executes under the existing plan lock and transaction.
+            if (in_array($action, ['submit', 'approve', 'selfapprove'], true)) {
+                $kind = $action === 'submit' ? 'submitted' : ($action === 'approve' ? 'approved' : 'selfapproved');
+                $plan->statepayload = battle_plan_review_cycle_service::append_event(
+                    (string)($plan->statepayload ?? ''), $kind, $actor,
+                    $action === 'submit' ? (int)$plan->submittedat : (int)$plan->approvedat);
+            }
             $plan->timemodified = time();
             $DB->update_record('local_kbacompany_bplan', $plan);
             $tx->allow_commit();
@@ -841,6 +1028,9 @@ class battle_plan_service {
                 $plan->approvedby = 0;
                 $plan->approvedat = 0;
             }
+            $plan->statepayload = battle_plan_review_cycle_service::append_event(
+                (string)($plan->statepayload ?? ''), $decision === 'approve' ? 'approved' : 'returned',
+                $actor, $now);
             $plan->timemodified = $now;
             $DB->update_record('local_kbacompany_bplan', $plan);
             $tx->allow_commit();
@@ -850,6 +1040,101 @@ class battle_plan_service {
         } finally {
             $lock->release();
         }
+    }
+
+    /** Outstanding acknowledgements on the most recent returned-review batch (advisory only). */
+    public static function outstanding_review_corrections(array $data): array {
+        $plan=$data['selected']??null;
+        if (!$plan || (string)($plan['status']??'')!=='draft') { return ['total'=>0,'outstanding'=>0]; }
+        $history=(array)($data['review_history']??[]);
+        if (!$history) { return ['total'=>0,'outstanding'=>0]; }
+        $last=end($history);
+        if ((string)($last['decision']??'')!=='changes') { return ['total'=>0,'outstanding'=>0]; }
+        $time=(int)($last['time_created']??0);
+        $actor=(int)($last['actor_id']??0);
+        $comment=(string)($last['comment']??'');
+        $targets=[];
+        foreach (array_reverse($history) as $row) {
+            if ((string)($row['decision']??'')!=='changes' || (int)($row['time_created']??0)!==$time ||
+                (int)($row['actor_id']??0)!==$actor || (string)($row['comment']??'')!==$comment) { continue; }
+            $targets[(string)($row['item_uuid']??'')]=true;
+        }
+        if (!$targets) { return ['total'=>0,'outstanding'=>0]; }
+        $payload=json_decode((string)($plan['state_payload']??''),true);
+        $events=(array)(is_array($payload)?($payload['review_correction_events']??[]):[]);
+        $batch=$time.':'.$actor.':'.$comment;
+        $latest=[];
+        foreach ($events as $event) {
+            if (!is_array($event) || (string)($event['batch']??'')!==$batch) { continue; }
+            $target=(string)($event['target']??'');
+            if (isset($targets[$target])) { $latest[$target]=(string)($event['action']??''); }
+        }
+        $outstanding=0;
+        foreach ($targets as $target=>$unused) {
+            if (($latest[$target]??'')!=='accepted') { ++$outstanding; }
+        }
+        return ['total'=>count($targets),'outstanding'=>$outstanding];
+    }
+
+    /** Record a correction acknowledgement or review against the current returned-review batch. */
+    public static function correction_action(string $companyuuid, int $actor, string $planuuid,
+            string $target, string $operation, string $note, string $expected): void {
+        global $DB;
+        company_context_service::context($companyuuid, $actor);
+        if (!in_array($operation, ['claimed', 'accepted', 'rework'], true) ||
+                \core_text::strlen($note) > 1500 || ($operation === 'rework' && trim($note) === '')) {
+            self::fail('invalid');
+        }
+        $lock = \core\lock\lock_config::get_lock_factory('local_kbacompany')
+            ->get_lock('battleplan:' . $companyuuid . ':' . $planuuid, 10);
+        if (!$lock) { self::fail('lock'); }
+        try {
+            $tx = $DB->start_delegated_transaction();
+            $plan = self::plan($companyuuid, $planuuid, $actor);
+            self::assert_token($plan, $expected);
+            if ((string)$plan->status !== 'draft') { self::fail('state'); }
+            $canmanage = self::can_manage($companyuuid, $actor);
+            $isreviewer = $canmanage || (int)$plan->reviewerid === $actor ||
+                access_role_service::may_approve_department_plan($companyuuid, $actor, (int)$plan->userid);
+            $isowner = $canmanage || (int)$plan->userid === $actor ||
+                access_role_service::may_edit_department_plan($companyuuid, $actor, (int)$plan->userid);
+            if ($operation === 'claimed' ? !$isowner : !$isreviewer) { self::fail('permission'); }
+            $reviews = $DB->get_records('local_kbacompany_bplanrev',
+                ['companyuuid'=>$companyuuid, 'planuuid'=>$planuuid], 'timecreated DESC, id DESC');
+            $batch = null; $valid = [];
+            foreach ($reviews as $review) {
+                if ((string)$review->decision !== 'changes') { break; }
+                $key = (int)$review->timecreated . ':' . (int)$review->actorid . ':' . (string)$review->comment;
+                if ($batch === null) { $batch = $key; }
+                if ($batch !== $key) { break; }
+                $valid[(string)$review->itemuuid] = true;
+            }
+            if ($batch === null || !array_key_exists($target, $valid)) { self::fail('reference'); }
+            $payload = self::state_payload_array((string)($plan->statepayload ?? ''));
+            $events = (array)($payload['review_correction_events'] ?? []);
+            $current = null;
+            for ($i=count($events)-1; $i>=0; --$i) {
+                $event=$events[$i];
+                if (($event['batch']??'') === $batch && ($event['target']??'') === $target) {
+                    $current=(string)($event['action']??''); break;
+                }
+            }
+            if (($operation === 'claimed' && $current === 'claimed') ||
+                (in_array($operation, ['accepted', 'rework'], true) && $current !== 'claimed')) {
+                self::fail('state');
+            }
+            if (count($events) >= 250) { self::fail('invalid'); }
+            $events[] = ['batch'=>$batch, 'target'=>$target, 'action'=>$operation,
+                'note'=>trim($note), 'actor'=>$actor, 'time'=>time()];
+            $payload['review_correction_events'] = $events;
+            $plan->statepayload = json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+            $plan->timemodified = time();
+            $DB->update_record('local_kbacompany_bplan', $plan);
+            $tx->allow_commit();
+        } catch (\Throwable $e) {
+            if (isset($tx)) { $tx->rollback($e); }
+            throw $e;
+        } finally { $lock->release(); }
     }
 
     /** Append-only review history for one Battle Plan. */
@@ -1033,7 +1318,8 @@ class battle_plan_service {
                     foreach ($provider->list_tasks($companyuuid, $actor, $targetuser, 'my') as $task) {
                         $ref = $task['provider'].':'.$task['external_id'];
                         if ((int)$task['assignee_id'] === $targetuser && !isset($taskids[$ref]) &&
-                                !in_array($task['status'], ['done','cancelled'], true)) { $availabletasks[] = $task; }
+                                !in_array($task['status'], ['done','cancelled'], true) &&
+                                ($key !== 'kbacorporate_impl' || !empty($task['attachable']))) { $availabletasks[] = $task; }
                     }
                 }
                 $sourcewhere = "(ownerpositionuuid = :sourceposition OR ownerpositionuuid = '')";
@@ -1080,12 +1366,34 @@ class battle_plan_service {
         $weekmeetings = ['count'=>0,'minutes'=>0,'items'=>[],'details_visible'=>false];
         $rolloveritems = [];
         $rollovertarget = null;
+        $nextplan = null;
         $metricstatuscounts = ['ok'=>0,'risk'=>0,'critical'=>0,'nodata'=>0];
+        $previousweekcomparison = null;
+        $performancehistory = [];
         if ($selected) {
             $weekworkspace = self::week_workspace_payload((string)($selected->statepayload ?? ''));
             $weekmeetings = self::week_meeting_projection($companyuuid, $actor, (int)$selected->userid,
                 (string)$selected->periodstart, (string)$selected->periodend, $canmanage);
             $rolloveritems = self::open_rollover_items($companyuuid, $actor, $items);
+            // Always project the next weekly Battle Plan independently from rollover state.
+            // This keeps navigation/creation UX available even when no task has been carried forward yet.
+            $nextstart = (new \DateTimeImmutable((string)$selected->periodstart, new \DateTimeZone('UTC')))
+                ->modify('+7 days')->format('Y-m-d');
+            $nextrow = $DB->get_record('local_kbacompany_bplan', [
+                'companyuuid'=>$companyuuid,
+                'userid'=>(int)$selected->userid,
+                'positionuuid'=>(string)$selected->positionuuid,
+                'periodstart'=>$nextstart,
+            ]);
+            if ($nextrow && self::can_access_plan($nextrow, $actor, $canmanage)) {
+                $nextplan = [
+                    'uuid'=>(string)$nextrow->uuid,
+                    'status'=>(string)$nextrow->status,
+                    'period_start'=>(string)$nextrow->periodstart,
+                    'period_end'=>(string)$nextrow->periodend,
+                ];
+            }
+
             $targetuuid = trim((string)($weekworkspace['rollover']['targetplanuuid'] ?? ''));
             if ($targetuuid !== '') {
                 $target = $DB->get_record('local_kbacompany_bplan', ['companyuuid'=>$companyuuid,'uuid'=>$targetuuid]);
@@ -1101,6 +1409,102 @@ class battle_plan_service {
                 if (!isset($metricstatuscounts[$status])) { $status = 'nodata'; }
                 $metricstatuscounts[$status]++;
             }
+
+            // Read-only comparison with the immediately preceding Battle Plan for the same employee/position.
+            // Reuse canonical task projections and indicator projections; do not create a parallel analytics model.
+            $previousstart = (new \DateTimeImmutable((string)$selected->periodstart, new \DateTimeZone('UTC')))
+                ->modify('-7 days')->format('Y-m-d');
+            $previousrow = $DB->get_record('local_kbacompany_bplan', [
+                'companyuuid'=>$companyuuid,
+                'userid'=>(int)$selected->userid,
+                'positionuuid'=>(string)$selected->positionuuid,
+                'periodstart'=>$previousstart,
+            ]);
+            if ($previousrow && self::can_access_plan($previousrow, $actor, $canmanage)) {
+                $previoustasks = ['tasks'=>0,'done'=>0,'open'=>0];
+                foreach ($DB->get_records('local_kbacompany_bplanitem', [
+                    'companyuuid'=>$companyuuid,'planuuid'=>(string)$previousrow->uuid,
+                ], 'stream ASC, sortorder ASC, id ASC') as $previousitem) {
+                    $provider = (string)($previousitem->provider ?: 'bms');
+                    $externalid = (string)($previousitem->externalid ?: $previousitem->taskuuid);
+                    if ($provider === 'bms') {
+                        $task = task_service::readable_projection($companyuuid, $actor, (string)$previousitem->taskuuid);
+                    } else {
+                        $task = task_provider_service::get_task($companyuuid, $actor, $provider, $externalid);
+                    }
+                    if (!$task) { continue; }
+                    $previoustasks['tasks']++;
+                    if ((string)$task['status'] === 'done') { $previoustasks['done']++; }
+                    if (!in_array((string)$task['status'], ['done','cancelled'], true)) { $previoustasks['open']++; }
+                }
+                $previousmetriccounts = ['ok'=>0,'risk'=>0,'critical'=>0,'nodata'=>0];
+                foreach (battle_plan_indicator_service::projection($companyuuid, $actor, (string)$selected->positionuuid,
+                        $previousstart, (string)$previousrow->uuid) as $indicator) {
+                    $status = (string)($indicator['performance']['status'] ?? 'nodata');
+                    if (!isset($previousmetriccounts[$status])) { $status = 'nodata'; }
+                    $previousmetriccounts[$status]++;
+                }
+                $previousweekcomparison = [
+                    'uuid'=>(string)$previousrow->uuid,
+                    'status'=>(string)$previousrow->status,
+                    'period_start'=>(string)$previousrow->periodstart,
+                    'period_end'=>(string)$previousrow->periodend,
+                    'tasks'=>$previoustasks,
+                    'metric_status_counts'=>$previousmetriccounts,
+                ];
+            }
+
+            // Bounded 8-week management-cycle trend for the same employee/position.
+            // Historical values are derived from the same canonical task/indicator projections as the current week.
+            $historyrows = $DB->get_records_select('local_kbacompany_bplan',
+                'companyuuid = :hcompany AND userid = :huser AND positionuuid = :hposition AND periodstart < :hcurrent',
+                ['hcompany'=>$companyuuid,'huser'=>(int)$selected->userid,'hposition'=>(string)$selected->positionuuid,
+                    'hcurrent'=>(string)$selected->periodstart],
+                'periodstart DESC', '*', 0, 7);
+            $historyrows = array_reverse(array_values($historyrows));
+            foreach ($historyrows as $historyrow) {
+                if (!self::can_access_plan($historyrow, $actor, $canmanage)) { continue; }
+                $htotal=0; $hdone=0;
+                foreach ($DB->get_records('local_kbacompany_bplanitem', [
+                    'companyuuid'=>$companyuuid,'planuuid'=>(string)$historyrow->uuid,
+                ], 'stream ASC, sortorder ASC, id ASC') as $historyitem) {
+                    $provider=(string)($historyitem->provider ?: 'bms');
+                    $externalid=(string)($historyitem->externalid ?: $historyitem->taskuuid);
+                    $task=$provider==='bms'
+                        ? task_service::readable_projection($companyuuid,$actor,(string)$historyitem->taskuuid)
+                        : task_provider_service::get_task($companyuuid,$actor,$provider,$externalid);
+                    if (!$task) { continue; }
+                    $htotal++;
+                    if ((string)$task['status']==='done') { $hdone++; }
+                }
+                $hmetrics=['ok'=>0,'risk'=>0,'critical'=>0,'nodata'=>0];
+                foreach (battle_plan_indicator_service::projection($companyuuid,$actor,(string)$selected->positionuuid,
+                        (string)$historyrow->periodstart,(string)$historyrow->uuid) as $indicator) {
+                    $status=(string)($indicator['performance']['status']??'nodata');
+                    if (!isset($hmetrics[$status])) { $status='nodata'; }
+                    $hmetrics[$status]++;
+                }
+                $hevaluated=(int)$hmetrics['ok']+(int)$hmetrics['risk']+(int)$hmetrics['critical'];
+                $htotalmetrics=$hevaluated+(int)$hmetrics['nodata'];
+                $performancehistory[]=[
+                    'uuid'=>(string)$historyrow->uuid,
+                    'period_start'=>(string)$historyrow->periodstart,
+                    'period_end'=>(string)$historyrow->periodend,
+                    'productivity'=>$htotal>0 ? (int)round(($hdone/$htotal)*100) : null,
+                    'effectiveness'=>$hevaluated>0 ? (int)round(((int)$hmetrics['ok']/$hevaluated)*100) : null,
+                    'coverage'=>$htotalmetrics>0 ? (int)round(($hevaluated/$htotalmetrics)*100) : null,
+                ];
+            }
+            $cevaluated=(int)$metricstatuscounts['ok']+(int)$metricstatuscounts['risk']+(int)$metricstatuscounts['critical'];
+            $ctotalmetrics=$cevaluated+(int)$metricstatuscounts['nodata'];
+            $performancehistory[]=[
+                'uuid'=>(string)$selected->uuid,
+                'period_start'=>(string)$selected->periodstart,
+                'period_end'=>(string)$selected->periodend,
+                'productivity'=>(int)$summary['tasks']>0 ? (int)round(((int)$summary['done']/(int)$summary['tasks'])*100) : null,
+                'effectiveness'=>$cevaluated>0 ? (int)round(((int)$metricstatuscounts['ok']/$cevaluated)*100) : null,
+                'coverage'=>$ctotalmetrics>0 ? (int)round(($cevaluated/$ctotalmetrics)*100) : null,
+            ];
         }
         $loadsummary = [
             'task_minutes'=>(int)$summary['plan_minutes'],
@@ -1149,9 +1553,13 @@ class battle_plan_service {
             'administrative_tasks' => $adminsources, 'position_work' => $worksources,
             'position_indicators' => $positionindicators, 'coverage_window' => $coveragewindow, 'metrics' => $metrics, 'summary' => $summary, 'overall_condition' => $overallcondition,
             'week_workspace' => $weekworkspace, 'week_meetings' => $weekmeetings, 'load_summary' => $loadsummary, 'capacity_summary' => $capacity,
-            'rollover_items' => $rolloveritems, 'rollover_target' => $rollovertarget, 'metric_status_counts' => $metricstatuscounts,
+            'rollover_items' => $rolloveritems, 'rollover_target' => $rollovertarget, 'next_plan' => $nextplan,
+            'metric_status_counts' => $metricstatuscounts, 'previous_week_comparison' => $previousweekcomparison,
+            'performance_history' => $performancehistory,
             'template_options' => $templateoptions, 'norm_options' => $normoptions,
             'review_history' => $selected ? self::review_history($companyuuid, $actor, (string)$selected->uuid) : [],
+            'review_cycle_history' => $selected ? battle_plan_review_cycle_service::project(
+                (string)($selected->statepayload ?? ''), $employees) : ['rows'=>[], 'cycles'=>0, 'timed'=>0, 'average_seconds'=>null],
             'selected_can_edit' => $selected ? ($canmanage || (int)$selected->userid === $actor ||
                 access_role_service::may_edit_department_plan($companyuuid, $actor, (int)$selected->userid)) : false];
     }
@@ -1186,15 +1594,26 @@ class battle_plan_service {
     public static function listing(string $companyuuid, int $actor, array $filters = [], int $page = 0): array {
         global $DB;
         company_context_service::context($companyuuid, $actor);
+
+        // Build the employee filter from plans the actor may actually access. This keeps the
+        // manager workspace useful without widening Battle Plan visibility or leaking foreign plans.
+        list($employeewhere, $employeeparams) = self::access_sql($companyuuid, $actor);
+        $employeeoptions = [];
+        $directory = self::employees($companyuuid, $actor);
+        foreach ($DB->get_records_sql("SELECT DISTINCT p.userid FROM {local_kbacompany_bplan} p WHERE $employeewhere ORDER BY p.userid",
+                $employeeparams) as $ownerrow) {
+            $ownerid = (int)$ownerrow->userid;
+            if (isset($directory[$ownerid])) { $employeeoptions[$ownerid] = $directory[$ownerid]; }
+        }
+
         list($where, $params) = self::access_sql($companyuuid, $actor);
         $scope = $filters['scope'] ?? 'all';
         if (!in_array($scope, ['all','my','review','watching'], true)) { self::fail('reference'); }
         if ($scope === 'my') { $where .= ' AND p.userid = :scopeactor'; $params['scopeactor'] = $actor; }
         if ($scope === 'watching') { $where .= ' AND p.observerid = :scopeactor'; $params['scopeactor'] = $actor; }
         if ($scope === 'review') { $where .= " AND p.reviewerid = :scopeactor AND p.status = 'submitted'"; $params['scopeactor'] = $actor; }
-        if (!empty($filters['status'])) {
-            if (!in_array($filters['status'], self::STATES, true)) { self::fail('state'); }
-            $where .= ' AND p.status = :filterstate'; $params['filterstate'] = $filters['status'];
+        if (!empty($filters['status']) && !in_array($filters['status'], self::STATES, true)) {
+            self::fail('state');
         }
         if (!empty($filters['user'])) { $where .= ' AND p.userid = :filteruser'; $params['filteruser'] = (int)$filters['user']; }
         if (!empty($filters['week'])) { $where .= ' AND p.periodstart = :filterweek'; $params['filterweek'] = self::week_start($filters['week']); }
@@ -1212,6 +1631,22 @@ class battle_plan_service {
                   LEFT JOIN {user} u ON u.id = p.userid
                   LEFT JOIN {user} r ON r.id = p.reviewerid
                   LEFT JOIN {local_kbacompany_position} pos ON pos.companyuuid = p.companyuuid AND pos.uuid = p.positionuuid";
+        // Count all status groups for the actor-authorized scope and other filters, BEFORE
+        // applying the selected status. Counts are not restricted to one paginated result page.
+        // In 'review' scope the existing submitted-only rule intentionally still applies.
+        $statuscounts = array_fill_keys(self::STATES, 0);
+        $statusrows = $DB->get_records_sql('SELECT p.status, COUNT(p.id) AS total'.$from.
+            ' WHERE '.$where.' GROUP BY p.status', $params);
+        foreach ($statusrows as $statusrow) {
+            if (array_key_exists((string)$statusrow->status, $statuscounts)) {
+                $statuscounts[(string)$statusrow->status] = (int)$statusrow->total;
+            }
+        }
+        $statuscounts['all'] = array_sum($statuscounts);
+        if (!empty($filters['status'])) {
+            $where .= ' AND p.status = :filterstate';
+            $params['filterstate'] = $filters['status'];
+        }
         $total = (int)$DB->count_records_sql('SELECT COUNT(p.id)'.$from.' WHERE '.$where, $params);
         $pagesize = 20; $page = max(0, min($page, max(0, (int)ceil($total/$pagesize)-1)));
         $sql = 'SELECT p.*, u.firstname, u.lastname, r.firstname AS rfirstname, r.lastname AS rlastname, pos.name AS positionname'.$from.
@@ -1223,11 +1658,45 @@ class battle_plan_service {
                 'period_start'=>(string)$row->periodstart,'period_end'=>(string)$row->periodend,
                 'status'=>(string)$row->status,'updated'=>(int)$row->timemodified];
         }
-        return ['rows'=>$rows,'total'=>$total,'page'=>$page,'pagesize'=>$pagesize,
-            'can_manage'=>self::can_manage($companyuuid, $actor)];
+        return ['rows'=>$rows,'total'=>$total,'status_counts'=>$statuscounts,'page'=>$page,'pagesize'=>$pagesize,
+            'can_manage'=>self::can_manage($companyuuid, $actor), 'employee_options'=>$employeeoptions];
     }
 
     /** A separate create form never chooses an unrelated first employee on behalf of a manager. */
+    /** Defaults for preparing the immediately following weekly plan from an accessible active/closed plan.
+     *
+     * Only reusable plan settings are inherited. Canonical tasks, metric facts, week goal/outcome and review
+     * history remain attached to the source week and are never copied by this helper.
+     */
+    public static function next_plan_creation_defaults(string $companyuuid, int $actor, string $sourceuuid,
+            int $targetuser, string $positionuuid, string $periodstart): array {
+        company_context_service::context($companyuuid, $actor);
+        $source = self::plan($companyuuid, $sourceuuid, $actor);
+        if (!in_array((string)$source->status, ['active','closed'], true)) { return []; }
+        if ((int)$source->userid !== $targetuser || (string)$source->positionuuid !== $positionuuid) { return []; }
+
+        $expected = (new \DateTimeImmutable((string)$source->periodstart, new \DateTimeZone('UTC')))
+            ->modify('+7 days')->format('Y-m-d');
+        if (self::week_start($periodstart) !== $expected) { return []; }
+
+        $employees = self::employees($companyuuid, $actor);
+        $reviewer = isset($employees[(int)$source->reviewerid]) ? (int)$source->reviewerid : 0;
+        $observer = (int)$source->observerid > 0 && isset($employees[(int)$source->observerid]) ? (int)$source->observerid : 0;
+        $published = battle_plan_template_service::published_options($companyuuid, $positionuuid);
+        $template = isset($published['templates'][(string)$source->templateuuid]) ? (string)$source->templateuuid : '';
+        $norm = isset($published['norms'][(string)$source->normuuid]) ? (string)$source->normuuid : '';
+
+        return [
+            'reviewerid'=>$reviewer,
+            'observerid'=>$observer,
+            'plantemplateuuid'=>$template,
+            'normuuid'=>$norm,
+            'source_uuid'=>(string)$source->uuid,
+            'source_period_start'=>(string)$source->periodstart,
+            'source_period_end'=>(string)$source->periodend,
+        ];
+    }
+
     public static function form_context(string $companyuuid, int $actor, int $targetuser = 0, string $position = ''): array {
         company_context_service::context($companyuuid, $actor);
         $employees = self::employees($companyuuid, $actor);

@@ -7,11 +7,12 @@ use local_kbacompany\local\task_provider\task_provider_interface;
 use local_kbacompany\local\task_provider\bms_task_provider;
 use local_kbacompany\local\task_provider\legacy_workflow_task_provider;
 use local_kbacompany\local\task_provider\kbaelement_task_provider;
+use local_kbacompany\local\task_provider\kbacorporate_impl_task_provider;
 
 /** Aggregates task-like work without transferring ownership from source subsystems. */
 class task_provider_service {
-    public const CONTRACT_VERSION = '0.4.6';
-    public const PROVIDERS = ['bms', 'legacy', 'kbaelement'];
+    public const CONTRACT_VERSION = '0.4.7';
+    public const PROVIDERS = ['bms', 'legacy', 'kbaelement', 'kbacorporate_impl'];
     public const SCOPES = ['my', 'created', 'review', 'overdue', 'all'];
 
     public static function contract(): array {
@@ -29,6 +30,8 @@ class task_provider_service {
                 'kbaelement_is_learning_source_of_truth',
                 'kbaelement_uses_explicit_company_course_bindings',
                 'kbaelement_completion_is_projected_from_moodle_completion',
+                'corporate_implementation_tasks_are_read_only_via_bridge_1_22',
+                'corporate_source_binding_requires_verified_company_identity',
                 'external_tasks_may_be_referenced_by_battle_plan_without_copying',
                 'provider_failure_must_not_break_other_providers',
                 'provider_projection_is_company_scoped',
@@ -50,6 +53,7 @@ class task_provider_service {
             'bms' => new bms_task_provider(),
             'legacy' => new legacy_workflow_task_provider(),
             'kbaelement' => new kbaelement_task_provider(),
+            'kbacorporate_impl' => new kbacorporate_impl_task_provider(),
         ];
     }
 

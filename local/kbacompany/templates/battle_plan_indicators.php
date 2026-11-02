@@ -8,7 +8,7 @@ use local_kbacompany\local\indicator_registry_service;
 use local_kbacompany\local\indicator_condition_service;
 use local_kbacompany\local\indicator_condition_execution_service;
 // Canonical position indicators for the selected Battle Plan week.
-$canmanageindicators = $metricsedit && indicator_registry_service::can_manage($uuid, (int)$USER->id);
+$canmanageindicators = indicator_registry_service::can_manage($uuid, (int)$USER->id);
 $cansetmetricplan = indicator_registry_service::can_manage($uuid, (int)$USER->id) && $plan['status'] !== 'closed';
 $canexecuteindicator = $canmanageindicators && $plan['status'] === 'draft' &&
     ($data['can_manage'] || (int)$plan['user_id'] === (int)$USER->id);
@@ -37,23 +37,19 @@ if (empty($data['position_indicators'])) {
     echo html_writer::div($summary, 'kba-indicator-kpis kba-indicator-kpis--four mb-3');
     echo html_writer::tag('p', get_string('battleplan_metric_status_rule','local_kbacompany'), ['class'=>'text-muted small']);
 
-    $it = new html_table();
-    $it->head = [get_string('battleplan_metric','local_kbacompany'),
-        get_string('battleplan_previous_fact','local_kbacompany'),
-        get_string('metric_period_plan','local_kbacompany'),
-        get_string('indicator_norm','local_kbacompany'),
-        get_string('battleplan_fact','local_kbacompany'),
-        get_string('metric_period_variance','local_kbacompany'),
-        get_string('metric_period_status','local_kbacompany'),
-        get_string('battleplan_trend','local_kbacompany')];
+    $cards = '';
     foreach ($data['position_indicators'] as $m) {
         $metriclabel = s($m['code'].' — '.$m['name']);
         $metriclabel = html_writer::link($m['indicator_url'], $metriclabel);
         if (!empty($m['daily_aggregate'])) {
-            $metriclabel .= html_writer::tag('small',
-                get_string('battleplan_daily_aggregate','local_kbacompany',(object)[
-                    'factdays'=>(int)$m['fact_days'], 'plandays'=>(int)$m['plan_days']]),
-                ['class'=>'d-block text-muted']);
+            $aggregatehelp = get_string('battleplan_daily_aggregate','local_kbacompany',(object)[
+                'factdays'=>(int)$m['fact_days'], 'plandays'=>(int)$m['plan_days']]);
+            $aggregateshort = get_string('battleplan_fact','local_kbacompany') . ': ' . (int)$m['fact_days'] .
+                ' / ' . get_string('metric_period_plan','local_kbacompany') . ': ' . (int)$m['plan_days'];
+            $metriclabel .= html_writer::tag('small', s($aggregateshort), [
+                'class'=>'d-block text-muted bms-bpu-metric-aggregate-short',
+                'title'=>$aggregatehelp,
+            ]);
         }
         if (!empty($m['critical'])) {
             $metriclabel .= ' ' . html_writer::tag('span', get_string('bpu_metric_critical_priority','local_kbacompany'), ['class'=>'badge badge-danger']);
@@ -100,8 +96,11 @@ if (empty($data['position_indicators'])) {
             $planbody .= html_writer::tag('button', get_string('bpu_metric_save_target','local_kbacompany'),
                 ['type'=>'submit','class'=>'btn btn-primary btn-sm']);
             $planbody .= html_writer::end_tag('form');
+            $planactionlabel = $m['current_plan'] === null ? get_string('bpu_metric_set_target', 'local_kbacompany') :
+                get_string('design_edit','local_kbacompany') . ' ' .
+                    core_text::strtolower(get_string('metric_period_plan','local_kbacompany'));
             $periodplan .= html_writer::tag('details',
-                html_writer::tag('summary', get_string('bpu_metric_set_target', 'local_kbacompany'),
+                html_writer::tag('summary', s($planactionlabel),
                     ['class'=>'btn btn-sm btn-outline-secondary']) . $planbody,
                 ['class'=>'bms-bpu-metric-target-inline','open'=>$planopen?'open':null]);
         }
@@ -273,16 +272,26 @@ if (empty($data['position_indicators'])) {
             }
         }
         $factdisplay = $m['current_fact'] === null ? '—' : format_float((float)$m['current_fact'], 2) . ' ' . s($m['unit']);
-        $factform = html_writer::tag('strong', s($factdisplay), ['class'=>'bms-bpu-metric-fact-value']);
+        $factstate = $m['current_fact'] === null ? get_string('bpu_metric_no_fact','local_kbacompany') :
+            get_string('battleplan_fact','local_kbacompany');
+        $factstateclass = $m['current_fact'] === null ? 'is-empty' : 'is-recorded';
+        $factform = html_writer::start_div('bms-bpu-metric-fact-summary ' . $factstateclass);
+        $factform .= html_writer::tag('span', s($factstate), ['class'=>'bms-bpu-metric-fact-state']);
+        $factform .= html_writer::tag('strong', s($factdisplay), ['class'=>'bms-bpu-metric-fact-value']);
         if (!empty($m['daily_aggregate'])) {
-            $factform .= html_writer::tag('small', get_string('battleplan_daily_aggregate',
-                'local_kbacompany', (object)['factdays'=>(int)$m['fact_days'],
-                    'plandays'=>(int)$m['plan_days']]), ['class'=>'d-block text-muted']);
+            $aggregatehelp = get_string('battleplan_daily_aggregate', 'local_kbacompany', (object)[
+                'factdays'=>(int)$m['fact_days'], 'plandays'=>(int)$m['plan_days']]);
+            $factdaysshort = get_string('battleplan_fact','local_kbacompany') . ': ' . (int)$m['fact_days'] .
+                ' / ' . (int)$m['plan_days'];
+            $factform .= html_writer::tag('small', s($factdaysshort), [
+                'class'=>'bms-bpu-metric-fact-days', 'title'=>$aggregatehelp,
+            ]);
         }
+        $factform .= html_writer::end_div();
         if ($canwritefact) {
             $chosen = (string)optional_param('fact', '', PARAM_RAW_TRIMMED) === (string)$m['bind_uuid'] ||
                 ($action === 'indicatorfact' && (string)($values['binduuid'] ?? '') === (string)$m['bind_uuid']);
-            $today = userdate(time(), '%Y-%m-%d');
+            $today = \local_kbacompany\local\business_date_service::day(time());
             $defaultdate = $today < $plan['period_start'] ? $plan['period_start'] :
                 ($today > $plan['period_end'] ? $plan['period_end'] : $today);
             $querydate = optional_param('factdate', '', PARAM_RAW_TRIMMED);
@@ -294,6 +303,14 @@ if (empty($data['position_indicators'])) {
             $defaultdate = $isday ? $defaultdate : $plan['period_start'];
             $entrydate = $metricvalue('indicatorfact','binduuid',(string)$m['bind_uuid'], 'factdate', $defaultdate);
             $factbody = html_writer::start_tag('form', ['method'=>'post','class'=>'bms-bpu-metric-fact-form']);
+            $factbody .= html_writer::tag('div',
+                html_writer::tag('strong', get_string('indicator_crud_record_fact','local_kbacompany')) .
+                html_writer::tag('span', s($m['code'].' — '.$m['name']), ['class'=>'d-block']) .
+                html_writer::tag('small',
+                    s($plan['period_start'].' — '.$plan['period_end']) . ' · ' .
+                    get_string('statunit','local_kbacompany') . ': ' . s($m['unit']),
+                    ['class'=>'d-block text-muted']),
+                ['class'=>'bms-bpu-metric-fact-context']);
             $factbody .= $hidden('indicatorfact', $plan['uuid']);
             $factbody .= html_writer::empty_tag('input', ['type'=>'hidden','name'=>'binduuid','value'=>$m['bind_uuid']]);
             if ($isday) {
@@ -332,8 +349,11 @@ if (empty($data['position_indicators'])) {
                         ['class'=>'bms-bpu-metric-history small']);
                 }
             }
+            $factactionlabel = $m['current_fact'] === null ? get_string('indicator_crud_record_fact','local_kbacompany') :
+                get_string('design_edit','local_kbacompany') . ' ' .
+                    core_text::strtolower(get_string('battleplan_fact','local_kbacompany'));
             $factform .= html_writer::tag('details',
-                html_writer::tag('summary', get_string('bpu_metric_add_fact','local_kbacompany'),
+                html_writer::tag('summary', s($factactionlabel),
                     ['class'=>'btn btn-sm btn-outline-primary']) . $factbody,
                 ['class'=>'bms-bpu-metric-inline','open'=>$chosen?'open':null]);
         }
@@ -343,6 +363,41 @@ if (empty($data['position_indicators'])) {
         $qualitykey = 'indicator_trend_'.$quality;
         $trend = get_string($movementkey, 'local_kbacompany');
         if ($quality !== 'insufficient') { $trend .= ' · ' . get_string($qualitykey, 'local_kbacompany'); }
+        $trendicon = $movement === 'rising' ? '↑' : ($movement === 'falling' ? '↓' :
+            ($movement === 'stable' ? '→' : '•'));
+        $trendclass = $quality === 'improving' ? 'is-positive' : ($quality === 'worsening' ? 'is-negative' :
+            ($movement === 'insufficient' ? 'is-muted' : 'is-neutral'));
+        $trenddisplay = html_writer::div(
+            html_writer::tag('span', $trendicon, ['class'=>'bms-bpu-metric-trend-icon','aria-hidden'=>'true']) .
+            html_writer::tag('span', s($trend), ['class'=>'bms-bpu-metric-trend-text']),
+            'bms-bpu-metric-trend ' . $trendclass);
+
+        $progress = '';
+        if ($m['current_plan'] !== null && (float)$m['current_plan'] > 0 && $m['current_fact'] !== null &&
+                (float)$m['current_fact'] >= 0) {
+            $progresspercent = ((float)$m['current_fact'] / (float)$m['current_plan']) * 100;
+            $progresswidth = max(0.0, min(100.0, $progresspercent));
+            $progresslabel = format_float($progresspercent, 1) . '%';
+            $progress = html_writer::div(
+                html_writer::div(
+                    html_writer::tag('span', get_string('battleplan_fact','local_kbacompany') . ' / ' .
+                        get_string('metric_period_plan','local_kbacompany'), ['class'=>'bms-bpu-metric-progress-label']) .
+                    html_writer::tag('strong', s($progresslabel), ['class'=>'bms-bpu-metric-progress-value']),
+                    'bms-bpu-metric-progress-head') .
+                html_writer::div(
+                    html_writer::div('', 'bms-bpu-metric-progress-fill', [
+                        'style'=>'width:' . format_float($progresswidth, 1, false, false) . '%',
+                    ]),
+                    'bms-bpu-metric-progress-track', [
+                        'role'=>'progressbar',
+                        'aria-valuemin'=>'0',
+                        'aria-valuemax'=>'100',
+                        'aria-valuenow'=>(string)round($progresswidth),
+                        'aria-label'=>get_string('battleplan_fact','local_kbacompany') . ' / ' .
+                            get_string('metric_period_plan','local_kbacompany'),
+                    ]),
+                'bms-bpu-metric-progress');
+        }
         $previous = $m['previous_fact'] === null ? '—' :
             format_float((float)$m['previous_fact'], 2) . ' ' . s($m['unit']);
         if (!empty($m['daily_aggregate']) && $m['previous_fact'] !== null) {
@@ -351,9 +406,50 @@ if (empty($data['position_indicators'])) {
                 get_string('bpu_metric_previous_fact_days', 'local_kbacompany', $days),
                 ['class'=>'d-block text-muted']);
         }
-        $it->data[] = [$metriclabel, $previous, $periodplan, $norm, $factform, $variance, $condition, s($trend)];
+        $metricmeta = html_writer::tag('small',
+            get_string('battleplan_previous_fact','local_kbacompany') . ': ' . $previous,
+            ['class'=>'d-block text-muted bms-bpu-metric-meta']);
+        $metricmeta .= html_writer::tag('small',
+            get_string('indicator_norm','local_kbacompany') . ': ' . $norm,
+            ['class'=>'d-block text-muted bms-bpu-metric-meta']);
+        $metriccell = html_writer::div($metriclabel . $metricmeta, 'bms-bpu-metric-identity');
+
+        $stat = static function(string $label, string $value, string $class = ''): string {
+            return html_writer::div(
+                html_writer::tag('span', s($label), ['class'=>'bms-bpu-metric-card-label']) .
+                html_writer::div($value, 'bms-bpu-metric-card-value'),
+                trim('bms-bpu-metric-card-stat ' . $class));
+        };
+
+        $daily = '';
+        if (!empty($m['daily_aggregate']) && !empty($m['daily_days'])) {
+            $dayitems = '';
+            foreach ($m['daily_days'] as $dayrow) {
+                $dayvalue = $dayrow['fact'] === null ? '—' :
+                    format_float((float)$dayrow['fact'], 2) . ' ' . s($m['unit']);
+                $dayitems .= html_writer::div(
+                    html_writer::tag('span', s($dayrow['period']), ['class'=>'bms-bpu-metric-day-date']) .
+                    html_writer::tag('strong', $dayvalue, ['class'=>'bms-bpu-metric-day-value']),
+                    'bms-bpu-metric-day');
+            }
+            $daily = html_writer::div(
+                html_writer::tag('span', get_string('battleplan_fact','local_kbacompany'),
+                    ['class'=>'bms-bpu-metric-card-label']) .
+                html_writer::div($dayitems, 'bms-bpu-metric-days'),
+                'bms-bpu-metric-card-daily');
+        }
+
+        $cardheader = html_writer::div($metriccell, 'bms-bpu-metric-card-heading');
+        $cardstats = html_writer::div(
+            $stat(get_string('metric_period_plan','local_kbacompany'), $periodplan, 'is-plan') .
+            $stat(get_string('battleplan_fact','local_kbacompany'), $factform, 'is-fact') .
+            $stat(get_string('metric_period_variance','local_kbacompany'), $variance, 'is-variance') .
+            $stat(get_string('metric_period_status','local_kbacompany'), $condition, 'is-status') .
+            $stat(get_string('battleplan_trend','local_kbacompany'), $trenddisplay, 'is-trend'),
+            'bms-bpu-metric-card-stats');
+        $cards .= html_writer::div($cardheader . $cardstats . $progress . $daily, 'bms-bpu-metric-card');
     }
-    echo html_writer::table($it);
+    echo html_writer::div($cards, 'bms-bpu-metric-cards');
     echo html_writer::tag('p', get_string('battleplan_position_indicators_rule','local_kbacompany'), ['class'=>'text-muted small']);
 }
 

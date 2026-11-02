@@ -1,0 +1,12 @@
+{
+    "component": "local_kbacompany",
+    "release": "1.1.0-rc29",
+    "build": 2026101721,
+    "summary": "RC29 build2026101721: fixed Moodle 4.0 unsupported html_writer::nav() in messenger filters and history pagination; static gate expanded; no DDL.",
+    "code_status": "Code ready",
+    "live_acceptance": "NOT RUN",
+    "release_notes": "RELEASE_NOTES_RC29_COMMUNICATION_NAV_HOTFIX_2026101721.md",
+    "register": "RELEASE_REGISTER_LOCAL.md",
+    "generated_at": "2026-10-20T04:00:38+00:00",
+    "guard": "Packaging must fail when cli/release_docs_checkpoint.php --check exits non-zero."
+}

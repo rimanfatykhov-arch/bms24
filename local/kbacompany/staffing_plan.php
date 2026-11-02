@@ -228,7 +228,7 @@ if ($canmanage && $data['branches']) {
     echo html_writer::start_div('col-lg-2 col-md-6 mb-3');
     echo html_writer::label(get_string('staffplaneffectivefrom', 'local_kbacompany'), 'effectivefrom');
     echo html_writer::empty_tag('input', ['id' => 'effectivefrom', 'name' => 'effectivefrom', 'type' => 'date',
-        'class' => 'form-control', 'value' => userdate(time(), '%Y-%m-%d')]);
+        'class' => 'form-control', 'value' => \local_kbacompany\local\business_date_service::day(time())]);
     echo html_writer::end_div();
     echo html_writer::start_div('col-lg-2 col-md-6 mb-3');
     echo html_writer::label(get_string('currency', 'local_kbacompany'), 'currency');
@@ -382,7 +382,7 @@ if ($canmanage && $isDraft) {
     echo html_writer::start_div('col-lg-4 col-md-6 mb-3');
     echo html_writer::label(get_string('staffplaneffectivefrom', 'local_kbacompany'), 'editeffectivefrom');
     echo html_writer::empty_tag('input', ['id' => 'editeffectivefrom', 'name' => 'effectivefrom', 'type' => 'date',
-        'class' => 'form-control', 'value' => !empty($data['plan']['effective_from']) ? userdate($data['plan']['effective_from'], '%Y-%m-%d') : '']);
+        'class' => 'form-control', 'value' => !empty($data['plan']['effective_from']) ? \local_kbacompany\local\business_date_service::day($data['plan']['effective_from']) : '']);
     echo html_writer::end_div();
     echo html_writer::start_div('col-lg-3 col-md-6 mb-3');
     echo html_writer::label(get_string('currency', 'local_kbacompany'), 'editcurrency');

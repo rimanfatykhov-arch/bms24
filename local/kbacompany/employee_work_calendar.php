@@ -13,6 +13,18 @@ $owner = required_param('userid', PARAM_INT);
 $actor = (int)$USER->id;
 $base = new moodle_url('/local/kbacompany/employee_work_calendar.php', ['uuid'=>$uuid, 'userid'=>$owner]);
 
+// Work calendars belong to canonical company employees/participants. A company user may still
+// legitimately own/curate a management cycle without having an Employee directory membership.
+// Never let that mismatch surface as bms_employee_not_found.
+if (!wc::owner_available($uuid, $actor, $owner)) {
+    if ($owner === $actor) {
+        redirect(new moodle_url('/local/kbacompany/my_management_cycle.php', ['uuid'=>$uuid]),
+            get_string('wcal_owner_not_employee', 'local_kbacompany'), null,
+            \core\output\notification::NOTIFY_WARNING);
+    }
+    throw new required_capability_exception($context, 'local/kbacompany:viewowncompany', 'nopermissions', '');
+}
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     require_sesskey();
     $operation = required_param('operation', PARAM_ALPHA);

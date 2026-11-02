@@ -4,6 +4,7 @@ require_once(__DIR__ . '/../../config.php');
 use local_kbacompany\local\battle_plan_coverage_service;
 use local_kbacompany\local\battle_plan_service;
 use local_kbacompany\local\battle_plan_week_launch_service;
+use local_kbacompany\local\bms24_ui_kit_service;
 
 require_login();
 $uuid = required_param('uuid', PARAM_ALPHANUMEXT);
@@ -63,31 +64,58 @@ $gapopts = ['all'=>get_string('battleplan_coverage_gap_all','local_kbacompany')]
 foreach (battle_plan_coverage_service::GAP_FILTERS as $code) {
     $gapopts[$code] = get_string('battleplan_coverage_gap_'.$code,'local_kbacompany');
 }
-echo html_writer::start_tag('form',['method'=>'get','class'=>'form-inline my-3']);
-echo html_writer::empty_tag('input',['type'=>'hidden','name'=>'uuid','value'=>$uuid]);
-echo html_writer::label(get_string('battleplan_week','local_kbacompany'),'bpcov_week',false,['class'=>'mr-2']);
-echo html_writer::empty_tag('input',['type'=>'date','id'=>'bpcov_week','name'=>'week','value'=>$data['week_start'],'class'=>'form-control mr-3']);
-echo html_writer::label(get_string('battleplan_overview_unit','local_kbacompany'),'bpcov_unit',false,['class'=>'mr-2']);
-echo html_writer::select($nodeopts,'orgnode',$data['orgnode_filter'],false,['id'=>'bpcov_unit','class'=>'form-control mr-3']);
-echo html_writer::label(get_string('battleplan_coverage_gap_filter','local_kbacompany'),'bpcov_gap',false,['class'=>'mr-2']);
-echo html_writer::select($gapopts,'gap',$data['gap_filter'],false,['id'=>'bpcov_gap','class'=>'form-control mr-3']);
-echo html_writer::tag('button',get_string('battleplan_show','local_kbacompany'),['type'=>'submit','class'=>'btn btn-primary']);
-echo html_writer::end_tag('form');
+echo bms24_ui_kit_service::filterbar(
+    new moodle_url('/local/kbacompany/battle_plan_coverage.php'),
+    get_string('battleplan_coverage_title','local_kbacompany'),
+    [
+        ['id'=>'bpcov_week','name'=>'week','label'=>get_string('battleplan_week','local_kbacompany'),'type'=>'date','value'=>$data['week_start']],
+        ['id'=>'bpcov_unit','name'=>'orgnode','label'=>get_string('battleplan_overview_unit','local_kbacompany'),'type'=>'select','value'=>$data['orgnode_filter'],'options'=>$nodeopts],
+        ['id'=>'bpcov_gap','name'=>'gap','label'=>get_string('battleplan_coverage_gap_filter','local_kbacompany'),'type'=>'select','value'=>$data['gap_filter'],'options'=>$gapopts],
+    ],
+    ['uuid'=>$uuid],
+    new moodle_url('/local/kbacompany/battle_plan_coverage.php',['uuid'=>$uuid]),
+    get_string('battleplan_show','local_kbacompany'),
+    get_string('reset','core')
+);
 echo html_writer::tag('p', s(battle_plan_service::period_label($data['week_start'],$data['week_end'])), ['class'=>'text-muted']);
 
+$expected = (int)$data['summary']['expected_assignments'];
+$covered = (int)$data['summary']['covered_assignments'];
+$coveragepercent = $expected > 0 ? (int)round(($covered / $expected) * 100) : 0;
+$coveragebar = html_writer::div(
+    html_writer::div('', 'bms-bpu-coverage-progress-value', ['style'=>'width:'.min(100, max(0, $coveragepercent)).'%']),
+    'bms-bpu-coverage-progress',
+    ['role'=>'progressbar','aria-valuemin'=>'0','aria-valuemax'=>'100','aria-valuenow'=>(string)$coveragepercent]
+);
+$coverageheadline = html_writer::div(
+    html_writer::div(
+        html_writer::tag('strong', (string)$coveragepercent.'%') .
+        html_writer::tag('span', get_string('battleplan_coverage_covered_assignments','local_kbacompany').' / '.
+            get_string('battleplan_coverage_expected_assignments','local_kbacompany')),
+        'bms-bpu-coverage-progress-copy'
+    ) . $coveragebar,
+    'bms-bpu-coverage-progress-card'
+);
+echo $coverageheadline;
+
+$kpidefs = [
+    'expected_assignments'=>['battleplan_coverage_expected_assignments','all'],
+    'covered_assignments'=>['battleplan_coverage_covered_assignments','all'],
+    'missing_plans'=>['battleplan_coverage_missing_plans','missing_plan'],
+    'positions_without_critical'=>['battleplan_coverage_positions_without_critical','no_critical'],
+    'critical_without_norm'=>['battleplan_coverage_critical_without_norm','no_norm'],
+    'units_with_gaps'=>['battleplan_coverage_units_with_gaps','all'],
+];
 $kpis = '';
-foreach ([
-    'expected_assignments'=>'battleplan_coverage_expected_assignments',
-    'covered_assignments'=>'battleplan_coverage_covered_assignments',
-    'missing_plans'=>'battleplan_coverage_missing_plans',
-    'positions_without_critical'=>'battleplan_coverage_positions_without_critical',
-    'critical_without_norm'=>'battleplan_coverage_critical_without_norm',
-    'units_with_gaps'=>'battleplan_coverage_units_with_gaps',
-] as $key=>$langkey) {
-    $kpis .= html_writer::div(html_writer::tag('strong',(string)$data['summary'][$key]) .
-        html_writer::tag('small',get_string($langkey,'local_kbacompany')), 'kba-indicator-kpi');
+foreach ($kpidefs as $key=>$def) {
+    $url = new moodle_url('/local/kbacompany/battle_plan_coverage.php', [
+        'uuid'=>$uuid, 'week'=>$data['week_start'], 'orgnode'=>$data['orgnode_filter'], 'gap'=>$def[1],
+    ]);
+    $content = html_writer::tag('strong',(string)$data['summary'][$key]) .
+        html_writer::tag('small',get_string($def[0],'local_kbacompany'));
+    $kpis .= html_writer::link($url, $content, ['class'=>'kba-indicator-kpi bms-bpu-stat-link']);
 }
-echo html_writer::div($kpis,'kba-indicator-kpis mb-4');
+echo html_writer::div($kpis,'kba-indicator-kpis bms-bpu-coverage-kpis mb-4');
 
 $missingrows = array_values(array_filter($data['rows'], static function(array $row): bool {
     return (string)$row['type'] === 'missing_plan';
@@ -148,9 +176,24 @@ if (!$data['by_unit']) {
         get_string('battleplan_coverage_positions_without_critical','local_kbacompany'),
         get_string('battleplan_coverage_critical_without_norm','local_kbacompany')];
     foreach ($data['by_unit'] as $unit) {
-        $t->data[] = [s($unit['name'] ?: get_string('battleplan_overview_no_unit','local_kbacompany')),
-            (int)$unit['expected_assignments'], (int)$unit['covered_assignments'], (int)$unit['missing_plans'],
-            (int)$unit['positions_without_critical'], (int)$unit['critical_without_norm']];
+        $unitname = s($unit['name'] ?: get_string('battleplan_overview_no_unit','local_kbacompany'));
+        $uniturl = new moodle_url('/local/kbacompany/battle_plan_coverage.php', [
+            'uuid'=>$uuid, 'week'=>$data['week_start'], 'orgnode'=>$unit['uuid'], 'gap'=>'all',
+        ]);
+        $missingurl = new moodle_url('/local/kbacompany/battle_plan_coverage.php', [
+            'uuid'=>$uuid, 'week'=>$data['week_start'], 'orgnode'=>$unit['uuid'], 'gap'=>'missing_plan',
+        ]);
+        $nocriticalurl = new moodle_url('/local/kbacompany/battle_plan_coverage.php', [
+            'uuid'=>$uuid, 'week'=>$data['week_start'], 'orgnode'=>$unit['uuid'], 'gap'=>'no_critical',
+        ]);
+        $nonormurl = new moodle_url('/local/kbacompany/battle_plan_coverage.php', [
+            'uuid'=>$uuid, 'week'=>$data['week_start'], 'orgnode'=>$unit['uuid'], 'gap'=>'no_norm',
+        ]);
+        $t->data[] = [html_writer::link($uniturl, $unitname),
+            (int)$unit['expected_assignments'], (int)$unit['covered_assignments'],
+            (int)$unit['missing_plans'] > 0 ? html_writer::link($missingurl, (string)(int)$unit['missing_plans']) : '0',
+            (int)$unit['positions_without_critical'] > 0 ? html_writer::link($nocriticalurl, (string)(int)$unit['positions_without_critical']) : '0',
+            (int)$unit['critical_without_norm'] > 0 ? html_writer::link($nonormurl, (string)(int)$unit['critical_without_norm']) : '0'];
     }
     echo html_writer::table($t);
 }

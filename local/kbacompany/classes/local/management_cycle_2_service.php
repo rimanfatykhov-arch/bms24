@@ -59,7 +59,7 @@ class management_cycle_2_service {
     public static function cadence_overview(string $companyuuid, int $actor, string $date = ''): array {
         global $DB;
         self::require_manage($companyuuid, $actor);
-        if ($date === '') { $date = userdate(time(), '%Y-%m-%d'); }
+        if ($date === '') { $date = business_date_service::day(time()); }
         if (!management_cycle_template_service::valid_date($date)) {
             throw new \moodle_exception('mcu_bad_date', 'local_kbacompany');
         }

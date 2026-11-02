@@ -31,13 +31,14 @@ class bms24_task_owned_presentation_test extends \advanced_testcase {
         set_config('bms24_shell_mode', 'owned', 'local_kbacompany');
         $html = ui::listing('company-test', ['can_manage'=>true,'total'=>0], [
             'scope'=>'my', 'q'=>'<script>alert(1)</script>', 'status'=>'',
-            'stream'=>'', 'sourcekind'=>'',
+            'stream'=>'', 'sourcekind'=>'', 'battleplan'=>'plan-1',
         ], 'list');
         $this->assertStringContainsString('bms24-task-header', $html);
         $this->assertStringContainsString('bms24-task-tabs', $html);
         $this->assertStringContainsString('bms24-ui-filterbar', $html);
         $this->assertStringContainsString('name="scope"', $html);
         $this->assertStringContainsString('name="display"', $html);
+        $this->assertStringContainsString('name="battleplan"', $html);
         $this->assertStringNotContainsString('<script>', $html);
     }
 

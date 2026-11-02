@@ -1,0 +1,9 @@
+{
+  "build": 2026101830,
+  "release": "1.1.0-rc29",
+  "scope": "task checklist 2.0",
+  "db_migration": false,
+  "php_lint": "466/466",
+  "phpunit": "test cases included but not executed",
+  "server_acceptance": "pending"
+}

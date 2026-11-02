@@ -125,14 +125,15 @@ class communication_center_service {
      * only filters and groups participant-visible threads for the three-pane UI.
      */
     public static function workspace_context(string $companyuuid, int $actor, string $tab = 'inbox',
-            string $selectedthread = '', string $search = ''): array {
+            string $selectedthread = '', string $search = '', string $messagequery = '', int $messagepage = 0): array {
         global $DB;
         company_context_service::context($companyuuid, $actor);
         if (!in_array($tab, self::TABS, true) || $tab === 'tasks') { $tab = 'inbox'; }
         $scope = 'all';
         if ($tab === 'unread') { $scope = 'unread'; }
         if ($tab === 'mentions') { $scope = 'mentions'; }
-        $comm = communication_service::context($companyuuid, $actor, $selectedthread, $scope);
+        $comm = communication_service::context($companyuuid, $actor, $selectedthread, $scope,
+            ['search' => $messagequery, 'page' => $messagepage]);
         $threads = [];
         $needle = \core_text::strtolower(trim(\core_text::substr($search, 0, 200)));
         foreach ($comm['threads'] as $thread) {
@@ -161,10 +162,56 @@ class communication_center_service {
             }
             $threads[] = $thread;
         }
+        // RC29/1714: bounded participant-visible previews. Never query raw unscoped threads.
+        // One batch for messages and one for mentions; no per-thread preview queries.
+        $previewthreads = array_slice($threads, 0, 100);
+        $previews = []; $mentionflags = [];
+        if ($previewthreads) {
+            $uuids = array_column($previewthreads, 'uuid');
+            list($insql, $inparams) = $DB->get_in_or_equal($uuids, SQL_PARAMS_NAMED, 'cct');
+            $params = ['ccpreviewcompany' => $companyuuid, 'ccpreviewactor' => $actor] + $inparams;
+            $sql = "SELECT m.id, m.threaduuid, m.body, m.authorid, m.timecreated
+                      FROM {local_kbacompany_commmsg} m
+                     WHERE m.companyuuid = :ccpreviewcompany AND m.status = 'active'
+                       AND m.threaduuid $insql
+                       AND EXISTS (SELECT 1 FROM {local_kbacompany_commpart} p
+                          WHERE p.companyuuid=m.companyuuid AND p.threaduuid=m.threaduuid
+                            AND p.userid=:ccpreviewactor AND p.active=1)
+                  ORDER BY m.id DESC";
+            // The thread list itself is already participant-scoped; collect only one per thread.
+            foreach ($DB->get_records_sql($sql, $params, 0, 2000) as $msg) {
+                $uuid = (string)$msg->threaduuid;
+                if (!isset($previews[$uuid])) {
+                    $body = preg_replace('/\s+/u', ' ', trim(strip_tags((string)$msg->body)));
+                    $previews[$uuid] = ['body' => \core_text::substr((string)$body, 0, 110),
+                        'author_id' => (int)$msg->authorid, 'time' => (int)$msg->timecreated];
+                }
+            }
+            $mentionparams = ['ccmentioncompany'=>$companyuuid, 'ccmentionactor'=>$actor,
+                'ccmentionpart'=>$actor, 'ccmentionreader'=>$actor] + $inparams;
+            $mentionsql = "SELECT mn.id, mn.threaduuid
+                 FROM {local_kbacompany_commmention} mn
+                 JOIN {local_kbacompany_commmsg} msg ON msg.companyuuid=mn.companyuuid
+                       AND msg.uuid=mn.messageuuid AND msg.status='active'
+                 JOIN {local_kbacompany_commpart} p ON p.companyuuid=mn.companyuuid
+                       AND p.threaduuid=mn.threaduuid AND p.userid=:ccmentionpart AND p.active=1
+                 LEFT JOIN {local_kbacompany_commread} rd ON rd.companyuuid=mn.companyuuid
+                       AND rd.threaduuid=mn.threaduuid AND rd.userid=:ccmentionreader
+                WHERE msg.id > COALESCE(rd.lastmessageid,0) AND mn.companyuuid=:ccmentioncompany AND mn.userid=:ccmentionactor
+                      AND mn.threaduuid $insql";
+            foreach ($DB->get_records_sql($mentionsql, $mentionparams, 0, 2000) as $mention) {
+                $mentionflags[(string)$mention->threaduuid] = true;
+            }
+        }
+        foreach ($threads as &$thread) {
+            $thread['preview'] = $previews[$thread['uuid']] ?? null;
+            $thread['has_unread_mention'] = isset($mentionflags[$thread['uuid']]);
+        }
+        unset($thread);
         $taskcounts = task_service::dashboard_counts($companyuuid, $actor);
         return [
             'company' => $comm['company'], 'tab' => $tab, 'threads' => $threads,
-            'selected' => $comm['selected'], 'messages' => $comm['messages'], 'employees' => $comm['employees'],
+            'selected' => $comm['selected'], 'messages' => $comm['messages'], 'history' => $comm['history'], 'employees' => $comm['employees'],
             'notifications' => $comm['notifications'], 'counts' => $comm['counts'], 'task_counts' => $taskcounts,
             'search' => $search, 'can_manage' => $comm['can_manage'],
         ];

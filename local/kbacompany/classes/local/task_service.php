@@ -5,7 +5,7 @@ defined('MOODLE_INTERNAL') || die();
 
 /** Canonical company task center. Battle plans reference these tasks instead of duplicating them. */
 class task_service {
-    public const CONTRACT_VERSION = '0.5.6';
+    public const CONTRACT_VERSION = '0.5.8';
     public const STATUSES = ['open', 'doing', 'review', 'returned', 'done', 'cancelled', 'deleted'];
     public const STREAMS = ['change', 'run', 'operate', 'develop', 'unplanned'];
     public const PRIORITIES = ['low', 'normal', 'high'];
@@ -50,6 +50,7 @@ class task_service {
                 'task_creation_can_add_same_canonical_task_to_selected_draft_battle_plan',
                 'indicator_condition_confirmation_can_source_canonical_task_without_task_copy',
                 'position_coverage_only_executes_explicit_position_bound_tasks_without_reassigning_original',
+                'pattern_trace_lookup_reuses_canonical_task_visibility',
             ],
         ];
         $contract['schema_hash_algorithm'] = 'sha256';
@@ -74,6 +75,90 @@ class task_service {
         $hex = bin2hex($bytes);
         return substr($hex, 0, 8) . '-' . substr($hex, 8, 4) . '-' . substr($hex, 12, 4) .
             '-' . substr($hex, 16, 4) . '-' . substr($hex, 20);
+    }
+
+    /**
+     * Calendar-date boundaries in the current Moodle user's timezone.
+     *
+     * Task deadlines are stored as YYYY-MM-DD dates, not UTC instants. Always
+     * compare with the same local calendar day used in the workspace and
+     * Battle Plans; otherwise a task can show as overdue in one view but not
+     * another around midnight. The six-day horizon is calendar arithmetic so
+     * daylight-saving transitions do not shorten/extend the seven-day window.
+     *
+     * @param int|null $timestamp Timestamp injection for deterministic tests.
+     * @return array{today: string, until: string} Seven dates including today.
+     */
+    public static function reporting_dates(?int $timestamp = null): array {
+        $today = business_date_service::day($timestamp ?? time());
+        $base = \DateTimeImmutable::createFromFormat('!Y-m-d', $today, new \DateTimeZone('UTC'));
+        if ($base === false) {
+            throw new \coding_exception('Task Center expected an ISO local calendar date');
+        }
+        return ['today' => $today, 'until' => $base->modify('+6 days')->format('Y-m-d')];
+    }
+
+    /**
+     * Task deadlines: five active calendar groups and a separate closed group.
+     * A closed task must never be shown as overdue, regardless of its saved due date.
+     * Dates are ISO calendar days in the Moodle user's timezone (reporting_dates()).
+     */
+    public static function deadline_bucket(string $duedate, string $status, array $dates): string {
+        if (in_array($status, ['done', 'cancelled'], true)) { return 'closed'; }
+        if ($duedate === '') { return 'undated'; }
+        if ($duedate < $dates['today']) { return 'overdue'; }
+        if ($duedate === $dates['today']) { return 'today'; }
+        if ($duedate <= $dates['until']) { return 'week'; }
+        return 'later';
+    }
+
+    public static function normalise_duegroup(string $group): string {
+        return in_array($group, ['overdue','today','week','later','undated','closed'], true) ? $group : '';
+    }
+
+    /** Pure, whitelisted SQL predicates, always ANDed to list_conditions ACL/company clauses. */
+    private static function deadline_group_condition(string $group, array $dates): array {
+        $active = "t.status NOT IN ('done','cancelled')";
+        switch ($group) {
+            case 'overdue': return ["$active AND t.duedate <> '' AND t.duedate < :groupoverdue", ['groupoverdue'=>$dates['today']]];
+            case 'today': return ["$active AND t.duedate = :grouptoday", ['grouptoday'=>$dates['today']]];
+            case 'week': return ["$active AND t.duedate > :groupafter AND t.duedate <= :groupuntil",
+                ['groupafter'=>$dates['today'], 'groupuntil'=>$dates['until']]];
+            case 'later': return ["$active AND t.duedate > :grouplater", ['grouplater'=>$dates['until']]];
+            case 'undated': return ["$active AND t.duedate = ''", []];
+            case 'closed': return ["t.status IN ('done','cancelled')", []];
+            default: return ['1=1', []];
+        }
+    }
+
+    /**
+     * Page-independent bucket totals for the *same* permitted selection as Task List.
+     * Selecting a bucket only affects list_page, not the totals shown in the navigator.
+     */
+    public static function deadline_summary(string $companyuuid, int $actor, array $filters = []): array {
+        global $DB;
+        company_context_service::context($companyuuid, $actor);
+        unset($filters['duegroup']);
+        [$where, $params] = self::list_conditions($companyuuid, $actor, $filters);
+        $dates = self::reporting_dates();
+        $active = "t.status NOT IN ('done','cancelled')";
+        $sql = "SELECT COUNT(t.id) AS total,
+            SUM(CASE WHEN $active AND t.duedate <> '' AND t.duedate < :dsover THEN 1 ELSE 0 END) AS overdue,
+            SUM(CASE WHEN $active AND t.duedate = :dstoday THEN 1 ELSE 0 END) AS today,
+            SUM(CASE WHEN $active AND t.duedate > :dsafter AND t.duedate <= :dsuntil THEN 1 ELSE 0 END) AS week,
+            SUM(CASE WHEN $active AND t.duedate > :dslater THEN 1 ELSE 0 END) AS later,
+            SUM(CASE WHEN $active AND t.duedate = '' THEN 1 ELSE 0 END) AS undated,
+            SUM(CASE WHEN t.status IN ('done','cancelled') THEN 1 ELSE 0 END) AS closed
+            FROM {local_kbacompany_task} t WHERE $where";
+        $r = $DB->get_record_sql($sql, $params + [
+            'dsover'=>$dates['today'], 'dstoday'=>$dates['today'], 'dsafter'=>$dates['today'],
+            'dsuntil'=>$dates['until'], 'dslater'=>$dates['until'],
+        ]);
+        $summary = [];
+        foreach (['total','overdue','today','week','later','undated','closed'] as $key) {
+            $summary[$key] = (int)($r->$key ?? 0);
+        }
+        return $summary;
     }
 
     private static function text(array $data, string $key, int $max, bool $required = false): string {
@@ -354,6 +439,14 @@ class task_service {
                 $actor, (int)$row->assigneeid, 'edit');
     }
 
+    /** Reading a task does not grant write access to its discussion. */
+    private static function can_post_discussion(\stdClass $row, int $actor, bool $canmanage): bool {
+        return self::can_contribute_to_task($row, $actor, $canmanage) ||
+            access_role_service::may_act_on_department_task((string)$row->companyuuid,
+                $actor, (int)$row->assigneeid, 'approve') ||
+            access_role_service::can((string)$row->companyuuid, $actor, 'task', 'comment');
+    }
+
     private static function can_edit_definition(\stdClass $row, int $actor, bool $canmanage): bool {
         return $canmanage || (int)$row->creatorid === $actor ||
             access_role_service::may_act_on_department_task((string)$row->companyuuid,
@@ -464,7 +557,7 @@ class task_service {
         $parentcompany = (string)($existing->companyuuid ?? $data['companyuuid'] ?? '');
         if ($parentuuid !== '') {
             if (!$existing || $parentuuid !== (string)$existing->parentuuid) {
-                if (!self::readable_projection($parentcompany, $actor, $parentuuid)) { self::fail('parent'); }
+                if (!self::can_add_subtasks($parentcompany, $actor, $parentuuid)) { self::fail('parent'); }
             }
             self::validate_parent_chain($parentcompany, $parentuuid, $existing ? (string)$existing->uuid : '');
             // One primary placement per task in the editor: parent task or management context.
@@ -511,6 +604,11 @@ class task_service {
         if (!$lock) { self::fail('lock'); }
         try {
             $tx = $DB->start_delegated_transaction();
+            // Parent could have been submitted since validate_common() ran.
+            if ($values['parentuuid'] !== '' &&
+                    !self::can_add_subtasks($companyuuid, $actor, (string)$values['parentuuid'])) {
+                self::fail('parent');
+            }
             $uuid = self::uuid();
             $now = time();
             $row = (object)array_merge($values, [
@@ -583,7 +681,9 @@ class task_service {
         $message = $DB->get_record('local_kbacompany_commmsg', [
             'companyuuid' => $companyuuid, 'uuid' => $messageuuid, 'status' => 'active',
         ]);
-        if (!$message) { self::fail('sourceerror'); }
+        if (!$message || !communication_service::can_view_message($companyuuid, $actor, $messageuuid)) {
+            self::fail('sourceerror');
+        }
         $employees = self::employees($companyuuid, $actor);
         $canmanage = self::can_manage($companyuuid, $actor);
         $data['companyuuid'] = $companyuuid;
@@ -951,13 +1051,38 @@ class task_service {
         } finally { $lock->release(); }
     }
 
+    /**
+     * Block premature parent submission/review while direct children have unfinished
+     * work. This query intentionally checks ALL children; permission-limited child
+     * lists cannot make an incomplete parent look complete. Never expose child IDs.
+     */
+    private static function require_subtasks_resolved(string $companyuuid, string $parentuuid): void {
+        global $DB;
+        $unfinished = $DB->record_exists_sql("SELECT t.id FROM {local_kbacompany_task} t
+             WHERE t.companyuuid = :childcompany AND t.parentuuid = :childparent
+               AND t.status NOT IN ('done','cancelled','deleted')",
+            ['childcompany' => $companyuuid, 'childparent' => $parentuuid]);
+        if ($unfinished) { self::fail('subtasksunfinished'); }
+    }
+
     public static function transition(string $companyuuid, int $actor, string $taskuuid, int $expectedrevision,
             string $action, array $data = []): void {
         global $DB;
         company_context_service::context($companyuuid, $actor);
         $canmanage = self::can_manage($companyuuid, $actor);
+        // Use the same company-level lock as create/link to prevent a child from
+        // appearing between the parent completion check and its status change.
+        $hierarchylock = null;
+        if (in_array($action, ['submit', 'accept'], true)) {
+            $hierarchylock = \core\lock\lock_config::get_lock_factory('local_kbacompany')
+                ->get_lock('taskcenter:' . $companyuuid, 10);
+            if (!$hierarchylock) { self::fail('lock'); }
+        }
         $lock = \core\lock\lock_config::get_lock_factory('local_kbacompany')->get_lock('task:' . $companyuuid . ':' . $taskuuid, 10);
-        if (!$lock) { self::fail('lock'); }
+        if (!$lock) {
+            if ($hierarchylock) { $hierarchylock->release(); }
+            self::fail('lock');
+        }
         try {
             $tx = $DB->start_delegated_transaction();
             $row = self::task($companyuuid, $taskuuid);
@@ -978,6 +1103,7 @@ class task_service {
                     'companyuuid' => $companyuuid, 'taskuuid' => $taskuuid, 'done' => 0,
                 ]);
                 if ($pending > 0) { self::fail('checklisterror'); }
+                self::require_subtasks_resolved($companyuuid, $taskuuid);
                 $result = self::text($data, 'result', 12000, true);
                 $row->result = $result;
                 $row->factminutes = max(0, min(525600, (int)($data['factminutes'] ?? $row->factminutes)));
@@ -990,6 +1116,7 @@ class task_service {
                 if ($row->status !== 'review' || (!$canmanage && (int)$row->reviewerid !== $actor &&
                         !access_role_service::may_act_on_department_task($companyuuid, $actor,
                             (int)$row->assigneeid, 'approve'))) { self::fail('state'); }
+                self::require_subtasks_resolved($companyuuid, $taskuuid);
                 $row->status = 'done'; $row->completedat = time();
             } else if ($action === 'return') {
                 if ($row->status !== 'review' || (!$canmanage && (int)$row->reviewerid !== $actor &&
@@ -1013,7 +1140,10 @@ class task_service {
         } catch (\Throwable $e) {
             if (isset($tx)) { $tx->rollback($e); }
             throw $e;
-        } finally { $lock->release(); }
+        } finally {
+            $lock->release();
+            if ($hierarchylock) { $hierarchylock->release(); }
+        }
     }
 
     /** Soft-delete a task while retaining its audit trail and source identity. */
@@ -1032,8 +1162,9 @@ class task_service {
             // Preserve submitted/approved/closed plan composition and review history.
             if ($DB->record_exists_sql("SELECT bi.id FROM {local_kbacompany_bplanitem} bi
                     JOIN {local_kbacompany_bplan} bp ON bp.uuid=bi.planuuid AND bp.companyuuid=bi.companyuuid
-                   WHERE bi.companyuuid=:dc AND bi.provider='bms' AND bi.externalid=:dt AND bp.status<>'draft'",
-                    ['dc'=>$companyuuid,'dt'=>$taskuuid])) {
+                   WHERE bi.companyuuid=:dc AND bi.provider='bms'
+                     AND (bi.externalid=:dt OR bi.taskuuid=:legacydt) AND bp.status<>'draft'",
+                    ['dc'=>$companyuuid,'dt'=>$taskuuid,'legacydt'=>$taskuuid])) {
                 throw new \moodle_exception('tui_delete_linked_plan', 'local_kbacompany');
             }
             $children = $DB->count_records_select('local_kbacompany_task',
@@ -1066,18 +1197,19 @@ class task_service {
         $row = self::task($companyuuid, $taskuuid);
         $canmanage = self::can_manage($companyuuid, $actor);
         if (!self::can_view_row($row, $actor, $canmanage)) { self::fail('permission'); }
+        $canpost = self::can_post_discussion($row, $actor, $canmanage);
         $thread = self::discussion_thread($companyuuid, $taskuuid);
         if (!$thread) {
-            return ['thread_uuid' => '', 'messages' => [], 'restricted' => false, 'can_post' => true];
+            return ['thread_uuid' => '', 'messages' => [], 'restricted' => false, 'can_post' => $canpost];
         }
         $isparticipant = $DB->record_exists('local_kbacompany_commpart', [
             'companyuuid' => $companyuuid, 'threaduuid' => $thread->uuid, 'userid' => $actor, 'active' => 1,
         ]);
         if (!$isparticipant) {
-            return ['thread_uuid' => (string)$thread->uuid, 'messages' => [], 'restricted' => true, 'can_post' => $canmanage];
+            return ['thread_uuid' => (string)$thread->uuid, 'messages' => [], 'restricted' => true, 'can_post' => $canpost];
         }
         $ctx = communication_service::context($companyuuid, $actor, (string)$thread->uuid, 'all');
-        return ['thread_uuid' => (string)$thread->uuid, 'messages' => $ctx['messages'], 'restricted' => false, 'can_post' => true];
+        return ['thread_uuid' => (string)$thread->uuid, 'messages' => $ctx['messages'], 'restricted' => false, 'can_post' => $canpost];
     }
 
     /** Append a message to the task discussion. Posting explicitly joins an authorised manager to the thread. */
@@ -1086,7 +1218,8 @@ class task_service {
         company_context_service::context($companyuuid, $actor);
         $row = self::task($companyuuid, $taskuuid);
         $canmanage = self::can_manage($companyuuid, $actor);
-        if (!self::can_view_row($row, $actor, $canmanage)) { self::fail('permission'); }
+        if (!self::can_view_row($row, $actor, $canmanage) ||
+                !self::can_post_discussion($row, $actor, $canmanage)) { self::fail('permission'); }
         if ((string)$row->status === 'deleted') { self::fail('state'); }
         $body = trim($body);
         if ($body === '' || \core_text::strlen($body) > 12000) { self::fail('invalid'); }
@@ -1273,6 +1406,8 @@ class task_service {
         company_context_service::context($companyuuid, $actor);
         $row = self::task($companyuuid, $taskuuid);
         $canmanage = self::can_manage($companyuuid, $actor);
+        // Ownership of an old attachment is not authority after task access is revoked.
+        if (!self::can_view_row($row, $actor, $canmanage)) { self::fail('permission'); }
         if (in_array((string)$row->status, ['done', 'cancelled', 'deleted'], true)) { self::fail('state'); }
         $filename = clean_filename($filename);
         if ($filename === '') { self::fail('invalid'); }
@@ -1289,22 +1424,36 @@ class task_service {
             int $assigneeid = 0): string {
         global $DB;
         company_context_service::context($companyuuid, $actor);
-        $canmanage = self::can_manage($companyuuid, $actor);
-        $task = self::task($companyuuid, $taskuuid);
-        if (!self::can_contribute_to_task($task, $actor, $canmanage) ||
-                in_array($task->status, ['done', 'cancelled', 'deleted'], true)) {
-            self::fail('state');
-        }
         $text = trim($text);
-        if ($text === '' || \core_text::strlen($text) > 1000) { self::fail('invalid'); }
-        if ($assigneeid > 0) { self::require_employee(self::employees($companyuuid, $actor), $assigneeid); }
-        $uuid = self::uuid();
-        $DB->insert_record('local_kbacompany_taskcheck', (object)[
-            'companyuuid' => $companyuuid, 'taskuuid' => $taskuuid, 'uuid' => $uuid, 'itemtext' => $text,
-            'assigneeid' => $assigneeid, 'done' => 0, 'sortorder' => 0, 'timecreated' => time(), 'timemodified' => time(),
-        ]);
-        self::log($companyuuid, $taskuuid, $actor, 'checklist_add', $task->status, $task->status, ['checkuuid' => $uuid]);
-        return $uuid;
+        if ($text === '' || \core_text::strlen($text) > 1000 || $assigneeid < 0) { self::fail('invalid'); }
+        $lock = \core\lock\lock_config::get_lock_factory('local_kbacompany')
+            ->get_lock('task:' . $companyuuid . ':' . $taskuuid, 10);
+        if (!$lock) { self::fail('lock'); }
+        try {
+            $tx = $DB->start_delegated_transaction();
+            $canmanage = self::can_manage($companyuuid, $actor);
+            $task = self::task($companyuuid, $taskuuid);
+            if (!self::can_contribute_to_task($task, $actor, $canmanage)) { self::fail('permission'); }
+            if (in_array($task->status, ['done', 'cancelled', 'deleted'], true)) { self::fail('state'); }
+            if ($assigneeid > 0) { self::require_employee(self::employees($companyuuid, $actor), $assigneeid); }
+            // Reserve next position while holding the same lock used by move/edit/delete.
+            $lastorder = (int)$DB->get_field_sql('SELECT COALESCE(MAX(sortorder), 0) FROM {local_kbacompany_taskcheck} '
+                . 'WHERE companyuuid = :company AND taskuuid = :task',
+                ['company' => $companyuuid, 'task' => $taskuuid]);
+            $count = $DB->count_records('local_kbacompany_taskcheck',
+                ['companyuuid' => $companyuuid, 'taskuuid' => $taskuuid]);
+            $uuid = self::uuid();
+            $DB->insert_record('local_kbacompany_taskcheck', (object)[
+                'companyuuid' => $companyuuid, 'taskuuid' => $taskuuid, 'uuid' => $uuid, 'itemtext' => $text,
+                'assigneeid' => $assigneeid, 'done' => 0, 'sortorder' => max($lastorder, $count) + 1,
+                'timecreated' => time(), 'timemodified' => time(),
+            ]);
+            self::log($companyuuid, $taskuuid, $actor, 'checklist_add', $task->status, $task->status,
+                ['checkuuid' => $uuid]);
+            $tx->allow_commit();
+            return $uuid;
+        } catch (\Throwable $e) { if (isset($tx)) { $tx->rollback($e); } throw $e; }
+        finally { $lock->release(); }
     }
 
     public static function toggle_checklist(string $companyuuid, int $actor, string $taskuuid, string $checkuuid): void {
@@ -1326,6 +1475,113 @@ class task_service {
         $DB->update_record('local_kbacompany_taskcheck', $check);
         self::log($companyuuid, $taskuuid, $actor, 'checklist_toggle', $task->status, $task->status,
             ['checkuuid' => $checkuuid, 'done' => (int)$check->done]);
+    }
+
+    /**
+     * Edit a checklist item without replacing its identity or completion state.
+     * All mutations are scoped to the parent task, company and authenticated actor.
+     */
+    public static function update_checklist(string $companyuuid, int $actor, string $taskuuid, string $checkuuid,
+            string $text, int $assigneeid = 0): void {
+        global $DB;
+        company_context_service::context($companyuuid, $actor);
+        $text = trim($text);
+        if ($text === '' || \core_text::strlen($text) > 1000 || $assigneeid < 0) { self::fail('invalid'); }
+        $lock = \core\lock\lock_config::get_lock_factory('local_kbacompany')
+            ->get_lock('task:' . $companyuuid . ':' . $taskuuid, 10);
+        if (!$lock) { self::fail('lock'); }
+        try {
+            $tx = $DB->start_delegated_transaction();
+            $task = self::task($companyuuid, $taskuuid);
+            $manager = self::can_manage($companyuuid, $actor);
+            if (!self::can_contribute_to_task($task, $actor, $manager)) { self::fail('permission'); }
+            if (in_array($task->status, ['done', 'cancelled', 'deleted'], true)) { self::fail('state'); }
+            $check = $DB->get_record('local_kbacompany_taskcheck',
+                ['companyuuid' => $companyuuid, 'taskuuid' => $taskuuid, 'uuid' => $checkuuid]);
+            if (!$check) { self::fail('reference'); }
+            if ($assigneeid > 0) { self::require_employee(self::employees($companyuuid, $actor), $assigneeid); }
+            if ((string)$check->itemtext !== $text || (int)$check->assigneeid !== $assigneeid) {
+                $oldtext = (string)$check->itemtext;
+                $oldassignee = (int)$check->assigneeid;
+                $check->itemtext = $text;
+                $check->assigneeid = $assigneeid;
+                $check->timemodified = time();
+                $DB->update_record('local_kbacompany_taskcheck', $check);
+                self::log($companyuuid, $taskuuid, $actor, 'checklist_edit', $task->status, $task->status,
+                    ['checkuuid' => $checkuuid, 'oldtext' => $oldtext, 'newtext' => $text,
+                        'oldassigneeid' => $oldassignee, 'assigneeid' => $assigneeid]);
+            }
+            $tx->allow_commit();
+        } catch (\Throwable $e) { if (isset($tx)) { $tx->rollback($e); } throw $e; }
+        finally { $lock->release(); }
+    }
+
+    /** Delete one item, never another company's item or an item of a different task. */
+    public static function delete_checklist(string $companyuuid, int $actor, string $taskuuid, string $checkuuid): void {
+        global $DB;
+        company_context_service::context($companyuuid, $actor);
+        $lock = \core\lock\lock_config::get_lock_factory('local_kbacompany')
+            ->get_lock('task:' . $companyuuid . ':' . $taskuuid, 10);
+        if (!$lock) { self::fail('lock'); }
+        try {
+            $tx = $DB->start_delegated_transaction();
+            $task = self::task($companyuuid, $taskuuid);
+            $manager = self::can_manage($companyuuid, $actor);
+            if (!self::can_contribute_to_task($task, $actor, $manager)) { self::fail('permission'); }
+            if (in_array($task->status, ['done', 'cancelled', 'deleted'], true)) { self::fail('state'); }
+            $check = $DB->get_record('local_kbacompany_taskcheck',
+                ['companyuuid' => $companyuuid, 'taskuuid' => $taskuuid, 'uuid' => $checkuuid]);
+            if (!$check) { self::fail('reference'); }
+            $DB->delete_records('local_kbacompany_taskcheck', ['id' => $check->id]);
+            self::log($companyuuid, $taskuuid, $actor, 'checklist_delete', $task->status, $task->status,
+                ['checkuuid' => $checkuuid, 'text' => (string)$check->itemtext,
+                    'assigneeid' => (int)$check->assigneeid, 'done' => (int)$check->done]);
+            $tx->allow_commit();
+        } catch (\Throwable $e) { if (isset($tx)) { $tx->rollback($e); } throw $e; }
+        finally { $lock->release(); }
+    }
+
+    /** Move a check exactly one position. Never accept unchecked client-supplied sort indexes. */
+    public static function move_checklist(string $companyuuid, int $actor, string $taskuuid,
+            string $checkuuid, string $direction): void {
+        global $DB;
+        company_context_service::context($companyuuid, $actor);
+        if (!in_array($direction, ['up', 'down'], true)) { self::fail('invalid'); }
+        $lock = \core\lock\lock_config::get_lock_factory('local_kbacompany')
+            ->get_lock('task:' . $companyuuid . ':' . $taskuuid, 10);
+        if (!$lock) { self::fail('lock'); }
+        try {
+            $tx = $DB->start_delegated_transaction();
+            $task = self::task($companyuuid, $taskuuid);
+            $manager = self::can_manage($companyuuid, $actor);
+            if (!self::can_contribute_to_task($task, $actor, $manager)) { self::fail('permission'); }
+            if (in_array($task->status, ['done', 'cancelled', 'deleted'], true)) { self::fail('state'); }
+            $items = array_values($DB->get_records('local_kbacompany_taskcheck',
+                ['companyuuid' => $companyuuid, 'taskuuid' => $taskuuid], 'sortorder ASC, id ASC'));
+            $index = null;
+            foreach ($items as $i => $item) {
+                if ((string)$item->uuid === $checkuuid) { $index = $i; break; }
+            }
+            if ($index === null) { self::fail('reference'); }
+            $nextindex = $index + ($direction === 'up' ? -1 : 1);
+            if ($nextindex >= 0 && $nextindex < count($items)) {
+                $otheruuid = (string)$items[$nextindex]->uuid;
+                $moved = $items[$index];
+                $items[$index] = $items[$nextindex];
+                $items[$nextindex] = $moved;
+                foreach ($items as $i => $item) {
+                    if ((int)$item->sortorder !== $i + 1) {
+                        $DB->update_record('local_kbacompany_taskcheck', (object)[
+                            'id' => $item->id, 'sortorder' => $i + 1, 'timemodified' => time(),
+                        ]);
+                    }
+                }
+                self::log($companyuuid, $taskuuid, $actor, 'checklist_move', $task->status, $task->status,
+                    ['checkuuid' => $checkuuid, 'direction' => $direction, 'otheruuid' => $otheruuid]);
+            }
+            $tx->allow_commit();
+        } catch (\Throwable $e) { if (isset($tx)) { $tx->rollback($e); } throw $e; }
+        finally { $lock->release(); }
     }
 
     private static function source_label(\stdClass $row): string {
@@ -1467,7 +1723,7 @@ class task_service {
         $company = company_context_service::context($companyuuid, $actor);
         $canmanage = self::can_manage($companyuuid, $actor);
         $employees = self::employees($companyuuid, $actor);
-        $today = gmdate('Y-m-d');
+        $today = self::reporting_dates()['today'];
         $visible = []; $parentcandidates = [];
         $scope = self::normalise_scope($scope, $canmanage);
         if (empty($options['recordonly'])) {
@@ -1576,7 +1832,9 @@ class task_service {
         global $DB;
         $where = "t.companyuuid = :taskcompany AND t.status <> 'deleted'"; $params=['taskcompany'=>$companyuuid];
         if (!self::can_manage($companyuuid,$actor)) {
-            $departmentids = access_role_service::department_view_userids($companyuuid, $actor, 'task');
+            // Department edit/approve is also a legitimate read permission in
+            // can_view_row(). SQL filtering must not hide those same tasks.
+            $departmentids = access_role_service::department_task_visibility_userids($companyuuid, $actor);
             $departmentclause = '';
             if ($departmentids) {
                 list($insql, $inparams) = $DB->get_in_or_equal($departmentids, SQL_PARAMS_NAMED, 'depttask');
@@ -1651,6 +1909,43 @@ class task_service {
         return self::row_dto($row, [], true);
     }
 
+    /**
+     * Visible manual tasks linked to a BMS24 management-pattern trace marker.
+     *
+     * The marker is traceability metadata only. The canonical Task Center projection
+     * visibility predicate remains authoritative. A bounded exact-title fallback is
+     * used only when no marker match exists, for build1704 tasks created before the
+     * marker was introduced.
+     */
+    public static function manual_tasks_by_trace_marker(string $companyuuid, int $actor,
+            string $marker, int $assigneeid, string $legacytitle = '', int $limit = 5): array {
+        global $DB;
+        company_context_service::context($companyuuid, $actor);
+        $marker = trim($marker);
+        $legacytitle = trim($legacytitle);
+        if ($assigneeid <= 0 || ($marker === '' && $legacytitle === '')) { return []; }
+        $limit = max(1, min(20, $limit));
+        list($where, $params) = self::projection_access($companyuuid, $actor);
+        $where .= " AND t.sourcekind = :patternsource AND t.assigneeid = :patternassignee";
+        $params += ['patternsource'=>'manual', 'patternassignee'=>$assigneeid];
+        $rows = [];
+        if ($marker !== '') {
+            $markerwhere = $where . ' AND ' . $DB->sql_like('t.description', ':patternmarker', false);
+            $markerparams = $params + ['patternmarker'=>'%' . $DB->sql_like_escape($marker) . '%'];
+            $rows = $DB->get_records_sql("SELECT t.* FROM {local_kbacompany_task} t WHERE $markerwhere ORDER BY t.id DESC",
+                $markerparams, 0, $limit);
+        }
+        if (!$rows && $legacytitle !== '') {
+            $legacywhere = $where . ' AND t.title = :patternlegacytitle';
+            $rows = $DB->get_records_sql("SELECT t.* FROM {local_kbacompany_task} t WHERE $legacywhere ORDER BY t.id DESC",
+                $params + ['patternlegacytitle'=>$legacytitle], 0, $limit);
+        }
+        $employees = self::employees($companyuuid, $actor);
+        $out = [];
+        foreach ($rows as $row) { $out[] = self::row_dto($row, $employees, true); }
+        return $out;
+    }
+
     /** Bounded picker for open tasks of the plan employee; excludes already linked tasks in SQL. */
     public static function battle_plan_candidates(string $companyuuid, int $actor, int $targetuser,
             string $planuuid, string $search = '', int $limit = 50): array {
@@ -1673,17 +1968,114 @@ class task_service {
     }
 
 
-    /** UI scopes constrain the existing visibility predicate; no new capability grants. */
+    /** Default role-union is intentionally distinct from company-wide manager visibility. */
     public static function normalise_scope(string $scope, bool $manager): string {
-        if (!in_array($scope, ['my','created','review','watching','overdue','all'], true)) { return 'my'; }
-        return $scope === 'all' && !$manager ? 'my' : $scope;
+        if (!in_array($scope, ['roles','my','created','review','watching','overdue','department','all'], true)) {
+            return 'roles';
+        }
+        return $scope === 'all' && !$manager ? 'roles' : $scope;
+    }
+
+    /**
+     * One distinct Task row for all direct task roles, coverage and Battle Plan participants.
+     * Never infer a user's role from their company-wide management rights.
+     * This condition only narrows the projection_access() company/ACL boundary.
+     */
+    private static function personal_roles_condition(int $actor, string $suffix): array {
+        [$covered, $coverageparams] = self::effective_sql('personal' . $suffix);
+        $ids = [
+            'roleassignee'.$suffix => $actor, 'rolecovered'.$suffix => $actor,
+            'rolecreator'.$suffix => $actor, 'rolereviewer'.$suffix => $actor,
+            'roleobserver'.$suffix => $actor, 'roleplanowner'.$suffix => $actor,
+            'roleplanreviewer'.$suffix => $actor, 'roleplanobserver'.$suffix => $actor,
+        ];
+        $condition = "(t.assigneeid = :roleassignee{$suffix} OR {$covered} = :rolecovered{$suffix}
+            OR t.creatorid = :rolecreator{$suffix} OR t.reviewerid = :rolereviewer{$suffix}
+            OR t.observerid = :roleobserver{$suffix}
+            OR EXISTS (SELECT bi.id FROM {local_kbacompany_bplanitem} bi
+               JOIN {local_kbacompany_bplan} bp
+                 ON bp.companyuuid = bi.companyuuid AND bp.uuid = bi.planuuid
+               WHERE bi.companyuuid = t.companyuuid AND bi.provider = 'bms' AND bi.externalid = t.uuid
+                 AND (bp.userid = :roleplanowner{$suffix} OR bp.reviewerid = :roleplanreviewer{$suffix}
+                      OR bp.observerid = :roleplanobserver{$suffix})))";
+        return [$condition, $coverageparams + $ids];
+    }
+
+    /** Badges describe task relationships, not permissions to edit or accept the task. */
+    public static function role_keys(array $task, int $actor): array {
+        $roles = [];
+        if ($actor <= 0) { return $roles; }
+        if ((int)($task['assignee_id'] ?? 0) === $actor ||
+                (int)($task['effective_assignee_id'] ?? 0) === $actor) { $roles[] = 'assignee'; }
+        if ((int)($task['creator_id'] ?? 0) === $actor) { $roles[] = 'creator'; }
+        if ((int)($task['reviewer_id'] ?? 0) === $actor) { $roles[] = 'reviewer'; }
+        if ((int)($task['observer_id'] ?? 0) === $actor) { $roles[] = 'observer'; }
+        return $roles;
+    }
+
+    /** Tab counters use one company/permission-constrained aggregate, not N role queries. */
+    public static function scope_counts(string $companyuuid, int $actor): array {
+        global $DB;
+        company_context_service::context($companyuuid, $actor);
+        [$where, $params] = self::projection_access($companyuuid, $actor);
+        // Department role grants may allow reviewing team tasks without granting
+        // company-wide management. A separate bounded tab exposes just this set.
+        $departmentids = access_role_service::department_task_visibility_userids($companyuuid, $actor);
+        $departmentexpr = '0';
+        if ($departmentids) {
+            [$departmentin, $departmentparams] = $DB->get_in_or_equal($departmentids,
+                SQL_PARAMS_NAMED, 'depttab');
+            $departmentexpr = "SUM(CASE WHEN t.assigneeid {$departmentin} THEN 1 ELSE 0 END)";
+            $params += $departmentparams;
+        }
+        [$roles, $roleparams] = self::personal_roles_condition($actor, 'tabs');
+        [$executor, $executorparams] = self::effective_sql('tabexec');
+        [$dueexecutor, $dueparams] = self::effective_sql('tabdue');
+        $params += $roleparams + $executorparams + $dueparams;
+        $params += ['tabactor' => $actor, 'tabdueactor' => $actor,
+            'tabtoday' => self::reporting_dates()['today']];
+        $row = $DB->get_record_sql("SELECT COUNT(t.id) AS allcount,
+            {$departmentexpr} AS departmentcount,
+            SUM(CASE WHEN {$roles} THEN 1 ELSE 0 END) AS rolescount,
+            SUM(CASE WHEN {$executor} = :tabactor THEN 1 ELSE 0 END) AS mycount,
+            SUM(CASE WHEN t.creatorid = :tabcreator THEN 1 ELSE 0 END) AS createdcount,
+            SUM(CASE WHEN t.reviewerid = :tabreviewer AND t.status = 'review' THEN 1 ELSE 0 END) AS reviewcount,
+            SUM(CASE WHEN t.observerid = :tabobserver THEN 1 ELSE 0 END) AS watchingcount,
+            SUM(CASE WHEN {$dueexecutor} = :tabdueactor AND t.duedate <> '' AND t.duedate < :tabtoday
+                AND t.status NOT IN ('done','cancelled') THEN 1 ELSE 0 END) AS overduecount
+            FROM {local_kbacompany_task} t WHERE {$where}", $params + [
+                'tabcreator' => $actor, 'tabreviewer' => $actor, 'tabobserver' => $actor,
+            ]);
+        return [
+            'roles' => (int)($row->rolescount ?? 0), 'my' => (int)($row->mycount ?? 0),
+            'created' => (int)($row->createdcount ?? 0), 'review' => (int)($row->reviewcount ?? 0),
+            'watching' => (int)($row->watchingcount ?? 0), 'overdue' => (int)($row->overduecount ?? 0),
+            'all' => (int)($row->allcount ?? 0),
+            'department' => (int)($row->departmentcount ?? 0),
+            'department_allowed' => !empty($departmentids),
+        ];
     }
 
     private static function list_conditions(string $companyuuid, int $actor, array $filters): array {
         global $DB;
         list($where, $params) = self::projection_access($companyuuid, $actor);
         $scope = self::normalise_scope((string)($filters['scope'] ?? 'my'), self::can_manage($companyuuid, $actor));
-        if ($scope === 'my' || $scope === 'overdue') {
+        if ($scope === 'roles') {
+            [$rolecondition, $roleparams] = self::personal_roles_condition($actor, 'list');
+            $where .= ' AND ' . $rolecondition;
+            $params += $roleparams;
+        } else if ($scope === 'department') {
+            $departmentids = access_role_service::department_task_visibility_userids($companyuuid, $actor);
+            if (!$departmentids) {
+                $where .= ' AND 1 = 0'; // No department grant: fail closed.
+            } else {
+                [$departmentin, $departmentparams] = $DB->get_in_or_equal($departmentids,
+                    SQL_PARAMS_NAMED, 'deptsco');
+                $where .= ' AND t.assigneeid ' . $departmentin;
+                $params += $departmentparams;
+            }
+        }
+        else if ($scope === 'my' || $scope === 'overdue') {
             [$expr, $extra] = self::effective_sql('myscope');
             $where .= ' AND ' . $expr . ' = :scopeactor';
             $params += $extra; $params['scopeactor'] = $actor;
@@ -1691,12 +2083,71 @@ class task_service {
         else if ($scope === 'created') { $where .= ' AND t.creatorid = :scopeactor'; $params['scopeactor'] = $actor; }
         else if ($scope === 'review') { $where .= " AND t.reviewerid = :scopeactor AND t.status = 'review'"; $params['scopeactor'] = $actor; }
         else if ($scope === 'watching') { $where .= ' AND t.observerid = :scopeactor'; $params['scopeactor'] = $actor; }
-        if ($scope === 'overdue') { $where .= " AND t.duedate <> '' AND t.duedate < :scopetoday AND t.status NOT IN ('done','cancelled')"; $params['scopetoday'] = gmdate('Y-m-d'); }
+        if ($scope === 'overdue') { $where .= " AND t.duedate <> '' AND t.duedate < :scopetoday AND t.status NOT IN ('done','cancelled')"; $params['scopetoday'] = self::reporting_dates()['today']; }
         // Workspace can page over open tasks without completed rows consuming its first 25 slots.
         if (!empty($filters['openonly'])) { $where .= " AND t.status NOT IN ('done','cancelled')"; }
         foreach (['status' => self::STATUSES, 'stream' => self::STREAMS, 'sourcekind' => self::SOURCE_KINDS, 'priority' => self::PRIORITIES] as $field => $allowed) {
             $value = (string)($filters[$field] ?? '');
             if ($value !== '' && in_array($value, $allowed, true)) { $where .= " AND t.$field = :f$field"; $params['f'.$field] = $value; }
+        }
+        $battleplan = trim((string)($filters['battleplan'] ?? ''));
+        if ($battleplan !== '') {
+            $where .= " AND EXISTS (SELECT bi.id FROM {local_kbacompany_bplanitem} bi
+                WHERE bi.companyuuid=t.companyuuid AND bi.planuuid=:fbattleplan AND bi.provider='bms'
+                  AND (bi.externalid=t.uuid OR bi.taskuuid=t.uuid))";
+            $params['fbattleplan'] = $battleplan;
+        }
+        // Analytics drill-down is an additional read-only predicate over the same canonical task set.
+        // It deliberately preserves scope and Battle Plan filters instead of switching the user to a
+        // different Task Center scope (for example, the special "overdue" personal scope).
+        $signal = (string)($filters['signal'] ?? '');
+        if ($signal === 'open') {
+            $where .= " AND t.status NOT IN ('done','cancelled')";
+        } else if ($signal === 'done') {
+            $where .= " AND t.status = 'done'";
+        } else if ($signal === 'review') {
+            $where .= " AND t.status = 'review'";
+        } else if ($signal === 'overdue' || $signal === 'subtaskoverdue') {
+            $where .= " AND t.duedate <> '' AND t.duedate < :signaltoday AND t.status NOT IN ('done','cancelled')";
+            if ($signal === 'subtaskoverdue') { $where .= " AND t.parentuuid <> ''"; }
+            $params['signaltoday'] = self::reporting_dates()['today'];
+        } else if ($signal === 'returned') {
+            $where .= " AND t.status = 'returned'";
+        } else if ($signal === 'soon') {
+            $where .= " AND t.duedate >= :signalfrom AND t.duedate <= :signaluntil AND t.status NOT IN ('done','cancelled')";
+            // Seven calendar dates including today: today + six days.
+            $dates = self::reporting_dates();
+            $params['signalfrom'] = $dates['today'];
+            $params['signaluntil'] = $dates['until'];
+        } else if ($signal === 'undated') {
+            $where .= " AND t.duedate = '' AND t.status NOT IN ('done','cancelled')";
+        }
+        $duegroup = self::normalise_duegroup((string)($filters['duegroup'] ?? ''));
+        if ($duegroup !== '') {
+            [$groupwhere, $groupparams] = self::deadline_group_condition($duegroup, self::reporting_dates());
+            $where .= ' AND (' . $groupwhere . ')';
+            $params += $groupparams;
+        }
+        // Narrow analytics drill-down predicates are ALWAYS combined with the existing
+        // actor visibility, company and Battle Plan restrictions (never replace them).
+        $assignee = (int)($filters['assignee'] ?? 0);
+        if ($assignee > 0) {
+            // Manager drill-downs must filter by the SAME effective executor shown
+            // in the task list. A position substitute must not disappear from
+            // their workload when a supervisor clicks the employee's name.
+            [$effective, $effectiveparams] = self::effective_sql('filterassignee');
+            $where .= ' AND ' . $effective . ' = :reportassignee';
+            $params += $effectiveparams;
+            $params['reportassignee'] = $assignee;
+        }
+        $project = (string)($filters['project'] ?? '');
+        if ($project !== '') {
+            if (!preg_match('/^[a-f0-9]{8}-(?:[a-f0-9]{4}-){3}[a-f0-9]{12}$/Di', $project)) {
+                self::fail('invalid');
+            }
+            // Direct project context only: subtask inheritance is deliberately not guessed.
+            $where .= " AND t.contextkind = 'project' AND t.contextuuid = :reportproject";
+            $params['reportproject'] = $project;
         }
         $search = \core_text::substr(trim((string)($filters['q'] ?? '')), 0, 200);
         if ($search !== '') { $where .= ' AND ' . $DB->sql_like('t.title', ':tasksearch', false); $params['tasksearch'] = '%' . $DB->sql_like_escape($search) . '%'; }
@@ -1719,9 +2170,95 @@ class task_service {
             SUM(CASE WHEN t.observerid = :watchactor THEN 1 ELSE 0 END) AS watching,
             SUM(CASE WHEN {$doneexecutor} = :doneactor AND t.status = 'done' THEN 1 ELSE 0 END) AS done
             FROM {local_kbacompany_task} t WHERE $where";
-        $r = $DB->get_record_sql($sql, $params + ['myactor'=>$actor,'dueactor'=>$actor,'today'=>gmdate('Y-m-d'),
+        $r = $DB->get_record_sql($sql, $params + ['myactor'=>$actor,'dueactor'=>$actor,'today'=>self::reporting_dates()['today'],
             'reviewactor'=>$actor,'watchactor'=>$actor,'doneactor'=>$actor]);
         return array_map('intval', (array)$r);
+    }
+
+    /** Active deadline groups first; pagination happens after this order, with stable id tie-breaker. */
+    private static function deadline_sql_order(array $dates): array {
+        $order = "CASE WHEN t.status IN ('done','cancelled') THEN 5
+            WHEN t.duedate = '' THEN 4
+            WHEN t.duedate < :ordersover THEN 0
+            WHEN t.duedate = :orderstoday THEN 1
+            WHEN t.duedate <= :ordersuntil THEN 2 ELSE 3 END ASC,
+            CASE t.priority WHEN 'high' THEN 0 WHEN 'normal' THEN 1 ELSE 2 END ASC,
+            CASE WHEN t.duedate = '' THEN 1 ELSE 0 END ASC, t.duedate ASC, t.id ASC";
+        return [$order, ['ordersover'=>$dates['today'], 'orderstoday'=>$dates['today'],
+            'ordersuntil'=>$dates['until']]];
+    }
+
+    /** ACL- and filter-scoped full Kanban counts, unaffected by list pagination. */
+    public static function kanban_status_counts(string $companyuuid, int $actor, array $filters = []): array {
+        global $DB;
+        company_context_service::context($companyuuid, $actor);
+        [$where, $params] = self::list_conditions($companyuuid, $actor, $filters);
+        $counts = array_fill_keys(array_values(array_diff(self::STATUSES, ['deleted'])), 0);
+        foreach ($DB->get_records_sql("SELECT t.status, COUNT(t.id) AS quantity
+                FROM {local_kbacompany_task} t WHERE {$where} GROUP BY t.status", $params) as $row) {
+            if (array_key_exists((string)$row->status, $counts)) {
+                $counts[(string)$row->status] = (int)$row->quantity;
+            }
+        }
+        return $counts;
+    }
+
+    /**
+     * Latest canonical audit event for each task on an already-ACL-filtered page.
+     * The ACL is re-applied in SQL; no raw log details or inaccessible task events leak.
+     * Bounded to 100 visible UUIDs, using one grouped query rather than N queries.
+     */
+    public static function latest_page_activity(string $companyuuid, int $actor, array $tasks,
+            ?array $employees = null): array {
+        global $DB;
+        company_context_service::context($companyuuid, $actor);
+        $uuids = [];
+        foreach (array_slice($tasks, 0, 100) as $task) {
+            if (!empty($task['uuid']) && is_string($task['uuid'])) { $uuids[] = $task['uuid']; }
+        }
+        $uuids = array_values(array_unique($uuids));
+        if (!$uuids) { return []; }
+        [$scopewhere, $scopeparams] = self::projection_access($companyuuid, $actor);
+        [$in, $inparams] = $DB->get_in_or_equal($uuids, SQL_PARAMS_NAMED, 'activityuuid');
+        $sql = "SELECT l.id, l.taskuuid, l.actorid, l.action, l.newstatus, l.timecreated
+                  FROM {local_kbacompany_tasklog} l
+                  JOIN (SELECT taskuuid, MAX(id) AS lastid
+                          FROM {local_kbacompany_tasklog}
+                         WHERE companyuuid = :activitycompany AND taskuuid {$in}
+                      GROUP BY taskuuid) latest ON latest.lastid = l.id
+                  JOIN {local_kbacompany_task} t
+                    ON t.companyuuid = l.companyuuid AND t.uuid = l.taskuuid
+                 WHERE {$scopewhere} AND l.companyuuid = :activitycompany2";
+        $entries = $DB->get_records_sql($sql,
+            $scopeparams + $inparams + ['activitycompany'=>$companyuuid, 'activitycompany2'=>$companyuuid]);
+        if (!$entries) { return []; }
+        // list_page() already loaded the permission-scoped employee directory.
+        // Reuse it rather than fetching organization context a second time.
+        $employees = $employees ?? self::employees($companyuuid, $actor);
+        $result = [];
+        foreach ($entries as $entry) {
+            $result[(string)$entry->taskuuid] = [
+                'action'=>(string)$entry->action,
+                'actor_name'=>(string)($employees[(int)$entry->actorid] ?? ''),
+                'time_created'=>(int)$entry->timecreated,
+                'new_status'=>(string)$entry->newstatus,
+            ];
+        }
+        return $result;
+    }
+
+    /** Derived attention signals; existing status/deadline/priority remain authoritative. */
+    public static function attention_signals(array $task, ?array $dates = null): array {
+        $dates = $dates ?? self::reporting_dates();
+        $status = (string)($task['status'] ?? '');
+        if (in_array($status, ['done', 'cancelled', 'deleted'], true)) { return []; }
+        $signals = [];
+        $due = (string)($task['due_date'] ?? '');
+        if ($due !== '' && $due < $dates['today']) { $signals[] = 'overdue'; }
+        if ($status === 'review') { $signals[] = 'review'; }
+        if ($status === 'returned') { $signals[] = 'returned'; }
+        if ((string)($task['priority'] ?? '') === 'high') { $signals[] = 'priority'; }
+        return $signals;
     }
 
     /** One bounded page and full filtered summary; list/kanban/analytics share the same predicates. */
@@ -1733,18 +2270,121 @@ class task_service {
             SUM(CASE WHEN t.status NOT IN ('done','cancelled') THEN 1 ELSE 0 END) AS open,
             SUM(CASE WHEN t.status = 'review' THEN 1 ELSE 0 END) AS review,
             SUM(CASE WHEN t.status = 'done' THEN 1 ELSE 0 END) AS done,
+            SUM(CASE WHEN t.status = 'cancelled' THEN 1 ELSE 0 END) AS cancelled,
             SUM(CASE WHEN t.duedate <> '' AND t.duedate < :counttoday AND t.status NOT IN ('done','cancelled') THEN 1 ELSE 0 END) AS overdue
-            FROM {local_kbacompany_task} t WHERE $where", $params + ['counttoday'=>gmdate('Y-m-d')]);
+            FROM {local_kbacompany_task} t WHERE $where", $params + ['counttoday'=>self::reporting_dates()['today']]);
         $counts = array_map('intval', (array)$counts);
         $pagesize = max(1, min(100, $pagesize));
         $page = max(0, min($page, max(0, (int)ceil($counts['total'] / $pagesize)-1)));
         $employees = self::employees($companyuuid, $actor); $rows = [];
-        foreach ($DB->get_records_sql("SELECT t.* FROM {local_kbacompany_task} t WHERE $where
-                ORDER BY CASE WHEN t.duedate = '' THEN 1 ELSE 0 END, t.duedate, t.id", $params, $page*$pagesize, $pagesize) as $row) {
+        // Apply a fixed allowlisted SQL order to the entire filtered set BEFORE pagination.
+        // The same ACL/company predicates apply regardless of the requested sort.
+        if (!empty($filters['deadlineview'])) {
+            $sortjoin = '';
+            [$sortorder, $sortparams] = self::deadline_sql_order(self::reporting_dates());
+            $params += $sortparams;
+        } else {
+            [$sortjoin, $sortorder, $sortparams] = task_list_preferences_service::sql_order(
+                (string)($filters['sort'] ?? 'duedate'), (string)($filters['dir'] ?? 'asc'));
+            $params += $sortparams;
+        }
+        foreach ($DB->get_records_sql("SELECT t.* FROM {local_kbacompany_task} t{$sortjoin} WHERE $where
+                ORDER BY {$sortorder}", $params, $page*$pagesize, $pagesize) as $row) {
             $rows[] = self::row_dto($row, $employees, true);
         }
         return ['tasks'=>$rows, 'counts'=>$counts, 'page'=>$page, 'pagesize'=>$pagesize, 'total'=>$counts['total'],
             'can_manage'=>self::can_manage($companyuuid, $actor), 'employees'=>$employees];
+    }
+
+    /**
+     * Task Execution Analytics 1.0. Read-only grouped queries over the SAME permission
+     * and filter predicate as list_page(); no unbounded PHP scans, no cross-company data.
+     * Limits apply only to presentation lists, not to aggregate totals.
+     */
+    public static function execution_report(string $companyuuid, int $actor, array $filters = []): array {
+        global $DB;
+        company_context_service::context($companyuuid, $actor);
+        [$where, $baseparams] = self::list_conditions($companyuuid, $actor, $filters);
+        $dates = self::reporting_dates();
+        $today = $dates['today'];
+        $until = $dates['until'];
+        $pending = "t.status NOT IN ('done','cancelled')";
+        $totals = $DB->get_record_sql("SELECT COUNT(t.id) AS total,
+                SUM(CASE WHEN t.status = 'returned' THEN 1 ELSE 0 END) AS returned,
+                SUM(CASE WHEN $pending AND t.duedate = '' THEN 1 ELSE 0 END) AS undated,
+                SUM(CASE WHEN $pending AND t.duedate BETWEEN :reportfrom AND :reportuntil THEN 1 ELSE 0 END) AS soon,
+                SUM(CASE WHEN $pending AND t.parentuuid <> '' AND t.duedate <> ''
+                    AND t.duedate < :reporttoday THEN 1 ELSE 0 END) AS subtaskoverdue
+                FROM {local_kbacompany_task} t WHERE $where",
+            $baseparams + ['reportfrom'=>$today, 'reportuntil'=>$until, 'reporttoday'=>$today]);
+        $summary = [];
+        foreach (['total','returned','undated','soon','subtaskoverdue'] as $key) {
+            $summary[$key] = (int)($totals->$key ?? 0);
+        }
+        // Match the effective executor shown by list_page(), including active
+        // position coverage. Use a derived table so the parameterised coverage
+        // expression appears ONCE: Moodle's named placeholders may not repeat.
+        [$effectiveexecutor, $executorparams] = self::effective_sql('reportexecutor');
+        $assigned = $DB->get_records_sql("SELECT report.effectiveuserid AS userid, COUNT(*) AS total,
+                SUM(CASE WHEN report.status NOT IN ('done','cancelled') THEN 1 ELSE 0 END) AS active,
+                SUM(CASE WHEN report.status = 'review' THEN 1 ELSE 0 END) AS review,
+                SUM(CASE WHEN report.status = 'returned' THEN 1 ELSE 0 END) AS returned,
+                SUM(CASE WHEN report.status = 'done' THEN 1 ELSE 0 END) AS done,
+                SUM(CASE WHEN report.status NOT IN ('done','cancelled') AND report.duedate <> ''
+                    AND report.duedate < :assigneetoday THEN 1 ELSE 0 END) AS overdue
+                FROM (SELECT {$effectiveexecutor} AS effectiveuserid, t.status, t.duedate
+                      FROM {local_kbacompany_task} t WHERE $where) report
+                GROUP BY report.effectiveuserid
+                ORDER BY overdue DESC, active DESC, total DESC, report.effectiveuserid ASC",
+            $baseparams + $executorparams + ['assigneetoday'=>$today], 0, 15);
+        $employees = self::employees($companyuuid, $actor);
+        $byassignee = [];
+        foreach ($assigned as $row) {
+            $id = (int)$row->userid;
+            $byassignee[] = ['userid'=>$id,'name'=>$employees[$id] ?? ('#'.$id),
+                'total'=>(int)$row->total,'active'=>(int)$row->active,
+                'review'=>(int)$row->review,'returned'=>(int)$row->returned,
+                'done'=>(int)$row->done,'overdue'=>(int)$row->overdue];
+        }
+        // Only direct, explicitly recorded BMS project links are included here.
+        $projectwhere = $where . " AND t.contextkind = 'project' AND t.contextuuid <> ''";
+        $projects = $DB->get_records_sql("SELECT t.contextuuid AS projectuuid,
+                MAX(a.name) AS projectname, MAX(a.code) AS projectcode,
+                COUNT(t.id) AS total,
+                SUM(CASE WHEN $pending THEN 1 ELSE 0 END) AS active,
+                SUM(CASE WHEN t.status = 'done' THEN 1 ELSE 0 END) AS done,
+                SUM(CASE WHEN $pending AND t.duedate <> '' AND t.duedate < :projecttoday THEN 1 ELSE 0 END) AS overdue
+                FROM {local_kbacompany_task} t
+                LEFT JOIN {local_kbacompany_adminitem} a ON a.companyuuid = t.companyuuid
+                    AND a.uuid = t.contextuuid AND a.revision = t.contextrevision AND a.kind = 'project'
+                WHERE $projectwhere GROUP BY t.contextuuid
+                ORDER BY overdue DESC, active DESC, total DESC, t.contextuuid ASC",
+            $baseparams + ['projecttoday'=>$today], 0, 10);
+        $byproject = [];
+        foreach ($projects as $row) {
+            $byproject[] = ['uuid'=>(string)$row->projectuuid,
+                'name'=>trim((string)$row->projectcode.' '.(string)$row->projectname) ?: (string)$row->projectuuid,
+                'total'=>(int)$row->total, 'active'=>(int)$row->active,
+                'done'=>(int)$row->done,'overdue'=>(int)$row->overdue];
+        }
+        [$riskeffective, $riskparams] = self::effective_sql('reportrisk');
+        $risks = $DB->get_records_sql("SELECT t.id, t.uuid, t.title, t.parentuuid,
+                    {$riskeffective} AS effectiveassigneeid, t.status, t.duedate
+                FROM {local_kbacompany_task} t
+                WHERE $where AND (t.status = 'returned' OR
+                    ($pending AND t.duedate <> '' AND t.duedate < :risktoday))
+                ORDER BY CASE WHEN t.duedate <> '' AND t.duedate < :riskorderdate THEN 0 ELSE 1 END,
+                    t.duedate ASC, t.id ASC",
+            $baseparams + $riskparams + ['risktoday'=>$today,'riskorderdate'=>$today], 0, 12);
+        $riskitems = [];
+        foreach ($risks as $row) {
+            $id = (int)$row->effectiveassigneeid;
+            $riskitems[] = ['uuid'=>(string)$row->uuid,'title'=>(string)$row->title,
+                'subtask'=>(string)$row->parentuuid !== '', 'assignee'=>$employees[$id] ?? ('#'.$id),
+                'status'=>(string)$row->status,'duedate'=>(string)$row->duedate];
+        }
+        return ['summary'=>$summary, 'assignees'=>$byassignee, 'projects'=>$byproject,
+            'risks'=>$riskitems, 'limits'=>['assignees'=>15, 'projects'=>10, 'risks'=>12]];
     }
 
     /** Canonical provider selection; filters are applied BEFORE fetching rows. */
@@ -1755,7 +2395,7 @@ class task_service {
         if ($target > 0) { $where .= ' AND t.assigneeid=:providertarget'; $params['providertarget']=$target; }
         if ($scope==='created') { $where .= ' AND t.creatorid=:provideractor'; $params['provideractor']=$actor; }
         if ($scope==='review') { $where .= " AND t.reviewerid=:providerreview AND t.status='review'"; $params['providerreview']=$actor; }
-        if ($scope==='overdue') { $where .= " AND t.duedate<>'' AND t.duedate<:providertoday AND t.status NOT IN ('done','cancelled')"; $params['providertoday']=gmdate('Y-m-d'); }
+        if ($scope==='overdue') { $where .= " AND t.duedate<>'' AND t.duedate<:providertoday AND t.status NOT IN ('done','cancelled')"; $params['providertoday']=self::reporting_dates()['today']; }
         $employees=self::employees($companyuuid,$actor); $out=[];
         foreach ($DB->get_records_sql("SELECT t.* FROM {local_kbacompany_task} t WHERE $where ORDER BY t.duedate,t.id",$params) as $row) { $out[]=self::row_dto($row,$employees,true); }
         return $out;
@@ -1811,6 +2451,253 @@ class task_service {
             $tx->allow_commit();
         } catch (\Throwable $e) { if(isset($tx)){$tx->rollback($e);} throw $e; }
         finally { $lock->release(); }
+    }
+
+    /**
+     * Whether an actor may decompose this active parent task. Reading alone never
+     * permits creating child work under another owner's task.
+     */
+    public static function can_add_subtasks(string $companyuuid, int $actor, string $parentuuid): bool {
+        company_context_service::context($companyuuid, $actor);
+        $parent = self::task($companyuuid, $parentuuid);
+        $manager = self::can_manage($companyuuid, $actor);
+        if (!self::can_view_row($parent, $actor, $manager) ||
+                !in_array((string)$parent->status, ['open', 'doing', 'returned'], true)) {
+            return false;
+        }
+        return $manager || (int)$parent->creatorid === $actor ||
+            self::effective_assignee($parent) === $actor ||
+            access_role_service::may_act_on_department_task($companyuuid, $actor,
+                (int)$parent->assigneeid, 'edit');
+    }
+
+    /** Compute display progress only from tasks actually visible to this user. */
+    public static function subtask_progress(array $counts, bool $limited = false): array {
+        $total = max(0, (int)($counts['total'] ?? 0));
+        $done = max(0, min($total, (int)($counts['done'] ?? 0)));
+        $cancelled = max(0, min($total - $done, (int)($counts['cancelled'] ?? 0)));
+        $active = $total - $cancelled;
+        return [
+            'total' => $total, 'done' => $done, 'cancelled' => $cancelled,
+            'pending' => max(0, $active - $done),
+            'review' => max(0, (int)($counts['review'] ?? 0)),
+            'overdue' => max(0, (int)($counts['overdue'] ?? 0)),
+            'limited' => $limited,
+            'percent' => $limited || $active === 0 ? null : (int)round(100 * $done / $active),
+        ];
+    }
+
+    /**
+     * Direct children, bounded to 20 per page. Aggregates use the full visible set
+     * (not the current page). Hidden child existence is reported only as a boolean;
+     * child titles, counts and statuses stay confidential.
+     */
+    public static function subtasks_page(string $companyuuid, int $actor, string $parentuuid, int $page = 0): array {
+        global $DB;
+        company_context_service::context($companyuuid, $actor);
+        if (!self::readable_projection($companyuuid, $actor, $parentuuid)) { self::fail('reference'); }
+        list($where, $params) = self::projection_access($companyuuid, $actor);
+        $where .= ' AND t.parentuuid = :childparent';
+        $params['childparent'] = $parentuuid;
+        $today = self::reporting_dates()['today'];
+        $counts = $DB->get_record_sql("SELECT COUNT(t.id) AS total,
+                 SUM(CASE WHEN t.status = 'done' THEN 1 ELSE 0 END) AS done,
+                 SUM(CASE WHEN t.status = 'cancelled' THEN 1 ELSE 0 END) AS cancelled,
+                 SUM(CASE WHEN t.status = 'review' THEN 1 ELSE 0 END) AS review,
+                 SUM(CASE WHEN t.status NOT IN ('done','cancelled') AND t.duedate <> ''
+                           AND t.duedate < :childtoday THEN 1 ELSE 0 END) AS overdue
+               FROM {local_kbacompany_task} t WHERE $where", $params + ['childtoday' => $today]);
+        $values = array_map('intval', (array)$counts);
+        $total = (int)$values['total'];
+        // A user may see the parent but not every child. Never claim the partial
+        // progress is the parent-wide completion percentage.
+        $allcount = (int)$DB->count_records_select('local_kbacompany_task',
+            "companyuuid = :allcompany AND parentuuid = :allparent AND status <> :alldeleted",
+            ['allcompany' => $companyuuid, 'allparent' => $parentuuid, 'alldeleted' => 'deleted']);
+        $progress = self::subtask_progress($values, $allcount > $total);
+        $pagesize = 20;
+        $page = max(0, min(100000, $page));
+        if ($total > 0 && $page * $pagesize >= $total) {
+            $page = (int)floor(($total - 1) / $pagesize);
+        }
+        $employees = self::employees($companyuuid, $actor);
+        $items = [];
+        foreach ($DB->get_records_sql("SELECT t.* FROM {local_kbacompany_task} t WHERE $where ORDER BY t.id ASC",
+                $params, $page * $pagesize, $pagesize) as $row) {
+            $items[] = self::row_dto($row, $employees, true);
+        }
+        return ['items' => $items, 'total' => $total, 'page' => $page, 'pagesize' => $pagesize,
+            'progress' => $progress];
+    }
+
+    /**
+     * Weekly Battle Plan coverage of direct children of a readable parent.
+     *
+     * Counting takes place in SQL over every visible child, independently of the
+     * 20-row task-card pager. Only accessible Battle Plans participate: for a
+     * non-manager, "not in an accessible plan" is not proof of being unplanned.
+     * This is a read model; it creates no copies and changes no task state.
+     */
+    public static function subtask_week_plan_projection(string $companyuuid, int $actor,
+            string $parentuuid, string $weekstart): array {
+        global $DB;
+        company_context_service::context($companyuuid, $actor);
+        if (!self::readable_projection($companyuuid, $actor, $parentuuid)) {
+            self::fail('reference');
+        }
+        $weekstart = battle_plan_service::week_start($weekstart);
+        $weekend = (new \DateTimeImmutable($weekstart, new \DateTimeZone('UTC')))
+            ->modify('+6 days')->format('Y-m-d');
+        list($where, $params) = self::projection_access($companyuuid, $actor);
+        $where .= ' AND t.parentuuid = :bmsweekparent';
+        $params['bmsweekparent'] = $parentuuid;
+        $params['bmsweekfrom'] = $weekstart;
+        $params['bmsweekto'] = $weekend;
+        $params['bmsweekcompany'] = $companyuuid;
+        // Task editing is not Battle Plan management. Reuse the exact
+        // Battle Plan permission rule instead of broadening plan visibility.
+        $canmanageplans = permission_service::can_manage_tasks($companyuuid, $actor)
+            || access_role_service::can($companyuuid, $actor, 'battle_plan', 'edit');
+        $planvisibility = '';
+        if (!$canmanageplans) {
+            $planvisibility = ' AND (bp.userid = :bmsweekowner OR bp.reviewerid = :bmsweekreviewer '
+                . 'OR bp.observerid = :bmsweekobserver)';
+            $params += ['bmsweekowner' => $actor, 'bmsweekreviewer' => $actor,
+                'bmsweekobserver' => $actor];
+        }
+        // An EXISTS per visible child prevents double-counting a task that is
+        // attached to more than one Battle Plan in the selected week.
+        $inplan = "EXISTS (SELECT bi.id FROM {local_kbacompany_bplanitem} bi
+            JOIN {local_kbacompany_bplan} bp ON bp.companyuuid = bi.companyuuid
+                AND bp.uuid = bi.planuuid
+            WHERE bi.companyuuid = :bmsweekcompany AND bi.provider = 'bms'
+                AND (bi.externalid = t.uuid OR bi.taskuuid = t.uuid)
+                AND bp.periodstart <= :bmsweekto AND bp.periodend >= :bmsweekfrom$planvisibility)";
+        $sql = "SELECT COUNT(t.id) AS visiblecount,
+                COALESCE(SUM(CASE WHEN t.status NOT IN ('done','cancelled') THEN 1 ELSE 0 END),0) AS open_count,
+                COALESCE(SUM(CASE WHEN t.status = 'done' THEN 1 ELSE 0 END),0) AS done_count,
+                COALESCE(SUM(CASE WHEN t.status = 'cancelled' THEN 1 ELSE 0 END),0) AS cancelled_count,
+                COALESCE(SUM(CASE WHEN t.status NOT IN ('done','cancelled') AND $inplan THEN 1 ELSE 0 END),0)
+                    AS planned_count
+            FROM {local_kbacompany_task} t WHERE $where";
+        $row = $DB->get_record_sql($sql, $params);
+        $visible = (int)($row->visiblecount ?? 0);
+        $open = (int)($row->open_count ?? 0);
+        $planned = (int)($row->planned_count ?? 0);
+        // A task's existence must not be exposed to an actor who cannot read it.
+        $allcount = (int)$DB->count_records_select('local_kbacompany_task',
+            'companyuuid = :bmsweekallcompany AND parentuuid = :bmsweekallparent AND status <> :bmsweekdeleted',
+            ['bmsweekallcompany' => $companyuuid, 'bmsweekallparent' => $parentuuid,
+                'bmsweekdeleted' => 'deleted']);
+        $limited = $allcount > $visible;
+        // Workload is only calculated from the visible children that are
+        // referenced by an accessible plan in the selected week.
+        $workloadsql = "SELECT t.assigneeid,COUNT(t.id) AS taskcount,
+                COALESCE(SUM(t.planminutes),0) AS plannedminutes
+            FROM {local_kbacompany_task} t WHERE $where
+                AND t.status NOT IN ('done','cancelled') AND $inplan
+            GROUP BY t.assigneeid ORDER BY taskcount DESC,t.assigneeid ASC";
+        $workloadparams = $params;
+        $workload = [];
+        $employees = self::employees($companyuuid, $actor);
+        $workloadlimited = false;
+        foreach ($DB->get_records_sql($workloadsql, $workloadparams, 0, 13) as $record) {
+            if (count($workload) === 12) { $workloadlimited = true; break; }
+            $id = (int)$record->assigneeid;
+            $workload[] = [
+                'assignee_id' => $id,
+                'assignee_name' => (string)($employees[$id] ?? get_string('tui_unavailable', 'local_kbacompany')),
+                'tasks' => (int)$record->taskcount,
+                'planned_minutes' => (int)$record->plannedminutes,
+            ];
+        }
+        return [
+            'weekstart' => $weekstart, 'weekend' => $weekend,
+            'visible_count' => $visible, 'open_count' => $open,
+            'planned_count' => $planned, 'unmatched_count' => max(0, $open - $planned),
+            'done_count' => (int)($row->done_count ?? 0),
+            'cancelled_count' => (int)($row->cancelled_count ?? 0),
+            'limited' => $limited, 'all_plans_visible' => $canmanageplans,
+            'workload' => $workload, 'workload_limited' => $workloadlimited,
+        ];
+    }
+
+    /** Safe, bounded existing-task picker: only own editable, active, unparented manual tasks. */
+    public static function subtask_candidates(string $companyuuid, int $actor, string $parentuuid,
+            string $search = '', int $limit = 50): array {
+        global $DB;
+        company_context_service::context($companyuuid, $actor);
+        $limit = max(1, min(50, $limit));
+        if (!self::can_add_subtasks($companyuuid, $actor, $parentuuid)) { self::fail('permission'); }
+        list($where, $params) = self::projection_access($companyuuid, $actor);
+        $where .= " AND t.sourcekind = :childsource AND t.parentuuid = :emptyparent
+                   AND t.contextuuid = :emptycontext
+                   AND t.status IN ('open', 'returned') AND t.uuid <> :excludedparent";
+        $params += ['childsource' => 'manual', 'emptyparent' => '',
+            'emptycontext' => '', 'excludedparent' => $parentuuid];
+        if (!self::can_manage($companyuuid, $actor)) {
+            $where .= ' AND t.creatorid = :childcreator';
+            $params['childcreator'] = $actor;
+        }
+        $search = \core_text::substr(trim($search), 0, 160);
+        if ($search !== '') {
+            $where .= ' AND ' . $DB->sql_like('t.title', ':childquery', false);
+            $params['childquery'] = '%' . $DB->sql_like_escape($search) . '%';
+        }
+        $out = [];
+        foreach ($DB->get_records_sql("SELECT t.id,t.uuid,t.title,t.revision,t.assigneeid,t.duedate
+                FROM {local_kbacompany_task} t WHERE $where ORDER BY t.id DESC", $params, 0, $limit) as $row) {
+            $out[] = ['uuid' => (string)$row->uuid, 'revision' => (int)$row->revision,
+                'title' => (string)$row->title, 'assigneeid' => (int)$row->assigneeid,
+                'duedate' => (string)$row->duedate];
+        }
+        return $out;
+    }
+
+    /** Attach one existing canonical task as a child; never clone tasks, discussions or plan membership. */
+    public static function link_subtask(string $companyuuid, int $actor, string $parentuuid,
+            string $childuuid, int $expectedrevision): void {
+        global $DB;
+        company_context_service::context($companyuuid, $actor);
+        if ($parentuuid === $childuuid || $parentuuid === '' || $childuuid === '') { self::fail('parent'); }
+        // Company lock coordinates with create() and serialises simultaneous reciprocal reparenting.
+        $lock = \core\lock\lock_config::get_lock_factory('local_kbacompany')
+            ->get_lock('taskcenter:' . $companyuuid, 10);
+        if (!$lock) { self::fail('lock'); }
+        $childlock = null;
+        try {
+            $childlock = \core\lock\lock_config::get_lock_factory('local_kbacompany')
+                ->get_lock('task:' . $companyuuid . ':' . $childuuid, 10);
+            if (!$childlock) { self::fail('lock'); }
+            $tx = $DB->start_delegated_transaction();
+            if (!self::can_add_subtasks($companyuuid, $actor, $parentuuid)) { self::fail('permission'); }
+            $child = self::task($companyuuid, $childuuid);
+            $manager = self::can_manage($companyuuid, $actor);
+            if (!self::can_view_row($child, $actor, $manager) ||
+                    !($manager || (int)$child->creatorid === $actor)) { self::fail('permission'); }
+            if ((int)$child->revision !== $expectedrevision) { self::fail('conflict'); }
+            if ((string)$child->sourcekind !== 'manual' ||
+                    !in_array((string)$child->status, ['open', 'returned'], true) ||
+                    (string)$child->parentuuid !== '' || (string)$child->contextuuid !== '') {
+                self::fail('state');
+            }
+            self::validate_parent_chain($companyuuid, $parentuuid, $childuuid);
+            $child->parentuuid = $parentuuid;
+            $child->revision++;
+            $child->timemodified = time();
+            $DB->update_record('local_kbacompany_task', $child);
+            self::log($companyuuid, $childuuid, $actor, 'subtask_link', $child->status, $child->status,
+                ['parentuuid' => $parentuuid]);
+            self::log($companyuuid, $parentuuid, $actor, 'subtask_added', '', '',
+                ['childuuid' => $childuuid]);
+            $tx->allow_commit();
+        } catch (\Throwable $e) {
+            if (isset($tx)) { $tx->rollback($e); }
+            throw $e;
+        } finally {
+            if ($childlock) { $childlock->release(); }
+            $lock->release();
+        }
     }
 
     /** Bounded, read-only canonical relation picker. Raw UUIDs are option values, not labels. */

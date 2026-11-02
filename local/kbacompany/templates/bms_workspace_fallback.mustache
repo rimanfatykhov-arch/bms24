@@ -1,66 +1,20 @@
 <div class="kbacompany-bms-fallback">
-    <div class="d-flex flex-wrap justify-content-between align-items-start mb-3">
-        <div>
-            <div class="text-muted small">{{#str}}bmsworkspace_nav, local_kbacompany{{/str}}</div>
-            <h1>{{companyname}}</h1>
-            <p class="lead">{{description}}</p>
-        </div>
-        <div>
-            <a href="{{taskurl}}" class="btn btn-primary">{{#str}}bmsworkspace_quick_task, local_kbacompany{{/str}}</a>
-            <a href="{{communicationurl}}" class="btn btn-outline-primary">{{#str}}bmsworkspace_quick_message, local_kbacompany{{/str}}</a>
-            <a href="{{backurl}}" class="btn btn-link">{{#str}}bmsworkspace_classic, local_kbacompany{{/str}}</a>
-        </div>
-    </div>
-
-    <div class="row mb-4">
-        {{#stats}}
-        <div class="col-12 col-sm-6 col-xl-3 mb-3">
-            <div class="card h-100"><div class="card-body">
-                <div class="text-muted small">{{label}}</div>
-                <div class="h2 mb-0">{{value}}</div>
-            </div></div>
-        </div>
-        {{/stats}}
-    </div>
-
+    <header class="mb-3">
+        <div class="text-muted small">{{#str}}bmsworkspace_nav, local_kbacompany{{/str}}</div>
+        <h1>{{#str}}bmsworkspace_focus_title, local_kbacompany{{/str}}</h1>
+        <p class="lead">{{description}}</p>
+        <a class="btn btn-outline-primary" href="{{widgetsurl}}">{{#str}}bmswidgets_title, local_kbacompany{{/str}}</a>
+    </header>
     <div class="row">
-        <aside class="col-lg-3 mb-4">
-            <div class="card"><div class="card-body">
-                {{#groups}}
-                    <details class="mb-2"{{#expanded}} open{{/expanded}}>
-                        <summary class="font-weight-bold text-muted py-2">{{label}}</summary>
-                        <nav class="list-group list-group-flush mb-2">
-                        {{#items}}
-                            <a class="list-group-item list-group-item-action{{#active}} active{{/active}}" href="{{url}}">{{label}}{{#badge}} <span class="badge badge-secondary">{{value}}</span>{{/badge}}</a>
-                        {{/items}}
-                        </nav>
-                    </details>
-                {{/groups}}
-            </div></div>
-        </aside>
-        <main class="col-lg-9">
-            <div class="row">
-                <div class="col-xl-8 mb-4">
-                    <div class="card h-100"><div class="card-body">
-                        <h2 class="h5">{{#str}}bmsworkspace_recenttasks, local_kbacompany{{/str}}</h2>
-                        {{#tasks}}<p class="mb-2"><a href="{{url}}">{{title}}</a> <span class="text-muted small">{{source}}</span></p>{{/tasks}}
-                        {{^tasks}}<p class="text-muted">{{#str}}bmsworkspace_notasks, local_kbacompany{{/str}}</p>{{/tasks}}
-                    </div></div>
-                </div>
-                <div class="col-xl-4 mb-4">
-                    <div class="card h-100"><div class="card-body">
-                        <h2 class="h5">{{#str}}bmsworkspace_attention, local_kbacompany{{/str}}</h2>
-                        {{#attention}}<p class="mb-2"><a href="{{url}}">{{label}}</a></p>{{/attention}}
-                        {{^attention}}<p class="text-muted">{{#str}}bmsworkspace_attention_none, local_kbacompany{{/str}}</p>{{/attention}}
-                    </div></div>
-                </div>
-            </div>
-            <div class="card"><div class="card-body">
-                <h2 class="h5">{{#str}}bmsarchitecture_title, local_kbacompany{{/str}}</h2>
-                <p class="text-muted">{{#str}}bmsarchitecture_workspace_subtitle, local_kbacompany{{/str}}</p>
-                <p>{{#str}}company_processes, local_kbacompany{{/str}}: <strong>{{architecture.processes}}</strong> · {{#str}}bmsworkspace_stat_units, local_kbacompany{{/str}}: <strong>{{architecture.units}}</strong> · {{#str}}bmsworkspace_stat_positions, local_kbacompany{{/str}}: <strong>{{architecture.positions}}</strong></p>
-                <a href="{{architectureurl}}" class="btn btn-outline-primary">{{#str}}bmsarchitecture_open, local_kbacompany{{/str}}</a>
-            </div></div>
-        </main>
+        <aside class="col-lg-3 mb-4"><nav class="card p-3" aria-label="{{#str}}bmsworkspace_sidebar_label, local_kbacompany{{/str}}">
+            {{#groups}}
+            <details class="mb-2"{{#expanded}} open{{/expanded}}>
+                <summary class="font-weight-bold text-muted py-2">{{label}}</summary>
+                {{#items}}<a class="d-block py-2" href="{{url}}">{{label}}</a>{{/items}}
+            </details>
+            {{/groups}}
+            <a class="d-block py-2" href="{{preferencesurl}}">{{#str}}bmsmain_change, local_kbacompany{{/str}}</a>
+        </nav></aside>
+        <main class="col-lg-9">{{{focushtml}}}{{{widgetcontenthtml}}}</main>
     </div>
 </div>

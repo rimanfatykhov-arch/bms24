@@ -1,5 +1,0 @@
-<IfModule mod_rewrite.c>
-RewriteEngine On
-RewriteRule ^status$ status/index.php [L]
-RewriteRule ^provision$ provision/index.php [L]
-</IfModule>

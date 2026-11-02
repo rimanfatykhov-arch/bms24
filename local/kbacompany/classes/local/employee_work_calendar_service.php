@@ -14,14 +14,28 @@ class employee_work_calendar_service {
             'local/kbacompany:viewowncompany', 'nopermissions', '');
     }
 
-    private static function context(string $company, int $actor, int $owner): void {
+    /** True only when the Moodle user resolves to a canonical employee/participant of this company. */
+    public static function owner_available(string $company, int $actor, int $owner): bool {
         global $DB;
         company_context_service::context($company, $actor);
         if ($owner <= 0 || !$DB->record_exists('user', ['id' => $owner, 'deleted' => 0])) {
+            return false;
+        }
+        try {
+            employee_service::directory_record($company, $owner, $actor, '');
+            return true;
+        } catch (\moodle_exception $e) {
+            if (($e->errorcode ?? '') === 'bms_employee_not_found') {
+                return false;
+            }
+            throw $e;
+        }
+    }
+
+    private static function context(string $company, int $actor, int $owner): void {
+        if (!self::owner_available($company, $actor, $owner)) {
             self::deny();
         }
-        // Only employees/participants in this company can own a work calendar.
-        employee_service::directory_record($company, $owner, $actor, '');
     }
 
     /** Permissions are independent: view, edit and discuss are never implied by each other. */

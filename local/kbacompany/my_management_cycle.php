@@ -51,19 +51,25 @@ if (!$records) {
 }
 
 echo html_writer::tag('h3', get_string('pmc_steps', 'local_kbacompany'));
+$calendaravailable = \local_kbacompany\local\employee_work_calendar_service::owner_available($uuid, $actor, $actor);
 $steps = [
-    ['pmc_plan', 'pmc_plan_desc', 'battle_plan.php', ['scope'=>'my']],
-    ['pmc_organize', 'pmc_organize_desc', 'tasks.php', ['scope'=>'my']],
-    ['pmc_lead', 'pmc_lead_desc', 'employee_work_calendar.php', ['userid'=>$actor]],
-    ['pmc_control', 'pmc_control_desc', 'tasks.php', ['scope'=>'my']],
-    ['pmc_correct', 'pmc_correct_desc', 'battle_plan.php', ['scope'=>'my']],
+    ['pmc_plan', 'pmc_plan_desc', 'battle_plan.php', ['scope'=>'my'], true],
+    ['pmc_organize', 'pmc_organize_desc', 'tasks.php', ['scope'=>'my'], true],
+    ['pmc_lead', 'pmc_lead_desc', 'employee_work_calendar.php', ['userid'=>$actor], $calendaravailable],
+    ['pmc_control', 'pmc_control_desc', 'tasks.php', ['scope'=>'my'], true],
+    ['pmc_correct', 'pmc_correct_desc', 'battle_plan.php', ['scope'=>'my'], true],
 ];
 echo html_writer::start_div('row');
 foreach ($steps as $index=>$step) {
-    $link = new moodle_url('/local/kbacompany/'.$step[2], ['uuid'=>$uuid]+$step[3]);
     $body = html_writer::tag('h4', ($index + 1).'. '.get_string($step[0], 'local_kbacompany'));
     $body .= html_writer::tag('p', get_string($step[1], 'local_kbacompany'), ['class'=>'text-muted']);
-    $body .= html_writer::link($link, get_string('pmc_open', 'local_kbacompany'), ['class'=>'btn btn-outline-success']);
+    if (!empty($step[4])) {
+        $link = new moodle_url('/local/kbacompany/'.$step[2], ['uuid'=>$uuid]+$step[3]);
+        $body .= html_writer::link($link, get_string('pmc_open', 'local_kbacompany'), ['class'=>'btn btn-outline-success']);
+    } else {
+        $body .= html_writer::div(get_string('pmc_calendar_unavailable', 'local_kbacompany'),
+            'alert alert-warning mb-0');
+    }
     echo html_writer::tag('div', html_writer::div($body, 'card p-3 mb-3 h-100'), ['class'=>'col-md-4 mb-3']);
 }
 echo html_writer::end_div();
