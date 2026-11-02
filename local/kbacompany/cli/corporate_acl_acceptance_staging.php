@@ -15,9 +15,10 @@ require_once($CFG->libdir . '/clilib.php');
     'help' => false,
     'companyuuid' => '',
     'outsideruserid' => 0,
+    'outsiderusername' => '',
 ], ['h' => 'help']);
 if ($unknown || $options['help'] || empty($options['companyuuid'])) {
-    echo "Usage: php local/kbacompany/cli/corporate_acl_acceptance_staging.php --companyuuid=UUID [--outsideruserid=ID]\n";
+    echo "Usage: php local/kbacompany/cli/corporate_acl_acceptance_staging.php --companyuuid=UUID [--outsideruserid=ID | --outsiderusername=NAME]\n";
     echo "Checks BMS/Corporate mapping, manager implementation capability and outsider denial (read-only).\n";
     exit($options['help'] && !$unknown ? 0 : 2);
 }
@@ -134,6 +135,21 @@ if ($globalprivileged) {
 }
 
 $outsiderid = (int)$options['outsideruserid'];
+$outsiderusername = trim((string)$options['outsiderusername']);
+if ($outsiderusername !== '') {
+    if ($outsiderid !== 0 || !preg_match('/^[a-z0-9_.-]{3,100}$/', $outsiderusername)) {
+        cli_error('STOP: specify either a valid outsiderusername or outsideruserid, not both.');
+    }
+    $nameduser = $DB->get_record('user', [
+        'username' => $outsiderusername,
+        'deleted' => 0,
+        'suspended' => 0,
+    ]);
+    if (!$nameduser) {
+        cli_error('ACCEPTANCE_PARTIAL: requested outsider username was not found as an active user on staging.');
+    }
+    $outsiderid = (int)$nameduser->id;
+}
 if ($outsiderid < 0) {
     cli_error('STOP: outsideruserid must be non-negative.');
 }
