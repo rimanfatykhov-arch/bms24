@@ -56,7 +56,7 @@ if ! grep -q 'BMS24 stage 1881.16' "$TMP"; then
     echo 'STOP: unexpected source file in remote branch' >&2
     exit 3
 fi
-php -l "$TMP" >/dev/null
+test -s "$TMP" || { echo 'STOP: downloaded CLI file is empty' >&2; exit 3; }
 mkdir -p "$BACKUPDIR"
 if [[ -f "$TARGET" ]]; then
     EXISTED=1
@@ -76,4 +76,6 @@ cd "$BASE/docker"
 INSTALLED=0
 trap - ERR
 echo 'STAGE1881_BRIDGE_INSTALLED_DRY_RUN_OK: no database changes made'
-[[ -n "$BACKUP" ]] && echo "Old CLI backup: $BACKUP"
+if [[ -n "$BACKUP" ]]; then
+    echo "Old CLI backup: $BACKUP"
+fi
