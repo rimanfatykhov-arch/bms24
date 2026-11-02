@@ -80,7 +80,7 @@ fi
 echo "STAGE1881_HTTPS_SMOKE_OK: status=$STATUS"
 
 ./bin/moodle-docker-compose exec -T webserver \
-    php "$REL" --companyuuid="$UUID"
+    php "$REL" --companyuuid="$UUID" --outsiderusername=bms24_acl_outsider
 
 # In-browser acceptance of Implementation.php remains a separate manual step.
 echo 'STAGE1881_ACL_PHP_ACCEPTANCE_COMPLETED'
