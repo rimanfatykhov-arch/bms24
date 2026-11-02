@@ -15,9 +15,12 @@ $PAGE->set_title(get_string('mycompanies', 'local_kbacompany'));
 $PAGE->set_heading(get_string('pluginname', 'local_kbacompany'));
 
 $status = company_service::status();
+// The canonical BMS registry is sufficient on a fresh SaaS installation.
+// Corporate Dashboard is an optional legacy compatibility source.
+$hascompanysource = !empty($status['canonical_registry']) || !empty($status['corporate_adapter']);
 $companies = company_service::companies_for_user((int)$USER->id);
 $showlist = optional_param('list', 0, PARAM_BOOL);
-if (!$showlist && !empty($status['corporate_adapter']) && count($companies) === 1) {
+if (!$showlist && $hascompanysource && count($companies) === 1) {
     redirect(new moodle_url('/local/kbacompany/bms_home.php', [
         'uuid' => $companies[0]['uuid'],
     ]));
@@ -35,7 +38,7 @@ echo $OUTPUT->heading(get_string('mycompanies', 'local_kbacompany'));
 echo html_writer::tag('p', get_string('foundationintro', 'local_kbacompany'), ['class' => 'lead']);
 echo $OUTPUT->notification(get_string('readonlyfoundation', 'local_kbacompany'), 'info');
 
-if (empty($status['corporate_adapter'])) {
+if (!$hascompanysource) {
     echo $OUTPUT->notification(get_string('adapterunavailable', 'local_kbacompany'), 'warning');
 } else if (!$companies) {
     echo $OUTPUT->notification(get_string('nocompanies', 'local_kbacompany'), 'info');
