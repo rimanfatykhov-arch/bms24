@@ -136,10 +136,10 @@ if ($options['verify']) {
         if (!(int)$member->ismanager) {
             continue;
         }
-        if (!\\local_kbacorporate\\local\\access::has_full_company_access($legacyid, (int)$member->userid)) {
+        if (!\local_kbacorporate\local\access::has_full_company_access($legacyid, (int)$member->userid)) {
             cli_error('VERIFY_FAILED: manager did not receive full legacy company access.');
         }
-        $allowed = \\local_kbacorporate\\local\\access::get_allowed_companies((int)$member->userid);
+        $allowed = \local_kbacorporate\local\access::get_allowed_companies((int)$member->userid);
         if (!isset($allowed[$legacyid])) {
             cli_error('VERIFY_FAILED: corporate company not visible to intended manager.');
         }
