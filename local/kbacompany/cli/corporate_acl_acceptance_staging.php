@@ -2,6 +2,11 @@
 // BMS24 Stage 1881.19 — read-only company access acceptance audit on staging.
 // NO DATA WRITES. No automatic user creation, capability grants or role changes.
 
+// CLI files live in the Moodle webroot; never allow direct web execution.
+if (PHP_SAPI !== 'cli') {
+    http_response_code(403);
+    exit;
+}
 define('CLI_SCRIPT', true);
 require(__DIR__ . '/../../../config.php');
 require_once($CFG->libdir . '/clilib.php');
