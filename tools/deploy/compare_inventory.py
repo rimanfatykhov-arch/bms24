@@ -93,7 +93,7 @@ def main():
         if prodcore is not None and required is not None and required > prodcore:
             status += '; STAGING CODE REQUIRES NEWER MOODLE CORE'
             flags.append(f'{name}: staging requires Moodle {b["requires"]} but production is {prod["MOODLE"]["version"]}')
-        print(f'| `\${escape(name)}` | {escape(a["version"])} | {escape(b["version"])} | {escape(status)} |')
+        print(f'| `{escape(name)}` | {escape(a["version"])} | {escape(b["version"])} | {escape(status)} |')
     print('\n## Release gates')
     if flags:
         print('\n**BLOCKERS / review:**')
