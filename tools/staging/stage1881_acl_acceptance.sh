@@ -60,6 +60,25 @@ cd "$BASE/docker"
 INSTALLED=0
 trap - ERR
 echo 'STAGE1881_ACL_CLI_INSTALLED'
+
+# Public smoke: correct HTTPS host, no server error and no localhost redirect.
+HEADERS=$(mktemp)
+trap 'rm -f "$TMP" "$HEADERS"' EXIT
+curl --noproxy '*' --silent --show-error --max-time 20 \
+    --resolve test.bms24.online:443:127.0.0.1 \
+    --dump-header "$HEADERS" --output /dev/null \
+    https://test.bms24.online/login/index.php
+STATUS=$(awk '/^HTTP\// {code=$2} END {print code}' "$HEADERS")
+case "$STATUS" in
+    2??|3??) ;;
+    *) echo "STAGE1881_HTTP_FAILED: status=$STATUS" >&2; exit 5 ;;
+esac
+if grep -Eiq '^location:.*(localhost|127[.]0[.]0[.]1)' "$HEADERS"; then
+    echo 'STAGE1881_HTTP_FAILED: localhost redirect' >&2
+    exit 5
+fi
+echo "STAGE1881_HTTPS_SMOKE_OK: status=$STATUS"
+
 ./bin/moodle-docker-compose exec -T webserver \
     php "$REL" --companyuuid="$UUID"
 
