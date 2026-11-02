@@ -1,4 +1,4 @@
-# BMS24 Dev AI — instructions for code agents (build2026101874)
+# BMS24 Dev AI — instructions for code agents (build2026101875)
 
 ## Product ownership
 The product owner approves scope, architecture-breaking changes and releases.

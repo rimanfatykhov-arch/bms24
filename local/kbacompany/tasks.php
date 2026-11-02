@@ -129,7 +129,7 @@ if ($selected !== '') {
             optional_param('subpage', 0, PARAM_INT));
         // Server-side weekly rollup uses the full visible subtask set (never only the pager).
         $weekparam = optional_param('subweek', '', PARAM_RAW_TRIMMED);
-        $weekday = $weekparam !== '' ? $weekparam : userdate(time(), '%Y-%m-%d');
+        $weekday = $weekparam !== '' ? $weekparam : battle_plan_service::user_today();
         $weekstart = battle_plan_service::week_start($weekday);
         $model['subtask_week'] = task_service::subtask_week_plan_projection($uuid, $actor, $selected, $weekstart);
         $model['subtask_plan_memberships'] = battle_plan_service::task_plan_memberships($uuid, $actor,
@@ -307,7 +307,7 @@ if($action!=='') {
                 $model['subtasks'] = task_service::subtasks_page($uuid,$actor,$selected,
                     optional_param('subpage',0,PARAM_INT));
                 $weekparam = optional_param('subweek', '', PARAM_RAW_TRIMMED);
-                $weekstart = battle_plan_service::week_start($weekparam !== '' ? $weekparam : userdate(time(), '%Y-%m-%d'));
+                $weekstart = battle_plan_service::week_start($weekparam !== '' ? $weekparam : battle_plan_service::user_today());
                 $model['subtask_week'] = task_service::subtask_week_plan_projection($uuid,$actor,$selected,$weekstart);
                 $model['subtask_plan_memberships'] = battle_plan_service::task_plan_memberships($uuid,$actor,
                     array_column($model['subtasks']['items'], 'uuid'));

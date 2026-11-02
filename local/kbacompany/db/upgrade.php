@@ -6078,6 +6078,12 @@ function xmldb_local_kbacompany_upgrade(int $oldversion): bool {
         upgrade_plugin_savepoint(true, 2026101874, 'local', 'kbacompany');
     }
 
+    // build1875: avoid locale-dependent date strings in current-week BMS screens.
+    // No DB schema or business-data migration.
+    if ($oldversion < 2026101875) {
+        upgrade_plugin_savepoint(true, 2026101875, 'local', 'kbacompany');
+    }
+
     return true;
 }
 

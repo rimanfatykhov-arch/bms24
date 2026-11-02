@@ -142,7 +142,7 @@ $weekstart = '';
 $myplan = null;
 $planlink = new moodle_url('/local/kbacompany/battle_plan.php', ['uuid' => $uuid]);
 if (isset($widgetactive['plan'])) {
-    $weekstart = \local_kbacompany\local\battle_plan_service::week_start(userdate(time(), '%Y-%m-%d'));
+    $weekstart = \local_kbacompany\local\battle_plan_service::week_start(\local_kbacompany\local\battle_plan_service::user_today());
     $planrecords = $DB->get_records('local_kbacompany_bplan', [
         'companyuuid' => $uuid, 'userid' => (int)$USER->id, 'periodstart' => $weekstart,
     ], 'id DESC', 'id,uuid,status', 0, 1);
@@ -169,7 +169,7 @@ if (isset($widgetactive['attention'])) {
         ? (array)($model['management_home']['exceptions']['rows'] ?? []) : [];
     $actionrows = bms_workspace_action_service::project($uuid, (int)$USER->id,
         (array)($taskctx['tasks'] ?? []), $taskreviews, $planreviews, $managerexceptions,
-        userdate(time(), '%Y-%m-%d'), $focusmode === 'all' ? 8 : 30);
+        \local_kbacompany\local\battle_plan_service::user_today(), $focusmode === 'all' ? 8 : 30);
     $actionrows = bms_workspace_focus_service::actions($actionrows, $focusmode);
 }
 
@@ -336,7 +336,7 @@ $statusvariants = [
     'returned' => 'danger', 'done' => 'success', 'cancelled' => 'neutral',
 ];
 $taskitems = [];
-$today = userdate(time(), '%Y-%m-%d');
+$today = \local_kbacompany\local\battle_plan_service::user_today();
 foreach (array_slice($taskctx['tasks'], 0, 6) as $task) {
     $due = (string)$task['due_date'];
     $overdue = $due !== '' && $due < $today && !in_array($task['status'], ['done', 'cancelled'], true);

@@ -53,7 +53,7 @@ final class implementation_project_weekly_service {
     public static function model(string $uuid, int $actor, int $programid, string $week = ''): array {
         global $DB;
         $base = implementation_project_stages_service::model($uuid, $actor, $programid);
-        $date = $week !== '' ? $week : userdate(time(), '%Y-%m-%d');
+        $date = $week !== '' ? $week : battle_plan_service::user_today();
         $monday = battle_plan_service::week_start($date);
         $base['week'] = $monday;
         $base['can_view_plans'] = self::can_view_plans($uuid, $actor);

@@ -60,6 +60,26 @@ final class battle_plan_service_test extends \advanced_testcase {
         $this->assertSame('2027-01-04', battle_plan_service::week_start('2027-01-10'));
     }
 
+    /** The week shown on the workspace is a civil date, never a localised display string. */
+    public function test_user_today_uses_user_timezone_and_iso_date_at_week_boundary(): void {
+        $this->resetAfterTest();
+        $ts = (new \DateTimeImmutable('2026-11-01T23:30:00+00:00'))->getTimestamp();
+        $user = $this->getDataGenerator()->create_user(['timezone' => 'Europe/Helsinki']);
+        $this->setUser($user);
+        $this->assertSame('2026-11-02', battle_plan_service::user_today($ts));
+        $this->assertSame('2026-11-02', battle_plan_service::week_start(battle_plan_service::user_today($ts)));
+
+        $lauser = $this->getDataGenerator()->create_user(['timezone' => 'America/Los_Angeles']);
+        $this->setUser($lauser);
+        $this->assertSame('2026-11-01', battle_plan_service::user_today($ts));
+        $this->assertSame('2026-10-26', battle_plan_service::week_start(battle_plan_service::user_today($ts)));
+    }
+
+    public function test_week_start_rejects_localised_non_iso_input(): void {
+        $this->expectException(\moodle_exception::class);
+        battle_plan_service::week_start('02.11.2026');
+    }
+
     public function test_period_label_is_human_readable_and_draft_plan_is_available_for_direct_library_add(): void {
         $label = battle_plan_service::period_label('2026-09-07', '2026-09-13');
         $this->assertStringNotContainsString('[[', $label);

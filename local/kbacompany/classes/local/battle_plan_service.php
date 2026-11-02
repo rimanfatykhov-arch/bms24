@@ -79,6 +79,19 @@ class battle_plan_service {
             '-' . substr($hex, 16, 4) . '-' . substr($hex, 20);
     }
 
+    /**
+     * Current civil date in the Moodle user's timezone, always Gregorian ISO 8601.
+     *
+     * userdate() is intended for locale-facing display and may not give an ASCII
+     * Y-m-d value on every calendar/locale configuration. Business-date keys
+     * must not depend on translated formatting (battleplan_date on workspace).
+     * $timestamp is injectable so timezone and UTC-midnight transitions can be tested.
+     */
+    public static function user_today(?int $timestamp = null): string {
+        $instant = new \DateTimeImmutable('@' . ($timestamp ?? time()));
+        return $instant->setTimezone(\core_date::get_user_timezone_object())->format('Y-m-d');
+    }
+
     public static function week_start(string $date): string {
         $d = \DateTimeImmutable::createFromFormat('!Y-m-d', $date, new \DateTimeZone('UTC'));
         if (!$d || $d->format('Y-m-d') !== $date) { self::fail('date'); }

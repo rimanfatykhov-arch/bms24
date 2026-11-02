@@ -49,7 +49,7 @@ echo html_writer::tag('strong', get_string('implweek_period', 'local_kbacompany'
 echo html_writer::link($weeklink($weekstart->modify('+7 days')->format('Y-m-d')),
     get_string('implweek_next', 'local_kbacompany'), ['class'=>'bms24-ui-btn']);
 echo html_writer::link($weeklink(\local_kbacompany\local\battle_plan_service::week_start(
-    userdate(time(), '%Y-%m-%d'))), get_string('implweek_current', 'local_kbacompany'),
+    \local_kbacompany\local\battle_plan_service::user_today())), get_string('implweek_current', 'local_kbacompany'),
     ['class'=>'bms24-ui-btn']);
 echo html_writer::end_tag('nav');
 if (!$model['weekly_complete']) {
