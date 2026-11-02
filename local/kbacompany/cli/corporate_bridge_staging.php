@@ -10,20 +10,31 @@ require_once($CFG->libdir . '/clilib.php');
     'help' => false,
     'companyuuid' => '',
     'apply' => false,
+    'verify' => false,
 ], ['h' => 'help']);
 
 if ($unrecognised || $options['help'] || trim((string)$options['companyuuid']) === '') {
-    echo "Usage: php local/kbacompany/cli/corporate_bridge_staging.php --companyuuid=UUID [--apply]\n";
+    echo "Usage: php local/kbacompany/cli/corporate_bridge_staging.php --companyuuid=UUID [--apply|--verify]\n";
     echo "Default: read-only. --apply requires BMS24_STAGING_BRIDGE_ALLOW=1.\n";
     exit($options['help'] && !$unrecognised ? 0 : 2);
 }
 
+if ($options['apply'] && $options['verify']) {
+    cli_error('STOP: --apply and --verify are mutually exclusive.');
+}
 $uuid = strtolower(trim((string)$options['companyuuid']));
 if (!preg_match('/^[a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$/', $uuid)) {
     cli_error('Invalid company UUID (expected UUID v4).');
 }
-if ($options['apply'] && getenv('BMS24_STAGING_BRIDGE_ALLOW') !== '1') {
-    cli_error('STOP: --apply requires BMS24_STAGING_BRIDGE_ALLOW=1 on staging.');
+if ($options['apply']) {
+    if (getenv('BMS24_STAGING_BRIDGE_ALLOW') !== '1') {
+        cli_error('STOP: --apply requires BMS24_STAGING_BRIDGE_ALLOW=1 on staging.');
+    }
+    // Stronger safety invariant: never write on Moodle instances with a different public URL.
+    if (rtrim((string)$CFG->wwwroot, '/') !== 'https://test.bms24.online' ||
+        empty($CFG->sslproxy)) {
+        cli_error('STOP: staging HTTPS configuration mismatch; refusing to write.');
+    }
 }
 
 $tables = [
@@ -117,6 +128,26 @@ printf("Corporate mapping: %s\n", $legacy ? (string)$legacyid : 'MISSING');
 printf("Canonical active members: %d; corporate members: %d; pending insertions: %d\n",
     count($eligiblemembers), count($existingmembers), count($newmembers));
 
+if ($options['verify']) {
+    if (!$legacy || $newmembers) {
+        cli_error('VERIFY_FAILED: corporate mapping or memberships incomplete.');
+    }
+    foreach ($eligiblemembers as $member) {
+        if (!(int)$member->ismanager) {
+            continue;
+        }
+        if (!\\local_kbacorporate\\local\\access::has_full_company_access($legacyid, (int)$member->userid)) {
+            cli_error('VERIFY_FAILED: manager did not receive full legacy company access.');
+        }
+        $allowed = \\local_kbacorporate\\local\\access::get_allowed_companies((int)$member->userid);
+        if (!isset($allowed[$legacyid])) {
+            cli_error('VERIFY_FAILED: corporate company not visible to intended manager.');
+        }
+    }
+    echo "VERIFY_OK: company bridge and membership roles are consistent (read-only).\n";
+    exit(0);
+}
+
 if (!$options['apply']) {
     echo "DRY_RUN_OK: no changes made. Run with --apply and explicit staging guard after backup/review.\n";
     exit(0);
@@ -135,8 +166,18 @@ try {
     if (!$legacy && $DB->count_records('local_kbacorp_company') !== 0) {
         cli_error('STOP: legacy registry changed since preflight.');
     }
-    if ($legacy && $DB->count_records('local_kbacorp_member', ['companyid' => $legacyid]) !== count($existingmembers)) {
-        cli_error('STOP: legacy membership count changed since preflight.');
+    if ($legacy) {
+        $freshlegacy = $DB->get_records('local_kbacorp_member', ['companyid' => $legacyid]);
+        if (count($freshlegacy) !== count($existingmembers)) {
+            cli_error('STOP: legacy membership count changed since preflight.');
+        }
+        foreach ($freshlegacy as $legacyrow) {
+            $uid = (int)$legacyrow->userid;
+            if (!isset($existingmembers[$uid]) ||
+                $expectedroles($legacyrow) !== $expectedroles($existingmembers[$uid])) {
+                cli_error('STOP: legacy membership roles changed since preflight.');
+            }
+        }
     }
     $freshmembers = $DB->get_records('local_kbacompany_member', [
         'companyuuid' => $uuid, 'active' => 1,
