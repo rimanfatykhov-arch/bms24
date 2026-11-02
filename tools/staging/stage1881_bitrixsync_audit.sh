@@ -88,7 +88,7 @@ categories = {
     'network/http': r'https?://|curl_exec\s*\(|curl_init\s*\(|->(?:get|post|request)\s*\(',
     'credentials': r'access_token|refresh_token|client_secret|api_key|webhook_url|auth_token',
     'outbound/email': r'email_to_user\s*\(|->send\s*\(|message_send\s*\(',
-    'task/event registration': r'adhoc_task|scheduled_task|queue_adhoc_task|event\\|observers',
+    'task/event registration': r'adhoc_task|scheduled_task|queue_adhoc_task|observers|event',
     'production toggle': r'production_activation|production_launch|production_enabled',
 }
 print('Potential integration files (not proof of an active connection):')
