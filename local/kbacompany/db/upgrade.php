@@ -6090,6 +6090,12 @@ function xmldb_local_kbacompany_upgrade(int $oldversion): bool {
         upgrade_plugin_savepoint(true, 2026101876, 'local', 'kbacompany');
     }
 
+    // build1877: GitHub/VDS import governance and automated CI verification.
+    // Version-only checkpoint; no schema, permission or business-data change.
+    if ($oldversion < 2026101877) {
+        upgrade_plugin_savepoint(true, 2026101877, 'local', 'kbacompany');
+    }
+
     return true;
 }
 

@@ -1,6 +1,6 @@
 # BMS24 Dev AI — source repository skeleton
 
-**Release:** local_kbacompany `1.1.0-rc29`, build `2026101876`.
+**Release:** local_kbacompany `1.1.0-rc29`, build `2026101877`.
 
 - `local/kbacompany` — installable Moodle plugin (full cumulative source).
 - `AGENTS.md` — mandatory guidelines for AI coding agents.
@@ -26,3 +26,5 @@ A passing CI workflow is not a real Moodle integration or release acceptance.
 **Important:** the production INSTALL zip is a PHP/Moodle distribution, not a
 container for Python development checks. GitHub CI publishes only *candidates*;
 a passing workflow does not constitute server acceptance or authorize deployment.
+
+- `tools/github_import.py` — non-destructive local Git bundle to GitHub import branch preparation; read-only by default. See `docs/GITHUB_IMPORT_AUTOMATION_1877.md`.

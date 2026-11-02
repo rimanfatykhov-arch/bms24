@@ -28,7 +28,7 @@ class CandidateTests(unittest.TestCase):
         self.base = Path(self.tmp.name)
         self.source = self.base / 'plugin'
         (self.source / 'cli').mkdir(parents=True)
-        (self.source / 'version.php').write_text('<?php $plugin->version = 2026101876;')
+        (self.source / 'version.php').write_text('<?php $plugin->version = 2026101877;')
         (self.source / 'app.php').write_text('<?php echo 1;')
         (self.source / 'cli/check_example.py').write_text('print(1)')
         (self.source / 'cli/test_example.py').write_text('print(1)')
@@ -42,7 +42,7 @@ class CandidateTests(unittest.TestCase):
             self.assertIn('kbacompany/app.php', zf.namelist())
 
     def test_valid_archive_and_manifest(self):
-        self.assertEqual(verify.verify(self.zip, self.manifest, 2026101876)['files'], 2)
+        self.assertEqual(verify.verify(self.zip, self.manifest, 2026101877)['files'], 2)
 
     def test_wrong_version_fails(self):
         with self.assertRaises(ValueError):
