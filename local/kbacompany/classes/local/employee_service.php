@@ -285,7 +285,8 @@ class employee_service {
         }
 
         $rows = array_values($DB->get_records_sql(
-            "SELECT m.*, u.firstname, u.lastname, u.email, u.phone1, u.institution, u.suspended, u.deleted
+            "SELECT m.*, u.firstname, u.lastname, u.firstnamephonetic, u.lastnamephonetic,
+                    u.middlename, u.alternatename, u.email, u.phone1, u.institution, u.suspended, u.deleted
                FROM {local_kbacompany_member} m
                JOIN {user} u ON u.id = m.userid
               WHERE " . implode(' AND ', $where) . "
