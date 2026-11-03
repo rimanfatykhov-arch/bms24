@@ -1,0 +1,31 @@
+# BMS24 Stage 1897 — HTTPS maintenance vhost, NO second password.
+# Serve only an HTTPS maintenance response until Moodle has passed acceptance.
+# This is intentionally NOT a public Moodle deployment.
+server {
+    listen 80;
+    server_name stage41.bms24.online;
+
+    location ^~ /.well-known/acme-challenge/ {
+        root /var/www/letsencrypt;
+        default_type text/plain;
+        try_files $uri =404;
+    }
+
+    location / {
+        return 308 https://$host$request_uri;
+    }
+}
+server {
+    listen 443 ssl;
+    server_name stage41.bms24.online;
+
+    ssl_certificate /etc/letsencrypt/live/stage41.bms24.online/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/stage41.bms24.online/privkey.pem;
+
+    add_header Cache-Control "no-store" always;
+    add_header Retry-After "300" always;
+    default_type text/plain;
+    location / {
+        return 503 "BMS24_PARITY41_HTTPS_MAINTENANCE\n";
+    }
+}
