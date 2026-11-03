@@ -8500,3 +8500,17 @@ $string['bms24_uikit_status_done'] = 'Completed';
 $string['bms24_uikit_status_returned'] = 'Returned';
 $string['bms24_uikit_status_paused'] = 'Paused';
 $string['bms24_uikit_page'] = 'Page {$a}';
+
+$string['readiness_title'] = 'Position design readiness';
+$string['readiness_intro'] = 'Readiness shows whether an active position has a purpose, published functions and a published Role DNA profile.';
+$string['readiness_status'] = 'Readiness';
+$string['readiness_gap'] = 'Missing element';
+$string['readiness_apply'] = 'Apply filters';
+$string['readiness_matches'] = 'Matching positions';
+$string['readiness_functions'] = 'Published functions';
+$string['readiness_profiles'] = 'Published Role DNA profiles';
+$string['readiness_basic_links_present'] = 'Basic elements present';
+$string['readiness_needs_description'] = 'Description incomplete';
+$string['readiness_purpose_missing'] = 'Purpose missing';
+$string['readiness_published_functions_missing'] = 'No published functions';
+$string['readiness_published_role_dna_missing'] = 'No published Role DNA';
