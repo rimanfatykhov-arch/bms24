@@ -1,0 +1,5 @@
+# BMS24 parity41-only overlay. Use alongside parity41/compose.yml.
+services:
+  webserver:
+    volumes:
+      - ./config/php/90-bms-parity.ini:/docker-entrypoint.d/90-bms-parity.ini:ro
