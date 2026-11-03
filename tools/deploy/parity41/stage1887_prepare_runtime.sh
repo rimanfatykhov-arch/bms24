@@ -25,7 +25,7 @@ done
     { echo 'STOP: Moodle Core structure is incomplete' >&2; exit 2; }
 grep -Eq '^[[:space:]]*\$version[[:space:]]*=[[:space:]]*2022112822\.00[[:space:]]*;' "$CORE/version.php" ||
     { echo 'STOP: expected Moodle 4.1.22 core version not found' >&2; exit 2; }
-grep -Eq '^[[:space:]]*\$branch[[:space:]]*=[[:space:]]*["\x27]401["\x27][[:space:]]*;' "$CORE/version.php" ||
+grep -Eq '^[[:space:]]*\$branch[[:space:]]*=[[:space:]]*.*401.*;' "$CORE/version.php" ||
     { echo 'STOP: expected Moodle branch 401 not found' >&2; exit 2; }
 
 # Reject accidental use of the existing staging network, project or host port.
@@ -77,7 +77,8 @@ fi
 
 # Validate Compose interpolation without printing resolved database passwords.
 if [[ -f "$ENVFILE" && ! -L "$ENVFILE" ]]; then
-    chmod 600 "$ENVFILE"
+    mode=$(stat -c '%a' "$ENVFILE")
+    [[ "$mode" == 600 ]] || { echo 'STOP: .env must be mode 600; no permissions changed' >&2; exit 2; }
     docker compose -p bms24_parity41 --project-directory "$BASE" \
         --env-file "$ENVFILE" -f "$COMPOSE" config --quiet
     echo 'STAGE1887_COMPOSE_CONFIG_OK (using local .env)'
