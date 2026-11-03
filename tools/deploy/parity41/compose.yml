@@ -1,0 +1,57 @@
+# BMS24 Stage 1885 — isolated Moodle 4.1.22 parity environment.
+# TEMPLATE ONLY: do not start until Moodle source + config.php + isolated DB credentials
+# have been prepared and reviewed. This compose file is NOT for existing stage1880.
+name: bms24_parity41
+
+services:
+  db:
+    image: mariadb:10.11
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+      - --innodb-file-per-table=1
+    environment:
+      MARIADB_DATABASE: paritymoodle
+      MARIADB_USER: parityuser
+      MARIADB_PASSWORD: ${PARITY_DB_PASSWORD:?Set a unique test-only DB password in local .env}
+      MARIADB_ROOT_PASSWORD: ${PARITY_DB_ROOT_PASSWORD:?Set a separate test-only root DB password}
+    volumes:
+      - parity41_db:/var/lib/mysql
+    networks:
+      - parity41_internal
+    mem_limit: 640m
+    cpus: 0.6
+    restart: "no"
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 15s
+      timeout: 10s
+      retries: 12
+      start_period: 30s
+
+  webserver:
+    image: moodlehq/moodle-php-apache:8.1-bookworm
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "127.0.0.1:18081:80"
+    volumes:
+      - "./moodle:/var/www/html:ro"
+      - "./moodledata:/var/www/moodledata"
+    networks:
+      - parity41_internal
+    mem_limit: 1024m
+    cpus: 1.0
+    restart: "no"
+    security_opt:
+      - no-new-privileges:true
+
+volumes:
+  parity41_db:
+    name: bms24_parity41_db
+
+networks:
+  parity41_internal:
+    name: bms24_parity41_internal
+    internal: true
