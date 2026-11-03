@@ -129,7 +129,8 @@ nginx -t >/dev/null
 systemctl reload nginx
 # nginx -t validates files on disk; wait for reloaded workers to serve
 # the new name before concluding the route is broken.
-if nginx -T 2>&1 | grep -Fq '# configuration file /etc/nginx/sites-enabled/bms24-stage41-acme:'; then
+active_snapshot=$(nginx -T 2>&1)
+if grep -Fq '# configuration file /etc/nginx/sites-enabled/bms24-stage41-acme:' <<< "$active_snapshot"; then
   echo 'STAGE1895_NEW_VHOST_INCLUDED_IN_NGINX_CONFIG'
 else
   echo 'STOP: stage41 vhost not included by Nginx' >&2
