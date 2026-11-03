@@ -9584,3 +9584,17 @@ $string['bms_task1853_restricted'] = 'The manager workspace is not available for
 $string['taskcenter_scope_department'] = 'Department';
 
 $string['bms_task1858_clear_filters'] = 'Clear filters';
+
+$string['readiness_title'] = 'Position design readiness';
+$string['readiness_intro'] = 'Readiness shows whether an active position has a purpose, published functions and a published Role DNA profile.';
+$string['readiness_status'] = 'Readiness';
+$string['readiness_gap'] = 'Missing element';
+$string['readiness_apply'] = 'Apply filters';
+$string['readiness_matches'] = 'Matching positions';
+$string['readiness_functions'] = 'Published functions';
+$string['readiness_profiles'] = 'Published Role DNA profiles';
+$string['readiness_basic_links_present'] = 'Basic elements present';
+$string['readiness_needs_description'] = 'Description incomplete';
+$string['readiness_purpose_missing'] = 'Purpose missing';
+$string['readiness_published_functions_missing'] = 'No published functions';
+$string['readiness_published_role_dna_missing'] = 'No published Role DNA';

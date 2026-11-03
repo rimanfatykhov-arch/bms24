@@ -6102,6 +6102,11 @@ function xmldb_local_kbacompany_upgrade(int $oldversion): bool {
         upgrade_plugin_savepoint(true, 2026101878, 'local', 'kbacompany');
     }
 
+    // Role Intelligence R1/R2 adds a read-only page, with no schema or data migration.
+    if ($oldversion < 2026110301) {
+        upgrade_plugin_savepoint(true, 2026110301, 'local', 'kbacompany');
+    }
+
     return true;
 }
 

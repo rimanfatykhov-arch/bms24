@@ -46,7 +46,7 @@ class WorkflowPolicyTest(unittest.TestCase):
         self.assert_hold(self.text.replace('tools/test_business_dates_1876.py','tools/no_date_test.py'))
 
     def test_no_wrong_build(self):
-        self.assert_hold(self.text.replace('--expected-version 2026101878','--expected-version 2026101877'))
+        self.assert_hold(self.text.replace('--expected-version 2026110301','--expected-version 2026101877'))
 
 if __name__ == '__main__':
     unittest.main(verbosity=2)

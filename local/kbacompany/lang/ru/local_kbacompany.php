@@ -9586,3 +9586,17 @@ $string['bms_task1853_restricted'] = 'Рабочее пространство р
 $string['taskcenter_scope_department'] = 'Подразделение';
 
 $string['bms_task1858_clear_filters'] = 'Сбросить фильтры';
+
+$string['readiness_title'] = 'Готовность описания должностей';
+$string['readiness_intro'] = 'Готовность показывает, есть ли у активной должности цель, опубликованные функции и опубликованный профиль Role DNA.';
+$string['readiness_status'] = 'Готовность';
+$string['readiness_gap'] = 'Чего не хватает';
+$string['readiness_apply'] = 'Применить фильтры';
+$string['readiness_matches'] = 'Найдено должностей';
+$string['readiness_functions'] = 'Опубликованные функции';
+$string['readiness_profiles'] = 'Опубликованные профили Role DNA';
+$string['readiness_basic_links_present'] = 'Базовые элементы есть';
+$string['readiness_needs_description'] = 'Описание неполное';
+$string['readiness_purpose_missing'] = 'Нет цели';
+$string['readiness_published_functions_missing'] = 'Нет опубликованных функций';
+$string['readiness_published_role_dna_missing'] = 'Нет опубликованного Role DNA';
