@@ -27,6 +27,9 @@ $actions = html_writer::link(new moodle_url('/local/kbacompany/employees.php', [
 $actions .= html_writer::link(new moodle_url('/local/kbacompany/positions.php', ['uuid' => $uuid]),
     get_string('people_open_positions', 'local_kbacompany'), ['class' => 'btn btn-outline-secondary btn-sm']);
 
+$actions .= html_writer::link(new moodle_url('/local/kbacompany/competency_catalogs.php', ['uuid' => $uuid]),
+    get_string('companycatalog_title', 'local_kbacompany'), ['class' => 'btn btn-outline-secondary btn-sm']);
+
 echo bms_workspace_ux_service::record_header(
     get_string('people_title', 'local_kbacompany'),
     get_string('people_intro_0710', 'local_kbacompany'),

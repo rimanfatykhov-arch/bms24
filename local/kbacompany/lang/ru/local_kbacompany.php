@@ -9605,3 +9605,21 @@ $string['readiness_needs_description'] = 'Описание неполное';
 $string['readiness_purpose_missing'] = 'Нет цели';
 $string['readiness_published_functions_missing'] = 'Нет опубликованных функций';
 $string['readiness_published_role_dna_missing'] = 'Нет опубликованного Role DNA';
+
+$string['companycatalog_title'] = 'Каталоги компетенций компании';
+
+$string['companycatalog_back'] = '← Люди';
+
+$string['companycatalog_intro'] = 'Подключённые каталоги доступны при составлении профилей должностей этой компании. Повторное подключение сохраняет одну привязку.';
+
+$string['companycatalog_saved'] = 'Каталог подключён к компании.';
+
+$string['companycatalog_empty'] = 'К компании пока не подключены каталоги компетенций.';
+
+$string['companycatalog_select'] = 'Каталог компетенций';
+
+$string['companycatalog_bind'] = 'Подключить каталог';
+
+$string['companycatalog_admin'] = 'Для подключения каталога обратитесь к администратору сайта.';
+
+$string['companycatalog_nosystem'] = 'Сначала создайте каталог в администрировании Moodle, в разделе «Компетенции».';

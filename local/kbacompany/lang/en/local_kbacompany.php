@@ -9603,3 +9603,21 @@ $string['readiness_needs_description'] = 'Description incomplete';
 $string['readiness_purpose_missing'] = 'Purpose missing';
 $string['readiness_published_functions_missing'] = 'No published functions';
 $string['readiness_published_role_dna_missing'] = 'No published Role DNA';
+
+$string['companycatalog_title'] = 'Company competency catalogs';
+
+$string['companycatalog_back'] = '← People';
+
+$string['companycatalog_intro'] = 'Linked catalogs are available for this company’s position profiles. Connecting again preserves a single binding.';
+
+$string['companycatalog_saved'] = 'Catalog connected to the company.';
+
+$string['companycatalog_empty'] = 'No competency catalogs are connected to this company yet.';
+
+$string['companycatalog_select'] = 'Competency catalog';
+
+$string['companycatalog_bind'] = 'Connect catalog';
+
+$string['companycatalog_admin'] = 'Contact the site administrator to connect a catalog.';
+
+$string['companycatalog_nosystem'] = 'First create a catalog in Moodle administration under Competencies.';
