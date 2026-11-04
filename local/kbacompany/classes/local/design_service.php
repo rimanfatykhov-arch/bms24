@@ -487,7 +487,13 @@ class design_service {
                 $sourceuuid = '';
                 $sourcerevision = 0;
                 if (in_array($source, ['bms_ofs', 'seven', 'directors'], true)) { $payload = self::template($source); }
-                else if ($source === 'library') {
+                else if ($source === 'firstunit') {
+                    if ($DB->record_exists('local_kbacompany_orgnode', ['companyuuid' => $company, 'active' => 1])) {
+                        self::fail('firstunitexists');
+                    }
+                    $payload = self::normalise(['nodes' => [['uuid' => self::uuid(), 'code' => 'DEP-01',
+                        'name' => self::text($data, 'name', 255), 'type' => 'department']]]);
+                } else if ($source === 'library') {
                     $templatekey = self::text($data, 'templatekey', 36);
                     if (!ofs_template_library_service::has($templatekey)) { self::fail('reference'); }
                     $payload = ofs_template_library_service::payload($templatekey);
@@ -671,8 +677,22 @@ class design_service {
                     $new->status = 'approved';
                 } else if ($action === 'apply') {
                     self::text($data, 'reason', 4000);
-                    $payload = self::apply_payload($company, $payload, $new, (int)$new->revision,
-                        self::text($data, 'branch', 36));
+                    $branch = self::text($data, 'branch', 36);
+                    if ($new->sourcekind === 'firstunit' && $DB->record_exists('local_kbacompany_orgnode',
+                            ['companyuuid' => $company, 'active' => 1])) {
+                        self::fail('firstunitexists');
+                    }
+                    if ($branch === 'create-main') {
+                        if ($new->sourcekind !== 'firstunit' || !organizing_board_service::can_manage($company, $actor)
+                                || $DB->record_exists('local_kbacompany_orgbranch', ['companyuuid' => $company])) {
+                            self::fail('branch');
+                        }
+                        $branch = self::uuid();
+                        $DB->insert_record('local_kbacompany_orgbranch', (object)['companyuuid' => $company,
+                            'uuid' => $branch, 'code' => 'main', 'name' => get_string('mainbranch', 'local_kbacompany'),
+                            'isdefault' => 1, 'active' => 1, 'sortorder' => 10, 'timecreated' => time(), 'timemodified' => time()]);
+                    }
+                    $payload = self::apply_payload($company, $payload, $new, (int)$new->revision, $branch);
                     $new->status = 'applied';
                 } else if ($action === 'archive') { self::text($data, 'reason', 4000); $new->status = 'archived'; }
                 else { self::fail('invalid'); }
@@ -708,6 +728,9 @@ class design_service {
         $branches = array_values($DB->get_records('local_kbacompany_orgbranch',
             ['companyuuid' => $company, 'active' => 1], 'sortorder ASC, name ASC', 'uuid, code, name, isdefault'));
         return ['company' => $c, 'projects' => $projects, 'branches' => $branches,
+            'canstartbranch' => !$branches && $selected && $selected->sourcekind === 'firstunit'
+                && organizing_board_service::can_manage($company, $actor)
+                && !$DB->record_exists('local_kbacompany_orgbranch', ['companyuuid' => $company]),
             'templates' => array_values(array_filter($projects, static function(\stdClass $project): bool {
                 return $project->status === 'template';
             })), 'selected' => $selected,
