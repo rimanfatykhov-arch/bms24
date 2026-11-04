@@ -116,7 +116,7 @@ def validate_repo(root: Path) -> list[str]:
         "local/kbacompany/db/upgrade.php", "local/kbacompany/db/install.xml",
         "local/kbacompany/lang/ru/local_kbacompany.php",
         "local/kbacompany/lang/en/local_kbacompany.php",
-        "local/kbacompany/release/RELEASE_NOTES_RC29_build2026110401.md",
+        "local/kbacompany/release/RELEASE_NOTES_RC29_build2026110402.md",
     ]
     for name in expected:
         if not (root / name).is_file():
@@ -125,8 +125,8 @@ def validate_repo(root: Path) -> list[str]:
         return problems + ["Moodle plugin source directory missing"]
     versiontext = (plugin / "version.php").read_text(encoding="utf-8")
     match = re.search(r"\$plugin->version\s*=\s*(\d+)\s*;", versiontext)
-    if not match or int(match.group(1)) != 2026110401:
-        problems.append("plugin version must be 2026110401")
+    if not match or int(match.group(1)) != 2026110402:
+        problems.append("plugin version must be 2026110402")
     if "1.1.0-rc29" not in versiontext:
         problems.append("RC30 must not be promoted before live acceptance")
     try:
@@ -137,7 +137,7 @@ def validate_repo(root: Path) -> list[str]:
     en = (plugin / "lang" / "en" / "local_kbacompany.php").read_text(encoding="utf-8")
     problems.extend(validate_languages(ru, en))
     upgrade = (plugin / "db" / "upgrade.php").read_text(encoding="utf-8")
-    if upgrade.count("if ($oldversion < 2026110401)") != 1 or upgrade.count("upgrade_plugin_savepoint(true, 2026110401") != 1:
+    if upgrade.count("if ($oldversion < 2026110402)") != 1 or upgrade.count("upgrade_plugin_savepoint(true, 2026110402") != 1:
         problems.append("current upgrade checkpoint missing or duplicated")
     # Never allow local runtime state or credentials inside installable code.
     for path in plugin.rglob("*"):

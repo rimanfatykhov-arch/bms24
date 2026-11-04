@@ -618,7 +618,7 @@ class design_service {
                     if (!in_array($type, ['leadership', 'division', 'department', 'section', 'service', 'office'], true)) {
                         self::fail('invalid');
                     }
-                    $payload['nodes'][] = ['uuid' => self::uuid(), 'sourceuuid' => '',
+                    $payload['nodes'][] = ['uuid' => self::uuid(), 'sourceuuid' => '', 'sourcehash' => '',
                         'code' => self::text($data, 'code', 50), 'name' => self::text($data, 'name', 255),
                         'type' => $type, 'layout_parent' => self::text($data, 'layout_parent', 36, false),
                         'reporting_parent' => self::text($data, 'reporting_parent', 36, false), 'branch' => '',
