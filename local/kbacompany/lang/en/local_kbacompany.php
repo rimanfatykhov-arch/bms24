@@ -9624,3 +9624,9 @@ $string['companycatalog_nosystem'] = 'First create a catalog in Moodle administr
 
 $string['employee2_moodle_rating'] = 'Moodle rating';
 $string['employee2_moodle_rating_note'] = 'The rating uses the Moodle scale. BMS24 uses its own assessments to calculate the current level and readiness.';
+
+$string['employee2_development_courses'] = 'Development courses';
+
+$string['employee2_course_progress'] = 'Course activity progress — {$a}%';
+
+$string['employee2_course_progress_unavailable'] = 'Course activity progress is unavailable';

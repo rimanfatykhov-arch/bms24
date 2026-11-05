@@ -9626,3 +9626,9 @@ $string['companycatalog_nosystem'] = 'Сначала создайте катал
 
 $string['employee2_moodle_rating'] = 'Оценка Moodle';
 $string['employee2_moodle_rating_note'] = 'Оценка Moodle показана по шкале Moodle. Текущий уровень и готовность в BMS24 рассчитываются по оценкам BMS24.';
+
+$string['employee2_development_courses'] = 'Курсы для развития';
+
+$string['employee2_course_progress'] = 'Выполнение элементов курса — {$a}%';
+
+$string['employee2_course_progress_unavailable'] = 'Выполнение элементов курса не отслеживается';

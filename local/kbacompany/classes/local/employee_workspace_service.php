@@ -286,8 +286,47 @@ class employee_workspace_service {
         } catch (\Throwable $e) {
             return ['competencies' => null];
         }
-        return ['competencies' => $profile, 'moodle_ratings' => self::moodle_competency_ratings(
-            $employeeuserid, $actorid, array_column($profile['requirements'], 'competency_id'))];
+        $competencyids = array_column($profile['requirements'], 'competency_id');
+        return [
+            'competencies' => $profile,
+            'moodle_ratings' => self::moodle_competency_ratings($employeeuserid, $actorid, $competencyids),
+            'development_courses' => $employeeuserid === $actorid
+                ? self::development_courses($actorid, $competencyids) : [],
+        ];
+    }
+
+    private static function development_courses(int $actorid, array $competencyids): array {
+        global $DB, $USER;
+        if (!$competencyids || $actorid !== (int)$USER->id || !\core_competency\api::is_enabled()) {
+            return [];
+        }
+        $courses = enrol_get_users_courses($actorid, true, 'id,fullname,visible,enablecompletion');
+        if (!$courses) {
+            return [];
+        }
+        [$coursein, $courseparams] = $DB->get_in_or_equal(array_keys($courses), SQL_PARAMS_NAMED, 'course');
+        [$competencyin, $competencyparams] = $DB->get_in_or_equal($competencyids, SQL_PARAMS_NAMED, 'competency');
+        $links = $DB->get_records_select(\core_competency\course_competency::TABLE,
+            "courseid $coursein AND competencyid $competencyin", $courseparams + $competencyparams, 'courseid, id');
+        $progress = [];
+        $matches = [];
+        foreach ($links as $link) {
+            $courseid = (int)$link->courseid;
+            $course = $courses[$courseid];
+            if (!isset($progress[$courseid])) {
+                if (!can_access_course($course, $actorid, '', true)) {
+                    continue;
+                }
+                $course = get_course($courseid);
+                $progress[$courseid] = [
+                    'id' => $courseid,
+                    'name' => format_string($course->fullname, true, ['context' => \context_course::instance($courseid)]),
+                    'percentage' => \core_completion\progress::get_course_progress_percentage($course, $actorid),
+                ];
+            }
+            $matches[(int)$link->competencyid][$courseid] = $progress[$courseid];
+        }
+        return $matches;
     }
 
     private static function moodle_competency_ratings(int $employeeuserid, int $actorid, array $competencyids): array {

@@ -499,10 +499,14 @@ class employee_ui_service {
                     'bms-employee2-chips'
                 );
                 $ratings = $extra['moodle_ratings'] ?? [];
+                $courses = $extra['development_courses'] ?? [];
                 $headers = [self::tr('employee2_metric_code'), self::tr('employee2_competency'),
                     self::tr('employee2_target_level'), self::tr('employee2_current_level'), get_string('status')];
                 if ($ratings) {
                     $headers[] = self::tr('employee2_moodle_rating');
+                }
+                if ($courses) {
+                    $headers[] = self::tr('employee2_development_courses');
                 }
                 $rows = [];
                 foreach ($ctx['requirements'] as $row) {
@@ -513,6 +517,17 @@ class employee_ui_service {
                         $rating = $ratings[$row['competency_id']] ?? null;
                         $cells[] = $rating ? \html_writer::link(new \moodle_url('/admin/tool/lp/user_competency.php',
                             ['id' => $rating['id']]), s($rating['label'])) : '—';
+                    }
+                    if ($courses) {
+                        $links = [];
+                        foreach ($courses[$row['competency_id']] ?? [] as $course) {
+                            $progress = $course['percentage'] === null
+                                ? self::tr('employee2_course_progress_unavailable')
+                                : self::tr('employee2_course_progress', (int)round($course['percentage']));
+                            $links[] = \html_writer::link(new \moodle_url('/course/view.php', ['id' => $course['id']]),
+                                $course['name']) . ' · ' . s($progress);
+                        }
+                        $cells[] = $links ? \html_writer::alist($links) : '—';
                     }
                     $rows[] = $cells;
                 }
