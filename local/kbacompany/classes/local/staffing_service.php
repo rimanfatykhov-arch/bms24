@@ -1136,14 +1136,22 @@ class staffing_service {
 
     private static function placement_employees(string $companyuuid, int $userid): array {
         $directory = employee_service::employees_context($companyuuid, $userid);
+        $organization = organization_service::organization_context($companyuuid, $userid);
+        $existing = array_column($organization['employees'], null, 'user_id');
         $employees = [];
         foreach ($directory['employees'] as $employee) {
-            if (!$employee['active'] || (!in_array('employee', $employee['roles'], true) &&
-                    $employee['membership_source'] !== 'local_kbacorporate_compatibility')) {
+            if (!$employee['active'] || !in_array('employee', $employee['roles'], true)) {
                 continue;
             }
             $id = (int)$employee['user_id'];
-            $employees[$id] = ['user_id' => $id, 'full_name' => $employee['full_name']];
+            $employees[$id] = $existing[$id] ?? [
+                'user_id' => $id,
+                'full_name' => $employee['full_name'],
+                'position' => $employee['position']['name'] ?? null,
+                'position_key' => $employee['position']['uuid'] ?? null,
+                'org_assignments' => [],
+                'company_roles' => $employee['roles'],
+            ];
         }
         return $employees;
     }

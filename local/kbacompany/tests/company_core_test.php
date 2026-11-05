@@ -346,7 +346,7 @@ final class company_core_test extends \advanced_testcase {
         $this->assertCount(3, $placement['slots']);
         $this->assertEquals(2.5, $placement['summary']['planned_fte']);
         $this->assertEquals(2.5, $placement['summary']['vacant_fte']);
-        $this->assertNull($placement['slots'][0]['employee_name']);
+        $this->assertSame([], $placement['slots'][0]['employee_names']);
         $assignmentid = staffing_service::assign_slot($companyuuid, (int)$owner->id,
             $placement['slots'][0]['uuid'], (int)$employee->id, 'primary');
         $filled = staffing_service::placement_context($companyuuid, (int)$owner->id, $planuuid);
