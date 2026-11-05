@@ -466,11 +466,7 @@ class staffing_service {
         $currentplan = $plans ? reset($plans) : null;
         $plan = $planuuid === '' ? $currentplan : $DB->get_record('local_kbacompany_staffplan',
             ['companyuuid' => $companyuuid, 'uuid' => $planuuid, 'status' => 'approved'], '*', MUST_EXIST);
-        $organization = organization_service::organization_context($companyuuid, $userid);
-        $employees = [];
-        foreach ($organization['employees'] as $employee) {
-            $employees[(int)$employee['user_id']] = $employee;
-        }
+        $employees = self::placement_employees($companyuuid, $userid);
         $positions = $DB->get_records('local_kbacompany_position', ['companyuuid' => $companyuuid]);
         $positionmap = [];
         foreach ($positions as $position) { $positionmap[(string)$position->uuid] = $position; }
@@ -659,9 +655,8 @@ class staffing_service {
             throw new \moodle_exception('staffingassignmenteditcurrentonly', 'local_kbacompany');
         }
         $employeeid = (int)($data['employeeid'] ?? 0);
-        $organization = organization_service::organization_context($companyuuid, $userid);
-        $eligible = array_map('intval', array_column($organization['employees'], 'user_id'));
-        if (!in_array($employeeid, $eligible, true)) {
+        $eligible = self::placement_employees($companyuuid, $userid);
+        if (!isset($eligible[$employeeid])) {
             throw new \moodle_exception('employeenotavailable', 'local_kbacompany');
         }
         $assignmenttype = trim((string)($data['assignmenttype'] ?? 'primary'));
@@ -1137,6 +1132,20 @@ class staffing_service {
     private static function line_values(\stdClass $line): array {
         return ['fte' => (float)$line->plannedfte, 'salary_min' => (float)$line->salarymin,
             'salary_max' => (float)$line->salarymax, 'budget' => (float)$line->budgetamount];
+    }
+
+    private static function placement_employees(string $companyuuid, int $userid): array {
+        $directory = employee_service::employees_context($companyuuid, $userid);
+        $employees = [];
+        foreach ($directory['employees'] as $employee) {
+            if (!$employee['active'] || (!in_array('employee', $employee['roles'], true) &&
+                    $employee['membership_source'] !== 'local_kbacorporate_compatibility')) {
+                continue;
+            }
+            $id = (int)$employee['user_id'];
+            $employees[$id] = ['user_id' => $id, 'full_name' => $employee['full_name']];
+        }
+        return $employees;
     }
 
     private static function parse_effective_date(string $value, int $fallback = 0): int {
