@@ -282,10 +282,34 @@ class employee_workspace_service {
 
     private static function competencies(string $companyuuid, int $employeeuserid, int $actorid): array {
         try {
-            return ['competencies' => employee_competency_profile_service::context($companyuuid, $employeeuserid, $actorid)];
+            $profile = employee_competency_profile_service::context($companyuuid, $employeeuserid, $actorid);
         } catch (\Throwable $e) {
             return ['competencies' => null];
         }
+        return ['competencies' => $profile, 'moodle_ratings' => self::moodle_competency_ratings(
+            $employeeuserid, $actorid, array_column($profile['requirements'], 'competency_id'))];
+    }
+
+    private static function moodle_competency_ratings(int $employeeuserid, int $actorid, array $competencyids): array {
+        global $USER;
+        // Core competency access is evaluated for the current Moodle session.
+        if (!$competencyids || $actorid !== (int)$USER->id || !\core_competency\api::is_enabled() ||
+                !\core_competency\user_competency::can_read_user($employeeuserid)) {
+            return [];
+        }
+        $ratings = [];
+        foreach (\core_competency\user_competency::get_multiple($employeeuserid, $competencyids) as $record) {
+            $grade = $record->get('grade');
+            if ($grade === null || (int)$record->get('status') !== \core_competency\user_competency::STATUS_IDLE) {
+                continue;
+            }
+            $scale = $record->get_competency()->get_scale();
+            $label = $scale->scale_items[$grade - 1] ?? '';
+            if ($label !== '') {
+                $ratings[(int)$record->get('competencyid')] = ['id' => (int)$record->get('id'), 'label' => $label];
+            }
+        }
+        return $ratings;
     }
 
     private static function learning(string $companyuuid, int $employeeuserid, int $actorid): array {

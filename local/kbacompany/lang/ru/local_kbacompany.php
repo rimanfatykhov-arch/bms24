@@ -9623,3 +9623,6 @@ $string['companycatalog_bind'] = 'Подключить каталог';
 $string['companycatalog_admin'] = 'Для подключения каталога обратитесь к администратору сайта.';
 
 $string['companycatalog_nosystem'] = 'Сначала создайте каталог в администрировании Moodle, в разделе «Компетенции».';
+
+$string['employee2_moodle_rating'] = 'Оценка Moodle';
+$string['employee2_moodle_rating_note'] = 'Оценка Moodle показана по шкале Moodle. Текущий уровень и готовность в BMS24 рассчитываются по оценкам BMS24.';

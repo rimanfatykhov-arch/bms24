@@ -498,14 +498,29 @@ class employee_ui_service {
                     \html_writer::tag('span', s(self::tr('employee2_comp_unknown') . ': ' . (int)$summary['unknown']), ['class' => 'bms-employee2-chip']),
                     'bms-employee2-chips'
                 );
+                $ratings = $extra['moodle_ratings'] ?? [];
+                $headers = [self::tr('employee2_metric_code'), self::tr('employee2_competency'),
+                    self::tr('employee2_target_level'), self::tr('employee2_current_level'), get_string('status')];
+                if ($ratings) {
+                    $headers[] = self::tr('employee2_moodle_rating');
+                }
                 $rows = [];
                 foreach ($ctx['requirements'] as $row) {
-                    $rows[] = [s($row['code']), s($row['name']), s($row['target_level'] === null ? self::tr('ecu_not_set') : (string)$row['target_level']),
+                    $cells = [s($row['code']), s($row['name']), s($row['target_level'] === null ? self::tr('ecu_not_set') : (string)$row['target_level']),
                         s($row['current_level'] === null ? self::tr('ecu_not_set') : (string)$row['current_level']),
                         s(self::tr('employee2_comp_state_' . $row['state']))];
+                    if ($ratings) {
+                        $rating = $ratings[$row['competency_id']] ?? null;
+                        $cells[] = $rating ? \html_writer::link(new \moodle_url('/admin/tool/lp/user_competency.php',
+                            ['id' => $rating['id']]), s($rating['label'])) : '—';
+                    }
+                    $rows[] = $cells;
                 }
-                $body = $rows ? self::table([self::tr('employee2_metric_code'), self::tr('employee2_competency'), self::tr('employee2_target_level'), self::tr('employee2_current_level'), get_string('status')],
+                $body = $rows ? self::table($headers,
                     $rows, self::tr('employee2_tab_competencies')) : self::note(self::tr('employee2_no_competencies'));
+                if ($ratings) {
+                    $body .= self::note(self::tr('employee2_moodle_rating_note'));
+                }
                 $body .= self::link(self::url($company, 'employee_competencies', ['userid' => $e['user_id']]), self::tr('employee2_open_competencies'), true);
                 $out .= self::panel(self::tr('employee2_tab_competencies'), $body);
             }

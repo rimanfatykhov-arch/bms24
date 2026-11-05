@@ -9621,3 +9621,6 @@ $string['companycatalog_bind'] = 'Connect catalog';
 $string['companycatalog_admin'] = 'Contact the site administrator to connect a catalog.';
 
 $string['companycatalog_nosystem'] = 'First create a catalog in Moodle administration under Competencies.';
+
+$string['employee2_moodle_rating'] = 'Moodle rating';
+$string['employee2_moodle_rating_note'] = 'The rating uses the Moodle scale. BMS24 uses its own assessments to calculate the current level and readiness.';
