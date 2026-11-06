@@ -6135,6 +6135,11 @@ function xmldb_local_kbacompany_upgrade(int $oldversion): bool {
         upgrade_plugin_savepoint(true, 2026110504, 'local', 'kbacompany');
     }
 
+    // Personal review queue and contextual evidence links; no schema or data migration.
+    if ($oldversion < 2026110601) {
+        upgrade_plugin_savepoint(true, 2026110601, 'local', 'kbacompany');
+    }
+
     return true;
 }
 

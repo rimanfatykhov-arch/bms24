@@ -9630,3 +9630,14 @@ $string['employee2_development_courses'] = 'Development courses';
 $string['employee2_course_progress'] = 'Course activity progress — {$a}%';
 
 $string['employee2_course_progress_unavailable'] = 'Course activity progress is unavailable';
+
+$string['reviewqueue_title'] = 'To review';
+$string['reviewqueue_competency'] = 'Competency';
+$string['reviewqueue_intro'] = 'Competency review requests available through your Moodle permissions. This queue may include employees from different companies. Submitted work and competency assessment open separately.';
+$string['reviewqueue_empty'] = 'No review requests are available.';
+$string['reviewqueue_open_work'] = 'Open related work';
+$string['reviewqueue_related_work_hint'] = 'Work related to learning evidence. It may predate this request: Moodle does not link the request to a specific submission. Check the evidence before assessing the competency.';
+$string['reviewqueue_review'] = 'Review competency';
+$string['reviewqueue_work_unavailable'] = 'A direct work link is unavailable. Open the competency review and its evidence.';
+$string['reviewqueue_waiting'] = 'Waiting for review';
+$string['reviewqueue_in_review'] = 'Under your review';

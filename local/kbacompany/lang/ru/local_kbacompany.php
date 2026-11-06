@@ -9632,3 +9632,14 @@ $string['employee2_development_courses'] = 'Курсы для развития';
 $string['employee2_course_progress'] = 'Выполнение элементов курса — {$a}%';
 
 $string['employee2_course_progress_unavailable'] = 'Выполнение элементов курса не отслеживается';
+
+$string['reviewqueue_title'] = 'На проверку';
+$string['reviewqueue_competency'] = 'Компетенция';
+$string['reviewqueue_intro'] = 'Запросы на проверку компетенций, доступные вам по правам Moodle. Очередь может включать сотрудников разных компаний. Работа и подтверждение компетенции открываются отдельно.';
+$string['reviewqueue_empty'] = 'Доступных запросов на проверку нет.';
+$string['reviewqueue_open_work'] = 'Открыть связанную работу';
+$string['reviewqueue_related_work_hint'] = 'Работа связана с учебным свидетельством. Она может быть сдана раньше этого запроса: Moodle не связывает запрос с конкретной сдачей. Перед оценкой компетенции проверьте доказательства.';
+$string['reviewqueue_review'] = 'Проверить компетенцию';
+$string['reviewqueue_work_unavailable'] = 'Прямой переход к работе недоступен. Откройте проверку компетенции и её доказательства.';
+$string['reviewqueue_waiting'] = 'Ожидает проверки';
+$string['reviewqueue_in_review'] = 'У вас на проверке';
