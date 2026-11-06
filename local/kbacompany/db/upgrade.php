@@ -6131,6 +6131,10 @@ function xmldb_local_kbacompany_upgrade(int $oldversion): bool {
         upgrade_plugin_savepoint(true, 2026110503, 'local', 'kbacompany');
     }
 
+    if ($oldversion < 2026110504) {
+        upgrade_plugin_savepoint(true, 2026110504, 'local', 'kbacompany');
+    }
+
     return true;
 }
 
