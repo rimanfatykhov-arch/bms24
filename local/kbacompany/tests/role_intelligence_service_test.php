@@ -3,13 +3,20 @@ namespace local_kbacompany;
 
 defined('MOODLE_INTERNAL') || die();
 
-use local_kbacompany\local\identity_registry;
 use local_kbacompany\local\organizing_board_service;
 use local_kbacompany\local\position_service;
-use local_kbacompany\local\repository;
 use local_kbacompany\local\role_intelligence_service;
 
 class role_intelligence_service_test extends \advanced_testcase {
+    /** Native BMS fixture; the optional Corporate repository is not a dependency. */
+    private function company_fixture(string $uuid, string $name): string {
+        global $DB;
+        $DB->insert_record('local_kbacompany_company', [
+            'uuid' => $uuid, 'name' => $name, 'sourcekind' => 'bms', 'bmsclient' => 1, 'active' => 1,
+        ]);
+        return $uuid;
+    }
+
     public function test_contract_preserves_boundaries(): void {
         $contract = role_intelligence_service::contract();
         $this->assertSame('0.1.0', $contract['version']);
@@ -71,10 +78,8 @@ class role_intelligence_service_test extends \advanced_testcase {
         $this->setAdminUser();
         $actor = (int)$USER->id;
 
-        $first = identity_registry::company_uuid(repository::save_company(
-            (object)['name' => 'Readiness A', 'active' => 1]));
-        $other = identity_registry::company_uuid(repository::save_company(
-            (object)['name' => 'Readiness B', 'active' => 1]));
+        $first = $this->company_fixture('11111111-1111-4111-8111-111111111111', 'Readiness A');
+        $other = $this->company_fixture('22222222-2222-4222-8222-222222222222', 'Readiness B');
         $boarda = organizing_board_service::install_seven_division_template($first, $actor);
         $boardb = organizing_board_service::install_seven_division_template($other, $actor);
         $positiona = position_service::create_position($first, $actor, [
@@ -97,8 +102,7 @@ class role_intelligence_service_test extends \advanced_testcase {
         global $USER;
         $this->resetAfterTest();
         $this->setAdminUser();
-        $company = identity_registry::company_uuid(repository::save_company(
-            (object)['name' => 'Protected readiness', 'active' => 1]));
+        $company = $this->company_fixture('11111111-1111-4111-8111-111111111111', 'Protected readiness');
         $outsider = $this->getDataGenerator()->create_user();
         $this->setUser($outsider);
         $this->expectException(\moodle_exception::class);
