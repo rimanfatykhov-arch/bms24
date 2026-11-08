@@ -1,0 +1,126 @@
+{
+  "observed_on": "2026-11-08",
+  "source": "GitHub REST via connector; repository state only, no server observation",
+  "issues": [
+    {
+      "number": 44,
+      "state": "open",
+      "title": "RC30 P0 — согласовать baseline 1645 ↔ 1879 и интеграцию Role Intelligence"
+    },
+    {
+      "number": 45,
+      "state": "open",
+      "title": "BMS DevOps Pipeline 1.0 — автоматизировать staging и защищённые релизы"
+    }
+  ],
+  "pull_requests": [
+    {
+      "number": 8,
+      "title": "Import verified BMS24 build2026101879 (review and CI only)",
+      "state": "open",
+      "draft": true,
+      "merged": false,
+      "head_sha": "eccc1eb221df90675067b1011e986702d96a4985",
+      "head_ref": "import/build2026101879",
+      "base_sha": "740fce16db15bb3551071cc11fe584c680fd738d",
+      "base_ref": "main",
+      "url": "https://github.com/rimanfatykhov-arch/bms24/pull/8"
+    },
+    {
+      "number": 37,
+      "title": "BMS24 Stage 1897 — удалить второй пароль Nginx, оставить вход Moodle",
+      "state": "open",
+      "draft": true,
+      "merged": false,
+      "head_sha": "105e9acdbb7cd0caa5a762115ac1c2180eb67ff4",
+      "head_ref": "fix/1897-remove-basic-auth",
+      "base_sha": "751046db0cd7f6f2a9fe1b84ce6f8c2471050222",
+      "base_ref": "ops/1897-stage41-https-basic-auth",
+      "url": "https://github.com/rimanfatykhov-arch/bms24/pull/37"
+    },
+    {
+      "number": 38,
+      "title": "BMS Role Intelligence R1 — read-only готовность описания должностей",
+      "state": "open",
+      "draft": true,
+      "merged": false,
+      "head_sha": "aadc035435a80a8721ebc98b74ae623c7569906d",
+      "head_ref": "feature/role-intelligence-readiness-01",
+      "base_sha": "740fce16db15bb3551071cc11fe584c680fd738d",
+      "base_ref": "main",
+      "url": "https://github.com/rimanfatykhov-arch/bms24/pull/38"
+    },
+    {
+      "number": 39,
+      "title": "Role Intelligence R2 — экран готовности описания должностей",
+      "state": "open",
+      "draft": true,
+      "merged": false,
+      "head_sha": "092bcb2718a2466bf1b763fd5c9e83ab983e0591",
+      "head_ref": "feature/role-intelligence-readiness-r2",
+      "base_sha": "aadc035435a80a8721ebc98b74ae623c7569906d",
+      "base_ref": "feature/role-intelligence-readiness-01",
+      "url": "https://github.com/rimanfatykhov-arch/bms24/pull/39"
+    },
+    {
+      "number": 40,
+      "title": "Fix build 1879 acceptance version mismatch with regression tests",
+      "state": "open",
+      "draft": true,
+      "merged": false,
+      "head_sha": "e2374237edd1f726f861843bd4aa8a4f3320b450",
+      "head_ref": "fix/1879-acceptance-version",
+      "base_sha": "eccc1eb221df90675067b1011e986702d96a4985",
+      "base_ref": "import/build2026101879",
+      "url": "https://github.com/rimanfatykhov-arch/bms24/pull/40"
+    },
+    {
+      "number": 41,
+      "title": "Codex context: четыре продуктовых направления BMS24 и единая архитектура",
+      "state": "open",
+      "draft": true,
+      "merged": false,
+      "head_sha": "9c758d154988564f09bbea979be4a46454d753ca",
+      "head_ref": "docs/bms24-four-stream-product-vision",
+      "base_sha": "740fce16db15bb3551071cc11fe584c680fd738d",
+      "base_ref": "main",
+      "url": "https://github.com/rimanfatykhov-arch/bms24/pull/41"
+    },
+    {
+      "number": 42,
+      "title": "Reconcile build 1879 with main: preserve components and audit dependencies",
+      "state": "open",
+      "draft": true,
+      "merged": false,
+      "head_sha": "3f000449498ea3c81d563248d4c99a749bed1994",
+      "head_ref": "reconcile/pr8-preserve-main",
+      "base_sha": "740fce16db15bb3551071cc11fe584c680fd738d",
+      "base_ref": "main",
+      "url": "https://github.com/rimanfatykhov-arch/bms24/pull/42"
+    },
+    {
+      "number": 43,
+      "title": "BMS Development Governance 1.0 — ADR и единый процесс решений и релизов",
+      "state": "open",
+      "draft": true,
+      "merged": false,
+      "head_sha": "cd1cd314d74e7946354ba7ae6576cbef8636e56d",
+      "head_ref": "docs/bms24-governance-1-0",
+      "base_sha": "9c758d154988564f09bbea979be4a46454d753ca",
+      "base_ref": "docs/bms24-four-stream-product-vision",
+      "url": "https://github.com/rimanfatykhov-arch/bms24/pull/43"
+    },
+    {
+      "number": 46,
+      "title": "Resolve PR42 Corporate API 1.26 dependency with scoped source and regression gates",
+      "state": "open",
+      "draft": true,
+      "merged": false,
+      "head_sha": "a36c5ab8ac129433eeddb0ae341717e35b614ac8",
+      "head_ref": "fix/pr42-corporate-api126",
+      "base_sha": "3f000449498ea3c81d563248d4c99a749bed1994",
+      "base_ref": "reconcile/pr8-preserve-main",
+      "url": "https://github.com/rimanfatykhov-arch/bms24/pull/46"
+    }
+  ]
+}
