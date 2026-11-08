@@ -147,3 +147,7 @@ large reconcile. Independent review and explicit human approval remain pending.
 Merge remains blocked until source/dependency review and required runtime gates
 are accepted. Staging changes and production deployment each require their own
 explicit authorization. No deployment or automatic merge is part of this branch.
+
+## Proposed Corporate dependency resolution
+
+The original API1.21 blocker below is historical to PR42. See [Corporate API1.26 candidate](CORPORATE_API126.md) for the separately reviewed provider update, precise preservation exception and remaining runtime HOLD.

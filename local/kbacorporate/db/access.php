@@ -17,6 +17,14 @@ $capabilities = [
         'archetypes' => ['manager' => CAP_ALLOW],
         'clonepermissionsfrom' => 'local/kbacorporate:manageimplementationaudits',
     ],
+    // Curator eligibility only. Real data access is always scoped to assigned program.curatorid.
+    // This capability does not allow changing programs or reading other companies.
+    'local/kbacorporate:curateimplementation' => [
+        'riskbitmask' => RISK_PERSONAL,
+        'captype' => 'read',
+        'contextlevel' => CONTEXT_SYSTEM,
+        'archetypes' => [],
+    ],
     'local/kbacorporate:manageimplementationprograms' => [
         'riskbitmask' => RISK_PERSONAL | RISK_DATALOSS,
         'captype' => 'write',

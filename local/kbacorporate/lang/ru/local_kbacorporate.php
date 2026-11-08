@@ -3266,3 +3266,22 @@ $string['enrolledwithoutallocationwarning'] = 'Есть активная зап�
 $string['licenseprovenancetitle'] = 'Источники лицензий';
 $string['licenseprovenancebitrix'] = 'Bitrix24: сделка #{$a->deal}, строка товара #{$a->row}';
 $string['licensepackagecapacity'] = 'мест: {$a->seats}; выделено: {$a->allocated}; свободно: {$a->free}';
+
+// Integration stage 1815.
+$string['implementationaddtobattleplan'] = 'Добавить в Боевой план';
+
+// Least-privilege implementation curator role (0.40.9).
+$string['curateimplementation'] = 'Может быть назначен куратором внедрения BMS';
+$string['curatorrolename'] = 'Куратор внедрения BMS';
+$string['curatorroledesc'] = 'Право назначения куратором программы BMS. Доступ только к закреплённым программам, задачам и обсуждениям. Не даёт права редактировать коммерческие программы.';
+$string['curatorrolesetup'] = 'Настроить роль куратора внедрения BMS';
+$string['curatorrolesetupdesc'] = 'После обновления Moodle создайте отдельную роль куратора. Затем назначьте её пользователям через системные назначения ролей. Назначение роли само по себе не открывает данные клиентов: дополнительно назначьте куратора в конкретной программе внедрения.';
+$string['curatorrolecreated'] = 'Роль куратора внедрения создана. Теперь её можно назначить пользователям.';
+$string['curatorrolealreadyexists'] = 'Роль куратора уже существует. Для доступа назначьте её пользователю, а затем закрепите пользователя за программой внедрения.';
+$string['curatorroleassign'] = 'Назначить системную роль';
+$string['curatorrolecreate'] = 'Создать отдельную роль куратора';
+$string['curatorrolecapmissing'] = 'Право куратора ещё не зарегистрировано. Завершите штатное обновление Moodle и повторите попытку.';
+$string['curatorrolecapnotassigned'] = 'Существующая роль с таким именем не содержит права куратора. Проверьте разрешения роли перед назначением пользователей.';
+$string['curatorrolepermissions'] = 'Проверить разрешения роли';
+
+$string['curatoropenreview'] = 'Открыть проверку результата';

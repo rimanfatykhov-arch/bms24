@@ -139,7 +139,16 @@
         "get_implementation_program_task_sections",
         "get_implementation_program_result_statuses"
       ],
-      "acceptance": "HOLD for implementation task/program features; availability guards are not compatibility proof"
+      "acceptance": "HOLD for implementation task/program features; availability guards are not compatibility proof",
+      "historical_pr42_gap": true
+    }
+  },
+  "candidate_resolution": {
+    "local_kbacorporate": {
+      "build": 2026102610,
+      "api": "1.26",
+      "source_status": "Seven required methods present; see corporate-api126-source.json and CORPORATE_API126.md",
+      "runtime_acceptance": "PENDING Moodle/DB/tenant/UI checks"
     }
   }
 }
