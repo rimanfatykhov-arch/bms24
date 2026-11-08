@@ -22,11 +22,10 @@ NOT four completed modules.
 
 1. `docs/22_BMS24_PRODUCT_VISION_FOUR_STREAMS.md` (mandatory product vision)
 2. `docs/00_MASTER_CONTEXT.md` (historical product context; verify code)
-
-2. `docs/01_ARCHITECTURE_BOUNDARIES.md`, `docs/02_MOODLE_PLUGIN_RULES.md`, `docs/04_SECURITY_COMPANY_ISOLATION.md`
-3. `docs/16_CURRENT_RELEASE_RC29_1642.md`, `docs/17_UI_SHELL_AND_DESIGN_SYSTEM.md`
-4. Domain-specific docs in `docs/` according to the task.
-5. `docs/05_RELEASE_QA_STANDARD.md` before packaging.
+3. `docs/01_ARCHITECTURE_BOUNDARIES.md`, `docs/02_MOODLE_PLUGIN_RULES.md`, `docs/04_SECURITY_COMPANY_ISOLATION.md`
+4. `docs/16_CURRENT_RELEASE_RC29_1642.md`, `docs/17_UI_SHELL_AND_DESIGN_SYSTEM.md`
+5. Domain-specific docs in `docs/` according to the task.
+6. `docs/05_RELEASE_QA_STANDARD.md` before packaging.
 
 For your first session follow `CODEX_FIRST_TASK.md` and **audit before changing code**.
 
