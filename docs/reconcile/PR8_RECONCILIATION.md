@@ -62,6 +62,27 @@ installation. Retaining sibling sources in Git does not automatically install
 or upgrade them; capture their actual deployed versions before acceptance.
 No new mandatory Moodle dependency declaration is invented for optional adapters.
 
+### Confirmed Corporate API gap
+
+The retained Corporate build is 2026092111 and its bridge API_RELEASE is **1.21**.
+Class presence therefore does not mean all imported integrations are usable:
+
+| Imported consumer | Minimum bridge API | Missing methods in retained Corporate |
+|---|---|---|
+| kbacorporate_impl_task_provider | 1.22 | list_implementation_task_projections, get_implementation_task_projection |
+| implementation_project_link_service | 1.23 | list_implementation_program_projections, get_implementation_program_projection |
+| implementation_project_stages_service | 1.24 | get_implementation_program_sections |
+| implementation_project_weekly_service | 1.25 | get_implementation_program_task_sections |
+| implementation_project_result_service | 1.26 | get_implementation_program_result_statuses |
+
+These consumers check class/method availability and/or API version before the
+calls. The dashboard also checks its projection method. They degrade to an
+unavailable integration, not a proven complete implementation. **Functional
+acceptance of these imported features is HOLD** until a separately reviewed
+compatible Corporate source is supplied and tested, or an explicit reduced
+release scope is approved. Do not fabricate a higher API_RELEASE or substitute
+empty successful responses. No Corporate code is changed by this reconcile.
+
 ## Reconciled governance and CI
 
 - Preserve main AGENTS.md architecture/security rules, README, .gitattributes,

@@ -124,5 +124,22 @@
       ],
       "test_only": true
     }
-  ]
+  ],
+  "contract_gaps": {
+    "local_kbacorporate": {
+      "retained_build": 2026092111,
+      "bridge_api": "1.21",
+      "required_api_range": "1.22-1.26",
+      "missing_methods": [
+        "list_implementation_task_projections",
+        "get_implementation_task_projection",
+        "list_implementation_program_projections",
+        "get_implementation_program_projection",
+        "get_implementation_program_sections",
+        "get_implementation_program_task_sections",
+        "get_implementation_program_result_statuses"
+      ],
+      "acceptance": "HOLD for implementation task/program features; availability guards are not compatibility proof"
+    }
+  }
 }
