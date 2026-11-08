@@ -2,6 +2,25 @@
 
 Historical docs refer to build `2026101642`. On `main`, `local/kbacompany/version.php` was **1.1.0-rc29 / build2026101645** when checked on 2026-11-08; other PR branches (e.g. import build2026101879) differ. This is **not** an accepted production release. ALWAYS read the actual checked-out `version.php` and Git SHA before editing; never trust a historical snapshot as the current deployment.
 
+## Approved decision and release governance
+
+The Product Owner approved **BMS Development Governance 1.0** on 2026-11-08.
+**Before every new feature/architecture/deployment task, read**
+`docs/adr/ADR-0001-bms24-decisions-and-release-governance.md`
+and `docs/DECISIONS.md`.
+
+- Chat = requirements/discussion/owner approval. GitHub accepted ADRs in
+  `main` = durable architectural source of truth.
+- GitHub Issues = task contract; feature branches + PRs = implementation.
+- Codex and configured subagents may design, code and test, but do not assume
+  that automatic subagent orchestration or deployment exists until verified.
+- "Next step" / "next release" allows code and staging work only; it never
+  authorizes production deployment.
+- Production requires a **separate, specific** owner approval for artifact,
+  destination, test evidence, backup/restore and rollback plan.
+- Do not conflate code committed, static CI PASS, staging acceptance and
+  production installed. Record each state explicitly.
+
 ## Mandatory product vision — four connected streams
 
 The owner is developing BMS24 as a **single business management platform**, with four product directions:
@@ -19,6 +38,8 @@ duplicate catalog/service. These four streams are strategic directions,
 NOT four completed modules.
 
 ## Read only what is relevant
+
+Before this list, read the ADR-0001 and decision index above.
 
 1. `docs/22_BMS24_PRODUCT_VISION_FOUR_STREAMS.md` (mandatory product vision)
 2. `docs/00_MASTER_CONTEXT.md` (historical product context; verify code)
