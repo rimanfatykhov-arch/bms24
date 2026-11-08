@@ -351,6 +351,10 @@ class provider implements
             'authorid' => 'privacy:metadata:communication:userid',
             'body' => 'privacy:metadata:communication:content',
         ], 'privacy:metadata:communication');
+        $collection->add_database_table('local_kbacompany_commrev', [
+            'actorid' => 'privacy:metadata:communication:userid',
+            'oldbody' => 'privacy:metadata:communication:content',
+        ], 'privacy:metadata:communication');
         $collection->add_database_table('local_kbacompany_commread', [
             'userid' => 'privacy:metadata:communication:userid',
         ], 'privacy:metadata:communication');
@@ -838,6 +842,7 @@ class provider implements
             'created_threads' => array_values($DB->get_records('local_kbacompany_commthread', ['createdby' => $userid], 'timecreated ASC')),
             'participation' => array_values($DB->get_records('local_kbacompany_commpart', ['userid' => $userid], 'timecreated ASC')),
             'messages' => array_values($DB->get_records('local_kbacompany_commmsg', ['authorid' => $userid], 'timecreated ASC')),
+            'revisions' => array_values($DB->get_records('local_kbacompany_commrev', ['actorid' => $userid], 'timecreated ASC')),
             'read_state' => array_values($DB->get_records('local_kbacompany_commread', ['userid' => $userid], 'timeread ASC')),
             'mentions' => array_values($DB->get_records('local_kbacompany_commmention', ['userid' => $userid], 'timecreated ASC')),
             'notifications' => array_values($DB->get_records('local_kbacompany_commnotif', ['userid' => $userid], 'timecreated ASC')),
@@ -1035,6 +1040,7 @@ class provider implements
     public static function delete_data_for_all_users_in_context(\context $context): void {
         global $DB;
         if ($context->contextlevel === CONTEXT_SYSTEM) {
+            $DB->delete_records('local_kbacompany_commrev');
             self::document_files_for_privacy(null, true);
             self::forget_workflow(null);
             $DB->set_field_select('local_kbacompany_aclog', 'oldvalue', null, 'actorid <> 0');
@@ -1384,10 +1390,12 @@ class provider implements
                 $DB->set_field('local_kbacompany_decision', $field, 0, [$field => $userid]);
             }
             $authored = $DB->get_records('local_kbacompany_commmsg', ['authorid' => $userid]);
+            $DB->delete_records('local_kbacompany_commrev', ['actorid' => $userid]);
             $communicationfs = get_file_storage();
             foreach ($authored as $message) {
                 $communicationfs->delete_area_files($systemcontext->id, 'local_kbacompany', 'communication_attachment', (int)$message->id);
                 $DB->delete_records('local_kbacompany_commattach', ['companyuuid' => $message->companyuuid, 'messageuuid' => $message->uuid]);
+                $DB->delete_records('local_kbacompany_commrev', ['companyuuid' => $message->companyuuid, 'messageuuid' => $message->uuid]);
                 $message->authorid = 0; $message->body = ''; $message->status = 'withdrawn';
                 $DB->update_record('local_kbacompany_commmsg', $message);
             }

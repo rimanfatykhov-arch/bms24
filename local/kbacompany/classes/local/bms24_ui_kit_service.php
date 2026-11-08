@@ -11,7 +11,7 @@ defined('MOODLE_INTERNAL') || die();
 final class bms24_ui_kit_service {
     public const CONTRACT_VERSION = '1.0.0-beta.1';
     private const FRAGMENTS = [
-        'ui_button', 'ui_status', 'ui_field', 'ui_filterbar', 'ui_table',
+        'ui_button', 'ui_status', 'ui_field', 'ui_fieldgrid', 'ui_filterbar', 'ui_table',
         'ui_tabs', 'ui_pagination', 'ui_alert',
     ];
     private const VARIANTS = ['primary', 'secondary', 'quiet', 'danger'];
@@ -67,9 +67,15 @@ final class bms24_ui_kit_service {
             throw new \coding_exception('Invalid BMS24 field id or name');
         }
         $value = (string)($spec['value'] ?? '');
+        $help = (string)($spec['help'] ?? '');
+        $error = (string)($spec['error'] ?? '');
+        $describedby = [];
+        if ($help !== '') { $describedby[] = $id . '-help'; }
+        if ($error !== '') { $describedby[] = $id . '-error'; }
         $data = [
             'id' => $id, 'name' => $name, 'label' => (string)($spec['label'] ?? ''),
-            'type' => $type, 'value' => $value, 'help' => (string)($spec['help'] ?? ''),
+            'type' => $type, 'value' => $value, 'help' => $help, 'error' => $error,
+            'haserror' => $error !== '', 'describedby' => implode(' ', $describedby),
             'required' => !empty($spec['required']),
             'placeholder' => (string)($spec['placeholder'] ?? ''),
             // Bound numeric HTML constraints: no arbitrary attribute injection.
@@ -88,6 +94,15 @@ final class bms24_ui_kit_service {
             }
         }
         return $data;
+    }
+
+    /** Build a responsive two-column field grid from typed, escaped Mustache data. */
+    public static function fieldgrid(array $fields): string {
+        $fielddata = [];
+        foreach ($fields as $field) {
+            $fielddata[] = self::field_data($field);
+        }
+        return self::fragment('ui_fieldgrid', ['fields' => $fielddata]);
     }
 
     /** Build a GET filterbar from typed, escaped Mustache data; no raw HTML slots. */

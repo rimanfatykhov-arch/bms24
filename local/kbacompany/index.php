@@ -18,7 +18,7 @@ $status = company_service::status();
 $companies = company_service::companies_for_user((int)$USER->id);
 $showlist = optional_param('list', 0, PARAM_BOOL);
 if (!$showlist && !empty($status['corporate_adapter']) && count($companies) === 1) {
-    redirect(new moodle_url('/local/kbacompany/bms_workspace.php', [
+    redirect(new moodle_url('/local/kbacompany/bms_home.php', [
         'uuid' => $companies[0]['uuid'],
     ]));
 }
@@ -61,7 +61,7 @@ if (empty($status['corporate_adapter'])) {
     foreach ($companies as $company) {
         echo html_writer::empty_tag('option', [
             'value' => format_string($company['name']),
-            'data-url' => (new moodle_url('/local/kbacompany/bms_workspace.php', [
+            'data-url' => (new moodle_url('/local/kbacompany/bms_home.php', [
                 'uuid' => $company['uuid'],
             ]))->out(false),
         ]);
@@ -92,7 +92,7 @@ if (empty($status['corporate_adapter'])) {
         if (!$roles) {
             $roles[] = get_string('rolenone', 'local_kbacompany');
         }
-        $url = new moodle_url('/local/kbacompany/bms_workspace.php', ['uuid' => $company['uuid']]);
+        $url = new moodle_url('/local/kbacompany/bms_home.php', ['uuid' => $company['uuid']]);
         $body = html_writer::tag('h3', format_string($company['name']), ['class' => 'h5']) .
             html_writer::tag('p', s(implode(', ', $roles)), ['class' => 'text-muted']) .
             html_writer::link($url, get_string('opencompany', 'local_kbacompany'), ['class' => 'btn btn-primary']);

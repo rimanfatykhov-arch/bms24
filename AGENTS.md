@@ -1,6 +1,6 @@
 # BMS24 — Instructions for Codex (VS Code / repository root)
 
-Current verified source snapshot: `local/kbacompany/version.php` → `local_kbacompany` **1.1.0-rc29**, `$plugin->version = 2026101642` (18 Oct 2026). This is a **staging candidate**, NOT an accepted production release. Verify the code checkout before editing; do not assume that docs override the actual version.
+Current source candidate: `local/kbacompany/version.php` → `local_kbacompany` **1.1.0-rc29**, `$plugin->version = 2026101879`. Reconciled from PR #8 with main files retained and the PR #40 acceptance fix. See `docs/reconcile/PR8_RECONCILIATION.md`. This is NOT an accepted production release. Historical build1642 documentation is retained as history.
 
 ## Read only what is relevant
 
@@ -41,6 +41,9 @@ BMOS colors: Navy `#0B2B41`, Emerald `#0C6C52`, Sky `#E4F2FB`, Mint `#ECF7F3`, S
 Own-shell UI lives in `local/kbacompany/templates/bms24_*` and `local/kbacompany/bms_ui/*`, CSS scoped `.bms24-app`. Reuse `bms24_shell_service`, `bms24_ui_kit_service`, canonical BMS render models. New BMS logic in the plugin; render-only Mustache, no SQL/business decisions in templates. Preserve legacy selectors/JS contracts until tests prove removal safe. Human-readable RU/EN text, responsive tables, keyboard focus.
 
 ## Release and work discipline
+
+- Reconcile authorization covers isolated source/CI changes only. Do not merge or deploy.
+- Run `python tools/check_reconcile_1879.py` and imported workflow gates in addition to main static QA. Independent QA/security and human review remain required before acceptance; never invent review approvals.
 
 - Before editing: inspect `git status`, plugin version, relevant pages/services, affected tests; provide concise scope and risk notes.
 - Small coherent patch; do not mix theme decoupling with unrelated feature work, schema, ACL or integration changes.

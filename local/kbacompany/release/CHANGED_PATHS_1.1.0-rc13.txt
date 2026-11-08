@@ -1,0 +1,12 @@
+classes/local/staffing_service.php
+classes/privacy/provider.php
+db/install.xml
+db/upgrade.php
+lang/en/local_kbacompany.php
+lang/ru/local_kbacompany.php
+staffing_placement.php
+styles.css
+version.php
+RELEASE_NOTES_1.1.0-rc13.md
+CHANGED_PATHS_1.1.0-rc13.txt
+CHANGELOG.md

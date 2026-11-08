@@ -1,0 +1,5 @@
+# RC29 build2026101712 — Release-blocking static regression gate
+
+Introduces `cli/check_rc29_regression_gate.py` and invokes it from the canonical `cli/build_release.py` **before** packaging. The gate checks 21 source-level contracts across Weekly Coordination, CEO Overview, canonical Task Center visibility, Battle Plan create path, missing/inaccessible employee filters, latest-task feedback, and release preflight. A missing source contract now fails the build instead of silently yielding an INSTALL ZIP. No Moodle core edit; no DDL, business writes, new persisted entity, synthetic score, or permission widening.
+
+This is STATIC regression only; a passing source contract does not demonstrate runtime correctness or security. Required Moodle staging test matrix: admin/manager/employee across two companies (including direct URL denial), existing/missing Battle Plans and draft/submitted/approved lifecycle, Task Center open/done/cancelled newest-linked tasks, four/eight-week filters and CEO summary, KBA and Boost themes, desktop/mobile. Production readiness remains blocked pending live acceptance.

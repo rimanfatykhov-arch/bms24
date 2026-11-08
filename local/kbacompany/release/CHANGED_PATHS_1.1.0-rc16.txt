@@ -1,0 +1,13 @@
+CHANGELOG.md
+ACCEPTANCE_1.1.0-rc16_METRICS_2_2.md
+RELEASE_NOTES_1.1.0-rc16.md
+version.php
+indicators.php
+styles.css
+classes/local/indicator_performance_status_service.php
+classes/local/indicator_registry_service.php
+classes/local/battle_plan_indicator_service.php
+templates/battle_plan_indicators.php
+tests/indicator_performance_status_service_test.php
+lang/ru/local_kbacompany.php
+lang/en/local_kbacompany.php

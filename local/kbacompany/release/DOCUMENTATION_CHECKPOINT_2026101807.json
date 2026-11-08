@@ -1,0 +1,12 @@
+{
+    "component": "local_kbacompany",
+    "release": "1.1.0-rc29",
+    "build": 2026101807,
+    "summary": "RC29/1807 Canonical BMS24 UI buttons for personalisation forms and workspace",
+    "code_status": "Code ready",
+    "live_acceptance": "NOT RUN (edu.kzn.mba)",
+    "release_notes": "RELEASE_NOTES_RC29_BUTTON_ACTION_STANDARD_2026101807.md",
+    "register": "RELEASE_REGISTER_LOCAL.md",
+    "generated_at": "2026-10-25T07:00:19+00:00",
+    "guard": "Packaging must fail when cli/release_docs_checkpoint.php --check exits non-zero."
+}

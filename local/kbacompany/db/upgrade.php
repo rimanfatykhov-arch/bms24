@@ -4907,5 +4907,1206 @@ function xmldb_local_kbacompany_upgrade(int $oldversion): bool {
         upgrade_plugin_savepoint(true, 2026101645, 'local', 'kbacompany');
     }
 
+    if ($oldversion < 2026101646) {
+        // BMS24 owned shell standalone hardening: presentation/layout only, no DDL or ACL changes.
+        upgrade_plugin_savepoint(true, 2026101646, 'local', 'kbacompany');
+    }
+
+    if ($oldversion < 2026101647) {
+        // Restore BMS24 owned-shell navigation icon sizing. Presentation only; no DDL or ACL changes.
+        upgrade_plugin_savepoint(true, 2026101647, 'local', 'kbacompany');
+    }
+
+    if ($oldversion < 2026101648) {
+        // BMS24 owned-shell geometry stabilization: sticky app navigation/header and structured page meta.
+        // Presentation only; no DDL, ACL, privacy, or company-isolation changes.
+        upgrade_plugin_savepoint(true, 2026101648, 'local', 'kbacompany');
+    }
+
+
+    if ($oldversion < 2026101649) {
+        // BMS24 Task Center owned-UI stabilization: detail, list and edit-form presentation only.
+        // No DDL, ACL, privacy, or company-isolation changes.
+        upgrade_plugin_savepoint(true, 2026101649, 'local', 'kbacompany');
+    }
+
+
+    if ($oldversion < 2026101650) {
+        // Battle Plan metric fact UX stabilization in BMS24 standalone UI. Presentation only.
+        // No DDL, ACL, privacy, or company-isolation changes.
+        upgrade_plugin_savepoint(true, 2026101650, 'local', 'kbacompany');
+    }
+
+    if ($oldversion < 2026101651) {
+        // Battle Plan metric fact localization/cache compatibility fix. Presentation only.
+        // Reuses established language keys; no DDL, ACL, privacy, or company-isolation changes.
+        upgrade_plugin_savepoint(true, 2026101651, 'local', 'kbacompany');
+    }
+
+    if ($oldversion < 2026101652) {
+        // Battle Plan metric table readability: compact operational columns and secondary metric context.
+        // Presentation only; no DDL, ACL, privacy, or company-isolation changes.
+        upgrade_plugin_savepoint(true, 2026101652, 'local', 'kbacompany');
+    }
+
+    if ($oldversion < 2026101653) {
+        // Battle Plan Metrics Card UI: one metric as one management object. Presentation only.
+        // No DDL, ACL, privacy, or company-isolation changes.
+        upgrade_plugin_savepoint(true, 2026101653, 'local', 'kbacompany');
+    }
+
+    if ($oldversion < 2026101654) {
+        // Battle Plan metric progress, trend and action-label UX. Presentation only.
+        // No DDL, ACL, privacy, or company-isolation changes.
+        upgrade_plugin_savepoint(true, 2026101654, 'local', 'kbacompany');
+    }
+
+    if ($oldversion < 2026101655) {
+        // Remove duplicate Battle Plan metric action entry point and expose canonical manager actions in metric cards.
+        // Legacy quota specialist mode remains available only when a legacy quota set is actually pinned.
+        // No DDL, ACL, privacy, or company-isolation changes.
+        upgrade_plugin_savepoint(true, 2026101655, 'local', 'kbacompany');
+    }
+
+    if ($oldversion < 2026101656) {
+        // Manager workspace UX for subordinate Battle Plans: permission-scoped employee filter and explicit plan-owner context.
+        // Uses existing department/company Battle Plan ACL; no DDL, capability, privacy, or company-isolation changes.
+        upgrade_plugin_savepoint(true, 2026101656, 'local', 'kbacompany');
+    }
+
+    if ($oldversion < 2026101657) {
+        // Battle Plan manager command panel reuses canonical overview, coverage and readiness read models.
+        // Read-only presentation integration; no DDL, ACL, privacy, or company-isolation changes.
+        upgrade_plugin_savepoint(true, 2026101657, 'local', 'kbacompany');
+    }
+
+    if ($oldversion < 2026101658) {
+        // Battle Plan manager dashboard drill-down: summary cards link to filtered canonical views and surface concrete attention rows.
+        // Read-only presentation integration; no DDL, ACL, privacy, or company-isolation changes.
+        upgrade_plugin_savepoint(true, 2026101658, 'local', 'kbacompany');
+    }
+
+    if ($oldversion < 2026101659) {
+        // Battle Plan week-readiness manager UX: clickable readiness cards and missing-plan employee drill-down.
+        // Reuses canonical readiness and coverage read models; no DDL, ACL, privacy, or company-isolation changes.
+        upgrade_plugin_savepoint(true, 2026101659, 'local', 'kbacompany');
+    }
+
+    if ($oldversion < 2026101660) {
+        // Battle Plan coverage manager UX: actionable coverage percentage and unit/gap drill-down.
+        // Reuses canonical coverage read model; no DDL, ACL, privacy, or company-isolation changes.
+        upgrade_plugin_savepoint(true, 2026101660, 'local', 'kbacompany');
+    }
+
+    if ($oldversion < 2026101661) {
+        // Battle Plan management overview action-first UX: clickable KPIs, attention queue and aggregate drill-down.
+        // Reuses canonical management overview read-model; no DDL, ACL, privacy, or company-isolation changes.
+        upgrade_plugin_savepoint(true, 2026101661, 'local', 'kbacompany');
+    }
+
+    if ($oldversion < 2026101662) {
+        // Battle Plan approval queue in management overview: surfaces existing submitted plans to authorized reviewers.
+        // Presentation only; review lifecycle, ACL, privacy, and company isolation remain canonical.
+        upgrade_plugin_savepoint(true, 2026101662, 'local', 'kbacompany');
+    }
+
+
+    if ($oldversion < 2026101663) {
+        // Battle Plan correction-feedback UX: surface the latest reviewer return comment and targeted tasks on returned drafts.
+        // Presentation only; review lifecycle, ACL, privacy, and company isolation remain canonical.
+        upgrade_plugin_savepoint(true, 2026101663, 'local', 'kbacompany');
+    }
+
+    if ($oldversion < 2026101664) {
+        // Battle Plan single-record readiness UX: show canonical submit blockers/readiness and expose lifecycle actions only when valid.
+        // Reuses battle_plan_week_readiness_service; no DDL, ACL, privacy, lifecycle, or company-isolation changes.
+        upgrade_plugin_savepoint(true, 2026101664, 'local', 'kbacompany');
+    }
+
+    if ($oldversion < 2026101665) {
+        // Battle Plan close-readiness UX: expose close only when unfinished tasks are complete/cancelled or explicitly rolled forward.
+        // Outcome and metric signals remain advisory; no DDL, ACL, privacy, lifecycle, or company-isolation changes.
+        upgrade_plugin_savepoint(true, 2026101665, 'local', 'kbacompany');
+    }
+
+    if ($oldversion < 2026101666) {
+        // Battle Plan carry-forward UX: distinguish already-carried work, expose remaining close blockers,
+        // and suppress invalid rollover actions when the next plan is no longer a draft.
+        // Presentation only; canonical task references, ACL, lifecycle, privacy, and company isolation are unchanged.
+        upgrade_plugin_savepoint(true, 2026101666, 'local', 'kbacompany');
+    }
+
+    if ($oldversion < 2026101667) {
+        // Battle Plan next-period UX: surface the existing next plan independently from rollover state,
+        // or prefill the canonical create flow for the next week when no plan exists yet.
+        // No DDL, ACL, lifecycle, privacy, or company-isolation changes.
+        upgrade_plugin_savepoint(true, 2026101667, 'local', 'kbacompany');
+    }
+
+    if ($oldversion < 2026101668) {
+        // Battle Plan next-week continuity UX: inherit still-valid reviewer/observer/design defaults
+        // from the current active/closed plan into the canonical create flow. No tasks, facts or outcomes are copied.
+        // No DDL, ACL, lifecycle, privacy, or company-isolation changes.
+        upgrade_plugin_savepoint(true, 2026101668, 'local', 'kbacompany');
+    }
+
+    if ($oldversion < 2026101669) {
+        // Battle Plan next-week continuity context: explain inherited settings and explicitly distinguish
+        // them from weekly tasks/facts/outcomes that stay attached to the source plan. Presentation only.
+        // No DDL, ACL, lifecycle, privacy, or company-isolation changes.
+        upgrade_plugin_savepoint(true, 2026101669, 'local', 'kbacompany');
+    }
+
+
+    if ($oldversion < 2026101670) {
+        // Battle Plan adjacent-week comparison: read-only task/metric summary for the previous plan
+        // using canonical projections. No DDL, ACL, lifecycle, privacy, or company-isolation changes.
+        upgrade_plugin_savepoint(true, 2026101670, 'local', 'kbacompany');
+    }
+
+    if ($oldversion < 2026101671) {
+        // Battle Plan week-change insights: derive descriptive task/metric deltas from the existing
+        // adjacent-week comparison. Presentation/read-model only; no causality claim or lifecycle change.
+        upgrade_plugin_savepoint(true, 2026101671, 'local', 'kbacompany');
+    }
+
+
+    if ($oldversion < 2026101672) {
+        // RC29: action-first weekly management panel; presentation/read-model only.
+        upgrade_plugin_savepoint(true, 2026101672, 'local', 'kbacompany');
+    }
+
+
+    if ($oldversion < 2026101673) {
+        // Battle Plan -> canonical Task Center handoff: safe GET prefill only; task creation still occurs
+        // through the existing Task Center POST validation and ACL path. No DDL/lifecycle/privacy change.
+        upgrade_plugin_savepoint(true, 2026101673, 'local', 'kbacompany');
+    }
+
+
+    if ($oldversion < 2026101674) {
+        // Task Center Battle Plan context: surface linked canonical Battle Plans on task detail
+        // with a direct return path. Presentation only; task/plan links and permissions are unchanged.
+        upgrade_plugin_savepoint(true, 2026101674, 'local', 'kbacompany');
+    }
+
+    if ($oldversion < 2026101675) {
+        // Task list Battle Plan context: surface existing plan membership in list/kanban views
+        // through a bounded read-only batch projection. No DDL, ACL, lifecycle or relation changes.
+        upgrade_plugin_savepoint(true, 2026101675, 'local', 'kbacompany');
+    }
+
+    if ($oldversion < 2026101676) {
+        // Task Center Battle Plan filter: filter canonical tasks by an existing visible plan through
+        // the existing bplanitem relation. No DDL, ACL, lifecycle or relation changes.
+        upgrade_plugin_savepoint(true, 2026101676, 'local', 'kbacompany');
+    }
+
+
+    if ($oldversion < 2026101677) {
+        // Task Center analytics now preserves the selected Battle Plan context and derives read-only
+        // completion/overdue/review indicators from the already-filtered canonical task set.
+        // No DDL, ACL, lifecycle or relation changes.
+        upgrade_plugin_savepoint(true, 2026101677, 'local', 'kbacompany');
+    }
+
+    if ($oldversion < 2026101678) {
+        // Task Center Battle Plan analytics polish: compact selected-plan context and KPI summary.
+        // Presentation only; no DDL, ACL, lifecycle, privacy or relation changes.
+        upgrade_plugin_savepoint(true, 2026101678, 'local', 'kbacompany');
+    }
+
+    if ($oldversion < 2026101679) {
+        // Task Center analytics KPI drill-down: read-only signal predicates preserve the selected
+        // Battle Plan and current visibility scope. No DDL, ACL, lifecycle, privacy or relation changes.
+        upgrade_plugin_savepoint(true, 2026101679, 'local', 'kbacompany');
+    }
+
+    if ($oldversion < 2026101680) {
+        // Battle Plan management-cycle summary: derive task productivity, metric effectiveness and
+        // metric data coverage from existing canonical projections. Presentation/read-only only;
+        // no DDL, ACL, lifecycle, privacy or company-isolation changes.
+        upgrade_plugin_savepoint(true, 2026101680, 'local', 'kbacompany');
+    }
+
+    if ($oldversion < 2026101681) {
+        // Battle Plan 8-week productivity/effectiveness trend derived from the same canonical task
+        // and indicator projections. Read-only/presentation only; no DDL, ACL or lifecycle changes.
+        upgrade_plugin_savepoint(true, 2026101681, 'local', 'kbacompany');
+    }
+
+    if ($oldversion < 2026101682) {
+        // Management overview team productivity/effectiveness: weighted read-only aggregation over
+        // accessible Battle Plans plus factual week-over-week deltas. No composite employee rating,
+        // DDL, ACL, lifecycle, privacy or company-isolation changes.
+        upgrade_plugin_savepoint(true, 2026101682, 'local', 'kbacompany');
+    }
+
+    if ($oldversion < 2026101683) {
+        // Team management-attention UX: explainable attention/insufficient-data/improving/stable
+        // signals derived from existing task and metric projections. No employee ranking, DDL, ACL,
+        // lifecycle, privacy or company-isolation changes.
+        upgrade_plugin_savepoint(true, 2026101683, 'local', 'kbacompany');
+    }
+
+    if ($oldversion < 2026101684) {
+        // Team attention drill-down: presentation-only filtering and direct navigation from factual
+        // team signals into the existing Battle Plan tasks/metrics context. No DDL, ACL, lifecycle,
+        // privacy or company-isolation changes.
+        upgrade_plugin_savepoint(true, 2026101684, 'local', 'kbacompany');
+    }
+
+    if ($oldversion < 2026101685) {
+        // Team attention -> Task Center handoff. Task Center may create one canonical manual task
+        // directly into an editable draft/active Battle Plan by reusing create_manual_task().
+        // No DDL, new task model, ACL bypass, privacy or company-isolation changes.
+        upgrade_plugin_savepoint(true, 2026101685, 'local', 'kbacompany');
+    }
+
+    if ($oldversion < 2026101686) {
+        // Team attention task feedback loop: management overview surfaces already-linked manual
+        // canonical tasks and their statuses before offering another task creation action.
+        // Read-only/presentation only; no DDL, ACL, lifecycle, privacy or relation changes.
+        upgrade_plugin_savepoint(true, 2026101686, 'local', 'kbacompany');
+    }
+
+    if ($oldversion < 2026101687) {
+        // Factual management-action follow-up: when manual management tasks are completed, the
+        // management overview shows week-over-week productivity/effectiveness movement next to
+        // execution context. Observation only; no causal claim, DDL, ACL or lifecycle change.
+        upgrade_plugin_savepoint(true, 2026101687, 'local', 'kbacompany');
+    }
+
+    if ($oldversion < 2026101688) {
+        // Department/team management-action feedback: aggregate canonical manual task execution and
+        // weighted task/metric performance movement by organizational unit. Read-only observation;
+        // no causal attribution, DDL, ACL, lifecycle, privacy or company-isolation changes.
+        upgrade_plugin_savepoint(true, 2026101688, 'local', 'kbacompany');
+    }
+
+    if ($oldversion < 2026101689) {
+        // Management overview compact two-column filter layout and reset action. Presentation only;
+        // filtering semantics, read models, ACL, lifecycle, privacy and company isolation unchanged.
+        upgrade_plugin_savepoint(true, 2026101689, 'local', 'kbacompany');
+    }
+
+    if ($oldversion < 2026101690) {
+        // Department action-first focus cards over the existing management overview by-unit aggregation.
+        // Presentation/read-only only; no new score, DDL, ACL, lifecycle, privacy or isolation changes.
+        upgrade_plugin_savepoint(true, 2026101690, 'local', 'kbacompany');
+    }
+
+    if ($oldversion < 2026101691) {
+        // Unified BMS24 two-column filter/selection layout for Battle Plan coverage, readiness, acceptance
+        // and create-plan context/settings. Presentation only; filter semantics, ACL and data unchanged.
+        upgrade_plugin_savepoint(true, 2026101691, 'local', 'kbacompany');
+    }
+
+    if ($oldversion < 2026101692) {
+        // Canonical BMS24 UI Kit filterbar/field-grid presentation contract. Battle Plan management
+        // overview, coverage, readiness and acceptance now render typed filter fields through one
+        // shared Mustache component. Presentation only; filters, ACL and data semantics unchanged.
+        upgrade_plugin_savepoint(true, 2026101692, 'local', 'kbacompany');
+    }
+
+
+    if ($oldversion < 2026101693) {
+        // Documentation recovery and self-contained release documentation packaging.
+        // Adds plugin-local docs/ and release/ snapshots only; no runtime, DDL, ACL,
+        // lifecycle, privacy or company-isolation changes.
+        upgrade_plugin_savepoint(true, 2026101693, 'local', 'kbacompany');
+    }
+
+
+    if ($oldversion < 2026101694) {
+        // Release-documentation checkpoint automation and packaging guard. Standalone build tooling only;
+        // no runtime, DDL, ACL, lifecycle, privacy or company-isolation changes.
+        upgrade_plugin_savepoint(true, 2026101694, 'local', 'kbacompany');
+    }
+
+
+    if ($oldversion < 2026101695) {
+        // One-command release runner: documentation checkpoint, static QA, INSTALL ZIP and SHA256.
+        // Build tooling only; no runtime, DDL, ACL, lifecycle, privacy or company-isolation changes.
+        upgrade_plugin_savepoint(true, 2026101695, 'local', 'kbacompany');
+    }
+    if ($oldversion < 2026101696) {
+        // Weekly management coordination read-model. No DDL.
+        upgrade_plugin_savepoint(true, 2026101696, 'local', 'kbacompany');
+    }
+
+
+    if ($oldversion < 2026101697) {
+        // Hotfix weekly management coordination shell close + language cache refresh. No DDL.
+        // New coordination strings were shipped in build1696; force Moodle caches to reload them
+        // so the UI does not expose [[string_key]] placeholders after a file-based plugin upgrade.
+        purge_all_caches();
+        upgrade_plugin_savepoint(true, 2026101697, 'local', 'kbacompany');
+    }
+
+
+    if ($oldversion < 2026101698) {
+        // Weekly coordination contextual actions: presentation/navigation only. All writes continue
+        // through canonical Battle Plan, Task Center, Indicator and Employee controllers. No DDL.
+        upgrade_plugin_savepoint(true, 2026101698, 'local', 'kbacompany');
+    }
+
+
+    if ($oldversion < 2026101699) {
+        // Contextual quick-navigation standard across major BMS24 contours. Presentation only, no DDL.
+        // Refresh strings/CSS after file-based upgrade; target controllers remain authoritative for ACL/lifecycle.
+        purge_all_caches();
+        upgrade_plugin_savepoint(true, 2026101699, 'local', 'kbacompany');
+    }
+
+
+    if ($oldversion < 2026101700) {
+        // Canonical navigation standard documentation + previous-week management-task follow-up
+        // in Weekly Management Coordination. Schema-neutral/read-only; no DDL.
+        purge_all_caches();
+        upgrade_plugin_savepoint(true, 2026101700, 'local', 'kbacompany');
+    }
+
+
+    if ($oldversion < 2026101701) {
+        // Bounded 4/8-week management history in Weekly Management Coordination.
+        // Read-only over canonical Battle Plan/Task/Indicator projections; no DDL or ranking model.
+        purge_all_caches();
+        upgrade_plugin_savepoint(true, 2026101701, 'local', 'kbacompany');
+    }
+
+
+    if ($oldversion < 2026101702) {
+        // Transparent recurring-management problem detection over bounded weekly history.
+        // Read-only factual rules; no DDL, ranking, persistence or new write path.
+        purge_all_caches();
+        upgrade_plugin_savepoint(true, 2026101702, 'local', 'kbacompany');
+    }
+
+
+    if ($oldversion < 2026101703) {
+        // Employee work-calendar owner resolution hotfix. No DDL.
+        // Prevent management-cycle links from targeting users who are not canonical company employees.
+        purge_all_caches();
+        upgrade_plugin_savepoint(true, 2026101703, 'local', 'kbacompany');
+    }
+
+
+    if ($oldversion < 2026101704) {
+        // Pattern -> Action: safe Task Center GET-prefill from one accessible employee scope.
+        // Task creation remains canonical POST through task_service; no DDL/new task model.
+        purge_all_caches();
+        upgrade_plugin_savepoint(true, 2026101704, 'local', 'kbacompany');
+    }
+
+
+    if ($oldversion < 2026101705) {
+        // Pattern -> live canonical Task Center feedback. Read-only trace resolution; no DDL.
+        purge_all_caches();
+        upgrade_plugin_savepoint(true, 2026101705, 'local', 'kbacompany');
+    }
+
+    if ($oldversion < 2026101706) {
+        // Contextual Battle Plan create UX: explicit create route, locked known context and duplicate redirect. No DDL.
+        purge_all_caches();
+        upgrade_plugin_savepoint(true, 2026101706, 'local', 'kbacompany');
+    }
+
+    if ($oldversion < 2026101707) {
+        // Pattern -> completed Task -> subsequent factual movement. Read-only before/after/delta; no DDL or causal model.
+        purge_all_caches();
+        upgrade_plugin_savepoint(true, 2026101707, 'local', 'kbacompany');
+    }
+
+    if ($oldversion < 2026101708) {
+        // Unit-level recurring management signals from existing bounded weekly read-models. No DDL.
+        purge_all_caches();
+        upgrade_plugin_savepoint(true, 2026101708, 'local', 'kbacompany');
+    }
+
+    if ($oldversion < 2026101709) {
+        // CEO read-only unit management overview over existing scoped projections. No DDL.
+        purge_all_caches();
+        upgrade_plugin_savepoint(true, 2026101709, 'local', 'kbacompany');
+    }
+
+    if ($oldversion < 2026101710) {
+        // Coordination filter UX regression guard; schema-neutral, no DDL.
+        upgrade_plugin_savepoint(true, 2026101710, 'local', 'kbacompany');
+    }
+
+    if ($oldversion < 2026101711) {
+        // Regression-only release; no schema migration.
+        upgrade_plugin_savepoint(true, 2026101711, 'local', 'kbacompany');
+    }
+
+    if ($oldversion < 2026101712) {
+        // Regression gate only. No schema changes.
+        upgrade_plugin_savepoint(true, 2026101712, 'local', 'kbacompany');
+    }
+
+    if ($oldversion < 2026101713) {
+        // Communication center UX-only update. No schema changes.
+        upgrade_plugin_savepoint(true, 2026101713, 'local', 'kbacompany');
+    }
+
+    if ($oldversion < 2026101714) {
+        // Participant-scoped communication preview UX. No schema changes.
+        upgrade_plugin_savepoint(true, 2026101714, 'local', 'kbacompany');
+    }
+
+    if ($oldversion < 2026101715) {
+        // Read-only communication navigation and search. No DDL.
+        upgrade_plugin_savepoint(true, 2026101715, 'local', 'kbacompany');
+    }
+
+    if ($oldversion < 2026101716) {
+        // Communication display and message paging only. No DDL or new write path.
+        upgrade_plugin_savepoint(true, 2026101716, 'local', 'kbacompany');
+    }
+
+    if ($oldversion < 2026101717) {
+        // Compact communication composer and cache-safe search label; no DDL.
+        upgrade_plugin_savepoint(true, 2026101717, 'local', 'kbacompany');
+    }
+
+    if ($oldversion < 2026101718) {
+        // Hotfix Moodle language cache fallback; no schema changes.
+        upgrade_plugin_savepoint(true, 2026101718, 'local', 'kbacompany');
+    }
+
+    if ($oldversion < 2026101719) {
+        // Bounded canonical communication history, no DDL.
+        upgrade_plugin_savepoint(true, 2026101719, 'local', 'kbacompany');
+    }
+
+    if ($oldversion < 2026101720) {
+        // Messenger viewport and contextual navigation UX only. No DDL.
+        upgrade_plugin_savepoint(true, 2026101720, 'local', 'kbacompany');
+    }
+
+    if ($oldversion < 2026101721) {
+        // Moodle 4.0 html_writer navigation compatibility hotfix; no DDL.
+        upgrade_plugin_savepoint(true, 2026101721, 'local', 'kbacompany');
+    }
+
+    if ($oldversion < 2026101722) {
+        // Communication UI Moodle 4.0 API compatibility and accessibility labels; no DDL.
+        upgrade_plugin_savepoint(true, 2026101722, 'local', 'kbacompany');
+    }
+
+    if ($oldversion < 2026101723) {
+        // Communication inbox primary filters and vertical object navigation; no DDL.
+        upgrade_plugin_savepoint(true, 2026101723, 'local', 'kbacompany');
+    }
+
+    if ($oldversion < 2026101724) {
+        // Object-mode icon rail and context cleanup. No schema changes.
+        upgrade_plugin_savepoint(true, 2026101724, 'local', 'kbacompany');
+    }
+
+    if ($oldversion < 2026101725) {
+        // Communication Center empty-state presentation only. No DDL.
+        upgrade_plugin_savepoint(true, 2026101725, 'local', 'kbacompany');
+    }
+
+    if ($oldversion < 2026101726) {
+        // Communication shell and search UX only, no DDL.
+        upgrade_plugin_savepoint(true, 2026101726, 'local', 'kbacompany');
+    }
+
+    if ($oldversion < 2026101727) {
+        // Scope sidebar collapse to the actual shell; never force a zero-width theme grid.
+        upgrade_plugin_savepoint(true, 2026101727, 'local', 'kbacompany');
+    }
+
+    if ($oldversion < 2026101729) {
+        // Shared App Shell navigation changes only; no schema migration.
+        upgrade_plugin_savepoint(true, 2026101729, 'local', 'kbacompany');
+    }
+
+    if ($oldversion < 2026101730) {
+        // Register global shell navigation on standalone Workspace and Architecture routes.
+        upgrade_plugin_savepoint(true, 2026101730, 'local', 'kbacompany');
+    }
+
+    if ($oldversion < 2026101731) {
+        // Shared navigation header alignment. No DDL.
+        upgrade_plugin_savepoint(true, 2026101731, 'local', 'kbacompany');
+    }
+
+    if ($oldversion < 2026101733) {
+        // Restore expanded BMS24 brand and correct non-executing upgrade checkpoint. No DDL.
+        upgrade_plugin_savepoint(true, 2026101733, 'local', 'kbacompany');
+    }
+
+    if ($oldversion < 2026101735) {
+        // Restore cached-safe product subtitle and large sidebar wordmark. No DDL.
+        upgrade_plugin_savepoint(true, 2026101735, 'local', 'kbacompany');
+    }
+
+    if ($oldversion < 2026101736) {
+        // Prominent existing Battle Plan rollover entry point. No database changes.
+        upgrade_plugin_savepoint(true, 2026101736, 'local', 'kbacompany');
+    }
+
+    if ($oldversion < 2026101737) {
+        upgrade_plugin_savepoint(true, 2026101737, 'local', 'kbacompany');
+    }
+
+    if ($oldversion < 2026101738) {
+        // Quick status navigation for existing Battle Plan listing; no schema changes.
+        upgrade_plugin_savepoint(true, 2026101738, 'local', 'kbacompany');
+    }
+
+    if ($oldversion < 2026101739) {
+        // Status-count projection only, no schema changes.
+        upgrade_plugin_savepoint(true, 2026101739, 'local', 'kbacompany');
+    }
+
+    if ($oldversion < 2026101740) {
+        // Read-only manager action queue, no database migration.
+        upgrade_plugin_savepoint(true, 2026101740, 'local', 'kbacompany');
+    }
+
+    if ($oldversion < 2026101741) {
+        // Close-time snapshot in existing statepayload; no DDL.
+        upgrade_plugin_savepoint(true, 2026101741, 'local', 'kbacompany');
+    }
+
+    if ($oldversion < 2026101742) {
+        // Verified repeated rollover history, read-only, no DDL.
+        upgrade_plugin_savepoint(true, 2026101742, 'local', 'kbacompany');
+    }
+
+    if ($oldversion < 2026101743) {
+        // Read-only management discipline from closure snapshots. No DDL.
+        upgrade_plugin_savepoint(true, 2026101743, 'local', 'kbacompany');
+    }
+
+    if ($oldversion < 2026101744) {
+        // Read-only weekly execution trend, closure snapshots only. No DDL.
+        upgrade_plugin_savepoint(true, 2026101744, 'local', 'kbacompany');
+    }
+
+    if ($oldversion < 2026101745) {
+        // Read-only employee execution insight based on verified close-time data; no DDL.
+        upgrade_plugin_savepoint(true, 2026101745, 'local', 'kbacompany');
+    }
+
+    if ($oldversion < 2026101746) {
+        // ACL-safe links between employee profile and battle plan execution insight; no DDL.
+        upgrade_plugin_savepoint(true, 2026101746, 'local', 'kbacompany');
+    }
+
+    if ($oldversion < 2026101747) {
+        // Employee execution summary uses existing close-time read model; no DDL.
+        upgrade_plugin_savepoint(true, 2026101747, 'local', 'kbacompany');
+    }
+
+    if ($oldversion < 2026101748) {
+        // Read-only coordination workflow navigation; no schema changes.
+        upgrade_plugin_savepoint(true, 2026101748, 'local', 'kbacompany');
+    }
+
+    if ($oldversion < 2026101749) {
+        // Read-only weekly coordination protocol worksheet; no schema changes.
+        upgrade_plugin_savepoint(true, 2026101749, 'local', 'kbacompany');
+    }
+
+    if ($oldversion < 2026101750) {
+        $dbman = $DB->get_manager();
+        $table = new xmldb_table('local_kbacompany_bp_proto');
+        if (!$dbman->table_exists($table)) {
+            $table->add_field('id', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, XMLDB_SEQUENCE, null);
+            $table->add_field('companyuuid', XMLDB_TYPE_CHAR, '36', null, XMLDB_NOTNULL, null, null);
+            $table->add_field('weekstart', XMLDB_TYPE_CHAR, '10', null, XMLDB_NOTNULL, null, null);
+            $table->add_field('taskuuid', XMLDB_TYPE_CHAR, '36', null, XMLDB_NOTNULL, null, null);
+            $table->add_field('revision', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, '1');
+            $table->add_field('reason', XMLDB_TYPE_TEXT, null, null, XMLDB_NOTNULL, null, null);
+            $table->add_field('decisiontext', XMLDB_TYPE_TEXT, null, null, XMLDB_NOTNULL, null, null);
+            $table->add_field('owneruserid', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, '0');
+            $table->add_field('duedate', XMLDB_TYPE_CHAR, '10', null, XMLDB_NOTNULL, null, '');
+            $table->add_field('createdby', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, '0');
+            $table->add_field('timecreated', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, '0');
+            $table->add_key('primary', XMLDB_KEY_PRIMARY, ['id']);
+            $table->add_index('task_revision_uix', XMLDB_INDEX_UNIQUE,
+                ['companyuuid','weekstart','taskuuid','revision']);
+            $table->add_index('company_week_ix', XMLDB_INDEX_NOTUNIQUE, ['companyuuid','weekstart']);
+            $dbman->create_table($table);
+        }
+        upgrade_plugin_savepoint(true, 2026101750, 'local', 'kbacompany');
+    }
+
+    if ($oldversion < 2026101751) {
+        upgrade_plugin_savepoint(true, 2026101751, 'local', 'kbacompany');
+    }
+
+    if ($oldversion < 2026101752) {
+        upgrade_plugin_savepoint(true, 2026101752, 'local', 'kbacompany');
+    }
+    if ($oldversion < 2026101753) {
+        upgrade_plugin_savepoint(true, 2026101753, 'local', 'kbacompany');
+    }
+
+    if ($oldversion < 2026101754) {
+        upgrade_plugin_savepoint(true, 2026101754, 'local', 'kbacompany');
+    }
+
+    if ($oldversion < 2026101755) {
+        $dbman = $DB->get_manager();
+        $table = new xmldb_table('local_kbacompany_bp_proto');
+        $field = new xmldb_field('executionstatus', XMLDB_TYPE_CHAR, '16', null,
+            XMLDB_NOTNULL, null, 'pending', 'duedate');
+        if ($dbman->table_exists($table) && !$dbman->field_exists($table, $field)) {
+            $dbman->add_field($table, $field);
+        }
+        upgrade_plugin_savepoint(true, 2026101755, 'local', 'kbacompany');
+    }
+
+    if ($oldversion < 2026101756) {
+        upgrade_plugin_savepoint(true, 2026101756, 'local', 'kbacompany');
+    }
+
+    if ($oldversion < 2026101757) {
+        upgrade_plugin_savepoint(true, 2026101757, 'local', 'kbacompany');
+    }
+
+    if ($oldversion < 2026101758) {
+        upgrade_plugin_savepoint(true, 2026101758, 'local', 'kbacompany');
+    }
+
+    if ($oldversion < 2026101759) {
+        upgrade_plugin_savepoint(true, 2026101759, 'local', 'kbacompany');
+    }
+
+    if ($oldversion < 2026101760) {
+        upgrade_plugin_savepoint(true, 2026101760, 'local', 'kbacompany');
+    }
+
+    if ($oldversion < 2026101761) {
+        upgrade_plugin_savepoint(true, 2026101761, 'local', 'kbacompany');
+    }
+
+    if ($oldversion < 2026101762) {
+        upgrade_plugin_savepoint(true, 2026101762, 'local', 'kbacompany');
+    }
+
+    if ($oldversion < 2026101763) {
+        upgrade_plugin_savepoint(true, 2026101763, 'local', 'kbacompany');
+    }
+
+    if ($oldversion < 2026101764) {
+        upgrade_plugin_savepoint(true, 2026101764, 'local', 'kbacompany');
+    }
+
+    if ($oldversion < 2026101765) {
+        upgrade_plugin_savepoint(true, 2026101765, 'local', 'kbacompany');
+    }
+
+    if ($oldversion < 2026101766) {
+        upgrade_plugin_savepoint(true, 2026101766, 'local', 'kbacompany');
+    }
+
+    if ($oldversion < 2026101767) {
+        upgrade_plugin_savepoint(true, 2026101767, 'local', 'kbacompany');
+    }
+
+    if ($oldversion < 2026101768) {
+        upgrade_plugin_savepoint(true, 2026101768, 'local', 'kbacompany');
+    }
+
+    if ($oldversion < 2026101769) {
+        $dbman = $DB->get_manager();
+        $table = new xmldb_table('local_kbacompany_bp_baudit');
+        if (!$dbman->table_exists($table)) {
+            $table->add_field('id', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, XMLDB_SEQUENCE, null);
+            $table->add_field('companyuuid', XMLDB_TYPE_CHAR, '36', null, XMLDB_NOTNULL, null, null);
+            $table->add_field('actoruserid', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, null);
+            $table->add_field('operation', XMLDB_TYPE_CHAR, '16', null, XMLDB_NOTNULL, null, null);
+            $table->add_field('selectedcount', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, '0');
+            $table->add_field('updatedcount', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, '0');
+            $table->add_field('skippedcount', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, '0');
+            $table->add_field('timecreated', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, '0');
+            $table->add_key('primary', XMLDB_KEY_PRIMARY, ['id']);
+            $table->add_index('company_time_ix', XMLDB_INDEX_NOTUNIQUE, ['companyuuid','timecreated']);
+            $dbman->create_table($table);
+        }
+        upgrade_plugin_savepoint(true, 2026101769, 'local', 'kbacompany');
+    }
+
+    if ($oldversion < 2026101770) {
+        $dbman = $DB->get_manager();
+        $table = new xmldb_table('local_kbacompany_bp_baudit');
+        if ($dbman->table_exists($table)) {
+            $field = new xmldb_field('detailspayload', XMLDB_TYPE_TEXT, null, null, null, null, null);
+            if (!$dbman->field_exists($table, $field)) {
+                $dbman->add_field($table, $field);
+            }
+        }
+        upgrade_plugin_savepoint(true, 2026101770, 'local', 'kbacompany');
+    }
+
+    // UI-only audit journal filters; no schema changes.
+    if ($oldversion < 2026101771) {
+        upgrade_plugin_savepoint(true, 2026101771, 'local', 'kbacompany');
+    }
+
+    if ($oldversion < 2026101772) {
+        upgrade_plugin_savepoint(true, 2026101772, 'local', 'kbacompany');
+    }
+
+    // Release safety gate: XMLDB table-name validation (no schema changes).
+    if ($oldversion < 2026101773) {
+        upgrade_plugin_savepoint(true, 2026101773, 'local', 'kbacompany');
+    }
+
+    // RC29 verified bulk-operation regression gate; no schema changes.
+    if ($oldversion < 2026101774) {
+        upgrade_plugin_savepoint(true, 2026101774, 'local', 'kbacompany');
+    }
+
+    // Audit filter usability and validation; no schema changes.
+    if ($oldversion < 2026101775) {
+        upgrade_plugin_savepoint(true, 2026101775, 'local', 'kbacompany');
+    }
+
+    // Audit journal deep links to existing decision records; no schema change.
+    if ($oldversion < 2026101776) {
+        upgrade_plugin_savepoint(true, 2026101776, 'local', 'kbacompany');
+    }
+
+    // Read-only audit decision revision history; no schema changes.
+    if ($oldversion < 2026101777) {
+        upgrade_plugin_savepoint(true, 2026101777, 'local', 'kbacompany');
+    }
+
+    // RC30 preparation: migration sequence release gate, no schema changes.
+    if ($oldversion < 2026101778) {
+        upgrade_plugin_savepoint(true, 2026101778, 'local', 'kbacompany');
+    }
+
+    // Administrator-only diagnostic tool; no database changes.
+    if ($oldversion < 2026101779) {
+        upgrade_plugin_savepoint(true, 2026101779, 'local', 'kbacompany');
+    }
+
+    if ($oldversion < 2026101780) {
+        upgrade_plugin_savepoint(true, 2026101780, 'local', 'kbacompany');
+    }
+
+    // PHP 7.4 compatibility for coordination redirects; no schema changes.
+    if ($oldversion < 2026101781) {
+        upgrade_plugin_savepoint(true, 2026101781, 'local', 'kbacompany');
+    }
+
+    // PHP 8.1 release safety gate; no schema modifications.
+    if ($oldversion < 2026101782) {
+        upgrade_plugin_savepoint(true, 2026101782, 'local', 'kbacompany');
+    }
+
+    if ($oldversion < 2026101783) {
+        upgrade_plugin_savepoint(true, 2026101783, 'local', 'kbacompany');
+    }
+
+    if ($oldversion < 2026101784) {
+        upgrade_plugin_savepoint(true, 2026101784, 'local', 'kbacompany');
+    }
+
+    // UX-only correction links in returned Battle Plan drafts.
+    if ($oldversion < 2026101785) {
+        upgrade_plugin_savepoint(true, 2026101785, 'local', 'kbacompany');
+    }
+
+    // UX-only correction review checklist, no schema changes.
+    if ($oldversion < 2026101786) {
+        upgrade_plugin_savepoint(true, 2026101786, 'local', 'kbacompany');
+    }
+
+    // Per-review correction acknowledgement in existing statepayload; no schema changes.
+    if ($oldversion < 2026101787) {
+        upgrade_plugin_savepoint(true, 2026101787, 'local', 'kbacompany');
+    }
+
+    // Informational correction readiness summary; no schema change.
+    if ($oldversion < 2026101788) {
+        upgrade_plugin_savepoint(true, 2026101788, 'local', 'kbacompany');
+    }
+
+    // Advisory acknowledgement for re-submitted returned plans; no schema changes.
+    if ($oldversion < 2026101789) {
+        upgrade_plugin_savepoint(true, 2026101789, 'local', 'kbacompany');
+    }
+
+    // Reviewer correction overview only; no schema changes.
+    if ($oldversion < 2026101790) {
+        upgrade_plugin_savepoint(true, 2026101790, 'local', 'kbacompany');
+    }
+
+    // Read-only reviewer approval checklist; no schema changes.
+    if ($oldversion < 2026101791) {
+        upgrade_plugin_savepoint(true, 2026101791, 'local', 'kbacompany');
+    }
+
+    // Approval queue is read-only; no schema changes.
+    if ($oldversion < 2026101792) {
+        upgrade_plugin_savepoint(true, 2026101792, 'local', 'kbacompany');
+    }
+
+    // Approval queue quick filters and department rollup. Read-only, no schema changes.
+    if ($oldversion < 2026101793) {
+        upgrade_plugin_savepoint(true, 2026101793, 'local', 'kbacompany');
+    }
+
+    // Approval queue inline preview and safe return navigation; no schema changes.
+    if ($oldversion < 2026101794) {
+        upgrade_plugin_savepoint(true, 2026101794, 'local', 'kbacompany');
+    }
+
+    // Read-only historical approval outcome summary; no schema changes.
+    if ($oldversion < 2026101795) {
+        upgrade_plugin_savepoint(true, 2026101795, 'local', 'kbacompany');
+    }
+
+    // Read-only review-time dashboard. No schema changes.
+    if ($oldversion < 2026101796) {
+        upgrade_plugin_savepoint(true, 2026101796, 'local', 'kbacompany');
+    }
+
+    // Review cycle events are stored append-only in existing Battle Plan statepayload.
+    if ($oldversion < 2026101797) {
+        upgrade_plugin_savepoint(true, 2026101797, 'local', 'kbacompany');
+    }
+
+    // Read-only review-cycle analytics derived from recorded plan events; no schema changes.
+    if ($oldversion < 2026101798) {
+        upgrade_plugin_savepoint(true, 2026101798, 'local', 'kbacompany');
+    }
+
+    // Pure event-evidenced review-stage durations; no XMLDB migration.
+    if ($oldversion < 2026101799) {
+        upgrade_plugin_savepoint(true, 2026101799, 'local', 'kbacompany');
+    }
+
+    // RC29/1800 unified manager dashboard is read-only, no XMLDB migration.
+    if ($oldversion < 2026101800) {
+        upgrade_plugin_savepoint(true, 2026101800, 'local', 'kbacompany');
+    }
+
+    // RC29/1801 consistent Battle Plan object navigation; no database changes.
+    if ($oldversion < 2026101801) {
+        upgrade_plugin_savepoint(true, 2026101801, 'local', 'kbacompany');
+    }
+
+    // RC29/1802 read-only management-cycle QA and explicit protocol actor ACL; no XMLDB changes.
+    if ($oldversion < 2026101802) {
+        upgrade_plugin_savepoint(true, 2026101802, 'local', 'kbacompany');
+    }
+
+    // RC29/1803 user preferences for per-company start tools; core Moodle preference API.
+    if ($oldversion < 2026101803) {
+        set_config('bms_main_tool_introduced', time(), 'local_kbacompany');
+        upgrade_plugin_savepoint(true, 2026101803, 'local', 'kbacompany');
+    }
+
+    // RC29/1804 layout preferences reuse Moodle user_preferences; no XMLDB change.
+    if ($oldversion < 2026101804) {
+        upgrade_plugin_savepoint(true, 2026101804, 'local', 'kbacompany');
+    }
+
+    // RC29/1805 remove duplicate main-tool shortcut from topbar; presentation-only upgrade.
+    if ($oldversion < 2026101805) {
+        upgrade_plugin_savepoint(true, 2026101805, 'local', 'kbacompany');
+    }
+
+    // RC29/1806 visibility-aware read-model loading and mobile workspace styles; no schema changes.
+    if ($oldversion < 2026101806) {
+        upgrade_plugin_savepoint(true, 2026101806, 'local', 'kbacompany');
+    }
+
+    // RC29/1807: unify action button styling on preferences and workspace; no schema change.
+    if ($oldversion < 2026101807) {
+        upgrade_plugin_savepoint(true, 2026101807, 'local', 'kbacompany');
+    }
+
+    // RC29/1808: compact, action-first workspace presentation. No XMLDB changes.
+    if ($oldversion < 2026101808) {
+        upgrade_plugin_savepoint(true, 2026101808, 'local', 'kbacompany');
+    }
+
+    // RC29/1809: actor-scoped read-only action queue, no XMLDB changes.
+    if ($oldversion < 2026101809) {
+        upgrade_plugin_savepoint(true, 2026101809, 'local', 'kbacompany');
+    }
+
+    // RC29/1810: capability-scoped workspace views; presentation-only upgrade.
+    if ($oldversion < 2026101810) {
+        upgrade_plugin_savepoint(true, 2026101810, 'local', 'kbacompany');
+    }
+
+    // RC29/1811: RC30 candidate quality gate, reciprocal company isolation
+    // diagnostics and same-origin management links. No XMLDB migration.
+    if ($oldversion < 2026101811) {
+        upgrade_plugin_savepoint(true, 2026101811, 'local', 'kbacompany');
+    }
+
+    // RC29/1814: Corporate implementation tasks as a read-only verified source. No schema migration.
+    if ($oldversion < 2026101814) {
+        upgrade_plugin_savepoint(true, 2026101814, 'local', 'kbacompany');
+    }
+
+
+    // RC29/1815: Corporate implementation task deep-link chooser; no schema change.
+    if ($oldversion < 2026101815) {
+        upgrade_plugin_savepoint(true, 2026101815, 'local', 'kbacompany');
+    }
+
+    // RC29/1816: explicit Corporate paid-program to existing BMS Project links only.
+    if ($oldversion < 2026101816) {
+        $table = new xmldb_table('local_kbacompany_implproj');
+        if (!$dbman->table_exists($table)) {
+            $table->add_field('id', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, XMLDB_SEQUENCE, null);
+            $table->add_field('companyuuid', XMLDB_TYPE_CHAR, '36', null, XMLDB_NOTNULL, null, null);
+            $table->add_field('corporatecompanyid', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, null);
+            $table->add_field('programid', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, null);
+            $table->add_field('projectuuid', XMLDB_TYPE_CHAR, '36', null, XMLDB_NOTNULL, null, null);
+            $table->add_field('createdby', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, null);
+            $table->add_field('timecreated', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, null);
+            $table->add_key('primary', XMLDB_KEY_PRIMARY, ['id']);
+            $table->add_index('program_uix', XMLDB_INDEX_UNIQUE, ['companyuuid', 'programid']);
+            $table->add_index('project_uix', XMLDB_INDEX_UNIQUE, ['companyuuid', 'projectuuid']);
+            $dbman->create_table($table);
+        }
+        upgrade_plugin_savepoint(true, 2026101816, 'local', 'kbacompany');
+    }
+
+    // RC29/1817: read-only Corporate section summaries for linked BMS Projects. No XMLDB changes.
+    if ($oldversion < 2026101817) {
+        upgrade_plugin_savepoint(true, 2026101817, 'local', 'kbacompany');
+    }
+
+    // RC29/1818: read-only weekly Corporate to Battle Plan projection; no XMLDB changes.
+    if ($oldversion < 2026101818) {
+        upgrade_plugin_savepoint(true, 2026101818, 'local', 'kbacompany');
+    }
+
+    // RC29/1819: Corporate evidence decision status read-only overlay; no XMLDB changes.
+    if ($oldversion < 2026101819) {
+        upgrade_plugin_savepoint(true, 2026101819, 'local', 'kbacompany');
+    }
+
+    // RC29/1820: read-only manager implementation cockpit; curator assignment stays in Corporate.
+    if ($oldversion < 2026101820) {
+        upgrade_plugin_savepoint(true, 2026101820, 'local', 'kbacompany');
+    }
+
+    // RC29/1821-1823: communication presentation hotfixes; no schema changes.
+    if ($oldversion < 2026101821) {
+        upgrade_plugin_savepoint(true, 2026101821, 'local', 'kbacompany');
+    }
+    if ($oldversion < 2026101822) {
+        upgrade_plugin_savepoint(true, 2026101822, 'local', 'kbacompany');
+    }
+    if ($oldversion < 2026101823) {
+        upgrade_plugin_savepoint(true, 2026101823, 'local', 'kbacompany');
+    }
+
+    // RC29/1824: bounded read-only live updates of Communication Center; no XMLDB changes.
+    if ($oldversion < 2026101824) {
+        upgrade_plugin_savepoint(true, 2026101824, 'local', 'kbacompany');
+    }
+
+    // RC29/1825: notification UI and lower-cost live polling; no XMLDB changes.
+    if ($oldversion < 2026101825) {
+        upgrade_plugin_savepoint(true, 2026101825, 'local', 'kbacompany');
+    }
+
+    // RC29/1828: private audit for author-only edits/withdrawals of communication messages.
+    if ($oldversion < 2026101828) {
+        $table = new xmldb_table('local_kbacompany_commrev');
+        if (!$dbman->table_exists($table)) {
+            $table->add_field('id', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, XMLDB_SEQUENCE, null);
+            $table->add_field('companyuuid', XMLDB_TYPE_CHAR, '36', null, XMLDB_NOTNULL, null, null);
+            $table->add_field('messageuuid', XMLDB_TYPE_CHAR, '36', null, XMLDB_NOTNULL, null, null);
+            $table->add_field('actorid', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, 0);
+            $table->add_field('action', XMLDB_TYPE_CHAR, '16', null, XMLDB_NOTNULL, null, null);
+            $table->add_field('oldbody', XMLDB_TYPE_TEXT, null, null, XMLDB_NOTNULL, null, null);
+            $table->add_field('timecreated', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, 0);
+            $table->add_key('primary', XMLDB_KEY_PRIMARY, ['id']);
+            $table->add_index('message_ix', XMLDB_INDEX_NOTUNIQUE, ['companyuuid', 'messageuuid']);
+            $table->add_index('actor_ix', XMLDB_INDEX_NOTUNIQUE, ['actorid']);
+            $dbman->create_table($table);
+        }
+        upgrade_plugin_savepoint(true, 2026101828, 'local', 'kbacompany');
+    }
+
+    // 1835: task bundle templates and idempotent launch receipts. No changes to existing tasks.
+    if ($oldversion < 2026101835) {
+        $table = new xmldb_table('local_kbacompany_taskbundle');
+        if (!$dbman->table_exists($table)) {
+            $table->add_field('id', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, XMLDB_SEQUENCE, null);
+            $table->add_field('companyuuid', XMLDB_TYPE_CHAR, '36', null, XMLDB_NOTNULL, null, null);
+            $table->add_field('uuid', XMLDB_TYPE_CHAR, '36', null, XMLDB_NOTNULL, null, null);
+            $table->add_field('title', XMLDB_TYPE_CHAR, '255', null, XMLDB_NOTNULL, null, null);
+            $table->add_field('payload', XMLDB_TYPE_TEXT, null, null, XMLDB_NOTNULL, null, null);
+            $table->add_field('status', XMLDB_TYPE_CHAR, '12', null, XMLDB_NOTNULL, null, 'active');
+            $table->add_field('createdby', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, '0');
+            $table->add_field('timecreated', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, '0');
+            $table->add_field('timemodified', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, '0');
+            $table->add_key('primary', XMLDB_KEY_PRIMARY, ['id']);
+            $table->add_index('uuid_uix', XMLDB_INDEX_UNIQUE, ['uuid']);
+            $table->add_index('company_status_ix', XMLDB_INDEX_NOTUNIQUE, ['companyuuid', 'status']);
+            $dbman->create_table($table);
+        }
+        $table = new xmldb_table('local_kbacompany_taskbrun');
+        if (!$dbman->table_exists($table)) {
+            $table->add_field('id', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, XMLDB_SEQUENCE, null);
+            $table->add_field('companyuuid', XMLDB_TYPE_CHAR, '36', null, XMLDB_NOTNULL, null, null);
+            $table->add_field('requestkey', XMLDB_TYPE_CHAR, '32', null, XMLDB_NOTNULL, null, null);
+            $table->add_field('fingerprint', XMLDB_TYPE_CHAR, '64', null, XMLDB_NOTNULL, null, null);
+            $table->add_field('templateuuid', XMLDB_TYPE_CHAR, '36', null, XMLDB_NOTNULL, null, null);
+            $table->add_field('parentuuid', XMLDB_TYPE_CHAR, '36', null, XMLDB_NOTNULL, null, null);
+            $table->add_field('createdby', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, '0');
+            $table->add_field('timecreated', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, '0');
+            $table->add_key('primary', XMLDB_KEY_PRIMARY, ['id']);
+            $table->add_index('company_request_uix', XMLDB_INDEX_UNIQUE, ['companyuuid', 'requestkey']);
+            $table->add_index('template_ix', XMLDB_INDEX_NOTUNIQUE, ['companyuuid', 'templateuuid']);
+            $dbman->create_table($table);
+        }
+        upgrade_plugin_savepoint(true, 2026101835, 'local', 'kbacompany');
+    }
+
+    // 1836: permission-scoped task execution analytics. Read-only, no schema change.
+    if ($oldversion < 2026101836) {
+        upgrade_plugin_savepoint(true, 2026101836, 'local', 'kbacompany');
+    }
+
+    // 1837: task summary drill-down consistency and subtask live lookup; no schema change.
+    if ($oldversion < 2026101837) {
+        upgrade_plugin_savepoint(true, 2026101837, 'local', 'kbacompany');
+    }
+
+    // 1838: correct html_writer attributes for Task Center active filters; no schema change.
+    if ($oldversion < 2026101838) {
+        upgrade_plugin_savepoint(true, 2026101838, 'local', 'kbacompany');
+    }
+
+    // 1839: align task deadlines and seven-day analytics with the user's Moodle calendar timezone. No schema change.
+    if ($oldversion < 2026101839) {
+        upgrade_plugin_savepoint(true, 2026101839, 'local', 'kbacompany');
+    }
+
+    // build1863: read-path indexes for task status, latest task event and legacy Battle Plan links.
+    // Idempotent so an interrupted Moodle upgrade can be resumed safely. No data rewrites.
+    if ($oldversion < 2026101863) {
+        $indexspecs = [
+            ['local_kbacompany_task', 'status_due_ix', ['companyuuid', 'status', 'duedate']],
+            ['local_kbacompany_tasklog', 'lastlog_ix', ['companyuuid', 'taskuuid', 'id']],
+            ['local_kbacompany_bplanitem', 'legacy_task_ix', ['companyuuid', 'provider', 'taskuuid']],
+            ['local_kbacompany_bplanitem', 'provider_ref_ix', ['companyuuid', 'provider', 'externalid']],
+        ];
+        foreach ($indexspecs as [$tablename, $indexname, $fields]) {
+            $table = new xmldb_table($tablename);
+            $index = new xmldb_index($indexname, XMLDB_INDEX_NOTUNIQUE, $fields);
+            if (!$dbman->index_exists($table, $index)) {
+                $dbman->add_index($table, $index);
+            }
+        }
+        upgrade_plugin_savepoint(true, 2026101863, 'local', 'kbacompany');
+    }
+
+    // build1864: acceptance diagnostics and legacy link duplicate check; no schema change.
+    if ($oldversion < 2026101864) {
+        upgrade_plugin_savepoint(true, 2026101864, 'local', 'kbacompany');
+    }
+
+    // build1865: make acceptance detect the actual PHP/MySQL server versions.
+    // Technical metadata only; no DDL or changes to business data.
+    if ($oldversion < 2026101865) {
+        upgrade_plugin_savepoint(true, 2026101865, 'local', 'kbacompany');
+    }
+
+    // build1866: machine-readable diagnostic failures and safer RC30 CLI evidence.
+    // No DDL, no data changes; keep release checkpoint aligned with version.php.
+    if ($oldversion < 2026101866) {
+        upgrade_plugin_savepoint(true, 2026101866, 'local', 'kbacompany');
+    }
+
+    // build1867: compare RC30 acceptance snapshots offline; no DDL or business-data changes.
+    if ($oldversion < 2026101867) {
+        upgrade_plugin_savepoint(true, 2026101867, 'local', 'kbacompany');
+    }
+
+    // build1868: fail-closed validation of RC30 comparison evidence; no schema or data change.
+    if ($oldversion < 2026101868) {
+        upgrade_plugin_savepoint(true, 2026101868, 'local', 'kbacompany');
+    }
+
+    // build1869: review task-population changes in RC30 evidence comparisons.
+    // Diagnostic-only improvement; no DDL and no business-data migration.
+    if ($oldversion < 2026101869) {
+        upgrade_plugin_savepoint(true, 2026101869, 'local', 'kbacompany');
+    }
+
+    // build1870: snapshot provenance and chronological checks for RC30 comparison.
+    // No schema or business-data changes.
+    if ($oldversion < 2026101870) {
+        upgrade_plugin_savepoint(true, 2026101870, 'local', 'kbacompany');
+    }
+
+    // build1871: standalone offline acceptance-report comparison (read-only).
+    // No schema or business-data changes; keep the Moodle version checkpoint aligned.
+    if ($oldversion < 2026101871) {
+        upgrade_plugin_savepoint(true, 2026101871, 'local', 'kbacompany');
+    }
+
+    // build1872: Dev AI source governance & deterministic packaging.
+    // No DDL or business data changes.
+    if ($oldversion < 2026101872) {
+        upgrade_plugin_savepoint(true, 2026101872, 'local', 'kbacompany');
+    }
+
+    // build1873: offline BMS Dev AI task workflow and independent review contracts.
+    // Only a version checkpoint; no schema, ACL or business-data migrations.
+    if ($oldversion < 2026101873) {
+        upgrade_plugin_savepoint(true, 2026101873, 'local', 'kbacompany');
+    }
+
+    // build1874: production archive hygiene and GitHub candidate delivery.
+    // Version checkpoint only; no schema, ACL or business-data changes.
+    if ($oldversion < 2026101874) {
+        upgrade_plugin_savepoint(true, 2026101874, 'local', 'kbacompany');
+    }
+
+    // build1875: avoid locale-dependent date strings in current-week BMS screens.
+    // No DB schema or business-data migration.
+    if ($oldversion < 2026101875) {
+        upgrade_plugin_savepoint(true, 2026101875, 'local', 'kbacompany');
+    }
+
+    // build1876: business-date ISO invariants across task, metric, calendar and staff forms.
+    // Version-only checkpoint; no schema, ACL or business-data changes.
+    if ($oldversion < 2026101876) {
+        upgrade_plugin_savepoint(true, 2026101876, 'local', 'kbacompany');
+    }
+
+    // build1877: GitHub/VDS import governance and automated CI verification.
+    // Version-only checkpoint; no schema, permission or business-data change.
+    if ($oldversion < 2026101877) {
+        upgrade_plugin_savepoint(true, 2026101877, 'local', 'kbacompany');
+    }
+
+    // build1878: reviewable GitHub PR candidate artifacts and workflow policy gate.
+    // Version checkpoint only; no schema, ACL or business-data migrations.
+    if ($oldversion < 2026101878) {
+        upgrade_plugin_savepoint(true, 2026101878, 'local', 'kbacompany');
+    }
+
+    // build1879: enforce verified Git source/install artifact provenance.
+    // Version checkpoint only; no schema or business-data changes.
+    if ($oldversion < 2026101879) {
+        upgrade_plugin_savepoint(true, 2026101879, 'local', 'kbacompany');
+    }
+
     return true;
 }

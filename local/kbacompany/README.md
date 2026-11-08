@@ -1,3 +1,13 @@
+# BMS24 / local_kbacompany
+
+Technical documentation is packaged with the plugin:
+
+- `docs/MASTER_INDEX.md` — technical documentation index
+- `release/RELEASE_REGISTER_LOCAL.md` — packaged release history
+- `release/CURRENT_RELEASE.json` — current build manifest
+
+---
+
 # local_kbacompany 0.9.0.12 build2026092508
 ## Должности — безопасное удаление из действующих и восстановление
 

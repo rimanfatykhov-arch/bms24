@@ -45,7 +45,7 @@ final class task_service_test extends \advanced_testcase {
     public function test_contract_declares_canonical_task_center(): void {
         $contract = task_service::contract();
         $this->assertSame('bms_task_center', $contract['contract']);
-        $this->assertSame('0.5.6', $contract['version']);
+        $this->assertSame(task_service::CONTRACT_VERSION, $contract['version']);
         $this->assertContains('task_is_canonical_execution_object', $contract['rules']);
         $this->assertContains('battle_plan_references_task_instead_of_copying_it', $contract['rules']);
         $this->assertSame(['change', 'run', 'operate', 'develop', 'unplanned'], $contract['streams']);

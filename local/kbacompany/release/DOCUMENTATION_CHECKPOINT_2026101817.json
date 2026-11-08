@@ -1,0 +1,12 @@
+{
+    "component": "local_kbacompany",
+    "release": "1.1.0-rc29",
+    "build": 2026101817,
+    "summary": "Corporate implementation section progress for linked published BMS project",
+    "code_status": "Code ready",
+    "live_acceptance": "NOT RUN (server acceptance required)",
+    "release_notes": "RELEASE_NOTES_RC29_CORPORATE_IMPL_STAGES_2026101817.md",
+    "register": "RELEASE_REGISTER_LOCAL.md",
+    "generated_at": "2026-10-25T20:35:07+00:00",
+    "guard": "Packaging must fail when cli/release_docs_checkpoint.php --check exits non-zero."
+}

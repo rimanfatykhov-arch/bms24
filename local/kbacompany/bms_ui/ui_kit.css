@@ -34,6 +34,9 @@
 .bms24-app .bms24-ui-btn--primary:hover,
 .bms24-app .bms24-content .btn.btn-primary:hover,
 .bms24-app .bms24-content .btn.btn-success:hover {background:var(--bms24-color-primary-hover);border-color:var(--bms24-color-primary-hover);color:#fff;}
+/* RC29/1807: keep primary label legible in all action states, including keyboard interaction. */
+.bms24-app .bms24-ui-btn--primary:focus-visible {color:#fff;}
+.bms24-app .bms24-ui-btn--primary:disabled {color:#fff;}
 .bms24-app .bms24-ui-btn--quiet {background:var(--bms24-surface-mint);color:var(--bms24-color-primary);border-color:#C6E6D8;}
 .bms24-app .bms24-ui-btn--quiet:hover {background:#DCF1E7;}
 .bms24-app .bms24-ui-btn--danger,
@@ -64,10 +67,10 @@
 .bms24-app .bms24-ui-help {font-size:12px;line-height:1.4;color:var(--bms24-color-text-muted);}
 .bms24-app .bms24-ui-error {font-size:12px;color:#A82929;}
 .bms24-app .bms24-ui-input[aria-invalid="true"] {border-color:#A82929;}
-.bms24-app .bms24-ui-filterbar,
-.bms24-app .bms24-content .bms-tui .bms-tui-filters {display:flex;gap:12px;flex-wrap:wrap;align-items:end;padding:16px;background:#fff;border:1px solid var(--bms24-border);border-radius:12px;}
-.bms24-app .bms24-ui-filterbar .bms24-ui-field {flex:1 1 180px;}
+.bms24-app .bms24-ui-filterbar {display:grid;gap:12px;margin:16px 0;padding:14px 16px;background:#fff;border:1px solid var(--bms24-border);border-radius:12px;}
+.bms24-app .bms24-ui-fieldgrid {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px 18px;}
 .bms24-app .bms24-ui-filter-actions {display:flex;gap:8px;align-items:center;flex-wrap:wrap;}
+.bms24-app .bms24-content .bms-tui .bms-tui-filters {display:flex;gap:12px;flex-wrap:wrap;align-items:end;padding:16px;background:#fff;border:1px solid var(--bms24-border);border-radius:12px;}
 .bms24-app .bms24-ui-table-wrap,
 .bms24-app .bms24-content .bms-tui .bms-tui-table-wrap {max-width:100%;overflow-x:auto;background:#fff;border:1px solid var(--bms24-border);border-radius:12px;}
 .bms24-app .bms24-ui-table,
@@ -116,7 +119,7 @@
 @media(max-width:720px) {
   .bms24-app .bms24-ui-grid {grid-template-columns:minmax(0,1fr);}
   .bms24-app .bms24-ui-table {min-width:640px;}
-  .bms24-app .bms24-ui-filterbar {align-items:stretch;}
+  .bms24-app .bms24-ui-fieldgrid {grid-template-columns:1fr;}
   .bms24-app .bms24-ui-filter-actions {width:100%;}
   .bms24-app .bms24-ui-filter-actions > * {flex:1 1 120px;}
   .bms24-app .bms24-content .bms-tui .bms-tui-grid {grid-template-columns:minmax(0,1fr);}

@@ -231,7 +231,7 @@ class staffing_service {
             'branchuuid' => (string)$source->branchuuid,
             'name' => get_string('staffplanversiondefault', 'local_kbacompany', userdate(time(), '%d.%m.%Y')),
             'currency' => (string)$source->currency,
-            'effectivefrom' => userdate(time(), '%Y-%m-%d'),
+            'effectivefrom' => business_date_service::day(time()),
             'copycurrent' => 1,
         ]);
     }

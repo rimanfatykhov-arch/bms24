@@ -1,0 +1,8 @@
+CALENDAR_HARDENING_1.1.0_BETA2.md
+CHANGELOG.md
+QA_REPORT_1.1.0-beta2.md
+RELEASE_MANIFEST_1.1.0-beta2.md
+RELEASE_NOTES_1.1.0-beta2.md
+classes/local/calendar_notification_service.php
+classes/local/calendar_workspace_service.php
+version.php

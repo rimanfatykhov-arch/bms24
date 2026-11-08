@@ -10,11 +10,144 @@ defined('MOODLE_INTERNAL') || die();
  * This service only renders a consistent record/workspace interaction layer.
  */
 class bms_workspace_ux_service {
-    public const CONTRACT_VERSION = '0.1';
+    public const CONTRACT_VERSION = '0.2';
+
+
+    /**
+     * Contextual quick navigation selected from the current App Shell route.
+     * This is presentation-only: it never grants access or changes lifecycle state.
+     */
+    public static function contextual_nav(string $companyuuid, string $routeactive, string $week = ''): string {
+        $workspace = [
+            'workspace' => 'workspace',
+            'calendar' => 'calendar',
+            'tasks' => 'tasks',
+            'recurring' => 'recurring',
+            'communications' => 'communications',
+        ];
+        if (isset($workspace[$routeactive])) {
+            return self::workspace_nav($companyuuid, $workspace[$routeactive]);
+        }
+
+        // Battle Plan is globally reachable from the Workspace sidebar, but its
+        // local work context is Management > Planning. Keep that cross-link explicit.
+        if ($routeactive === 'battleplan') {
+            return self::management_nav($companyuuid, 'battleplan', $week);
+        }
+
+        $architecture = [
+            'architecturecenter' => 'architecturecenter',
+            'owner' => 'owner',
+            'philosophy' => 'philosophy',
+            'market' => 'market',
+            'businessmodel' => 'businessmodel',
+            'finance' => 'finance',
+            'financialmodel' => 'finance',
+            'strategy' => 'strategy',
+            'adminscale' => 'adminscale',
+        ];
+        if (isset($architecture[$routeactive])) {
+            return self::architecture_nav($companyuuid, $architecture[$routeactive]);
+        }
+
+        $architectureops = [
+            'organization' => 'organization',
+            'positions' => 'positions',
+            'processes' => 'processes',
+            'functions' => 'functions',
+            'roles' => 'roles',
+            'flows' => 'flows',
+            'products' => 'products',
+        ];
+        if (isset($architectureops[$routeactive])) {
+            return self::architecture_operations_nav($companyuuid, $architectureops[$routeactive]);
+        }
+
+        $people = [
+            'people' => 'overview',
+            'employees' => 'employees',
+            'coverage' => 'coverage',
+            'culture' => 'culture',
+            'learning' => 'learning',
+        ];
+        if (isset($people[$routeactive])) {
+            return self::people_nav($companyuuid, $people[$routeactive]);
+        }
+
+        $management = [
+            'management' => 'overview',
+            'managementcycles' => 'cycles',
+            'informationcenter' => 'informationcenter',
+        ];
+        if (isset($management[$routeactive])) {
+            return self::management_nav($companyuuid, $management[$routeactive], $week);
+        }
+
+        $governance = [
+            'qualitycenter' => 'quality',
+            'documents' => 'documents',
+            'policies' => 'policies',
+            'deviations' => 'deviations',
+        ];
+        if (isset($governance[$routeactive])) {
+            return self::governance_nav($companyuuid, $governance[$routeactive]);
+        }
+
+        return '';
+    }
+
+    /** Fast access across the user's daily operational workspace. */
+    public static function workspace_nav(string $companyuuid, string $active): string {
+        $items = [
+            'workspace' => ['bmsworkspace_nav', '/local/kbacompany/bms_workspace.php', []],
+            'calendar' => ['bmscalendar_title', '/local/kbacompany/calendar.php', []],
+            'tasks' => ['taskcenter_title', '/local/kbacompany/tasks.php', ['scope' => 'my']],
+            'recurring' => ['recurringtask_title', '/local/kbacompany/recurring_tasks.php', ['view' => 'list']],
+            'battleplan' => ['battleplan_title', '/local/kbacompany/battle_plan.php', []],
+            'communications' => ['communicationcenter_title', '/local/kbacompany/communication_center.php', []],
+        ];
+        $links = [];
+        foreach ($items as $key => $item) {
+            $classes = 'bms-workspace-subnav-link' . ($key === $active ? ' is-active' : '');
+            $params = array_merge(['uuid' => $companyuuid], $item[2]);
+            $links[] = \html_writer::link(new \moodle_url($item[1], $params),
+                get_string($item[0], 'local_kbacompany'), ['class' => $classes,
+                    'aria-current' => $key === $active ? 'page' : null]);
+        }
+        return \html_writer::tag('nav', implode('', $links), [
+            'class' => 'bms-workspace-subnav bms-context-quicknav',
+            'aria-label' => get_string('bmsquicknav_workspace_aria', 'local_kbacompany'),
+        ]);
+    }
+
+    /** Quick navigation inside the structural/operating architecture contour. */
+    public static function architecture_operations_nav(string $companyuuid, string $active): string {
+        $items = [
+            'organization' => ['organizationtitle', '/local/kbacompany/organization_hub.php'],
+            'positions' => ['positiondirectory', '/local/kbacompany/positions.php'],
+            'processes' => ['company_processes', '/local/kbacompany/processes.php'],
+            'functions' => ['company_functions', '/local/kbacompany/functions.php'],
+            'roles' => ['openbusinessroles', '/local/kbacompany/business_roles.php'],
+            'flows' => ['flow_title', '/local/kbacompany/flows.php'],
+            'products' => ['productregistry', '/local/kbacompany/products.php'],
+        ];
+        $links = [];
+        foreach ($items as $key => $item) {
+            $classes = 'bms-workspace-subnav-link' . ($key === $active ? ' is-active' : '');
+            $links[] = \html_writer::link(new \moodle_url($item[1], ['uuid' => $companyuuid]),
+                get_string($item[0], 'local_kbacompany'), ['class' => $classes,
+                    'aria-current' => $key === $active ? 'page' : null]);
+        }
+        return \html_writer::tag('nav', implode('', $links), [
+            'class' => 'bms-workspace-subnav bms-context-quicknav',
+            'aria-label' => get_string('bmsquicknav_archops_aria', 'local_kbacompany'),
+        ]);
+    }
 
     /** Architecture-local navigation inspired by focused ERP module navigation. */
     public static function architecture_nav(string $companyuuid, string $active): string {
         $items = [
+            'architecturecenter' => ['bmsarchitecture_title', '/local/kbacompany/bms_architecture.php'],
             'owner' => ['ownermodel_title', '/local/kbacompany/owner.php'],
             'philosophy' => ['companycontext_philosophy', '/local/kbacompany/philosophy.php'],
             'market' => ['companycontext_market', '/local/kbacompany/market_assessment.php'],
@@ -31,7 +164,7 @@ class bms_workspace_ux_service {
                     'aria-current' => $key === $active ? 'page' : null]);
         }
         return \html_writer::tag('nav', implode('', $links), [
-            'class' => 'bms-workspace-subnav',
+            'class' => 'bms-workspace-subnav bms-context-quicknav',
             'aria-label' => get_string('bmsux_architecture_nav', 'local_kbacompany'),
         ]);
     }
@@ -42,6 +175,7 @@ class bms_workspace_ux_service {
             'overview' => ['people_title', '/local/kbacompany/people.php'],
             'employees' => ['people_open_employees', '/local/kbacompany/employees.php'],
             'positions' => ['people_open_positions', '/local/kbacompany/positions.php'],
+            'coverage' => ['coverage_title', '/local/kbacompany/position_coverage.php'],
             'culture' => ['culture_title', '/local/kbacompany/culture.php'],
             'transfers' => ['functiontransfer_title', '/local/kbacompany/function_transfers.php'],
             'learning' => ['people_open_learning', '/local/kbacompany/learning.php'],
@@ -55,7 +189,7 @@ class bms_workspace_ux_service {
                     'aria-current' => $key === $active ? 'page' : null]);
         }
         return \html_writer::tag('nav', implode('', $links), [
-            'class' => 'bms-workspace-subnav',
+            'class' => 'bms-workspace-subnav bms-context-quicknav',
             'aria-label' => get_string('people_nav_aria', 'local_kbacompany'),
         ]);
     }
@@ -73,7 +207,7 @@ class bms_workspace_ux_service {
             $out .= self::navigation_list($model['items'], 'bms-management-nav-items');
         }
         return \html_writer::tag('nav', $out, [
-            'class' => 'bms-management-nav',
+            'class' => 'bms-management-nav bms-context-quicknav',
             'aria-label' => get_string('management_nav_aria', 'local_kbacompany'),
         ]);
     }
@@ -94,10 +228,13 @@ class bms_workspace_ux_service {
         // key => [label, path, params, requires management access, supports week].
         $catalogue = [
             'overview' => ['bmsnav_overview', 'management.php', [], true, true],
+            'coordweek' => ['battleplan_weekcoord_title', 'battle_plan_week_coordination.php', [], true, true],
+            'decisionsregistry' => ['battleplan_registry_title', 'battle_plan_decision_registry.php', [], true, false],
             'week' => ['bmsnav_week', 'battle_plan_overview.php', [], false, true],
             'battleplan' => ['battleplan_title', 'battle_plan.php', [], false, true],
             'cycles' => ['mcycle_title', 'management_cycles.php', [], true, false],
             'indicators' => ['bmsworkspace_indicators', 'indicators.php', [], false, false],
+            'informationcenter' => ['productinfocentertitle', 'information_center.php', [], false, false],
             'exceptions' => ['indicator_tab_exceptions', 'indicators.php', ['tab' => 'exceptions'], false, false],
             'loop' => ['management_loop_title', 'management_loop.php', [], true, true],
             'review' => ['management_review_title', 'management_review.php', [], true, true],
@@ -108,8 +245,8 @@ class bms_workspace_ux_service {
         ];
         $definitions = [
             'overview' => ['bmsnav_overview', ['overview']],
-            'planning' => ['bmsnav_planning', ['week', 'battleplan', 'cycles']],
-            'indicators' => ['bmsnav_indicators', ['indicators', 'exceptions']],
+            'planning' => ['bmsnav_planning', ['coordweek', 'decisionsregistry', 'week', 'battleplan', 'cycles']],
+            'indicators' => ['bmsnav_indicators', ['informationcenter', 'indicators', 'exceptions']],
             'decisions' => ['bmsnav_decisions', ['loop', 'review', 'history', 'patterns']],
             'workspaces' => ['bmsnav_workspaces', ['ownerws', 'curator']],
         ];
@@ -175,6 +312,7 @@ class bms_workspace_ux_service {
     /** Local navigation for the governance/document-quality contour. */
     public static function governance_nav(string $companyuuid, string $active): string {
         $items = [
+            'quality' => ['qc20_title', '/local/kbacompany/quality_center.php'],
             'documents' => ['bmsnav_documents', '/local/kbacompany/documents.php'],
             'policies' => ['bmsnav_policies', '/local/kbacompany/policies.php'],
             'deviations' => ['bmsnav_deviations', '/local/kbacompany/deviations.php'],
@@ -187,7 +325,7 @@ class bms_workspace_ux_service {
                     'aria-current' => $key === $active ? 'page' : null]);
         }
         return \html_writer::tag('nav', implode('', $links), [
-            'class' => 'bms-workspace-subnav bms-governance-subnav',
+            'class' => 'bms-workspace-subnav bms-governance-subnav bms-context-quicknav',
             'aria-label' => get_string('management_nav_aria', 'local_kbacompany'),
         ]);
     }

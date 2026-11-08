@@ -1,0 +1,12 @@
+{
+    "component": "local_kbacompany",
+    "release": "1.1.0-rc29",
+    "build": 2026101700,
+    "summary": "Canonical BMS24 navigation standard + previous-week management-task follow-up in Weekly Management Coordination.",
+    "code_status": "Code ready",
+    "live_acceptance": "NOT RUN",
+    "release_notes": "RELEASE_NOTES_RC29_NAV_STANDARD_AND_WEEK_FOLLOWUP_2026101700.md",
+    "register": "RELEASE_REGISTER_LOCAL.md",
+    "generated_at": "2026-10-19T18:52:35+00:00",
+    "guard": "Packaging must fail when cli/release_docs_checkpoint.php --check exits non-zero."
+}

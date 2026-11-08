@@ -1,106 +1,13 @@
 name: Prepare BMS24 Release
-
 on:
   workflow_dispatch:
-    inputs:
-      summary:
-        description: "Краткое описание релиза"
-        required: true
-        type: string
-
 permissions:
-  contents: write
-  pull-requests: write
-
+  contents: read
 jobs:
-  prepare-release:
+  release-hold:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
     steps:
-      - name: Checkout main
-        uses: actions/checkout@v4
-        with:
-          ref: main
-          fetch-depth: 0
-
-      - name: Set up PHP 7.4
-        uses: shivammathur/setup-php@v2
-        with:
-          php-version: "7.4"
-          coverage: none
-          tools: none
-
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.13"
-
-      - name: Prepare release metadata
-        id: prep
-        shell: bash
-        env:
-          RELEASE_SUMMARY: ${{ inputs.summary }}
+      - name: Hold legacy release preparation
         run: |
-          set -euo pipefail
-          python scripts/prepare_release.py --summary "$RELEASE_SUMMARY" | tee /tmp/release-meta.txt
-          grep '^new_build=' /tmp/release-meta.txt >> "$GITHUB_OUTPUT"
-          grep '^release=' /tmp/release-meta.txt >> "$GITHUB_OUTPUT"
-
-      - name: Run static QA
-        run: python scripts/qa_local.py
-
-      - name: Check diff
-        run: git diff --check
-
-      - name: Create release branch and commit
-        id: branch
-        shell: bash
-        env:
-          BUILD: ${{ steps.prep.outputs.new_build }}
-          RELEASE: ${{ steps.prep.outputs.release }}
-        run: |
-          set -euo pipefail
-          SAFE_RELEASE=$(echo "$RELEASE" | tr '/ ' '--')
-          BRANCH="release/${SAFE_RELEASE}-build${BUILD}"
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git checkout -B "$BRANCH"
-          git add local/kbacompany/version.php local/kbacompany/db/upgrade.php local/kbacompany/RELEASE_NOTES_*_BUILD_${BUILD}.md
-          git commit -m "Prepare ${RELEASE} build${BUILD} release"
-          git fetch origin "$BRANCH:refs/remotes/origin/$BRANCH" || true
-          git push --force-with-lease origin "$BRANCH"
-          echo "branch=$BRANCH" >> "$GITHUB_OUTPUT"
-
-      - name: Create pull request
-        env:
-          GH_TOKEN: ${{ github.token }}
-          BRANCH: ${{ steps.branch.outputs.branch }}
-          BUILD: ${{ steps.prep.outputs.new_build }}
-          RELEASE: ${{ steps.prep.outputs.release }}
-          RELEASE_SUMMARY: ${{ inputs.summary }}
-        run: |
-          gh pr create \
-            --base main \
-            --head "$BRANCH" \
-            --title "Release: ${RELEASE} build${BUILD}" \
-            --body "## Summary
-
-          ${RELEASE_SUMMARY}
-
-          ## Automated changes
-          - version.php build bump
-          - Moodle upgrade savepoint
-          - generated release notes
-
-          ## Required gates
-          - GitHub CI
-          - Moodle install/upgrade
-          - live acceptance before production"
-
-      - name: Summary
-        run: |
-          echo "### Release preparation complete" >> "$GITHUB_STEP_SUMMARY"
-          echo "- Release: ${{ steps.prep.outputs.release }}" >> "$GITHUB_STEP_SUMMARY"
-          echo "- Build: ${{ steps.prep.outputs.new_build }}" >> "$GITHUB_STEP_SUMMARY"
-          echo "- Branch: ${{ steps.branch.outputs.branch }}" >> "$GITHUB_STEP_SUMMARY"
-          echo "- Next: review CI and merge the generated PR." >> "$GITHUB_STEP_SUMMARY"
+          echo "HOLD: reconcile candidate is not a release. Unify version, acceptance and packaging metadata before enabling release preparation."
+          exit 1

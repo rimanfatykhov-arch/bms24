@@ -1,0 +1,52 @@
+{
+  "schema_version": 1,
+  "product": "BMS24",
+  "execution_enabled": false,
+  "default_policy": "deny",
+  "environments": ["isolated_worktree", "ephemeral_ci"],
+  "human_approval_required": [
+    "merge_protected_branch",
+    "release_production",
+    "change_agent_policy",
+    "modify_permissions",
+    "access_live_customer_data"
+  ],
+  "agents": [
+    {
+      "id": "analyst",
+      "name": "Аналитик продукта",
+      "mission": "Формировать требования и критерии приёмки из целей собственника",
+      "capabilities": ["read_source", "draft_spec", "propose_task"]
+    },
+    {
+      "id": "architect",
+      "name": "Архитектор",
+      "mission": "Проектировать решения, контракты и миграции",
+      "capabilities": ["read_source", "draft_spec", "review_design"]
+    },
+    {
+      "id": "developer",
+      "name": "Разработчик",
+      "mission": "Реализовывать изменения в изолированной ветке",
+      "capabilities": ["read_source", "edit_worktree", "run_local_tests"]
+    },
+    {
+      "id": "qa",
+      "name": "Тестировщик",
+      "mission": "Проверять регрессии и сценарии пользователя",
+      "capabilities": ["read_source", "run_local_tests", "write_test_report"]
+    },
+    {
+      "id": "security",
+      "name": "Аудитор безопасности",
+      "mission": "Контролировать права, изоляцию компаний и риски изменений",
+      "capabilities": ["read_source", "run_local_tests", "audit_security", "block_release"]
+    },
+    {
+      "id": "release",
+      "name": "Менеджер релизов",
+      "mission": "Собирать и проверять кандидатный релиз",
+      "capabilities": ["read_source", "run_local_tests", "package_candidate", "write_release_notes"]
+    }
+  ]
+}

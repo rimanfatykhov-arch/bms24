@@ -1,0 +1,12 @@
+{
+    "component": "local_kbacompany",
+    "release": "1.1.0-rc29",
+    "build": 2026101763,
+    "summary": "Search weekly protocol tasks and employees before result cap",
+    "code_status": "Code ready",
+    "live_acceptance": "NOT RUN",
+    "release_notes": "RELEASE_NOTES_RC29_PROTOCOL_SEARCH_2026101763.md",
+    "register": "RELEASE_REGISTER_LOCAL.md",
+    "generated_at": "2026-10-23T07:05:23+00:00",
+    "guard": "Packaging must fail when cli/release_docs_checkpoint.php --check exits non-zero."
+}

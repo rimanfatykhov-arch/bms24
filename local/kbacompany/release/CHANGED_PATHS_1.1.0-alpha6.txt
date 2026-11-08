@@ -1,0 +1,14 @@
+BMS_CALENDAR_UNIFIED_MANAGEMENT_1.1.0_ALPHA6.md
+CHANGELOG.md
+RELEASE_NOTES_1.1.0-alpha6.md
+calendar.php
+classes/local/battle_plan_service.php
+classes/local/calendar_workspace_service.php
+classes/local/calendar_workspace_ui_service.php
+classes/local/management_cycle_template_service.php
+classes/local/meeting_service.php
+classes/local/task_service.php
+lang/en/local_kbacompany.php
+lang/ru/local_kbacompany.php
+styles.css
+version.php

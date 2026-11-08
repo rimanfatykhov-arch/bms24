@@ -1,0 +1,13 @@
+{
+  "component": "local_kbacompany",
+  "build": 2026101829,
+  "type": "sql-text-comparison-hotfix",
+  "changed": [
+    "classes/local/communication_service.php",
+    "tests/communication_service_test.php",
+    "version.php",
+    "release/CURRENT_RELEASE.json"
+  ],
+  "production_acceptance": "not_run",
+  "database_schema_changes": false
+}

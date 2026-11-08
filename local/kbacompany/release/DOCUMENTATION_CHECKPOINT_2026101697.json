@@ -1,0 +1,12 @@
+{
+    "component": "local_kbacompany",
+    "release": "1.1.0-rc29",
+    "build": 2026101697,
+    "summary": "Weekly management coordination hotfix: canonical shell finish + Moodle language cache refresh.",
+    "code_status": "Code ready",
+    "live_acceptance": "NOT RUN",
+    "release_notes": "RELEASE_NOTES_RC29_WEEK_COORDINATION_HOTFIX_2026101697.md",
+    "register": "RELEASE_REGISTER_LOCAL.md",
+    "generated_at": "2026-10-19T18:26:19+00:00",
+    "guard": "Packaging must fail when cli/release_docs_checkpoint.php --check exits non-zero."
+}

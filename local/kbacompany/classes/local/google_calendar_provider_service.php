@@ -177,7 +177,7 @@ class google_calendar_provider_service {
                 'event_type' => 'google',
                 'time_start' => $ts,
                 'duration' => $duration,
-                'day_key' => userdate($ts, '%Y-%m-%d'),
+                'day_key' => business_date_service::day($ts),
                 'time_label' => $allday ? get_string('bmscalendar_all_day', 'local_kbacompany') : userdate($ts, get_string('strftimetime')),
                 'date_label' => userdate($ts, get_string('strftimedaydate')),
                 'generated' => false,

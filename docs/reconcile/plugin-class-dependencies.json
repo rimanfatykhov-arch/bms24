@@ -1,0 +1,128 @@
+{
+  "method": "Static qualified PHP class references, not dynamic/autoload runtime validation",
+  "references": [
+    {
+      "component": "local_bitrixsync",
+      "class": "services\\bms_bridge_service",
+      "source_path": "local/bitrixsync/classes/services/bms_bridge_service.php",
+      "source_present": true,
+      "references": [
+        "local/kbacompany/classes/local/bitrix_adapter_service.php:135",
+        "local/kbacompany/classes/local/integration_service.php:240"
+      ],
+      "test_only": false
+    },
+    {
+      "component": "local_bitrixsync",
+      "class": "task\\process_bms_bridge",
+      "source_path": "local/bitrixsync/classes/task/process_bms_bridge.php",
+      "source_present": true,
+      "references": [
+        "local/kbacompany/classes/local/bitrix_adapter_service.php:136",
+        "local/kbacompany/classes/local/integration_service.php:241"
+      ],
+      "test_only": false
+    },
+    {
+      "component": "local_kbaai",
+      "class": "service\\bms_assistant_service",
+      "source_path": "local/kbaai/classes/service/bms_assistant_service.php",
+      "source_present": true,
+      "references": [
+        "local/kbacompany/classes/local/bms_ai_bridge_service.php:269",
+        "local/kbacompany/classes/local/bms_ai_bridge_service.php:67",
+        "local/kbacompany/classes/local/bms_ai_bridge_service.php:94"
+      ],
+      "test_only": false
+    },
+    {
+      "component": "local_kbacorporate",
+      "class": "local\\access",
+      "source_path": "local/kbacorporate/classes/local/access.php",
+      "source_present": true,
+      "references": [
+        "local/kbacompany/business_roles.php:14",
+        "local/kbacompany/business_roles.php:16"
+      ],
+      "test_only": false
+    },
+    {
+      "component": "local_kbacorporate",
+      "class": "local\\bridge",
+      "source_path": "local/kbacorporate/classes/local/bridge.php",
+      "source_present": true,
+      "references": [
+        "local/kbacompany/classes/local/implementation_project_dashboard_service.php:107",
+        "local/kbacompany/classes/local/implementation_project_link_service.php:11",
+        "local/kbacompany/classes/local/implementation_project_result_service.php:8",
+        "local/kbacompany/classes/local/implementation_project_stages_service.php:18",
+        "local/kbacompany/classes/local/implementation_project_weekly_service.php:9",
+        "local/kbacompany/classes/local/learning_contour_service.php:76",
+        "local/kbacompany/classes/local/learning_contour_service.php:78",
+        "local/kbacompany/classes/local/learning_contour_service.php:79",
+        "local/kbacompany/classes/local/learning_contour_service.php:82",
+        "local/kbacompany/classes/local/learning_contour_service.php:83",
+        "local/kbacompany/classes/local/task_provider/kbacorporate_impl_task_provider.php:17"
+      ],
+      "test_only": false
+    },
+    {
+      "component": "local_kbacorporate",
+      "class": "local\\repository",
+      "source_path": "local/kbacorporate/classes/local/repository.php",
+      "source_present": true,
+      "references": [
+        "local/kbacompany/tests/access_role_service_test.php:8",
+        "local/kbacompany/tests/administrative_scale_service_test.php:9",
+        "local/kbacompany/tests/battle_plan_indicator_service_test.php:10",
+        "local/kbacompany/tests/battle_plan_service_test.php:9",
+        "local/kbacompany/tests/battle_plan_week_launch_service_test.php:8",
+        "local/kbacompany/tests/cascade_service_test.php:8",
+        "local/kbacompany/tests/communication_center_service_test.php:10",
+        "local/kbacompany/tests/communication_service_test.php:9",
+        "local/kbacompany/tests/company_core_test.php:15",
+        "local/kbacompany/tests/design_service_test.php:8",
+        "local/kbacompany/tests/deviation_service_test.php:8",
+        "local/kbacompany/tests/document_service_test.php:14",
+        "local/kbacompany/tests/employee_schedule_service_test.php:8",
+        "local/kbacompany/tests/function_service_test.php:14",
+        "local/kbacompany/tests/indicator_condition_execution_service_test.php:8",
+        "local/kbacompany/tests/ofs_service_test.php:11",
+        "local/kbacompany/tests/permission_service_test.php:8",
+        "local/kbacompany/tests/policy_service_test.php:8",
+        "local/kbacompany/tests/position_coverage_handover_regression_test.php:9",
+        "local/kbacompany/tests/position_task_coverage_test.php:9",
+        "local/kbacompany/tests/process_model_service_test.php:13",
+        "local/kbacompany/tests/process_service_test.php:11",
+        "local/kbacompany/tests/product_service_test.php:9",
+        "local/kbacompany/tests/semantic_service_test.php:9",
+        "local/kbacompany/tests/stp_service_test.php:13",
+        "local/kbacompany/tests/strategy_service_test.php:8",
+        "local/kbacompany/tests/task_acl_stabilization1857_test.php:9",
+        "local/kbacompany/tests/task_activity1852_test.php:8",
+        "local/kbacompany/tests/task_batch_actions1842_test.php:9",
+        "local/kbacompany/tests/task_bundle_service_test.php:9",
+        "local/kbacompany/tests/task_checklist20_test.php:8",
+        "local/kbacompany/tests/task_deadlines1843_test.php:9",
+        "local/kbacompany/tests/task_execution_analytics_test.php:8",
+        "local/kbacompany/tests/task_kanban1850_test.php:60",
+        "local/kbacompany/tests/task_list1841_test.php:10",
+        "local/kbacompany/tests/task_provider_service_test.php:9",
+        "local/kbacompany/tests/task_rc30_effective_workload1855_test.php:8",
+        "local/kbacompany/tests/task_rc30_performance1863_test.php:8",
+        "local/kbacompany/tests/task_rc30_plan_lifecycle1862_test.php:11",
+        "local/kbacompany/tests/task_rc30_quick_actions1856_test.php:9",
+        "local/kbacompany/tests/task_rc30_stabilization1854_test.php:9",
+        "local/kbacompany/tests/task_roles_workspace1840_test.php:9",
+        "local/kbacompany/tests/task_security_hardening1861_test.php:11",
+        "local/kbacompany/tests/task_service_test.php:8",
+        "local/kbacompany/tests/task_subtask_live_search_test.php:8",
+        "local/kbacompany/tests/task_subtask_week_planning_test.php:9",
+        "local/kbacompany/tests/task_subtasks10_test.php:8",
+        "local/kbacompany/tests/task_subtasks20_test.php:8",
+        "local/kbacompany/tests/workflow_service_test.php:11"
+      ],
+      "test_only": true
+    }
+  ]
+}

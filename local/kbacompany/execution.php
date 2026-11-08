@@ -116,7 +116,7 @@ $end = static function(string $label): void {
 $plans = $workmap = [];
 $table = new html_table();
 $table->head = [$str('name'), $str('kind'), $str('status'), $str('executor'), $str('reviewer'), $str('deadline')];
-$today = userdate(time(), '%Y-%m-%d');
+$today = \local_kbacompany\local\business_date_service::day(time());
 foreach ($data['work'] as $work) {
     $workmap[$work->uuid] = $work;
     if ($work->kind === 'plan' && $work->status === 'draft') { $plans[$work->uuid] = $work->name; }

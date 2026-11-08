@@ -4,6 +4,7 @@ require_once(__DIR__ . '/../../config.php');
 use local_kbacompany\local\battle_plan_service;
 use local_kbacompany\local\bms_workspace_ux_service;
 use local_kbacompany\local\management_execution_service;
+use local_kbacompany\local\management_leader_dashboard_service;
 
 require_login();
 $context = context_system::instance();
@@ -11,6 +12,7 @@ require_capability('local/kbacompany:viewowncompany', $context);
 $uuid = required_param('uuid', PARAM_RAW_TRIMMED);
 $week = optional_param('week', '', PARAM_TEXT);
 $data = management_execution_service::context($uuid, (int)$USER->id, $week);
+$leader = management_leader_dashboard_service::context($uuid, (int)$USER->id, $data);
 
 $PAGE->set_context($context);
 $PAGE->set_url(new moodle_url('/local/kbacompany/management.php', ['uuid' => $uuid, 'week' => $data['week_start']]));
@@ -42,21 +44,33 @@ echo html_writer::empty_tag('input', ['type'=>'date','id'=>'management_week','na
 echo html_writer::tag('button', get_string('battleplan_show','local_kbacompany'), ['type'=>'submit','class'=>'btn btn-sm btn-outline-primary']);
 echo html_writer::end_tag('form');
 
-$summary = $data['summary'];
-$cards = [
-    ['needs_decision','management_kpi_needs_decision'],
-    ['critical_exceptions','management_kpi_critical_exceptions'],
-    ['overdue_tasks','management_kpi_overdue_tasks'],
-    ['active_plans','management_kpi_active_plans'],
+// RC29/1800: one management overview, not an additional competing workspace.
+// Selected-week metrics and current-state task/decision counters have explicit labels.
+$stats = [
+    ['needs_decision', 'management_kpi_needs_decision', 'indicators.php', ['tab'=>'exceptions']],
+    ['critical_exceptions', 'management_kpi_critical_exceptions', 'indicators.php', ['tab'=>'exceptions']],
+    ['approval_queue', 'leader_dashboard_kpi_approval', 'battle_plan_overview.php', ['week'=>$data['week_start']]],
+    ['overdue_tasks', 'leader_dashboard_kpi_tasks', 'tasks.php', ['signal'=>'overdue', 'scope'=>'all']],
+    ['protocol_overdue', 'leader_dashboard_kpi_protocol', 'battle_plan_week_coordination.php', ['week'=>$data['week_start']]],
+    ['active_plans', 'management_kpi_active_plans', 'battle_plan_overview.php', ['week'=>$data['week_start']]],
 ];
+echo html_writer::tag('p', get_string('leader_dashboard_scope','local_kbacompany'), ['class'=>'text-muted mb-3']);
 echo html_writer::start_div('kbacompany-summary-grid');
-foreach ($cards as $card) {
+foreach ($stats as $stat) {
+    $value = $leader['totals'][$stat[0]];
+    $target = new moodle_url('/local/kbacompany/'.$stat[2], ['uuid'=>$uuid] + $stat[3]);
     echo html_writer::start_div('kbacompany-summary-card');
-    echo html_writer::div((string)$summary[$card[0]], 'kbacompany-summary-value');
-    echo html_writer::div(get_string($card[1], 'local_kbacompany'), 'kbacompany-summary-label');
+    echo html_writer::div($value === null ? '—' : (string)$value, 'kbacompany-summary-value');
+    $label = get_string($stat[1], 'local_kbacompany');
+    $labelhtml = $value === null ? s($label) : html_writer::link($target, $label);
+    echo html_writer::div($labelhtml, 'kbacompany-summary-label');
     echo html_writer::end_div();
 }
 echo html_writer::end_div();
+if (!$leader['protocol_available']) {
+    echo html_writer::div(get_string('leader_dashboard_protocol_restricted','local_kbacompany'),
+        'alert alert-info mt-3');
+}
 
 $acceptance = $data['acceptance'];
 $stateclass = $acceptance['state'] === 'accepted' ? 'alert alert-success' :
@@ -95,31 +109,47 @@ foreach ($chain as $index=>$item) {
 }
 echo html_writer::end_div();
 
-// Attention queue.
-echo $OUTPUT->heading(get_string('management_attention_title', 'local_kbacompany'), 2, 'h4 mt-3');
-if (!$data['attention']) {
-    echo html_writer::div(get_string('management_attention_clear', 'local_kbacompany'), 'alert alert-success');
+// Single cross-source action queue: each link returns to the canonical object or section.
+echo $OUTPUT->heading(get_string('leader_dashboard_queue_title','local_kbacompany'), 2, 'h4 mt-3');
+echo html_writer::tag('p', get_string('leader_dashboard_queue_help','local_kbacompany'), ['class'=>'text-muted']);
+if (!$leader['items']) {
+    echo html_writer::div(get_string('leader_dashboard_queue_clear','local_kbacompany'), 'alert alert-info');
 } else {
     $table = new html_table();
     $table->attributes['class'] = 'table table-sm table-hover';
     $table->head = [
-        get_string('management_attention_severity','local_kbacompany'),
+        get_string('leader_dashboard_col_source','local_kbacompany'),
         get_string('management_attention_object','local_kbacompany'),
         get_string('management_attention_context','local_kbacompany'),
         get_string('management_attention_reason','local_kbacompany'),
     ];
-    foreach ($data['attention'] as $row) {
-        $reason = [];
-        if ($row['needs_decision']) { $reason[] = get_string('management_reason_decision','local_kbacompany'); }
-        if ($row['overdue']) { $reason[] = get_string('management_reason_overdue','local_kbacompany'); }
-        if (!$reason) { $reason[] = get_string('management_reason_exception','local_kbacompany'); }
+    foreach ($leader['items'] as $row) {
+        // All values originate from company- and actor-scoped canonical providers.
+        $title = (string)$row['title'] !== '' ? s((string)$row['title']) : '—';
+        $link = $row['url'] !== '' ? html_writer::link((string)$row['url'], $title) : $title;
+        $reason = get_string((string)$row['note'],'local_kbacompany');
+        if ($row['due'] !== '') { $reason .= ' · ' . s((string)$row['due']); }
         $table->data[] = [
-            get_string('indicator_exception_severity_'.$row['severity'],'local_kbacompany'),
-            s($row['title']), s($row['context']), s(implode(' · ', $reason)),
+            get_string('leader_dashboard_source_'.$row['kind'],'local_kbacompany'),
+            $link, s((string)$row['detail']), s($reason),
         ];
     }
     echo html_writer::table($table);
 }
+if ($leader['has_more']) {
+    echo html_writer::tag('p', get_string('leader_dashboard_more','local_kbacompany'),
+        ['class'=>'text-muted']);
+}
+echo html_writer::div(
+    html_writer::link(new moodle_url('/local/kbacompany/battle_plan_week_coordination.php',
+        ['uuid'=>$uuid,'week'=>$data['week_start']]),
+        get_string('battleplan_weekcoord_title','local_kbacompany'), ['class'=>'btn btn-outline-primary btn-sm mr-2']) .
+    html_writer::link(new moodle_url('/local/kbacompany/management_loop.php',
+        ['uuid'=>$uuid,'week'=>$data['week_start']]),
+        get_string('management_loop_title','local_kbacompany'), ['class'=>'btn btn-outline-secondary btn-sm mr-2']) .
+    html_writer::link(new moodle_url('/local/kbacompany/battle_plan_decision_registry.php', ['uuid'=>$uuid]),
+        get_string('battleplan_registry_title','local_kbacompany'), ['class'=>'btn btn-outline-secondary btn-sm']),
+    'my-3');
 
 // Gate details.
 echo $OUTPUT->heading(get_string('management_gate_title', 'local_kbacompany'), 2, 'h4 mt-4');

@@ -1,0 +1,3 @@
+# BMS24 build2026101750 — persistent weekly coordination decisions
+
+Adds append-only protocol revisions per company/week/task and a write form on weekly coordination page. Each POST validates sesskey, managerial capability, read-model visibility and optimistic revision. Stored cause, decision, Moodle user ID of responsible person, due date, author and timestamp. Does not modify canonical Task Center record automatically. Creates database table local_kbacompany_bp_proto with an upgrade checkpoint. Known limitation: view currently displays the latest revision number, not the full historical timeline; audit revisions remain in DB. Live Moodle test is required before production use.

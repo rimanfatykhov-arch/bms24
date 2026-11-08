@@ -1,0 +1,12 @@
+{
+    "component": "local_kbacompany",
+    "release": "1.1.0-rc29",
+    "build": 2026101809,
+    "summary": "Personal action queue: scoped tasks, Battle Plan approvals and KPI decision links",
+    "code_status": "Code ready",
+    "live_acceptance": "NOT RUN; Moodle 4.1/PHP 8.1 browser acceptance pending",
+    "release_notes": "RELEASE_NOTES_RC29_PERSONAL_ACTION_QUEUE_2026101809.md",
+    "register": "RELEASE_REGISTER_LOCAL.md",
+    "generated_at": "2026-10-25T07:47:54+00:00",
+    "guard": "Packaging must fail when cli/release_docs_checkpoint.php --check exits non-zero."
+}
