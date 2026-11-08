@@ -1,14 +1,31 @@
 # BMS24 — Instructions for Codex (VS Code / repository root)
 
-Current verified source snapshot: `local/kbacompany/version.php` → `local_kbacompany` **1.1.0-rc29**, `$plugin->version = 2026101642` (18 Oct 2026). This is a **staging candidate**, NOT an accepted production release. Verify the code checkout before editing; do not assume that docs override the actual version.
+Historical docs refer to build `2026101642`. On `main`, `local/kbacompany/version.php` was **1.1.0-rc29 / build2026101645** when checked on 2026-11-08; other PR branches (e.g. import build2026101879) differ. This is **not** an accepted production release. ALWAYS read the actual checked-out `version.php` and Git SHA before editing; never trust a historical snapshot as the current deployment.
+
+## Mandatory product vision — four connected streams
+
+The owner is developing BMS24 as a **single business management platform**, with four product directions:
+1. **BMS Role Intelligence** — positions and competencies.
+2. **BMS AI Core** — company knowledge and AI models.
+3. **AI Studio** — agents, panels, programs.
+4. **BMS24.online** — commercial SaaS pilot and separate control plane.
+
+**Read `docs/22_BMS24_PRODUCT_VISION_FOUR_STREAMS.md` before proposing any
+new module, architecture, AI integration, or roadmap.** It records the
+product vision, dependency map, ownership boundaries, proposed release
+lanes, acceptance criteria, and the difference between planned and
+implemented features. Do not silently omit a stream or implement a new
+duplicate catalog/service. These four streams are strategic directions,
+NOT four completed modules.
 
 ## Read only what is relevant
 
-1. `docs/00_MASTER_CONTEXT.md` (product, current state)
-2. `docs/01_ARCHITECTURE_BOUNDARIES.md`, `docs/02_MOODLE_PLUGIN_RULES.md`, `docs/04_SECURITY_COMPANY_ISOLATION.md`
-3. `docs/16_CURRENT_RELEASE_RC29_1642.md`, `docs/17_UI_SHELL_AND_DESIGN_SYSTEM.md`
-4. Domain-specific docs in `docs/` according to the task.
-5. `docs/05_RELEASE_QA_STANDARD.md` before packaging.
+1. `docs/22_BMS24_PRODUCT_VISION_FOUR_STREAMS.md` (mandatory product vision)
+2. `docs/00_MASTER_CONTEXT.md` (historical product context; verify code)
+3. `docs/01_ARCHITECTURE_BOUNDARIES.md`, `docs/02_MOODLE_PLUGIN_RULES.md`, `docs/04_SECURITY_COMPANY_ISOLATION.md`
+4. `docs/16_CURRENT_RELEASE_RC29_1642.md`, `docs/17_UI_SHELL_AND_DESIGN_SYSTEM.md`
+5. Domain-specific docs in `docs/` according to the task.
+6. `docs/05_RELEASE_QA_STANDARD.md` before packaging.
 
 For your first session follow `CODEX_FIRST_TASK.md` and **audit before changing code**.
 
