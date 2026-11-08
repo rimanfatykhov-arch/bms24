@@ -1,0 +1,388 @@
+{
+  "captured_utc": "2026-11-08T18:49:10+00:00",
+  "read_only": true,
+  "moodle_bootstrap": false,
+  "php_cli": "8.1.34",
+  "php_sapi": "cli",
+  "server": {
+    "version": "10.11.19-MariaDB-ubu2204",
+    "engine": "mariadb.org binary distribution",
+    "collation": "utf8mb4_unicode_ci"
+  },
+  "code": {
+    "moodle": {
+      "version": "2022112822.00",
+      "release": "4.1.22 (Build: 20251208)",
+      "version_file_sha256": "d267c899d8e692b5a71ee4f3f88e8afab5b913e21fb1398b2fd05cce68184cf7"
+    },
+    "local_kbacompany": {
+      "version": "2026110802",
+      "release": "1.1.0-rc29",
+      "version_file_sha256": "9a0da178a9156807c0fab7ca44465346e643aea997eda08b7bd9bb512727cd46"
+    },
+    "local_kbacorporate": {
+      "version": "2026102613",
+      "release": "0.40.13 — integration acceptance and performance diagnostics",
+      "version_file_sha256": "d2510b7503f2d257f5e5027f665fe523c93b361b0738b861ba315a18e4cfb3c6"
+    }
+  },
+  "installed_plugin_versions": {
+    "local_kbacompany": "2026110802",
+    "local_kbacorporate": "2026102613"
+  },
+  "installed_core_version": "2022112822",
+  "fields": {
+    "task": [
+      {
+        "COLUMN_NAME": "starttime",
+        "COLUMN_TYPE": "varchar(5)",
+        "IS_NULLABLE": "NO",
+        "COLUMN_DEFAULT": "''"
+      },
+      {
+        "COLUMN_NAME": "duetime",
+        "COLUMN_TYPE": "varchar(5)",
+        "IS_NULLABLE": "NO",
+        "COLUMN_DEFAULT": "''"
+      }
+    ],
+    "deviation": []
+  },
+  "indexes_metadata": {
+    "task": [
+      {
+        "INDEX_NAME": "mdl_locakbactask_comasssta_ix",
+        "SEQ_IN_INDEX": 1,
+        "COLUMN_NAME": "companyuuid",
+        "NON_UNIQUE": 1
+      },
+      {
+        "INDEX_NAME": "mdl_locakbactask_comasssta_ix",
+        "SEQ_IN_INDEX": 2,
+        "COLUMN_NAME": "assigneeid",
+        "NON_UNIQUE": 1
+      },
+      {
+        "INDEX_NAME": "mdl_locakbactask_comasssta_ix",
+        "SEQ_IN_INDEX": 3,
+        "COLUMN_NAME": "status",
+        "NON_UNIQUE": 1
+      },
+      {
+        "INDEX_NAME": "mdl_locakbactask_comconconc_ix",
+        "SEQ_IN_INDEX": 1,
+        "COLUMN_NAME": "companyuuid",
+        "NON_UNIQUE": 1
+      },
+      {
+        "INDEX_NAME": "mdl_locakbactask_comconconc_ix",
+        "SEQ_IN_INDEX": 2,
+        "COLUMN_NAME": "contextkind",
+        "NON_UNIQUE": 1
+      },
+      {
+        "INDEX_NAME": "mdl_locakbactask_comconconc_ix",
+        "SEQ_IN_INDEX": 3,
+        "COLUMN_NAME": "contextuuid",
+        "NON_UNIQUE": 1
+      },
+      {
+        "INDEX_NAME": "mdl_locakbactask_comconconc_ix",
+        "SEQ_IN_INDEX": 4,
+        "COLUMN_NAME": "contextrevision",
+        "NON_UNIQUE": 1
+      },
+      {
+        "INDEX_NAME": "mdl_locakbactask_comcresta_ix",
+        "SEQ_IN_INDEX": 1,
+        "COLUMN_NAME": "companyuuid",
+        "NON_UNIQUE": 1
+      },
+      {
+        "INDEX_NAME": "mdl_locakbactask_comcresta_ix",
+        "SEQ_IN_INDEX": 2,
+        "COLUMN_NAME": "creatorid",
+        "NON_UNIQUE": 1
+      },
+      {
+        "INDEX_NAME": "mdl_locakbactask_comcresta_ix",
+        "SEQ_IN_INDEX": 3,
+        "COLUMN_NAME": "status",
+        "NON_UNIQUE": 1
+      },
+      {
+        "INDEX_NAME": "mdl_locakbactask_comduesta_ix",
+        "SEQ_IN_INDEX": 1,
+        "COLUMN_NAME": "companyuuid",
+        "NON_UNIQUE": 1
+      },
+      {
+        "INDEX_NAME": "mdl_locakbactask_comduesta_ix",
+        "SEQ_IN_INDEX": 2,
+        "COLUMN_NAME": "duedate",
+        "NON_UNIQUE": 1
+      },
+      {
+        "INDEX_NAME": "mdl_locakbactask_comduesta_ix",
+        "SEQ_IN_INDEX": 3,
+        "COLUMN_NAME": "status",
+        "NON_UNIQUE": 1
+      },
+      {
+        "INDEX_NAME": "mdl_locakbactask_comdutass_ix",
+        "SEQ_IN_INDEX": 1,
+        "COLUMN_NAME": "companyuuid",
+        "NON_UNIQUE": 1
+      },
+      {
+        "INDEX_NAME": "mdl_locakbactask_comdutass_ix",
+        "SEQ_IN_INDEX": 2,
+        "COLUMN_NAME": "dutypositionuuid",
+        "NON_UNIQUE": 1
+      },
+      {
+        "INDEX_NAME": "mdl_locakbactask_comdutass_ix",
+        "SEQ_IN_INDEX": 3,
+        "COLUMN_NAME": "assigneeid",
+        "NON_UNIQUE": 1
+      },
+      {
+        "INDEX_NAME": "mdl_locakbactask_comobssta_ix",
+        "SEQ_IN_INDEX": 1,
+        "COLUMN_NAME": "companyuuid",
+        "NON_UNIQUE": 1
+      },
+      {
+        "INDEX_NAME": "mdl_locakbactask_comobssta_ix",
+        "SEQ_IN_INDEX": 2,
+        "COLUMN_NAME": "observerid",
+        "NON_UNIQUE": 1
+      },
+      {
+        "INDEX_NAME": "mdl_locakbactask_comobssta_ix",
+        "SEQ_IN_INDEX": 3,
+        "COLUMN_NAME": "status",
+        "NON_UNIQUE": 1
+      },
+      {
+        "INDEX_NAME": "mdl_locakbactask_compar_ix",
+        "SEQ_IN_INDEX": 1,
+        "COLUMN_NAME": "companyuuid",
+        "NON_UNIQUE": 1
+      },
+      {
+        "INDEX_NAME": "mdl_locakbactask_compar_ix",
+        "SEQ_IN_INDEX": 2,
+        "COLUMN_NAME": "parentuuid",
+        "NON_UNIQUE": 1
+      },
+      {
+        "INDEX_NAME": "mdl_locakbactask_comrevsta_ix",
+        "SEQ_IN_INDEX": 1,
+        "COLUMN_NAME": "companyuuid",
+        "NON_UNIQUE": 1
+      },
+      {
+        "INDEX_NAME": "mdl_locakbactask_comrevsta_ix",
+        "SEQ_IN_INDEX": 2,
+        "COLUMN_NAME": "reviewerid",
+        "NON_UNIQUE": 1
+      },
+      {
+        "INDEX_NAME": "mdl_locakbactask_comrevsta_ix",
+        "SEQ_IN_INDEX": 3,
+        "COLUMN_NAME": "status",
+        "NON_UNIQUE": 1
+      },
+      {
+        "INDEX_NAME": "mdl_locakbactask_comsousous_ix",
+        "SEQ_IN_INDEX": 1,
+        "COLUMN_NAME": "companyuuid",
+        "NON_UNIQUE": 1
+      },
+      {
+        "INDEX_NAME": "mdl_locakbactask_comsousous_ix",
+        "SEQ_IN_INDEX": 2,
+        "COLUMN_NAME": "sourcekind",
+        "NON_UNIQUE": 1
+      },
+      {
+        "INDEX_NAME": "mdl_locakbactask_comsousous_ix",
+        "SEQ_IN_INDEX": 3,
+        "COLUMN_NAME": "sourceuuid",
+        "NON_UNIQUE": 1
+      },
+      {
+        "INDEX_NAME": "mdl_locakbactask_comsousous_ix",
+        "SEQ_IN_INDEX": 4,
+        "COLUMN_NAME": "sourcerevision",
+        "NON_UNIQUE": 1
+      },
+      {
+        "INDEX_NAME": "mdl_locakbactask_uui_uix",
+        "SEQ_IN_INDEX": 1,
+        "COLUMN_NAME": "uuid",
+        "NON_UNIQUE": 0
+      },
+      {
+        "INDEX_NAME": "PRIMARY",
+        "SEQ_IN_INDEX": 1,
+        "COLUMN_NAME": "id",
+        "NON_UNIQUE": 0
+      }
+    ],
+    "tasklog": [
+      {
+        "INDEX_NAME": "mdl_locakbactask_acttim_ix",
+        "SEQ_IN_INDEX": 1,
+        "COLUMN_NAME": "actorid",
+        "NON_UNIQUE": 1
+      },
+      {
+        "INDEX_NAME": "mdl_locakbactask_acttim_ix",
+        "SEQ_IN_INDEX": 2,
+        "COLUMN_NAME": "timecreated",
+        "NON_UNIQUE": 1
+      },
+      {
+        "INDEX_NAME": "mdl_locakbactask_comtasid_ix",
+        "SEQ_IN_INDEX": 1,
+        "COLUMN_NAME": "companyuuid",
+        "NON_UNIQUE": 1
+      },
+      {
+        "INDEX_NAME": "mdl_locakbactask_comtasid_ix",
+        "SEQ_IN_INDEX": 2,
+        "COLUMN_NAME": "taskuuid",
+        "NON_UNIQUE": 1
+      },
+      {
+        "INDEX_NAME": "mdl_locakbactask_comtasid_ix",
+        "SEQ_IN_INDEX": 3,
+        "COLUMN_NAME": "id",
+        "NON_UNIQUE": 1
+      },
+      {
+        "INDEX_NAME": "mdl_locakbactask_comtastim_ix",
+        "SEQ_IN_INDEX": 1,
+        "COLUMN_NAME": "companyuuid",
+        "NON_UNIQUE": 1
+      },
+      {
+        "INDEX_NAME": "mdl_locakbactask_comtastim_ix",
+        "SEQ_IN_INDEX": 2,
+        "COLUMN_NAME": "taskuuid",
+        "NON_UNIQUE": 1
+      },
+      {
+        "INDEX_NAME": "mdl_locakbactask_comtastim_ix",
+        "SEQ_IN_INDEX": 3,
+        "COLUMN_NAME": "timecreated",
+        "NON_UNIQUE": 1
+      },
+      {
+        "INDEX_NAME": "PRIMARY",
+        "SEQ_IN_INDEX": 1,
+        "COLUMN_NAME": "id",
+        "NON_UNIQUE": 0
+      }
+    ],
+    "bplanitem": [
+      {
+        "INDEX_NAME": "mdl_locakbacbpla_complapro_uix",
+        "SEQ_IN_INDEX": 1,
+        "COLUMN_NAME": "companyuuid",
+        "NON_UNIQUE": 0
+      },
+      {
+        "INDEX_NAME": "mdl_locakbacbpla_complapro_uix",
+        "SEQ_IN_INDEX": 2,
+        "COLUMN_NAME": "planuuid",
+        "NON_UNIQUE": 0
+      },
+      {
+        "INDEX_NAME": "mdl_locakbacbpla_complapro_uix",
+        "SEQ_IN_INDEX": 3,
+        "COLUMN_NAME": "provider",
+        "NON_UNIQUE": 0
+      },
+      {
+        "INDEX_NAME": "mdl_locakbacbpla_complapro_uix",
+        "SEQ_IN_INDEX": 4,
+        "COLUMN_NAME": "externalid",
+        "NON_UNIQUE": 0
+      },
+      {
+        "INDEX_NAME": "mdl_locakbacbpla_complastr_ix",
+        "SEQ_IN_INDEX": 1,
+        "COLUMN_NAME": "companyuuid",
+        "NON_UNIQUE": 1
+      },
+      {
+        "INDEX_NAME": "mdl_locakbacbpla_complastr_ix",
+        "SEQ_IN_INDEX": 2,
+        "COLUMN_NAME": "planuuid",
+        "NON_UNIQUE": 1
+      },
+      {
+        "INDEX_NAME": "mdl_locakbacbpla_complastr_ix",
+        "SEQ_IN_INDEX": 3,
+        "COLUMN_NAME": "stream",
+        "NON_UNIQUE": 1
+      },
+      {
+        "INDEX_NAME": "mdl_locakbacbpla_comproext_ix",
+        "SEQ_IN_INDEX": 1,
+        "COLUMN_NAME": "companyuuid",
+        "NON_UNIQUE": 1
+      },
+      {
+        "INDEX_NAME": "mdl_locakbacbpla_comproext_ix",
+        "SEQ_IN_INDEX": 2,
+        "COLUMN_NAME": "provider",
+        "NON_UNIQUE": 1
+      },
+      {
+        "INDEX_NAME": "mdl_locakbacbpla_comproext_ix",
+        "SEQ_IN_INDEX": 3,
+        "COLUMN_NAME": "externalid",
+        "NON_UNIQUE": 1
+      },
+      {
+        "INDEX_NAME": "mdl_locakbacbpla_comprotas_ix",
+        "SEQ_IN_INDEX": 1,
+        "COLUMN_NAME": "companyuuid",
+        "NON_UNIQUE": 1
+      },
+      {
+        "INDEX_NAME": "mdl_locakbacbpla_comprotas_ix",
+        "SEQ_IN_INDEX": 2,
+        "COLUMN_NAME": "provider",
+        "NON_UNIQUE": 1
+      },
+      {
+        "INDEX_NAME": "mdl_locakbacbpla_comprotas_ix",
+        "SEQ_IN_INDEX": 3,
+        "COLUMN_NAME": "taskuuid",
+        "NON_UNIQUE": 1
+      },
+      {
+        "INDEX_NAME": "mdl_locakbacbpla_uui2_uix",
+        "SEQ_IN_INDEX": 1,
+        "COLUMN_NAME": "uuid",
+        "NON_UNIQUE": 0
+      },
+      {
+        "INDEX_NAME": "PRIMARY",
+        "SEQ_IN_INDEX": 1,
+        "COLUMN_NAME": "id",
+        "NON_UNIQUE": 0
+      }
+    ]
+  },
+  "source_file_sha256": {
+    "local/kbacompany/db/install.xml": "306dfb9e26b746fc985743e4d19a847d79209577e25962f499a3b09e750d6bc7",
+    "local/kbacompany/db/upgrade.php": "a6126552a56240435f913df6c03243ab01d1e6040f88d25b6d0f1f5d29ea06f8",
+    "local/kbacorporate/classes/local/bridge.php": "49729607e7cc076d3a9657a95bb36c84d0a64523c51d05c7355f72f224d2c461"
+  }
+}

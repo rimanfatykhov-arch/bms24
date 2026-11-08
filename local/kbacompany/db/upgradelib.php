@@ -15,6 +15,63 @@
 defined('MOODLE_INTERNAL') || die();
 
 /**
+ * Add the three fresh/upgrade parity fields missed by historical upgrade paths.
+ *
+ * Validate existing definitions before any DDL; never convert an incompatible
+ * column or overwrite existing values. Re-read metadata after DDL so an incomplete
+ * attempt cannot be followed by the caller's savepoint. Partial DDL is retryable.
+ */
+function local_kbacompany_upgrade_schema_parity_2026110890(): void {
+    global $DB;
+
+    $dbman = $DB->get_manager();
+    $definitions = [
+        ['local_kbacompany_task', 'starttime', '5', '', 'startdate'],
+        ['local_kbacompany_task', 'duetime', '5', '', 'duedate'],
+        ['local_kbacompany_deviation', 'executionstatus', '16', 'pending', 'duedate'],
+    ];
+    $validate = static function(string $table, string $name, string $length,
+            string $default, array $columns): void {
+        $column = $columns[$name];
+        if ($column->meta_type !== 'C' || (int)$column->max_length !== (int)$length ||
+                !$column->not_null || $column->default_value === null ||
+                (string)$column->default_value !== $default) {
+            throw new upgrade_exception('local_kbacompany', 2026110890,
+                'Schema parity repair stopped: incompatible ' . $table . '.' . $name .
+                '. Inspect its type, length, nullability and default; no automatic conversion is allowed.');
+        }
+    };
+
+    // Check every existing target definition before adding even the first field.
+    $pending = [];
+    foreach ($definitions as [$tablename, $name, $length, $default, $previous]) {
+        $table = new xmldb_table($tablename);
+        if (!$dbman->table_exists($table)) {
+            throw new ddl_table_missing_exception($tablename);
+        }
+        $columns = $DB->get_columns($tablename, false);
+        if (isset($columns[$name])) {
+            $validate($tablename, $name, $length, $default, $columns);
+        } else {
+            $pending[] = [$table, new xmldb_field($name, XMLDB_TYPE_CHAR, $length,
+                null, XMLDB_NOTNULL, null, $default, $previous)];
+        }
+    }
+    foreach ($pending as [$table, $field]) {
+        if (!$dbman->field_exists($table, $field)) {
+            $dbman->add_field($table, $field);
+        }
+    }
+    foreach ($definitions as [$tablename, $name, $length, $default]) {
+        $columns = $DB->get_columns($tablename, false);
+        if (!isset($columns[$name])) {
+            throw new ddl_field_missing_exception($name, $tablename);
+        }
+        $validate($tablename, $name, $length, $default, $columns);
+    }
+}
+
+/**
  * Make the six legacy quantitative fields nullable without losing the norm index.
  *
  * Moodle checks index dependencies even for change_field_notnull(). Only the
