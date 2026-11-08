@@ -10,7 +10,8 @@ defined('MOODLE_INTERNAL') || die();
  * must still be signed off independently on the target Moodle installation.
  */
 final class task_rc30_acceptance_service {
-    public const EXPECTED_PLUGIN_VERSION = 2026101873;
+    // Keep exact candidate identity; CI checks this against version.php.
+    public const EXPECTED_PLUGIN_VERSION = 2026101879;
     public const REQUIRED_INDEXES = [
         ['local_kbacompany_task', 'status_due_ix', ['companyuuid', 'status', 'duedate']],
         ['local_kbacompany_tasklog', 'lastlog_ix', ['companyuuid', 'taskuuid', 'id']],
