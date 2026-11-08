@@ -42,6 +42,26 @@ final class task_rc30_acceptance1864_test extends \advanced_testcase {
         };
     }
 
+    public function test_candidate_version_matches_acceptance_and_rejects_other_installed_versions(): void {
+        $plugin = new \stdClass();
+        require(__DIR__ . '/../version.php');
+        $candidateversion = (int)$plugin->version;
+        $this->assertSame($candidateversion, acceptance::EXPECTED_PLUGIN_VERSION);
+        foreach ([false, true] as $strict) {
+            $result = acceptance::assess($this->fake_db(), $candidateversion, self::COMPANY, $strict);
+            $this->assertNotContains('plugin_version_mismatch', $result['errors']);
+            $this->assertSame($candidateversion, $result['expected_plugin_version']);
+            $this->assertFalse($result['rc30_promotion_approved']);
+            foreach ([0, 2026101873, $candidateversion - 1, $candidateversion + 1] as $installed) {
+                $result = acceptance::assess($this->fake_db(), $installed, self::COMPANY, $strict);
+                $this->assertSame('failed', $result['technical_gate']);
+                $this->assertContains('plugin_version_mismatch', $result['errors']);
+                $this->assertSame($installed, $result['installed_plugin_version']);
+                $this->assertFalse($result['rc30_promotion_approved']);
+            }
+        }
+    }
+
     public function test_all_indexes_and_empty_scope_yield_warning_not_release_approval(): void {
         $result = acceptance::assess($this->fake_db(), acceptance::EXPECTED_PLUGIN_VERSION, self::COMPANY);
         $this->assertSame('warnings', $result['technical_gate']);
