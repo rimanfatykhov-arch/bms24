@@ -6108,5 +6108,13 @@ function xmldb_local_kbacompany_upgrade(int $oldversion): bool {
         upgrade_plugin_savepoint(true, 2026101879, 'local', 'kbacompany');
     }
 
+    // Repair fresh-install/upgrade parity without changing any existing values.
+    // This new checkpoint also runs for sites newer than the historical 1879 import.
+    if ($oldversion < 2026110890) {
+        require_once(__DIR__ . '/upgradelib.php');
+        local_kbacompany_upgrade_schema_parity_2026110890();
+        upgrade_plugin_savepoint(true, 2026110890, 'local', 'kbacompany');
+    }
+
     return true;
 }

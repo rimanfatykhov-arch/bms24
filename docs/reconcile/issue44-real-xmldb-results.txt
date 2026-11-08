@@ -1,0 +1,17 @@
+Server: 10.11.11-MariaDB; PHP: 8.1.34
+PASS presence mask 0
+PASS presence mask 1
+PASS presence mask 2
+PASS presence mask 3
+PASS presence mask 4
+PASS presence mask 5
+PASS presence mask 6
+PASS presence mask 7
+PASS incompatible type
+PASS incompatible length
+PASS incompatible nullable
+PASS incompatible default
+PASS incompatible null-default
+PASS missing local_kbacompany_task
+PASS missing local_kbacompany_deviation
+PASS 320 assertions; real XMLDB helper only; full Moodle upgrade NOT RUN
