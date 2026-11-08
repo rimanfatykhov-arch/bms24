@@ -24,6 +24,8 @@ jobs:
           coverage: none
       - name: PHP 7.4 syntax only
         run: find local/kbacompany -name '*.php' -type f -print0 | xargs -0 -n1 -P8 php -l > /tmp/bms-php74-lint.txt
+      - name: Workspace filter regression on PHP 7.4
+        run: php local/kbacompany/cli/test_reconcile_workspace_focus.php
   checks:
     runs-on: ubuntu-latest
     timeout-minutes: 25
@@ -76,6 +78,7 @@ jobs:
         run: |
           php local/kbacompany/cli/test_rc30_version_1879.php
           php local/kbacompany/cli/test_rc30_runtime_1865.php
+          php local/kbacompany/cli/test_reconcile_workspace_focus.php
       - name: Workspace Battle Plan date hotfix regression
         run: python tools/test_battleplan_date_1875.py
       - name: Machine-date ISO regression (week, dates, calendar)

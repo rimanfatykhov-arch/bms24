@@ -27,12 +27,16 @@ final class bms_workspace_focus_service {
 
     /** Only filters previously ACL-approved and user-visible widget IDs. */
     public static function visible(array $visible, string $mode): array {
-        $allowed = match ($mode) {
-            'personal' => self::PERSONAL,
-            'management' => self::MANAGEMENT,
-            'owner' => self::OWNER,
-            default => bms_workspace_widget_service::DEFAULT_ORDER,
-        };
+        // Preserve strict matching without PHP 8-only syntax (main supports 7.4 lint).
+        if ($mode === 'personal') {
+            $allowed = self::PERSONAL;
+        } else if ($mode === 'management') {
+            $allowed = self::MANAGEMENT;
+        } else if ($mode === 'owner') {
+            $allowed = self::OWNER;
+        } else {
+            $allowed = bms_workspace_widget_service::DEFAULT_ORDER;
+        }
         return array_values(array_intersect($visible, $allowed));
     }
 

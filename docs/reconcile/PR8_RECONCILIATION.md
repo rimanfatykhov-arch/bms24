@@ -106,6 +106,11 @@ empty successful responses. No Corporate code is changed by this reconcile.
   build1879 alone does not distinguish original import from this reconciled tree.
 - Normalize whitespace in 21 imported/annotated files so the retained whitespace
   gate passes; Markdown hard line breaks use backslashes instead of trailing spaces.
+- Retained PHP 7.4 lint found PHP 8-only match syntax in bms_workspace_focus_service.
+  Replace it with strict if/else comparisons preserving widget selection and fallback.
+  A pure regression runs on both PHP 7.4 and 8.1 (modes, input order/duplicates,
+  empty input and forbidden-mode fallback). This is the only reconcile-specific
+  runtime compatibility adjustment beyond PR 40; no new permissions are granted.
 
 ## Schema and security impact inherited from the import
 
@@ -114,7 +119,8 @@ import contains six additional XMLDB tables (commrev, bp_proto, bp_baudit,
 implproj, taskbundle, taskbrun), task/deviation fields, four read indexes and
 upgrade checkpoints through 1879. Runtime access-role, task, Battle Plan,
 communication and privacy code also changes. The reconcile adds no further
-business behavior beyond the imported source and PR 40 fix, but must inherit
+business behavior beyond the imported source and PR 40 fix (the Workspace syntax
+adjustment preserves existing filtering), but must inherit
 their full migration/RBAC acceptance burden.
 
 Before approval: fresh install and supported upgrade paths, schema equivalence,
