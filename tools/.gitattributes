@@ -1,1 +1,2 @@
 ruweb_inventory_forced_command.sh text eol=lf
+tests/run_moodle_acceptance.sh text eol=lf

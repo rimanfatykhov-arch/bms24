@@ -1,0 +1,189 @@
+{
+  "candidate": "e06cc96e2933e9142c1d51d2fcfa06b159737718",
+  "test_head": "147f40049b25e17a74b5d2032e631c0122b4453a",
+  "tested_merge": "711163b8e99fd34d52ccdfbc7c00b1e8c40579c0",
+  "run": 42515754360,
+  "decision": "FAIL",
+  "engines": {
+    "mariadb": {
+      "php": "8.1.34",
+      "database": "10.11.19-MariaDB-ubu2204",
+      "database_comment": "mariadb.org binary distribution",
+      "scenarios": {
+        "fresh": "PASS",
+        "from1645": "PASS",
+        "from1879": "PASS"
+      },
+      "schema_comparison": {
+        "from1645": "FAIL",
+        "from1879": "PASS"
+      },
+      "phpunit_status": {
+        "init": "PASS",
+        "schema_parity_2026110890_test": "FAIL",
+        "pr48_tenant_isolation_test": "PASS",
+        "local_kbacompany": "FAIL",
+        "local_kbacorporate": "FAIL"
+      },
+      "focused_schema": {
+        "tests": 13,
+        "assertions": 1257,
+        "errors": 0,
+        "failures": 11
+      },
+      "focused_tenants": {
+        "tests": 2,
+        "assertions": 66,
+        "errors": 0,
+        "failures": 0
+      },
+      "bms": {
+        "tests": 540,
+        "assertions": 4034,
+        "errors": 40,
+        "failures": 41
+      },
+      "corporate_diagnostics": {
+        "tests": 144,
+        "assertions": 666,
+        "errors": 29,
+        "failures": 3,
+        "files_pass": 27,
+        "files_fail": 10,
+        "junit_files": 36,
+        "collection_fatal_files": 1
+      },
+      "diagnostic_files": {
+        "access_test.php": "PASS",
+        "business_role_management_test.php": "PASS",
+        "business_roles_test.php": "PASS",
+        "company_implementation_access_test.php": "PASS",
+        "competencies_test.php": "PASS",
+        "competency_audits_test.php": "PASS",
+        "competency_map_test.php": "PASS",
+        "competency_reassessment_test.php": "PASS",
+        "course_recommendations_test.php": "FAIL",
+        "development_plans_test.php": "FAIL",
+        "economic_dashboard_test.php": "PASS",
+        "economic_indicators_test.php": "PASS",
+        "employee_assessment_history_test.php": "PASS",
+        "employee_competency_profile_test.php": "PASS",
+        "employee_gap_test.php": "PASS",
+        "erp_exchange_test.php": "FAIL",
+        "implementation_actions_test.php": "FAIL",
+        "implementation_analytics_test.php": "PASS",
+        "implementation_audit_comparison_test.php": "PASS",
+        "implementation_audits_test.php": "FAIL",
+        "implementation_curator_company_scope_test.php": "PASS",
+        "implementation_curator_role_test.php": "PASS",
+        "implementation_evidence_test.php": "FAIL",
+        "implementation_kanban_test.php": "FAIL",
+        "implementation_section_progress_test.php": "PASS",
+        "implementation_task_bridge_test.php": "FAIL",
+        "individual_development_plan_test.php": "FAIL",
+        "license_reconciliation_test.php": "PASS",
+        "management_dashboards_test.php": "PASS",
+        "moodle_learning_plan_urls_test.php": "PASS",
+        "privacy_provider_test.php": "FAIL",
+        "production_hardening_test.php": "PASS",
+        "repository_lifecycle_test.php": "PASS",
+        "role_course_coverage_test.php": "PASS",
+        "study_plan_progress_test.php": "PASS",
+        "study_plan_provisioning_test.php": "PASS",
+        "target_profile_test.php": "PASS"
+      },
+      "artifact": 13631791508,
+      "artifact_zip_sha256": "316c8ab3f18b73bd330a7884ddb2cd128731e04468008f1011762656de505e1d"
+    },
+    "percona": {
+      "php": "8.1.34",
+      "database": "8.0.46-37",
+      "database_comment": "Percona Server (GPL), Release 37, Revision 39e2b60e",
+      "scenarios": {
+        "fresh": "PASS",
+        "from1645": "PASS",
+        "from1879": "PASS"
+      },
+      "schema_comparison": {
+        "from1645": "FAIL",
+        "from1879": "PASS"
+      },
+      "phpunit_status": {
+        "init": "PASS",
+        "schema_parity_2026110890_test": "FAIL",
+        "pr48_tenant_isolation_test": "PASS",
+        "local_kbacompany": "FAIL",
+        "local_kbacorporate": "FAIL"
+      },
+      "focused_schema": {
+        "tests": 13,
+        "assertions": 1257,
+        "errors": 0,
+        "failures": 11
+      },
+      "focused_tenants": {
+        "tests": 2,
+        "assertions": 66,
+        "errors": 0,
+        "failures": 0
+      },
+      "bms": {
+        "tests": 540,
+        "assertions": 4034,
+        "errors": 40,
+        "failures": 41
+      },
+      "corporate_diagnostics": {
+        "tests": 144,
+        "assertions": 638,
+        "errors": 35,
+        "failures": 2,
+        "files_pass": 26,
+        "files_fail": 11,
+        "junit_files": 36,
+        "collection_fatal_files": 1
+      },
+      "diagnostic_files": {
+        "access_test.php": "PASS",
+        "business_role_management_test.php": "PASS",
+        "business_roles_test.php": "PASS",
+        "company_implementation_access_test.php": "PASS",
+        "competencies_test.php": "PASS",
+        "competency_audits_test.php": "PASS",
+        "competency_map_test.php": "PASS",
+        "competency_reassessment_test.php": "PASS",
+        "course_recommendations_test.php": "FAIL",
+        "development_plans_test.php": "FAIL",
+        "economic_dashboard_test.php": "PASS",
+        "economic_indicators_test.php": "PASS",
+        "employee_assessment_history_test.php": "PASS",
+        "employee_competency_profile_test.php": "PASS",
+        "employee_gap_test.php": "PASS",
+        "erp_exchange_test.php": "FAIL",
+        "implementation_actions_test.php": "FAIL",
+        "implementation_analytics_test.php": "PASS",
+        "implementation_audit_comparison_test.php": "PASS",
+        "implementation_audits_test.php": "FAIL",
+        "implementation_curator_company_scope_test.php": "PASS",
+        "implementation_curator_role_test.php": "PASS",
+        "implementation_evidence_test.php": "FAIL",
+        "implementation_kanban_test.php": "FAIL",
+        "implementation_section_progress_test.php": "PASS",
+        "implementation_task_bridge_test.php": "FAIL",
+        "individual_development_plan_test.php": "FAIL",
+        "license_reconciliation_test.php": "PASS",
+        "management_dashboards_test.php": "PASS",
+        "moodle_learning_plan_urls_test.php": "PASS",
+        "privacy_provider_test.php": "FAIL",
+        "production_hardening_test.php": "FAIL",
+        "repository_lifecycle_test.php": "PASS",
+        "role_course_coverage_test.php": "PASS",
+        "study_plan_progress_test.php": "PASS",
+        "study_plan_provisioning_test.php": "PASS",
+        "target_profile_test.php": "PASS"
+      },
+      "artifact": 13632085407,
+      "artifact_zip_sha256": "8546ea57ee74b3e6f35d7a221ea5c2fb0d35a5786a013f5241e43f06583e5941"
+    }
+  }
+}
