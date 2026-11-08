@@ -40,6 +40,7 @@ final class implementation_analytics {
                       WHERE ck.taskid = t.id AND ck.isdone = 1) AS checklistdone
                FROM {local_kbacorp_impl_program} p
                JOIN {local_kbacorp_impl_task} t ON t.auditid = p.baselineauditid
+                         AND t.companyid = p.companyid
                JOIN {local_kbacorp_company} co ON co.id = t.companyid
                JOIN {user} cu ON cu.id = p.curatorid
               WHERE " . implode(' AND ', $where) . "

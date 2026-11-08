@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Source preservation and dependency gate; never connects to Moodle or a DB."""
 import json
+from check_corporate_api126 import check_source
 import re
 import subprocess
 from pathlib import Path
@@ -10,7 +11,7 @@ BASE = '740fce16db15bb3551071cc11fe584c680fd738d'
 REVIEWED_UPDATES = {'.github/workflows/prepare-release.yml', 'docs/00_MASTER_CONTEXT.md'}
 
 def check(root=ROOT):
-    errors = []
+    errors, corporate_updates = check_source(root)
     data = subprocess.check_output(['git', '-C', str(root), 'ls-tree', '-r', '-z', BASE])
     baseline = {}
     for row in data.split(b'\0'):
@@ -27,7 +28,7 @@ def check(root=ROOT):
             errors.append('missing or unsafe main path: ' + path)
     protected = {p for p in baseline if p.startswith('local/') and not p.startswith('local/kbacompany/')}
     protected.update(r['path'] for r in deleted)
-    protected.difference_update(REVIEWED_UPDATES)
+    protected.difference_update(REVIEWED_UPDATES | corporate_updates)
     # Batch hashing preserves attributes while avoiding one process per file.
     paths = sorted(p for p in protected if (root / p).is_file() and not (root / p).is_symlink())
     hashes = subprocess.check_output(['git', '-C', str(root), 'hash-object', '--stdin-paths'],

@@ -22,7 +22,7 @@ final class erp_exchange_test extends \advanced_testcase {
         $this->assertFalse($contract['privacy']['employee_pii_exported']);
         $this->assertContains('unassessed_competency_is_null_not_zero', $contract['semantic_guards']);
         $this->assertSame('erp_created_accounts_only', $contract['push_entities']['employee']['profile_update_policy']);
-        $this->assertSame('1.21', bridge::API_RELEASE);
+        $this->assertSame('1.26', bridge::API_RELEASE);
         $this->assertTrue($contract['hardening']['entity_locking']);
         $this->assertTrue($contract['hardening']['transactional_writes']);
         $this->assertSame('hashed_identifiers_no_payload_or_pii',

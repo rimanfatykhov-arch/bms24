@@ -3268,3 +3268,22 @@ $string['enrolledwithoutallocationwarning'] = 'Active Moodle enrolments without 
 $string['licenseprovenancetitle'] = 'Licence sources';
 $string['licenseprovenancebitrix'] = 'Bitrix24: deal #{$a->deal}, product row #{$a->row}';
 $string['licensepackagecapacity'] = 'seats: {$a->seats}; allocated: {$a->allocated}; free: {$a->free}';
+
+// Integration stage 1815.
+$string['implementationaddtobattleplan'] = 'Add to Battle Plan';
+
+// Least-privilege implementation curator role (0.40.9).
+$string['curateimplementation'] = 'Eligible for BMS implementation curator assignment';
+$string['curatorrolename'] = 'BMS Implementation Curator';
+$string['curatorroledesc'] = 'Eligibility for appointment to specific BMS implementation programs only; no program administration or access to unassigned company data.';
+$string['curatorrolesetup'] = 'Set up the BMS implementation curator role';
+$string['curatorrolesetupdesc'] = 'After the plugin upgrade, create the curator role, assign it in system roles, and separately assign the curator to a specific implementation program. The role does not grant blanket access to customer companies.';
+$string['curatorrolecreated'] = 'The implementation curator role was created. It can now be assigned to users.';
+$string['curatorrolealreadyexists'] = 'The curator role already exists. Assign it to the user and then assign the user to a specific program.';
+$string['curatorroleassign'] = 'Assign a system role';
+$string['curatorrolecreate'] = 'Create the curator role';
+$string['curatorrolecapmissing'] = 'Curator capability is not registered yet. Complete the Moodle upgrade first.';
+$string['curatorrolecapnotassigned'] = 'An existing role with this shortname does not grant curator eligibility. Review the role permissions before assigning users.';
+$string['curatorrolepermissions'] = 'Review role permissions';
+
+$string['curatoropenreview'] = 'Open result review';

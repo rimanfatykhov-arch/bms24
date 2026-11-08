@@ -74,6 +74,15 @@ jobs:
             exit 1
           fi
           git diff --check 740fce16db15bb3551071cc11fe584c680fd738d HEAD
+      - name: Corporate API 1.26 source and dependency regression
+        run: |
+          python tools/test_corporate_api126.py
+          php tools/test_corporate_task_query_scope.php
+          php local/kbacorporate/cli/implementation_program_sections_projection_contract.php
+          php local/kbacorporate/cli/implementation_program_task_sections_projection_contract.php
+          php local/kbacorporate/cli/implementation_program_result_projection_contract.php
+          php local/kbacorporate/tests/curator_scope_contract_1822.php
+          find local/kbacorporate -name '*.php' -type f -print0 | xargs -0 -n1 -P8 php -l > /tmp/corporate-php-lint.txt
       - name: RC30 candidate version and runtime gate regressions
         run: |
           php local/kbacompany/cli/test_rc30_version_1879.php

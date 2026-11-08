@@ -75,6 +75,7 @@ final class implementation_section_progress {
                FROM {local_kbacorp_impl_audit} a
                JOIN {local_kbacorp_bms_tool} t ON t.id = a.toolid
           LEFT JOIN {local_kbacorp_impl_program} p ON p.baselineauditid = a.id
+                        AND p.companyid = a.companyid
               WHERE a.companyid = :companyid
                 AND a.status = :status
            ORDER BY a.auditdate DESC, a.id DESC",
