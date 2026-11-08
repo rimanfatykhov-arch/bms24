@@ -8,8 +8,9 @@ The workflow runs on disposable GitHub-hosted Ubuntu workers, with no deployment
 credentials, read-only repository permissions and isolated service containers.
 Production, stage41 and the shared Windows Moodle QA installation are not targets.
 
-Pinned core: Moodle 4.1.22, commit
-`b27f0816159a7555a0b3ad9ff2f8f8ef701a29fa`. PHP 8.1 is supplied by setup-php;
+Pinned core: Moodle 4.1.22, annotated tag object
+`b27f0816159a7555a0b3ad9ff2f8f8ef701a29fa`, resolving to core commit
+`df1157bb845eabedd31989d6a1a6e18f638ff890`. PHP 8.1 is supplied by setup-php;
 the patch version is recorded by the run. Container manifest digests are pinned
 for MariaDB 10.11.19 and Percona Server 8.0.46-37. These versions reproduce the
 observed engine families; they do not reproduce host configuration or live data.
