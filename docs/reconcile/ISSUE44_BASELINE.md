@@ -28,7 +28,7 @@ governance. Accepted владельцем и merged в main — разные с�
 
 [GitHub snapshot](issue44-github-snapshot.json) содержит полные SHA/base/head/status.
 [Source evidence](issue44-source-evidence.json) содержит SHA256 version/install/upgrade,
-все guards и структурный diff XMLDB для main/import/candidate/R1/R2.
+извлечённые regex-анализом version guards и структурный diff XMLDB для main/import/candidate/R1/R2.
 Git diff посчитан с `--no-renames`; XML сравнен по таблицам, полям, keys и indexes.
 Это анализ исходников, не исполнение миграций и не deployment record.
 
