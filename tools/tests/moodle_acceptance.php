@@ -276,6 +276,19 @@ if ($fresh) {
             $fresh, $logs . '/' . $component . '-phpunit.log');
         $report['phpunit'][$component] = $exit === 0 ? 'PASS' : 'FAIL';
         echo $component . '/phpunit: ' . $report['phpunit'][$component] . "\n";
+        // A discovery fatal must not hide all other files. Keep the suite FAIL;
+        // these independent runs are additional diagnostic evidence, not a waiver.
+        if ($exit !== 0 && !is_file($logs . '/' . $component . '-junit.xml')) {
+            $directory = $fresh . '/local/' . substr($component, 6) . '/tests';
+            foreach (glob($directory . '/*_test.php') as $file) {
+                $label = $component . '-' . basename($file, '.php');
+                $result = command([PHP_BINARY, $fresh . '/vendor/bin/phpunit',
+                    '--configuration', $fresh . '/phpunit.xml', '--log-junit',
+                    $logs . '/' . $label . '-junit.xml', $file], $fresh, $logs . '/' . $label . '.log');
+                $report['diagnostic_files'][$component][basename($file)] = $result === 0 ? 'PASS' : 'FAIL';
+                echo $label . ': ' . ($result === 0 ? 'PASS' : 'FAIL') . "\n";
+            }
+        }
     }
 } else {
     $report['phpunit'] = ['init' => 'NOT RUN', 'reason' => 'Fresh Moodle installation failed'];

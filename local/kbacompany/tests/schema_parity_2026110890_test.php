@@ -34,9 +34,21 @@ final class schema_parity_2026110890_test extends \advanced_testcase {
         require_once(__DIR__ . '/../db/upgradelib.php');
     }
 
+    protected function tearDown(): void {
+        try {
+            // Fail inside PHPUnit's lifecycle so Moodle still resets the DB.
+            // Do not accept or hide debugging emitted by the actual repair.
+            $this->assertDebuggingNotCalled();
+        } finally {
+            parent::tearDown();
+        }
+    }
+
     private function definition(array $spec): \xmldb_field {
+        // XMLDB represents an empty CHAR default as null; the SQL generator
+        // creates the database-specific empty default for a NOT NULL field.
         return new \xmldb_field($spec[1], XMLDB_TYPE_CHAR, $spec[2], null,
-            XMLDB_NOTNULL, null, $spec[3], $spec[4]);
+            XMLDB_NOTNULL, null, $spec[3] === '' ? null : $spec[3], $spec[4]);
     }
 
     /** Restore schema even when a test assertion or the repair itself fails. */
