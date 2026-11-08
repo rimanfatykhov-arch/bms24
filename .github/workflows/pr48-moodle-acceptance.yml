@@ -61,6 +61,8 @@ jobs:
         run: |
           cp ../candidate/tools/tests/moodle-4.1-composer.lock composer.lock
           composer install --no-interaction --prefer-dist --no-progress
+      - name: Provision Moodle PHPUnit locales
+        run: sudo locale-gen en_AU.UTF-8
       - name: Fresh install, historical upgrades and tenant tests
         env:
           MOODLE_ROOT: ${{ github.workspace }}/moodle-core

@@ -286,5 +286,6 @@ foreach ($report['schema_comparison'] as $status) { $failed = $failed || $status
 foreach ($report['phpunit'] as $status) { $failed = $failed || $status !== 'PASS'; }
 $report['status'] = $failed ? 'FAIL' : 'PASS';
 write_json($logs . '/report.json', $report);
+echo json_encode($report, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR) . "\n";
 echo 'Full isolated acceptance: ' . $report['status'] . "\n";
 exit($failed ? 1 : 0);
