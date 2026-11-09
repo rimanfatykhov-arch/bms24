@@ -84,16 +84,21 @@ certified by this matrix. No new dependencies are introduced.
 
 Bounded tracked-file scanning found no config/env/private-key paths or obvious
 token/private-key signatures in tracked text. This is not a secret-free
-certification: legacy `local/bitrixsync_v5.0.31_PROD.zip.zip 17.08.2026` contains
-499 archive entries; member names were checked but all content is not audited.
+certification. The sole tracked archive,
+`local/bitrixsync_v5.0.31_PROD.zip.zip 17.08.2026`, was also scanned in memory:
+499 entries (451 files),755636 bytes, no skipped members or nested archives,
+and zero matches for the chosen sensitive-name/key/token/config patterns.
+No archive was extracted or executed. Signature coverage is inherently limited.
 SSH inventory metadata contains route/config-path/fingerprint categories, not
 private-key material. Packaging is plugin-scoped and does not certify all legacy
 repository archives. Do not print suspected values into CI/report output.
 
 ## Validation
 
-Results are recorded after executing this candidate; prior PR52 PASS does not
-certify changed code. Required checks: syntax/static/language/XML, source and
-dependency preservation, CLI regressions, deterministic install ZIP verification,
-real Moodle focused gates and both full suites on MariaDB and Percona. Remaining
-BMS failures stay blocking; no skip/xfail or severity relaxation is introduced.
+Actual execution is recorded in [PR56 acceptance](PR56_RC30_ACCEPTANCE.md).
+Both engines pass all31 focused RC30 tests, all six install/upgrade scenarios,
+schema comparisons and full Corporate. Full BMS563/5496 retains23 errors and
+20 failures (no new failing identities). Static CI and CI ZIP/manifest verification
+pass. Overall release remains HOLD; no skip/xfail or severity relaxation was used.
+The CI artifact is authoritative: Windows checkout packages differ only by
+CRLF/LF in24 entries, recorded as a cross-checkout packaging follow-up for Issue45.

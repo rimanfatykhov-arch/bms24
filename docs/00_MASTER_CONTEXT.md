@@ -53,3 +53,5 @@ PR52 tested source469afad: complete MariaDB/Percona matrix confirms Corporate150
 ## 2026-11-09 — Issue44 re-audit and RC30 diagnostics
 
 The current owner prompt preserves approved ADR-0002. PR55 historical observations do not supersede that decision or PR52 evidence. Separate candidate BMS2026110902 repairs Moodle exception classification and RC30 severity fixtures; Corporate2026110901 is unchanged. See docs/reconcile/ISSUE44_REAUDIT_RC30_DIAGNOSTICS.md. No new main-based integration, merge, staging/production deployment or Issue45 operational rollout is authorized by this source increment.
+
+PR56 tested979a23e: MariaDB/Percona both pass31 focused RC30 tests, six install/upgrade scenarios and full Corporate150/962. Full BMS563/5496 still has23 errors/20 failures; no new failing identities. Issue44/release HOLD. Report: docs/reconcile/PR56_RC30_ACCEPTANCE.md. CI artifact verified; no deployment. Cross-checkout CRLF/LF packaging difference is recorded for Issue45.

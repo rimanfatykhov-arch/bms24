@@ -1,0 +1,98 @@
+{
+  "observed_date": "2026-11-09",
+  "main_sha": "740fce16db15bb3551071cc11fe584c680fd738d",
+  "approved_anchor": "a36c5ab8ac129433eeddb0ae341717e35b614ac8",
+  "source_candidate": "979a23e9c6f9cb4ea82ab5b7272be36e6bbfff9c",
+  "pull_requests": [
+    {
+      "number": 8,
+      "state": "open",
+      "merged": false,
+      "draft": true,
+      "head_sha": "eccc1eb221df90675067b1011e986702d96a4985",
+      "head_ref": "import/build2026101879",
+      "base_ref": "main"
+    },
+    {
+      "number": 38,
+      "state": "open",
+      "merged": false,
+      "draft": true,
+      "head_sha": "aadc035435a80a8721ebc98b74ae623c7569906d",
+      "head_ref": "feature/role-intelligence-readiness-01",
+      "base_ref": "main"
+    },
+    {
+      "number": 39,
+      "state": "open",
+      "merged": false,
+      "draft": true,
+      "head_sha": "092bcb2718a2466bf1b763fd5c9e83ab983e0591",
+      "head_ref": "feature/role-intelligence-readiness-r2",
+      "base_ref": "feature/role-intelligence-readiness-01"
+    },
+    {
+      "number": 41,
+      "state": "open",
+      "merged": false,
+      "draft": true,
+      "head_sha": "9c758d154988564f09bbea979be4a46454d753ca",
+      "head_ref": "docs/bms24-four-stream-product-vision",
+      "base_ref": "main"
+    },
+    {
+      "number": 43,
+      "state": "open",
+      "merged": false,
+      "draft": true,
+      "head_sha": "cd1cd314d74e7946354ba7ae6576cbef8636e56d",
+      "head_ref": "docs/bms24-governance-1-0",
+      "base_ref": "docs/bms24-four-stream-product-vision"
+    },
+    {
+      "number": 55,
+      "state": "open",
+      "merged": false,
+      "draft": true,
+      "head_sha": "a2347d2192a7df498b68ca0d24795f14b4eca7b2",
+      "head_ref": "audit/rc30-issue44-baseline-reconciliation",
+      "base_ref": "main"
+    },
+    {
+      "number": 35,
+      "state": "open",
+      "merged": false,
+      "draft": true,
+      "head_sha": "66ccc1562f3eabc4bc30773c24d60f6f37e68ab1",
+      "head_ref": "ops/1896-stage41-certbot-webroot",
+      "base_ref": "fix/1895-acme-probe-retry-diagnostics"
+    },
+    {
+      "number": 36,
+      "state": "open",
+      "merged": false,
+      "draft": true,
+      "head_sha": "751046db0cd7f6f2a9fe1b84ce6f8c2471050222",
+      "head_ref": "ops/1897-stage41-https-basic-auth",
+      "base_ref": "ops/1896-stage41-certbot-webroot"
+    },
+    {
+      "number": 54,
+      "state": "open",
+      "merged": false,
+      "draft": true,
+      "head_sha": "6a0c81fa731e8269881fb13ea1e28f66697a1823",
+      "head_ref": "ops/1898-parity41-webserver-gated",
+      "base_ref": "ops/1897-stage41-https-basic-auth"
+    },
+    {
+      "number": 52,
+      "state": "open",
+      "merged": false,
+      "draft": true,
+      "head_sha": "1146e1bc330621ffcfa7dcb3881a2188110904c8",
+      "head_ref": "fix/pr50-runtime-blockers",
+      "base_ref": "fix/pr49-schema-p0"
+    }
+  ]
+}
