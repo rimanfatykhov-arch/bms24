@@ -159,7 +159,8 @@ $self = __FILE__;
 $fresh = null;
 foreach (['fresh' => null, 'from1645' => $main, 'from1879' => $import,
         'from0890' => 'e06cc96e2933e9142c1d51d2fcfa06b159737718',
-        'from0900' => '5c59057cb7af3fd545cd661bb7c2b3daa5ae7cd9'] as $name => $historical) {
+        'from0900' => '5c59057cb7af3fd545cd661bb7c2b3daa5ae7cd9',
+        'from0901' => '1146e1bc330621ffcfa7dcb3881a2188110904c8'] as $name => $historical) {
     $scenario = $testroot . '/' . $name;
     $core = $scenario . '/core';
     $entry = ['status' => 'FAIL', 'steps' => [], 'bms_source' => $historical ?? 'candidate working tree',
@@ -251,7 +252,7 @@ foreach (['fresh' => null, 'from1645' => $main, 'from1879' => $import,
     write_json($logs . '/report.json', $report);
 }
 
-foreach (['from1645', 'from1879', 'from0890', 'from0900'] as $name) {
+foreach (['from1645', 'from1879', 'from0890', 'from0900', 'from0901'] as $name) {
     $a = $testroot . '/fresh/schema.json';
     $b = $testroot . '/' . $name . '/schema.json';
     $report['schema_comparison'][$name] = !is_file($a) || !is_file($b) ? 'NOT RUN' :
@@ -267,6 +268,10 @@ if ($fresh) {
         'privacy_provider_test', 'kbacorporate_impl_task_provider_test'];
     foreach (glob($fresh . '/local/kbacompany/tests/communication*_test.php') as $file) {
         $focused[] = basename($file, '.php');
+    }
+    foreach (['task_rc30_acceptance1864_test', 'task_rc30_cli_response1866_test',
+            'task_rc30_report_comparison1867_test'] as $test) {
+        $focused[] = $test;
     }
     foreach ($focused as $test) {
         if ($code !== 0) { $report['phpunit'][$test] = 'NOT RUN'; continue; }
