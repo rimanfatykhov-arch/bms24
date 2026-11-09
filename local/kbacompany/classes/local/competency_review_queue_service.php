@@ -33,10 +33,40 @@ class competency_review_queue_service {
                 'competency' => $item->competency->get('shortname'),
                 'status' => (int)$item->usercompetency->get('status'),
                 'workurl' => self::work_url($id),
+                'workgrade' => self::work_grade($id),
                 'reviewurl' => new \moodle_url('/admin/tool/lp/user_competency.php', ['id' => $id]),
             ];
         }
         return ['count' => (int)$native['count'], 'rows' => $rows];
+    }
+
+    /** Read-only published grade; never infer competency confirmation from a grade. */
+    public static function work_grade(int $id): ?string {
+        global $CFG;
+        $url = self::work_url($id);
+        if (!$url) {
+            return null;
+        }
+        require_once($CFG->libdir . '/gradelib.php');
+        $cm = get_coursemodule_from_id('assign', (int)$url->get_param('id'), 0, false, MUST_EXIST);
+        $course = get_course($cm->course);
+        $userid = (int)$url->get_param('userid');
+        $assignment = new \assign(\context_module::instance($cm->id), $cm, $course);
+        if (empty($course->showgrades) || !has_capability('moodle/grade:view',
+                \context_course::instance($course->id), $userid) ||
+                ($assignment->get_instance()->markingworkflow &&
+                 $assignment->get_grading_status($userid) !== ASSIGN_MARKING_WORKFLOW_STATE_RELEASED)) {
+            return null;
+        }
+        $item = \grade_item::fetch(['courseid' => $course->id, 'itemtype' => 'mod',
+            'itemmodule' => 'assign', 'iteminstance' => $cm->instance, 'itemnumber' => 0]);
+        $grade = $item ? \grade_grade::fetch(['itemid' => $item->id, 'userid' => $userid]) : null;
+        if (!$item || $item->needsupdate || $item->is_hidden() || !$grade || $grade->is_hidden() ||
+                $grade->finalgrade === null || $grade->finalgrade === false ||
+                !in_array((int)$item->gradetype, [GRADE_TYPE_VALUE, GRADE_TYPE_SCALE], true)) {
+            return null;
+        }
+        return grade_format_gradevalue($grade->finalgrade, $item);
     }
 
     /**

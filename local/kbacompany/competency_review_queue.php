@@ -28,17 +28,21 @@ if ($action === 'work') {
 $queue = competency_review_queue_service::queue(max(0, $page));
 echo $OUTPUT->header();
 echo html_writer::tag('p', get_string('reviewqueue_intro', 'local_kbacompany'));
+echo html_writer::tag('p', get_string('reviewqueue_route_help', 'local_kbacompany'));
+echo html_writer::link(new moodle_url($url, ['page' => max(0, $page)]),
+    get_string('reviewqueue_refresh', 'local_kbacompany'), ['class' => 'btn btn-secondary mb-3']);
 if (!$queue['rows']) {
     echo $OUTPUT->notification(get_string('reviewqueue_empty', 'local_kbacompany'), 'info');
 } else {
     $table = new html_table();
     $table->head = [get_string('fullname'), get_string('reviewqueue_competency', 'local_kbacompany'),
-        get_string('status'), get_string('actions')];
+        get_string('status'), get_string('employee2_assignment_grade', 'local_kbacompany'), get_string('actions')];
     foreach ($queue['rows'] as $row) {
         $actions = [];
         if ($row['workurl']) {
             $actions[] = html_writer::link(new moodle_url($url, ['action' => 'work', 'id' => $row['id']]),
-                get_string('reviewqueue_open_work', 'local_kbacompany'), ['class' => 'btn btn-primary mr-2']);
+                get_string('reviewqueue_open_work_tab', 'local_kbacompany'),
+                ['class' => 'btn btn-primary mr-2', 'target' => '_blank', 'rel' => 'noopener']);
             $actions[] = html_writer::span(get_string('reviewqueue_related_work_hint', 'local_kbacompany'),
                 'text-muted d-block');
         } else {
@@ -46,11 +50,13 @@ if (!$queue['rows']) {
                 'text-muted d-block');
         }
         $actions[] = html_writer::link($row['reviewurl'],
-            get_string('reviewqueue_review', 'local_kbacompany'), ['class' => 'btn btn-secondary']);
+            get_string('reviewqueue_review_tab', 'local_kbacompany'),
+            ['class' => 'btn btn-secondary', 'target' => '_blank', 'rel' => 'noopener']);
         $status = $row['status'] === \core_competency\user_competency::STATUS_IN_REVIEW
             ? 'reviewqueue_in_review' : 'reviewqueue_waiting';
         $table->data[] = [s($row['fullname']), s($row['competency']),
-            get_string($status, 'local_kbacompany'), implode(' ', $actions)];
+            get_string($status, 'local_kbacompany'), $row['workgrade'] !== null ? s($row['workgrade']) :
+                get_string('reviewqueue_grade_not_published', 'local_kbacompany'), implode(' ', $actions)];
     }
     echo html_writer::div(html_writer::table($table), 'table-responsive');
 }

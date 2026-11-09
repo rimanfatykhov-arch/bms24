@@ -64,6 +64,56 @@ final class employee_development_courses_test extends \advanced_testcase {
         employee_workspace_service::tab_context($company, $employee->id, $outsider->id, 'competencies', []);
     }
 
+    public function test_two_company_requirements_do_not_leak_learning_results(): void {
+        global $DB;
+        [$company, $employee, , $outsider, $competency] = $this->fixture();
+        $othercompany = '55555555-5555-4555-8555-555555555555';
+        $position = '66666666-6666-4666-8666-666666666666';
+        $profile = '77777777-7777-4777-8777-777777777777';
+        $DB->insert_record('local_kbacompany_company', ['uuid' => $othercompany, 'name' => 'Other Workshop',
+            'sourcekind' => 'bms', 'bmsclient' => 1]);
+        foreach ([$employee, $outsider] as $index => $user) {
+            $DB->insert_record('local_kbacompany_member', [
+                'uuid' => '88888888-8888-4888-8888-88888888888' . $index,
+                'companyuuid' => $othercompany, 'userid' => $user->id]);
+        }
+        $DB->insert_record('local_kbacompany_position', ['companyuuid' => $othercompany, 'uuid' => $position,
+            'branchuuid' => '', 'orgnodeuuid' => '', 'code' => 'OTHER-01', 'name' => 'Other lead']);
+        $DB->insert_record('local_kbacompany_posassign', ['companyuuid' => $othercompany,
+            'positionuuid' => $position, 'userid' => $employee->id]);
+        $DB->insert_record('local_kbacompany_roledna', ['companyuuid' => $othercompany, 'uuid' => $profile,
+            'positionuuid' => $position, 'title' => 'Other lead', 'status' => 'published']);
+        $generator = $this->getDataGenerator();
+        $cg = $generator->get_plugin_generator('core_competency');
+        $framework = $cg->create_framework();
+        $othercompetency = $cg->create_competency(['competencyframeworkid' => $framework->get('id')]);
+        $otherid = (int)$othercompetency->get('id');
+        competency_catalog_service::bind_framework($othercompany, (int)get_admin()->id, (int)$framework->get('id'));
+        $DB->insert_record('local_kbacompany_rolednacomp', ['companyuuid' => $othercompany,
+            'rolednauuid' => $profile, 'competencyid' => $otherid, 'targetlevel' => 2]);
+        $courses = [];
+        foreach ([$competency, $otherid] as $id) {
+            $course = $generator->create_course();
+            $generator->enrol_user($employee->id, $course->id, 'student');
+            $cg->create_course_competency(['courseid' => $course->id, 'competencyid' => $id]);
+            $cg->create_user_competency(['userid' => $employee->id, 'competencyid' => $id,
+                'grade' => 1, 'proficiency' => false]);
+            $courses[$id] = (int)$course->id;
+        }
+        $this->setUser($employee);
+        foreach ([$company => $competency, $othercompany => $otherid] as $scope => $id) {
+            $context = employee_workspace_service::tab_context($scope, $employee->id, $employee->id, 'competencies', []);
+            $this->assertSame([$id], array_column($context['competencies']['requirements'], 'competency_id'));
+            $this->assertSame([$id], array_keys($context['development_courses']));
+            $this->assertSame([$courses[$id]], array_keys($context['development_courses'][$id]));
+            $this->assertSame([$id], array_keys($context['moodle_ratings']));
+        }
+        $this->setUser($outsider);
+        $this->expectException(\moodle_exception::class);
+        $this->expectExceptionMessage(get_string('companynotavailable', 'local_kbacompany'));
+        employee_workspace_service::tab_context($company, $employee->id, $outsider->id, 'competencies', []);
+    }
+
     public function test_course_access_enrolment_and_untracked_progress(): void {
         [$company, $employee, , , $competency] = $this->fixture();
         $generator = $this->getDataGenerator();
@@ -92,7 +142,8 @@ final class employee_development_courses_test extends \advanced_testcase {
         }
         $this->setUser($employee);
         $context = employee_workspace_service::tab_context($company, $employee->id, $employee->id, 'competencies', []);
-        $this->assertSame([$competency => [$eligibleid => ['id' => $eligibleid, 'name' => 'eligible', 'percentage' => null]]],
+        $this->assertSame([$competency => [$eligibleid => ['id' => $eligibleid, 'name' => 'eligible',
+            'percentage' => null, 'assignments' => []]]],
             $context['development_courses']);
         $this->assertSame((int)$rating->get('id'), $context['moodle_ratings'][$competency]['id']);
         $this->assertSame('A', $context['moodle_ratings'][$competency]['label']);
@@ -102,5 +153,100 @@ final class employee_development_courses_test extends \advanced_testcase {
         $this->assertTrue($generator->enrol_user($adminid, $eligibleid, 'student'));
         $context = employee_workspace_service::tab_context($company, $employee->id, $adminid, 'competencies', []);
         $this->assertSame([], $context['development_courses']);
+    }
+
+    public function test_assignment_results_visibility_zero_and_scale(): void {
+        global $CFG, $DB;
+        require_once($CFG->libdir . '/gradelib.php');
+        [$company, $employee, , , $competency] = $this->fixture();
+        $generator = $this->getDataGenerator();
+        $course = $generator->create_course(['showgrades' => 1]);
+        $generator->enrol_user($employee->id, $course->id, 'student');
+        $cg = $generator->get_plugin_generator('core_competency');
+        $cg->create_course_competency(['courseid' => $course->id, 'competencyid' => $competency]);
+        $scale = $generator->create_scale(['scale' => 'Developing,Ready']);
+        $modules = [];
+        foreach (['zero', 'hiddenitem', 'hiddengrade', 'future', 'workflow', 'blind', 'scale', 'unrelated', 'hiddenmodule'] as $kind) {
+            $a = $generator->create_module('assign', ['course' => $course->id,
+                'grade' => $kind === 'scale' ? -$scale->id : 100,
+                'markingworkflow' => $kind === 'workflow' ? 1 : 0,
+                'blindmarking' => $kind === 'blind' ? 1 : 0,
+                'visible' => $kind === 'hiddenmodule' ? 0 : 1]);
+            if ($kind !== 'unrelated') {
+                $cg->create_course_module_competency(['cmid' => $a->cmid, 'competencyid' => $competency]);
+            }
+            grade_update('test', $course->id, 'mod', 'assign', $a->id, 0,
+                ['userid' => $employee->id, 'rawgrade' => $kind === 'scale' ? 2 : 0]);
+            $item = \grade_item::fetch(['courseid' => $course->id, 'itemmodule' => 'assign', 'iteminstance' => $a->id]);
+            if ($kind === 'hiddenitem' || $kind === 'future') {
+                $item->set_hidden($kind === 'future' ? time() + 3600 : 1);
+            }
+            if ($kind === 'hiddengrade') {
+                $grade = \grade_grade::fetch(['itemid' => $item->id, 'userid' => $employee->id]);
+                $grade->set_hidden(1);
+            }
+            $modules[$kind] = $a;
+        }
+        grade_regrade_final_grades($course->id);
+        $this->setUser($employee);
+        $context = employee_workspace_service::tab_context($company, $employee->id, $employee->id, 'competencies', []);
+        $results = $context['development_courses'][$competency][$course->id]['assignments'];
+        $this->assertArrayNotHasKey($modules['unrelated']->cmid, $results);
+        $this->assertArrayNotHasKey($modules['hiddenmodule']->cmid, $results);
+        $this->assertSame('graded', $results[$modules['zero']->cmid]['state']);
+        $this->assertNotEmpty($results[$modules['zero']->cmid]['grade']);
+        $this->assertSame('Ready', $results[$modules['scale']->cmid]['grade']);
+        foreach (['hiddenitem', 'hiddengrade', 'future', 'workflow', 'blind'] as $kind) {
+            $this->assertNull($results[$modules[$kind]->cmid]['grade'], $kind);
+            $this->assertSame('unavailable', $results[$modules[$kind]->cmid]['state'], $kind);
+        }
+        $DB->insert_record('assign_user_flags', ['assignment' => $modules['workflow']->id,
+            'userid' => $employee->id, 'workflowstate' => ASSIGN_MARKING_WORKFLOW_STATE_RELEASED]);
+        $item = \grade_item::fetch(['courseid' => $course->id, 'itemmodule' => 'assign',
+            'iteminstance' => $modules['zero']->id]);
+        $DB->set_field('grade_items', 'needsupdate', 1, ['id' => $item->id]);
+        $before = $DB->get_record('grade_grades', ['itemid' => $item->id, 'userid' => $employee->id]);
+        $context = employee_workspace_service::tab_context($company, $employee->id, $employee->id, 'competencies', []);
+        $results = $context['development_courses'][$competency][$course->id]['assignments'];
+        $this->assertNull($results[$modules['zero']->cmid]['grade']);
+        $this->assertSame(1, (int)$DB->get_field('grade_items', 'needsupdate', ['id' => $item->id]));
+        $this->assertEquals($before, $DB->get_record('grade_grades', ['itemid' => $item->id, 'userid' => $employee->id]));
+        $this->assertSame('graded', $results[$modules['workflow']->cmid]['state']);
+        $role = $DB->get_record('role', ['shortname' => 'student'], '*', MUST_EXIST);
+        assign_capability('moodle/grade:view', CAP_PROHIBIT, $role->id, \context_course::instance($course->id)->id);
+        accesslib_clear_all_caches_for_unit_testing();
+        $context = employee_workspace_service::tab_context($company, $employee->id, $employee->id, 'competencies', []);
+        foreach ($context['development_courses'][$competency][$course->id]['assignments'] as $result) {
+            $this->assertNull($result['grade']);
+        }
+        unassign_capability('moodle/grade:view', $role->id, \context_course::instance($course->id)->id);
+        accesslib_clear_all_caches_for_unit_testing();
+        $DB->set_field('course', 'showgrades', 0, ['id' => $course->id]);
+        rebuild_course_cache($course->id, true);
+        $context = employee_workspace_service::tab_context($company, $employee->id, $employee->id, 'competencies', []);
+        foreach ($context['development_courses'][$competency][$course->id]['assignments'] as $result) {
+            $this->assertNull($result['grade']);
+        }
+    }
+
+    public function test_confirmation_states_are_not_assignment_grades(): void {
+        [$company, $employee, , , $competency] = $this->fixture();
+        $this->setUser($employee);
+        $context = employee_workspace_service::tab_context($company, $employee->id, $employee->id, 'competencies', []);
+        $this->assertSame('unassessed', $context['moodle_ratings'][$competency]['state']);
+        $this->setAdminUser();
+        $record = $this->getDataGenerator()->get_plugin_generator('core_competency')->create_user_competency([
+            'userid' => $employee->id, 'competencyid' => $competency, 'grade' => 1, 'proficiency' => false]);
+        foreach ([['notproficient', false, 0], ['proficient', true, 0],
+                ['review', true, \core_competency\user_competency::STATUS_WAITING_FOR_REVIEW]] as [$state, $proficiency, $status]) {
+            $record->set('proficiency', $proficiency)->set('status', $status)->update();
+            $this->setUser($employee);
+            $context = employee_workspace_service::tab_context($company, $employee->id, $employee->id, 'competencies', []);
+            $this->assertSame($state, $context['moodle_ratings'][$competency]['state']);
+            if ($state === 'review') {
+                $this->assertSame('', $context['moodle_ratings'][$competency]['label']);
+            }
+            $this->setAdminUser();
+        }
     }
 }
