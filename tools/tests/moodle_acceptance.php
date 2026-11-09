@@ -263,7 +263,8 @@ if ($fresh) {
     $code = command([PHP_BINARY, $fresh . '/admin/tool/phpunit/cli/init.php'], $fresh, $logs . '/phpunit-init.log');
     $report['phpunit']['init'] = $code === 0 ? 'PASS' : 'FAIL';
     // Run focused files in separate PHP processes before broad legacy discovery.
-    $focused = ['schema_parity_2026110890_test', 'ordered_index_2026110900_test', 'pr48_tenant_isolation_test'];
+    $focused = ['schema_parity_2026110890_test', 'ordered_index_2026110900_test', 'pr48_tenant_isolation_test',
+        'privacy_provider_test', 'kbacorporate_impl_task_provider_test'];
     foreach (glob($fresh . '/local/kbacompany/tests/communication*_test.php') as $file) {
         $focused[] = basename($file, '.php');
     }

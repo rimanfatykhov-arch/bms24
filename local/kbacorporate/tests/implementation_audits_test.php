@@ -298,10 +298,9 @@ final class implementation_audits_test extends \advanced_testcase {
         $this->assertSame($taskid, (int)$deleted->deletionkey);
         $this->assertGreaterThan(0, (int)$deleted->deletedat);
         $this->assertCount(0, implementation_audits::get_tasks($companyid, ['auditid' => $auditid]));
-        $this->assertTrue($DB->record_exists('local_kbacorp_impl_comment', [
-            'taskid' => $taskid,
-            'message' => 'Audit trail message',
-        ]));
+        $this->assertTrue($DB->record_exists_select('local_kbacorp_impl_comment',
+            'taskid = :taskid AND ' . $DB->sql_compare_text('message') . ' = :message',
+            ['taskid' => $taskid, 'message' => 'Audit trail message']));
         $history = implementation_task_lifecycle::get_history($taskid);
         $this->assertSame('delete', (string)$history[0]->eventtype);
 

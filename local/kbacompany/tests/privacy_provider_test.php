@@ -18,7 +18,7 @@ final class privacy_provider_test extends \advanced_testcase {
             'revision' => 1, 'writerid' => $user->id, 'reason' => 'Personal note', 'timecreated' => time(),
         ]);
         $contexts = provider::get_contexts_for_userid((int)$user->id);
-        $this->assertContains(\context_system::instance()->id, $contexts->get_contextids());
+        $this->assertContains(\context_system::instance()->id, array_map('intval', $contexts->get_contextids()));
         $approved = new \core_privacy\local\request\approved_contextlist(
             $user, 'local_kbacompany', [\context_system::instance()->id]);
         provider::delete_data_for_user($approved);
@@ -39,7 +39,7 @@ final class privacy_provider_test extends \advanced_testcase {
             'effectiveto' => 0, 'active' => 1, 'timecreated' => time(), 'timemodified' => time(),
         ]);
         $contexts = provider::get_contexts_for_userid((int)$user->id);
-        $this->assertContains(\context_system::instance()->id, $contexts->get_contextids());
+        $this->assertContains(\context_system::instance()->id, array_map('intval', $contexts->get_contextids()));
     }
     public function test_communication_user_data_is_anonymised_without_deleting_other_participants_thread(): void {
         global $DB;
@@ -67,7 +67,7 @@ final class privacy_provider_test extends \advanced_testcase {
             'status' => 'active', 'timecreated' => time(),
         ]);
         $contexts = provider::get_contexts_for_userid((int)$user->id);
-        $this->assertContains(\context_system::instance()->id, $contexts->get_contextids());
+        $this->assertContains(\context_system::instance()->id, array_map('intval', $contexts->get_contextids()));
         $approved = new \core_privacy\local\request\approved_contextlist(
             $user, 'local_kbacompany', [\context_system::instance()->id]);
         provider::delete_data_for_user($approved);
@@ -115,7 +115,7 @@ final class privacy_provider_test extends \advanced_testcase {
             'sourcekind' => 'manual', 'sourceinfo' => 'Close', 'reportedby' => $user->id, 'timecreated' => $now,
         ]);
         $contexts = provider::get_contexts_for_userid((int)$user->id);
-        $this->assertContains(\context_system::instance()->id, $contexts->get_contextids());
+        $this->assertContains(\context_system::instance()->id, array_map('intval', $contexts->get_contextids()));
         $approved = new \core_privacy\local\request\approved_contextlist(
             $user, 'local_kbacompany', [\context_system::instance()->id]);
         provider::delete_data_for_user($approved);
@@ -153,7 +153,7 @@ final class privacy_provider_test extends \advanced_testcase {
             'ownerpositionuuid' => '', 'duedate' => '', 'createdby' => $user->id, 'timecreated' => $now,
         ]);
         $contexts = provider::get_contexts_for_userid((int)$user->id);
-        $this->assertContains(\context_system::instance()->id, $contexts->get_contextids());
+        $this->assertContains(\context_system::instance()->id, array_map('intval', $contexts->get_contextids()));
         $approved = new \core_privacy\local\request\approved_contextlist(
             $user, 'local_kbacompany', [\context_system::instance()->id]);
         provider::delete_data_for_user($approved);
@@ -194,7 +194,7 @@ final class privacy_provider_test extends \advanced_testcase {
             'authoruserid' => $user->id, 'comment' => 'Private user comment', 'timecreated' => $now,
         ]);
         $contexts = provider::get_contexts_for_userid((int)$user->id);
-        $this->assertContains(\context_system::instance()->id, $contexts->get_contextids());
+        $this->assertContains(\context_system::instance()->id, array_map('intval', $contexts->get_contextids()));
         $approved = new \core_privacy\local\request\approved_contextlist(
             $user, 'local_kbacompany', [\context_system::instance()->id]);
         provider::delete_data_for_user($approved);

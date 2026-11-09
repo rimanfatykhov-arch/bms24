@@ -44,8 +44,8 @@ final class kbacorporate_impl_task_provider_test extends \advanced_testcase {
 
     public function test_projection_never_trusts_external_source_url_or_editability(): void {
         $task = provider::project($this->fixture(), 17);
-        $this->assertSame('/local/kbacorporate/implementation_task.php?id=28',
-            parse_url($task['source_url'], PHP_URL_PATH) . '?'.parse_url($task['source_url'], PHP_URL_QUERY));
+        $expectedurl = new \moodle_url('/local/kbacorporate/implementation_task.php', ['id' => 28]);
+        $this->assertSame($expectedurl->out(false), $task['source_url']);
         $this->assertFalse($task['editable']);
         $this->assertSame('', $task['canonical_task_uuid']);
         $this->assertSame('develop', $task['stream']);

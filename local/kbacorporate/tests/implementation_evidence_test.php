@@ -70,6 +70,7 @@ final class implementation_evidence_test extends \advanced_testcase {
     }
 
     public function test_pending_version_blocks_duplicate_submission_and_direct_review(): void {
+        $this->resetAfterTest();
         [$taskid, $ownerid] = $this->create_inprogress_task();
         $this->setUser(\core_user::get_user($ownerid));
         $evidence = implementation_evidence::submit(

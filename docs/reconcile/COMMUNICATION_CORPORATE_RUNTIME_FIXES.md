@@ -16,6 +16,12 @@ communication/Corporate blockers without weakening ACL/privacy checks.
   company-authorized actor fallback. A named-user regression exercises additional
   name fields and asserts no debugging. A stale inbox expectation is corrected
   to explicitly verify two distinct events: thread invitation and message.
+  Relative future/past deadlines separately verify `task_due` and `task_overdue`,
+  so the test no longer changes meaning after a fixed calendar date.
+  Privacy context assertions normalize DB-returned numeric IDs before strict
+  comparison; all anonymization and other-participant preservation assertions
+  remain. Corporate task-source URLs are compared in full against Moodle's URL
+  API, including the configured origin and installation subdirectory.
 - ERP normalizes a missing DB result to null at its private typed boundary.
   Company/provider/external-ID predicates, opt-in and membership checks remain.
 - ERP lookups qualify the fixed `system` column, with all values bound. Fixed
@@ -23,9 +29,16 @@ communication/Corporate blockers without weakening ACL/privacy checks.
   logging; updates omit the unchanged provider identity. No column is renamed.
 - Criterion save preserves valid section code `'0'`; it must not be treated as
   an absent value by PHP empty(). Existing weighted-score assertions remain.
+- Development-plan projections select every real Moodle name field, including
+  joined mentor, evidence submitter and reviewer names. Query scope is unchanged.
+  Normal role-merge outcomes remain structured results rather than developer
+  errors; ERP privacy-safe audit logging remains enabled.
 - Corporate tests declare CFG in the file-loader scope, avoid by-reference calls
   on expressions, use Moodle generators/valid domain fixtures, supply intended
   manager permissions, and read privacy metadata through its actual object API.
+  Text comparisons use Moodle's DB-portable API and mutating evidence tests reset
+  their fixtures. Provider isolation is tested independently within one company
+  as well as across companies, including missing mappings and hashed audit data.
   No failure is suppressed, skipped or changed to an expected exception merely
   to make the suite green.
 

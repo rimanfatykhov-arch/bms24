@@ -165,8 +165,10 @@ final class erp_exchange_test extends \advanced_testcase {
         $this->assertTrue($first['created']);
         $this->assertFalse($second['created']);
         $this->assertSame($first['moodle_company_id'], $second['moodle_company_id']);
-        $this->assertSame(1, $DB->count_records('local_kbacorp_extmap', [
-            'companyid' => 0, ($DB->get_dbfamily() === 'mysql' ? '`system`' : 'system') => 'odoo', 'entitytype' => 'company',
+        $this->assertSame(1, $DB->count_records_sql('SELECT COUNT(*) FROM {local_kbacorp_extmap} em
+            WHERE em.companyid = :companyid AND em.system = :system
+              AND em.entitytype = :entitytype AND em.externalid = :externalid', [
+            'companyid' => 0, 'system' => 'odoo', 'entitytype' => 'company',
             'externalid' => 'company-42',
         ]));
 
@@ -230,9 +232,11 @@ final class erp_exchange_test extends \advanced_testcase {
             'companyid' => (int)$company['moodle_company_id'], 'userid' => $userid,
         ]));
         $this->assertSame(0, (int)$DB->get_field('user', 'suspended', ['id' => $userid]));
-        $this->assertSame('inactive', $DB->get_field('local_kbacorp_extmap', 'status', [
+        $this->assertSame('inactive', $DB->get_field_sql('SELECT em.status FROM {local_kbacorp_extmap} em
+            WHERE em.companyid = :companyid AND em.system = :system
+              AND em.entitytype = :entitytype AND em.externalid = :externalid', [
             'companyid' => (int)$company['moodle_company_id'],
-            ($DB->get_dbfamily() === 'mysql' ? '`system`' : 'system') => 'erp_test',
+            'system' => 'erp_test',
             'entitytype' => 'employee', 'externalid' => 'employee-created',
         ]));
 
@@ -607,9 +611,11 @@ final class erp_exchange_test extends \advanced_testcase {
         $this->assertCount(0, business_roles::get_user_roles(
             (int)$user->id, (int)$company['moodle_company_id']
         ));
-        $this->assertSame('inactive', $DB->get_field('local_kbacorp_extmap', 'status', [
+        $this->assertSame('inactive', $DB->get_field_sql('SELECT em.status FROM {local_kbacorp_extmap} em
+            WHERE em.companyid = :companyid AND em.system = :system
+              AND em.entitytype = :entitytype AND em.externalid = :externalid', [
             'companyid' => $company['moodle_company_id'],
-            ($DB->get_dbfamily() === 'mysql' ? '`system`' : 'system') => 'bms_erp',
+            'system' => 'bms_erp',
             'entitytype' => 'business_role_assignment', 'externalid' => 'a-1',
         ]));
     }

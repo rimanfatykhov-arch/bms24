@@ -72,7 +72,16 @@ final class communication_center_service_test extends \advanced_testcase {
         $this->assertStringContainsString('weekly numbers', $screen['rows'][0]['body']);
     }
 
-    public function test_employee_inbox_combines_unread_communication_and_due_task(): void {
+    public static function deadline_cases(): array {
+        return [
+            'future deadline' => ['+7 days', 'task_due'],
+            'past deadline' => ['-7 days', 'task_overdue'],
+        ];
+    }
+
+    /** @dataProvider deadline_cases */
+    public function test_employee_inbox_combines_unread_communication_and_due_task(
+            string $relativeDeadline, string $expectedKind): void {
         global $DB;
         $f = $this->fixture();
         $thread = communication_service::create_thread($f['company'], $f['admin'], [
@@ -82,7 +91,8 @@ final class communication_center_service_test extends \advanced_testcase {
         task_service::create($f['company'], $f['admin'], [
             'title' => 'Due task', 'description' => '', 'product' => 'Accepted result',
             'assigneeid' => (int)$f['employee']->id, 'reviewerid' => 0, 'priority' => 'normal',
-            'stream' => 'operate', 'startdate' => '', 'duedate' => '2026-09-20', 'planminutes' => 0,
+            'stream' => 'operate', 'startdate' => '',
+            'duedate' => gmdate('Y-m-d', strtotime($relativeDeadline)), 'planminutes' => 0,
             'parentuuid' => '',
         ]);
 
@@ -98,6 +108,7 @@ final class communication_center_service_test extends \advanced_testcase {
         $this->assertSame(1, $context['counts']['tasks']);
         $kinds = array_column($context['inbox'], 'kind');
         $this->assertContains('notification', $kinds);
-        $this->assertContains('task_due', $kinds);
+        $this->assertContains($expectedKind, $kinds);
+        $this->assertNotContains($expectedKind === 'task_due' ? 'task_overdue' : 'task_due', $kinds);
     }
 }

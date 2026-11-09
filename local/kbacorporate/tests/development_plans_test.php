@@ -10,6 +10,59 @@ use local_kbacorporate\local\competency_audits;
 use local_kbacorporate\local\repository;
 
 final class development_plans_test extends \advanced_testcase {
+    public function test_name_projections_preserve_all_configured_fields_for_each_actor(): void {
+        global $CFG, $DB;
+        $this->resetAfterTest();
+        $this->setAdminUser();
+        $CFG->fullnamedisplay = 'firstname middlename lastname firstnamephonetic lastnamephonetic alternatename';
+        $CFG->alternativefullnameformat = $CFG->fullnamedisplay;
+        $companyid = repository::save_company((object)['name' => 'Name Fields', 'active' => 1]);
+        $users = [];
+        $names = [];
+        foreach (['Employee', 'Mentor', 'Submitter', 'Reviewer'] as $actor) {
+            $users[$actor] = $this->getDataGenerator()->create_user([
+                'firstname' => $actor, 'lastname' => 'Family', 'middlename' => $actor . 'Middle',
+                'firstnamephonetic' => $actor . 'Phonetic', 'lastnamephonetic' => 'FamilyPhonetic',
+                'alternatename' => $actor . 'Alias',
+            ]);
+            repository::add_member($companyid, (int)$users[$actor]->id, 'employee');
+            $names[$actor] = $actor . ' ' . $actor . 'Middle Family ' .
+                $actor . 'Phonetic FamilyPhonetic ' . $actor . 'Alias';
+        }
+        $planid = $DB->insert_record('local_kbacorp_devplan', (object)[
+            'companyid' => $companyid, 'userid' => $users['Employee']->id,
+            'title' => 'Names', 'mentorid' => $users['Mentor']->id,
+        ]);
+        $generator = $this->getDataGenerator()->get_plugin_generator('core_competency');
+        $framework = $generator->create_framework();
+        $competency = $generator->create_competency(['competencyframeworkid' => $framework->get('id')]);
+        $itemid = $DB->insert_record('local_kbacorp_devitem', (object)[
+            'planid' => $planid, 'competencyid' => $competency->get('id'), 'goal' => 'Verify names',
+            'mentorid' => $users['Mentor']->id, 'evidencesubmittedby' => $users['Submitter']->id,
+            'reviewedby' => $users['Reviewer']->id,
+        ]);
+        $options = development_plans::mentor_options($companyid);
+        foreach ($users as $actor => $user) { $this->assertSame($names[$actor], $options[$user->id]); }
+        $plan = development_plans::get_plan($planid);
+        $this->assertSame($names['Employee'], fullname($plan));
+        $this->assertSame($names['Mentor'], $plan->mentorname);
+        $plans = development_plans::get_company_plans($companyid);
+        $this->assertCount(1, $plans);
+        $this->assertSame($names['Employee'], fullname($plans[0]));
+        $items = development_plans::get_items($planid);
+        $this->assertCount(1, $items);
+        foreach ([$items[0], development_plans::get_item($itemid)] as $item) {
+            $this->assertSame($names['Mentor'], $item->mentorname);
+            $this->assertSame($names['Submitter'], $item->evidencesubmittername);
+            $this->assertSame($names['Reviewer'], $item->reviewername);
+        }
+        development_plans::log_event($planid, $itemid, $users['Reviewer']->id, 'name-check');
+        $history = development_plans::get_history($planid);
+        $this->assertCount(1, $history);
+        $this->assertSame($names['Reviewer'], fullname($history[0]));
+        $this->assertDebuggingNotCalled();
+    }
+
     public function test_learning_plan_schedule_uses_priority_phases_and_deadlines(): void {
         $critical = development_plans::learning_plan_schedule(business_roles::PRIORITY_CRITICAL);
         $core = development_plans::learning_plan_schedule(business_roles::PRIORITY_CORE);
