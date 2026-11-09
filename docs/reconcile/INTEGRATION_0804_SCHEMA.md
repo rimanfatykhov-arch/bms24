@@ -12,8 +12,8 @@ Disposable GitHub Linux workers, stock Moodle4.1.22, PHP8.1, pinned MariaDB10.11
 
 Focused schema/index/task isolation, reviewqueue, employee learning/profile, readiness, company and design suites run separately before full BMS/Corporate suites. Existing failures remain failures, not waived. Queue scope is personal Moodle permissions, not the currently selected company: test restricted target-user permissions across companies, direct work URLs, revoked rights and grade visibility. Employee-card requirements/results must remain company-scoped. No browser UI/HTTP or live-stage acceptance is implied by PHP service tests.
 
-## Pending results
+## Final results
 
-CI and full matrix pending. PR50 full acceptance was HOLD (40 errors/30 failures per engine in BMS plus Corporate blockers); compare failing identities on the integrated tree. This candidate is not approved for deployment. Rollback here is discarding/reverting this isolated branch; deployed DB rollback would require a matched backup, not a version decrement.
+See PR53_INTEGRATION_ACCEPTANCE.md: static CI PASS; both SQL engines pass all migrations and targeted isolation. Full BMS has37 errors/29 failures per engine (0 new failing identities versus PR50), Corporate remains blocked. Overall HOLD. This candidate is not approved for deployment. Rollback here is discarding/reverting this isolated branch; deployed DB rollback would require a matched backup, not a version decrement.
 
 PR52 independently uses2026110901. This candidate therefore uses2026110902; PR52 runtime fixes are not included in this requested0804+PR48–50 integration.
