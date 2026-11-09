@@ -1,0 +1,15 @@
+{
+  "artifact_id": 13704536748,
+  "sha256": "afa36dead177ceb87b0a2833891823cc70980fed890992fcd04c2ebf5debd080",
+  "entries": 1790,
+  "crc_ok": true,
+  "forbidden_names": [],
+  "signature_findings": [],
+  "scan_rules": [
+    "private_key",
+    "github_token",
+    "aws_access_id",
+    "openai_project_key"
+  ],
+  "limitation": "Limited filename and high-confidence signature scan; not proof of absence of all secrets. No production/config content examined."
+}
