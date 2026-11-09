@@ -85,29 +85,53 @@ final class task_kanban1850_test extends \advanced_testcase {
     public function test_page_scoped_grouping_and_full_counts_in_board_html(): void {
         $this->resetAfterTest();
         set_config('bms24_shell_mode', 'owned', 'local_kbacompany');
+        // Rendering resolves real company ACL; a model actor is not a membership grant.
+        global $DB;
+        $company = '74c48c36-d1bf-4ba0-b80f-3e7f7e8e9777';
+        $DB->insert_record('local_kbacompany_company', (object)[
+            'uuid'=>$company, 'name'=>'Kanban fixture', 'sourcekind'=>'bms',
+            'legacycompanyid'=>0, 'bmsclient'=>1, 'active'=>1,
+        ]);
+        $employee = $this->getDataGenerator()->create_user();
+        $actor = (int)$employee->id;
+        $DB->insert_record('local_kbacompany_member', (object)[
+            'uuid'=>'22222222-2222-4222-8222-222222222222',
+            'companyuuid'=>$company, 'userid'=>$actor, 'active'=>1, 'isemployee'=>1,
+        ]);
+        $this->setUser($employee);
+        $this->assertFalse(is_siteadmin($actor));
+        $this->assertFalse(has_capability('local/kbacompany:viewallcompanies',
+            \context_system::instance(), $actor));
+        $this->assertFalse(\local_kbacompany\local\task_service::can_manage($company, $actor));
         $task = [
             'uuid'=>'11111111-1111-4111-8111-111111111111','title'=>'<strong>Task</strong>',
             'revision'=>1,'product'=>'Result','status'=>'open','stream'=>'operate',
-            'due_date'=>'','assignee_id'=>10,'assignee_name'=>'John',
-            'effective_assignee_id'=>10,'effective_assignee_name'=>'John',
-            'creator_id'=>10,'creator_name'=>'John','reviewer_id'=>0,'reviewer_name'=>'',
+            'due_date'=>'','assignee_id'=>$actor,'assignee_name'=>'John',
+            'effective_assignee_id'=>$actor,'effective_assignee_name'=>'John',
+            'creator_id'=>$actor,'creator_name'=>'John','reviewer_id'=>0,'reviewer_name'=>'',
             'observer_id'=>0,'observer_name'=>'','priority'=>'normal','source_kind'=>'manual',
             'time_modified'=>0,'time_created'=>0,'context_kind'=>'','context_uuid'=>'','context_label'=>'',
         ];
         $p = prefs::defaults();
         $p['groupby'] = 'assignee';
         $p['limits']['open'] = 1;
-        $model = ['can_manage'=>false,'total'=>1,'page'=>0,'pagesize'=>25,'actor'=>10,
+        $model = ['can_manage'=>false,'total'=>1,'page'=>0,'pagesize'=>25,'actor'=>$actor,
             'tasks'=>[$task], 'scope_counts'=>[], 'plan_memberships'=>[], 'employees'=>[],
             'kanban_preferences'=>$p, 'kanban_status_counts'=>['open'=>5]];
         $f = ['scope'=>'roles','q'=>'','status'=>'','stream'=>'','sourcekind'=>'',
             'battleplan'=>'','signal'=>'','assignee'=>0,'project'=>''];
-        $html = ui::listing('test-company', $model, $f, 'kanban');
+        $html = ui::listing($company, $model, $f, 'kanban');
         $this->assertStringContainsString('bms-task1850-board', $html);
         $this->assertStringContainsString('bms-task1850-group', $html);
         $this->assertStringContainsString('bms-task1850-overlimit', $html);
         $this->assertStringContainsString('data-kanban-target="doing"', $html);
         $this->assertStringContainsString('data-kanban-routes=', $html);
         $this->assertStringNotContainsString('<strong>Task</strong>', $html);
+        $this->assertStringContainsString('&lt;strong&gt;Task&lt;/strong&gt;', $html);
+        $this->assertSame(1, substr_count($html, 'data-kanban-task="'.$task['uuid'].'"'));
+        $this->assertStringContainsString('class="bms-task1846-count">5</span>', $html);
+        $this->assertStringContainsString('5 / 1', $html);
+        $this->assertStringContainsString('operation=start', $html);
+        $this->assertStringNotContainsString('operation=accept', $html);
     }
 }

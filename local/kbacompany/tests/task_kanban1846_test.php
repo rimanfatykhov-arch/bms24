@@ -70,6 +70,24 @@ final class task_kanban1846_test extends \advanced_testcase {
     public function test_editor_and_columns_render_without_raw_html_or_missing_tasks(): void {
         $this->resetAfterTest();
         set_config('bms24_shell_mode', 'owned', 'local_kbacompany');
+        // Rendering resolves real company ACL; a model actor is not a membership grant.
+        global $DB;
+        $company = '74c48c36-d1bf-4ba0-b80f-3e7f7e8e9777';
+        $DB->insert_record('local_kbacompany_company', (object)[
+            'uuid'=>$company, 'name'=>'Kanban fixture', 'sourcekind'=>'bms',
+            'legacycompanyid'=>0, 'bmsclient'=>1, 'active'=>1,
+        ]);
+        $employee = $this->getDataGenerator()->create_user();
+        $actor = (int)$employee->id;
+        $DB->insert_record('local_kbacompany_member', (object)[
+            'uuid'=>'22222222-2222-4222-8222-222222222222',
+            'companyuuid'=>$company, 'userid'=>$actor, 'active'=>1, 'isemployee'=>1,
+        ]);
+        $this->setUser($employee);
+        $this->assertFalse(is_siteadmin($actor));
+        $this->assertFalse(has_capability('local/kbacompany:viewallcompanies',
+            \context_system::instance(), $actor));
+        $this->assertFalse(\local_kbacompany\local\task_service::can_manage($company, $actor));
         $base = [
             'uuid'=>'15151515-1515-4151-8151-151515151515', 'title'=>'<script>Unsafe</script>',
             'product'=>'Product', 'status'=>'open', 'stream'=>'operate', 'due_date'=>'',
@@ -89,7 +107,7 @@ final class task_kanban1846_test extends \advanced_testcase {
         $config = prefs::normalise(['columns'=>$columns, 'mapping'=>['returned'=>'open']]);
         $model = [
             'can_manage'=>false, 'total'=>2, 'page'=>0, 'pagesize'=>25,
-            'actor'=>10, 'tasks'=>[$base,$returned], 'scope_counts'=>[],
+            'actor'=>$actor, 'tasks'=>[$base,$returned], 'scope_counts'=>[],
             'plan_memberships'=>[], 'employees'=>[], 'kanban_preferences'=>$config,
         ];
         $filters = [
@@ -97,7 +115,7 @@ final class task_kanban1846_test extends \advanced_testcase {
             'battleplan'=>'', 'signal'=>'', 'assignee'=>0, 'project'=>'',
             'sort'=>'duedate', 'dir'=>'asc',
         ];
-        $html = ui::listing('test-company', $model, $filters, 'kanban');
+        $html = ui::listing($company, $model, $filters, 'kanban');
         $this->assertStringContainsString('task_kanban_preferences.php', $html);
         $this->assertStringContainsString('data-kanban-column="open"', $html);
         $this->assertStringContainsString('Returned task', $html);
@@ -105,5 +123,9 @@ final class task_kanban1846_test extends \advanced_testcase {
         $this->assertStringNotContainsString('Мой <b>список</b>', $html);
         $this->assertStringContainsString('bms-task1846-settings', $html);
         $this->assertStringContainsString('bms-task1846-board', $html);
+        $this->assertStringContainsString('&lt;script&gt;Unsafe&lt;/script&gt;', $html);
+        $this->assertSame(1, substr_count($html, 'data-kanban-task="'.$base['uuid'].'"'));
+        $this->assertSame(1, substr_count($html, 'data-kanban-task="'.$returned['uuid'].'"'));
+        $this->assertDoesNotMatchRegularExpression('/<section\\b[^>]*data-kanban-column="returned"/', $html);
     }
 }
