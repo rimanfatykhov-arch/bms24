@@ -33,3 +33,5 @@ Build0906 adds a code-only savepoint and exact0905 upgrade coverage. Corporate,
 Core, schema definitions and domain authorization stay unchanged. Full dual-engine
 results and remaining failure identities will be recorded after candidate CI.
 Release HOLD; no merge or staging/production access.
+
+Final dual-engine evidence: [PR60_ACCEPTANCE.md](PR60_ACCEPTANCE.md). Both unchanged-source baseline artifacts and final candidate raw JUnit were verified. Exactly three target errors resolve; eight new cases pass; no new or missing failure identities. RC30 remains HOLD for 21 prior failures.
