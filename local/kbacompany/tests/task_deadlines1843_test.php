@@ -71,7 +71,13 @@ final class task_deadlines1843_test extends \advanced_testcase {
             ['companyuuid'=>$company,'uuid'=>$closed]);
         $otherid = repository::save_company((object)['name'=>'Isolated tasks','active'=>1]);
         $other = identity_registry::company_uuid($otherid);
-        $this->create($other,$actor,$actor,'Other company task',$yesterday);
+        $otherworker = $this->getDataGenerator()->create_user();
+        $DB->insert_record('local_kbacorp_member', (object)[
+            'companyid'=>$otherid, 'userid'=>$otherworker->id, 'membertype'=>'employee',
+            'isemployee'=>1, 'ismanager'=>0, 'isdepartmentmanager'=>0, 'ishr'=>0,
+            'timecreated'=>time(), 'timemodified'=>time(),
+        ]);
+        $foreign = $this->create($other,$actor,(int)$otherworker->id,'Other company task',$yesterday);
         $filter=['scope'=>'roles','deadlineview'=>true];
         $summary = task_service::deadline_summary($company,$actor,$filter);
         $this->assertSame(['total'=>7, 'overdue'=>2, 'today'=>1, 'week'=>1,
@@ -83,12 +89,22 @@ final class task_deadlines1843_test extends \advanced_testcase {
         $this->assertSame(['Overdue A','Overdue B','Today'],array_column($first['tasks'],'title'));
         $this->assertSame(['Week','Later','Undated'],array_column($second['tasks'],'title'));
         $this->assertSame(['Closed'],array_column($third['tasks'],'title'));
+        foreach ([$first, $second, $third] as $page) {
+            $this->assertNotContains($foreign, array_column($page['tasks'], 'uuid'));
+        }
         $filter['duegroup']='overdue';
         $only=task_service::list_page($company,$actor,$filter);
         $this->assertSame(2,$only['total']);
+        $this->assertNotContains($foreign, array_column($only['tasks'], 'uuid'));
         $this->assertSame(7,task_service::deadline_summary($company,$actor,$filter)['total']);
         $filter['duegroup']='closed';
         $this->assertSame(['Closed'],array_column(task_service::list_page($company,$actor,$filter)['tasks'],'title'));
+        $this->setUser($worker);
+        $this->assertSame(7, task_service::deadline_summary($company, $worker)['total']);
+        $this->assertNull(task_service::readable_projection($company, $worker, $foreign));
+        $this->expectException(\moodle_exception::class);
+        $this->expectExceptionMessage(get_string('companynotavailable', 'local_kbacompany'));
+        task_service::deadline_summary($other, $worker);
     }
 
     public function test_deadlines_view_escapes_task_titles_and_preserves_scope_and_group(): void {

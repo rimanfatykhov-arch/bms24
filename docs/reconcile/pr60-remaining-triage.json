@@ -1,0 +1,149 @@
+[
+  {
+    "test_id": "local_kbacompany\\battle_plan_indicator_service_test::test_historical_projection_uses_last_52_periods_relative_to_plan_week",
+    "category": "Battle Plans and tasks",
+    "first_failure_diagnosis": "Only two historical facts seeded; trend requires at least three. Preserve plan-relative52-period window and future-data exclusion.",
+    "scope": "source and first-failure diagnosis; later paths are not proven",
+    "test_source": "local/kbacompany/tests/battle_plan_indicator_service_test.php"
+  },
+  {
+    "test_id": "local_kbacompany\\battle_plan_management_overview_service_test::test_contract_is_schema_neutral_read_model",
+    "category": "Contracts and stale tests",
+    "first_failure_diagnosis": "Exact old contract version0.5.10 differs from owning0.5.11; review semantic assertions before updating.",
+    "scope": "source and first-failure diagnosis; later paths are not proven",
+    "test_source": "local/kbacompany/tests/battle_plan_management_overview_service_test.php"
+  },
+  {
+    "test_id": "local_kbacompany\\battle_plan_word_export_service_test::test_model_projects_previous_partial_week_and_current_target",
+    "category": "Battle Plans and tasks",
+    "first_failure_diagnosis": "Hand-built OOXML model omits labels.observer; other case expects Russian literal in English runtime. Preserve valid model, Cyrillic/escaping and partial-week semantics.",
+    "scope": "source and first-failure diagnosis; later paths are not proven",
+    "test_source": "local/kbacompany/tests/battle_plan_word_export_service_test.php"
+  },
+  {
+    "test_id": "local_kbacompany\\battle_plan_word_export_service_test::test_ooxml_contains_real_word_document_and_cyrillic_text",
+    "category": "Battle Plans and tasks",
+    "first_failure_diagnosis": "Hand-built OOXML model omits labels.observer; other case expects Russian literal in English runtime. Preserve valid model, Cyrillic/escaping and partial-week semantics.",
+    "scope": "source and first-failure diagnosis; later paths are not proven",
+    "test_source": "local/kbacompany/tests/battle_plan_word_export_service_test.php"
+  },
+  {
+    "test_id": "local_kbacompany\\bms_navigation_test::test_only_allowlisted_context_is_propagated",
+    "category": "BMS UI and App Shell",
+    "first_failure_diagnosis": "Allowlist expanded to coordweek; retain rejection of unrelated parameters and invalid dates.",
+    "scope": "source and first-failure diagnosis; later paths are not proven",
+    "test_source": "local/kbacompany/tests/bms_navigation_test.php"
+  },
+  {
+    "test_id": "local_kbacompany\\bms_page_shell_service_test::test_business_architecture_semantics_follow_bms_methodology",
+    "category": "BMS UI and App Shell",
+    "first_failure_diagnosis": "Old contract/taxonomy arrays precede implemented entries; review owning information architecture, order and visibility.",
+    "scope": "source and first-failure diagnosis; later paths are not proven",
+    "test_source": "local/kbacompany/tests/bms_page_shell_service_test.php"
+  },
+  {
+    "test_id": "local_kbacompany\\bms_page_shell_service_test::test_contract_versions_are_aligned",
+    "category": "BMS UI and App Shell",
+    "first_failure_diagnosis": "Old contract/taxonomy arrays precede implemented entries; review owning information architecture, order and visibility.",
+    "scope": "source and first-failure diagnosis; later paths are not proven",
+    "test_source": "local/kbacompany/tests/bms_page_shell_service_test.php"
+  },
+  {
+    "test_id": "local_kbacompany\\company_core_test::test_contract_declares_existing_source_without_duplication",
+    "category": "Contracts and stale tests",
+    "first_failure_diagnosis": "Company0.6.7 and permission0.7.0 declarations differ from old literal assertions; do not loosen permission behavior.",
+    "scope": "source and first-failure diagnosis; later paths are not proven",
+    "test_source": "local/kbacompany/tests/company_core_test.php"
+  },
+  {
+    "test_id": "local_kbacompany\\company_core_test::test_permission_contract_centralises_company_role_policies",
+    "category": "Contracts and stale tests",
+    "first_failure_diagnosis": "Company0.6.7 and permission0.7.0 declarations differ from old literal assertions; do not loosen permission behavior.",
+    "scope": "source and first-failure diagnosis; later paths are not proven",
+    "test_source": "local/kbacompany/tests/company_core_test.php"
+  },
+  {
+    "test_id": "local_kbacompany\\financial_statement_service_test::test_bdr_and_bdds_calculations_match_bms_finance_rules",
+    "category": "Metrics and finance",
+    "first_failure_diagnosis": "Fixture arithmetic1000-300-200+50-20-30 yields500; expected450 contradicts inputs. Verify intermediate lines, not change financial rules.",
+    "scope": "source and first-failure diagnosis; later paths are not proven",
+    "test_source": "local/kbacompany/tests/financial_statement_service_test.php"
+  },
+  {
+    "test_id": "local_kbacompany\\indicator_registry_service_test::test_contract_keeps_one_canonical_indicator_registry",
+    "category": "Contracts and stale tests",
+    "first_failure_diagnosis": "Old contract version assertion; owning source declares0.5.5.2.",
+    "scope": "source and first-failure diagnosis; later paths are not proven",
+    "test_source": "local/kbacompany/tests/indicator_registry_service_test.php"
+  },
+  {
+    "test_id": "local_kbacompany\\integration_event_service_test::test_event_outbox_lifecycle_is_independent_from_legacy_command_status",
+    "category": "Contracts and stale tests",
+    "first_failure_diagnosis": "Attempts count failed and completed attempts:0 ->1 ->1 ->2 through fail/retry/complete. Keep idempotency and legacy-command independence assertions.",
+    "scope": "source and first-failure diagnosis; later paths are not proven",
+    "test_source": "local/kbacompany/tests/integration_event_service_test.php"
+  },
+  {
+    "test_id": "local_kbacompany\\market_model_service_test::test_contract",
+    "category": "Contracts and stale tests",
+    "first_failure_diagnosis": "Old contract version assertion; owning source declares0.4.11.",
+    "scope": "source and first-failure diagnosis; later paths are not proven",
+    "test_source": "local/kbacompany/tests/market_model_service_test.php"
+  },
+  {
+    "test_id": "local_kbacompany\\ofs_service_test::test_ofs_projects_company_unit_function_products_and_internal_customer",
+    "category": "Processes and documents",
+    "first_failure_diagnosis": "Old expectation says process-model unavailable although implemented provider advertises availability. Preserve company projection/relations.",
+    "scope": "source and first-failure diagnosis; later paths are not proven",
+    "test_source": "local/kbacompany/tests/ofs_service_test.php"
+  },
+  {
+    "test_id": "local_kbacompany\\process_model_service_test::test_complete_sipoc_bpmn_model_publishes_and_activity_becomes_semantic",
+    "category": "Processes and documents",
+    "first_failure_diagnosis": "Old0.3.1 assertion precedes semantic checks; actual source0.4.4. Review published lifecycle and SIPOC requirements before any fixture edits.",
+    "scope": "source and first-failure diagnosis; later paths are not proven",
+    "test_source": "local/kbacompany/tests/process_model_service_test.php"
+  },
+  {
+    "test_id": "local_kbacompany\\process_service_test::test_process_hierarchy_publish_and_cross_functional_links",
+    "category": "Processes and documents",
+    "first_failure_diagnosis": "Old0.3.0 assertion vs actual0.4.0; preserve publication and cross-functional links.",
+    "scope": "source and first-failure diagnosis; later paths are not proven",
+    "test_source": "local/kbacompany/tests/process_service_test.php"
+  },
+  {
+    "test_id": "local_kbacompany\\project_execution_service_test::test_management_planning_does_not_link_to_retired_editor",
+    "category": "BMS UI and App Shell",
+    "first_failure_diagnosis": "Old navigation array omits explicit coordweek/decisionsregistry routes; retain retired-editor exclusion.",
+    "scope": "source and first-failure diagnosis; later paths are not proven",
+    "test_source": "local/kbacompany/tests/project_execution_service_test.php"
+  },
+  {
+    "test_id": "local_kbacompany\\task_kanban1846_test::test_editor_and_columns_render_without_raw_html_or_missing_tasks",
+    "category": "BMS UI and App Shell",
+    "first_failure_diagnosis": "Invalid test-company UUID and fictional actor10 fail real company ACL before rendering assertions.",
+    "scope": "source and first-failure diagnosis; later paths are not proven",
+    "test_source": "local/kbacompany/tests/task_kanban1846_test.php"
+  },
+  {
+    "test_id": "local_kbacompany\\task_kanban1850_test::test_page_scoped_grouping_and_full_counts_in_board_html",
+    "category": "BMS UI and App Shell",
+    "first_failure_diagnosis": "Same invalid company/actor fixture; seed actual authorized assignee before testing actions/grouping/counts.",
+    "scope": "source and first-failure diagnosis; later paths are not proven",
+    "test_source": "local/kbacompany/tests/task_kanban1850_test.php"
+  },
+  {
+    "test_id": "local_kbacompany\\task_manager_workspace1853_test::test_non_manager_never_receives_manager_workspace",
+    "category": "Rights and company membership",
+    "first_failure_diagnosis": "Presentation-policy question: restricted model still retains hidden display=manager form state. Not proof of privileged data exposure; owner decision before changing policy.",
+    "scope": "source and first-failure diagnosis; later paths are not proven",
+    "test_source": "local/kbacompany/tests/task_manager_workspace1853_test.php"
+  },
+  {
+    "test_id": "local_kbacompany\\task_roles_workspace1840_test::test_compact_workspace_escapes_search_and_has_progressive_get_fallback",
+    "category": "BMS UI and App Shell",
+    "first_failure_diagnosis": "Hardcoded Russian label under English runtime; use owning language contract without weakening escaping/search checks.",
+    "scope": "source and first-failure diagnosis; later paths are not proven",
+    "test_source": "local/kbacompany/tests/task_roles_workspace1840_test.php"
+  }
+]

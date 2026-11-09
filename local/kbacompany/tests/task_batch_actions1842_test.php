@@ -55,20 +55,44 @@ final class task_batch_actions1842_test extends \advanced_testcase {
     }
 
     public function test_batch_start_accept_and_stale_revisions(): void {
-        [$company,$actor,$worker] = $this->fixture();
+        global $DB;
+        [$company,$actor,$worker,$reviewer] = $this->fixture();
         $first=$this->task($company,$actor,$worker);
-        $second=$this->task($company,$actor,$worker,$actor);
+        $second=$this->task($company,$actor,$worker,$reviewer);
         $started=batch::run($company,$actor,[$first=>1,$second=>1],'start');
         $this->assertSame(['updated'=>2,'skipped'=>0,'total'=>2],$started);
         $this->assertSame('doing',task_service::readable_projection($company,$actor,$first)['status']);
+        $before = $this->snapshot($company, $first);
         $this->assertSame(['updated'=>0,'skipped'=>1,'total'=>1],
             batch::run($company,$actor,[$first=>1],'start'));
+        $this->assertEquals($before, $this->snapshot($company, $first));
+        try {
+            task_service::transition($company, $actor, $first, 1, 'submit', ['result'=>'Stale evidence']);
+            $this->fail('The domain service must also reject stale revisions.');
+        } catch (\moodle_exception $error) {
+            $this->assertSame('taskcenter_conflict', $error->errorcode);
+        }
+        $this->assertEquals($before, $this->snapshot($company, $first));
         // The submit step still requires the canonical result; it is never bulk-skipped.
         task_service::transition($company,$actor,$second,2,'submit',['result'=>'Accepted evidence']);
         $revision=task_service::readable_projection($company,$actor,$second)['revision'];
-        $accepted=batch::run($company,$actor,[$second=>$revision],'accept');
+        $before = $this->snapshot($company, $second);
+        $this->setUser($worker);
+        $this->assertSame(['updated'=>0,'skipped'=>1,'total'=>1],
+            batch::run($company,$worker,[$second=>$revision],'accept'));
+        $this->assertEquals($before, $this->snapshot($company, $second));
+        $this->setUser($reviewer);
+        $accepted=batch::run($company,$reviewer,[$second=>$revision],'accept');
         $this->assertSame(1,$accepted['updated']);
-        $this->assertSame('done',task_service::readable_projection($company,$actor,$second)['status']);
+        $this->assertSame('done',task_service::readable_projection($company,$reviewer,$second)['status']);
+        $after = $this->snapshot($company, $second);
+        $this->assertSame($second, $after['task']->uuid);
+        $this->assertSame($revision + 1, (int)$after['task']->revision);
+        $this->assertSame(['create','start','submit','accept'], array_values(array_column($after['log'], 'action')));
+        $last = end($after['log']);
+        $this->assertSame($reviewer, (int)$last->actorid);
+        $this->assertSame($company, $last->companyuuid);
+        $this->assertSame($second, $last->taskuuid);
     }
 
     public function test_due_date_and_assignee_use_domain_save_with_revision_checks(): void {
@@ -90,15 +114,39 @@ final class task_batch_actions1842_test extends \advanced_testcase {
         $task=$this->task($company,$actor,$worker);
         $DB->set_field('local_kbacompany_task','sourcekind','template',
             ['companyuuid'=>$company,'uuid'=>$task]);
+        $before = $this->snapshot($company, $task);
         $skip=batch::run($company,$actor,[$task=>1],'assignee','',$replacement);
         $this->assertSame(0,$skip['updated']);
         $this->assertSame(1,$skip['skipped']);
         $this->assertSame($worker,task_service::readable_projection($company,$actor,$task)['assignee_id']);
+        $this->assertEquals($before, $this->snapshot($company, $task));
         $otherid=repository::save_company((object)['name'=>'Other batch company','active'=>1]);
         $otheruuid=identity_registry::company_uuid($otherid);
-        $other=$this->task($otheruuid,$actor,$actor);
+        $otherworker = $this->getDataGenerator()->create_user();
+        $DB->insert_record('local_kbacorp_member', (object)[
+            'companyid'=>$otherid, 'userid'=>$otherworker->id, 'membertype'=>'employee',
+            'isemployee'=>1, 'ismanager'=>0, 'isdepartmentmanager'=>0, 'ishr'=>0,
+            'timecreated'=>time(), 'timemodified'=>time(),
+        ]);
+        $other=$this->task($otheruuid,$actor,(int)$otherworker->id);
+        $otherbefore = $this->snapshot($otheruuid, $other);
         $result=batch::run($company,$actor,[$other=>1],'start');
         $this->assertSame(0,$result['updated']);
         $this->assertSame('open',task_service::readable_projection($otheruuid,$actor,$other)['status']);
+        $this->assertEquals($otherbefore, $this->snapshot($otheruuid, $other));
+        $this->setUser($worker);
+        $this->assertNull(task_service::readable_projection($company, $worker, $other));
+        $this->assertSame(['updated'=>1,'skipped'=>1,'total'=>2],
+            batch::run($company, $worker, [$task=>1, $other=>1], 'start'));
+        $this->assertEquals($otherbefore, $this->snapshot($otheruuid, $other));
+        $this->assertSame($task, $this->snapshot($company, $task)['task']->uuid);
+    }
+
+    private function snapshot(string $company, string $task): array {
+        global $DB;
+        return ['task'=>$DB->get_record('local_kbacompany_task',
+            ['companyuuid'=>$company, 'uuid'=>$task], '*', MUST_EXIST),
+            'log'=>$DB->get_records('local_kbacompany_tasklog',
+                ['companyuuid'=>$company, 'taskuuid'=>$task], 'id ASC')];
     }
 }
