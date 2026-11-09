@@ -19,7 +19,7 @@ EXPECTED=BMS24_STAGE1895_HTTP01_OK
 
 case "$MODE" in --check|--start|--status) ;; *) echo 'Usage: stage1898_webserver.sh --check|--start|--status' >&2; exit 2;; esac
 [[ "$(id -u)" == 0 ]] || { echo 'STOP: root required' >&2; exit 2; }
-for cmd in docker curl stat grep openssl readlink ss; do command -v "$cmd" >/dev/null || { echo "STOP: missing $cmd" >&2; exit 2; }; done
+for cmd in docker curl stat grep openssl readlink ss python3; do command -v "$cmd" >/dev/null || { echo "STOP: missing $cmd" >&2; exit 2; }; done
 [[ -d "$BASE" && ! -L "$BASE" && -f "$COMPOSE" && ! -L "$COMPOSE" &&
    -f "$OVERRIDE" && ! -L "$OVERRIDE" && -f "$ENVFILE" && ! -L "$ENVFILE" &&
    "$(stat -c '%a' "$ENVFILE")" == 600 ]] ||
@@ -38,6 +38,36 @@ grep -Fq 'internal: true' "$COMPOSE" ||
   { echo 'STOP: parity41 Compose isolation mismatch' >&2; exit 3; }
 ARGS=(-p "$PROJECT" --project-directory "$BASE" --env-file "$ENVFILE" -f "$COMPOSE" -f "$OVERRIDE")
 docker compose "${ARGS[@]}" config --quiet
+# Validate the fully rendered Compose configuration, not just literal template strings.
+docker compose "${ARGS[@]}" config --format json | python3 -c '
+import json, sys
+c = json.load(sys.stdin)
+s = c.get("services", {})
+assert c.get("name") == "bms24_parity41", "unexpected project name"
+assert set(s) == {"db", "webserver"}, "unexpected Compose services"
+db, web = s["db"], s["webserver"]
+assert db.get("image") == "mariadb:10.11", "unexpected DB image"
+assert web.get("image") == "moodlehq/moodle-php-apache:8.1-bookworm", "unexpected web image"
+assert not db.get("ports") and not db.get("expose"), "DB must not publish ports"
+ports = web.get("ports") or []
+assert len(ports) == 1 and str(ports[0].get("published")) == "18081" and ports[0].get("host_ip") == "127.0.0.1" and int(ports[0].get("target")) == 80, "web port must bind only to localhost"
+for name, service in s.items():
+    assert not service.get("privileged") and not service.get("network_mode"), "unsafe container privileges/network mode"
+    assert not service.get("cap_add") and not service.get("devices"), "unexpected capabilities/devices"
+    assert set(service.get("networks", {})) == {"parity41_internal"}, "unexpected service network"
+    assert service.get("restart") in (None, "no"), "automatic restart not allowed"
+net = c.get("networks", {}).get("parity41_internal", {})
+assert net.get("internal") is True, "network is not internal"
+assert net.get("name") == "bms24_parity41_internal", "unexpected network name"
+v = web.get("volumes") or []
+assert len(v) == 3, "unexpected web mounts"
+mounts = {(x.get("target"), x.get("type"), x.get("read_only", False)) for x in v}
+assert ("/var/www/html", "bind", True) in mounts, "Moodle source must be read-only"
+assert ("/var/www/moodledata", "bind", False) in mounts, "separate moodledata required"
+assert ("/docker-entrypoint.d/90-bms-parity.ini", "bind", True) in mounts, "unexpected PHP override"
+assert all(x.get("target") not in ("/var/run/docker.sock", "/etc/nginx", "/etc/letsencrypt") for x in v), "host security mounts forbidden"
+print("STAGE1898_RENDERED_COMPOSE_ISOLATED")
+'
 echo STAGE1898_COMPOSE_SAFE
 
 if [[ "$MODE" == --status ]]; then
@@ -82,7 +112,14 @@ fi
 echo STAGE1898_WEB_PREFLIGHT_OK
 [[ "$MODE" == --start ]] || exit 0
 
-# Start only the isolated parity41 webserver. Existing DB must stay untouched.
+# On any post-start failure, stop ONLY the newly started parity41 webserver.
+# Do not remove its container or touch the separate MariaDB / volumes.
+started_new=1
+rollback_new_webserver() {
+  echo 'STAGE1898_ROLLBACK_STOPPING_NEW_WEBSERVER' >&2
+  docker compose "${ARGS[@]}" stop webserver >&2 || true
+}
+trap rollback_new_webserver ERR
 docker compose "${ARGS[@]}" up -d --no-deps --pull never webserver
 [[ "$(docker inspect -f '{{.State.Running}}' "$WEB" 2>/dev/null || true)" == true ]] ||
   { echo 'STOP: parity41 webserver did not start; inspect logs' >&2; exit 5; }
@@ -97,6 +134,7 @@ done
 localcode="$code"
 code=$(curl --noproxy '*' -sS -o /dev/null -w '%{http_code}' --max-time 8 --resolve "$DOMAIN:443:127.0.0.1" "https://$DOMAIN/" )
 [[ "$code" == 401 ]] || { echo 'STOP: HTTPS gate changed after startup; inspect urgently' >&2; exit 5; }
+trap - ERR
 echo "STAGE1898_LOCAL_WEB_HTTP_$localcode"
 echo STAGE1898_HTTPS_STILL_401
 echo STAGE1898_ISOLATED_WEB_STARTED
