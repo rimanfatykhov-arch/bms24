@@ -22,7 +22,13 @@ with tempfile.TemporaryDirectory(prefix='bms1866-cli-') as temp:
     (root / 'config.php').write_text(r'''<?php
         define('MOODLE_INTERNAL', true);
         define('XMLDB_INDEX_NOTUNIQUE', 0);
-        class coding_exception extends Exception {}
+        class coding_exception extends Exception {
+            public $a;
+            public function __construct($hint) {
+                $this->a = $hint;
+                parent::__construct('Coding error detected, it must be fixed by a programmer: ' . $hint);
+            }
+        }
         class invalid_parameter_exception extends Exception {}
         class dml_exception extends Exception {}
         class xmldb_table {public function __construct($name) {}}

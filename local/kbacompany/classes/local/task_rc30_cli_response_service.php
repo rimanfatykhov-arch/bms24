@@ -49,10 +49,12 @@ final class task_rc30_cli_response_service {
         if ($exception instanceof \invalid_parameter_exception) {
             return 'invalid_company_uuid';
         }
-        // The integrity service reports missing required schemas with a fixed
-        // prefix. Never print the table name or the exception itself.
+        // Moodle wraps/localizes getMessage(); coding_exception keeps the
+        // original hint in a. Inspect only the typed exception's fixed marker,
+        // and never return its hint, table name, debug info or rendered message.
         if ($exception instanceof \coding_exception &&
-                strpos($exception->getMessage(), 'RC30 schema missing:') === 0) {
+                is_string($exception->a ?? null) &&
+                strpos($exception->a, 'RC30 schema missing:') === 0) {
             return 'missing_rc30_table';
         }
         if ($exception instanceof \dml_exception) {

@@ -86,6 +86,7 @@ jobs:
       - name: RC30 candidate version and runtime gate regressions
         run: |
           php local/kbacompany/cli/test_rc30_version_1879.php
+          python local/kbacompany/cli/test_rc30_cli_1866.py
           php local/kbacompany/cli/test_schema_parity_2026110890.php
           php -l tools/inventory_moodle_readonly.php
           bash -n tools/ruweb_inventory_forced_command.sh
@@ -104,11 +105,11 @@ jobs:
       - name: Build and verify deterministic candidate
         run: |
           mkdir -p artifacts
-          python tools/build_install.py --output artifacts/INSTALL_local_kbacompany_1.1.0-rc29_build2026110901.zip --manifest artifacts/MANIFEST_build2026110901.json
+          python tools/build_install.py --output artifacts/INSTALL_local_kbacompany_1.1.0-rc29_build2026110902.zip --manifest artifacts/MANIFEST_build2026110902.json
           python tools/build_install.py --output artifacts/repeat.zip
-          cmp artifacts/INSTALL_local_kbacompany_1.1.0-rc29_build2026110901.zip artifacts/repeat.zip
-          python tools/verify_install.py --zip artifacts/INSTALL_local_kbacompany_1.1.0-rc29_build2026110901.zip --manifest artifacts/MANIFEST_build2026110901.json --expected-version 2026110901
-          sha256sum artifacts/INSTALL_local_kbacompany_1.1.0-rc29_build2026110901.zip > artifacts/SHA256SUMS.txt
+          cmp artifacts/INSTALL_local_kbacompany_1.1.0-rc29_build2026110902.zip artifacts/repeat.zip
+          python tools/verify_install.py --zip artifacts/INSTALL_local_kbacompany_1.1.0-rc29_build2026110902.zip --manifest artifacts/MANIFEST_build2026110902.json --expected-version 2026110902
+          sha256sum artifacts/INSTALL_local_kbacompany_1.1.0-rc29_build2026110902.zip > artifacts/SHA256SUMS.txt
           rm artifacts/repeat.zip
       # Reviewed PRs must get an installable candidate BEFORE merge.
       # Artifacts are UNAPPROVED; no deploy job or credentials in CI.
@@ -116,10 +117,10 @@ jobs:
         if: github.event_name == 'pull_request' || (github.event_name == 'push' && github.ref == 'refs/heads/main')
         uses: actions/upload-artifact@v4
         with:
-          name: bms24-candidate-${{ github.event.pull_request.number || github.sha }}-build2026110901
+          name: bms24-candidate-${{ github.event.pull_request.number || github.sha }}-build2026110902
           path: |
-            artifacts/INSTALL_local_kbacompany_1.1.0-rc29_build2026110901.zip
-            artifacts/MANIFEST_build2026110901.json
+            artifacts/INSTALL_local_kbacompany_1.1.0-rc29_build2026110902.zip
+            artifacts/MANIFEST_build2026110902.json
             artifacts/SHA256SUMS.txt
           if-no-files-found: error
           retention-days: 14

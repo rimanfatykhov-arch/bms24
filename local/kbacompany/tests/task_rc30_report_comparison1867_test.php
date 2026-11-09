@@ -77,11 +77,39 @@ final class task_rc30_report_comparison1867_test extends \advanced_testcase {
 
     public function test_regressed_error_count_blocks_comparison(): void {
         $before=$this->report(); $after=$this->report();
-        $after['integrity_checks']['orphan_task_history']['count']=2;
+        $this->assertSame('error', $after['integrity_checks']['orphan_checklists']['severity']);
+        $after['integrity_checks']['orphan_checklists']['count']=2;
         $this->normalise($after);
         $result=comparison::compare($before, $after);
         $this->assertSame('failed', $result['comparison_gate']);
+        $this->assertSame('orphan_checklists', $result['integrity_regressions'][0]['check']);
+        $this->assertSame('error', $result['integrity_regressions'][0]['severity']);
+        $this->assertFalse($result['rc30_promotion_approved']);
+    }
+
+    public function test_orphan_history_remains_a_warning_unless_strict(): void {
+        $before = $this->report();
+        $after = $this->report();
+        $this->assertSame('warning', $after['integrity_checks']['orphan_task_history']['severity']);
+        $after['integrity_checks']['orphan_task_history']['count'] = 2;
+        $this->normalise($after);
+        $result = comparison::compare($before, $after);
+        $this->assertSame('warnings', $result['comparison_gate']);
         $this->assertSame('orphan_task_history', $result['integrity_regressions'][0]['check']);
+        $this->assertSame('warning', $result['integrity_regressions'][0]['severity']);
+        $this->assertFalse($result['rc30_promotion_approved']);
+        $strict = comparison::compare($before, $after, true);
+        $this->assertSame('failed', $strict['comparison_gate']);
+        $this->assertFalse($strict['rc30_promotion_approved']);
+    }
+
+    public function test_tampered_severity_cannot_relabel_an_error_as_a_warning(): void {
+        $before = $this->report();
+        $after = $this->report();
+        $after['integrity_checks']['orphan_checklists'] = ['severity' => 'warning', 'count' => 2];
+        $this->normalise($after);
+        $this->expectException(\InvalidArgumentException::class);
+        comparison::compare($before, $after);
     }
 
     public function test_warning_regression_respects_strict_mode(): void {

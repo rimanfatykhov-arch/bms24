@@ -6,9 +6,46 @@ defined('MOODLE_INTERNAL') || die();
 use local_kbacompany\local\task_rc30_acceptance_service as acceptance;
 use local_kbacompany\local\task_rc30_integrity_service as integrity;
 
-/** Pure read-only gate checks, using fake DB adapters instead of mutating records. */
+/** Read-only gate checks with adapters and the real installed Moodle database. */
 final class task_rc30_acceptance1864_test extends \advanced_testcase {
     private const COMPANY = '22222222-2222-4222-8222-222222222222';
+
+    public function test_real_database_acceptance_requires_exact_version_without_config_writes(): void {
+        global $DB;
+        $this->resetAfterTest();
+        $plugin = new \stdClass();
+        require(__DIR__ . '/../version.php');
+        $candidate = (int)$plugin->version;
+        $this->assertSame($candidate, acceptance::EXPECTED_PLUGIN_VERSION);
+        $config = $DB->get_records('config', null, 'id');
+        $pluginconfig = $DB->get_records('config_plugins', null, 'id');
+        $writes = $DB->perf_get_writes();
+        $runtime = acceptance::runtime_status(PHP_VERSION, $DB->get_dbfamily(), $DB->get_server_info());
+        foreach ([false, true] as $strict) {
+            $exact = acceptance::assess($DB, $candidate, self::COMPANY, $strict);
+            $this->assertNotContains('plugin_version_mismatch', $exact['errors']);
+            $this->assertSame($runtime['runtime'], $exact['runtime']);
+            foreach ($runtime['warnings'] as $warning) { $this->assertContains($warning, $exact['warnings']); }
+            $this->assertSame($candidate, $exact['expected_plugin_version']);
+            $this->assertTrue($exact['read_only']);
+            $this->assertFalse($exact['rc30_promotion_approved']);
+            // A real MariaDB/Percona environment may retain runtime warnings:
+            // exact source version alone must never be treated as release approval.
+            foreach ([0, $candidate - 1, $candidate + 1] as $installed) {
+                $mismatch = acceptance::assess($DB, $installed, self::COMPANY, $strict);
+                $this->assertSame('failed', $mismatch['technical_gate']);
+                $this->assertContains('plugin_version_mismatch', $mismatch['errors']);
+                $this->assertSame($installed, $mismatch['installed_plugin_version']);
+                $this->assertSame($exact['runtime'], $mismatch['runtime']);
+                $this->assertSame($exact['warnings'], $mismatch['warnings']);
+                $this->assertFalse($mismatch['rc30_promotion_approved']);
+            }
+        }
+        $this->assertSame($writes, $DB->perf_get_writes(), 'Acceptance must issue no database writes');
+        $this->assertEquals($config, $DB->get_records('config', null, 'id'));
+        $this->assertEquals($pluginconfig, $DB->get_records('config_plugins', null, 'id'));
+        $this->assertDebuggingNotCalled();
+    }
 
     /** @return object fake Moodle db */
     private function fake_db(array $missingindexes = [], array $counts = [], string $family = 'mysql') {
