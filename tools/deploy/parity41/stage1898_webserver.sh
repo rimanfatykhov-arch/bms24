@@ -61,11 +61,15 @@ assert net.get("internal") is True, "network is not internal"
 assert net.get("name") == "bms24_parity41_internal", "unexpected network name"
 v = web.get("volumes") or []
 assert len(v) == 3, "unexpected web mounts"
+assert all(x.get("type") == "bind" and str(x.get("source", "")).startswith("/srv/bms24-staging/parity41/") for x in v), "web bind sources must stay in isolated parity41"
 mounts = {(x.get("target"), x.get("type"), x.get("read_only", False)) for x in v}
 assert ("/var/www/html", "bind", True) in mounts, "Moodle source must be read-only"
 assert ("/var/www/moodledata", "bind", False) in mounts, "separate moodledata required"
 assert ("/docker-entrypoint.d/90-bms-parity.ini", "bind", True) in mounts, "unexpected PHP override"
 assert all(x.get("target") not in ("/var/run/docker.sock", "/etc/nginx", "/etc/letsencrypt") for x in v), "host security mounts forbidden"
+dbvolumes = db.get("volumes") or []
+assert len(dbvolumes) == 1 and dbvolumes[0].get("type") == "volume" and dbvolumes[0].get("target") == "/var/lib/mysql", "unexpected DB mounts"
+assert dbvolumes[0].get("source") == "bms24_parity41_db", "DB must use only parity41 volume"
 print("STAGE1898_RENDERED_COMPOSE_ISOLATED")
 '
 echo STAGE1898_COMPOSE_SAFE
