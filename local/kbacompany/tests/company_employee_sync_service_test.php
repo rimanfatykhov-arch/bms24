@@ -100,8 +100,11 @@ final class company_employee_sync_service_test extends \advanced_testcase {
         global $DB;
         $this->resetAfterTest();
         $user = $this->getDataGenerator()->create_user([
-            'email' => 'invalidphone@example.test', 'phone1' => 'badphone@example.test', 'institution' => '',
+            'email' => 'invalidphone@example.test', 'phone1' => 'bad@example.test', 'institution' => '',
         ]);
+        // Moodle phone1 is varchar(20); exercise email-like legacy data, not an impossible insert.
+        $this->assertTrue(validate_email($user->phone1));
+        $this->assertLessThanOrEqual(20, strlen($user->phone1));
         integration_service::upsert_company_from_external('2203', true, ['name' => 'ООО Телефон']);
         $result = integration_service::upsert_employee_from_external('2203', '3203', [
             'email' => 'invalidphone@example.test', 'phone' => '+7 901 555-44-33', 'allow_create_user' => false,

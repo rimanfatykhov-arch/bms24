@@ -13,6 +13,8 @@ def check(root=ROOT):
     errors=[]
     if plan['counts'] != {'pr53':59,'pr56':54,'overlap':14,'only_pr53':45,'only_pr56':40}:
         errors.append('conflict map coverage changed')
+    # PR57 follow-up: only impossible varchar(20) fixture repaired; assertions retained/extended.
+    reviewed_followup = {'local/kbacompany/tests/company_employee_sync_service_test.php': '77fb41119da22be984915d7839dfc9e8352a5a8a7d6da8ca8558e906c062e4bd'}
     reviewed_metadata={'AGENTS.md','docs/00_MASTER_CONTEXT.md'}
     for name, expected in plan['unchanged_schema_hashes'].items():
         if digest(root/name)!=expected:
@@ -22,14 +24,14 @@ def check(root=ROOT):
         if not path.is_file() or path.is_symlink():
             errors.append('missing/unsafe source path: '+row['path']); continue
         origin={'select-pr53':'pr53_sha256_lf','preserve-pr56':'pr56_sha256_lf'}.get(row['resolution'])
-        if origin and row['path'] not in reviewed_metadata and digest(path)!=row[origin]:
+        if origin and row['path'] not in reviewed_metadata and digest(path)!=reviewed_followup.get(row['path'], row[origin]):
             errors.append('parent source lost: '+row['path'])
     notes=next(r for r in plan['rows'] if r['path']=='local/kbacompany/release/RELEASE_NOTES_RC29_build2026110902.md')
     if digest(root/notes['path'])!=notes['pr56_sha256_lf'] or digest(root/'docs/reconcile/PR53_RELEASE_NOTES_0902_HISTORICAL.md')!=notes['pr53_sha256_lf']:
         errors.append('one historical0902 release note was lost')
     upgrade=(root/'local/kbacompany/db/upgrade.php').read_text(encoding='utf-8')
     versions=[int(v) for v in re.findall(r'upgrade_plugin_savepoint\(true,\s*(\d+)',upgrade)]
-    if len(versions)!=477 or versions!=sorted(set(versions)) or versions[-1]!=2026110903:
+    if len(versions)!=478 or versions!=sorted(set(versions)) or versions[-1]!=2026110904:
         errors.append('merged upgrade chronology/identity changed')
     driver=(root/'tools/tests/moodle_acceptance.php').read_text(encoding='utf-8')
     for ref in [plan['pr53_sha'],plan['pr56_sha']]:

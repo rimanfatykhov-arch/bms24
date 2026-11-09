@@ -6197,5 +6197,10 @@ function xmldb_local_kbacompany_upgrade(int $oldversion): bool {
         upgrade_plugin_savepoint(true, 2026110903, 'local', 'kbacompany');
     }
 
+    // Document/employee acceptance repair; version identity only, no DDL or data mutation.
+    if ($oldversion < 2026110904) {
+        upgrade_plugin_savepoint(true, 2026110904, 'local', 'kbacompany');
+    }
+
     return true;
 }
