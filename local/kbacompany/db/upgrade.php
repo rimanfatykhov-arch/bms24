@@ -6207,5 +6207,10 @@ function xmldb_local_kbacompany_upgrade(int $oldversion): bool {
         upgrade_plugin_savepoint(true, 2026110905, 'local', 'kbacompany');
     }
 
+    // Task membership/batch/deadline acceptance; no DDL or business-data changes.
+    if ($oldversion < 2026110906) {
+        upgrade_plugin_savepoint(true, 2026110906, 'local', 'kbacompany');
+    }
+
     return true;
 }

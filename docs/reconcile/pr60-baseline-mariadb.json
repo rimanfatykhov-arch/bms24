@@ -1,0 +1,16 @@
+{
+  "engine": "mariadb",
+  "baseline_counts": {
+    "tests": 610,
+    "assertions": 7095,
+    "errors": 6,
+    "failures": 18,
+    "skipped": 0
+  },
+  "target_reproduction": {
+    "local_kbacompany\\task_batch_actions1842_test::test_batch_start_accept_and_stale_revisions": "local_kbacompany\\task_batch_actions1842_test::test_batch_start_accept_and_stale_revisions\nmoodle_exception: Employee is not available in this company.\n\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/task_service.php:68\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/task_service.php:197\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/task_service.php:550\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/task_service.php:590\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/tests/task_batch_actions1842_test.php:38\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/tests/task_batch_actions1842_test.php:60\n/home/runner/work/_temp/pr48/fresh/core/lib/phpunit/classes/advanced_testcase.php:80",
+    "local_kbacompany\\task_batch_actions1842_test::test_generated_tasks_cannot_be_bulk_reassigned_and_cross_company_task_is_not_updated": "local_kbacompany\\task_batch_actions1842_test::test_generated_tasks_cannot_be_bulk_reassigned_and_cross_company_task_is_not_updated\nmoodle_exception: Employee is not available in this company.\n\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/task_service.php:68\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/task_service.php:197\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/task_service.php:546\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/task_service.php:590\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/tests/task_batch_actions1842_test.php:38\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/tests/task_batch_actions1842_test.php:99\n/home/runner/work/_temp/pr48/fresh/core/lib/phpunit/classes/advanced_testcase.php:80",
+    "local_kbacompany\\task_deadlines1843_test::test_bucket_filter_and_global_counts_are_separate_and_acl_scoped": "local_kbacompany\\task_deadlines1843_test::test_bucket_filter_and_global_counts_are_separate_and_acl_scoped\nmoodle_exception: Employee is not available in this company.\n\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/task_service.php:68\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/task_service.php:197\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/task_service.php:546\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/task_service.php:590\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/tests/task_deadlines1843_test.php:35\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/tests/task_deadlines1843_test.php:74\n/home/runner/work/_temp/pr48/fresh/core/lib/phpunit/classes/advanced_testcase.php:80"
+  },
+  "all_three_reproduced": true
+}
