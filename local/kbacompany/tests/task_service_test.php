@@ -5,6 +5,7 @@ defined('MOODLE_INTERNAL') || die();
 
 use local_kbacompany\local\identity_registry;
 use local_kbacompany\local\task_service;
+use local_kbacompany\local\business_date_service;
 use local_kbacorporate\local\repository;
 
 /** Canonical Task Center regression tests. */
@@ -40,6 +41,25 @@ final class task_service_test extends \advanced_testcase {
             'startdate' => '2026-09-14', 'duedate' => '2026-09-18',
             'planminutes' => 90, 'parentuuid' => '',
         ], $overrides));
+    }
+
+    public static function invalid_task_dates(): array {
+        return ['due before start' => [['startdate' => '2026-09-14', 'duedate' => '2026-09-13']],
+            'same day reversed time' => [['startdate' => '2026-09-14', 'duedate' => '2026-09-14',
+                'starttime' => '17:00', 'duetime' => '09:00']]];
+    }
+
+    /** @dataProvider invalid_task_dates */
+    public function test_invalid_date_order_cannot_create_task(array $dates): void {
+        global $DB;
+        $f = $this->fixture();
+        try {
+            $this->create($f, $dates);
+            $this->fail('Deadline before start must not create a task.');
+        } catch (\moodle_exception $error) {
+            $this->assertSame('taskcenter_date', $error->errorcode);
+        }
+        $this->assertSame(0, $DB->count_records('local_kbacompany_task', ['companyuuid' => $f['company']]));
     }
 
     public function test_contract_declares_canonical_task_center(): void {
@@ -183,9 +203,12 @@ final class task_service_test extends \advanced_testcase {
     /** RC25: Workspace and Task Center must project one canonical user-scoped task set. */
     public function test_workspace_and_tasks_page_agree_on_open_and_overdue_tasks(): void {
         $f = $this->fixture();
+        $this->setUser($f['employee']);
+        $duedate = business_date_service::yesterday();
+        $this->setAdminUser();
         $uuid = $this->create($f, [
             'title' => 'Launch sales battle plan',
-            'duedate' => '2026-01-01',
+            'startdate' => '', 'duedate' => $duedate,
             'reviewerid' => 0,
         ]);
         $this->setUser($f['employee']);
@@ -204,15 +227,18 @@ final class task_service_test extends \advanced_testcase {
     public function test_workspace_open_tasks_remain_visible_after_completed_history(): void {
         global $DB;
         $f = $this->fixture();
+        $this->setUser($f['employee']);
+        $duedate = business_date_service::yesterday();
+        $this->setAdminUser();
         for ($i = 0; $i < 28; $i++) {
             $doneuuid = $this->create($f, [
                 'title' => 'Completed historical work ' . $i,
-                'duedate' => '2026-01-01', 'reviewerid' => 0,
+                'startdate' => '', 'duedate' => $duedate, 'reviewerid' => 0,
             ]);
             $DB->set_field('local_kbacompany_task', 'status', 'done', ['uuid' => $doneuuid]);
         }
         $openuuid = $this->create($f, [
-            'title' => 'Current overdue action', 'duedate' => '2026-01-01', 'reviewerid' => 0,
+            'title' => 'Current overdue action', 'startdate' => '', 'duedate' => $duedate, 'reviewerid' => 0,
         ]);
         $this->setUser($f['employee']);
         $actor = (int)$f['employee']->id;

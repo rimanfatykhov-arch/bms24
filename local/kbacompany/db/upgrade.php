@@ -6202,5 +6202,10 @@ function xmldb_local_kbacompany_upgrade(int $oldversion): bool {
         upgrade_plugin_savepoint(true, 2026110904, 'local', 'kbacompany');
     }
 
+    // Bounded period/task/Battle Plan regression stabilization; no DDL or data changes.
+    if ($oldversion < 2026110905) {
+        upgrade_plugin_savepoint(true, 2026110905, 'local', 'kbacompany');
+    }
+
     return true;
 }
