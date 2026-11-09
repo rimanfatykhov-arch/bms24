@@ -115,9 +115,17 @@
     "url": "https://github.com/rimanfatykhov-arch/bms24/issues/61",
     "scope": "Design System backlog, not included"
   },
-  "access": {
+  "initial_access": {
     "production_current": "NOT VERIFIED",
     "ssh": "StrictHostKeyChecking rejected unknown ED25519 key before authentication; no bypass",
     "saved_session": "WinSCP window capture unavailable; no remote command executed"
+  },
+  "production_refresh": {
+    "captured_utc": "2026-11-09T20:55:42Z",
+    "status": "PASS metadata acquisition; HOLD readiness",
+    "method": "trusted saved WinSCP session; ephemeral readonly PHP reader",
+    "evidence": "RC30_PRODUCTION_REFRESH_EVIDENCE.json",
+    "schema_diff": "RC30_PRODUCTION_SCHEMA_DIFF.json",
+    "initial_access_limit_superseded": true
   }
 }

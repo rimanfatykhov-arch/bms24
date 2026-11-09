@@ -20,42 +20,47 @@ ADR-0001 отсутствует в данном checkout; прочитан по 
 несоответствие; NOT RUN — операция/тест не выполнялись; NOT VERIFIED — нет
 достаточных доказательств состояния. Неизвестность обязательного gate блокирует GO.
 
-## Доступ и фактические версии
+## Доступ и фактические версии — обновлено по live inventory
 
-Попытка текущего доступа выполнена с `BatchMode=yes`, `StrictHostKeyChecking=yes`
-через локально сохранённый alias `bms-erp`, чтобы проверить доступность
-ранее описанного ограниченного маршрута. Соответствие этого alias нужному
-stage relay в текущем сеансе не подтверждено; до RUWEB команда не дошла.
-SSH остановлен **до аутентификации**: неизвестен ED25519 host key. Проверка
-подлинности не отключалась, новые ключи не принимались. Просмотр публичного
-trust-cache не дал пригодного ключа. Открыт локальный WinSCP для поиска сохранённой
-доверенной сессии, но чтение окна завершилось capture timeout; удалённых команд
-через GUI не выполнено. Это ограничение доступа, а не доказательство отказа сервера.
-Не менялись SSH-конфигурации, forced command или доверенные ключи.
+Новый снимок production получен **2026-11-09T20:55:42Z** через существующую
+доверенную сессию WinSCP `p706494@kzn.mba`. Сохранённый пароль использован самим
+клиентом, не извлекался. Host-key checking не отключался. Reader передан в stdin,
+не записывался на сервер; Moodle bootstrap, DML/DDL, cron, backup/restore не запускались.
+Дополнительный PHP reader использовал read-only transaction, выключенные prepend/
+append/error logging и выдавал только metadata/счётчики. Никаких business rows,
+users, task customdata, содержимого config, паролей или токенов в отчёте нет.
 
-**Новых данных с production в этом аудите нет.** Следующая таблица — только
-последний сохранённый [inventory от 2026-11-08T18:56:43Z](../reconcile/issue44-production-inventory.json).
+Ранее alias bms-erp не прошёл host-key проверку. Правильный stage41 адрес с
+существующим ключом закрывал соединение до key exchange; этот маршрут не менялся.
+GUI capture WinSCP оставался недоступен. Штатный console client с сохранённой
+production-сессией обеспечил прямой доверенный read-only доступ; forced handler
+и серверная конфигурация не расширялись.
 
-| Объект | Исторически подтверждено | Актуальность сейчас |
+[Свежий протокол](RC30_PRODUCTION_REFRESH.md), [metadata evidence](RC30_PRODUCTION_REFRESH_EVIDENCE.json),
+[точные schema differences](RC30_PRODUCTION_SCHEMA_DIFF.json).
+Исторический [inventory08.11](../reconcile/issue44-production-inventory.json)
+сохранён; общие версии и hashes в двух снимках совпадают.
+
+| Объект | Подтверждено свежим снимком | Граница |
 |---|---|---|
-| Moodle code / DB | 4.1.22, code2022112822.00 / DB2022112822 | NOT VERIFIED |
-| PHP CLI | 8.1.34 | NOT VERIFIED |
-| PHP Web / handler / extensions / ini | Не установлено | NOT VERIFIED |
-| DB | Percona8.0.46-37, utf8mb4_unicode_ci | NOT VERIFIED |
-| BMS code / DB | 2026101878 / 2026101878 | NOT VERIFIED |
-| Corporate code / DB | 2026102613 / 2026102613, release0.40.13 | NOT VERIFIED |
-| Core Git SHA / full source identity | Только hash version.php, не полный tree | NOT VERIFIED |
-| KBA Theme / полный набор плагинов | Не установлен | NOT VERIFIED |
-| task.starttime / duetime | varchar5, NOT NULL, default empty | NOT VERIFIED сейчас |
-| deviation.executionstatus | Отсутствовал | NOT VERIFIED сейчас |
-| task index | companyuuid,duedate,status, иной порядок | NOT VERIFIED сейчас |
-| Полная схема/индексы/constraints | Только ограниченная выборка3 таблиц | NOT VERIFIED |
-| Cron / adhoc / maintenance | Нет актуального доказательства | NOT VERIFIED |
-| Disk / inodes / квоты / RAM / лимиты аккаунта | Нет актуального доказательства | NOT VERIFIED |
-| DB+code+moodledata+config backup set | Не проверен; отсутствие не доказано | NOT VERIFIED |
-| Restore rehearsal | Не выполнялся | NOT RUN |
+| Moodle code / DB |4.1.22,2022112822.00 /2022112822|Full Core tree SHA NOT VERIFIED|
+| PHP CLI |8.1.34,16 выбранных extensions присутствуют|Web SAPI NOT VERIFIED|
+| DB |Percona8.0.46-37,utf8mb4_unicode_ci|Metadata, не load/restore acceptance|
+| BMS code / DB |2026101878 /2026101878|Не новый candidate0906|
+| Corporate code / DB |2026102613 /2026102613|bridge declaresAPI1.26;behavior compatibility NOT RUN|
+| KBA Theme |Активная kba,code/DB2026092213|UI/полный theme source NOT VERIFIED|
+| Plugins |472 DB version entries,203 code version files|Code enumeration частичная по plugin types|
+| Schema |704 tables,7528 columns,2519 distinct indexes|BMS142; новые drift blockers ниже|
+| Maintenance |DB flag0,cli maintenance marker отсутствует|Не изменялся|
+| Scheduled/adhoc |127 scheduled,120 enabled;adhoc0;faildelay0|15 enabled nextruntime старше суток;health NOT VERIFIED|
+| Storage/memory |Получены host-level значения|Account quotas/inodes/capacity acceptance NOT VERIFIED|
+| Backups/restore |Не проверялись/не выполнялись|NOT VERIFIED / NOT RUN|
 
-Нельзя переносить параметры CLI на Web SAPI или снимок stage41 на production.
+**Новые P0 schema gates:** отсутствуют adminitem.starttime/duetime и11 DECIMAL
+полей имеют scale0 вместо ожидаемых2/3/6.0906 не исправляет их на пути1878→0906.
+Известные deviation.executionstatus и ordered task index также отсутствуют;
+для них достижимые0890/0900 repairs существуют. Не запускать upgrade до отдельного
+repair proposal, проверки диапазонов и exact-schema rehearsal. Подробнее в матрице.
 
 ## Идентичность кандидата и gates
 
@@ -249,7 +254,7 @@ projection/discussion/board/curator и публичные API signatures с па
 
 ## Что закрывает HOLD
 
-1. Актуальный подписанный metadata inventory и exact source/schema identity production.
+1. Fresh metadata получены; подтвердить полный source identity, Web PHP, quotas и закрыть обнаруженный schema drift.
 2. Corporate2613 semantic/API reconciliation и выбор сохранения установленного Corporate;
    replacement только отдельным согласованным планом.
 3. Согласованный backup set и успешный isolated restore + exact1878/2613 upgrade rehearsal.
@@ -264,5 +269,5 @@ projection/discussion/board/curator и публичные API signatures с па
 Архитектор сверил миграции/API и ограничения2613; QA сверил PR graph,19 IDs,
 rawCI/manifest/hash и ссылки; security проверил команды и границы backup/restore.
 Замечания внесены до docs commit. Это ревью документов, не production security
-acceptance. Все7 shell snippets проверены bash -n, оба PHP static-parser snippets — lint; remote команды не запускались
-после SSH отказа. Финальные статусы production gates остаются неизменными.
+acceptance. Все7 shell snippets проверены bash -n, оба PHP static-parser snippets — lint; расширенный reader дополнительно проверен security reviewer до фактического
+read-only запуска через сохранённую WinSCP-сессию. Финальные статусы production gates остаются неизменными.

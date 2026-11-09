@@ -11,7 +11,7 @@
 |---|---|
 | Product owner,оператор,независимый проверяющий,канал инцидента | Должны быть назначены |
 | UTC window,максимальный downtime/DDL lock,abort deadline | Не согласованы |
-| Exact production source/DB/schema/plugin/theme/Web profile | NOT VERIFIED |
+| Exact production source/DB/schema/plugin/theme/Web profile | DB/schema/plugin/theme metadata получены;full source/Web NOT VERIFIED |
 | Tested immutable artifact и однозначная версия | PR62 identity ниже; ещё не accepted release |
 | Corporate2613 retained/reconciled decision | Не принято, compatibility NOT RUN |
 | Backup-set ID +restore/rollback evidence,RTO/RPO | NOT VERIFIED / NOT RUN |
@@ -118,3 +118,8 @@ Core/WebPHP/DB profile,UTC start/end,backup-set+restore protocol,RTO/RPO,
 **Сейчас GO отсутствует.** [Preflight](RC30_PRODUCTION_PREFLIGHT.md),
 [риски](RC30_COMPATIBILITY_MATRIX.md), [backup/restore](RC30_BACKUP_RESTORE_PLAN.md)
 должны быть закрыты до отдельного production approval. Этот PR только документы.
+
+После fresh read-only inventory обнаружены adminitem2 missing fields и11decimal
+scale mismatches, не исправляемые0906. До отдельного repair proposal и проверки
+диапазонов/сохранности на разрешённом clone шаги deployment остаются заблокированы.
+См. [production refresh](RC30_PRODUCTION_REFRESH.md).

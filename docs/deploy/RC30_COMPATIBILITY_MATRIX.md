@@ -9,15 +9,16 @@
 Git1878 `a87252b642e5796c6d84105dd448d51d9a5b5241` найден и проверен.
 Его `local/kbacompany/db/install.xml` побайтно совпадает с PR62e7e9b1b.
 **Это не доказательство, что Git1878 равен production source или actual DB.**
-Полный production tree и schema diff сейчас NOT VERIFIED.
+Полный production tree остаётся NOT VERIFIED. Schema metadata получены в live
+снимке20:55:42Z; обнаружен дополнительный drift, см. [refresh](RC30_PRODUCTION_REFRESH.md).
 
 | Участок | Фактическое поведение | Production acceptance |
 |---|---|---|
 | upgrade.php:6107+ checkpoint1879 и0301–0804 | Version-only сохранение порядка | NOT RUN от actual1878 |
-| checkpoint2026110890 | Достижимый repair3полей | Исторически executionstatus отсутствовал; сейчас NOT VERIFIED |
+| checkpoint2026110890 | Достижимый repair3полей | executionstatus отсутствует и в свежем снимке; repair не выполнялся |
 | checkpoint2026110900 | Повтор guarded repair + ordered index | NOT RUN на actual production schema/volume |
 | checkpoints0901–0906 | Code-only savepoints | Не разрешают заменять иной feature tree |
-| install.xml | Новых таблиц относительно Git1878 нет | Полная actual schema NOT VERIFIED |
+| install.xml | Новых таблиц относительно Git1878 нет | Actual metadata получены;142 BMS tables,13 дополнительных field/type drift за пределами repair |
 | исторические repairs<2026092503/2505 | Недостижимы от1878 | Не исправят возможный production drift |
 
 Источник: [upgrade.php](../../local/kbacompany/db/upgrade.php),
@@ -49,8 +50,8 @@ CI имеет fresh +1645,1879,0890,0900,0901,0804,PR53/56/57/58/59 origins.
 
 | Проверка | Candidate0901 | Production2613 |
 |---|---|---|
-| Происхождение | Patched2610/API1.26, release0.40.10-bms.1 | Исторически0.40.13, актуальный tree NOT VERIFIED |
-| bridge API | `bridge.php:18` API1.26 | Полный current API fingerprint NOT VERIFIED |
+| Происхождение | Patched2610/API1.26, release0.40.10-bms.1 | Code/DB2613 свежеподтверждены,full source tree NOT VERIFIED |
+| bridge API | `bridge.php:18` API1.26 | bridge API1.26 и имена методов подтверждены;signatures/behavior NOT VERIFIED |
 | task/program projections | Методы bridge:107–144 присутствуют | Signature/behavior NOT VERIFIED |
 | ERP mappings/audit/exchange | Исправления PR52/56;150Corporate tests PASS | Сохранение поведения2613 не доказано |
 | company mapping | bridge:413 + provider mapping checks | Stable mapping/UUID reconciliation NOT RUN |
@@ -72,8 +73,8 @@ mapping, активную source binding и отдельную Corporate authori
 и program projection tests. Это stage41 metadata, **не production source equivalence**;
 полное содержание/семантика различий NOT VERIFIED.
 
-Безопасная базовая стратегия: **сохранить установленный Corporate2613**, получить
-его разрешённый source/API fingerprint и проверить BMS0906 с ним отдельно.
+Безопасная базовая стратегия: **сохранить установленный Corporate2613**, дополнить
+полученный fingerprint сигнатурами,проверить full source/behavior и BMS0906 с ним отдельно.
 Если несовместим — самостоятельная reconciliation-ветка Corporate, карта сохранённых
 функций2613, DDL/data/API/permission diff, полный Corporate/BMS regression и решение
 владельца. Не копировать0901 из CI на production ради зелёной матрицы.
@@ -82,8 +83,8 @@ mapping, активную source binding и отдельную Corporate authori
 
 | Область | Подтверждено в CI0906/0901 | Не закрыто для production |
 |---|---|---|
-| Moodle4.1.22/PHP8.1.34/Percona8.0.46-37 | Изолированная матрица фактически выполнена | Web SAPI, full Core hash, extensions/settings, installed siblings |
-| KBA Theme/Boost, App Shell/CRUD | Static+некоторые renderer tests | Theme version, legacy/owned, navigation, mobile, forms/session/CSRF NOT RUN |
+| Moodle4.1.22/PHP8.1.34/Percona8.0.46-37 | Изолированная матрица фактически выполнена | Web SAPI/full Core hash;CLI metadata и installed DB plugin versions получены |
+| KBA Theme/Boost, App Shell/CRUD | Static+некоторые renderer tests | Theme2026092213 подтверждена;legacy/owned, navigation, mobile, forms/session/CSRF NOT RUN |
 | Tasks / Battle Plans | task12/48,battle14/74,Kanban10/90, batch/deadline/member PASS |3 Battle Plan/export failures; browser workflows/performance |
 | Role Intelligence | role intelligence4/16,readiness3/9 PASS | Полнота live R1/R2/source-tree и UI/nonadmin2company NOT VERIFIED |
 | Learning/queues | development5/65,queue9/99, profile1/5 PASS | Курсы/gradebook/completion/competency и plugin-stack реального сайта |
@@ -108,13 +109,13 @@ P0 gate означает блокирующую недостаточность �
 |---|---|---|---|---|
 | R01 P0 gate recovery | Backup set NOT VERIFIED, restore NOT RUN | Невозможность вернуть курсы/файлы/бизнес-данные | Запрет установки, согласованный coherent backup+isolated restore | Успешный restore DB+code+data+config, измеренные RTO/RPO |
 | R02 P0 Corporate |0901 patched2610;stage2613 feature diff;actual source неизвестен | Утрата функций, API/mapping/authorization regressions | Не заменять2613; отдельная совместимость | Exact2613+0906 acceptance либо утверждённый reconciliation |
-| R03 P0 gate migrations | Нет actual1878 origin, schema inventory неполный | DDL error, длительные locks, частичное изменение схемы | Полный metadata diff, restore rehearsal, capacity/lock budget | Exact-source/data/schema upgrade + repeat + rollback rehearsal PASS |
+| R03 P0 gate migrations | Нет actual1878 origin;live metadata:adminitem2fields +11decimal types не исправляются0906 | DDL error, длительные locks, частичное изменение схемы | Полный metadata diff, restore rehearsal, capacity/lock budget | Exact-source/data/schema upgrade + repeat + rollback rehearsal PASS |
 | R04 P0 gate tenant/auth | HTTP/session/file ACL NOT RUN | Доступ к чужой компании/файлам или несанкционированная запись | Закрытая изолированная двухкомпанейская приёмка | GET/POST/files/revocation tests и независимый security sign-off |
 | R05 P0 gate education | Full sibling/theme/Core pair NOT VERIFIED | Повреждение входа/курсов/оценок/записей на обучение | Сохранить Core/siblings, hashes, smoke on exact clone | Login/course/enrolment/gradebook/completion/files PASS |
 | R06 P1 BMS defects |19 exact failed IDs,1error18fail | Неполные business/user scenarios; влияние неизвестно | Исправления узкими PR, без ослабления assertions | Все обязательные тесты PASS либо доказанный scoped acceptance владельца; P0 исключать нельзя |
-| R07 P1 Web/runtime |CLI исторический,Web не проверен | Неожиданные PHP errors/timeouts/uploads | Подтвердить domain handler/ini/extensions | Совпадающий runtime профиль, web smoke |
+| R07 P1 Web/runtime |CLI свежеподтверждён,Web не проверен | Неожиданные PHP errors/timeouts/uploads | Подтвердить domain handler/ini/extensions | Совпадающий runtime профиль, web smoke |
 | R08 P1 cron/integrations |Cron/Bitrix/ERP operational NOT RUN | Дубли/потеря задач, реальные уведомления/платежи | Инвентаризация writers; deny-egress restore; controlled canary | Schedule/identity/locks/idempotency/backlog/retries подтверждены |
-| R09 P1 performance/capacity |Нет текущих квот/диска/DDL benchmarks | Outage/disk full/metadata locks | Capacity расчёт и rehearsal на сопоставимом объёме | Запас по каждому volume/quota, measured lock/duration в окне |
+| R09 P1 performance/capacity |Host-level disk/RAM получены;account quotas/inodes/DDL benchmarks неизвестны | Outage/disk full/metadata locks | Capacity расчёт и rehearsal на сопоставимом объёме | Запас по каждому volume/quota, measured lock/duration в окне |
 | R10 P0 gate artifact identity |PR60/62 разные ZIP,один0906 | Установка непроверенного кандидата | Pin source+manifest+SHA256; запрет latest | Exact bytes approved+verified on target before install |
 | R11 P1 operational control |Нет rehearsal/window/operator evidence | Ошибки порядка backup/cron/rollback | Двухэтапное owner approval, журнал, ответственные | Подписанный runbook с конкретными путями/окном/rollback trigger |
 
@@ -201,3 +202,33 @@ contracts и не поведение; commented text может дать лож�
 результат не является compatibility PASS. Не включать исходники с secrets/PII
 в GitHub; приватное сравнение API1.26/2613 должно учитывать реальные типы,
 параметры,пагинацию,projection fields,company mapping и Corporate authorization.
+
+## Новые подтверждённые блокеры после live refresh
+
+Источник: [schema diff](RC30_PRODUCTION_SCHEMA_DIFF.json), снимок20:55:42Z.
+142 BMS таблицы присутствуют. Помимо известных executionstatus и ordered index,
+0906 не содержит достижимого repair для:
+
+- `local_kbacompany_adminitem.starttime` и `.duetime` (отсутствуют; fresh varchar5 NOT NULL default empty).
+- `finbudfact.actualamount`, `finbudline.planamount/limitamount`, `finline.amount`: decimal(18,0) вместо(18,2).
+- `statbind.weight`: decimal(8,0) вместо(8,3).
+- `statnorm.targetvalue/minval/maxval`: decimal(18,0) вместо(18,6).
+- `statpolicy.dangerdecline/affluencegrowth/powerlevel`: decimal(8,0) вместо(8,3).
+
+Это подтверждённые отличия COLUMN_TYPE, не display-width/default formatting.
+При фиксированной precision увеличение scale **уменьшает целый диапазон**:
+18→16/12 и8→5 цифр. Нельзя считать ALTER безопасным widening. По metadata нельзя
+доказать отсутствие overflow или прежнего округления; потерянную дробную часть
+изменение типа не восстановит. Business values не читались.
+
+R03 теперь не только unknown gate: actual drift доказан. До установки нужен
+отдельный согласованный repair/ADR при выборе правил типов, fail-closed range
+checks в разрешённом clone, проверки сохранения значений и exact1878→newcandidate
+upgrade/repeat на обеих DB. Никаких ручных ALTER/version reset в production.
+Существующий synthetic CI этот drift не моделирует; прежний PASS не отменяет его.
+
+Corporate41 actual schema имеет2default differences:devplan.status active vsCI draft,
+member.isemployee0 vsCI1. Defaults проверены поmetadatahashes,не поbusinessrows.
+Не менять их автоматически:особенно isemployee влияет на admission semantics.
+Состав таблиц/колонок и нормализованные types/nullability/auto_increment совпадают;
+это не отменяет полноценный API/behavior review2613. См.[refresh](RC30_PRODUCTION_REFRESH.md).

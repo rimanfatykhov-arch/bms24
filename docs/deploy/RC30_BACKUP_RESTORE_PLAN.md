@@ -15,7 +15,7 @@
 | config.php и требуемые server settings/keys | NOT VERIFIED; секреты не читались | NOT RUN |
 | Общая точка согласованности DB/code/files | NOT VERIFIED | NOT RUN |
 | Offsite/encryption/key availability/retention | NOT VERIFIED | NOT RUN |
-| Свободное место/квоты/IO budget | NOT VERIFIED | NOT RUN |
+| Свободное место/квоты/IO budget | Host volume space получен;quota/IO budget NOT VERIFIED | NOT RUN |
 | RTO/RPO, обратное восстановление | Цели должен согласовать владелец | NOT RUN |
 
 Упомянутый в [SSH inventory отчёте](../reconcile/ISSUE44_SCHEMA_REPAIR.md)
@@ -148,3 +148,7 @@ PASS возможен только при проверенном coherent set, �
 сохранении образовательных/бизнес-данных, точной совместимости, доказанных ACL,
 rehearsed rollback, приемлемых измеренных RTO/RPO и owner sign-off.
 Сейчас все эти production recovery gates остаются NOT VERIFIED / NOT RUN.
+
+Fresh read-only metadata от20:55:42Z не включают backup archives. Наличие,полнота,
+контрольные суммы и restore по-прежнему не подтверждены. Найденные13 дополнительных
+field/type mismatches должны войти в isolated rehearsal до выбора deployment package.
