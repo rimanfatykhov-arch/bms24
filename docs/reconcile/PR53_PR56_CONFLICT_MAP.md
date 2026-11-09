@@ -8,7 +8,7 @@ inventory were prepared before creating the integration branch or changing code.
 ## All changed paths and dispositions
 
 PR53 changes59 paths; PR56 changes54; overlap14; unique53=45; unique56=40.
-`conflict-map.json` enumerates every path and normalized source hashes.
+`pr53-pr56-conflict-map.json` enumerates every path and normalized source hashes.
 
 | Conflict/group | Resolution |
 |---|---|

@@ -33,8 +33,10 @@ parent JUnit sets, not only totals. No skipped/xfail or weakened assertions.
 
 Local preflight: PHP540/540, RU/EN9094 keys, XML syntax, upgrade chronology,
 source/dependency preservation, RC30 version10 cases and schema CLI371 assertions
-PASS. Actual runtime and artifact results will be recorded after CI completes;
-neither parent acceptance substitutes for the combined matrix.
+PASS. Combined runtime and artifact evidence is now in [PR57 acceptance](PR57_ACCEPTANCE.md):
+both engines pass9 scenarios/8 schema comparisons, full Corporate150/962 and
+targeted learning/queue/RC30/communication/access tests. Full BMS598/6981 retains
+20 errors/19 failures common to both parents; release HOLD, no new failures.
 
 ## Rollback and operational boundary
 
@@ -49,8 +51,8 @@ matching code+database backup/restore plan and artifact identity. Choosing eithe
 0902 ZIP by version number alone is invalid because their source trees differ.
 Do not copy Corporate0901 over installed2613: metadata proves feature differences,
 not semantic compatibility. Such deployment requires a separate reviewed source
-reconciliation and owner approval. Staging/production were only subject to the
-narrow read-only stage41 version/hash inspection; application/data were unchanged.
+reconciliation and owner approval. Stage41 received only narrow read-only
+version/hash inspection; application/data were unchanged. Production was not accessed.
 
 Remaining global BMS failures, full browser/HTTP ACL, live Corporate2613 semantic
 reconciliation, sibling-stack and backup/restore acceptance remain explicit gates.
