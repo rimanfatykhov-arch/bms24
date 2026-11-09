@@ -305,6 +305,7 @@ if ($fresh) {
             'role_intelligence_service_test', 'role_readiness_view_test', 'company_core_test',
             'deviation_service_test', 'task_service_test', 'battle_plan_service_test',
             'task_batch_actions1842_test', 'task_deadlines1843_test', 'task_membership_regression_test',
+            'task_kanban1846_test', 'task_kanban1850_test',
             'design_service_test', 'document_service_test', 'semantic_service_test', 'company_employee_sync_service_test',
             'rc30_integrated_access_test'] as $test) {
         $focused[] = $test;
