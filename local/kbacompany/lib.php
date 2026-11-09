@@ -7,6 +7,11 @@ function local_kbacompany_extend_navigation(global_navigation $navigation): void
     if (!isloggedin() || isguestuser()) {
         return;
     }
+    if (\local_kbacompany\local\competency_review_queue_service::has_pending()) {
+        $navigation->add(get_string('reviewqueue_title', 'local_kbacompany'),
+            new moodle_url('/local/kbacompany/competency_review_queue.php'),
+            navigation_node::TYPE_CUSTOM, null, 'local_kbacompany_reviewqueue');
+    }
     $context = context_system::instance();
     if (!has_capability('local/kbacompany:viewowncompany', $context)) {
         return;
@@ -35,9 +40,14 @@ function local_kbacompany_render_navbar_output($renderer): string {
         return '';
     }
 
+    $queuelink = '';
+    if (\local_kbacompany\local\competency_review_queue_service::has_pending()) {
+        $queuelink = html_writer::link(new moodle_url('/local/kbacompany/competency_review_queue.php'),
+            get_string('reviewqueue_title', 'local_kbacompany'), ['class' => 'kbacompany-navbar-link']);
+    }
     $context = context_system::instance();
     if (!has_capability('local/kbacompany:viewowncompany', $context)) {
-        return '';
+        return $queuelink ? html_writer::div($queuelink, 'kbacompany-navbar-entry') : '';
     }
 
     $url = new moodle_url('/local/kbacompany/index.php');
@@ -54,7 +64,7 @@ function local_kbacompany_render_navbar_output($renderer): string {
         'aria-label' => get_string('mycompany', 'local_kbacompany'),
     ]);
 
-    return html_writer::div($link, 'kbacompany-navbar-entry');
+    return html_writer::div($link . $queuelink, 'kbacompany-navbar-entry');
 }
 
 /** Shared navigation for the organization workspace. */

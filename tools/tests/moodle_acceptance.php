@@ -78,7 +78,8 @@ if (in_array($mode, ['seed', 'verify', 'snapshot'], true)) {
     }
     if ($mode === 'seed') {
         $fixtures = [];
-        foreach (['local_kbacompany_task', 'local_kbacompany_deviation'] as $table) {
+        foreach (['local_kbacompany_task', 'local_kbacompany_deviation', 'local_kbacompany_doc',
+                'local_kbacompany_member', 'local_kbacompany_empcomp'] as $table) {
             $columns = $DB->get_columns($table, false);
             foreach (['aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb'] as $tenant) {
                 $row = new stdClass();
@@ -95,13 +96,34 @@ if (in_array($mode, ['seed', 'verify', 'snapshot'], true)) {
                 foreach (['starttime' => '09:15', 'duetime' => '17:20', 'executionstatus' => 'inprogress'] as $field => $value) {
                     if (isset($columns[$field])) { $row->$field = $value; }
                 }
+                if ($table === 'local_kbacompany_doc') {
+                    $row->revision = 1;
+                    $row->status = 'superseded';
+                    $row->code = 'PRESERVE-' . substr($tenant, 0, 8);
+                    $row->title = 'Synthetic published history';
+                    $row->content = 'Original published content';
+                    $row->doctype = 'procedure';
+                }
+                if ($table === 'local_kbacompany_empcomp') {
+                    $row->currentlevel = 2;
+                    $row->evidence = 'Synthetic competency evidence';
+                }
                 $id = $DB->insert_record($table, $row);
                 $actual = (array)$DB->get_record($table, ['id' => $id], '*', MUST_EXIST);
                 $fixtures[] = ['table' => $table, 'id' => $id, 'row' => $actual];
+                if ($table === 'local_kbacompany_doc') {
+                    $row->revision = 2;
+                    $row->status = 'effective';
+                    $row->supersedesrevision = 1;
+                    $row->content = 'Current published content';
+                    $id = $DB->insert_record($table, $row);
+                    $fixtures[] = ['table' => $table, 'id' => $id,
+                        'row' => (array)$DB->get_record($table, ['id' => $id], '*', MUST_EXIST)];
+                }
             }
         }
         write_json($output, $fixtures);
-        echo "PASS seeded four synthetic preservation rows across two tenant UUIDs; not an ACL test\n";
+        echo 'PASS seeded ' . count($fixtures) . " synthetic task/deviation/document-history/membership/competency rows across two tenant UUIDs; not an ACL test\n";
         exit(0);
     }
     $fixtures = json_decode(file_get_contents($output), true, 512, JSON_THROW_ON_ERROR);
@@ -113,7 +135,7 @@ if (in_array($mode, ['seed', 'verify', 'snapshot'], true)) {
             }
         }
         $expected = $fixture['table'] === 'local_kbacompany_task' ? ['starttime' => '', 'duetime' => ''] :
-            ['executionstatus' => 'pending'];
+            ($fixture['table'] === 'local_kbacompany_deviation' ? ['executionstatus' => 'pending'] : []);
         foreach ($expected as $field => $default) {
             if (!array_key_exists($field, $fixture['row']) && (!isset($actual[$field]) || $actual[$field] !== $default)) {
                 throw new RuntimeException('New field default incorrect: ' . $field);
@@ -150,6 +172,7 @@ if (required_env('DBTYPE') === 'mysqli' && stripos($versioncomment, 'Percona') =
 }
 $main = '740fce16db15bb3551071cc11fe584c680fd738d';
 $import = 'eccc1eb221df90675067b1011e986702d96a4985';
+$functional = 'd4887103c13f45c42b73b455a95dba142d7ba116';
 $report = ['run_id' => $runid, 'php' => PHP_VERSION, 'dbtype' => required_env('DBTYPE'),
     'database_server' => $dbversion, 'database_version_comment' => $versioncomment,
     'scope' => 'isolated Moodle core plus local_kbacompany/local_kbacorporate only',
@@ -160,20 +183,23 @@ $fresh = null;
 foreach (['fresh' => null, 'from1645' => $main, 'from1879' => $import,
         'from0890' => 'e06cc96e2933e9142c1d51d2fcfa06b159737718',
         'from0900' => '5c59057cb7af3fd545cd661bb7c2b3daa5ae7cd9',
-        'from0901' => '1146e1bc330621ffcfa7dcb3881a2188110904c8'] as $name => $historical) {
+        'from0901' => '1146e1bc330621ffcfa7dcb3881a2188110904c8',
+        'from0804' => $functional,
+        'frompr530902' => '28a60d010d8c59fd301a2bf1b2df628e38fb79dc',
+        'frompr560902' => '1ced6b88e5933bb8d63aa1806411ac4d8a6a5443'] as $name => $historical) {
     $scenario = $testroot . '/' . $name;
     $core = $scenario . '/core';
     $entry = ['status' => 'FAIL', 'steps' => [], 'bms_source' => $historical ?? 'candidate working tree',
-        'corporate_source' => $historical === $import ? $main : ($historical ?? 'candidate working tree')];
-    if ($historical === $import) {
-        $entry['note'] = 'Reconstructed pair: import1879 deleted Corporate; Corporate explicitly taken from main1645 SHA.';
+        'corporate_source' => in_array($historical, [$import, $functional], true) ? $main : ($historical ?? 'candidate working tree')];
+    if (in_array($historical, [$import, $functional], true)) {
+        $entry['note'] = 'Reconstructed dependency pair: standalone BMS source uses Corporate from main1645 SHA; not live stage Corporate2613.';
     }
     try {
         mkdir($core, 0700, true);
         must_command(['cp', '-a', $source . '/.', $core], $testroot, $logs . '/' . $name . '-copy-core.log');
         foreach (['kbacompany', 'kbacorporate'] as $plugin) {
             if (file_exists($core . '/local/' . $plugin)) { throw new RuntimeException('Core source already contains candidate plugin'); }
-            $ref = $plugin === 'kbacorporate' && $historical === $import ? $main : $historical;
+            $ref = $plugin === 'kbacorporate' && in_array($historical, [$import, $functional], true) ? $main : $historical;
             if ($ref) {
                 $tar = $scenario . '/' . $plugin . '.tar';
                 must_command(['git', '-C', $candidate, 'archive', '--format=tar', '--output=' . $tar, $ref,
@@ -252,7 +278,8 @@ foreach (['fresh' => null, 'from1645' => $main, 'from1879' => $import,
     write_json($logs . '/report.json', $report);
 }
 
-foreach (['from1645', 'from1879', 'from0890', 'from0900', 'from0901'] as $name) {
+foreach (['from1645', 'from1879', 'from0890', 'from0900', 'from0901', 'from0804',
+        'frompr530902', 'frompr560902'] as $name) {
     $a = $testroot . '/fresh/schema.json';
     $b = $testroot . '/' . $name . '/schema.json';
     $report['schema_comparison'][$name] = !is_file($a) || !is_file($b) ? 'NOT RUN' :
@@ -270,7 +297,11 @@ if ($fresh) {
         $focused[] = basename($file, '.php');
     }
     foreach (['task_rc30_acceptance1864_test', 'task_rc30_cli_response1866_test',
-            'task_rc30_report_comparison1867_test'] as $test) {
+            'task_rc30_report_comparison1867_test', 'competency_review_queue_test',
+            'employee_development_courses_test', 'employee_competency_profile_service_test',
+            'role_intelligence_service_test', 'role_readiness_view_test', 'company_core_test',
+            'design_service_test', 'document_service_test', 'company_employee_sync_service_test',
+            'rc30_integrated_access_test'] as $test) {
         $focused[] = $test;
     }
     foreach ($focused as $test) {

@@ -1,0 +1,43 @@
+<section class="bms-pdu">
+    <h1>{{#str}}readiness_title, local_kbacompany{{/str}}</h1>
+    <p>{{#str}}readiness_intro, local_kbacompany{{/str}}</p>
+    <form method="get" action="{{formurl}}" class="bms-pdu-actions">
+        <input type="hidden" name="uuid" value="{{uuid}}">
+        <label>{{#str}}readiness_status, local_kbacompany{{/str}}
+            <select name="status">
+                {{#statuses}}<option value="{{value}}" {{#selected}}selected{{/selected}}>{{label}}</option>{{/statuses}}
+            </select>
+        </label>
+        <label>{{#str}}readiness_gap, local_kbacompany{{/str}}
+            <select name="gap">
+                {{#gaps}}<option value="{{value}}" {{#selected}}selected{{/selected}}>{{label}}</option>{{/gaps}}
+            </select>
+        </label>
+        <button type="submit">{{#str}}readiness_apply, local_kbacompany{{/str}}</button>
+    </form>
+    {{#total}}
+    <div class="table-responsive">
+        <table class="table">
+            <caption>{{#str}}readiness_matches, local_kbacompany{{/str}} {{total}}</caption>
+            <thead><tr>
+                <th scope="col">{{#str}}positiondirectory, local_kbacompany{{/str}}</th>
+                <th scope="col">{{#str}}readiness_status, local_kbacompany{{/str}}</th>
+                <th scope="col">{{#str}}readiness_functions, local_kbacompany{{/str}}</th>
+                <th scope="col">{{#str}}readiness_profiles, local_kbacompany{{/str}}</th>
+            </tr></thead>
+            <tbody>
+                {{#rows}}
+                <tr>
+                    <th scope="row"><a href="{{url}}">{{code}} — {{name}}</a></th>
+                    <td>{{statuslabel}}{{#details}}<br>{{details}}{{/details}}</td>
+                    <td>{{published_function_count}}</td>
+                    <td>{{published_role_dna_count}}</td>
+                </tr>
+                {{/rows}}
+            </tbody>
+        </table>
+    </div>
+    {{/total}}
+    {{^total}}<p>{{#str}}pdu_empty, local_kbacompany{{/str}}</p>{{/total}}
+    <a href="{{directoryurl}}">{{#str}}positiondirectory, local_kbacompany{{/str}}</a>
+</section>

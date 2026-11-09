@@ -12,6 +12,6 @@ class employee_competency_profile_service_test extends \advanced_testcase {
         $this->assertContains('employee_profile_compares_evidence_with_published_position_profile', $contract['rules']);
         $this->assertContains('course_completion_does_not_confirm_competency_attainment', $contract['rules']);
         $this->assertContains('missing_evidence_is_unknown_not_zero_competence', $contract['rules']);
-        $this->assertContains('assessment_workflow_is_deferred_to_0_7_3', $contract['rules']);
+        $this->assertContains('formal_assessment_projection_is_owned_by_assessment_engine_0_7_3', $contract['rules']);
     }
 }

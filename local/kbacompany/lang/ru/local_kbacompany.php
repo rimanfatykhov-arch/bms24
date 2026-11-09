@@ -4669,6 +4669,8 @@ $string['positioncompetency_removed'] = 'Требование к компете�
 $string['positioncompetency_published'] = 'Профиль компетенций опубликован.';
 $string['positioncompetency_publish_empty'] = 'Нельзя опубликовать профиль без хотя бы одного требования к компетенции.';
 $string['positioncompetency_boundary_note'] = 'Целевой профиль должности не изменяет оценку сотрудника. Завершение курса также не подтверждает достижение компетенции автоматически.';
+$string['positioncompetency_priority'] = 'Приоритет';
+$string['positioncompetency_competency'] = 'Компетенция';
 $string['positioncompetency_priority_low'] = 'Низкий';
 $string['positioncompetency_priority_normal'] = 'Обычный';
 $string['positioncompetency_priority_high'] = 'Высокий';
@@ -6543,6 +6545,11 @@ $string['pdu_units_limited'] = 'Показаны первые 50 совпаде�
 $string['pdu_units_help'] = 'Подразделение выбирается явно. Поиск не сохраняет должность и не меняет введённый текст.';
 $string['pdu_units_empty'] = 'Подразделений по этому запросу нет. Измените поиск или подготовьте подразделение в структуре.';
 $string['pdu_open_units'] = 'Открыть структуру';
+$string['pdu_firstunit'] = 'Подготовить первое подразделение (в новой вкладке)';
+$string['pdu_refreshunits'] = 'После применения согласованной структуры вернитесь сюда и нажмите «Найти». Введённые поля останутся в этой вкладке.';
+$string['design_firstunitcreate'] = 'Создать проект с одним подразделением';
+$string['design_firstunitbranch'] = 'Создать основной филиал при применении';
+$string['design_firstunitexists'] = 'В компании уже есть действующее подразделение. Обновите список или создайте обычный проект структуры.';
 $string['pdu_unit_readonly'] = 'Подразделение задано при создании. Перевод в другое подразделение не выполняется этой формой, чтобы не изменить смысл связанных штатных строк и назначений.';
 $string['pdu_purpose_help'] = 'Зачем существует эта должность и за какую работу она отвечает? Функции и их продукты связываются отдельно.';
 $string['pdu_manager_help'] = 'Признак руководящей работы, а не роль доступа. Он не выдаёт управленческие права пользователю.';
@@ -7777,13 +7784,13 @@ $string['employee2_no_competency_profile'] = 'Профиль компетенц�
 $string['employee2_comp_total'] = 'Требований';
 $string['employee2_comp_met'] = 'Соответствует';
 $string['employee2_comp_gap'] = 'Есть разрыв';
-$string['employee2_comp_unknown'] = 'Нет оценки';
+$string['employee2_comp_unknown'] = 'Нет оценки BMS24';
 $string['employee2_competency'] = 'Компетенция';
 $string['employee2_target_level'] = 'Требуемый уровень';
 $string['employee2_current_level'] = 'Текущий уровень';
 $string['employee2_comp_state_met'] = 'Соответствует';
 $string['employee2_comp_state_gap'] = 'Разрыв';
-$string['employee2_comp_state_unknown'] = 'Нет оценки';
+$string['employee2_comp_state_unknown'] = 'Нет оценки BMS24';
 $string['employee2_no_competencies'] = 'Для текущей должности требования к компетенциям не опубликованы.';
 $string['employee2_open_competencies'] = 'Открыть профиль компетенций';
 $string['employee2_learning_boundary'] = 'Статус обучения читается из действующего контура обучения. Завершение курса само по себе не подтверждает достижение компетенции.';
@@ -9586,3 +9593,68 @@ $string['bms_task1853_restricted'] = 'Рабочее пространство р
 $string['taskcenter_scope_department'] = 'Подразделение';
 
 $string['bms_task1858_clear_filters'] = 'Сбросить фильтры';
+
+$string['readiness_title'] = 'Готовность описания должностей';
+$string['readiness_intro'] = 'Готовность показывает, есть ли у активной должности цель, опубликованные функции и опубликованный профиль Role DNA.';
+$string['readiness_status'] = 'Готовность';
+$string['readiness_gap'] = 'Чего не хватает';
+$string['readiness_apply'] = 'Применить фильтры';
+$string['readiness_matches'] = 'Найдено должностей';
+$string['readiness_functions'] = 'Опубликованные функции';
+$string['readiness_profiles'] = 'Опубликованные профили Role DNA';
+$string['readiness_basic_links_present'] = 'Базовые элементы есть';
+$string['readiness_needs_description'] = 'Описание неполное';
+$string['readiness_purpose_missing'] = 'Нет цели';
+$string['readiness_published_functions_missing'] = 'Нет опубликованных функций';
+$string['readiness_published_role_dna_missing'] = 'Нет опубликованного Role DNA';
+
+$string['companycatalog_title'] = 'Каталоги компетенций компании';
+
+$string['companycatalog_back'] = '← Люди';
+
+$string['companycatalog_intro'] = 'Подключённые каталоги доступны при составлении профилей должностей этой компании. Повторное подключение сохраняет одну привязку.';
+
+$string['companycatalog_saved'] = 'Каталог подключён к компании.';
+
+$string['companycatalog_empty'] = 'К компании пока не подключены каталоги компетенций.';
+
+$string['companycatalog_select'] = 'Каталог компетенций';
+
+$string['companycatalog_bind'] = 'Подключить каталог';
+
+$string['companycatalog_admin'] = 'Для подключения каталога обратитесь к администратору сайта.';
+
+$string['companycatalog_nosystem'] = 'Сначала создайте каталог в администрировании Moodle, в разделе «Компетенции».';
+
+$string['employee2_moodle_rating'] = 'Подтверждение компетенции в Moodle';
+$string['employee2_confirmation_unassessed'] = 'Ещё не оценена';
+$string['employee2_confirmation_review'] = 'Ожидает проверки или проверяется';
+$string['employee2_confirmation_proficient'] = 'Компетенция подтверждена';
+$string['employee2_confirmation_notproficient'] = 'Компетенция не подтверждена';
+$string['employee2_assignment_grade'] = 'Оценка задания в Moodle';
+$string['employee2_assignment_unavailable'] = 'Недоступна';
+$string['employee2_assignment_ungraded'] = 'Ещё не выставлена';
+$string['employee2_moodle_rating_note'] = 'Оценка Moodle показана по шкале Moodle. Текущий уровень и готовность в BMS24 рассчитываются по оценкам BMS24.';
+
+$string['employee2_development_courses'] = 'Курсы для развития';
+
+$string['employee2_course_progress'] = 'Выполнение элементов курса — {$a}%';
+
+$string['employee2_course_progress_unavailable'] = 'Выполнение элементов курса не отслеживается';
+
+$string['reviewqueue_title'] = 'На проверку';
+$string['reviewqueue_competency'] = 'Компетенция';
+$string['reviewqueue_intro'] = 'Запросы на проверку компетенций, доступные вам по правам Moodle. Очередь может включать сотрудников разных компаний. Работа и подтверждение компетенции открываются отдельно.';
+$string['reviewqueue_empty'] = 'Доступных запросов на проверку нет.';
+$string['reviewqueue_open_work'] = 'Открыть связанную работу';
+$string['reviewqueue_related_work_hint'] = 'Работа связана с учебным свидетельством. Она может быть сдана раньше этого запроса: Moodle не связывает запрос с конкретной сдачей. Перед оценкой компетенции проверьте доказательства.';
+$string['reviewqueue_review'] = 'Проверить компетенцию';
+$string['reviewqueue_work_unavailable'] = 'Прямой переход к работе недоступен. Откройте проверку компетенции и её доказательства.';
+$string['reviewqueue_waiting'] = 'Ожидает проверки';
+$string['reviewqueue_in_review'] = 'У вас на проверке';
+$string['reviewqueue_route_help'] = 'Откройте работу и сохраните оценку в Moodle. Очередь останется в этой вкладке: обновите результаты, затем отдельно проверьте компетенцию. Оценка задания не подтверждает компетенцию автоматически.';
+$string['reviewqueue_refresh'] = 'Обновить результаты';
+$string['reviewqueue_open_work_tab'] = 'Открыть работу — новая вкладка';
+$string['reviewqueue_review_tab'] = 'Проверить компетенцию — новая вкладка';
+$string['reviewqueue_grade_not_published'] = 'Нет доступной опубликованной оценки';
+$string['employee2_open_assignment_feedback'] = 'Откройте задание по ссылке выше, чтобы прочитать отзыв преподавателя.';

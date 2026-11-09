@@ -54,6 +54,39 @@ final class design_service_test extends \advanced_testcase {
         return $uuid;
     }
 
+    public function test_first_department_stays_in_design_until_approved_apply(): void {
+        global $DB, $USER;
+        $this->resetAfterTest();
+        $this->setAdminUser();
+        $actor = (int)$USER->id;
+        $company = identity_registry::company_uuid(repository::save_company((object)['name' => 'Factory', 'active' => 1]));
+        $scope = ['companyuuid' => $company];
+        $draft = design_service::command($company, $actor, 'create', ['source' => 'firstunit', 'name' => 'Production']);
+        $payload = json_decode(design_service::version($company, $actor, $draft, 1)->payload, true);
+        $this->assertCount(1, $payload['nodes']);
+        $node = $payload['nodes'][0]['uuid'];
+        design_service::command($company, $actor, 'position', ['object' => $draft, 'revision' => 1,
+            'targetnode' => $node, 'code' => 'P01', 'name' => 'Manager', 'plannedfte' => '1', 'managerial' => 1]);
+        $payload = json_decode(design_service::version($company, $actor, $draft, 2)->payload, true);
+        design_service::command($company, $actor, 'function', ['object' => $draft, 'revision' => 2,
+            'targetnode' => $node, 'code' => 'F01', 'name' => 'Plan', 'result' => 'Schedule',
+            'position' => $payload['positions'][0]['uuid']]);
+        design_service::command($company, $actor, 'submit', ['object' => $draft, 'revision' => 3, 'reason' => 'Reviewed']);
+        design_service::command($company, $actor, 'approve', ['object' => $draft, 'revision' => 4, 'reason' => 'Approved']);
+        $this->assertFalse($DB->record_exists('local_kbacompany_orgbranch', $scope));
+        $this->assertFalse($DB->record_exists('local_kbacompany_orgnode', $scope));
+        design_service::command($company, $actor, 'apply', ['object' => $draft, 'revision' => 5,
+            'branch' => 'create-main', 'reason' => 'Open first department']);
+        $branch = $DB->get_record('local_kbacompany_orgbranch', $scope, '*', MUST_EXIST);
+        $unit = $DB->get_record('local_kbacompany_orgnode', $scope, '*', MUST_EXIST);
+        $this->assertSame($branch->uuid, $unit->branchuuid);
+        $this->assertSame('Production', $unit->name);
+        $this->assertEquals(1, $unit->active);
+        $this->expectException(\moodle_exception::class);
+        $this->expectExceptionMessage(get_string('design_firstunitexists', 'local_kbacompany'));
+        design_service::command($company, $actor, 'create', ['source' => 'firstunit', 'name' => 'Duplicate']);
+    }
+
     public function test_apply_rejects_live_change_after_capture(): void {
         global $DB;
         $f = $this->fixture();

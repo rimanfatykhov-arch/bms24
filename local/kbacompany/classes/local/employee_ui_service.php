@@ -498,14 +498,60 @@ class employee_ui_service {
                     \html_writer::tag('span', s(self::tr('employee2_comp_unknown') . ': ' . (int)$summary['unknown']), ['class' => 'bms-employee2-chip']),
                     'bms-employee2-chips'
                 );
+                $ratings = $extra['moodle_ratings'] ?? [];
+                $courses = $extra['development_courses'] ?? [];
+                $headers = [self::tr('employee2_metric_code'), self::tr('employee2_competency'),
+                    self::tr('employee2_target_level'), self::tr('employee2_current_level'), get_string('status')];
+                if ($ratings) {
+                    $headers[] = self::tr('employee2_moodle_rating');
+                }
+                if ($courses) {
+                    $headers[] = self::tr('employee2_development_courses');
+                }
                 $rows = [];
                 foreach ($ctx['requirements'] as $row) {
-                    $rows[] = [s($row['code']), s($row['name']), s($row['target_level'] === null ? self::tr('ecu_not_set') : (string)$row['target_level']),
+                    $cells = [s($row['code']), s($row['name']), s($row['target_level'] === null ? self::tr('ecu_not_set') : (string)$row['target_level']),
                         s($row['current_level'] === null ? self::tr('ecu_not_set') : (string)$row['current_level']),
                         s(self::tr('employee2_comp_state_' . $row['state']))];
+                    if ($ratings) {
+                        $rating = $ratings[$row['competency_id']] ?? null;
+                        $confirmation = self::tr('employee2_confirmation_' . ($rating['state'] ?? 'unassessed'));
+                        if (!empty($rating['label'])) {
+                            $confirmation .= ' · ' . $rating['label'];
+                        }
+                        $cells[] = !empty($rating['id']) ? \html_writer::link(new \moodle_url('/admin/tool/lp/user_competency.php',
+                            ['id' => $rating['id']]), s($confirmation)) : s($confirmation);
+                    }
+                    if ($courses) {
+                        $links = [];
+                        foreach ($courses[$row['competency_id']] ?? [] as $course) {
+                            $progress = $course['percentage'] === null
+                                ? self::tr('employee2_course_progress_unavailable')
+                                : self::tr('employee2_course_progress', (int)round($course['percentage']));
+                            $content = \html_writer::link(new \moodle_url('/course/view.php', ['id' => $course['id']]),
+                                $course['name']) . \html_writer::div(s($progress));
+                            foreach ($course['assignments'] ?? [] as $assignment) {
+                                $grade = $assignment['state'] === 'graded' ? $assignment['grade']
+                                    : self::tr('employee2_assignment_' . $assignment['state']);
+                                $content .= \html_writer::div(\html_writer::link(new \moodle_url('/mod/assign/view.php',
+                                    ['id' => $assignment['cmid']]), $assignment['name']) .
+                                    \html_writer::div(s(self::tr('employee2_open_assignment_feedback'))) .
+                                    \html_writer::div(s(self::tr('employee2_assignment_grade') . ': ' . $grade)));
+                            }
+                            $links[] = $content;
+                        }
+                        $cells[] = $links ? \html_writer::alist($links) : '—';
+                    }
+                    $rows[] = $cells;
                 }
-                $body = $rows ? self::table([self::tr('employee2_metric_code'), self::tr('employee2_competency'), self::tr('employee2_target_level'), self::tr('employee2_current_level'), get_string('status')],
+                $body = $rows ? self::table($headers,
                     $rows, self::tr('employee2_tab_competencies')) : self::note(self::tr('employee2_no_competencies'));
+                if ($rows && $courses) {
+                    $body = \html_writer::div($body, 'bms-employee-learning-results');
+                }
+                if ($ratings) {
+                    $body .= self::note(self::tr('employee2_moodle_rating_note'));
+                }
                 $body .= self::link(self::url($company, 'employee_competencies', ['userid' => $e['user_id']]), self::tr('employee2_open_competencies'), true);
                 $out .= self::panel(self::tr('employee2_tab_competencies'), $body);
             }

@@ -106,7 +106,7 @@ final class schema_parity_2026110890_test extends \advanced_testcase {
 
     public static function presence_provider(): array {
         $cases = [];
-        foreach ([2026101879, 2026110890] as $oldversion) {
+        foreach ([2026101879, 2026110804, 2026110890] as $oldversion) {
             for ($mask = 0; $mask < 8; $mask++) {
                 $cases[$oldversion . '-presence-' . $mask] = [$mask, $oldversion];
             }
@@ -125,7 +125,7 @@ final class schema_parity_2026110890_test extends \advanced_testcase {
             $before = $this->snapshot();
             set_config('version', $oldversion, 'local_kbacompany');
             $this->assertTrue(xmldb_local_kbacompany_upgrade($oldversion));
-            $this->assertSame('2026110902', (string)get_config('local_kbacompany', 'version'));
+            $this->assertSame('2026110903', (string)get_config('local_kbacompany', 'version'));
             $after = $this->snapshot();
             foreach (self::FIELDS as $index => [$table, $name, $length, $default]) {
                 $column = $after[$table]['columns'][$name];
@@ -165,7 +165,7 @@ final class schema_parity_2026110890_test extends \advanced_testcase {
             $once = $this->snapshot();
             local_kbacompany_upgrade_schema_parity_2026110890();
             $this->assertEquals($once, $this->snapshot(), 'Helper is idempotent');
-            $this->assertTrue(xmldb_local_kbacompany_upgrade(2026110902));
+            $this->assertTrue(xmldb_local_kbacompany_upgrade((int)get_config('local_kbacompany', 'version')));
             $this->assertEquals($once, $this->snapshot(), 'Applied checkpoint leaves schema and data unchanged');
         } finally {
             $this->restore_fields();
@@ -212,7 +212,8 @@ final class schema_parity_2026110890_test extends \advanced_testcase {
                 $rejected = true;
             }
             $this->assertTrue($rejected, 'Incompatible definition must fail closed');
-            $this->assertSame('2026101879', (string)get_config('local_kbacompany', 'version'));
+            // Earlier version-only checkpoints may complete; failed schema checkpoint must not.
+            $this->assertSame('2026110804', (string)get_config('local_kbacompany', 'version'));
             $this->assertEquals($before, $this->snapshot(), 'Preflight rejects before any schema/data change');
             $this->assertFalse($DB->get_manager()->field_exists(new \xmldb_table('local_kbacompany_task'),
                 new \xmldb_field('starttime')));
