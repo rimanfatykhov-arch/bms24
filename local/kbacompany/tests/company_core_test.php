@@ -321,14 +321,14 @@ final class company_core_test extends \advanced_testcase {
         $employee = $this->getDataGenerator()->create_user();
         $companyid = $this->create_company('Separated staffing');
         $now = time();
-        foreach ([[$owner, 'owner', 1], [$employee, 'employee', 0]] as [$user, $type, $manager]) {
-            $DB->insert_record('local_kbacorp_member', (object)[
-                'companyid' => $companyid, 'userid' => $user->id, 'membertype' => $type,
-                'isemployee' => 1, 'ismanager' => $manager, 'isdepartmentmanager' => 0,
-                'ishr' => 0, 'timecreated' => $now, 'timemodified' => $now,
-            ]);
-        }
+        $DB->insert_record('local_kbacorp_member', (object)[
+            'companyid' => $companyid, 'userid' => $owner->id, 'membertype' => 'owner',
+            'isemployee' => 1, 'ismanager' => 1, 'isdepartmentmanager' => 0,
+            'ishr' => 0, 'timecreated' => $now, 'timemodified' => $now,
+        ]);
         $companyuuid = identity_registry::company_uuid($companyid);
+        \local_kbacompany\local\employee_service::ensure_membership($companyuuid, (int)$employee->id,
+            ['employee' => true], 'bms_manual');
         $board = organizing_board_service::install_seven_division_template($companyuuid, (int)$owner->id);
         $positionuuid = position_service::create_position($companyuuid, (int)$owner->id, [
             'orgnodeuuid' => $board['nodes'][0]['uuid'], 'code' => 'ADM-001', 'name' => 'Administrator',
@@ -341,10 +341,12 @@ final class company_core_test extends \advanced_testcase {
         ]);
         staffing_service::approve_plan($companyuuid, (int)$owner->id, $planuuid);
         $placement = staffing_service::placement_context($companyuuid, (int)$owner->id, $planuuid);
+        $this->assertContains((int)$employee->id, array_column($placement['employees'], 'user_id'));
+        $this->assertContains((int)$owner->id, array_column($placement['employees'], 'user_id'));
         $this->assertCount(3, $placement['slots']);
         $this->assertEquals(2.5, $placement['summary']['planned_fte']);
         $this->assertEquals(2.5, $placement['summary']['vacant_fte']);
-        $this->assertNull($placement['slots'][0]['employee_name']);
+        $this->assertSame([], $placement['slots'][0]['employee_names']);
         $assignmentid = staffing_service::assign_slot($companyuuid, (int)$owner->id,
             $placement['slots'][0]['uuid'], (int)$employee->id, 'primary');
         $filled = staffing_service::placement_context($companyuuid, (int)$owner->id, $planuuid);

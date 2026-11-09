@@ -4669,6 +4669,8 @@ $string['positioncompetency_removed'] = 'Competency requirement removed.';
 $string['positioncompetency_published'] = 'Competency profile published.';
 $string['positioncompetency_publish_empty'] = 'A profile cannot be published without at least one competency requirement.';
 $string['positioncompetency_boundary_note'] = 'A position target profile does not change an employee assessment. Course completion also does not automatically confirm competency attainment.';
+$string['positioncompetency_priority'] = 'Priority';
+$string['positioncompetency_competency'] = 'Competency';
 $string['positioncompetency_priority_low'] = 'Low';
 $string['positioncompetency_priority_normal'] = 'Normal';
 $string['positioncompetency_priority_high'] = 'High';
@@ -6543,6 +6545,11 @@ $string['pdu_units_limited'] = 'The first 50 matches and the selected unit are s
 $string['pdu_units_help'] = 'Select the unit explicitly. Searching does not save the position or change the text you entered.';
 $string['pdu_units_empty'] = 'No units match this query. Change the search or prepare the unit in the organizational structure.';
 $string['pdu_open_units'] = 'Open structure';
+$string['pdu_firstunit'] = 'Draft the first department (new tab)';
+$string['pdu_refreshunits'] = 'After the approved structure is applied, return here and click Find to refresh the list. Your entries stay in this tab.';
+$string['design_firstunitcreate'] = 'Create a draft with one department';
+$string['design_firstunitbranch'] = 'Create the main branch when applying';
+$string['design_firstunitexists'] = 'An active organizational unit already exists. Refresh the unit list or create a regular design.';
 $string['pdu_unit_readonly'] = 'The unit was set at creation. This form does not transfer positions between units, protecting the meaning of linked staffing lines and assignments.';
 $string['pdu_purpose_help'] = 'Why does this position exist, and what work is it accountable for? Functions and their products are linked separately.';
 $string['pdu_manager_help'] = 'A marker of managerial work, not an access role. It does not grant management permissions to a user.';
@@ -7777,13 +7784,13 @@ $string['employee2_no_competency_profile'] = 'The competency profile is not avai
 $string['employee2_comp_total'] = 'Requirements';
 $string['employee2_comp_met'] = 'Met';
 $string['employee2_comp_gap'] = 'Gap';
-$string['employee2_comp_unknown'] = 'Not assessed';
+$string['employee2_comp_unknown'] = 'No BMS24 assessment';
 $string['employee2_competency'] = 'Competency';
 $string['employee2_target_level'] = 'Required level';
 $string['employee2_current_level'] = 'Current level';
 $string['employee2_comp_state_met'] = 'Met';
 $string['employee2_comp_state_gap'] = 'Gap';
-$string['employee2_comp_state_unknown'] = 'Not assessed';
+$string['employee2_comp_state_unknown'] = 'No BMS24 assessment';
 $string['employee2_no_competencies'] = 'No competency requirements are published for the current position.';
 $string['employee2_open_competencies'] = 'Open competency profile';
 $string['employee2_learning_boundary'] = 'Learning status is read from the active learning contour. Course completion alone does not confirm competency attainment.';
@@ -9584,3 +9591,68 @@ $string['bms_task1853_restricted'] = 'The manager workspace is not available for
 $string['taskcenter_scope_department'] = 'Department';
 
 $string['bms_task1858_clear_filters'] = 'Clear filters';
+
+$string['readiness_title'] = 'Position design readiness';
+$string['readiness_intro'] = 'Readiness shows whether an active position has a purpose, published functions and a published Role DNA profile.';
+$string['readiness_status'] = 'Readiness';
+$string['readiness_gap'] = 'Missing element';
+$string['readiness_apply'] = 'Apply filters';
+$string['readiness_matches'] = 'Matching positions';
+$string['readiness_functions'] = 'Published functions';
+$string['readiness_profiles'] = 'Published Role DNA profiles';
+$string['readiness_basic_links_present'] = 'Basic elements present';
+$string['readiness_needs_description'] = 'Description incomplete';
+$string['readiness_purpose_missing'] = 'Purpose missing';
+$string['readiness_published_functions_missing'] = 'No published functions';
+$string['readiness_published_role_dna_missing'] = 'No published Role DNA';
+
+$string['companycatalog_title'] = 'Company competency catalogs';
+
+$string['companycatalog_back'] = '← People';
+
+$string['companycatalog_intro'] = 'Linked catalogs are available for this company’s position profiles. Connecting again preserves a single binding.';
+
+$string['companycatalog_saved'] = 'Catalog connected to the company.';
+
+$string['companycatalog_empty'] = 'No competency catalogs are connected to this company yet.';
+
+$string['companycatalog_select'] = 'Competency catalog';
+
+$string['companycatalog_bind'] = 'Connect catalog';
+
+$string['companycatalog_admin'] = 'Contact the site administrator to connect a catalog.';
+
+$string['companycatalog_nosystem'] = 'First create a catalog in Moodle administration under Competencies.';
+
+$string['employee2_moodle_rating'] = 'Competency confirmation in Moodle';
+$string['employee2_confirmation_unassessed'] = 'Not assessed';
+$string['employee2_confirmation_review'] = 'Awaiting or undergoing review';
+$string['employee2_confirmation_proficient'] = 'Competency confirmed';
+$string['employee2_confirmation_notproficient'] = 'Competency not confirmed';
+$string['employee2_assignment_grade'] = 'Assignment grade in Moodle';
+$string['employee2_assignment_unavailable'] = 'Not available';
+$string['employee2_assignment_ungraded'] = 'Not graded yet';
+$string['employee2_moodle_rating_note'] = 'The rating uses the Moodle scale. BMS24 uses its own assessments to calculate the current level and readiness.';
+
+$string['employee2_development_courses'] = 'Development courses';
+
+$string['employee2_course_progress'] = 'Course activity progress — {$a}%';
+
+$string['employee2_course_progress_unavailable'] = 'Course activity progress is unavailable';
+
+$string['reviewqueue_title'] = 'To review';
+$string['reviewqueue_competency'] = 'Competency';
+$string['reviewqueue_intro'] = 'Competency review requests available through your Moodle permissions. This queue may include employees from different companies. Submitted work and competency assessment open separately.';
+$string['reviewqueue_empty'] = 'No review requests are available.';
+$string['reviewqueue_open_work'] = 'Open related work';
+$string['reviewqueue_related_work_hint'] = 'Work related to learning evidence. It may predate this request: Moodle does not link the request to a specific submission. Check the evidence before assessing the competency.';
+$string['reviewqueue_review'] = 'Review competency';
+$string['reviewqueue_work_unavailable'] = 'A direct work link is unavailable. Open the competency review and its evidence.';
+$string['reviewqueue_waiting'] = 'Waiting for review';
+$string['reviewqueue_in_review'] = 'Under your review';
+$string['reviewqueue_route_help'] = 'Open the work and save its grade in Moodle. This queue stays in this tab: refresh results, then review the competency separately. An assignment grade does not automatically confirm a competency.';
+$string['reviewqueue_refresh'] = 'Refresh results';
+$string['reviewqueue_open_work_tab'] = 'Open work — new tab';
+$string['reviewqueue_review_tab'] = 'Review competency — new tab';
+$string['reviewqueue_grade_not_published'] = 'No published grade available';
+$string['employee2_open_assignment_feedback'] = 'Open the assignment link above to read the teacher feedback.';

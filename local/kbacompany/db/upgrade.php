@@ -6108,6 +6108,63 @@ function xmldb_local_kbacompany_upgrade(int $oldversion): bool {
         upgrade_plugin_savepoint(true, 2026101879, 'local', 'kbacompany');
     }
 
+    // Role Intelligence R1/R2 adds a read-only page, with no schema or data migration.
+    if ($oldversion < 2026110301) {
+        upgrade_plugin_savepoint(true, 2026110301, 'local', 'kbacompany');
+    }
+
+    if ($oldversion < 2026110401) {
+        upgrade_plugin_savepoint(true, 2026110401, 'local', 'kbacompany');
+    }
+
+    if ($oldversion < 2026110402) {
+        upgrade_plugin_savepoint(true, 2026110402, 'local', 'kbacompany');
+    }
+
+    if ($oldversion < 2026110403) {
+        upgrade_plugin_savepoint(true, 2026110403, 'local', 'kbacompany');
+    }
+
+    if ($oldversion < 2026110501) {
+        upgrade_plugin_savepoint(true, 2026110501, 'local', 'kbacompany');
+    }
+
+    if ($oldversion < 2026110502) {
+        upgrade_plugin_savepoint(true, 2026110502, 'local', 'kbacompany');
+    }
+
+    if ($oldversion < 2026110503) {
+        upgrade_plugin_savepoint(true, 2026110503, 'local', 'kbacompany');
+    }
+
+    if ($oldversion < 2026110504) {
+        upgrade_plugin_savepoint(true, 2026110504, 'local', 'kbacompany');
+    }
+
+    // Personal review queue and contextual evidence links; no schema or data migration.
+    if ($oldversion < 2026110601) {
+        upgrade_plugin_savepoint(true, 2026110601, 'local', 'kbacompany');
+    }
+
+    // Separate employee learning results; presentation only, no schema/data migration.
+    if ($oldversion < 2026110801) {
+        upgrade_plugin_savepoint(true, 2026110801, 'local', 'kbacompany');
+    }
+
+    if ($oldversion < 2026110802) {
+        upgrade_plugin_savepoint(true, 2026110802, 'local', 'kbacompany');
+    }
+
+    // Clarify BMS24 assessment labels; no schema or data migration.
+    if ($oldversion < 2026110803) {
+        upgrade_plugin_savepoint(true, 2026110803, 'local', 'kbacompany');
+    }
+
+    // Resolve position requirement labels; no schema or data migration.
+    if ($oldversion < 2026110804) {
+        upgrade_plugin_savepoint(true, 2026110804, 'local', 'kbacompany');
+    }
+
     // Repair fresh-install/upgrade parity without changing any existing values.
     // This new checkpoint also runs for sites newer than the historical 1879 import.
     if ($oldversion < 2026110890) {
@@ -6122,6 +6179,11 @@ function xmldb_local_kbacompany_upgrade(int $oldversion): bool {
         local_kbacompany_upgrade_schema_parity_2026110890();
         local_kbacompany_upgrade_ordered_task_index_2026110900();
         upgrade_plugin_savepoint(true, 2026110900, 'local', 'kbacompany');
+    }
+
+    // Integrated functional0804 and schema0900 candidate; no additional DDL.
+    if ($oldversion < 2026110901) {
+        upgrade_plugin_savepoint(true, 2026110901, 'local', 'kbacompany');
     }
 
     return true;

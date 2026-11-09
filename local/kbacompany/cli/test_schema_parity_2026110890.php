@@ -133,13 +133,13 @@ foreach (['local_kbacompany_task' => ['starttime', 'duetime'],
 }
 require_once(__DIR__ . '/../db/upgrade.php');
 
-foreach ([2026101645, 2026101879, 2026110802, 2026110890] as $oldversion) {
+foreach ([2026101645, 2026101879, 2026110802, 2026110804, 2026110890] as $oldversion) {
     foreach (range(0, 7) as $presentmask) {
         $DB = new SchemaParityDatabase($targets, $presentmask);
         $before = $DB->rows;
         $savepoints = [];
         parity_check(xmldb_local_kbacompany_upgrade($oldversion), 'actual upgrade returns success');
-        parity_check(end($savepoints) === 2026110900, 'repair checkpoint reached from ' . $oldversion);
+        parity_check(end($savepoints) === 2026110901, 'repair checkpoint reached from ' . $oldversion);
         foreach ($targets as $key => $metadata) {
             [$table, $field] = explode('.', $key);
             parity_check($DB->columns[$table][$field] == $metadata, 'matches fresh XMLDB: ' . $key);
@@ -156,7 +156,7 @@ foreach ([2026101645, 2026101879, 2026110802, 2026110890] as $oldversion) {
         xmldb_local_kbacompany_upgrade($oldversion);
         parity_check($DB->manager->adds === $adds, 'retry adds no duplicate fields');
         $savepoints = [];
-        xmldb_local_kbacompany_upgrade(2026110900);
+        xmldb_local_kbacompany_upgrade(2026110901);
         parity_check(!$savepoints && $DB->manager->adds === $adds, 'installed target is no-op');
     }
 }
@@ -171,7 +171,7 @@ foreach (['meta_type' => 'I', 'max_length' => 40, 'not_null' => false,
         xmldb_local_kbacompany_upgrade(2026101879);
         throw new RuntimeException('incompatible existing column accepted');
     } catch (upgrade_exception $e) {
-        parity_check(!$DB->manager->adds && !$savepoints, 'incompatibility stopped before DDL/savepoint');
+        parity_check(!$DB->manager->adds && !array_filter($savepoints, static function($v) { return $v >= 2026110890; }), 'incompatibility stopped before DDL/savepoint');
     }
 }
 
@@ -181,11 +181,11 @@ foreach (['failon', 'silenton'] as $failuremode) {
     $savepoints = [];
     $failed = false;
     try { xmldb_local_kbacompany_upgrade(2026101879); } catch (RuntimeException $e) { $failed = true; }
-    parity_check($failed && !$savepoints, 'failed/incomplete DDL cannot advance savepoint');
+    parity_check($failed && !array_filter($savepoints, static function($v) { return $v >= 2026110890; }), 'failed/incomplete DDL cannot advance savepoint');
     parity_check(isset($DB->columns['local_kbacompany_task']['starttime']), 'partial DDL model exercised');
     $DB->manager->$failuremode = null;
     xmldb_local_kbacompany_upgrade(2026101879);
-    parity_check(end($savepoints) === 2026110900, 'partial DDL retry reaches checkpoint');
+    parity_check(end($savepoints) === 2026110901, 'partial DDL retry reaches checkpoint');
 }
 $DB = new SchemaParityDatabase($targets, 0);
 $DB->missingtable = 'local_kbacompany_deviation';
@@ -194,7 +194,7 @@ try {
     xmldb_local_kbacompany_upgrade(2026101879);
     throw new RuntimeException('missing required table accepted');
 } catch (ddl_table_missing_exception $e) {
-    parity_check(!$savepoints && !$DB->manager->adds, 'missing table stops before DDL/savepoint');
+    parity_check(!array_filter($savepoints, static function($v) { return $v >= 2026110890; }) && !$DB->manager->adds, 'missing table stops before DDL/savepoint');
 }
-echo "PASS: schema parity upgrade entrypoint, 32 version/partial-state cases and failures; $assertions assertions\n";
+echo "PASS: schema parity upgrade entrypoint, 40 version/partial-state cases and failures; $assertions assertions\n";
 echo "NOT RUN: actual Moodle SQL drivers, fresh install and complete historical migration semantics\n";

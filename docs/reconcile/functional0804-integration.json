@@ -1,0 +1,271 @@
+{
+  "schema_base": "5c59057cb7af3fd545cd661bb7c2b3daa5ae7cd9",
+  "functional_head": "d4887103c13f45c42b73b455a95dba142d7ba116",
+  "functional_delta_base": "a87252b642e5796c6d84105dd448d51d9a5b5241",
+  "files": [
+    {
+      "path": "local/kbacompany/classes/local/competency_review_queue_service.php",
+      "functional_sha256_lf": "2928e45b4239e0e6459756aaf68a954978443f98df04f212ccc133827f139187",
+      "integrated_sha256_lf": "2928e45b4239e0e6459756aaf68a954978443f98df04f212ccc133827f139187",
+      "resolution": "exact-functional-content"
+    },
+    {
+      "path": "local/kbacompany/classes/local/design_service.php",
+      "functional_sha256_lf": "ee0979d5a7b646ff224a725c97fbdf7dd70f5bc28d93199aee2002cc0d018e31",
+      "integrated_sha256_lf": "ee0979d5a7b646ff224a725c97fbdf7dd70f5bc28d93199aee2002cc0d018e31",
+      "resolution": "exact-functional-content"
+    },
+    {
+      "path": "local/kbacompany/classes/local/employee_service.php",
+      "functional_sha256_lf": "e3b2c8d64fcd8e016a2f800ee24779057c71873c72e1f3d1d1da31d918f605af",
+      "integrated_sha256_lf": "e3b2c8d64fcd8e016a2f800ee24779057c71873c72e1f3d1d1da31d918f605af",
+      "resolution": "exact-functional-content"
+    },
+    {
+      "path": "local/kbacompany/classes/local/employee_ui_service.php",
+      "functional_sha256_lf": "765dc74542375b023f58544a5eb32c1758f0c52d0cefb10df9caa10117e57ac6",
+      "integrated_sha256_lf": "765dc74542375b023f58544a5eb32c1758f0c52d0cefb10df9caa10117e57ac6",
+      "resolution": "exact-functional-content"
+    },
+    {
+      "path": "local/kbacompany/classes/local/employee_workspace_service.php",
+      "functional_sha256_lf": "d26c760e94126f2c40506bc0e45875b77026443b61bab84b4400db53cc0e579b",
+      "integrated_sha256_lf": "d26c760e94126f2c40506bc0e45875b77026443b61bab84b4400db53cc0e579b",
+      "resolution": "exact-functional-content"
+    },
+    {
+      "path": "local/kbacompany/classes/local/position_ui_service.php",
+      "functional_sha256_lf": "771d2f15e7d2e6227429e97caedfa2e2a3e7dc2b09b108127112eedc0cf352fd",
+      "integrated_sha256_lf": "771d2f15e7d2e6227429e97caedfa2e2a3e7dc2b09b108127112eedc0cf352fd",
+      "resolution": "exact-functional-content"
+    },
+    {
+      "path": "local/kbacompany/classes/local/role_intelligence_service.php",
+      "functional_sha256_lf": "43a966e0e62aa2383f08e189ed901e4e93e38126df11041feb0336ba55f5e8de",
+      "integrated_sha256_lf": "43a966e0e62aa2383f08e189ed901e4e93e38126df11041feb0336ba55f5e8de",
+      "resolution": "exact-functional-content"
+    },
+    {
+      "path": "local/kbacompany/classes/local/role_readiness_view.php",
+      "functional_sha256_lf": "8a76250762d9811da99489e93b1703a13600148905d064de1a0564352d7bec7a",
+      "integrated_sha256_lf": "8a76250762d9811da99489e93b1703a13600148905d064de1a0564352d7bec7a",
+      "resolution": "exact-functional-content"
+    },
+    {
+      "path": "local/kbacompany/classes/local/staffing_service.php",
+      "functional_sha256_lf": "ec2514a4e5e87b210d18227ca91a9b66a635cc172939d30c4ae6c01083089eb2",
+      "integrated_sha256_lf": "ec2514a4e5e87b210d18227ca91a9b66a635cc172939d30c4ae6c01083089eb2",
+      "resolution": "exact-functional-content"
+    },
+    {
+      "path": "local/kbacompany/competency_catalogs.php",
+      "functional_sha256_lf": "d9f33ab0e5151f8789ea36ca2807b62ddcc80a68607a4be9a9859776c07e733d",
+      "integrated_sha256_lf": "d9f33ab0e5151f8789ea36ca2807b62ddcc80a68607a4be9a9859776c07e733d",
+      "resolution": "exact-functional-content"
+    },
+    {
+      "path": "local/kbacompany/competency_review_queue.php",
+      "functional_sha256_lf": "bfa894e7d818a82726985ca6fdf09986246f7c56cdadef4f85d078590c7e5825",
+      "integrated_sha256_lf": "bfa894e7d818a82726985ca6fdf09986246f7c56cdadef4f85d078590c7e5825",
+      "resolution": "exact-functional-content"
+    },
+    {
+      "path": "local/kbacompany/db/upgrade.php",
+      "functional_sha256_lf": "fd26780343419f8bd7d32f67d7ab8213789f1f8b879b1de014b87756e6fe787d",
+      "integrated_sha256_lf": "ed9963b4acaccde9be874e83cb1af4bcc84243b838bc2792798f6635bbb98797",
+      "resolution": "reconciled-checkpoints-and-version"
+    },
+    {
+      "path": "local/kbacompany/designs.php",
+      "functional_sha256_lf": "19205b05861d71bacaebcf0ca990029b67132b7e695895c43827e5e444771e16",
+      "integrated_sha256_lf": "19205b05861d71bacaebcf0ca990029b67132b7e695895c43827e5e444771e16",
+      "resolution": "exact-functional-content"
+    },
+    {
+      "path": "local/kbacompany/lang/en/local_kbacompany.php",
+      "functional_sha256_lf": "8e9ea3070b3a02e4dc76caab8bec883aded16913f455953e143766dcb74b6665",
+      "integrated_sha256_lf": "8e9ea3070b3a02e4dc76caab8bec883aded16913f455953e143766dcb74b6665",
+      "resolution": "exact-functional-content"
+    },
+    {
+      "path": "local/kbacompany/lang/ru/local_kbacompany.php",
+      "functional_sha256_lf": "cffc89d5a5b53e191d85c8e5a6d3a81c40a17abf1e79c4601e39c9cc3c8ad699",
+      "integrated_sha256_lf": "cffc89d5a5b53e191d85c8e5a6d3a81c40a17abf1e79c4601e39c9cc3c8ad699",
+      "resolution": "exact-functional-content"
+    },
+    {
+      "path": "local/kbacompany/lib.php",
+      "functional_sha256_lf": "84c668fcafcb6382fde1fba5d01a63b31e0c6d38f1805b88e1876d5e365c8a74",
+      "integrated_sha256_lf": "84c668fcafcb6382fde1fba5d01a63b31e0c6d38f1805b88e1876d5e365c8a74",
+      "resolution": "exact-functional-content"
+    },
+    {
+      "path": "local/kbacompany/people.php",
+      "functional_sha256_lf": "d304c2a80d9168659f7323110dc8bc1ba028e7e2b56ddaa71c1ff00f59de78b3",
+      "integrated_sha256_lf": "d304c2a80d9168659f7323110dc8bc1ba028e7e2b56ddaa71c1ff00f59de78b3",
+      "resolution": "exact-functional-content"
+    },
+    {
+      "path": "local/kbacompany/position_competencies.php",
+      "functional_sha256_lf": "bbf07cbce85f9f5c7072c894dcb0e7feebce2cc8066a61b7cc905fab7b1d442d",
+      "integrated_sha256_lf": "bbf07cbce85f9f5c7072c894dcb0e7feebce2cc8066a61b7cc905fab7b1d442d",
+      "resolution": "exact-functional-content"
+    },
+    {
+      "path": "local/kbacompany/positions.php",
+      "functional_sha256_lf": "15eff316137c43842c6b0d5fa0c2b9bd22749c1d7bdc8274f5a9718ebb43520b",
+      "integrated_sha256_lf": "15eff316137c43842c6b0d5fa0c2b9bd22749c1d7bdc8274f5a9718ebb43520b",
+      "resolution": "exact-functional-content"
+    },
+    {
+      "path": "local/kbacompany/release/RELEASE_NOTES_RC29_build2026110301.md",
+      "functional_sha256_lf": "1a7718fb48cad3e2490c87861ace1e7ffe9bcf50cc9e72424028ff8f21bd991b",
+      "integrated_sha256_lf": "1a7718fb48cad3e2490c87861ace1e7ffe9bcf50cc9e72424028ff8f21bd991b",
+      "resolution": "exact-functional-content"
+    },
+    {
+      "path": "local/kbacompany/release/RELEASE_NOTES_RC29_build2026110401.md",
+      "functional_sha256_lf": "9a8f46aec36930e7c711fbddd46dd3520eeac37270cc893eae563a48122f20e5",
+      "integrated_sha256_lf": "9a8f46aec36930e7c711fbddd46dd3520eeac37270cc893eae563a48122f20e5",
+      "resolution": "exact-functional-content"
+    },
+    {
+      "path": "local/kbacompany/release/RELEASE_NOTES_RC29_build2026110402.md",
+      "functional_sha256_lf": "841c1867d8943a56633de7beda8eee93bf0193295e3a822c2fbdcc2b3aa76927",
+      "integrated_sha256_lf": "841c1867d8943a56633de7beda8eee93bf0193295e3a822c2fbdcc2b3aa76927",
+      "resolution": "exact-functional-content"
+    },
+    {
+      "path": "local/kbacompany/release/RELEASE_NOTES_RC29_build2026110403.md",
+      "functional_sha256_lf": "1aed693dc67d988880b71a9c168cff16d87b618d98c576218f13bce9109c8754",
+      "integrated_sha256_lf": "1aed693dc67d988880b71a9c168cff16d87b618d98c576218f13bce9109c8754",
+      "resolution": "exact-functional-content"
+    },
+    {
+      "path": "local/kbacompany/release/RELEASE_NOTES_RC29_build2026110501.md",
+      "functional_sha256_lf": "a2ca55df59ef801534bb342e95d7a6b1a42367844f8fc01b263b0f371d147d85",
+      "integrated_sha256_lf": "a2ca55df59ef801534bb342e95d7a6b1a42367844f8fc01b263b0f371d147d85",
+      "resolution": "exact-functional-content"
+    },
+    {
+      "path": "local/kbacompany/release/RELEASE_NOTES_RC29_build2026110502.md",
+      "functional_sha256_lf": "f57d570a8119a66892038029bb6510c331b8ed78fd232c14dc7bfc9a0fd3f225",
+      "integrated_sha256_lf": "f57d570a8119a66892038029bb6510c331b8ed78fd232c14dc7bfc9a0fd3f225",
+      "resolution": "exact-functional-content"
+    },
+    {
+      "path": "local/kbacompany/release/RELEASE_NOTES_RC29_build2026110503.md",
+      "functional_sha256_lf": "fb6bfd86236f7e6d905b0eb666696750cc2ade2a4cd0b07dc0a92305004b4305",
+      "integrated_sha256_lf": "fb6bfd86236f7e6d905b0eb666696750cc2ade2a4cd0b07dc0a92305004b4305",
+      "resolution": "exact-functional-content"
+    },
+    {
+      "path": "local/kbacompany/release/RELEASE_NOTES_RC29_build2026110504.md",
+      "functional_sha256_lf": "e569630abc1778e8e2f5a970b0caff11be2f6113702d2a72bf52b1d75c4cef4c",
+      "integrated_sha256_lf": "e569630abc1778e8e2f5a970b0caff11be2f6113702d2a72bf52b1d75c4cef4c",
+      "resolution": "exact-functional-content"
+    },
+    {
+      "path": "local/kbacompany/release/RELEASE_NOTES_RC29_build2026110601.md",
+      "functional_sha256_lf": "dbf6c07ebc6cff1c4f1e1338bdb146f1cd9b9f9cf7a74e4b83cafe55f03d63ec",
+      "integrated_sha256_lf": "dbf6c07ebc6cff1c4f1e1338bdb146f1cd9b9f9cf7a74e4b83cafe55f03d63ec",
+      "resolution": "exact-functional-content"
+    },
+    {
+      "path": "local/kbacompany/release/RELEASE_NOTES_RC29_build2026110801.md",
+      "functional_sha256_lf": "ec575d9e9a0e34f8ff81ef82357ac6fdc55eaee03229c67e7dede51bdad9064a",
+      "integrated_sha256_lf": "ec575d9e9a0e34f8ff81ef82357ac6fdc55eaee03229c67e7dede51bdad9064a",
+      "resolution": "exact-functional-content"
+    },
+    {
+      "path": "local/kbacompany/release/RELEASE_NOTES_RC29_build2026110802.md",
+      "functional_sha256_lf": "a83fa05daf6e7b3d886b4ce56924c5ec47b025c1a21e542cb4f954a3d0069a5c",
+      "integrated_sha256_lf": "a83fa05daf6e7b3d886b4ce56924c5ec47b025c1a21e542cb4f954a3d0069a5c",
+      "resolution": "exact-functional-content"
+    },
+    {
+      "path": "local/kbacompany/release/RELEASE_NOTES_RC29_build2026110803.md",
+      "functional_sha256_lf": "e79c20d9f2694dc18c105ab8d7dde39158351329369bcc3e23c48b01e2cfd0f0",
+      "integrated_sha256_lf": "e79c20d9f2694dc18c105ab8d7dde39158351329369bcc3e23c48b01e2cfd0f0",
+      "resolution": "exact-functional-content"
+    },
+    {
+      "path": "local/kbacompany/release/RELEASE_NOTES_RC29_build2026110804.md",
+      "functional_sha256_lf": "888f808c9382f2e18af4af389e962093c121c6a41751d386f4e4844082f3eb5f",
+      "integrated_sha256_lf": "888f808c9382f2e18af4af389e962093c121c6a41751d386f4e4844082f3eb5f",
+      "resolution": "exact-functional-content"
+    },
+    {
+      "path": "local/kbacompany/release/REVIEW_QUEUE_LOCAL_CANDIDATE.md",
+      "functional_sha256_lf": "f827b61259dbc1a61d0131c5ea4eedd6645040fd3e5898028ce9e19c2eaf0326",
+      "integrated_sha256_lf": "f827b61259dbc1a61d0131c5ea4eedd6645040fd3e5898028ce9e19c2eaf0326",
+      "resolution": "exact-functional-content"
+    },
+    {
+      "path": "local/kbacompany/role_readiness.php",
+      "functional_sha256_lf": "25ecf6cbac9f847d4119e25ab308c105398623889d7d4cdd816c91459f636df1",
+      "integrated_sha256_lf": "25ecf6cbac9f847d4119e25ab308c105398623889d7d4cdd816c91459f636df1",
+      "resolution": "exact-functional-content"
+    },
+    {
+      "path": "local/kbacompany/styles.css",
+      "functional_sha256_lf": "b2bbcccfabffe710c42733b8cee98bf0906d226e0467703b10ca27e8b2cd7080",
+      "integrated_sha256_lf": "b2bbcccfabffe710c42733b8cee98bf0906d226e0467703b10ca27e8b2cd7080",
+      "resolution": "exact-functional-content"
+    },
+    {
+      "path": "local/kbacompany/templates/bms24_role_readiness.mustache",
+      "functional_sha256_lf": "ac40379da88e2bc18f1a12d3a812c5804fe16b92e0598500f3c765178d676c59",
+      "integrated_sha256_lf": "ac40379da88e2bc18f1a12d3a812c5804fe16b92e0598500f3c765178d676c59",
+      "resolution": "exact-functional-content"
+    },
+    {
+      "path": "local/kbacompany/tests/company_core_test.php",
+      "functional_sha256_lf": "64c6d17fe69c0e6aff479622dc166e0d30617909be3f0fffb53a1f3cbab691e3",
+      "integrated_sha256_lf": "64c6d17fe69c0e6aff479622dc166e0d30617909be3f0fffb53a1f3cbab691e3",
+      "resolution": "exact-functional-content"
+    },
+    {
+      "path": "local/kbacompany/tests/competency_review_queue_test.php",
+      "functional_sha256_lf": "165ca0ecfdad02556a4f28ad48676dabec2ed64f9840da67d68405f16af6ad9f",
+      "integrated_sha256_lf": "6e37708374ce0ea221c86dde78b11c84aa8dcbb4525bbf12e133cf2bbd2aa57a",
+      "resolution": "functional-content-plus-cross-company-grant-revoke-tests"
+    },
+    {
+      "path": "local/kbacompany/tests/design_service_test.php",
+      "functional_sha256_lf": "45af47bae0a3e5ee89e167aa5fb8647dd03a3824c978b84345bee3cc760c38c8",
+      "integrated_sha256_lf": "45af47bae0a3e5ee89e167aa5fb8647dd03a3824c978b84345bee3cc760c38c8",
+      "resolution": "exact-functional-content"
+    },
+    {
+      "path": "local/kbacompany/tests/employee_competency_profile_service_test.php",
+      "functional_sha256_lf": "fbf8c5c4b7704bebf7bbb453502f0df4bbc9259679b04a54cde6c38a6685d16c",
+      "integrated_sha256_lf": "fbf8c5c4b7704bebf7bbb453502f0df4bbc9259679b04a54cde6c38a6685d16c",
+      "resolution": "exact-functional-content"
+    },
+    {
+      "path": "local/kbacompany/tests/employee_development_courses_test.php",
+      "functional_sha256_lf": "c51614de167a8f3e555c608a8ce49591c19e8550f41a04b72366478db6c06646",
+      "integrated_sha256_lf": "c51614de167a8f3e555c608a8ce49591c19e8550f41a04b72366478db6c06646",
+      "resolution": "exact-functional-content"
+    },
+    {
+      "path": "local/kbacompany/tests/role_intelligence_service_test.php",
+      "functional_sha256_lf": "5849ebf078948d7997192935a4e1a2b21e4fcc3927c6e3de1645d294dbcb1c2c",
+      "integrated_sha256_lf": "5849ebf078948d7997192935a4e1a2b21e4fcc3927c6e3de1645d294dbcb1c2c",
+      "resolution": "exact-functional-content"
+    },
+    {
+      "path": "local/kbacompany/tests/role_readiness_view_test.php",
+      "functional_sha256_lf": "6d4ff1665add65de14166b09af25e05b67f9d52c9ada60a332c39128c797fdc1",
+      "integrated_sha256_lf": "6d4ff1665add65de14166b09af25e05b67f9d52c9ada60a332c39128c797fdc1",
+      "resolution": "exact-functional-content"
+    },
+    {
+      "path": "local/kbacompany/version.php",
+      "functional_sha256_lf": "9819b42e185a204c125eceecdc492ec696126ba494ad58f883ec79c4dc027d3e",
+      "integrated_sha256_lf": "d20681e6760979130c5ea9634a4bc7fa4582dabd740773a340fb2d67f68106fa",
+      "resolution": "reconciled-checkpoints-and-version"
+    }
+  ]
+}
