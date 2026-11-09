@@ -72,7 +72,8 @@ class communication_service {
         // Company owners/managers may not be represented as active staffing rows yet; current actor is always a valid participant.
         if (!isset($employees[$actor])) {
             global $DB;
-            if ($user = $DB->get_record('user', ['id' => $actor], 'id,firstname,lastname')) {
+            $namefields = 'id,' . implode(',', \core_user\fields::get_name_fields());
+            if ($user = $DB->get_record('user', ['id' => $actor], $namefields)) {
                 $employees[$actor] = fullname($user);
             }
         }

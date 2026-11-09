@@ -10,6 +10,23 @@ use local_kbacorporate\local\repository;
 
 /** Communication Core regression and privacy-boundary tests. */
 final class communication_service_test extends \advanced_testcase {
+    public function test_actor_fallback_supports_complete_moodle_name_fields_without_debugging(): void {
+        global $CFG, $DB;
+        $f = $this->fixture();
+        // The admin is intentionally absent from staffing rows, exercising fallback.
+        $DB->set_field('user', 'middlename', 'Middle', ['id' => $f['admin']]);
+        $DB->set_field('user', 'alternatename', 'Alias', ['id' => $f['admin']]);
+        $CFG->fullnamedisplay = 'firstname middlename lastname alternatename';
+        $thread = communication_service::create_thread($f['company'], $f['admin'], [
+            'threadtype' => 'direct', 'participants' => [(int)$f['employee']->id],
+        ]);
+        $this->assertNotEmpty($thread);
+        $this->assertTrue($DB->record_exists('local_kbacompany_commthread', [
+            'companyuuid' => $f['company'], 'uuid' => $thread,
+        ]));
+        $this->assertDebuggingNotCalled();
+    }
+
     private function fixture(): array {
         global $DB, $USER;
         $this->resetAfterTest();

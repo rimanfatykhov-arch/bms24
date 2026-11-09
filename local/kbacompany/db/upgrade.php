@@ -6124,5 +6124,10 @@ function xmldb_local_kbacompany_upgrade(int $oldversion): bool {
         upgrade_plugin_savepoint(true, 2026110900, 'local', 'kbacompany');
     }
 
+    // Communication name projection fix only; no schema or ACL mutation.
+    if ($oldversion < 2026110901) {
+        upgrade_plugin_savepoint(true, 2026110901, 'local', 'kbacompany');
+    }
+
     return true;
 }

@@ -43,3 +43,9 @@ Read-only production inventory08.11.2026: BMS2026101878, Corporate2026102613, Mo
 ## 2026-11-09 — isolated schema P0 repair
 
 Candidate build2026110900 corrects XMLDB warnings and adds the missing ordered task index through a reachable checkpoint. See docs/adr/ADR-0003-ordered-index-schema-repair.md. PR48/49 remain unmerged; unrelated full-suite blockers remain HOLD. No production or staging deployment is authorized.
+
+## 2026-11-09 — communication/Corporate runtime candidate
+
+BMS2026110901 and local Corporate0.40.10-bms.1 build2026110901 preserve the approved source lineage while fixing observed runtime blockers. See docs/reconcile/COMMUNICATION_CORPORATE_RUNTIME_FIXES.md. Live Corporate.13 and stage0802 remain separate unreconciled feature trees; no deployment/merge authorization.
+
+PR52 tested source469afad: complete MariaDB/Percona matrix confirms Corporate150/962 and communication/privacy/provider/schema/tenant gates PASS. Full BMS558/5397 retains23 errors/22 failures on both engines: release acceptance HOLD. Evidence: docs/reconcile/PR52_RUNTIME_ACCEPTANCE.md. PR48/49/50/52 remain draft and unmerged.

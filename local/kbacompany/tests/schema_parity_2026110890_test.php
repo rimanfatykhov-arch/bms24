@@ -125,7 +125,7 @@ final class schema_parity_2026110890_test extends \advanced_testcase {
             $before = $this->snapshot();
             set_config('version', $oldversion, 'local_kbacompany');
             $this->assertTrue(xmldb_local_kbacompany_upgrade($oldversion));
-            $this->assertSame('2026110900', (string)get_config('local_kbacompany', 'version'));
+            $this->assertSame('2026110901', (string)get_config('local_kbacompany', 'version'));
             $after = $this->snapshot();
             foreach (self::FIELDS as $index => [$table, $name, $length, $default]) {
                 $column = $after[$table]['columns'][$name];
@@ -165,7 +165,7 @@ final class schema_parity_2026110890_test extends \advanced_testcase {
             $once = $this->snapshot();
             local_kbacompany_upgrade_schema_parity_2026110890();
             $this->assertEquals($once, $this->snapshot(), 'Helper is idempotent');
-            $this->assertTrue(xmldb_local_kbacompany_upgrade(2026110900));
+            $this->assertTrue(xmldb_local_kbacompany_upgrade(2026110901));
             $this->assertEquals($once, $this->snapshot(), 'Applied checkpoint leaves schema and data unchanged');
         } finally {
             $this->restore_fields();

@@ -10,7 +10,11 @@ use local_kbacorporate\privacy\provider;
 final class privacy_provider_test extends \advanced_testcase {
     public function test_new_personal_data_tables_are_declared(): void {
         $collection = provider::get_metadata(new collection('local_kbacorporate'));
-        $metadata = $collection->get_collection();
+        // Moodle returns a numeric list of metadata objects, not a map by table.
+        $metadata = [];
+        foreach ($collection->get_collection() as $item) {
+            $metadata[$item->get_name()] = $item;
+        }
         $this->assertArrayHasKey('local_kbacorp_member_busrole', $metadata);
         $this->assertArrayHasKey('local_kbacorp_rolever', $metadata);
         $this->assertArrayHasKey('local_kbacorp_extmap', $metadata);
