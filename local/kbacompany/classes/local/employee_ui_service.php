@@ -515,8 +515,12 @@ class employee_ui_service {
                         s(self::tr('employee2_comp_state_' . $row['state']))];
                     if ($ratings) {
                         $rating = $ratings[$row['competency_id']] ?? null;
-                        $cells[] = $rating ? \html_writer::link(new \moodle_url('/admin/tool/lp/user_competency.php',
-                            ['id' => $rating['id']]), s($rating['label'])) : '—';
+                        $confirmation = self::tr('employee2_confirmation_' . ($rating['state'] ?? 'unassessed'));
+                        if (!empty($rating['label'])) {
+                            $confirmation .= ' · ' . $rating['label'];
+                        }
+                        $cells[] = !empty($rating['id']) ? \html_writer::link(new \moodle_url('/admin/tool/lp/user_competency.php',
+                            ['id' => $rating['id']]), s($confirmation)) : s($confirmation);
                     }
                     if ($courses) {
                         $links = [];
@@ -524,8 +528,17 @@ class employee_ui_service {
                             $progress = $course['percentage'] === null
                                 ? self::tr('employee2_course_progress_unavailable')
                                 : self::tr('employee2_course_progress', (int)round($course['percentage']));
-                            $links[] = \html_writer::link(new \moodle_url('/course/view.php', ['id' => $course['id']]),
-                                $course['name']) . ' · ' . s($progress);
+                            $content = \html_writer::link(new \moodle_url('/course/view.php', ['id' => $course['id']]),
+                                $course['name']) . \html_writer::div(s($progress));
+                            foreach ($course['assignments'] ?? [] as $assignment) {
+                                $grade = $assignment['state'] === 'graded' ? $assignment['grade']
+                                    : self::tr('employee2_assignment_' . $assignment['state']);
+                                $content .= \html_writer::div(\html_writer::link(new \moodle_url('/mod/assign/view.php',
+                                    ['id' => $assignment['cmid']]), $assignment['name']) .
+                                    \html_writer::div(s(self::tr('employee2_open_assignment_feedback'))) .
+                                    \html_writer::div(s(self::tr('employee2_assignment_grade') . ': ' . $grade)));
+                            }
+                            $links[] = $content;
                         }
                         $cells[] = $links ? \html_writer::alist($links) : '—';
                     }
@@ -533,6 +546,9 @@ class employee_ui_service {
                 }
                 $body = $rows ? self::table($headers,
                     $rows, self::tr('employee2_tab_competencies')) : self::note(self::tr('employee2_no_competencies'));
+                if ($rows && $courses) {
+                    $body = \html_writer::div($body, 'bms-employee-learning-results');
+                }
                 if ($ratings) {
                     $body .= self::note(self::tr('employee2_moodle_rating_note'));
                 }

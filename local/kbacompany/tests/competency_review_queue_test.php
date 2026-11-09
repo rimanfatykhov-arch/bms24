@@ -7,6 +7,80 @@ use core_competency\user_competency;
 use local_kbacompany\local\competency_review_queue_service;
 
 final class competency_review_queue_test extends \advanced_testcase {
+    public function test_published_work_grade_is_separate_and_rechecks_access(): void {
+        global $CFG, $DB;
+        [$competencyid, $roleid] = $this->fixture();
+        require_once($CFG->libdir . '/gradelib.php');
+        $generator = $this->getDataGenerator();
+        $course = $generator->create_course(['enablecompletion' => 1, 'showgrades' => 1]);
+        $employee = $generator->create_and_enrol($course, 'student');
+        $reviewer = $generator->create_and_enrol($course, 'teacher');
+        role_assign($roleid, $reviewer->id, \context_user::instance($employee->id)->id);
+        api::add_competency_to_course($course->id, $competencyid);
+        $assignment = $this->activity($competencyid, $course);
+        $this->submit($assignment, $employee);
+        $request = $this->request_id($employee, $competencyid);
+        $this->setUser($reviewer);
+        $this->assertNull(competency_review_queue_service::work_grade($request));
+        grade_update('test', $course->id, 'mod', 'assign', $assignment->get_instance()->id, 0,
+            ['userid' => $employee->id, 'rawgrade' => 85]);
+        grade_regrade_final_grades($course->id);
+        $this->assertSame('85.00', competency_review_queue_service::work_grade($request));
+        $this->assertSame('85.00', competency_review_queue_service::queue()['rows'][0]['workgrade']);
+        $this->assertEquals(user_competency::STATUS_WAITING_FOR_REVIEW,
+            $DB->get_field('competency_usercomp', 'status', ['id' => $request]));
+        $item = \grade_item::fetch(['courseid' => $course->id, 'itemmodule' => 'assign',
+            'iteminstance' => $assignment->get_instance()->id]);
+        $item->set_hidden(1);
+        $this->assertNull(competency_review_queue_service::work_grade($request));
+        $item->set_hidden(0);
+        $grade = \grade_grade::fetch(['itemid' => $item->id, 'userid' => $employee->id]);
+        $grade->set_hidden(1);
+        $this->assertNull(competency_review_queue_service::work_grade($request));
+        $grade->set_hidden(time() + 3600);
+        $this->assertNull(competency_review_queue_service::work_grade($request));
+        $grade->set_hidden(0);
+        $item->set_hidden(time() + 3600);
+        $this->assertNull(competency_review_queue_service::work_grade($request));
+        $item->set_hidden(0);
+        $this->assertSame('85.00', competency_review_queue_service::work_grade($request));
+
+        $DB->set_field('course', 'showgrades', 0, ['id' => $course->id]);
+        rebuild_course_cache($course->id, true);
+        $this->assertNull(competency_review_queue_service::work_grade($request));
+        $DB->set_field('course', 'showgrades', 1, ['id' => $course->id]);
+        rebuild_course_cache($course->id, true);
+        $studentrole = $DB->get_record('role', ['shortname' => 'student'], '*', MUST_EXIST);
+        assign_capability('moodle/grade:view', CAP_PROHIBIT, $studentrole->id,
+            \context_course::instance($course->id)->id);
+        accesslib_clear_all_caches_for_unit_testing();
+        $this->assertNull(competency_review_queue_service::work_grade($request));
+        unassign_capability('moodle/grade:view', $studentrole->id, \context_course::instance($course->id)->id);
+        accesslib_clear_all_caches_for_unit_testing();
+        $this->assertSame('85.00', competency_review_queue_service::work_grade($request));
+
+        $DB->set_field('assign', 'markingworkflow', 1, ['id' => $assignment->get_instance()->id]);
+        $this->assertNull(competency_review_queue_service::work_grade($request));
+        $DB->insert_record('assign_user_flags', ['assignment' => $assignment->get_instance()->id,
+            'userid' => $employee->id, 'workflowstate' => ASSIGN_MARKING_WORKFLOW_STATE_RELEASED]);
+        $this->assertSame('85.00', competency_review_queue_service::work_grade($request));
+        grade_update('test', $course->id, 'mod', 'assign', $assignment->get_instance()->id, 0,
+            ['userid' => $employee->id, 'rawgrade' => 0]);
+        grade_regrade_final_grades($course->id);
+        $this->assertSame('0.00', competency_review_queue_service::work_grade($request));
+        $before = $DB->get_record('grade_grades', ['itemid' => $item->id, 'userid' => $employee->id]);
+        $DB->set_field('grade_items', 'needsupdate', 1, ['id' => $item->id]);
+        $this->assertNull(competency_review_queue_service::work_grade($request));
+        $this->assertEquals(1, $DB->get_field('grade_items', 'needsupdate', ['id' => $item->id]));
+        $this->assertEquals($before, $DB->get_record('grade_grades', ['itemid' => $item->id, 'userid' => $employee->id]));
+        $DB->set_field('grade_items', 'needsupdate', 0, ['id' => $item->id]);
+        $this->setUser($employee);
+        $this->assertNull(competency_review_queue_service::work_grade($request));
+        $this->setUser($reviewer);
+        role_unassign($roleid, $reviewer->id, \context_user::instance($employee->id)->id);
+        $this->assertNull(competency_review_queue_service::work_grade($request));
+    }
+
     private function fixture(): array {
         global $CFG;
         $this->resetAfterTest();

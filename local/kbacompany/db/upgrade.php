@@ -6140,6 +6140,25 @@ function xmldb_local_kbacompany_upgrade(int $oldversion): bool {
         upgrade_plugin_savepoint(true, 2026110601, 'local', 'kbacompany');
     }
 
+    // Separate employee learning results; presentation only, no schema/data migration.
+    if ($oldversion < 2026110801) {
+        upgrade_plugin_savepoint(true, 2026110801, 'local', 'kbacompany');
+    }
+
+    if ($oldversion < 2026110802) {
+        upgrade_plugin_savepoint(true, 2026110802, 'local', 'kbacompany');
+    }
+
+    // Clarify BMS24 assessment labels; no schema or data migration.
+    if ($oldversion < 2026110803) {
+        upgrade_plugin_savepoint(true, 2026110803, 'local', 'kbacompany');
+    }
+
+    // Resolve position requirement labels; no schema or data migration.
+    if ($oldversion < 2026110804) {
+        upgrade_plugin_savepoint(true, 2026110804, 'local', 'kbacompany');
+    }
+
     return true;
 }
 
