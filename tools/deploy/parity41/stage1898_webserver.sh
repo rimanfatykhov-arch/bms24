@@ -94,6 +94,7 @@ done
 [[ "$code" != 000 && "$code" != 502 && "$code" != 503 ]] ||
   { echo "STOP: localhost web HTTP=$code; inspect container; no acceptance" >&2; exit 5; }
 # Reconfirm no unauthenticated external access after backend starts.
+localcode="$code"
 code=$(curl --noproxy '*' -sS -o /dev/null -w '%{http_code}' --max-time 8 --resolve "$DOMAIN:443:127.0.0.1" "https://$DOMAIN/" )
 [[ "$code" == 401 ]] || { echo 'STOP: HTTPS gate changed after startup; inspect urgently' >&2; exit 5; }
 echo "STAGE1898_LOCAL_WEB_HTTP_$localcode"
