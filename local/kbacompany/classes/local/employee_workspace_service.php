@@ -282,10 +282,120 @@ class employee_workspace_service {
 
     private static function competencies(string $companyuuid, int $employeeuserid, int $actorid): array {
         try {
-            return ['competencies' => employee_competency_profile_service::context($companyuuid, $employeeuserid, $actorid)];
+            $profile = employee_competency_profile_service::context($companyuuid, $employeeuserid, $actorid);
         } catch (\Throwable $e) {
             return ['competencies' => null];
         }
+        $competencyids = array_column($profile['requirements'], 'competency_id');
+        return [
+            'competencies' => $profile,
+            'moodle_ratings' => self::moodle_competency_ratings($employeeuserid, $actorid, $competencyids),
+            'development_courses' => $employeeuserid === $actorid
+                ? self::development_courses($actorid, $competencyids) : [],
+        ];
+    }
+
+    private static function development_courses(int $actorid, array $competencyids): array {
+        global $DB, $USER;
+        if (!$competencyids || $actorid !== (int)$USER->id || !\core_competency\api::is_enabled()) {
+            return [];
+        }
+        $courses = enrol_get_users_courses($actorid, true, 'id,fullname,visible,enablecompletion');
+        if (!$courses) {
+            return [];
+        }
+        [$coursein, $courseparams] = $DB->get_in_or_equal(array_keys($courses), SQL_PARAMS_NAMED, 'course');
+        [$competencyin, $competencyparams] = $DB->get_in_or_equal($competencyids, SQL_PARAMS_NAMED, 'competency');
+        $links = $DB->get_records_select(\core_competency\course_competency::TABLE,
+            "courseid $coursein AND competencyid $competencyin", $courseparams + $competencyparams, 'courseid, id');
+        $progress = [];
+        $matches = [];
+        foreach ($links as $link) {
+            $courseid = (int)$link->courseid;
+            $course = $courses[$courseid];
+            if (!isset($progress[$courseid])) {
+                if (!can_access_course($course, $actorid, '', true)) {
+                    continue;
+                }
+                $course = get_course($courseid);
+                $progress[$courseid] = [
+                    'id' => $courseid,
+                    'name' => format_string($course->fullname, true, ['context' => \context_course::instance($courseid)]),
+                    'percentage' => \core_completion\progress::get_course_progress_percentage($course, $actorid),
+                ];
+            }
+            $matches[(int)$link->competencyid][$courseid] = $progress[$courseid];
+            $matches[(int)$link->competencyid][$courseid]['assignments'] =
+                self::assignment_results(get_course($courseid), $actorid, (int)$link->competencyid);
+        }
+        return $matches;
+    }
+
+    /** Own learning results only; neither enrolment nor a competency link grants grade access. */
+    private static function assignment_results(\stdClass $course, int $userid, int $competencyid): array {
+        global $CFG, $DB, $USER;
+        if ($userid !== (int)$USER->id) {
+            return [];
+        }
+        require_once($CFG->libdir . '/gradelib.php');
+        require_once($CFG->dirroot . '/mod/assign/locallib.php');
+        $context = \context_course::instance($course->id);
+        $canseegrades = !empty($course->showgrades) && has_capability('moodle/grade:view', $context, $userid);
+        $modinfo = get_fast_modinfo($course, $userid);
+        $links = $DB->get_records('competency_modulecomp', ['competencyid' => $competencyid]);
+        $results = [];
+        foreach ($links as $link) {
+            $cm = $modinfo->get_cms()[$link->cmid] ?? null;
+            if (!$cm || $cm->modname !== 'assign' || !$cm->uservisible ||
+                    !has_capability('mod/assign:view', $cm->context, $userid)) {
+                continue;
+            }
+            $result = ['cmid' => (int)$cm->id, 'name' => format_string($cm->name, true,
+                ['context' => $cm->context]), 'grade' => null, 'state' => 'unavailable'];
+            if ($canseegrades) {
+                $assignment = new \assign($cm->context, $cm, $course);
+                $released = !$assignment->get_instance()->markingworkflow ||
+                    $assignment->get_grading_status($userid) === ASSIGN_MARKING_WORKFLOW_STATE_RELEASED;
+                $instance = $assignment->get_instance();
+                if ($released && (empty($instance->blindmarking) || !empty($instance->revealidentities))) {
+                    // Read-only gradebook projection: grade_get_grades can trigger regrading.
+                    $item = \grade_item::fetch(['courseid' => $course->id, 'itemtype' => 'mod',
+                        'itemmodule' => 'assign', 'iteminstance' => $cm->instance, 'itemnumber' => 0]);
+                    $grade = $item ? \grade_grade::fetch(['itemid' => $item->id, 'userid' => $userid]) : null;
+                    if ($item && !$item->needsupdate && !$item->is_hidden() && $grade && !$grade->is_hidden()) {
+                        $result['state'] = 'ungraded';
+                        if ($grade->finalgrade !== null && $grade->finalgrade !== false &&
+                                in_array((int)$item->gradetype, [GRADE_TYPE_VALUE, GRADE_TYPE_SCALE], true)) {
+                            $result['grade'] = grade_format_gradevalue($grade->finalgrade, $item);
+                            $result['state'] = 'graded';
+                        }
+                    }
+                }
+            }
+            $results[(int)$cm->id] = $result;
+        }
+        return $results;
+    }
+
+    private static function moodle_competency_ratings(int $employeeuserid, int $actorid, array $competencyids): array {
+        global $USER;
+        // Core competency access is evaluated for the current Moodle session.
+        if (!$competencyids || $actorid !== (int)$USER->id || !\core_competency\api::is_enabled() ||
+                !\core_competency\user_competency::can_read_user($employeeuserid)) {
+            return [];
+        }
+        $ratings = array_fill_keys($competencyids, ['id' => 0, 'label' => '', 'state' => 'unassessed']);
+        foreach (\core_competency\user_competency::get_multiple($employeeuserid, $competencyids) as $record) {
+            $grade = $record->get('grade');
+            $state = (int)$record->get('status') !== \core_competency\user_competency::STATUS_IDLE
+                ? 'review' : ($record->get('proficiency') === null ? 'unassessed'
+                    : ($record->get('proficiency') ? 'proficient' : 'notproficient'));
+            $scale = $record->get_competency()->get_scale();
+            $label = $grade === null ? '' : ($scale->scale_items[$grade - 1] ?? '');
+            $ratings[(int)$record->get('competencyid')] = ['id' => (int)$record->get('id'),
+                'label' => $state === 'review' ? '' : $label, 'state' => $state];
+        }
+        return $ratings;
     }
 
     private static function learning(string $companyuuid, int $employeeuserid, int $actorid): array {

@@ -432,7 +432,11 @@ class position_ui_service {
                     $body .= self::control('orgnodeuuid', self::tr('orgunitname'), (string)($values['orgnodeuuid'] ?? ''), ['required' => true,
                         'options' => ['' => self::tr('pdu_select_unit')] + $units['options']], $errors['orgnodeuuid'] ?? '');
                     $body .= self::note(self::tr($units['total'] ? ($units['limited'] ? 'pdu_units_limited' : 'pdu_units_help') : 'pdu_units_empty'));
-                    if (!$units['total']) { $body .= self::link(self::url($company, [], 'ofs_designer'), self::tr('pdu_open_units')); }
+                    if (!$units['total'] && $units['query'] === '') {
+                        $url = new \moodle_url('/local/kbacompany/designs.php', ['uuid' => $company, 'firstunit' => 1]);
+                        $body .= \html_writer::link($url, s(self::tr('pdu_firstunit')), ['target' => '_blank', 'rel' => 'noopener']);
+                        $body .= self::note(self::tr('pdu_refreshunits'));
+                    }
                 } else {
                     $p = $model['position'];
                     $body .= self::fields([self::tr('orgunitname') => trim($p['nodecode'] . ' — ' . $p['nodename'], ' —')]);

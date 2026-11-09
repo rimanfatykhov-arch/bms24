@@ -2787,6 +2787,14 @@ details.bms-crm-section-collapsed[open] > summary::after {
 .bms-ecu-active{background:var(--bms-primary-soft,#e6f3e9);color:var(--bms-primary,#146c35)}.bms-ecu-muted{background:#eef1ef;color:#526259}.bms-ecu-warning{background:#fff3d8;color:#765211}
 .bms-ecu-table-wrap{max-width:100%;overflow:auto;border:1px solid var(--bms-border,#dce6e0);border-radius:.8rem;background:var(--bms-surface,#fff);margin:1rem 0}
 .bms-ecu-table{width:100%;border-collapse:collapse;margin:0;table-layout:auto}
+/* Keep learning results readable; the existing region scrolls on narrow desktops. */
+@media(min-width:701px){
+    .bms-employee-learning-results .bms-ecu-table th,
+    .bms-employee-learning-results .bms-ecu-table td{min-width:7rem}
+    .bms-employee-learning-results .bms-ecu-table td:nth-child(2){min-width:14rem}
+    .bms-employee-learning-results .bms-ecu-table th:last-child,
+    .bms-employee-learning-results .bms-ecu-table td:last-child{min-width:22rem}
+}
 .bms-ecu-table th{background:var(--bms-surface-alt,#f0f5f1);padding:.9rem 1rem;font-size:.88rem;text-align:left;color:var(--bms-text-muted,#496052)}
 .bms-ecu-table td{padding:1rem;vertical-align:top;border-top:1px solid var(--bms-border,#e0e9e3);font-size:.98rem;overflow-wrap:anywhere}
 .bms-ecu-table td:first-child>a{font-weight:650;font-size:1rem}.bms-ecu-table td:first-child{min-width:11rem}.bms-ecu-table td .bms-ecu-note{margin:.3rem 0 0}

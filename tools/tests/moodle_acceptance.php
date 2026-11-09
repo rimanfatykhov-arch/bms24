@@ -150,6 +150,8 @@ if (required_env('DBTYPE') === 'mysqli' && stripos($versioncomment, 'Percona') =
 }
 $main = '740fce16db15bb3551071cc11fe584c680fd738d';
 $import = 'eccc1eb221df90675067b1011e986702d96a4985';
+$functional = 'd4887103c13f45c42b73b455a95dba142d7ba116';
+$schemabase = '5c59057cb7af3fd545cd661bb7c2b3daa5ae7cd9';
 $report = ['run_id' => $runid, 'php' => PHP_VERSION, 'dbtype' => required_env('DBTYPE'),
     'database_server' => $dbversion, 'database_version_comment' => $versioncomment,
     'scope' => 'isolated Moodle core plus local_kbacompany/local_kbacorporate only',
@@ -158,20 +160,21 @@ $report = ['run_id' => $runid, 'php' => PHP_VERSION, 'dbtype' => required_env('D
 $self = __FILE__;
 $fresh = null;
 foreach (['fresh' => null, 'from1645' => $main, 'from1879' => $import,
-        'from0890' => 'e06cc96e2933e9142c1d51d2fcfa06b159737718'] as $name => $historical) {
+        'from0890' => 'e06cc96e2933e9142c1d51d2fcfa06b159737718',
+        'from0804' => $functional, 'from0900' => $schemabase] as $name => $historical) {
     $scenario = $testroot . '/' . $name;
     $core = $scenario . '/core';
     $entry = ['status' => 'FAIL', 'steps' => [], 'bms_source' => $historical ?? 'candidate working tree',
-        'corporate_source' => $historical === $import ? $main : ($historical ?? 'candidate working tree')];
-    if ($historical === $import) {
-        $entry['note'] = 'Reconstructed pair: import1879 deleted Corporate; Corporate explicitly taken from main1645 SHA.';
+        'corporate_source' => in_array($historical, [$import, $functional], true) ? $main : ($historical ?? 'candidate working tree')];
+    if (in_array($historical, [$import, $functional], true)) {
+        $entry['note'] = 'Reconstructed dependency pair: standalone BMS source uses Corporate from main1645 SHA; not live stage Corporate2613.';
     }
     try {
         mkdir($core, 0700, true);
         must_command(['cp', '-a', $source . '/.', $core], $testroot, $logs . '/' . $name . '-copy-core.log');
         foreach (['kbacompany', 'kbacorporate'] as $plugin) {
             if (file_exists($core . '/local/' . $plugin)) { throw new RuntimeException('Core source already contains candidate plugin'); }
-            $ref = $plugin === 'kbacorporate' && $historical === $import ? $main : $historical;
+            $ref = $plugin === 'kbacorporate' && in_array($historical, [$import, $functional], true) ? $main : $historical;
             if ($ref) {
                 $tar = $scenario . '/' . $plugin . '.tar';
                 must_command(['git', '-C', $candidate, 'archive', '--format=tar', '--output=' . $tar, $ref,
@@ -250,7 +253,7 @@ foreach (['fresh' => null, 'from1645' => $main, 'from1879' => $import,
     write_json($logs . '/report.json', $report);
 }
 
-foreach (['from1645', 'from1879', 'from0890'] as $name) {
+foreach (['from1645', 'from1879', 'from0890', 'from0804', 'from0900'] as $name) {
     $a = $testroot . '/fresh/schema.json';
     $b = $testroot . '/' . $name . '/schema.json';
     $report['schema_comparison'][$name] = !is_file($a) || !is_file($b) ? 'NOT RUN' :
@@ -262,7 +265,10 @@ if ($fresh) {
     $code = command([PHP_BINARY, $fresh . '/admin/tool/phpunit/cli/init.php'], $fresh, $logs . '/phpunit-init.log');
     $report['phpunit']['init'] = $code === 0 ? 'PASS' : 'FAIL';
     // Run focused files in separate PHP processes before broad legacy discovery.
-    foreach (['schema_parity_2026110890_test', 'ordered_index_2026110900_test', 'pr48_tenant_isolation_test'] as $test) {
+    foreach (['schema_parity_2026110890_test', 'ordered_index_2026110900_test', 'pr48_tenant_isolation_test',
+            'competency_review_queue_test', 'employee_development_courses_test',
+            'employee_competency_profile_service_test', 'role_intelligence_service_test',
+            'role_readiness_view_test', 'company_core_test', 'design_service_test'] as $test) {
         if ($code !== 0) { $report['phpunit'][$test] = 'NOT RUN'; continue; }
         $exit = command([PHP_BINARY, $fresh . '/vendor/bin/phpunit', '--configuration', $fresh . '/phpunit.xml',
             '--log-junit', $logs . '/' . $test . '-junit.xml',
