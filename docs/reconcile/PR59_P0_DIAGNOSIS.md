@@ -8,7 +8,7 @@ At initial document preparation reproduction was pending and fixtures unchanged.
 Before applying fixes, new MariaDB artifact13669416723 from attempt2 reproduced
 all eight exact identities, with603 tests/7042 assertions,14 errors/18 failures,
 zero skipped. Independent security reviewer confirmed this against actual JUnit.
-The Percona baseline rerun continues independently; its evidence will be appended.
+Percona attempt2 artifact13670091491 subsequently confirmed the same eight identities and exact counts. Both raw JUnit files were independently checked by QA; the Percona rerun started before edits and executed unchanged baseline source.
 
 ## Owning domain requirements
 
