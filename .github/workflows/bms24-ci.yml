@@ -86,7 +86,7 @@ jobs:
       - name: RC30 candidate version and runtime gate regressions
         run: |
           php local/kbacompany/cli/test_rc30_version_1879.php
-          php local/kbacompany/cli/test_schema_parity_2026110900.php
+          php local/kbacompany/cli/test_schema_parity_2026110890.php
           php -l tools/inventory_moodle_readonly.php
           bash -n tools/ruweb_inventory_forced_command.sh
           php local/kbacompany/cli/test_rc30_runtime_1865.php

@@ -36,6 +36,8 @@ Limit: when an index is missing, other database families fail closed pending a
 separately verified DDL path. Moodle core is unchanged. No cross-tenant data is
 read or modified by this helper. Index creation can lock/consume resources in a
 real deployment; this task executes it only in disposable CI databases.
+Moodle index metadata verifies ordered columns and uniqueness, but does not
+attest index prefix lengths, visibility or physical index type.
 
 Verification: real fresh installation, historical1645/1879/0890 upgrades, exact
 183-table schema comparison, two-tenant preservation/authorization, focused
