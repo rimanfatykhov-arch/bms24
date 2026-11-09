@@ -371,4 +371,3 @@ Task fixture default startdate2026-09-14 is combined with overridden due2026-01-
 Evidence: local/kbacompany/classes/local/task_service.php:68; local/kbacompany/classes/local/task_service.php:575; local/kbacompany/classes/local/task_service.php:590; local/kbacompany/tests/task_service_test.php:34; local/kbacompany/tests/task_service_test.php:210; tests/task_service_test.php:34; tests/task_service_test.php:187; tests/task_service_test.php:210; classes/local/task_service.php:575
 
 Next: Generate internally valid overdue dates and matching/empty startdate; retain count consistency and completed-history pagination assertions.
-
