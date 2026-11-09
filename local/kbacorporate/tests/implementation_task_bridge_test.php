@@ -164,7 +164,8 @@ final class implementation_task_bridge_test extends \advanced_testcase {
             'audittype' => 'baseline',
             'auditdate' => time(),
         ], (int)get_admin()->id);
-        $item = reset(implementation_audits::get_items($auditid));
+        $audititems = implementation_audits::get_items($auditid);
+        $item = reset($audititems);
         $DB->update_record('local_kbacorp_impl_item', (object)[
             'id' => (int)$item->id,
             'score' => 2,

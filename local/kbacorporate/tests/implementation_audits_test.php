@@ -97,7 +97,8 @@ final class implementation_audits_test extends \advanced_testcase {
             'companyid' => $companyid, 'toolid' => $toolid, 'title' => 'Gap test',
             'audittype' => 'baseline', 'auditdate' => time(),
         ], 2);
-        $item = reset(implementation_audits::get_items($auditid));
+        $audititems = implementation_audits::get_items($auditid);
+        $item = reset($audititems);
         $this->assertSame(7, (int)$item->targetscore);
         $DB->set_field('local_kbacorp_impl_item', 'score', 2, ['id' => $item->id]);
         $DB->set_field('local_kbacorp_impl_item', 'evidencestatus',
@@ -118,7 +119,8 @@ final class implementation_audits_test extends \advanced_testcase {
         $version1 = implementation_audits::ensure_versioned($toolid, 2);
         $this->assertSame('v1', $version1->versionlabel);
 
-        $criterion = reset(implementation_audits::get_criteria($toolid));
+        $criteria = implementation_audits::get_criteria($toolid);
+        $criterion = reset($criteria);
         $oldname = $criterion->name;
         $DB->set_field('local_kbacorp_bms_crit', 'name', 'Updated criterion', ['id' => $criterion->id]);
         implementation_audits::mark_tool_draft($toolid);
@@ -162,7 +164,8 @@ final class implementation_audits_test extends \advanced_testcase {
         $this->resetAfterTest();
         $companyid = $this->create_company();
         $toolid = point_a_template::install($companyid);
-        $criterion = reset(implementation_audits::get_criteria($toolid));
+        $criteria = implementation_audits::get_criteria($toolid);
+        $criterion = reset($criteria);
         $generator = $this->getDataGenerator()->get_plugin_generator('core_competency');
         $framework = $generator->create_framework();
         $competency = $generator->create_competency([
@@ -216,7 +219,8 @@ final class implementation_audits_test extends \advanced_testcase {
         $toolid = point_a_template::install($companyid);
         $auditid = implementation_audits::create_audit((object)['companyid' => $companyid,
             'toolid' => $toolid, 'title' => 'Task test', 'audittype' => 'baseline', 'auditdate' => time()], 2);
-        $item = reset(implementation_audits::get_items($auditid));
+        $audititems = implementation_audits::get_items($auditid);
+        $item = reset($audititems);
         $DB->set_field('local_kbacorp_impl_item', 'score', 2, ['id' => $item->id]);
         $DB->set_field('local_kbacorp_impl_item', 'evidencestatus', implementation_audits::EVIDENCE_SUBMITTED,
             ['id' => $item->id]);
@@ -268,7 +272,8 @@ final class implementation_audits_test extends \advanced_testcase {
             'audittype' => 'baseline',
             'auditdate' => time(),
         ], $adminid);
-        $item = reset(implementation_audits::get_items($auditid));
+        $audititems = implementation_audits::get_items($auditid);
+        $item = reset($audititems);
         $taskdata = (object)[
             'companyid' => $companyid,
             'auditid' => $auditid,

@@ -9,6 +9,114 @@ use local_kbacorporate\local\erp_exchange;
 
 /** Regression tests for the provider-neutral ERP exchange boundary. */
 final class erp_exchange_test extends \advanced_testcase {
+    private const AUDIT_SALT = 'erp-regression-test-salt';
+
+    public function test_provider_isolation_with_same_company_and_employee_external_id(): void {
+        global $DB;
+        $this->resetAfterTest();
+        $company = erp_exchange::push_entity('erp_a', 'company', 'shared-company', ['name' => 'Shared Company']);
+        $companyid = (int)$company['moodle_company_id'];
+        \local_kbacorporate\local\external_mapping::upsert(
+            0, 'erp_b', 'company', 'company', $companyid, 'shared-company');
+        $users = [];
+        foreach (['erp_a', 'erp_b'] as $provider) {
+            $users[$provider] = $this->getDataGenerator()->create_user();
+            $result = erp_exchange::push_entity($provider, 'employee', 'shared-employee', [
+                'company_external_id' => 'shared-company', 'moodle_user_id' => (int)$users[$provider]->id,
+            ]);
+            $this->assertSame($companyid, (int)$result['moodle_company_id']);
+            $this->assertSame((int)$users[$provider]->id, (int)$result['moodle_user_id']);
+            $this->assertTrue($result['created']);
+        }
+        $before = \local_kbacorporate\local\external_mapping::find_local(
+            $companyid, 'erp_b', 'employee', 'shared-employee');
+        $this->assertNotFalse($before);
+        erp_exchange::push_entity('erp_a', 'employee', 'shared-employee', [
+            'company_external_id' => 'shared-company', 'active' => false,
+        ]);
+        $this->assertFalse(\local_kbacorporate\local\external_mapping::find_local(
+            $companyid, 'erp_a', 'employee', 'shared-employee'));
+        $this->assertEquals($before, \local_kbacorporate\local\external_mapping::find_local(
+            $companyid, 'erp_b', 'employee', 'shared-employee'));
+        $this->assertSame(0, (int)$DB->get_field('local_kbacorp_member', 'isemployee',
+            ['companyid' => $companyid, 'userid' => $users['erp_a']->id], MUST_EXIST));
+        $this->assertSame(1, (int)$DB->get_field('local_kbacorp_member', 'isemployee',
+            ['companyid' => $companyid, 'userid' => $users['erp_b']->id], MUST_EXIST));
+        $this->assertDebuggingNotCalled();
+    }
+
+    public function test_unmapped_inactive_employee_is_noop_and_records_success_audit(): void {
+        global $CFG, $DB;
+        $this->resetAfterTest();
+        $CFG->passwordsaltmain = self::AUDIT_SALT;
+        $company = erp_exchange::push_entity('erp_missing', 'company', 'company-missing', ['name' => 'Missing Mapping']);
+        $usersbefore = $DB->count_records('user');
+        $mapsbefore = $DB->count_records('local_kbacorp_extmap');
+        $result = erp_exchange::push_entity('erp_missing', 'employee', 'employee-never-mapped', [
+            'company_external_id' => 'company-missing', 'active' => false,
+        ], 'request-inactive');
+        $this->assertTrue($result['success']);
+        $this->assertSame('unmapped_inactive', $result['status']);
+        $this->assertFalse($result['changed']);
+        $this->assertFalse($result['created']);
+        $this->assertSame($usersbefore, $DB->count_records('user'));
+        $this->assertSame($mapsbefore, $DB->count_records('local_kbacorp_extmap'));
+        $this->assertFalse($DB->record_exists('local_kbacorp_member', ['companyid' => $company['moodle_company_id']]));
+        $audit = $DB->get_record('local_kbacorp_erp_log', [
+            'companyid' => $company['moodle_company_id'], 'entitytype' => 'employee',
+        ], '*', MUST_EXIST);
+        $this->assertSame('success', $audit->status);
+        $this->assertSame('erp_missing', $audit->system);
+        $this->assertSame(hash_hmac('sha256', 'employee-never-mapped', self::AUDIT_SALT), $audit->externalidhash);
+        $this->assertSame(hash_hmac('sha256', 'request-inactive', self::AUDIT_SALT), $audit->idempotencyhash);
+        $this->assertDebuggingNotCalled();
+    }
+
+    public function test_same_employee_external_id_is_isolated_by_company_and_provider(): void {
+        global $CFG, $DB;
+        $this->resetAfterTest();
+        $CFG->passwordsaltmain = self::AUDIT_SALT;
+        $scopes = [['erp_a', 'company-shared'], ['erp_a', 'company-other'], ['erp_b', 'company-shared']];
+        $fixtures = [];
+        foreach ($scopes as $index => [$provider, $externalcompany]) {
+            $company = erp_exchange::push_entity($provider, 'company', $externalcompany,
+                ['name' => 'Scope ' . $index]);
+            $user = $this->getDataGenerator()->create_user();
+            $employee = erp_exchange::push_entity($provider, 'employee', 'employee-shared', [
+                'company_external_id' => $externalcompany, 'moodle_user_id' => (int)$user->id,
+            ]);
+            $this->assertTrue($employee['created']);
+            $this->assertSame((int)$user->id, (int)$employee['moodle_user_id']);
+            $companyid = (int)$company['moodle_company_id'];
+            $mapping = $DB->get_record('local_kbacorp_extmap', [
+                'companyid' => $companyid, 'entitytype' => 'employee', 'externalid' => 'employee-shared',
+            ], '*', MUST_EXIST);
+            $this->assertSame($provider, $mapping->system);
+            $this->assertSame((int)$user->id, (int)$mapping->localid);
+            $audit = $DB->get_record('local_kbacorp_erp_log', [
+                'companyid' => $companyid, 'entitytype' => 'employee',
+            ], '*', MUST_EXIST);
+            $this->assertSame('success', $audit->status);
+            $this->assertSame($provider, $audit->system);
+            $this->assertSame(hash_hmac('sha256', 'employee-shared', self::AUDIT_SALT), $audit->externalidhash);
+            $fixtures[] = [$companyid, (int)$user->id];
+        }
+        $this->assertCount(3, array_unique(array_column($fixtures, 0)));
+        $inactive = erp_exchange::push_entity('erp_a', 'employee', 'employee-shared', [
+            'company_external_id' => 'company-shared', 'active' => false,
+        ]);
+        $this->assertSame('employee_deactivated', $inactive['status']);
+        foreach ($fixtures as $index => [$companyid, $userid]) {
+            $this->assertSame($index === 0 ? 0 : 1, (int)$DB->get_field('local_kbacorp_member', 'isemployee',
+                ['companyid' => $companyid, 'userid' => $userid], MUST_EXIST));
+            $mapping = $DB->get_record('local_kbacorp_extmap', [
+                'companyid' => $companyid, 'entitytype' => 'employee', 'externalid' => 'employee-shared',
+            ], '*', MUST_EXIST);
+            $this->assertSame($index === 0 ? 'inactive' : 'active', $mapping->status);
+        }
+        $this->assertDebuggingNotCalled();
+    }
+
     public function test_contract_is_versioned_and_declares_data_authorities(): void {
         $contract = erp_exchange::contract();
         $this->assertSame(1, $contract['version']);
@@ -58,7 +166,7 @@ final class erp_exchange_test extends \advanced_testcase {
         $this->assertFalse($second['created']);
         $this->assertSame($first['moodle_company_id'], $second['moodle_company_id']);
         $this->assertSame(1, $DB->count_records('local_kbacorp_extmap', [
-            'companyid' => 0, 'system' => 'odoo', 'entitytype' => 'company',
+            'companyid' => 0, ($DB->get_dbfamily() === 'mysql' ? '`system`' : 'system') => 'odoo', 'entitytype' => 'company',
             'externalid' => 'company-42',
         ]));
 
@@ -124,7 +232,8 @@ final class erp_exchange_test extends \advanced_testcase {
         $this->assertSame(0, (int)$DB->get_field('user', 'suspended', ['id' => $userid]));
         $this->assertSame('inactive', $DB->get_field('local_kbacorp_extmap', 'status', [
             'companyid' => (int)$company['moodle_company_id'],
-            'system' => 'erp_test', 'entitytype' => 'employee', 'externalid' => 'employee-created',
+            ($DB->get_dbfamily() === 'mysql' ? '`system`' : 'system') => 'erp_test',
+            'entitytype' => 'employee', 'externalid' => 'employee-created',
         ]));
 
         $reactivated = erp_exchange::push_entity('erp_test', 'employee', 'employee-created', [
@@ -500,7 +609,8 @@ final class erp_exchange_test extends \advanced_testcase {
         ));
         $this->assertSame('inactive', $DB->get_field('local_kbacorp_extmap', 'status', [
             'companyid' => $company['moodle_company_id'],
-            'system' => 'bms_erp', 'entitytype' => 'business_role_assignment', 'externalid' => 'a-1',
+            ($DB->get_dbfamily() === 'mysql' ? '`system`' : 'system') => 'bms_erp',
+            'entitytype' => 'business_role_assignment', 'externalid' => 'a-1',
         ]));
     }
 

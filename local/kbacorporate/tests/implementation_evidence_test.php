@@ -2,6 +2,7 @@
 namespace local_kbacorporate;
 
 defined('MOODLE_INTERNAL') || die();
+global $CFG;
 require_once($CFG->libdir . '/filelib.php');
 
 use local_kbacorporate\local\implementation_actions;
@@ -111,7 +112,8 @@ final class implementation_evidence_test extends \advanced_testcase {
             'audittype' => 'baseline',
             'auditdate' => time(),
         ], $adminid);
-        $item = reset(implementation_audits::get_items($auditid));
+        $audititems = implementation_audits::get_items($auditid);
+        $item = reset($audititems);
         $DB->update_record('local_kbacorp_impl_item', (object)[
             'id' => (int)$item->id,
             'score' => 2,

@@ -139,7 +139,7 @@ foreach ([2026101645, 2026101879, 2026110802, 2026110890] as $oldversion) {
         $before = $DB->rows;
         $savepoints = [];
         parity_check(xmldb_local_kbacompany_upgrade($oldversion), 'actual upgrade returns success');
-        parity_check(end($savepoints) === 2026110900, 'repair checkpoint reached from ' . $oldversion);
+        parity_check(end($savepoints) === 2026110901, 'repair checkpoint reached from ' . $oldversion);
         foreach ($targets as $key => $metadata) {
             [$table, $field] = explode('.', $key);
             parity_check($DB->columns[$table][$field] == $metadata, 'matches fresh XMLDB: ' . $key);
@@ -156,7 +156,7 @@ foreach ([2026101645, 2026101879, 2026110802, 2026110890] as $oldversion) {
         xmldb_local_kbacompany_upgrade($oldversion);
         parity_check($DB->manager->adds === $adds, 'retry adds no duplicate fields');
         $savepoints = [];
-        xmldb_local_kbacompany_upgrade(2026110900);
+        xmldb_local_kbacompany_upgrade(2026110901);
         parity_check(!$savepoints && $DB->manager->adds === $adds, 'installed target is no-op');
     }
 }
@@ -185,7 +185,7 @@ foreach (['failon', 'silenton'] as $failuremode) {
     parity_check(isset($DB->columns['local_kbacompany_task']['starttime']), 'partial DDL model exercised');
     $DB->manager->$failuremode = null;
     xmldb_local_kbacompany_upgrade(2026101879);
-    parity_check(end($savepoints) === 2026110900, 'partial DDL retry reaches checkpoint');
+    parity_check(end($savepoints) === 2026110901, 'partial DDL retry reaches checkpoint');
 }
 $DB = new SchemaParityDatabase($targets, 0);
 $DB->missingtable = 'local_kbacompany_deviation';

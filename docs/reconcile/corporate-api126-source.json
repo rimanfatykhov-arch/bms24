@@ -1048,7 +1048,7 @@
     {
       "path": "local/kbacorporate/version.php",
       "archive_sha256": "a611d48d236476781340ae9efd90def34ba31ab1139e7ede47efea0f39d9e4c2",
-      "source_sha256": "a611d48d236476781340ae9efd90def34ba31ab1139e7ede47efea0f39d9e4c2",
+      "source_sha256": "f5cbe8695b94c34f73ad5fb3994d5853cdd0ccb30f1d796d019678a7e1f7fe60",
       "status": "modified"
     },
     {
@@ -1342,8 +1342,8 @@
     {
       "path": "local/kbacorporate/classes/local/external_mapping.php",
       "archive_sha256": "69dfa1bee5d5476568ebc2f856e9e15cad31fa3a3f1f03f6dd05b6ff645d35cd",
-      "source_sha256": "69dfa1bee5d5476568ebc2f856e9e15cad31fa3a3f1f03f6dd05b6ff645d35cd",
-      "status": "unchanged"
+      "source_sha256": "ccfe252a6036c1040f26203dcf9b110fc5023415f9e52afeb35565cecd37f844",
+      "status": "modified"
     },
     {
       "path": "local/kbacorporate/classes/local/economic_dashboard.php",
@@ -1390,8 +1390,8 @@
     {
       "path": "local/kbacorporate/classes/local/erp_audit.php",
       "archive_sha256": "4896bbadebebf45c8e67d33b2e60de18b3f25068c84613720451bcc55a9cae53",
-      "source_sha256": "4896bbadebebf45c8e67d33b2e60de18b3f25068c84613720451bcc55a9cae53",
-      "status": "unchanged"
+      "source_sha256": "cb987060a37bf0d00cf24350fbdaa6ce61ab50c89f49cadd7793a7c560bfb03b",
+      "status": "modified"
     },
     {
       "path": "local/kbacorporate/classes/local/competency_map.php",
@@ -1462,8 +1462,8 @@
     {
       "path": "local/kbacorporate/classes/local/implementation_audits.php",
       "archive_sha256": "91c347b80e479be916363f1f14f568ed522e82956e4729081b0d11cf17da5642",
-      "source_sha256": "91c347b80e479be916363f1f14f568ed522e82956e4729081b0d11cf17da5642",
-      "status": "unchanged"
+      "source_sha256": "4bfb7dd9793104dc57017736a1a9299b257f04f4b7477ec4ad24a65ad3189cad",
+      "status": "modified"
     },
     {
       "path": "local/kbacorporate/classes/local/development_notifier.php",
@@ -1576,8 +1576,8 @@
     {
       "path": "local/kbacorporate/classes/local/erp_exchange.php",
       "archive_sha256": "5e99e2422699fd4134d185a53b49a3d020ca43ad14451b8f81497ae0b40b211d",
-      "source_sha256": "5e99e2422699fd4134d185a53b49a3d020ca43ad14451b8f81497ae0b40b211d",
-      "status": "unchanged"
+      "source_sha256": "c92a4af7ccedfa20f60c7455b284216e0801f168a228e495035757eb3a3857f5",
+      "status": "modified"
     },
     {
       "path": "local/kbacorporate/classes/local/competencies.php",
@@ -3436,7 +3436,7 @@
     {
       "path": "local/kbacorporate/db/upgrade.php",
       "archive_sha256": "c1668acbdc0d106a133002ca71e745a1c376b4f9e80a50ea7cad85fa5b071948",
-      "source_sha256": "c1668acbdc0d106a133002ca71e745a1c376b4f9e80a50ea7cad85fa5b071948",
+      "source_sha256": "b9ffdd9a05661ce616db90d7c0049c304a765b20e2004f75b9526336a53ae5d4",
       "status": "modified"
     },
     {
@@ -4030,14 +4030,14 @@
     {
       "path": "local/kbacorporate/tests/implementation_actions_test.php",
       "archive_sha256": "4560b77654d0233616e092494ac342d9d98c7fb06ff0c2bbd6ebf4ffd48b588c",
-      "source_sha256": "4560b77654d0233616e092494ac342d9d98c7fb06ff0c2bbd6ebf4ffd48b588c",
-      "status": "unchanged"
+      "source_sha256": "2cdaa54d32830a6c57ee4cce47be901f64e37f5c7622844c9bacb245f9cb18cf",
+      "status": "modified"
     },
     {
       "path": "local/kbacorporate/tests/implementation_audits_test.php",
       "archive_sha256": "c3b2831ada39df6ef8303b92d46d17f38a6940bc8de139cde7d3b1a8597bcbe5",
-      "source_sha256": "c3b2831ada39df6ef8303b92d46d17f38a6940bc8de139cde7d3b1a8597bcbe5",
-      "status": "unchanged"
+      "source_sha256": "0129c1b1fabe0740d50f40e9d8642f77d1cde7e65aac4fc53939a71352f65d5d",
+      "status": "modified"
     },
     {
       "path": "local/kbacorporate/tests/moodle_learning_plan_urls_test.php",
@@ -4072,8 +4072,8 @@
     {
       "path": "local/kbacorporate/tests/course_recommendations_test.php",
       "archive_sha256": "a7e6e27939b419286903c55fde783c84ec3e11cabc067fd3dcf48a53461b9602",
-      "source_sha256": "a7e6e27939b419286903c55fde783c84ec3e11cabc067fd3dcf48a53461b9602",
-      "status": "unchanged"
+      "source_sha256": "60438a9ad4d6f679163c3d22865c7a1f9dff75bcdd849147bf90986954c8accf",
+      "status": "modified"
     },
     {
       "path": "local/kbacorporate/tests/implementation_audit_comparison_test.php",
@@ -4138,8 +4138,8 @@
     {
       "path": "local/kbacorporate/tests/development_plans_test.php",
       "archive_sha256": "eabb49ee17de77899acdbc2f0bba962ad095f24271cc3c9f4254de397ac88d36",
-      "source_sha256": "eabb49ee17de77899acdbc2f0bba962ad095f24271cc3c9f4254de397ac88d36",
-      "status": "unchanged"
+      "source_sha256": "edfd4c748a28ef4b104931d921ac12eb571decca34640f1635d94542b08df56d",
+      "status": "modified"
     },
     {
       "path": "local/kbacorporate/tests/license_reconciliation_test.php",
@@ -4174,8 +4174,8 @@
     {
       "path": "local/kbacorporate/tests/implementation_evidence_test.php",
       "archive_sha256": "6b768ae2af0561d602a17d15d648936f1687486632140070d9220615aafe5365",
-      "source_sha256": "6b768ae2af0561d602a17d15d648936f1687486632140070d9220615aafe5365",
-      "status": "unchanged"
+      "source_sha256": "7fb28fd3350498209fca8a9485a6d4a3bacc003edbd37ecb20fdbbf9abf081c6",
+      "status": "modified"
     },
     {
       "path": "local/kbacorporate/tests/study_plan_progress_test.php",
@@ -4186,20 +4186,20 @@
     {
       "path": "local/kbacorporate/tests/implementation_kanban_test.php",
       "archive_sha256": "b328d764bcbd9835117f2850c19473503e47d1afd29ef800cd08b99ad77d563f",
-      "source_sha256": "b328d764bcbd9835117f2850c19473503e47d1afd29ef800cd08b99ad77d563f",
-      "status": "unchanged"
+      "source_sha256": "a93a380aa37905f2fc4863f43b20d88ad964e2e5ae358f82ce39b12f959e10a1",
+      "status": "modified"
     },
     {
       "path": "local/kbacorporate/tests/individual_development_plan_test.php",
       "archive_sha256": "e53f38722c1159baac5a3000128fad599a392af9fbf8dd5b9d22e792511d2b8f",
-      "source_sha256": "e53f38722c1159baac5a3000128fad599a392af9fbf8dd5b9d22e792511d2b8f",
-      "status": "unchanged"
+      "source_sha256": "1cbd42dfb724ae2ab56e4814d64df97c06a2421c4f5d4153d60cd4633ce098cd",
+      "status": "modified"
     },
     {
       "path": "local/kbacorporate/tests/privacy_provider_test.php",
       "archive_sha256": "20c2fbf17f10bca154fb2762055ee054ab4a2e136a4260d7634ad5fd7d43911a",
-      "source_sha256": "20c2fbf17f10bca154fb2762055ee054ab4a2e136a4260d7634ad5fd7d43911a",
-      "status": "unchanged"
+      "source_sha256": "9f7f69f1a3c3f84648f5ff94adc1135db235ced6f7e341227d334978f68cbb43",
+      "status": "modified"
     },
     {
       "path": "local/kbacorporate/tests/study_plan_provisioning_test.php",
@@ -4216,8 +4216,8 @@
     {
       "path": "local/kbacorporate/tests/implementation_task_bridge_test.php",
       "archive_sha256": "673cac063539da8a11f92829a44eb195b24a363fe41bc0dbdddbe40516cd4fec",
-      "source_sha256": "3a25066b6c0c62daad3d1e64a77e255c9b34eb4e7d8c263acfce379f5b7d5d52",
-      "status": "added"
+      "source_sha256": "40f552eb66c49f22b7a570770f8b3436d03b069d17c31ca00f47fb167787c23c",
+      "status": "modified"
     },
     {
       "path": "local/kbacorporate/cli/implementation_program_task_sections_projection_contract.php",
@@ -4267,7 +4267,7 @@
     {
       "path": "local/kbacorporate/tests/erp_exchange_test.php",
       "archive_sha256": "b64030ac003a1dac4ebcec8eda455775ba17ba18d31d29ced10abab922938731",
-      "source_sha256": "63b7daeceaaf2bdfdf777bf87f93c0b915e074822db12f2c9cc240616876bcc6",
+      "source_sha256": "5db2616274e38f13ab5228a592e3aa8ef066576c8ecd1af740c7155841498c6b",
       "status": "modified"
     },
     {
@@ -4953,7 +4953,7 @@
     {
       "path": "local/kbacorporate/version.php",
       "archive_sha256": "a611d48d236476781340ae9efd90def34ba31ab1139e7ede47efea0f39d9e4c2",
-      "source_sha256": "a611d48d236476781340ae9efd90def34ba31ab1139e7ede47efea0f39d9e4c2",
+      "source_sha256": "f5cbe8695b94c34f73ad5fb3994d5853cdd0ccb30f1d796d019678a7e1f7fe60",
       "status": "modified"
     },
     {
@@ -4963,10 +4963,22 @@
       "status": "added"
     },
     {
+      "path": "local/kbacorporate/classes/local/external_mapping.php",
+      "archive_sha256": "69dfa1bee5d5476568ebc2f856e9e15cad31fa3a3f1f03f6dd05b6ff645d35cd",
+      "source_sha256": "ccfe252a6036c1040f26203dcf9b110fc5023415f9e52afeb35565cecd37f844",
+      "status": "modified"
+    },
+    {
       "path": "local/kbacorporate/classes/local/implementation_curator_role.php",
       "archive_sha256": "ba8094c2d42b9fb196f5ed37bd5e653d62946fbf061cabd497291dee65e6bac0",
       "source_sha256": "ba8094c2d42b9fb196f5ed37bd5e653d62946fbf061cabd497291dee65e6bac0",
       "status": "added"
+    },
+    {
+      "path": "local/kbacorporate/classes/local/erp_audit.php",
+      "archive_sha256": "4896bbadebebf45c8e67d33b2e60de18b3f25068c84613720451bcc55a9cae53",
+      "source_sha256": "cb987060a37bf0d00cf24350fbdaa6ce61ab50c89f49cadd7793a7c560bfb03b",
+      "status": "modified"
     },
     {
       "path": "local/kbacorporate/classes/local/bridge.php",
@@ -4981,10 +4993,22 @@
       "status": "modified"
     },
     {
+      "path": "local/kbacorporate/classes/local/implementation_audits.php",
+      "archive_sha256": "91c347b80e479be916363f1f14f568ed522e82956e4729081b0d11cf17da5642",
+      "source_sha256": "4bfb7dd9793104dc57017736a1a9299b257f04f4b7477ec4ad24a65ad3189cad",
+      "status": "modified"
+    },
+    {
       "path": "local/kbacorporate/classes/local/implementation_task_projection.php",
       "archive_sha256": "ce7132b7567b5db6ddd46ca4d0fa8464ec6bf1cc21beaa89a3c1a76829f4075c",
       "source_sha256": "d994ec86eeec92f78c1f8667d32a6c233410cbc1ef809bb5f360f9557854d428",
       "status": "added"
+    },
+    {
+      "path": "local/kbacorporate/classes/local/erp_exchange.php",
+      "archive_sha256": "5e99e2422699fd4134d185a53b49a3d020ca43ad14451b8f81497ae0b40b211d",
+      "source_sha256": "c92a4af7ccedfa20f60c7455b284216e0801f168a228e495035757eb3a3857f5",
+      "status": "modified"
     },
     {
       "path": "local/kbacorporate/classes/local/implementation_analytics.php",
@@ -5079,13 +5103,31 @@
     {
       "path": "local/kbacorporate/db/upgrade.php",
       "archive_sha256": "c1668acbdc0d106a133002ca71e745a1c376b4f9e80a50ea7cad85fa5b071948",
-      "source_sha256": "c1668acbdc0d106a133002ca71e745a1c376b4f9e80a50ea7cad85fa5b071948",
+      "source_sha256": "b9ffdd9a05661ce616db90d7c0049c304a765b20e2004f75b9526336a53ae5d4",
       "status": "modified"
     },
     {
       "path": "local/kbacorporate/db/access.php",
       "archive_sha256": "0d5ef23ed1f6ad47c5ffbd0464d709981f0ffffbc3bc5b0da70de1f259c84951",
       "source_sha256": "0d5ef23ed1f6ad47c5ffbd0464d709981f0ffffbc3bc5b0da70de1f259c84951",
+      "status": "modified"
+    },
+    {
+      "path": "local/kbacorporate/tests/implementation_actions_test.php",
+      "archive_sha256": "4560b77654d0233616e092494ac342d9d98c7fb06ff0c2bbd6ebf4ffd48b588c",
+      "source_sha256": "2cdaa54d32830a6c57ee4cce47be901f64e37f5c7622844c9bacb245f9cb18cf",
+      "status": "modified"
+    },
+    {
+      "path": "local/kbacorporate/tests/implementation_audits_test.php",
+      "archive_sha256": "c3b2831ada39df6ef8303b92d46d17f38a6940bc8de139cde7d3b1a8597bcbe5",
+      "source_sha256": "0129c1b1fabe0740d50f40e9d8642f77d1cde7e65aac4fc53939a71352f65d5d",
+      "status": "modified"
+    },
+    {
+      "path": "local/kbacorporate/tests/course_recommendations_test.php",
+      "archive_sha256": "a7e6e27939b419286903c55fde783c84ec3e11cabc067fd3dcf48a53461b9602",
+      "source_sha256": "60438a9ad4d6f679163c3d22865c7a1f9dff75bcdd849147bf90986954c8accf",
       "status": "modified"
     },
     {
@@ -5101,16 +5143,46 @@
       "status": "added"
     },
     {
+      "path": "local/kbacorporate/tests/development_plans_test.php",
+      "archive_sha256": "eabb49ee17de77899acdbc2f0bba962ad095f24271cc3c9f4254de397ac88d36",
+      "source_sha256": "edfd4c748a28ef4b104931d921ac12eb571decca34640f1635d94542b08df56d",
+      "status": "modified"
+    },
+    {
       "path": "local/kbacorporate/tests/curator_scope_contract_1822.php",
       "archive_sha256": "165eec8d27051dd17d9a6079cd109cee7f28f1122cfc45ef4e7cfc08f9d1877c",
       "source_sha256": "165eec8d27051dd17d9a6079cd109cee7f28f1122cfc45ef4e7cfc08f9d1877c",
       "status": "added"
     },
     {
+      "path": "local/kbacorporate/tests/implementation_evidence_test.php",
+      "archive_sha256": "6b768ae2af0561d602a17d15d648936f1687486632140070d9220615aafe5365",
+      "source_sha256": "7fb28fd3350498209fca8a9485a6d4a3bacc003edbd37ecb20fdbbf9abf081c6",
+      "status": "modified"
+    },
+    {
+      "path": "local/kbacorporate/tests/implementation_kanban_test.php",
+      "archive_sha256": "b328d764bcbd9835117f2850c19473503e47d1afd29ef800cd08b99ad77d563f",
+      "source_sha256": "a93a380aa37905f2fc4863f43b20d88ad964e2e5ae358f82ce39b12f959e10a1",
+      "status": "modified"
+    },
+    {
+      "path": "local/kbacorporate/tests/individual_development_plan_test.php",
+      "archive_sha256": "e53f38722c1159baac5a3000128fad599a392af9fbf8dd5b9d22e792511d2b8f",
+      "source_sha256": "1cbd42dfb724ae2ab56e4814d64df97c06a2421c4f5d4153d60cd4633ce098cd",
+      "status": "modified"
+    },
+    {
+      "path": "local/kbacorporate/tests/privacy_provider_test.php",
+      "archive_sha256": "20c2fbf17f10bca154fb2762055ee054ab4a2e136a4260d7634ad5fd7d43911a",
+      "source_sha256": "9f7f69f1a3c3f84648f5ff94adc1135db235ced6f7e341227d334978f68cbb43",
+      "status": "modified"
+    },
+    {
       "path": "local/kbacorporate/tests/implementation_task_bridge_test.php",
       "archive_sha256": "673cac063539da8a11f92829a44eb195b24a363fe41bc0dbdddbe40516cd4fec",
-      "source_sha256": "3a25066b6c0c62daad3d1e64a77e255c9b34eb4e7d8c263acfce379f5b7d5d52",
-      "status": "added"
+      "source_sha256": "40f552eb66c49f22b7a570770f8b3436d03b069d17c31ca00f47fb167787c23c",
+      "status": "modified"
     },
     {
       "path": "local/kbacorporate/cli/implementation_program_task_sections_projection_contract.php",
@@ -5136,7 +5208,7 @@
     {
       "path": "local/kbacorporate/tests/erp_exchange_test.php",
       "archive_sha256": "b64030ac003a1dac4ebcec8eda455775ba17ba18d31d29ced10abab922938731",
-      "source_sha256": "63b7daeceaaf2bdfdf777bf87f93c0b915e074822db12f2c9cc240616876bcc6",
+      "source_sha256": "5db2616274e38f13ab5228a592e3aa8ef066576c8ecd1af740c7155841498c6b",
       "status": "modified"
     },
     {
@@ -5151,5 +5223,93 @@
     "Authorize single-task projection before task query; owner SQL scope for employees",
     "Correct two stale API assertions to 1.26",
     "Move three standalone fixture scripts from PHPUnit discovery to cli/"
-  ]
+  ],
+  "candidate_version": 2026110901,
+  "candidate_release": "0.40.10-bms.1",
+  "local_patch": {
+    "base_sha": "5c59057cb7af3fd545cd661bb7c2b3daa5ae7cd9",
+    "scope": "isolated communication/Corporate ERP acceptance fixes; no deployment approval",
+    "files": [
+      {
+        "path": "local/kbacorporate/version.php",
+        "before_sha256": "a611d48d236476781340ae9efd90def34ba31ab1139e7ede47efea0f39d9e4c2",
+        "after_sha256": "f5cbe8695b94c34f73ad5fb3994d5853cdd0ccb30f1d796d019678a7e1f7fe60"
+      },
+      {
+        "path": "local/kbacorporate/classes/local/external_mapping.php",
+        "before_sha256": "69dfa1bee5d5476568ebc2f856e9e15cad31fa3a3f1f03f6dd05b6ff645d35cd",
+        "after_sha256": "ccfe252a6036c1040f26203dcf9b110fc5023415f9e52afeb35565cecd37f844"
+      },
+      {
+        "path": "local/kbacorporate/classes/local/erp_audit.php",
+        "before_sha256": "4896bbadebebf45c8e67d33b2e60de18b3f25068c84613720451bcc55a9cae53",
+        "after_sha256": "cb987060a37bf0d00cf24350fbdaa6ce61ab50c89f49cadd7793a7c560bfb03b"
+      },
+      {
+        "path": "local/kbacorporate/classes/local/implementation_audits.php",
+        "before_sha256": "91c347b80e479be916363f1f14f568ed522e82956e4729081b0d11cf17da5642",
+        "after_sha256": "4bfb7dd9793104dc57017736a1a9299b257f04f4b7477ec4ad24a65ad3189cad"
+      },
+      {
+        "path": "local/kbacorporate/classes/local/erp_exchange.php",
+        "before_sha256": "5e99e2422699fd4134d185a53b49a3d020ca43ad14451b8f81497ae0b40b211d",
+        "after_sha256": "c92a4af7ccedfa20f60c7455b284216e0801f168a228e495035757eb3a3857f5"
+      },
+      {
+        "path": "local/kbacorporate/db/upgrade.php",
+        "before_sha256": "c1668acbdc0d106a133002ca71e745a1c376b4f9e80a50ea7cad85fa5b071948",
+        "after_sha256": "b9ffdd9a05661ce616db90d7c0049c304a765b20e2004f75b9526336a53ae5d4"
+      },
+      {
+        "path": "local/kbacorporate/tests/implementation_actions_test.php",
+        "before_sha256": "4560b77654d0233616e092494ac342d9d98c7fb06ff0c2bbd6ebf4ffd48b588c",
+        "after_sha256": "2cdaa54d32830a6c57ee4cce47be901f64e37f5c7622844c9bacb245f9cb18cf"
+      },
+      {
+        "path": "local/kbacorporate/tests/implementation_audits_test.php",
+        "before_sha256": "c3b2831ada39df6ef8303b92d46d17f38a6940bc8de139cde7d3b1a8597bcbe5",
+        "after_sha256": "0129c1b1fabe0740d50f40e9d8642f77d1cde7e65aac4fc53939a71352f65d5d"
+      },
+      {
+        "path": "local/kbacorporate/tests/course_recommendations_test.php",
+        "before_sha256": "a7e6e27939b419286903c55fde783c84ec3e11cabc067fd3dcf48a53461b9602",
+        "after_sha256": "60438a9ad4d6f679163c3d22865c7a1f9dff75bcdd849147bf90986954c8accf"
+      },
+      {
+        "path": "local/kbacorporate/tests/development_plans_test.php",
+        "before_sha256": "eabb49ee17de77899acdbc2f0bba962ad095f24271cc3c9f4254de397ac88d36",
+        "after_sha256": "edfd4c748a28ef4b104931d921ac12eb571decca34640f1635d94542b08df56d"
+      },
+      {
+        "path": "local/kbacorporate/tests/implementation_evidence_test.php",
+        "before_sha256": "6b768ae2af0561d602a17d15d648936f1687486632140070d9220615aafe5365",
+        "after_sha256": "7fb28fd3350498209fca8a9485a6d4a3bacc003edbd37ecb20fdbbf9abf081c6"
+      },
+      {
+        "path": "local/kbacorporate/tests/implementation_kanban_test.php",
+        "before_sha256": "b328d764bcbd9835117f2850c19473503e47d1afd29ef800cd08b99ad77d563f",
+        "after_sha256": "a93a380aa37905f2fc4863f43b20d88ad964e2e5ae358f82ce39b12f959e10a1"
+      },
+      {
+        "path": "local/kbacorporate/tests/individual_development_plan_test.php",
+        "before_sha256": "e53f38722c1159baac5a3000128fad599a392af9fbf8dd5b9d22e792511d2b8f",
+        "after_sha256": "1cbd42dfb724ae2ab56e4814d64df97c06a2421c4f5d4153d60cd4633ce098cd"
+      },
+      {
+        "path": "local/kbacorporate/tests/privacy_provider_test.php",
+        "before_sha256": "20c2fbf17f10bca154fb2762055ee054ab4a2e136a4260d7634ad5fd7d43911a",
+        "after_sha256": "9f7f69f1a3c3f84648f5ff94adc1135db235ced6f7e341227d334978f68cbb43"
+      },
+      {
+        "path": "local/kbacorporate/tests/implementation_task_bridge_test.php",
+        "before_sha256": "3a25066b6c0c62daad3d1e64a77e255c9b34eb4e7d8c263acfce379f5b7d5d52",
+        "after_sha256": "40f552eb66c49f22b7a570770f8b3436d03b069d17c31ca00f47fb167787c23c"
+      },
+      {
+        "path": "local/kbacorporate/tests/erp_exchange_test.php",
+        "before_sha256": "63b7daeceaaf2bdfdf777bf87f93c0b915e074822db12f2c9cc240616876bcc6",
+        "after_sha256": "5db2616274e38f13ab5228a592e3aa8ef066576c8ecd1af740c7155841498c6b"
+      }
+    ]
+  }
 }

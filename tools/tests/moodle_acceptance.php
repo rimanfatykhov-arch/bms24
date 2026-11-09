@@ -158,7 +158,8 @@ $report = ['run_id' => $runid, 'php' => PHP_VERSION, 'dbtype' => required_env('D
 $self = __FILE__;
 $fresh = null;
 foreach (['fresh' => null, 'from1645' => $main, 'from1879' => $import,
-        'from0890' => 'e06cc96e2933e9142c1d51d2fcfa06b159737718'] as $name => $historical) {
+        'from0890' => 'e06cc96e2933e9142c1d51d2fcfa06b159737718',
+        'from0900' => '5c59057cb7af3fd545cd661bb7c2b3daa5ae7cd9'] as $name => $historical) {
     $scenario = $testroot . '/' . $name;
     $core = $scenario . '/core';
     $entry = ['status' => 'FAIL', 'steps' => [], 'bms_source' => $historical ?? 'candidate working tree',
@@ -250,7 +251,7 @@ foreach (['fresh' => null, 'from1645' => $main, 'from1879' => $import,
     write_json($logs . '/report.json', $report);
 }
 
-foreach (['from1645', 'from1879', 'from0890'] as $name) {
+foreach (['from1645', 'from1879', 'from0890', 'from0900'] as $name) {
     $a = $testroot . '/fresh/schema.json';
     $b = $testroot . '/' . $name . '/schema.json';
     $report['schema_comparison'][$name] = !is_file($a) || !is_file($b) ? 'NOT RUN' :
@@ -262,7 +263,11 @@ if ($fresh) {
     $code = command([PHP_BINARY, $fresh . '/admin/tool/phpunit/cli/init.php'], $fresh, $logs . '/phpunit-init.log');
     $report['phpunit']['init'] = $code === 0 ? 'PASS' : 'FAIL';
     // Run focused files in separate PHP processes before broad legacy discovery.
-    foreach (['schema_parity_2026110890_test', 'ordered_index_2026110900_test', 'pr48_tenant_isolation_test'] as $test) {
+    $focused = ['schema_parity_2026110890_test', 'ordered_index_2026110900_test', 'pr48_tenant_isolation_test'];
+    foreach (glob($fresh . '/local/kbacompany/tests/communication*_test.php') as $file) {
+        $focused[] = basename($file, '.php');
+    }
+    foreach ($focused as $test) {
         if ($code !== 0) { $report['phpunit'][$test] = 'NOT RUN'; continue; }
         $exit = command([PHP_BINARY, $fresh . '/vendor/bin/phpunit', '--configuration', $fresh . '/phpunit.xml',
             '--log-junit', $logs . '/' . $test . '-junit.xml',

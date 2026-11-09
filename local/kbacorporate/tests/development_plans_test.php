@@ -93,6 +93,10 @@ final class development_plans_test extends \advanced_testcase {
             'timecreated' => time(), 'timemodified' => time(),
         ]);
         repository::add_member($companyid, (int)$user->id, 'employee');
+        repository::add_member($companyid, (int)$manager->id, 'manager');
+        $managerrole = $DB->get_record('role', ['shortname' => 'manager'], '*', MUST_EXIST);
+        role_assign($managerrole->id, $manager->id, \context_system::instance()->id);
+        $this->setUser($manager);
         $generator = $this->getDataGenerator()->get_plugin_generator('core_competency');
         $framework = $generator->create_framework();
         $competency = $generator->create_competency(['competencyframeworkid' => $framework->get('id')]);

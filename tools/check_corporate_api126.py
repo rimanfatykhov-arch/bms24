@@ -2,6 +2,7 @@
 """Pinned provider source gate, no Moodle boot, network or database."""
 import hashlib
 import json
+import re
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -14,6 +15,10 @@ def check_source(root=ROOT):
             or manifest['archive_sha256'] != '85ec38d0292543e9ad87572a091529ae765c7901015044914951ccac6e22e141'):
         errors.append('Corporate source identity mismatch')
     entries = manifest['entries']
+    versiontext = (root / 'local/kbacorporate/version.php').read_text()
+    version = re.search(r'\$plugin->version\s*=\s*(\d+)', versiontext)
+    if manifest.get('candidate_version') != 2026110901 or not version or int(version.group(1)) != 2026110901:
+        errors.append('Corporate local candidate version mismatch')
     paths = [row['path'] for row in entries]
     if len(paths) != 817 or len(set(paths)) != len(paths):
         errors.append('Corporate inventory incomplete or duplicated')
