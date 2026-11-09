@@ -11,5 +11,7 @@ Isolated candidate; no merge, deployment or RC30 promotion authorization.
 - Full isolated Moodle matrix includes fresh and1645/1879/0890/0900 upgrades,
   schema preservation, focused communication/security cases and both suites.
 
-Acceptance results are recorded in the accompanying PR report. Unresolved
-unrelated failures remain blocking and must not be suppressed.
+PR52 isolated acceptance on MariaDB10.11.19 and Percona8.0.46-37: full Corporate
+150 tests /962 assertions PASS; communication, privacy, task provider and
+schema/tenant gates PASS. Full BMS558 tests retains23 errors/22 failures.
+Overall acceptance remains HOLD; see docs/reconcile/PR52_RUNTIME_ACCEPTANCE.md.

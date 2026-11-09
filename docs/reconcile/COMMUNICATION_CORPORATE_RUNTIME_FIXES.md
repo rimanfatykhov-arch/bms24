@@ -59,5 +59,7 @@ and Percona8.0.46-37 containers. It includes fresh install,1645/reconstructed187
 strict migration/index regressions, dedicated communication suites and both full
 plugin suites. Unrelated BMS failures remain blocking until independently fixed.
 
-Execution results will be recorded after the actual runs. No full acceptance or
-deployment approval follows from this implementation note alone.
+Actual results are recorded in [PR52 acceptance](PR52_RUNTIME_ACCEPTANCE.md):
+Corporate, communication, privacy, provider and schema/tenant gates pass on both
+engines. Full BMS still has23 errors/22 failures; overall acceptance remains HOLD.
+No deployment approval follows from these focused results.
