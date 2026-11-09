@@ -187,7 +187,8 @@ foreach (['fresh' => null, 'from1645' => $main, 'from1879' => $import,
         'from0804' => $functional,
         'frompr530902' => '28a60d010d8c59fd301a2bf1b2df628e38fb79dc',
         'frompr560902' => '1ced6b88e5933bb8d63aa1806411ac4d8a6a5443',
-        'frompr570903' => '1bfa75bf439e8cf45725c2c3bb69ca01b543fb01'] as $name => $historical) {
+        'frompr570903' => '1bfa75bf439e8cf45725c2c3bb69ca01b543fb01',
+        'frompr580904' => 'd3a16c3d08b9b10ac7edc32658157aa7f237e9a0'] as $name => $historical) {
     $scenario = $testroot . '/' . $name;
     $core = $scenario . '/core';
     $entry = ['status' => 'FAIL', 'steps' => [], 'bms_source' => $historical ?? 'candidate working tree',
@@ -280,7 +281,7 @@ foreach (['fresh' => null, 'from1645' => $main, 'from1879' => $import,
 }
 
 foreach (['from1645', 'from1879', 'from0890', 'from0900', 'from0901', 'from0804',
-        'frompr530902', 'frompr560902', 'frompr570903'] as $name) {
+        'frompr530902', 'frompr560902', 'frompr570903', 'frompr580904'] as $name) {
     $a = $testroot . '/fresh/schema.json';
     $b = $testroot . '/' . $name . '/schema.json';
     $report['schema_comparison'][$name] = !is_file($a) || !is_file($b) ? 'NOT RUN' :
@@ -301,6 +302,7 @@ if ($fresh) {
             'task_rc30_report_comparison1867_test', 'competency_review_queue_test',
             'employee_development_courses_test', 'employee_competency_profile_service_test',
             'role_intelligence_service_test', 'role_readiness_view_test', 'company_core_test',
+            'deviation_service_test', 'task_service_test', 'battle_plan_service_test',
             'design_service_test', 'document_service_test', 'semantic_service_test', 'company_employee_sync_service_test',
             'rc30_integrated_access_test'] as $test) {
         $focused[] = $test;

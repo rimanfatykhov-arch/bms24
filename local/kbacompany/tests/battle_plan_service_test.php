@@ -119,6 +119,27 @@ final class battle_plan_service_test extends \advanced_testcase {
         task_service::transition($f['company'], (int)$f['employee']->id, $task, 2, 'submit', [
             'result' => 'Weekly output accepted', 'factminutes' => 55,
         ]);
+        $this->assertSame((int)$f['reviewer']->id, (int)$DB->get_field('local_kbacompany_task', 'reviewerid', ['uuid' => $task]));
+        $this->assertSame('review', $DB->get_field('local_kbacompany_task', 'status', ['uuid' => $task]));
+        $planscope = ['companyuuid' => $f['company'], 'uuid' => $plan];
+        $before = $DB->get_record('local_kbacompany_bplan', $planscope, '*', MUST_EXIST);
+        try {
+            battle_plan_service::transition($f['company'], (int)$f['employee']->id, $plan, 'close');
+            $this->fail('Submitted work is not yet accepted and must block closure.');
+        } catch (\moodle_exception $error) {
+            $this->assertSame('battleplan_unfinished', $error->errorcode);
+        }
+        $this->assertEquals($before, $DB->get_record('local_kbacompany_bplan', $planscope, '*', MUST_EXIST));
+        try {
+            task_service::transition($f['company'], (int)$f['employee']->id, $task, 3, 'accept');
+            $this->fail('Assignee cannot bypass the assigned reviewer.');
+        } catch (\moodle_exception $error) {
+            $this->assertSame('taskcenter_state', $error->errorcode);
+        }
+        $this->assertSame('review', $DB->get_field('local_kbacompany_task', 'status', ['uuid' => $task]));
+        $this->setUser($f['reviewer']);
+        task_service::transition($f['company'], (int)$f['reviewer']->id, $task, 3, 'accept');
+        $this->setUser($f['employee']);
         battle_plan_service::transition($f['company'], (int)$f['employee']->id, $plan, 'close');
         $this->assertSame('closed', $DB->get_field('local_kbacompany_bplan', 'status', ['uuid' => $plan]));
         $this->assertSame(1, $DB->count_records('local_kbacompany_task', ['companyuuid' => $f['company']]));
@@ -291,6 +312,23 @@ final class battle_plan_service_test extends \advanced_testcase {
         $plan = battle_plan_service::create_plan($f['company'], $f['admin'], (int)$f['employee']->id,
             $f['positionuuid'], '2026-10-12', (int)$f['reviewer']->id);
         $this->setUser($f['employee']);
+        $planscope = ['companyuuid' => $f['company'], 'uuid' => $plan];
+        $draft = $DB->get_record('local_kbacompany_bplan', $planscope, '*', MUST_EXIST);
+        try {
+            battle_plan_service::transition($f['company'], (int)$f['employee']->id, $plan, 'submit');
+            $this->fail('An empty plan cannot be submitted.');
+        } catch (\moodle_exception $error) {
+            $this->assertSame('battleplan_empty', $error->errorcode);
+        }
+        $this->assertEquals($draft, $DB->get_record('local_kbacompany_bplan', $planscope, '*', MUST_EXIST));
+        $this->setAdminUser();
+        $initialtask = battle_plan_service::create_manual_task($f['company'], $f['admin'], $plan, [
+            'title' => 'Initially planned work', 'description' => 'Before approval',
+            'product' => 'Initial approved result', 'reviewerid' => 0,
+            'priority' => 'normal', 'stream' => 'operate', 'startdate' => '2026-10-12',
+            'duedate' => '2026-10-18', 'planminutes' => 30, 'parentuuid' => '',
+        ]);
+        $this->setUser($f['employee']);
         battle_plan_service::transition($f['company'], (int)$f['employee']->id, $plan, 'submit');
         $this->setUser($f['reviewer']);
         battle_plan_service::transition($f['company'], (int)$f['reviewer']->id, $plan, 'approve');
@@ -320,13 +358,19 @@ final class battle_plan_service_test extends \advanced_testcase {
         } catch (\moodle_exception $e) {
             $this->assertSame('battleplan_state', $e->errorcode);
         }
+        foreach ([$initialtask, $task] as $completedtask) {
+            $this->setUser($f['employee']);
+            task_service::transition($f['company'], (int)$f['employee']->id, $completedtask, 1, 'start');
+            task_service::transition($f['company'], (int)$f['employee']->id, $completedtask, 2, 'submit', [
+                'result'=>'Completed planned work', 'factminutes'=>20,
+            ]);
+            $this->setUser($f['reviewer']);
+            task_service::transition($f['company'], (int)$f['reviewer']->id, $completedtask, 3, 'accept');
+        }
         $this->setUser($f['employee']);
-        task_service::transition($f['company'], (int)$f['employee']->id, $task, 1, 'start');
-        task_service::transition($f['company'], (int)$f['employee']->id, $task, 2, 'submit', [
-            'result'=>'Completed extra work', 'factminutes'=>20,
-        ]);
         battle_plan_service::transition($f['company'], (int)$f['employee']->id, $plan, 'close');
         $this->setAdminUser();
+        $tasksbefore = $DB->get_records('local_kbacompany_task', ['companyuuid' => $f['company']], 'id');
         try {
             battle_plan_service::create_manual_task($f['company'], $f['admin'], $plan, [
                 'title'=>'Should not be created', 'product'=>'Never', 'stream'=>'operate', 'priority'=>'normal',
@@ -336,7 +380,8 @@ final class battle_plan_service_test extends \advanced_testcase {
         } catch (\moodle_exception $e) {
             $this->assertSame('battleplan_state', $e->errorcode);
         }
-        $this->assertSame(1, $DB->count_records('local_kbacompany_task', [
+        $this->assertEquals($tasksbefore, $DB->get_records('local_kbacompany_task', ['companyuuid' => $f['company']], 'id'));
+        $this->assertSame(2, $DB->count_records('local_kbacompany_task', [
             'companyuuid'=>$f['company']]));
     }
 

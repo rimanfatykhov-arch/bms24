@@ -1,0 +1,1485 @@
+{
+  "pr": 59,
+  "source_sha": "6f5c3f9c3116ccc05dec77ac1ade493247d7c312",
+  "runtime_patch_sha": "e15ea8b5b830dfc254959dfadd86f79813d438ea",
+  "merge_sha": "0d9199d00b52b4e47e008c138df9b0a1fbf5f61e",
+  "base_sha": "d3a16c3d08b9b10ac7edc32658157aa7f237e9a0",
+  "baseline_runtime_sha": "e37bb2a0c8c767d93f9e9e0d7647fd98af037740",
+  "baseline_run_id": 42600654381,
+  "baseline_run_attempt": 2,
+  "baseline_artifacts": {
+    "mariadb": 13669416723,
+    "percona": 13670091491
+  },
+  "run_id": 42610777656,
+  "static_run_id": 42610777658,
+  "bms_version": 2026110905,
+  "corporate_version": 2026110901,
+  "engines": {
+    "mariadb": {
+      "engine": "mariadb",
+      "baseline_counts": {
+        "tests": 603,
+        "assertions": 7042,
+        "errors": 14,
+        "failures": 18,
+        "skipped": 0
+      },
+      "target_reproduction": {
+        "local_kbacompany\\battle_plan_service_test::test_active_plan_accepts_scoped_manual_task_but_closed_plan_rejects_it": "local_kbacompany\\battle_plan_service_test::test_active_plan_accepts_scoped_manual_task_but_closed_plan_rejects_it\nmoodle_exception: An empty Battle Plan cannot be submitted.\n\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/battle_plan_service.php:70\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/battle_plan_service.php:898\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/tests/battle_plan_service_test.php:294\n/home/runner/work/_temp/pr48/fresh/core/lib/phpunit/classes/advanced_testcase.php:80",
+        "local_kbacompany\\battle_plan_service_test::test_battle_plan_references_one_canonical_task_and_closes_after_execution": "local_kbacompany\\battle_plan_service_test::test_battle_plan_references_one_canonical_task_and_closes_after_execution\nmoodle_exception: The week cannot be closed: finish the open tasks or explicitly carry them into the next Battle Plan.\n\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/battle_plan_service.php:70\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/battle_plan_service.php:944\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/tests/battle_plan_service_test.php:122\n/home/runner/work/_temp/pr48/fresh/core/lib/phpunit/classes/advanced_testcase.php:80",
+        "local_kbacompany\\deviation_service_test::test_accepted_task_does_not_close_deviation": "local_kbacompany\\deviation_service_test::test_accepted_task_does_not_close_deviation\nmoodle_exception: Invalid period: YYYY-MM-DD, Monday for weekly and first day for monthly.\n\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/product_service.php:215\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/deviation_service.php:89\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/deviation_service.php:167\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/deviation_service.php:467\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/tests/deviation_service_test.php:54\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/tests/deviation_service_test.php:61\n/home/runner/work/_temp/pr48/fresh/core/lib/phpunit/classes/advanced_testcase.php:80",
+        "local_kbacompany\\deviation_service_test::test_lowered_norm_cannot_be_used_as_improvement": "local_kbacompany\\deviation_service_test::test_lowered_norm_cannot_be_used_as_improvement\nmoodle_exception: Invalid period: YYYY-MM-DD, Monday for weekly and first day for monthly.\n\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/product_service.php:215\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/deviation_service.php:89\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/deviation_service.php:167\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/deviation_service.php:467\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/tests/deviation_service_test.php:54\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/tests/deviation_service_test.php:84\n/home/runner/work/_temp/pr48/fresh/core/lib/phpunit/classes/advanced_testcase.php:80",
+        "local_kbacompany\\deviation_service_test::test_recheck_and_explicit_closure_do_not_create_statistics": "local_kbacompany\\deviation_service_test::test_recheck_and_explicit_closure_do_not_create_statistics\nmoodle_exception: Invalid period: YYYY-MM-DD, Monday for weekly and first day for monthly.\n\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/product_service.php:215\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/deviation_service.php:89\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/deviation_service.php:167\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/deviation_service.php:467\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/tests/deviation_service_test.php:54\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/tests/deviation_service_test.php:71\n/home/runner/work/_temp/pr48/fresh/core/lib/phpunit/classes/advanced_testcase.php:80",
+        "local_kbacompany\\deviation_service_test::test_regular_user_cannot_read_deviations": "local_kbacompany\\deviation_service_test::test_regular_user_cannot_read_deviations\nmoodle_exception: Invalid period: YYYY-MM-DD, Monday for weekly and first day for monthly.\n\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/product_service.php:215\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/deviation_service.php:89\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/deviation_service.php:167\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/deviation_service.php:467\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/tests/deviation_service_test.php:54\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/tests/deviation_service_test.php:102\n/home/runner/work/_temp/pr48/fresh/core/lib/phpunit/classes/advanced_testcase.php:80",
+        "local_kbacompany\\task_service_test::test_workspace_and_tasks_page_agree_on_open_and_overdue_tasks": "local_kbacompany\\task_service_test::test_workspace_and_tasks_page_agree_on_open_and_overdue_tasks\nmoodle_exception: Task deadline cannot be earlier than its start date.\n\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/task_service.php:68\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/task_service.php:575\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/task_service.php:590\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/tests/task_service_test.php:34\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/tests/task_service_test.php:187\n/home/runner/work/_temp/pr48/fresh/core/lib/phpunit/classes/advanced_testcase.php:80",
+        "local_kbacompany\\task_service_test::test_workspace_open_tasks_remain_visible_after_completed_history": "local_kbacompany\\task_service_test::test_workspace_open_tasks_remain_visible_after_completed_history\nmoodle_exception: Task deadline cannot be earlier than its start date.\n\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/task_service.php:68\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/task_service.php:575\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/task_service.php:590\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/tests/task_service_test.php:34\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/tests/task_service_test.php:210\n/home/runner/work/_temp/pr48/fresh/core/lib/phpunit/classes/advanced_testcase.php:80"
+      },
+      "all_eight_reproduced": true,
+      "final_counts": {
+        "tests": 610,
+        "assertions": 7095,
+        "errors": 6,
+        "failures": 18,
+        "skipped": 0
+      },
+      "new_failures": [],
+      "resolved": [
+        "local_kbacompany\\battle_plan_service_test::test_active_plan_accepts_scoped_manual_task_but_closed_plan_rejects_it",
+        "local_kbacompany\\battle_plan_service_test::test_battle_plan_references_one_canonical_task_and_closes_after_execution",
+        "local_kbacompany\\deviation_service_test::test_accepted_task_does_not_close_deviation",
+        "local_kbacompany\\deviation_service_test::test_lowered_norm_cannot_be_used_as_improvement",
+        "local_kbacompany\\deviation_service_test::test_recheck_and_explicit_closure_do_not_create_statistics",
+        "local_kbacompany\\deviation_service_test::test_regular_user_cannot_read_deviations",
+        "local_kbacompany\\task_service_test::test_workspace_and_tasks_page_agree_on_open_and_overdue_tasks",
+        "local_kbacompany\\task_service_test::test_workspace_open_tasks_remain_visible_after_completed_history"
+      ],
+      "missing_tests": {},
+      "added_tests": {
+        "local_kbacompany\\deviation_service_test::test_machine_observation_dates_preserve_single_digit_days": 1,
+        "local_kbacompany\\deviation_service_test::test_invalid_observation_period_is_still_rejected with data set \"unpadded observation\"": 1,
+        "local_kbacompany\\deviation_service_test::test_invalid_observation_period_is_still_rejected with data set \"invalid calendar date\"": 1,
+        "local_kbacompany\\deviation_service_test::test_invalid_observation_period_is_still_rejected with data set \"monthly start must be first\"": 1,
+        "local_kbacompany\\deviation_service_test::test_recheck_before_task_acceptance_preserves_deviation_and_check_history": 1,
+        "local_kbacompany\\task_service_test::test_invalid_date_order_cannot_create_task with data set \"due before start\"": 1,
+        "local_kbacompany\\task_service_test::test_invalid_date_order_cannot_create_task with data set \"same day reversed time\"": 1
+      },
+      "unresolved_targets": [],
+      "remaining_failures": [
+        "local_kbacompany\\battle_plan_indicator_service_test::test_historical_projection_uses_last_52_periods_relative_to_plan_week",
+        "local_kbacompany\\battle_plan_management_overview_service_test::test_contract_is_schema_neutral_read_model",
+        "local_kbacompany\\battle_plan_word_export_service_test::test_model_projects_previous_partial_week_and_current_target",
+        "local_kbacompany\\battle_plan_word_export_service_test::test_ooxml_contains_real_word_document_and_cyrillic_text",
+        "local_kbacompany\\bms_navigation_test::test_only_allowlisted_context_is_propagated",
+        "local_kbacompany\\bms_page_shell_service_test::test_business_architecture_semantics_follow_bms_methodology",
+        "local_kbacompany\\bms_page_shell_service_test::test_contract_versions_are_aligned",
+        "local_kbacompany\\company_core_test::test_contract_declares_existing_source_without_duplication",
+        "local_kbacompany\\company_core_test::test_permission_contract_centralises_company_role_policies",
+        "local_kbacompany\\financial_statement_service_test::test_bdr_and_bdds_calculations_match_bms_finance_rules",
+        "local_kbacompany\\indicator_registry_service_test::test_contract_keeps_one_canonical_indicator_registry",
+        "local_kbacompany\\integration_event_service_test::test_event_outbox_lifecycle_is_independent_from_legacy_command_status",
+        "local_kbacompany\\market_model_service_test::test_contract",
+        "local_kbacompany\\ofs_service_test::test_ofs_projects_company_unit_function_products_and_internal_customer",
+        "local_kbacompany\\process_model_service_test::test_complete_sipoc_bpmn_model_publishes_and_activity_becomes_semantic",
+        "local_kbacompany\\process_service_test::test_process_hierarchy_publish_and_cross_functional_links",
+        "local_kbacompany\\project_execution_service_test::test_management_planning_does_not_link_to_retired_editor",
+        "local_kbacompany\\task_batch_actions1842_test::test_batch_start_accept_and_stale_revisions",
+        "local_kbacompany\\task_batch_actions1842_test::test_generated_tasks_cannot_be_bulk_reassigned_and_cross_company_task_is_not_updated",
+        "local_kbacompany\\task_deadlines1843_test::test_bucket_filter_and_global_counts_are_separate_and_acl_scoped",
+        "local_kbacompany\\task_kanban1846_test::test_editor_and_columns_render_without_raw_html_or_missing_tasks",
+        "local_kbacompany\\task_kanban1850_test::test_page_scoped_grouping_and_full_counts_in_board_html",
+        "local_kbacompany\\task_manager_workspace1853_test::test_non_manager_never_receives_manager_workspace",
+        "local_kbacompany\\task_roles_workspace1840_test::test_compact_workspace_escapes_search_and_has_progressive_get_fallback"
+      ],
+      "suites": {
+        "battle_plan_service_test": {
+          "tests": 14,
+          "assertions": 74,
+          "errors": 0,
+          "failures": 0,
+          "skipped": 0
+        },
+        "communication_center_service_test": {
+          "tests": 5,
+          "assertions": 26,
+          "errors": 0,
+          "failures": 0,
+          "skipped": 0
+        },
+        "communication_live_service_test": {
+          "tests": 1,
+          "assertions": 4,
+          "errors": 0,
+          "failures": 0,
+          "skipped": 0
+        },
+        "communication_service_test": {
+          "tests": 17,
+          "assertions": 55,
+          "errors": 0,
+          "failures": 0,
+          "skipped": 0
+        },
+        "company_core_test": {
+          "tests": 16,
+          "assertions": 78,
+          "errors": 0,
+          "failures": 2,
+          "skipped": 0
+        },
+        "company_employee_sync_service_test": {
+          "tests": 11,
+          "assertions": 57,
+          "errors": 0,
+          "failures": 0,
+          "skipped": 0
+        },
+        "competency_review_queue_test": {
+          "tests": 9,
+          "assertions": 99,
+          "errors": 0,
+          "failures": 0,
+          "skipped": 0
+        },
+        "design_service_test": {
+          "tests": 3,
+          "assertions": 13,
+          "errors": 0,
+          "failures": 0,
+          "skipped": 0
+        },
+        "deviation_service_test": {
+          "tests": 11,
+          "assertions": 25,
+          "errors": 0,
+          "failures": 0,
+          "skipped": 0
+        },
+        "document_service_test": {
+          "tests": 10,
+          "assertions": 53,
+          "errors": 0,
+          "failures": 0,
+          "skipped": 0
+        },
+        "employee_competency_profile_service_test": {
+          "tests": 1,
+          "assertions": 5,
+          "errors": 0,
+          "failures": 0,
+          "skipped": 0
+        },
+        "employee_development_courses_test": {
+          "tests": 5,
+          "assertions": 65,
+          "errors": 0,
+          "failures": 0,
+          "skipped": 0
+        },
+        "kbacorporate_impl_task_provider_test": {
+          "tests": 4,
+          "assertions": 23,
+          "errors": 0,
+          "failures": 0,
+          "skipped": 0
+        },
+        "local_kbacompany": {
+          "tests": 610,
+          "assertions": 7095,
+          "errors": 6,
+          "failures": 18,
+          "skipped": 0
+        },
+        "local_kbacorporate": {
+          "tests": 150,
+          "assertions": 962,
+          "errors": 0,
+          "failures": 0,
+          "skipped": 0
+        },
+        "ordered_index_2026110900_test": {
+          "tests": 9,
+          "assertions": 103,
+          "errors": 0,
+          "failures": 0,
+          "skipped": 0
+        },
+        "pr48_tenant_isolation_test": {
+          "tests": 2,
+          "assertions": 66,
+          "errors": 0,
+          "failures": 0,
+          "skipped": 0
+        },
+        "privacy_provider_test": {
+          "tests": 6,
+          "assertions": 37,
+          "errors": 0,
+          "failures": 0,
+          "skipped": 0
+        },
+        "rc30_integrated_access_test": {
+          "tests": 4,
+          "assertions": 19,
+          "errors": 0,
+          "failures": 0,
+          "skipped": 0
+        },
+        "role_intelligence_service_test": {
+          "tests": 4,
+          "assertions": 16,
+          "errors": 0,
+          "failures": 0,
+          "skipped": 0
+        },
+        "role_readiness_view_test": {
+          "tests": 3,
+          "assertions": 9,
+          "errors": 0,
+          "failures": 0,
+          "skipped": 0
+        },
+        "schema_parity_2026110890_test": {
+          "tests": 29,
+          "assertions": 3721,
+          "errors": 0,
+          "failures": 0,
+          "skipped": 0
+        },
+        "semantic_service_test": {
+          "tests": 4,
+          "assertions": 29,
+          "errors": 0,
+          "failures": 0,
+          "skipped": 0
+        },
+        "task_rc30_acceptance1864_test": {
+          "tests": 12,
+          "assertions": 118,
+          "errors": 0,
+          "failures": 0,
+          "skipped": 0
+        },
+        "task_rc30_cli_response1866_test": {
+          "tests": 4,
+          "assertions": 48,
+          "errors": 0,
+          "failures": 0,
+          "skipped": 0
+        },
+        "task_rc30_report_comparison1867_test": {
+          "tests": 15,
+          "assertions": 32,
+          "errors": 0,
+          "failures": 0,
+          "skipped": 0
+        },
+        "task_service_test": {
+          "tests": 12,
+          "assertions": 48,
+          "errors": 0,
+          "failures": 0,
+          "skipped": 0
+        }
+      },
+      "retained_suite_comparison": {
+        "communication_center_service_test": {
+          "missing_tests": {},
+          "added_tests": {},
+          "new_failures": [],
+          "resolved": [],
+          "assertion_decreases": {},
+          "changed_remaining_failure": {}
+        },
+        "communication_live_service_test": {
+          "missing_tests": {},
+          "added_tests": {},
+          "new_failures": [],
+          "resolved": [],
+          "assertion_decreases": {},
+          "changed_remaining_failure": {}
+        },
+        "communication_service_test": {
+          "missing_tests": {},
+          "added_tests": {},
+          "new_failures": [],
+          "resolved": [],
+          "assertion_decreases": {},
+          "changed_remaining_failure": {}
+        },
+        "company_core_test": {
+          "missing_tests": {},
+          "added_tests": {},
+          "new_failures": [],
+          "resolved": [],
+          "assertion_decreases": {},
+          "changed_remaining_failure": {}
+        },
+        "company_employee_sync_service_test": {
+          "missing_tests": {},
+          "added_tests": {},
+          "new_failures": [],
+          "resolved": [],
+          "assertion_decreases": {},
+          "changed_remaining_failure": {}
+        },
+        "competency_review_queue_test": {
+          "missing_tests": {},
+          "added_tests": {},
+          "new_failures": [],
+          "resolved": [],
+          "assertion_decreases": {},
+          "changed_remaining_failure": {}
+        },
+        "design_service_test": {
+          "missing_tests": {},
+          "added_tests": {},
+          "new_failures": [],
+          "resolved": [],
+          "assertion_decreases": {},
+          "changed_remaining_failure": {}
+        },
+        "document_service_test": {
+          "missing_tests": {},
+          "added_tests": {},
+          "new_failures": [],
+          "resolved": [],
+          "assertion_decreases": {},
+          "changed_remaining_failure": {}
+        },
+        "employee_competency_profile_service_test": {
+          "missing_tests": {},
+          "added_tests": {},
+          "new_failures": [],
+          "resolved": [],
+          "assertion_decreases": {},
+          "changed_remaining_failure": {}
+        },
+        "employee_development_courses_test": {
+          "missing_tests": {},
+          "added_tests": {},
+          "new_failures": [],
+          "resolved": [],
+          "assertion_decreases": {},
+          "changed_remaining_failure": {}
+        },
+        "kbacorporate_impl_task_provider_test": {
+          "missing_tests": {},
+          "added_tests": {},
+          "new_failures": [],
+          "resolved": [],
+          "assertion_decreases": {},
+          "changed_remaining_failure": {}
+        },
+        "local_kbacompany": {
+          "missing_tests": {},
+          "added_tests": {
+            "local_kbacompany\\deviation_service_test::test_machine_observation_dates_preserve_single_digit_days": 1,
+            "local_kbacompany\\deviation_service_test::test_invalid_observation_period_is_still_rejected with data set \"unpadded observation\"": 1,
+            "local_kbacompany\\deviation_service_test::test_invalid_observation_period_is_still_rejected with data set \"invalid calendar date\"": 1,
+            "local_kbacompany\\deviation_service_test::test_invalid_observation_period_is_still_rejected with data set \"monthly start must be first\"": 1,
+            "local_kbacompany\\deviation_service_test::test_recheck_before_task_acceptance_preserves_deviation_and_check_history": 1,
+            "local_kbacompany\\task_service_test::test_invalid_date_order_cannot_create_task with data set \"due before start\"": 1,
+            "local_kbacompany\\task_service_test::test_invalid_date_order_cannot_create_task with data set \"same day reversed time\"": 1
+          },
+          "new_failures": [],
+          "resolved": [
+            "local_kbacompany\\battle_plan_service_test::test_active_plan_accepts_scoped_manual_task_but_closed_plan_rejects_it",
+            "local_kbacompany\\battle_plan_service_test::test_battle_plan_references_one_canonical_task_and_closes_after_execution",
+            "local_kbacompany\\deviation_service_test::test_accepted_task_does_not_close_deviation",
+            "local_kbacompany\\deviation_service_test::test_lowered_norm_cannot_be_used_as_improvement",
+            "local_kbacompany\\deviation_service_test::test_recheck_and_explicit_closure_do_not_create_statistics",
+            "local_kbacompany\\deviation_service_test::test_regular_user_cannot_read_deviations",
+            "local_kbacompany\\task_service_test::test_workspace_and_tasks_page_agree_on_open_and_overdue_tasks",
+            "local_kbacompany\\task_service_test::test_workspace_open_tasks_remain_visible_after_completed_history"
+          ],
+          "assertion_decreases": {},
+          "changed_remaining_failure": {}
+        },
+        "local_kbacorporate": {
+          "missing_tests": {},
+          "added_tests": {},
+          "new_failures": [],
+          "resolved": [],
+          "assertion_decreases": {},
+          "changed_remaining_failure": {}
+        },
+        "ordered_index_2026110900_test": {
+          "missing_tests": {},
+          "added_tests": {},
+          "new_failures": [],
+          "resolved": [],
+          "assertion_decreases": {},
+          "changed_remaining_failure": {}
+        },
+        "pr48_tenant_isolation_test": {
+          "missing_tests": {},
+          "added_tests": {},
+          "new_failures": [],
+          "resolved": [],
+          "assertion_decreases": {},
+          "changed_remaining_failure": {}
+        },
+        "privacy_provider_test": {
+          "missing_tests": {},
+          "added_tests": {},
+          "new_failures": [],
+          "resolved": [],
+          "assertion_decreases": {},
+          "changed_remaining_failure": {}
+        },
+        "rc30_integrated_access_test": {
+          "missing_tests": {},
+          "added_tests": {},
+          "new_failures": [],
+          "resolved": [],
+          "assertion_decreases": {},
+          "changed_remaining_failure": {}
+        },
+        "role_intelligence_service_test": {
+          "missing_tests": {},
+          "added_tests": {},
+          "new_failures": [],
+          "resolved": [],
+          "assertion_decreases": {},
+          "changed_remaining_failure": {}
+        },
+        "role_readiness_view_test": {
+          "missing_tests": {},
+          "added_tests": {},
+          "new_failures": [],
+          "resolved": [],
+          "assertion_decreases": {},
+          "changed_remaining_failure": {}
+        },
+        "schema_parity_2026110890_test": {
+          "missing_tests": {},
+          "added_tests": {},
+          "new_failures": [],
+          "resolved": [],
+          "assertion_decreases": {},
+          "changed_remaining_failure": {}
+        },
+        "semantic_service_test": {
+          "missing_tests": {},
+          "added_tests": {},
+          "new_failures": [],
+          "resolved": [],
+          "assertion_decreases": {},
+          "changed_remaining_failure": {}
+        },
+        "task_rc30_acceptance1864_test": {
+          "missing_tests": {},
+          "added_tests": {},
+          "new_failures": [],
+          "resolved": [],
+          "assertion_decreases": {},
+          "changed_remaining_failure": {}
+        },
+        "task_rc30_cli_response1866_test": {
+          "missing_tests": {},
+          "added_tests": {},
+          "new_failures": [],
+          "resolved": [],
+          "assertion_decreases": {},
+          "changed_remaining_failure": {}
+        },
+        "task_rc30_report_comparison1867_test": {
+          "missing_tests": {},
+          "added_tests": {},
+          "new_failures": [],
+          "resolved": [],
+          "assertion_decreases": {},
+          "changed_remaining_failure": {}
+        }
+      },
+      "junit_inventory_matches_report": true,
+      "scenarios": {
+        "fresh": "PASS",
+        "from1645": "PASS",
+        "from1879": "PASS",
+        "from0890": "PASS",
+        "from0900": "PASS",
+        "from0901": "PASS",
+        "from0804": "PASS",
+        "frompr530902": "PASS",
+        "frompr560902": "PASS",
+        "frompr570903": "PASS",
+        "frompr580904": "PASS"
+      },
+      "schema_comparison": {
+        "from1645": "PASS",
+        "from1879": "PASS",
+        "from0890": "PASS",
+        "from0900": "PASS",
+        "from0901": "PASS",
+        "from0804": "PASS",
+        "frompr530902": "PASS",
+        "frompr560902": "PASS",
+        "frompr570903": "PASS",
+        "frompr580904": "PASS"
+      },
+      "fixture_counts": {
+        "fresh-fixtures.json": 12,
+        "from0804-fixtures.json": 12,
+        "from0890-fixtures.json": 12,
+        "from0900-fixtures.json": 12,
+        "from0901-fixtures.json": 12,
+        "from1645-fixtures.json": 12,
+        "from1879-fixtures.json": 12,
+        "frompr530902-fixtures.json": 12,
+        "frompr560902-fixtures.json": 12,
+        "frompr570903-fixtures.json": 12,
+        "frompr580904-fixtures.json": 12
+      },
+      "nonpassing_steps": {},
+      "artifact_id": 13671821934,
+      "baseline_zip_sha256": "11886af86d168dc4ecdcb92b7b374a79c65211ab19b3b87111bf03d2fd750a06",
+      "evidence_zip_sha256": "440bbd56a2acd560ba8f58657c1c67004f32d7a11ae4308ce6f37ebced98fa47",
+      "runtime": {
+        "php": "8.1.34",
+        "database_server": "10.11.19-MariaDB-ubu2204",
+        "database_version_comment": "mariadb.org binary distribution"
+      },
+      "not_covered": [
+        "browser/UI",
+        "production/staging deployment",
+        "full sibling-plugin distribution",
+        "backup/restore"
+      ],
+      "remaining_failure_messages": [
+        {
+          "case": "local_kbacompany\\battle_plan_indicator_service_test::test_historical_projection_uses_last_52_periods_relative_to_plan_week",
+          "type": "failure",
+          "message": "local_kbacompany\\battle_plan_indicator_service_test::test_historical_projection_uses_last_52_periods_relative_to_plan_week\nFailed asserting that two strings are not identical.\n\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/tests/battle_plan_indicator_service_test.php:104\n/home/runner/work/_temp/pr48/fresh/core/lib/phpunit/classes/advanced_testcase.php:80"
+        },
+        {
+          "case": "local_kbacompany\\battle_plan_management_overview_service_test::test_contract_is_schema_neutral_read_model",
+          "type": "failure",
+          "message": "local_kbacompany\\battle_plan_management_overview_service_test::test_contract_is_schema_neutral_read_model\nFailed asserting that two strings are identical.\n--- Expected\n+++ Actual\n@@ @@\n-'0.5.10'\n+'0.5.11'\n\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/tests/battle_plan_management_overview_service_test.php:11\n/home/runner/work/_temp/pr48/fresh/core/lib/phpunit/classes/advanced_testcase.php:80"
+        },
+        {
+          "case": "local_kbacompany\\battle_plan_word_export_service_test::test_ooxml_contains_real_word_document_and_cyrillic_text",
+          "type": "error",
+          "message": "local_kbacompany\\battle_plan_word_export_service_test::test_ooxml_contains_real_word_document_and_cyrillic_text\nUndefined array key \"observer\"\n\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/battle_plan_word_export_service.php:383\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/tests/battle_plan_word_export_service_test.php:24\n/home/runner/work/_temp/pr48/fresh/core/lib/phpunit/classes/basic_testcase.php:64"
+        },
+        {
+          "case": "local_kbacompany\\battle_plan_word_export_service_test::test_model_projects_previous_partial_week_and_current_target",
+          "type": "failure",
+          "message": "local_kbacompany\\battle_plan_word_export_service_test::test_model_projects_previous_partial_week_and_current_target\nFailed asserting that '42000.00 (Actual for 1 of 7 days)' contains \"Факт за 1 из 7 дней\".\n\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/tests/battle_plan_word_export_service_test.php:113\n/home/runner/work/_temp/pr48/fresh/core/lib/phpunit/classes/basic_testcase.php:64"
+        },
+        {
+          "case": "local_kbacompany\\bms_navigation_test::test_only_allowlisted_context_is_propagated",
+          "type": "failure",
+          "message": "local_kbacompany\\bms_navigation_test::test_only_allowlisted_context_is_propagated\nFailed asserting that true is identical to false.\n\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/tests/bms_navigation_test.php:36\n/home/runner/work/_temp/pr48/fresh/core/lib/phpunit/classes/advanced_testcase.php:80"
+        },
+        {
+          "case": "local_kbacompany\\bms_page_shell_service_test::test_contract_versions_are_aligned",
+          "type": "failure",
+          "message": "local_kbacompany\\bms_page_shell_service_test::test_contract_versions_are_aligned\nFailed asserting that two strings are identical.\n--- Expected\n+++ Actual\n@@ @@\n-'0.4.9'\n+'0.6.0'\n\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/tests/bms_page_shell_service_test.php:12\n/home/runner/work/_temp/pr48/fresh/core/lib/phpunit/classes/advanced_testcase.php:80"
+        },
+        {
+          "case": "local_kbacompany\\bms_page_shell_service_test::test_business_architecture_semantics_follow_bms_methodology",
+          "type": "failure",
+          "message": "local_kbacompany\\bms_page_shell_service_test::test_business_architecture_semantics_follow_bms_methodology\nFailed asserting that two arrays are identical.\n--- Expected\n+++ Actual\n@@ @@\n     1 => 'functions'\n     2 => 'flows'\n     3 => 'products'\n+    4 => 'metrics'\n+    5 => 'informationcenter'\n )\n\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/tests/bms_page_shell_service_test.php:44\n/home/runner/work/_temp/pr48/fresh/core/lib/phpunit/classes/advanced_testcase.php:80"
+        },
+        {
+          "case": "local_kbacompany\\company_core_test::test_contract_declares_existing_source_without_duplication",
+          "type": "failure",
+          "message": "local_kbacompany\\company_core_test::test_contract_declares_existing_source_without_duplication\nFailed asserting that two strings are identical.\n--- Expected\n+++ Actual\n@@ @@\n-'0.6.0'\n+'0.6.7'\n\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/tests/company_core_test.php:21\n/home/runner/work/_temp/pr48/fresh/core/lib/phpunit/classes/advanced_testcase.php:80"
+        },
+        {
+          "case": "local_kbacompany\\company_core_test::test_permission_contract_centralises_company_role_policies",
+          "type": "failure",
+          "message": "local_kbacompany\\company_core_test::test_permission_contract_centralises_company_role_policies\nFailed asserting that two strings are identical.\n--- Expected\n+++ Actual\n@@ @@\n-'0.5.1.3'\n+'0.7.0'\n\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/tests/company_core_test.php:79\n/home/runner/work/_temp/pr48/fresh/core/lib/phpunit/classes/advanced_testcase.php:80"
+        },
+        {
+          "case": "local_kbacompany\\financial_statement_service_test::test_bdr_and_bdds_calculations_match_bms_finance_rules",
+          "type": "failure",
+          "message": "local_kbacompany\\financial_statement_service_test::test_bdr_and_bdds_calculations_match_bms_finance_rules\nFailed asserting that 500.0 matches expected 450.0.\n\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/tests/financial_statement_service_test.php:32\n/home/runner/work/_temp/pr48/fresh/core/lib/phpunit/classes/advanced_testcase.php:80"
+        },
+        {
+          "case": "local_kbacompany\\indicator_registry_service_test::test_contract_keeps_one_canonical_indicator_registry",
+          "type": "failure",
+          "message": "local_kbacompany\\indicator_registry_service_test::test_contract_keeps_one_canonical_indicator_registry\nFailed asserting that two strings are identical.\n--- Expected\n+++ Actual\n@@ @@\n-'0.5.2'\n+'0.5.5.2'\n\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/tests/indicator_registry_service_test.php:14\n/home/runner/work/_temp/pr48/fresh/core/lib/phpunit/classes/advanced_testcase.php:80"
+        },
+        {
+          "case": "local_kbacompany\\integration_event_service_test::test_event_outbox_lifecycle_is_independent_from_legacy_command_status",
+          "type": "failure",
+          "message": "local_kbacompany\\integration_event_service_test::test_event_outbox_lifecycle_is_independent_from_legacy_command_status\nFailed asserting that 2 is identical to 1.\n\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/tests/integration_event_service_test.php:78\n/home/runner/work/_temp/pr48/fresh/core/lib/phpunit/classes/advanced_testcase.php:80"
+        },
+        {
+          "case": "local_kbacompany\\market_model_service_test::test_contract",
+          "type": "failure",
+          "message": "local_kbacompany\\market_model_service_test::test_contract\nFailed asserting that two strings are identical.\n--- Expected\n+++ Actual\n@@ @@\n-'0.3.5'\n+'0.4.11'\n\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/tests/market_model_service_test.php:8\n/home/runner/work/_temp/pr48/fresh/core/lib/phpunit/classes/advanced_testcase.php:80"
+        },
+        {
+          "case": "local_kbacompany\\ofs_service_test::test_ofs_projects_company_unit_function_products_and_internal_customer",
+          "type": "failure",
+          "message": "local_kbacompany\\ofs_service_test::test_ofs_projects_company_unit_function_products_and_internal_customer\nFailed asserting that true is false.\n\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/tests/ofs_service_test.php:73\n/home/runner/work/_temp/pr48/fresh/core/lib/phpunit/classes/advanced_testcase.php:80"
+        },
+        {
+          "case": "local_kbacompany\\process_model_service_test::test_complete_sipoc_bpmn_model_publishes_and_activity_becomes_semantic",
+          "type": "failure",
+          "message": "local_kbacompany\\process_model_service_test::test_complete_sipoc_bpmn_model_publishes_and_activity_becomes_semantic\nFailed asserting that two strings are identical.\n--- Expected\n+++ Actual\n@@ @@\n-'0.3.1'\n+'0.4.4'\n\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/tests/process_model_service_test.php:85\n/home/runner/work/_temp/pr48/fresh/core/lib/phpunit/classes/advanced_testcase.php:80"
+        },
+        {
+          "case": "local_kbacompany\\process_service_test::test_process_hierarchy_publish_and_cross_functional_links",
+          "type": "failure",
+          "message": "local_kbacompany\\process_service_test::test_process_hierarchy_publish_and_cross_functional_links\nFailed asserting that two strings are identical.\n--- Expected\n+++ Actual\n@@ @@\n-'0.3.0'\n+'0.4.0'\n\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/tests/process_service_test.php:56\n/home/runner/work/_temp/pr48/fresh/core/lib/phpunit/classes/advanced_testcase.php:80"
+        },
+        {
+          "case": "local_kbacompany\\project_execution_service_test::test_management_planning_does_not_link_to_retired_editor",
+          "type": "failure",
+          "message": "local_kbacompany\\project_execution_service_test::test_management_planning_does_not_link_to_retired_editor\nFailed asserting that two arrays are identical.\n--- Expected\n+++ Actual\n@@ @@\n Array &0 (\n-    0 => 'week'\n-    1 => 'battleplan'\n-    2 => 'cycles'\n+    0 => 'coordweek'\n+    1 => 'decisionsregistry'\n+    2 => 'week'\n+    3 => 'battleplan'\n+    4 => 'cycles'\n )\n\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/tests/project_execution_service_test.php:55\n/home/runner/work/_temp/pr48/fresh/core/lib/phpunit/classes/advanced_testcase.php:80"
+        },
+        {
+          "case": "local_kbacompany\\task_batch_actions1842_test::test_batch_start_accept_and_stale_revisions",
+          "type": "error",
+          "message": "local_kbacompany\\task_batch_actions1842_test::test_batch_start_accept_and_stale_revisions\nmoodle_exception: Employee is not available in this company.\n\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/task_service.php:68\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/task_service.php:197\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/task_service.php:550\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/task_service.php:590\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/tests/task_batch_actions1842_test.php:38\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/tests/task_batch_actions1842_test.php:60\n/home/runner/work/_temp/pr48/fresh/core/lib/phpunit/classes/advanced_testcase.php:80"
+        },
+        {
+          "case": "local_kbacompany\\task_batch_actions1842_test::test_generated_tasks_cannot_be_bulk_reassigned_and_cross_company_task_is_not_updated",
+          "type": "error",
+          "message": "local_kbacompany\\task_batch_actions1842_test::test_generated_tasks_cannot_be_bulk_reassigned_and_cross_company_task_is_not_updated\nmoodle_exception: Employee is not available in this company.\n\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/task_service.php:68\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/task_service.php:197\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/task_service.php:546\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/task_service.php:590\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/tests/task_batch_actions1842_test.php:38\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/tests/task_batch_actions1842_test.php:99\n/home/runner/work/_temp/pr48/fresh/core/lib/phpunit/classes/advanced_testcase.php:80"
+        },
+        {
+          "case": "local_kbacompany\\task_deadlines1843_test::test_bucket_filter_and_global_counts_are_separate_and_acl_scoped",
+          "type": "error",
+          "message": "local_kbacompany\\task_deadlines1843_test::test_bucket_filter_and_global_counts_are_separate_and_acl_scoped\nmoodle_exception: Employee is not available in this company.\n\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/task_service.php:68\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/task_service.php:197\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/task_service.php:546\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/task_service.php:590\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/tests/task_deadlines1843_test.php:35\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/tests/task_deadlines1843_test.php:74\n/home/runner/work/_temp/pr48/fresh/core/lib/phpunit/classes/advanced_testcase.php:80"
+        },
+        {
+          "case": "local_kbacompany\\task_kanban1846_test::test_editor_and_columns_render_without_raw_html_or_missing_tasks",
+          "type": "error",
+          "message": "local_kbacompany\\task_kanban1846_test::test_editor_and_columns_render_without_raw_html_or_missing_tasks\ninvalid_parameter_exception: Invalid parameter value detected (Invalid BMS Company UUID.)\n\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/company_context_service.php:36\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/company_context_service.php:64\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/access_role_service.php:127\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/task_service.php:2412\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/task_ui_service.php:950\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/tests/task_kanban1846_test.php:100\n/home/runner/work/_temp/pr48/fresh/core/lib/phpunit/classes/advanced_testcase.php:80"
+        },
+        {
+          "case": "local_kbacompany\\task_kanban1850_test::test_page_scoped_grouping_and_full_counts_in_board_html",
+          "type": "error",
+          "message": "local_kbacompany\\task_kanban1850_test::test_page_scoped_grouping_and_full_counts_in_board_html\ninvalid_parameter_exception: Invalid parameter value detected (Invalid BMS Company UUID.)\n\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/company_context_service.php:36\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/company_context_service.php:64\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/access_role_service.php:127\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/task_service.php:2414\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/task_ui_service.php:950\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/tests/task_kanban1850_test.php:105\n/home/runner/work/_temp/pr48/fresh/core/lib/phpunit/classes/advanced_testcase.php:80"
+        },
+        {
+          "case": "local_kbacompany\\task_manager_workspace1853_test::test_non_manager_never_receives_manager_workspace",
+          "type": "failure",
+          "message": "local_kbacompany\\task_manager_workspace1853_test::test_non_manager_never_receives_manager_workspace\nFailed asserting that '<header class=\"bms24-task-header\">\\n\n  <div class=\"bms24-task-heading\"><h1>Tasks</h1></div>\\n\n  \\n\n  <div class=\"bms24-task-header-actions\"><a class=\"bms24-ui-btn bms24-ui-btn--primary\" href=\"https://www.example.com/moodle/local/kbacompany/tasks.php?uuid=test-company&amp;view=create\">Create task</a><details class=\"bms24-task-menu\"><summary class=\"bms24-ui-btn\">Tools</summary><div class=\"bms24-task-menu-items\"><a href=\"https://www.example.com/moodle/local/kbacompany/tasks.php?uuid=test-company&amp;view=sources\">Tasks from other sources</a><a href=\"https://www.example.com/moodle/local/kbacompany/recurring_task_library.php?uuid=test-company\">Recurring task library</a><a href=\"https://www.example.com/moodle/local/kbacompany/battle_plan.php?uuid=test-company\">Battle Plan</a><a href=\"https://www.example.com/moodle/local/kbacompany/communication_center.php?uuid=test-company\">Communication Center</a></div></details></div>\\n\n</header><section class=\"bms24-task-toolbar\" aria-label=\"Tasks\">\\n\n  \\n\n  <div class=\"bms24-task-toolbar-actions\"><nav class=\"bms24-task-tabs\" aria-label=\"Tasks\">\\n\n<a class=\"bms24-task-tab\" href=\"https://www.example.com/moodle/local/kbacompany/tasks.php?uuid=test-company&amp;scope=roles&amp;q&amp;status&amp;stream&amp;sourcekind&amp;battleplan&amp;signal&amp;assignee=0&amp;project&amp;sort=duedate&amp;dir=asc&amp;display=manager&amp;page=0\">All my roles · 2</a><a class=\"bms24-task-tab\" href=\"https://www.example.com/moodle/local/kbacompany/tasks.php?uuid=test-company&amp;scope=my&amp;q&amp;status&amp;stream&amp;sourcekind&amp;battleplan&amp;signal&amp;assignee=0&amp;project&amp;sort=duedate&amp;dir=asc&amp;display=manager&amp;page=0\">My tasks</a><a class=\"bms24-task-tab\" href=\"https://www.example.com/moodle/local/kbacompany/tasks.php?uuid=test-company&amp;scope=created&amp;q&amp;status&amp;stream&amp;sourcekind&amp;battleplan&amp;signal&amp;assignee=0&amp;project&amp;sort=duedate&amp;dir=asc&amp;display=manager&amp;page=0\">Created by me</a><a class=\"bms24-task-tab\" href=\"https://www.example.com/moodle/local/kbacompany/tasks.php?uuid=test-company&amp;scope=review&amp;q&amp;status&amp;stream&amp;sourcekind&amp;battleplan&amp;signal&amp;assignee=0&amp;project&amp;sort=duedate&amp;dir=asc&amp;display=manager&amp;page=0\">Waiting for my review</a><a class=\"bms24-task-tab\" href=\"https://www.example.com/moodle/local/kbacompany/tasks.php?uuid=test-company&amp;scope=watching&amp;q&amp;status&amp;stream&amp;sourcekind&amp;battleplan&amp;signal&amp;assignee=0&amp;project&amp;sort=duedate&amp;dir=asc&amp;display=manager&amp;page=0\">Watching</a>\\n\n</nav></div>\\n\n</section><form class=\"bms24-task-quicksearch\" method=\"get\" action=\"https://www.example.com/moodle/local/kbacompany/tasks.php?uuid=test-company\" role=\"search\" data-bms-task-fast-search=\"1\"><input type=\"hidden\" name=\"scope\" value=\"all\" /><input type=\"hidden\" name=\"status\" value=\"\" /><input type=\"hidden\" name=\"stream\" value=\"\" /><input type=\"hidden\" name=\"sourcekind\" value=\"\" /><input type=\"hidden\" name=\"battleplan\" value=\"\" /><input type=\"hidden\" name=\"signal\" value=\"\" /><input type=\"hidden\" name=\"assignee\" value=\"0\" /><input type=\"hidden\" name=\"project\" value=\"\" /><input type=\"hidden\" name=\"sort\" value=\"duedate\" /><input type=\"hidden\" name=\"dir\" value=\"asc\" /><input type=\"hidden\" name=\"uuid\" value=\"test-company\" /><input type=\"hidden\" name=\"display\" value=\"manager\" /><input type=\"hidden\" name=\"page\" value=\"0\" /><label for=\"bms_task1840_q\" class=\"sr-only\">Search tasks by title</label><input type=\"search\" id=\"bms_task1840_q\" name=\"q\" value=\"\" maxlength=\"200\" class=\"bms24-ui-input\" autocomplete=\"off\" placeholder=\"Search tasks by title\" /><button class=\"bms24-ui-btn bms24-ui-btn--primary\" type=\"submit\">Search</button></form><nav class=\"bms24-task-quickfilters\" aria-label=\"Quick filters\"><a class=\"bms24-task-quickchip\" aria-pressed=\"false\" href=\"https://www.example.com/moodle/local/kbacompany/tasks.php?uuid=test-company&amp;scope=all&amp;q&amp;status&amp;stream&amp;sourcekind&amp;battleplan&amp;signal=open&amp;assignee=0&amp;project&amp;sort=duedate&amp;dir=asc&amp;display=list&amp;page=0\">Unfinished</a><a class=\"bms24-task-quickchip\" aria-pressed=\"false\" href=\"https://www.example.com/moodle/local/kbacompany/tasks.php?uuid=test-company&amp;scope=all&amp;q&amp;status&amp;stream&amp;sourcekind&amp;battleplan&amp;signal=review&amp;assignee=0&amp;project&amp;sort=duedate&amp;dir=asc&amp;display=list&amp;page=0\">In review</a><a class=\"bms24-task-quickchip\" aria-pressed=\"false\" href=\"https://www.example.com/moodle/local/kbacompany/tasks.php?uuid=test-company&amp;scope=all&amp;q&amp;status&amp;stream&amp;sourcekind&amp;battleplan&amp;signal=overdue&amp;assignee=0&amp;project&amp;sort=duedate&amp;dir=asc&amp;display=list&amp;page=0\">Overdue</a><a class=\"bms24-task-quickchip\" aria-pressed=\"false\" href=\"https://www.example.com/moodle/local/kbacompany/tasks.php?uuid=test-company&amp;scope=all&amp;q&amp;status&amp;stream&amp;sourcekind&amp;battleplan&amp;signal=soon&amp;assignee=0&amp;project&amp;sort=duedate&amp;dir=asc&amp;display=list&amp;page=0\">Due within 7 days</a><a class=\"bms24-task-quickchip\" aria-pressed=\"false\" href=\"https://www.example.com/moodle/local/kbacompany/tasks.php?uuid=test-company&amp;scope=all&amp;q&amp;status&amp;stream&amp;sourcekind&amp;battleplan&amp;signal=done&amp;assignee=0&amp;project&amp;sort=duedate&amp;dir=asc&amp;display=list&amp;page=0\">Completed</a></nav><details class=\"bms24-task-advanced\"><summary>More filters</summary><form class=\"bms24-ui-filterbar\" method=\"get\" action=\"https://www.example.com/moodle/local/kbacompany/tasks.php?uuid=test-company\" aria-label=\"Tasks\">\\n\n<input type=\"hidden\" name=\"uuid\" value=\"test-company\"><input type=\"hidden\" name=\"scope\" value=\"all\"><input type=\"hidden\" name=\"display\" value=\"manager\"><input type=\"hidden\" name=\"signal\" value=\"\"><input type=\"hidden\" name=\"q\" value=\"\"><input type=\"hidden\" name=\"assignee\" value=\"0\"><input type=\"hidden\" name=\"project\" value=\"\"><input type=\"hidden\" name=\"duegroup\" value=\"\">\\n\n<div class=\"bms24-ui-fieldgrid\"><div class=\"bms24-ui-field\">\\n\n<label class=\"bms24-ui-label\" for=\"tui_status\">Status</label>\\n\n<select class=\"bms24-ui-select\" id=\"tui_status\" name=\"status\"><option value=\"\" selected>All statuses</option><option value=\"open\">New</option><option value=\"doing\">In progress</option><option value=\"review\">Awaiting acceptance</option><option value=\"returned\">Returned</option><option value=\"done\">Done</option><option value=\"cancelled\">Cancelled</option></select>\\n\n\\n\n\\n\n\\n\n\\n\n</div>\\n\n<div class=\"bms24-ui-field\">\\n\n<label class=\"bms24-ui-label\" for=\"tui_stream\">Work stream</label>\\n\n<select class=\"bms24-ui-select\" id=\"tui_stream\" name=\"stream\"><option value=\"\" selected>All streams</option><option value=\"change\">Change — programs and projects</option><option value=\"run\">Recurring work</option><option value=\"operate\">Current position work</option><option value=\"develop\">Learning and development</option><option value=\"unplanned\">Unplanned</option></select>\\n\n\\n\n\\n\n\\n\n\\n\n</div>\\n\n<div class=\"bms24-ui-field\">\\n\n<label class=\"bms24-ui-label\" for=\"tui_sourcekind\">Source</label>\\n\n<select class=\"bms24-ui-select\" id=\"tui_sourcekind\" name=\"sourcekind\"><option value=\"\" selected>All BMS sources</option><option value=\"manual\">Manual task</option><option value=\"adminscale\">Administrative Scale</option><option value=\"positionwork\">Position Work Program</option><option value=\"learning\">Learning / development</option><option value=\"legacy\">Previous execution workflow</option><option value=\"communication\">Communication Center</option><option value=\"decision\">Meeting decision</option><option value=\"recurring\">Recurring task</option><option value=\"template\">Task library template</option><option value=\"bplantemplate\">Battle Plan template</option><option value=\"condition\">Indicator condition</option></select>\\n\n\\n\n\\n\n\\n\n\\n\n</div>\\n\n<div class=\"bms24-ui-field\">\\n\n<label class=\"bms24-ui-label\" for=\"tui_battleplan\">Battle Plan</label>\\n\n<select class=\"bms24-ui-select\" id=\"tui_battleplan\" name=\"battleplan\"><option value=\"\" selected>All Battle Plans</option></select>\\n\n\\n\n\\n\n\\n\n\\n\n</div>\\n\n</div>\\n\n<div class=\"bms24-ui-filter-actions\"><button class=\"bms24-ui-btn bms24-ui-btn--primary\" type=\"submit\">Apply</button><a class=\"bms24-ui-btn\" href=\"https://www.example.com/moodle/local/kbacompany/tasks.php?uuid=test-company&amp;scope=all&amp;display=manager\">Reset</a></div>\\n\n</form></details><section class=\"bms24-task-toolbar\" aria-label=\"Tasks\">\\n\n  <div class=\"bms24-task-toolbar-lead\"><p class=\"bms24-task-note\">Records found: 3</p></div>\\n\n  <div class=\"bms24-task-toolbar-actions\"><nav class=\"bms24-task-tabs\" aria-label=\"List\">\\n\n<a class=\"bms24-task-tab\" href=\"https://www.example.com/moodle/local/kbacompany/tasks.php?uuid=test-company&amp;scope=all&amp;q&amp;status&amp;stream&amp;sourcekind&amp;battleplan&amp;signal&amp;assignee=0&amp;project&amp;sort=duedate&amp;dir=asc&amp;display=list&amp;page=0\">List</a><a class=\"bms24-task-tab\" href=\"https://www.example.com/moodle/local/kbacompany/tasks.php?uuid=test-company&amp;scope=all&amp;q&amp;status&amp;stream&amp;sourcekind&amp;battleplan&amp;signal&amp;assignee=0&amp;project&amp;sort=duedate&amp;dir=asc&amp;display=kanban&amp;page=0\">Board</a><a class=\"bms24-task-tab\" href=\"https://www.example.com/moodle/local/kbacompany/tasks.php?uuid=test-company&amp;scope=all&amp;q&amp;status&amp;stream&amp;sourcekind&amp;battleplan&amp;signal&amp;assignee=0&amp;project&amp;sort=duedate&amp;dir=asc&amp;display=deadlines&amp;page=0\">Deadlines</a><a class=\"bms24-task-tab\" href=\"https://www.example.com/moodle/local/kbacompany/tasks.php?uuid=test-company&amp;scope=all&amp;q&amp;status&amp;stream&amp;sourcekind&amp;battleplan&amp;signal&amp;assignee=0&amp;project&amp;sort=duedate&amp;dir=asc&amp;display=analytics&amp;page=0\">Summary</a>\\n\n</nav></div>\\n\n</section><p class=\"bms24-task-note\">The manager workspace is not available for your role.</p>' does not contain \"display=manager\".\n\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/tests/task_manager_workspace1853_test.php:58\n/home/runner/work/_temp/pr48/fresh/core/lib/phpunit/classes/advanced_testcase.php:80"
+        },
+        {
+          "case": "local_kbacompany\\task_roles_workspace1840_test::test_compact_workspace_escapes_search_and_has_progressive_get_fallback",
+          "type": "failure",
+          "message": "local_kbacompany\\task_roles_workspace1840_test::test_compact_workspace_escapes_search_and_has_progressive_get_fallback\nFailed asserting that '<header class=\"bms24-task-header\">\\n\n  <div class=\"bms24-task-heading\"><h1>Tasks</h1></div>\\n\n  \\n\n  <div class=\"bms24-task-header-actions\"><a class=\"bms24-ui-btn bms24-ui-btn--primary\" href=\"https://www.example.com/moodle/local/kbacompany/tasks.php?uuid=company-test&amp;view=create\">Create task</a><details class=\"bms24-task-menu\"><summary class=\"bms24-ui-btn\">Tools</summary><div class=\"bms24-task-menu-items\"><a href=\"https://www.example.com/moodle/local/kbacompany/tasks.php?uuid=company-test&amp;view=sources\">Tasks from other sources</a><a href=\"https://www.example.com/moodle/local/kbacompany/recurring_task_library.php?uuid=company-test\">Recurring task library</a><a href=\"https://www.example.com/moodle/local/kbacompany/battle_plan.php?uuid=company-test\">Battle Plan</a><a href=\"https://www.example.com/moodle/local/kbacompany/communication_center.php?uuid=company-test\">Communication Center</a></div></details></div>\\n\n</header><section class=\"bms24-task-toolbar\" aria-label=\"Tasks\">\\n\n  \\n\n  <div class=\"bms24-task-toolbar-actions\"><nav class=\"bms24-task-tabs\" aria-label=\"Tasks\">\\n\n<a class=\"bms24-task-tab\" href=\"https://www.example.com/moodle/local/kbacompany/tasks.php?uuid=company-test&amp;scope=roles&amp;q=%3Cscript%3Ealert%281%29%3C%2Fscript%3E&amp;status&amp;stream&amp;sourcekind&amp;battleplan&amp;signal&amp;assignee=0&amp;project&amp;display=list&amp;page=0\" aria-current=\"page\">All my roles · 3</a><a class=\"bms24-task-tab\" href=\"https://www.example.com/moodle/local/kbacompany/tasks.php?uuid=company-test&amp;scope=my&amp;q=%3Cscript%3Ealert%281%29%3C%2Fscript%3E&amp;status&amp;stream&amp;sourcekind&amp;battleplan&amp;signal&amp;assignee=0&amp;project&amp;display=list&amp;page=0\">My tasks · 2</a><a class=\"bms24-task-tab\" href=\"https://www.example.com/moodle/local/kbacompany/tasks.php?uuid=company-test&amp;scope=created&amp;q=%3Cscript%3Ealert%281%29%3C%2Fscript%3E&amp;status&amp;stream&amp;sourcekind&amp;battleplan&amp;signal&amp;assignee=0&amp;project&amp;display=list&amp;page=0\">Created by me · 1</a><a class=\"bms24-task-tab\" href=\"https://www.example.com/moodle/local/kbacompany/tasks.php?uuid=company-test&amp;scope=review&amp;q=%3Cscript%3Ealert%281%29%3C%2Fscript%3E&amp;status&amp;stream&amp;sourcekind&amp;battleplan&amp;signal&amp;assignee=0&amp;project&amp;display=list&amp;page=0\">Waiting for my review · 0</a><a class=\"bms24-task-tab\" href=\"https://www.example.com/moodle/local/kbacompany/tasks.php?uuid=company-test&amp;scope=watching&amp;q=%3Cscript%3Ealert%281%29%3C%2Fscript%3E&amp;status&amp;stream&amp;sourcekind&amp;battleplan&amp;signal&amp;assignee=0&amp;project&amp;display=list&amp;page=0\">Watching · 1</a>\\n\n</nav></div>\\n\n</section><form class=\"bms24-task-quicksearch\" method=\"get\" action=\"https://www.example.com/moodle/local/kbacompany/tasks.php?uuid=company-test\" role=\"search\" data-bms-task-fast-search=\"1\"><input type=\"hidden\" name=\"scope\" value=\"roles\" /><input type=\"hidden\" name=\"status\" value=\"\" /><input type=\"hidden\" name=\"stream\" value=\"\" /><input type=\"hidden\" name=\"sourcekind\" value=\"\" /><input type=\"hidden\" name=\"battleplan\" value=\"\" /><input type=\"hidden\" name=\"signal\" value=\"\" /><input type=\"hidden\" name=\"assignee\" value=\"0\" /><input type=\"hidden\" name=\"project\" value=\"\" /><input type=\"hidden\" name=\"uuid\" value=\"company-test\" /><input type=\"hidden\" name=\"display\" value=\"list\" /><input type=\"hidden\" name=\"page\" value=\"0\" /><label for=\"bms_task1840_q\" class=\"sr-only\">Search tasks by title</label><input type=\"search\" id=\"bms_task1840_q\" name=\"q\" value=\"&lt;script&gt;alert(1)&lt;/script&gt;\" maxlength=\"200\" class=\"bms24-ui-input\" autocomplete=\"off\" placeholder=\"Search tasks by title\" /><button class=\"bms24-ui-btn bms24-ui-btn--primary\" type=\"submit\">Search</button></form><nav class=\"bms24-task-quickfilters\" aria-label=\"Quick filters\"><a class=\"bms24-task-quickchip\" aria-pressed=\"false\" href=\"https://www.example.com/moodle/local/kbacompany/tasks.php?uuid=company-test&amp;scope=roles&amp;q=%3Cscript%3Ealert%281%29%3C%2Fscript%3E&amp;status&amp;stream&amp;sourcekind&amp;battleplan&amp;signal=open&amp;assignee=0&amp;project&amp;display=list&amp;page=0\">Unfinished</a><a class=\"bms24-task-quickchip\" aria-pressed=\"false\" href=\"https://www.example.com/moodle/local/kbacompany/tasks.php?uuid=company-test&amp;scope=roles&amp;q=%3Cscript%3Ealert%281%29%3C%2Fscript%3E&amp;status&amp;stream&amp;sourcekind&amp;battleplan&amp;signal=review&amp;assignee=0&amp;project&amp;display=list&amp;page=0\">In review</a><a class=\"bms24-task-quickchip\" aria-pressed=\"false\" href=\"https://www.example.com/moodle/local/kbacompany/tasks.php?uuid=company-test&amp;scope=roles&amp;q=%3Cscript%3Ealert%281%29%3C%2Fscript%3E&amp;status&amp;stream&amp;sourcekind&amp;battleplan&amp;signal=overdue&amp;assignee=0&amp;project&amp;display=list&amp;page=0\">Overdue</a><a class=\"bms24-task-quickchip\" aria-pressed=\"false\" href=\"https://www.example.com/moodle/local/kbacompany/tasks.php?uuid=company-test&amp;scope=roles&amp;q=%3Cscript%3Ealert%281%29%3C%2Fscript%3E&amp;status&amp;stream&amp;sourcekind&amp;battleplan&amp;signal=soon&amp;assignee=0&amp;project&amp;display=list&amp;page=0\">Due within 7 days</a><a class=\"bms24-task-quickchip\" aria-pressed=\"false\" href=\"https://www.example.com/moodle/local/kbacompany/tasks.php?uuid=company-test&amp;scope=roles&amp;q=%3Cscript%3Ealert%281%29%3C%2Fscript%3E&amp;status&amp;stream&amp;sourcekind&amp;battleplan&amp;signal=done&amp;assignee=0&amp;project&amp;display=list&amp;page=0\">Completed</a></nav><details class=\"bms24-task-advanced\"><summary>More filters</summary><form class=\"bms24-ui-filterbar\" method=\"get\" action=\"https://www.example.com/moodle/local/kbacompany/tasks.php?uuid=company-test\" aria-label=\"Tasks\">\\n\n<input type=\"hidden\" name=\"uuid\" value=\"company-test\"><input type=\"hidden\" name=\"scope\" value=\"roles\"><input type=\"hidden\" name=\"display\" value=\"list\"><input type=\"hidden\" name=\"signal\" value=\"\"><input type=\"hidden\" name=\"q\" value=\"&lt;script&gt;alert(1)&lt;/script&gt;\"><input type=\"hidden\" name=\"assignee\" value=\"0\"><input type=\"hidden\" name=\"project\" value=\"\"><input type=\"hidden\" name=\"duegroup\" value=\"\">\\n\n<div class=\"bms24-ui-fieldgrid\"><div class=\"bms24-ui-field\">\\n\n<label class=\"bms24-ui-label\" for=\"tui_status\">Status</label>\\n\n<select class=\"bms24-ui-select\" id=\"tui_status\" name=\"status\"><option value=\"\" selected>All statuses</option><option value=\"open\">New</option><option value=\"doing\">In progress</option><option value=\"review\">Awaiting acceptance</option><option value=\"returned\">Returned</option><option value=\"done\">Done</option><option value=\"cancelled\">Cancelled</option></select>\\n\n\\n\n\\n\n\\n\n\\n\n</div>\\n\n<div class=\"bms24-ui-field\">\\n\n<label class=\"bms24-ui-label\" for=\"tui_stream\">Work stream</label>\\n\n<select class=\"bms24-ui-select\" id=\"tui_stream\" name=\"stream\"><option value=\"\" selected>All streams</option><option value=\"change\">Change — programs and projects</option><option value=\"run\">Recurring work</option><option value=\"operate\">Current position work</option><option value=\"develop\">Learning and development</option><option value=\"unplanned\">Unplanned</option></select>\\n\n\\n\n\\n\n\\n\n\\n\n</div>\\n\n<div class=\"bms24-ui-field\">\\n\n<label class=\"bms24-ui-label\" for=\"tui_sourcekind\">Source</label>\\n\n<select class=\"bms24-ui-select\" id=\"tui_sourcekind\" name=\"sourcekind\"><option value=\"\" selected>All BMS sources</option><option value=\"manual\">Manual task</option><option value=\"adminscale\">Administrative Scale</option><option value=\"positionwork\">Position Work Program</option><option value=\"learning\">Learning / development</option><option value=\"legacy\">Previous execution workflow</option><option value=\"communication\">Communication Center</option><option value=\"decision\">Meeting decision</option><option value=\"recurring\">Recurring task</option><option value=\"template\">Task library template</option><option value=\"bplantemplate\">Battle Plan template</option><option value=\"condition\">Indicator condition</option></select>\\n\n\\n\n\\n\n\\n\n\\n\n</div>\\n\n<div class=\"bms24-ui-field\">\\n\n<label class=\"bms24-ui-label\" for=\"tui_battleplan\">Battle Plan</label>\\n\n<select class=\"bms24-ui-select\" id=\"tui_battleplan\" name=\"battleplan\"><option value=\"\" selected>All Battle Plans</option></select>\\n\n\\n\n\\n\n\\n\n\\n\n</div>\\n\n</div>\\n\n<div class=\"bms24-ui-filter-actions\"><button class=\"bms24-ui-btn bms24-ui-btn--primary\" type=\"submit\">Apply</button><a class=\"bms24-ui-btn\" href=\"https://www.example.com/moodle/local/kbacompany/tasks.php?uuid=company-test&amp;scope=roles&amp;display=list\">Reset</a></div>\\n\n</form></details><div class=\"bms-task1849-shell bms-task1848-shell\" data-bms-task1848-shell=\"1\"><div class=\"bms-task1849-topbar\"><section class=\"bms24-task-toolbar\" aria-label=\"Tasks\">\\n\n  <div class=\"bms24-task-toolbar-lead\"><p class=\"bms24-task-note\">Records found: 0</p></div>\\n\n  <div class=\"bms24-task-toolbar-actions\"><div class=\"bms24-task-viewtools\"><details class=\"bms24-task-preferences\"><summary class=\"bms24-task-preferences-toggle\" title=\"Configure table\" aria-label=\"Configure table\"><span class=\"bms24-task-preferences-icon\" aria-hidden=\"true\">&#9881;</span><span class=\"sr-only\">Configure table</span></summary><form method=\"post\" action=\"https://www.example.com/moodle/local/kbacompany/task_list_preferences.php\" class=\"bms24-task-preferences-form\"><input type=\"hidden\" name=\"uuid\" value=\"company-test\" /><input type=\"hidden\" name=\"sesskey\" value=\"k0XtNt25Gv\" /><input type=\"hidden\" name=\"scope\" value=\"roles\" /><input type=\"hidden\" name=\"q\" value=\"&lt;script&gt;alert(1)&lt;/script&gt;\" /><input type=\"hidden\" name=\"status\" value=\"\" /><input type=\"hidden\" name=\"stream\" value=\"\" /><input type=\"hidden\" name=\"sourcekind\" value=\"\" /><input type=\"hidden\" name=\"battleplan\" value=\"\" /><input type=\"hidden\" name=\"signal\" value=\"\" /><input type=\"hidden\" name=\"assignee\" value=\"0\" /><input type=\"hidden\" name=\"project\" value=\"\" /><fieldset class=\"bms24-task-column-fieldset\"><legend>Visible columns</legend><div class=\"bms24-task-column-options\"><label class=\"bms24-task-column-option\"><input type=\"checkbox\" name=\"columns[title]\" value=\"1\" checked=\"checked\" disabled=\"disabled\" /> Task</label><label class=\"bms24-task-column-option\"><input type=\"checkbox\" name=\"columns[assignee]\" value=\"1\" checked=\"checked\" /> Assignee</label><label class=\"bms24-task-column-option\"><input type=\"checkbox\" name=\"columns[creator]\" value=\"1\" checked=\"checked\" /> Creator</label><label class=\"bms24-task-column-option\"><input type=\"checkbox\" name=\"columns[status]\" value=\"1\" checked=\"checked\" /> Status</label><label class=\"bms24-task-column-option\"><input type=\"checkbox\" name=\"columns[duedate]\" value=\"1\" checked=\"checked\" /> Deadline</label><label class=\"bms24-task-column-option\"><input type=\"checkbox\" name=\"columns[priority]\" value=\"1\" checked=\"checked\" /> Priority</label><label class=\"bms24-task-column-option\"><input type=\"checkbox\" name=\"columns[sourcekind]\" value=\"1\" checked=\"checked\" /> Source</label><label class=\"bms24-task-column-option\"><input type=\"checkbox\" name=\"columns[reviewer]\" value=\"1\" /> Reviewer / result acceptor</label><label class=\"bms24-task-column-option\"><input type=\"checkbox\" name=\"columns[observer]\" value=\"1\" /> Observer</label><label class=\"bms24-task-column-option\"><input type=\"checkbox\" name=\"columns[stream]\" value=\"1\" /> Work stream</label><label class=\"bms24-task-column-option\"><input type=\"checkbox\" name=\"columns[updated]\" value=\"1\" /> Last updated</label><label class=\"bms24-task-column-option\"><input type=\"checkbox\" name=\"columns[created]\" value=\"1\" /> Created</label></div></fieldset><div class=\"bms24-task-sort-preferences\"><div class=\"bms24-task-sort-field\"><label for=\"bms_task1841_defaultsort\">Default sort</label><select id=\"bms_task1841_defaultsort\" class=\"select custom-select bms24-ui-select\" name=\"defaultsort\"><option value=\"title\">Task</option><option value=\"assignee\">Assignee</option><option value=\"creator\">Creator</option><option value=\"status\">Status</option><option selected=\"selected\" value=\"duedate\">Deadline</option><option value=\"priority\">Priority</option><option value=\"sourcekind\">Source</option><option value=\"updated\">Last updated</option><option value=\"created\">Created</option></select></div><div class=\"bms24-task-sort-field\"><label for=\"bms_task1841_defaultdir\">Direction</label><select id=\"bms_task1841_defaultdir\" class=\"select custom-select bms24-ui-select\" name=\"defaultdir\"><option selected=\"selected\" value=\"asc\">Ascending</option><option value=\"desc\">Descending</option></select></div></div><div class=\"bms24-task-preferences-actions\"><button type=\"submit\" class=\"bms24-ui-btn bms24-ui-btn--primary\">Save preferences</button><button type=\"submit\" name=\"resetcolumns\" value=\"1\" class=\"bms24-ui-btn\">Restore default columns</button></div></form></details><nav class=\"bms24-task-tabs\" aria-label=\"List\">\\n\n<a class=\"bms24-task-tab\" href=\"https://www.example.com/moodle/local/kbacompany/tasks.php?uuid=company-test&amp;scope=roles&amp;q=%3Cscript%3Ealert%281%29%3C%2Fscript%3E&amp;status&amp;stream&amp;sourcekind&amp;battleplan&amp;signal&amp;assignee=0&amp;project&amp;display=list&amp;page=0\" aria-current=\"page\">List</a><a class=\"bms24-task-tab\" href=\"https://www.example.com/moodle/local/kbacompany/tasks.php?uuid=company-test&amp;scope=roles&amp;q=%3Cscript%3Ealert%281%29%3C%2Fscript%3E&amp;status&amp;stream&amp;sourcekind&amp;battleplan&amp;signal&amp;assignee=0&amp;project&amp;display=kanban&amp;page=0\">Board</a><a class=\"bms24-task-tab\" href=\"https://www.example.com/moodle/local/kbacompany/tasks.php?uuid=company-test&amp;scope=roles&amp;q=%3Cscript%3Ealert%281%29%3C%2Fscript%3E&amp;status&amp;stream&amp;sourcekind&amp;battleplan&amp;signal&amp;assignee=0&amp;project&amp;display=deadlines&amp;page=0\">Deadlines</a><a class=\"bms24-task-tab\" href=\"https://www.example.com/moodle/local/kbacompany/tasks.php?uuid=company-test&amp;scope=roles&amp;q=%3Cscript%3Ealert%281%29%3C%2Fscript%3E&amp;status&amp;stream&amp;sourcekind&amp;battleplan&amp;signal&amp;assignee=0&amp;project&amp;display=analytics&amp;page=0\">Summary</a>\\n\n</nav></div></div>\\n\n</section></div><section class=\"bms24-task-panel\">\\n\n  <header class=\"bms24-task-panel-head\"><h2>No tasks found</h2></header>\\n\n  <div class=\"bms24-task-panel-body\"><p class=\"bms24-task-note\">Check the selected view and filters, or create a task. Learning and legacy tasks are available under Tools → Tasks from other sources.</p><div class=\"bms-task1858-empty-actions\"><a class=\"bms24-ui-btn bms24-ui-btn--primary\" href=\"https://www.example.com/moodle/local/kbacompany/tasks.php?uuid=company-test&amp;view=create\">Create task</a><a class=\"bms24-ui-btn bms24-ui-btn--secondary\" href=\"https://www.example.com/moodle/local/kbacompany/tasks.php?uuid=company-test&amp;scope=roles&amp;display=list\">Clear filters</a></div></div>\\n\n</section></div>' contains \"Все мои роли\".\n\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/tests/task_roles_workspace1840_test.php:107\n/home/runner/work/_temp/pr48/fresh/core/lib/phpunit/classes/advanced_testcase.php:80"
+        }
+      ],
+      "schema_table_counts": {
+        "fresh-schema.json": 183,
+        "from0804-schema.json": 183,
+        "from0890-schema.json": 183,
+        "from0900-schema.json": 183,
+        "from0901-schema.json": 183,
+        "from1645-schema.json": 183,
+        "from1879-schema.json": 183,
+        "frompr530902-schema.json": 183,
+        "frompr560902-schema.json": 183,
+        "frompr570903-schema.json": 183,
+        "frompr580904-schema.json": 183
+      },
+      "preservation_log_status": {
+        "fresh-verify-data.log": "PASS preserved synthetic two-tenant data and new-column defaults",
+        "from0804-verify-data.log": "PASS preserved synthetic two-tenant data and new-column defaults",
+        "from0890-verify-data.log": "PASS preserved synthetic two-tenant data and new-column defaults",
+        "from0900-verify-data.log": "PASS preserved synthetic two-tenant data and new-column defaults",
+        "from0901-verify-data.log": "PASS preserved synthetic two-tenant data and new-column defaults",
+        "from1645-verify-data.log": "PASS preserved synthetic two-tenant data and new-column defaults",
+        "from1879-verify-data.log": "PASS preserved synthetic two-tenant data and new-column defaults",
+        "frompr530902-verify-data.log": "PASS preserved synthetic two-tenant data and new-column defaults",
+        "frompr560902-verify-data.log": "PASS preserved synthetic two-tenant data and new-column defaults",
+        "frompr570903-verify-data.log": "PASS preserved synthetic two-tenant data and new-column defaults",
+        "frompr580904-verify-data.log": "PASS preserved synthetic two-tenant data and new-column defaults",
+        "fresh-verify-repeat.log": "PASS preserved synthetic two-tenant data and new-column defaults",
+        "from0804-verify-repeat.log": "PASS preserved synthetic two-tenant data and new-column defaults",
+        "from0890-verify-repeat.log": "PASS preserved synthetic two-tenant data and new-column defaults",
+        "from0900-verify-repeat.log": "PASS preserved synthetic two-tenant data and new-column defaults",
+        "from0901-verify-repeat.log": "PASS preserved synthetic two-tenant data and new-column defaults",
+        "from1645-verify-repeat.log": "PASS preserved synthetic two-tenant data and new-column defaults",
+        "from1879-verify-repeat.log": "PASS preserved synthetic two-tenant data and new-column defaults",
+        "frompr530902-verify-repeat.log": "PASS preserved synthetic two-tenant data and new-column defaults",
+        "frompr560902-verify-repeat.log": "PASS preserved synthetic two-tenant data and new-column defaults",
+        "frompr570903-verify-repeat.log": "PASS preserved synthetic two-tenant data and new-column defaults",
+        "frompr580904-verify-repeat.log": "PASS preserved synthetic two-tenant data and new-column defaults"
+      },
+      "bootstrap_warnings": {
+        "baseline": [
+          "PHP Warning:  Constant MOODLE_INTERNAL already defined in /home/runner/work/_temp/pr48/fresh/core/local/kbacompany/tests/implementation_project_dashboard_service_test.php on line 3",
+          "PHP Warning:  Constant MOODLE_INTERNAL already defined in /home/runner/work/_temp/pr48/fresh/core/local/kbacompany/tests/implementation_project_result_service_test.php on line 3",
+          "PHP Warning:  Constant MOODLE_INTERNAL already defined in /home/runner/work/_temp/pr48/fresh/core/local/kbacompany/tests/implementation_project_weekly_service_test.php on line 3"
+        ],
+        "candidate": [
+          "PHP Warning:  Constant MOODLE_INTERNAL already defined in /home/runner/work/_temp/pr48/fresh/core/local/kbacompany/tests/implementation_project_dashboard_service_test.php on line 3",
+          "PHP Warning:  Constant MOODLE_INTERNAL already defined in /home/runner/work/_temp/pr48/fresh/core/local/kbacompany/tests/implementation_project_result_service_test.php on line 3",
+          "PHP Warning:  Constant MOODLE_INTERNAL already defined in /home/runner/work/_temp/pr48/fresh/core/local/kbacompany/tests/implementation_project_weekly_service_test.php on line 3"
+        ]
+      }
+    },
+    "percona": {
+      "engine": "percona",
+      "baseline_counts": {
+        "tests": 603,
+        "assertions": 7042,
+        "errors": 14,
+        "failures": 18,
+        "skipped": 0
+      },
+      "target_reproduction": {
+        "local_kbacompany\\battle_plan_service_test::test_active_plan_accepts_scoped_manual_task_but_closed_plan_rejects_it": "local_kbacompany\\battle_plan_service_test::test_active_plan_accepts_scoped_manual_task_but_closed_plan_rejects_it\nmoodle_exception: An empty Battle Plan cannot be submitted.\n\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/battle_plan_service.php:70\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/battle_plan_service.php:898\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/tests/battle_plan_service_test.php:294\n/home/runner/work/_temp/pr48/fresh/core/lib/phpunit/classes/advanced_testcase.php:80",
+        "local_kbacompany\\battle_plan_service_test::test_battle_plan_references_one_canonical_task_and_closes_after_execution": "local_kbacompany\\battle_plan_service_test::test_battle_plan_references_one_canonical_task_and_closes_after_execution\nmoodle_exception: The week cannot be closed: finish the open tasks or explicitly carry them into the next Battle Plan.\n\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/battle_plan_service.php:70\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/battle_plan_service.php:944\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/tests/battle_plan_service_test.php:122\n/home/runner/work/_temp/pr48/fresh/core/lib/phpunit/classes/advanced_testcase.php:80",
+        "local_kbacompany\\deviation_service_test::test_accepted_task_does_not_close_deviation": "local_kbacompany\\deviation_service_test::test_accepted_task_does_not_close_deviation\nmoodle_exception: Invalid period: YYYY-MM-DD, Monday for weekly and first day for monthly.\n\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/product_service.php:215\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/deviation_service.php:89\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/deviation_service.php:167\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/deviation_service.php:467\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/tests/deviation_service_test.php:54\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/tests/deviation_service_test.php:61\n/home/runner/work/_temp/pr48/fresh/core/lib/phpunit/classes/advanced_testcase.php:80",
+        "local_kbacompany\\deviation_service_test::test_lowered_norm_cannot_be_used_as_improvement": "local_kbacompany\\deviation_service_test::test_lowered_norm_cannot_be_used_as_improvement\nmoodle_exception: Invalid period: YYYY-MM-DD, Monday for weekly and first day for monthly.\n\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/product_service.php:215\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/deviation_service.php:89\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/deviation_service.php:167\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/deviation_service.php:467\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/tests/deviation_service_test.php:54\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/tests/deviation_service_test.php:84\n/home/runner/work/_temp/pr48/fresh/core/lib/phpunit/classes/advanced_testcase.php:80",
+        "local_kbacompany\\deviation_service_test::test_recheck_and_explicit_closure_do_not_create_statistics": "local_kbacompany\\deviation_service_test::test_recheck_and_explicit_closure_do_not_create_statistics\nmoodle_exception: Invalid period: YYYY-MM-DD, Monday for weekly and first day for monthly.\n\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/product_service.php:215\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/deviation_service.php:89\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/deviation_service.php:167\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/deviation_service.php:467\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/tests/deviation_service_test.php:54\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/tests/deviation_service_test.php:71\n/home/runner/work/_temp/pr48/fresh/core/lib/phpunit/classes/advanced_testcase.php:80",
+        "local_kbacompany\\deviation_service_test::test_regular_user_cannot_read_deviations": "local_kbacompany\\deviation_service_test::test_regular_user_cannot_read_deviations\nmoodle_exception: Invalid period: YYYY-MM-DD, Monday for weekly and first day for monthly.\n\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/product_service.php:215\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/deviation_service.php:89\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/deviation_service.php:167\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/deviation_service.php:467\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/tests/deviation_service_test.php:54\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/tests/deviation_service_test.php:102\n/home/runner/work/_temp/pr48/fresh/core/lib/phpunit/classes/advanced_testcase.php:80",
+        "local_kbacompany\\task_service_test::test_workspace_and_tasks_page_agree_on_open_and_overdue_tasks": "local_kbacompany\\task_service_test::test_workspace_and_tasks_page_agree_on_open_and_overdue_tasks\nmoodle_exception: Task deadline cannot be earlier than its start date.\n\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/task_service.php:68\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/task_service.php:575\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/task_service.php:590\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/tests/task_service_test.php:34\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/tests/task_service_test.php:187\n/home/runner/work/_temp/pr48/fresh/core/lib/phpunit/classes/advanced_testcase.php:80",
+        "local_kbacompany\\task_service_test::test_workspace_open_tasks_remain_visible_after_completed_history": "local_kbacompany\\task_service_test::test_workspace_open_tasks_remain_visible_after_completed_history\nmoodle_exception: Task deadline cannot be earlier than its start date.\n\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/task_service.php:68\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/task_service.php:575\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/task_service.php:590\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/tests/task_service_test.php:34\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/tests/task_service_test.php:210\n/home/runner/work/_temp/pr48/fresh/core/lib/phpunit/classes/advanced_testcase.php:80"
+      },
+      "all_eight_reproduced": true,
+      "final_counts": {
+        "tests": 610,
+        "assertions": 7095,
+        "errors": 6,
+        "failures": 18,
+        "skipped": 0
+      },
+      "new_failures": [],
+      "resolved": [
+        "local_kbacompany\\battle_plan_service_test::test_active_plan_accepts_scoped_manual_task_but_closed_plan_rejects_it",
+        "local_kbacompany\\battle_plan_service_test::test_battle_plan_references_one_canonical_task_and_closes_after_execution",
+        "local_kbacompany\\deviation_service_test::test_accepted_task_does_not_close_deviation",
+        "local_kbacompany\\deviation_service_test::test_lowered_norm_cannot_be_used_as_improvement",
+        "local_kbacompany\\deviation_service_test::test_recheck_and_explicit_closure_do_not_create_statistics",
+        "local_kbacompany\\deviation_service_test::test_regular_user_cannot_read_deviations",
+        "local_kbacompany\\task_service_test::test_workspace_and_tasks_page_agree_on_open_and_overdue_tasks",
+        "local_kbacompany\\task_service_test::test_workspace_open_tasks_remain_visible_after_completed_history"
+      ],
+      "missing_tests": {},
+      "added_tests": {
+        "local_kbacompany\\deviation_service_test::test_machine_observation_dates_preserve_single_digit_days": 1,
+        "local_kbacompany\\deviation_service_test::test_invalid_observation_period_is_still_rejected with data set \"unpadded observation\"": 1,
+        "local_kbacompany\\deviation_service_test::test_invalid_observation_period_is_still_rejected with data set \"invalid calendar date\"": 1,
+        "local_kbacompany\\deviation_service_test::test_invalid_observation_period_is_still_rejected with data set \"monthly start must be first\"": 1,
+        "local_kbacompany\\deviation_service_test::test_recheck_before_task_acceptance_preserves_deviation_and_check_history": 1,
+        "local_kbacompany\\task_service_test::test_invalid_date_order_cannot_create_task with data set \"due before start\"": 1,
+        "local_kbacompany\\task_service_test::test_invalid_date_order_cannot_create_task with data set \"same day reversed time\"": 1
+      },
+      "unresolved_targets": [],
+      "remaining_failures": [
+        "local_kbacompany\\battle_plan_indicator_service_test::test_historical_projection_uses_last_52_periods_relative_to_plan_week",
+        "local_kbacompany\\battle_plan_management_overview_service_test::test_contract_is_schema_neutral_read_model",
+        "local_kbacompany\\battle_plan_word_export_service_test::test_model_projects_previous_partial_week_and_current_target",
+        "local_kbacompany\\battle_plan_word_export_service_test::test_ooxml_contains_real_word_document_and_cyrillic_text",
+        "local_kbacompany\\bms_navigation_test::test_only_allowlisted_context_is_propagated",
+        "local_kbacompany\\bms_page_shell_service_test::test_business_architecture_semantics_follow_bms_methodology",
+        "local_kbacompany\\bms_page_shell_service_test::test_contract_versions_are_aligned",
+        "local_kbacompany\\company_core_test::test_contract_declares_existing_source_without_duplication",
+        "local_kbacompany\\company_core_test::test_permission_contract_centralises_company_role_policies",
+        "local_kbacompany\\financial_statement_service_test::test_bdr_and_bdds_calculations_match_bms_finance_rules",
+        "local_kbacompany\\indicator_registry_service_test::test_contract_keeps_one_canonical_indicator_registry",
+        "local_kbacompany\\integration_event_service_test::test_event_outbox_lifecycle_is_independent_from_legacy_command_status",
+        "local_kbacompany\\market_model_service_test::test_contract",
+        "local_kbacompany\\ofs_service_test::test_ofs_projects_company_unit_function_products_and_internal_customer",
+        "local_kbacompany\\process_model_service_test::test_complete_sipoc_bpmn_model_publishes_and_activity_becomes_semantic",
+        "local_kbacompany\\process_service_test::test_process_hierarchy_publish_and_cross_functional_links",
+        "local_kbacompany\\project_execution_service_test::test_management_planning_does_not_link_to_retired_editor",
+        "local_kbacompany\\task_batch_actions1842_test::test_batch_start_accept_and_stale_revisions",
+        "local_kbacompany\\task_batch_actions1842_test::test_generated_tasks_cannot_be_bulk_reassigned_and_cross_company_task_is_not_updated",
+        "local_kbacompany\\task_deadlines1843_test::test_bucket_filter_and_global_counts_are_separate_and_acl_scoped",
+        "local_kbacompany\\task_kanban1846_test::test_editor_and_columns_render_without_raw_html_or_missing_tasks",
+        "local_kbacompany\\task_kanban1850_test::test_page_scoped_grouping_and_full_counts_in_board_html",
+        "local_kbacompany\\task_manager_workspace1853_test::test_non_manager_never_receives_manager_workspace",
+        "local_kbacompany\\task_roles_workspace1840_test::test_compact_workspace_escapes_search_and_has_progressive_get_fallback"
+      ],
+      "suites": {
+        "battle_plan_service_test": {
+          "tests": 14,
+          "assertions": 74,
+          "errors": 0,
+          "failures": 0,
+          "skipped": 0
+        },
+        "communication_center_service_test": {
+          "tests": 5,
+          "assertions": 26,
+          "errors": 0,
+          "failures": 0,
+          "skipped": 0
+        },
+        "communication_live_service_test": {
+          "tests": 1,
+          "assertions": 4,
+          "errors": 0,
+          "failures": 0,
+          "skipped": 0
+        },
+        "communication_service_test": {
+          "tests": 17,
+          "assertions": 55,
+          "errors": 0,
+          "failures": 0,
+          "skipped": 0
+        },
+        "company_core_test": {
+          "tests": 16,
+          "assertions": 78,
+          "errors": 0,
+          "failures": 2,
+          "skipped": 0
+        },
+        "company_employee_sync_service_test": {
+          "tests": 11,
+          "assertions": 57,
+          "errors": 0,
+          "failures": 0,
+          "skipped": 0
+        },
+        "competency_review_queue_test": {
+          "tests": 9,
+          "assertions": 99,
+          "errors": 0,
+          "failures": 0,
+          "skipped": 0
+        },
+        "design_service_test": {
+          "tests": 3,
+          "assertions": 13,
+          "errors": 0,
+          "failures": 0,
+          "skipped": 0
+        },
+        "deviation_service_test": {
+          "tests": 11,
+          "assertions": 25,
+          "errors": 0,
+          "failures": 0,
+          "skipped": 0
+        },
+        "document_service_test": {
+          "tests": 10,
+          "assertions": 53,
+          "errors": 0,
+          "failures": 0,
+          "skipped": 0
+        },
+        "employee_competency_profile_service_test": {
+          "tests": 1,
+          "assertions": 5,
+          "errors": 0,
+          "failures": 0,
+          "skipped": 0
+        },
+        "employee_development_courses_test": {
+          "tests": 5,
+          "assertions": 65,
+          "errors": 0,
+          "failures": 0,
+          "skipped": 0
+        },
+        "kbacorporate_impl_task_provider_test": {
+          "tests": 4,
+          "assertions": 23,
+          "errors": 0,
+          "failures": 0,
+          "skipped": 0
+        },
+        "local_kbacompany": {
+          "tests": 610,
+          "assertions": 7095,
+          "errors": 6,
+          "failures": 18,
+          "skipped": 0
+        },
+        "local_kbacorporate": {
+          "tests": 150,
+          "assertions": 962,
+          "errors": 0,
+          "failures": 0,
+          "skipped": 0
+        },
+        "ordered_index_2026110900_test": {
+          "tests": 9,
+          "assertions": 103,
+          "errors": 0,
+          "failures": 0,
+          "skipped": 0
+        },
+        "pr48_tenant_isolation_test": {
+          "tests": 2,
+          "assertions": 66,
+          "errors": 0,
+          "failures": 0,
+          "skipped": 0
+        },
+        "privacy_provider_test": {
+          "tests": 6,
+          "assertions": 37,
+          "errors": 0,
+          "failures": 0,
+          "skipped": 0
+        },
+        "rc30_integrated_access_test": {
+          "tests": 4,
+          "assertions": 19,
+          "errors": 0,
+          "failures": 0,
+          "skipped": 0
+        },
+        "role_intelligence_service_test": {
+          "tests": 4,
+          "assertions": 16,
+          "errors": 0,
+          "failures": 0,
+          "skipped": 0
+        },
+        "role_readiness_view_test": {
+          "tests": 3,
+          "assertions": 9,
+          "errors": 0,
+          "failures": 0,
+          "skipped": 0
+        },
+        "schema_parity_2026110890_test": {
+          "tests": 29,
+          "assertions": 3721,
+          "errors": 0,
+          "failures": 0,
+          "skipped": 0
+        },
+        "semantic_service_test": {
+          "tests": 4,
+          "assertions": 29,
+          "errors": 0,
+          "failures": 0,
+          "skipped": 0
+        },
+        "task_rc30_acceptance1864_test": {
+          "tests": 12,
+          "assertions": 118,
+          "errors": 0,
+          "failures": 0,
+          "skipped": 0
+        },
+        "task_rc30_cli_response1866_test": {
+          "tests": 4,
+          "assertions": 48,
+          "errors": 0,
+          "failures": 0,
+          "skipped": 0
+        },
+        "task_rc30_report_comparison1867_test": {
+          "tests": 15,
+          "assertions": 32,
+          "errors": 0,
+          "failures": 0,
+          "skipped": 0
+        },
+        "task_service_test": {
+          "tests": 12,
+          "assertions": 48,
+          "errors": 0,
+          "failures": 0,
+          "skipped": 0
+        }
+      },
+      "retained_suite_comparison": {
+        "communication_center_service_test": {
+          "missing_tests": {},
+          "added_tests": {},
+          "new_failures": [],
+          "resolved": [],
+          "assertion_decreases": {},
+          "changed_remaining_failure": {}
+        },
+        "communication_live_service_test": {
+          "missing_tests": {},
+          "added_tests": {},
+          "new_failures": [],
+          "resolved": [],
+          "assertion_decreases": {},
+          "changed_remaining_failure": {}
+        },
+        "communication_service_test": {
+          "missing_tests": {},
+          "added_tests": {},
+          "new_failures": [],
+          "resolved": [],
+          "assertion_decreases": {},
+          "changed_remaining_failure": {}
+        },
+        "company_core_test": {
+          "missing_tests": {},
+          "added_tests": {},
+          "new_failures": [],
+          "resolved": [],
+          "assertion_decreases": {},
+          "changed_remaining_failure": {}
+        },
+        "company_employee_sync_service_test": {
+          "missing_tests": {},
+          "added_tests": {},
+          "new_failures": [],
+          "resolved": [],
+          "assertion_decreases": {},
+          "changed_remaining_failure": {}
+        },
+        "competency_review_queue_test": {
+          "missing_tests": {},
+          "added_tests": {},
+          "new_failures": [],
+          "resolved": [],
+          "assertion_decreases": {},
+          "changed_remaining_failure": {}
+        },
+        "design_service_test": {
+          "missing_tests": {},
+          "added_tests": {},
+          "new_failures": [],
+          "resolved": [],
+          "assertion_decreases": {},
+          "changed_remaining_failure": {}
+        },
+        "document_service_test": {
+          "missing_tests": {},
+          "added_tests": {},
+          "new_failures": [],
+          "resolved": [],
+          "assertion_decreases": {},
+          "changed_remaining_failure": {}
+        },
+        "employee_competency_profile_service_test": {
+          "missing_tests": {},
+          "added_tests": {},
+          "new_failures": [],
+          "resolved": [],
+          "assertion_decreases": {},
+          "changed_remaining_failure": {}
+        },
+        "employee_development_courses_test": {
+          "missing_tests": {},
+          "added_tests": {},
+          "new_failures": [],
+          "resolved": [],
+          "assertion_decreases": {},
+          "changed_remaining_failure": {}
+        },
+        "kbacorporate_impl_task_provider_test": {
+          "missing_tests": {},
+          "added_tests": {},
+          "new_failures": [],
+          "resolved": [],
+          "assertion_decreases": {},
+          "changed_remaining_failure": {}
+        },
+        "local_kbacompany": {
+          "missing_tests": {},
+          "added_tests": {
+            "local_kbacompany\\deviation_service_test::test_machine_observation_dates_preserve_single_digit_days": 1,
+            "local_kbacompany\\deviation_service_test::test_invalid_observation_period_is_still_rejected with data set \"unpadded observation\"": 1,
+            "local_kbacompany\\deviation_service_test::test_invalid_observation_period_is_still_rejected with data set \"invalid calendar date\"": 1,
+            "local_kbacompany\\deviation_service_test::test_invalid_observation_period_is_still_rejected with data set \"monthly start must be first\"": 1,
+            "local_kbacompany\\deviation_service_test::test_recheck_before_task_acceptance_preserves_deviation_and_check_history": 1,
+            "local_kbacompany\\task_service_test::test_invalid_date_order_cannot_create_task with data set \"due before start\"": 1,
+            "local_kbacompany\\task_service_test::test_invalid_date_order_cannot_create_task with data set \"same day reversed time\"": 1
+          },
+          "new_failures": [],
+          "resolved": [
+            "local_kbacompany\\battle_plan_service_test::test_active_plan_accepts_scoped_manual_task_but_closed_plan_rejects_it",
+            "local_kbacompany\\battle_plan_service_test::test_battle_plan_references_one_canonical_task_and_closes_after_execution",
+            "local_kbacompany\\deviation_service_test::test_accepted_task_does_not_close_deviation",
+            "local_kbacompany\\deviation_service_test::test_lowered_norm_cannot_be_used_as_improvement",
+            "local_kbacompany\\deviation_service_test::test_recheck_and_explicit_closure_do_not_create_statistics",
+            "local_kbacompany\\deviation_service_test::test_regular_user_cannot_read_deviations",
+            "local_kbacompany\\task_service_test::test_workspace_and_tasks_page_agree_on_open_and_overdue_tasks",
+            "local_kbacompany\\task_service_test::test_workspace_open_tasks_remain_visible_after_completed_history"
+          ],
+          "assertion_decreases": {},
+          "changed_remaining_failure": {}
+        },
+        "local_kbacorporate": {
+          "missing_tests": {},
+          "added_tests": {},
+          "new_failures": [],
+          "resolved": [],
+          "assertion_decreases": {},
+          "changed_remaining_failure": {}
+        },
+        "ordered_index_2026110900_test": {
+          "missing_tests": {},
+          "added_tests": {},
+          "new_failures": [],
+          "resolved": [],
+          "assertion_decreases": {},
+          "changed_remaining_failure": {}
+        },
+        "pr48_tenant_isolation_test": {
+          "missing_tests": {},
+          "added_tests": {},
+          "new_failures": [],
+          "resolved": [],
+          "assertion_decreases": {},
+          "changed_remaining_failure": {}
+        },
+        "privacy_provider_test": {
+          "missing_tests": {},
+          "added_tests": {},
+          "new_failures": [],
+          "resolved": [],
+          "assertion_decreases": {},
+          "changed_remaining_failure": {}
+        },
+        "rc30_integrated_access_test": {
+          "missing_tests": {},
+          "added_tests": {},
+          "new_failures": [],
+          "resolved": [],
+          "assertion_decreases": {},
+          "changed_remaining_failure": {}
+        },
+        "role_intelligence_service_test": {
+          "missing_tests": {},
+          "added_tests": {},
+          "new_failures": [],
+          "resolved": [],
+          "assertion_decreases": {},
+          "changed_remaining_failure": {}
+        },
+        "role_readiness_view_test": {
+          "missing_tests": {},
+          "added_tests": {},
+          "new_failures": [],
+          "resolved": [],
+          "assertion_decreases": {},
+          "changed_remaining_failure": {}
+        },
+        "schema_parity_2026110890_test": {
+          "missing_tests": {},
+          "added_tests": {},
+          "new_failures": [],
+          "resolved": [],
+          "assertion_decreases": {},
+          "changed_remaining_failure": {}
+        },
+        "semantic_service_test": {
+          "missing_tests": {},
+          "added_tests": {},
+          "new_failures": [],
+          "resolved": [],
+          "assertion_decreases": {},
+          "changed_remaining_failure": {}
+        },
+        "task_rc30_acceptance1864_test": {
+          "missing_tests": {},
+          "added_tests": {},
+          "new_failures": [],
+          "resolved": [],
+          "assertion_decreases": {},
+          "changed_remaining_failure": {}
+        },
+        "task_rc30_cli_response1866_test": {
+          "missing_tests": {},
+          "added_tests": {},
+          "new_failures": [],
+          "resolved": [],
+          "assertion_decreases": {},
+          "changed_remaining_failure": {}
+        },
+        "task_rc30_report_comparison1867_test": {
+          "missing_tests": {},
+          "added_tests": {},
+          "new_failures": [],
+          "resolved": [],
+          "assertion_decreases": {},
+          "changed_remaining_failure": {}
+        }
+      },
+      "junit_inventory_matches_report": true,
+      "scenarios": {
+        "fresh": "PASS",
+        "from1645": "PASS",
+        "from1879": "PASS",
+        "from0890": "PASS",
+        "from0900": "PASS",
+        "from0901": "PASS",
+        "from0804": "PASS",
+        "frompr530902": "PASS",
+        "frompr560902": "PASS",
+        "frompr570903": "PASS",
+        "frompr580904": "PASS"
+      },
+      "schema_comparison": {
+        "from1645": "PASS",
+        "from1879": "PASS",
+        "from0890": "PASS",
+        "from0900": "PASS",
+        "from0901": "PASS",
+        "from0804": "PASS",
+        "frompr530902": "PASS",
+        "frompr560902": "PASS",
+        "frompr570903": "PASS",
+        "frompr580904": "PASS"
+      },
+      "fixture_counts": {
+        "fresh-fixtures.json": 12,
+        "from0804-fixtures.json": 12,
+        "from0890-fixtures.json": 12,
+        "from0900-fixtures.json": 12,
+        "from0901-fixtures.json": 12,
+        "from1645-fixtures.json": 12,
+        "from1879-fixtures.json": 12,
+        "frompr530902-fixtures.json": 12,
+        "frompr560902-fixtures.json": 12,
+        "frompr570903-fixtures.json": 12,
+        "frompr580904-fixtures.json": 12
+      },
+      "nonpassing_steps": {},
+      "artifact_id": 13672810860,
+      "baseline_zip_sha256": "00d136b6a008d63efe6733b230664918f510ee718b3ccedc03754a7f2fcfc844",
+      "evidence_zip_sha256": "db84f3c1d323d1f463229d799a68ae5ab6a0072bcdd309ac9c106d79a1f0b7cc",
+      "runtime": {
+        "php": "8.1.34",
+        "database_server": "8.0.46-37",
+        "database_version_comment": "Percona Server (GPL), Release 37, Revision 39e2b60e"
+      },
+      "not_covered": [
+        "browser/UI",
+        "production/staging deployment",
+        "full sibling-plugin distribution",
+        "backup/restore"
+      ],
+      "remaining_failure_messages": [
+        {
+          "case": "local_kbacompany\\battle_plan_indicator_service_test::test_historical_projection_uses_last_52_periods_relative_to_plan_week",
+          "type": "failure",
+          "message": "local_kbacompany\\battle_plan_indicator_service_test::test_historical_projection_uses_last_52_periods_relative_to_plan_week\nFailed asserting that two strings are not identical.\n\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/tests/battle_plan_indicator_service_test.php:104\n/home/runner/work/_temp/pr48/fresh/core/lib/phpunit/classes/advanced_testcase.php:80"
+        },
+        {
+          "case": "local_kbacompany\\battle_plan_management_overview_service_test::test_contract_is_schema_neutral_read_model",
+          "type": "failure",
+          "message": "local_kbacompany\\battle_plan_management_overview_service_test::test_contract_is_schema_neutral_read_model\nFailed asserting that two strings are identical.\n--- Expected\n+++ Actual\n@@ @@\n-'0.5.10'\n+'0.5.11'\n\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/tests/battle_plan_management_overview_service_test.php:11\n/home/runner/work/_temp/pr48/fresh/core/lib/phpunit/classes/advanced_testcase.php:80"
+        },
+        {
+          "case": "local_kbacompany\\battle_plan_word_export_service_test::test_ooxml_contains_real_word_document_and_cyrillic_text",
+          "type": "error",
+          "message": "local_kbacompany\\battle_plan_word_export_service_test::test_ooxml_contains_real_word_document_and_cyrillic_text\nUndefined array key \"observer\"\n\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/battle_plan_word_export_service.php:383\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/tests/battle_plan_word_export_service_test.php:24\n/home/runner/work/_temp/pr48/fresh/core/lib/phpunit/classes/basic_testcase.php:64"
+        },
+        {
+          "case": "local_kbacompany\\battle_plan_word_export_service_test::test_model_projects_previous_partial_week_and_current_target",
+          "type": "failure",
+          "message": "local_kbacompany\\battle_plan_word_export_service_test::test_model_projects_previous_partial_week_and_current_target\nFailed asserting that '42000.00 (Actual for 1 of 7 days)' contains \"Факт за 1 из 7 дней\".\n\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/tests/battle_plan_word_export_service_test.php:113\n/home/runner/work/_temp/pr48/fresh/core/lib/phpunit/classes/basic_testcase.php:64"
+        },
+        {
+          "case": "local_kbacompany\\bms_navigation_test::test_only_allowlisted_context_is_propagated",
+          "type": "failure",
+          "message": "local_kbacompany\\bms_navigation_test::test_only_allowlisted_context_is_propagated\nFailed asserting that true is identical to false.\n\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/tests/bms_navigation_test.php:36\n/home/runner/work/_temp/pr48/fresh/core/lib/phpunit/classes/advanced_testcase.php:80"
+        },
+        {
+          "case": "local_kbacompany\\bms_page_shell_service_test::test_contract_versions_are_aligned",
+          "type": "failure",
+          "message": "local_kbacompany\\bms_page_shell_service_test::test_contract_versions_are_aligned\nFailed asserting that two strings are identical.\n--- Expected\n+++ Actual\n@@ @@\n-'0.4.9'\n+'0.6.0'\n\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/tests/bms_page_shell_service_test.php:12\n/home/runner/work/_temp/pr48/fresh/core/lib/phpunit/classes/advanced_testcase.php:80"
+        },
+        {
+          "case": "local_kbacompany\\bms_page_shell_service_test::test_business_architecture_semantics_follow_bms_methodology",
+          "type": "failure",
+          "message": "local_kbacompany\\bms_page_shell_service_test::test_business_architecture_semantics_follow_bms_methodology\nFailed asserting that two arrays are identical.\n--- Expected\n+++ Actual\n@@ @@\n     1 => 'functions'\n     2 => 'flows'\n     3 => 'products'\n+    4 => 'metrics'\n+    5 => 'informationcenter'\n )\n\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/tests/bms_page_shell_service_test.php:44\n/home/runner/work/_temp/pr48/fresh/core/lib/phpunit/classes/advanced_testcase.php:80"
+        },
+        {
+          "case": "local_kbacompany\\company_core_test::test_contract_declares_existing_source_without_duplication",
+          "type": "failure",
+          "message": "local_kbacompany\\company_core_test::test_contract_declares_existing_source_without_duplication\nFailed asserting that two strings are identical.\n--- Expected\n+++ Actual\n@@ @@\n-'0.6.0'\n+'0.6.7'\n\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/tests/company_core_test.php:21\n/home/runner/work/_temp/pr48/fresh/core/lib/phpunit/classes/advanced_testcase.php:80"
+        },
+        {
+          "case": "local_kbacompany\\company_core_test::test_permission_contract_centralises_company_role_policies",
+          "type": "failure",
+          "message": "local_kbacompany\\company_core_test::test_permission_contract_centralises_company_role_policies\nFailed asserting that two strings are identical.\n--- Expected\n+++ Actual\n@@ @@\n-'0.5.1.3'\n+'0.7.0'\n\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/tests/company_core_test.php:79\n/home/runner/work/_temp/pr48/fresh/core/lib/phpunit/classes/advanced_testcase.php:80"
+        },
+        {
+          "case": "local_kbacompany\\financial_statement_service_test::test_bdr_and_bdds_calculations_match_bms_finance_rules",
+          "type": "failure",
+          "message": "local_kbacompany\\financial_statement_service_test::test_bdr_and_bdds_calculations_match_bms_finance_rules\nFailed asserting that 500.0 matches expected 450.0.\n\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/tests/financial_statement_service_test.php:32\n/home/runner/work/_temp/pr48/fresh/core/lib/phpunit/classes/advanced_testcase.php:80"
+        },
+        {
+          "case": "local_kbacompany\\indicator_registry_service_test::test_contract_keeps_one_canonical_indicator_registry",
+          "type": "failure",
+          "message": "local_kbacompany\\indicator_registry_service_test::test_contract_keeps_one_canonical_indicator_registry\nFailed asserting that two strings are identical.\n--- Expected\n+++ Actual\n@@ @@\n-'0.5.2'\n+'0.5.5.2'\n\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/tests/indicator_registry_service_test.php:14\n/home/runner/work/_temp/pr48/fresh/core/lib/phpunit/classes/advanced_testcase.php:80"
+        },
+        {
+          "case": "local_kbacompany\\integration_event_service_test::test_event_outbox_lifecycle_is_independent_from_legacy_command_status",
+          "type": "failure",
+          "message": "local_kbacompany\\integration_event_service_test::test_event_outbox_lifecycle_is_independent_from_legacy_command_status\nFailed asserting that 2 is identical to 1.\n\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/tests/integration_event_service_test.php:78\n/home/runner/work/_temp/pr48/fresh/core/lib/phpunit/classes/advanced_testcase.php:80"
+        },
+        {
+          "case": "local_kbacompany\\market_model_service_test::test_contract",
+          "type": "failure",
+          "message": "local_kbacompany\\market_model_service_test::test_contract\nFailed asserting that two strings are identical.\n--- Expected\n+++ Actual\n@@ @@\n-'0.3.5'\n+'0.4.11'\n\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/tests/market_model_service_test.php:8\n/home/runner/work/_temp/pr48/fresh/core/lib/phpunit/classes/advanced_testcase.php:80"
+        },
+        {
+          "case": "local_kbacompany\\ofs_service_test::test_ofs_projects_company_unit_function_products_and_internal_customer",
+          "type": "failure",
+          "message": "local_kbacompany\\ofs_service_test::test_ofs_projects_company_unit_function_products_and_internal_customer\nFailed asserting that true is false.\n\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/tests/ofs_service_test.php:73\n/home/runner/work/_temp/pr48/fresh/core/lib/phpunit/classes/advanced_testcase.php:80"
+        },
+        {
+          "case": "local_kbacompany\\process_model_service_test::test_complete_sipoc_bpmn_model_publishes_and_activity_becomes_semantic",
+          "type": "failure",
+          "message": "local_kbacompany\\process_model_service_test::test_complete_sipoc_bpmn_model_publishes_and_activity_becomes_semantic\nFailed asserting that two strings are identical.\n--- Expected\n+++ Actual\n@@ @@\n-'0.3.1'\n+'0.4.4'\n\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/tests/process_model_service_test.php:85\n/home/runner/work/_temp/pr48/fresh/core/lib/phpunit/classes/advanced_testcase.php:80"
+        },
+        {
+          "case": "local_kbacompany\\process_service_test::test_process_hierarchy_publish_and_cross_functional_links",
+          "type": "failure",
+          "message": "local_kbacompany\\process_service_test::test_process_hierarchy_publish_and_cross_functional_links\nFailed asserting that two strings are identical.\n--- Expected\n+++ Actual\n@@ @@\n-'0.3.0'\n+'0.4.0'\n\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/tests/process_service_test.php:56\n/home/runner/work/_temp/pr48/fresh/core/lib/phpunit/classes/advanced_testcase.php:80"
+        },
+        {
+          "case": "local_kbacompany\\project_execution_service_test::test_management_planning_does_not_link_to_retired_editor",
+          "type": "failure",
+          "message": "local_kbacompany\\project_execution_service_test::test_management_planning_does_not_link_to_retired_editor\nFailed asserting that two arrays are identical.\n--- Expected\n+++ Actual\n@@ @@\n Array &0 (\n-    0 => 'week'\n-    1 => 'battleplan'\n-    2 => 'cycles'\n+    0 => 'coordweek'\n+    1 => 'decisionsregistry'\n+    2 => 'week'\n+    3 => 'battleplan'\n+    4 => 'cycles'\n )\n\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/tests/project_execution_service_test.php:55\n/home/runner/work/_temp/pr48/fresh/core/lib/phpunit/classes/advanced_testcase.php:80"
+        },
+        {
+          "case": "local_kbacompany\\task_batch_actions1842_test::test_batch_start_accept_and_stale_revisions",
+          "type": "error",
+          "message": "local_kbacompany\\task_batch_actions1842_test::test_batch_start_accept_and_stale_revisions\nmoodle_exception: Employee is not available in this company.\n\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/task_service.php:68\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/task_service.php:197\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/task_service.php:550\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/task_service.php:590\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/tests/task_batch_actions1842_test.php:38\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/tests/task_batch_actions1842_test.php:60\n/home/runner/work/_temp/pr48/fresh/core/lib/phpunit/classes/advanced_testcase.php:80"
+        },
+        {
+          "case": "local_kbacompany\\task_batch_actions1842_test::test_generated_tasks_cannot_be_bulk_reassigned_and_cross_company_task_is_not_updated",
+          "type": "error",
+          "message": "local_kbacompany\\task_batch_actions1842_test::test_generated_tasks_cannot_be_bulk_reassigned_and_cross_company_task_is_not_updated\nmoodle_exception: Employee is not available in this company.\n\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/task_service.php:68\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/task_service.php:197\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/task_service.php:546\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/task_service.php:590\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/tests/task_batch_actions1842_test.php:38\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/tests/task_batch_actions1842_test.php:99\n/home/runner/work/_temp/pr48/fresh/core/lib/phpunit/classes/advanced_testcase.php:80"
+        },
+        {
+          "case": "local_kbacompany\\task_deadlines1843_test::test_bucket_filter_and_global_counts_are_separate_and_acl_scoped",
+          "type": "error",
+          "message": "local_kbacompany\\task_deadlines1843_test::test_bucket_filter_and_global_counts_are_separate_and_acl_scoped\nmoodle_exception: Employee is not available in this company.\n\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/task_service.php:68\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/task_service.php:197\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/task_service.php:546\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/task_service.php:590\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/tests/task_deadlines1843_test.php:35\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/tests/task_deadlines1843_test.php:74\n/home/runner/work/_temp/pr48/fresh/core/lib/phpunit/classes/advanced_testcase.php:80"
+        },
+        {
+          "case": "local_kbacompany\\task_kanban1846_test::test_editor_and_columns_render_without_raw_html_or_missing_tasks",
+          "type": "error",
+          "message": "local_kbacompany\\task_kanban1846_test::test_editor_and_columns_render_without_raw_html_or_missing_tasks\ninvalid_parameter_exception: Invalid parameter value detected (Invalid BMS Company UUID.)\n\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/company_context_service.php:36\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/company_context_service.php:64\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/access_role_service.php:127\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/task_service.php:2412\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/task_ui_service.php:950\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/tests/task_kanban1846_test.php:100\n/home/runner/work/_temp/pr48/fresh/core/lib/phpunit/classes/advanced_testcase.php:80"
+        },
+        {
+          "case": "local_kbacompany\\task_kanban1850_test::test_page_scoped_grouping_and_full_counts_in_board_html",
+          "type": "error",
+          "message": "local_kbacompany\\task_kanban1850_test::test_page_scoped_grouping_and_full_counts_in_board_html\ninvalid_parameter_exception: Invalid parameter value detected (Invalid BMS Company UUID.)\n\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/company_context_service.php:36\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/company_context_service.php:64\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/access_role_service.php:127\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/task_service.php:2414\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/task_ui_service.php:950\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/tests/task_kanban1850_test.php:105\n/home/runner/work/_temp/pr48/fresh/core/lib/phpunit/classes/advanced_testcase.php:80"
+        },
+        {
+          "case": "local_kbacompany\\task_manager_workspace1853_test::test_non_manager_never_receives_manager_workspace",
+          "type": "failure",
+          "message": "local_kbacompany\\task_manager_workspace1853_test::test_non_manager_never_receives_manager_workspace\nFailed asserting that '<header class=\"bms24-task-header\">\\n\n  <div class=\"bms24-task-heading\"><h1>Tasks</h1></div>\\n\n  \\n\n  <div class=\"bms24-task-header-actions\"><a class=\"bms24-ui-btn bms24-ui-btn--primary\" href=\"https://www.example.com/moodle/local/kbacompany/tasks.php?uuid=test-company&amp;view=create\">Create task</a><details class=\"bms24-task-menu\"><summary class=\"bms24-ui-btn\">Tools</summary><div class=\"bms24-task-menu-items\"><a href=\"https://www.example.com/moodle/local/kbacompany/tasks.php?uuid=test-company&amp;view=sources\">Tasks from other sources</a><a href=\"https://www.example.com/moodle/local/kbacompany/recurring_task_library.php?uuid=test-company\">Recurring task library</a><a href=\"https://www.example.com/moodle/local/kbacompany/battle_plan.php?uuid=test-company\">Battle Plan</a><a href=\"https://www.example.com/moodle/local/kbacompany/communication_center.php?uuid=test-company\">Communication Center</a></div></details></div>\\n\n</header><section class=\"bms24-task-toolbar\" aria-label=\"Tasks\">\\n\n  \\n\n  <div class=\"bms24-task-toolbar-actions\"><nav class=\"bms24-task-tabs\" aria-label=\"Tasks\">\\n\n<a class=\"bms24-task-tab\" href=\"https://www.example.com/moodle/local/kbacompany/tasks.php?uuid=test-company&amp;scope=roles&amp;q&amp;status&amp;stream&amp;sourcekind&amp;battleplan&amp;signal&amp;assignee=0&amp;project&amp;sort=duedate&amp;dir=asc&amp;display=manager&amp;page=0\">All my roles · 2</a><a class=\"bms24-task-tab\" href=\"https://www.example.com/moodle/local/kbacompany/tasks.php?uuid=test-company&amp;scope=my&amp;q&amp;status&amp;stream&amp;sourcekind&amp;battleplan&amp;signal&amp;assignee=0&amp;project&amp;sort=duedate&amp;dir=asc&amp;display=manager&amp;page=0\">My tasks</a><a class=\"bms24-task-tab\" href=\"https://www.example.com/moodle/local/kbacompany/tasks.php?uuid=test-company&amp;scope=created&amp;q&amp;status&amp;stream&amp;sourcekind&amp;battleplan&amp;signal&amp;assignee=0&amp;project&amp;sort=duedate&amp;dir=asc&amp;display=manager&amp;page=0\">Created by me</a><a class=\"bms24-task-tab\" href=\"https://www.example.com/moodle/local/kbacompany/tasks.php?uuid=test-company&amp;scope=review&amp;q&amp;status&amp;stream&amp;sourcekind&amp;battleplan&amp;signal&amp;assignee=0&amp;project&amp;sort=duedate&amp;dir=asc&amp;display=manager&amp;page=0\">Waiting for my review</a><a class=\"bms24-task-tab\" href=\"https://www.example.com/moodle/local/kbacompany/tasks.php?uuid=test-company&amp;scope=watching&amp;q&amp;status&amp;stream&amp;sourcekind&amp;battleplan&amp;signal&amp;assignee=0&amp;project&amp;sort=duedate&amp;dir=asc&amp;display=manager&amp;page=0\">Watching</a>\\n\n</nav></div>\\n\n</section><form class=\"bms24-task-quicksearch\" method=\"get\" action=\"https://www.example.com/moodle/local/kbacompany/tasks.php?uuid=test-company\" role=\"search\" data-bms-task-fast-search=\"1\"><input type=\"hidden\" name=\"scope\" value=\"all\" /><input type=\"hidden\" name=\"status\" value=\"\" /><input type=\"hidden\" name=\"stream\" value=\"\" /><input type=\"hidden\" name=\"sourcekind\" value=\"\" /><input type=\"hidden\" name=\"battleplan\" value=\"\" /><input type=\"hidden\" name=\"signal\" value=\"\" /><input type=\"hidden\" name=\"assignee\" value=\"0\" /><input type=\"hidden\" name=\"project\" value=\"\" /><input type=\"hidden\" name=\"sort\" value=\"duedate\" /><input type=\"hidden\" name=\"dir\" value=\"asc\" /><input type=\"hidden\" name=\"uuid\" value=\"test-company\" /><input type=\"hidden\" name=\"display\" value=\"manager\" /><input type=\"hidden\" name=\"page\" value=\"0\" /><label for=\"bms_task1840_q\" class=\"sr-only\">Search tasks by title</label><input type=\"search\" id=\"bms_task1840_q\" name=\"q\" value=\"\" maxlength=\"200\" class=\"bms24-ui-input\" autocomplete=\"off\" placeholder=\"Search tasks by title\" /><button class=\"bms24-ui-btn bms24-ui-btn--primary\" type=\"submit\">Search</button></form><nav class=\"bms24-task-quickfilters\" aria-label=\"Quick filters\"><a class=\"bms24-task-quickchip\" aria-pressed=\"false\" href=\"https://www.example.com/moodle/local/kbacompany/tasks.php?uuid=test-company&amp;scope=all&amp;q&amp;status&amp;stream&amp;sourcekind&amp;battleplan&amp;signal=open&amp;assignee=0&amp;project&amp;sort=duedate&amp;dir=asc&amp;display=list&amp;page=0\">Unfinished</a><a class=\"bms24-task-quickchip\" aria-pressed=\"false\" href=\"https://www.example.com/moodle/local/kbacompany/tasks.php?uuid=test-company&amp;scope=all&amp;q&amp;status&amp;stream&amp;sourcekind&amp;battleplan&amp;signal=review&amp;assignee=0&amp;project&amp;sort=duedate&amp;dir=asc&amp;display=list&amp;page=0\">In review</a><a class=\"bms24-task-quickchip\" aria-pressed=\"false\" href=\"https://www.example.com/moodle/local/kbacompany/tasks.php?uuid=test-company&amp;scope=all&amp;q&amp;status&amp;stream&amp;sourcekind&amp;battleplan&amp;signal=overdue&amp;assignee=0&amp;project&amp;sort=duedate&amp;dir=asc&amp;display=list&amp;page=0\">Overdue</a><a class=\"bms24-task-quickchip\" aria-pressed=\"false\" href=\"https://www.example.com/moodle/local/kbacompany/tasks.php?uuid=test-company&amp;scope=all&amp;q&amp;status&amp;stream&amp;sourcekind&amp;battleplan&amp;signal=soon&amp;assignee=0&amp;project&amp;sort=duedate&amp;dir=asc&amp;display=list&amp;page=0\">Due within 7 days</a><a class=\"bms24-task-quickchip\" aria-pressed=\"false\" href=\"https://www.example.com/moodle/local/kbacompany/tasks.php?uuid=test-company&amp;scope=all&amp;q&amp;status&amp;stream&amp;sourcekind&amp;battleplan&amp;signal=done&amp;assignee=0&amp;project&amp;sort=duedate&amp;dir=asc&amp;display=list&amp;page=0\">Completed</a></nav><details class=\"bms24-task-advanced\"><summary>More filters</summary><form class=\"bms24-ui-filterbar\" method=\"get\" action=\"https://www.example.com/moodle/local/kbacompany/tasks.php?uuid=test-company\" aria-label=\"Tasks\">\\n\n<input type=\"hidden\" name=\"uuid\" value=\"test-company\"><input type=\"hidden\" name=\"scope\" value=\"all\"><input type=\"hidden\" name=\"display\" value=\"manager\"><input type=\"hidden\" name=\"signal\" value=\"\"><input type=\"hidden\" name=\"q\" value=\"\"><input type=\"hidden\" name=\"assignee\" value=\"0\"><input type=\"hidden\" name=\"project\" value=\"\"><input type=\"hidden\" name=\"duegroup\" value=\"\">\\n\n<div class=\"bms24-ui-fieldgrid\"><div class=\"bms24-ui-field\">\\n\n<label class=\"bms24-ui-label\" for=\"tui_status\">Status</label>\\n\n<select class=\"bms24-ui-select\" id=\"tui_status\" name=\"status\"><option value=\"\" selected>All statuses</option><option value=\"open\">New</option><option value=\"doing\">In progress</option><option value=\"review\">Awaiting acceptance</option><option value=\"returned\">Returned</option><option value=\"done\">Done</option><option value=\"cancelled\">Cancelled</option></select>\\n\n\\n\n\\n\n\\n\n\\n\n</div>\\n\n<div class=\"bms24-ui-field\">\\n\n<label class=\"bms24-ui-label\" for=\"tui_stream\">Work stream</label>\\n\n<select class=\"bms24-ui-select\" id=\"tui_stream\" name=\"stream\"><option value=\"\" selected>All streams</option><option value=\"change\">Change — programs and projects</option><option value=\"run\">Recurring work</option><option value=\"operate\">Current position work</option><option value=\"develop\">Learning and development</option><option value=\"unplanned\">Unplanned</option></select>\\n\n\\n\n\\n\n\\n\n\\n\n</div>\\n\n<div class=\"bms24-ui-field\">\\n\n<label class=\"bms24-ui-label\" for=\"tui_sourcekind\">Source</label>\\n\n<select class=\"bms24-ui-select\" id=\"tui_sourcekind\" name=\"sourcekind\"><option value=\"\" selected>All BMS sources</option><option value=\"manual\">Manual task</option><option value=\"adminscale\">Administrative Scale</option><option value=\"positionwork\">Position Work Program</option><option value=\"learning\">Learning / development</option><option value=\"legacy\">Previous execution workflow</option><option value=\"communication\">Communication Center</option><option value=\"decision\">Meeting decision</option><option value=\"recurring\">Recurring task</option><option value=\"template\">Task library template</option><option value=\"bplantemplate\">Battle Plan template</option><option value=\"condition\">Indicator condition</option></select>\\n\n\\n\n\\n\n\\n\n\\n\n</div>\\n\n<div class=\"bms24-ui-field\">\\n\n<label class=\"bms24-ui-label\" for=\"tui_battleplan\">Battle Plan</label>\\n\n<select class=\"bms24-ui-select\" id=\"tui_battleplan\" name=\"battleplan\"><option value=\"\" selected>All Battle Plans</option></select>\\n\n\\n\n\\n\n\\n\n\\n\n</div>\\n\n</div>\\n\n<div class=\"bms24-ui-filter-actions\"><button class=\"bms24-ui-btn bms24-ui-btn--primary\" type=\"submit\">Apply</button><a class=\"bms24-ui-btn\" href=\"https://www.example.com/moodle/local/kbacompany/tasks.php?uuid=test-company&amp;scope=all&amp;display=manager\">Reset</a></div>\\n\n</form></details><section class=\"bms24-task-toolbar\" aria-label=\"Tasks\">\\n\n  <div class=\"bms24-task-toolbar-lead\"><p class=\"bms24-task-note\">Records found: 3</p></div>\\n\n  <div class=\"bms24-task-toolbar-actions\"><nav class=\"bms24-task-tabs\" aria-label=\"List\">\\n\n<a class=\"bms24-task-tab\" href=\"https://www.example.com/moodle/local/kbacompany/tasks.php?uuid=test-company&amp;scope=all&amp;q&amp;status&amp;stream&amp;sourcekind&amp;battleplan&amp;signal&amp;assignee=0&amp;project&amp;sort=duedate&amp;dir=asc&amp;display=list&amp;page=0\">List</a><a class=\"bms24-task-tab\" href=\"https://www.example.com/moodle/local/kbacompany/tasks.php?uuid=test-company&amp;scope=all&amp;q&amp;status&amp;stream&amp;sourcekind&amp;battleplan&amp;signal&amp;assignee=0&amp;project&amp;sort=duedate&amp;dir=asc&amp;display=kanban&amp;page=0\">Board</a><a class=\"bms24-task-tab\" href=\"https://www.example.com/moodle/local/kbacompany/tasks.php?uuid=test-company&amp;scope=all&amp;q&amp;status&amp;stream&amp;sourcekind&amp;battleplan&amp;signal&amp;assignee=0&amp;project&amp;sort=duedate&amp;dir=asc&amp;display=deadlines&amp;page=0\">Deadlines</a><a class=\"bms24-task-tab\" href=\"https://www.example.com/moodle/local/kbacompany/tasks.php?uuid=test-company&amp;scope=all&amp;q&amp;status&amp;stream&amp;sourcekind&amp;battleplan&amp;signal&amp;assignee=0&amp;project&amp;sort=duedate&amp;dir=asc&amp;display=analytics&amp;page=0\">Summary</a>\\n\n</nav></div>\\n\n</section><p class=\"bms24-task-note\">The manager workspace is not available for your role.</p>' does not contain \"display=manager\".\n\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/tests/task_manager_workspace1853_test.php:58\n/home/runner/work/_temp/pr48/fresh/core/lib/phpunit/classes/advanced_testcase.php:80"
+        },
+        {
+          "case": "local_kbacompany\\task_roles_workspace1840_test::test_compact_workspace_escapes_search_and_has_progressive_get_fallback",
+          "type": "failure",
+          "message": "local_kbacompany\\task_roles_workspace1840_test::test_compact_workspace_escapes_search_and_has_progressive_get_fallback\nFailed asserting that '<header class=\"bms24-task-header\">\\n\n  <div class=\"bms24-task-heading\"><h1>Tasks</h1></div>\\n\n  \\n\n  <div class=\"bms24-task-header-actions\"><a class=\"bms24-ui-btn bms24-ui-btn--primary\" href=\"https://www.example.com/moodle/local/kbacompany/tasks.php?uuid=company-test&amp;view=create\">Create task</a><details class=\"bms24-task-menu\"><summary class=\"bms24-ui-btn\">Tools</summary><div class=\"bms24-task-menu-items\"><a href=\"https://www.example.com/moodle/local/kbacompany/tasks.php?uuid=company-test&amp;view=sources\">Tasks from other sources</a><a href=\"https://www.example.com/moodle/local/kbacompany/recurring_task_library.php?uuid=company-test\">Recurring task library</a><a href=\"https://www.example.com/moodle/local/kbacompany/battle_plan.php?uuid=company-test\">Battle Plan</a><a href=\"https://www.example.com/moodle/local/kbacompany/communication_center.php?uuid=company-test\">Communication Center</a></div></details></div>\\n\n</header><section class=\"bms24-task-toolbar\" aria-label=\"Tasks\">\\n\n  \\n\n  <div class=\"bms24-task-toolbar-actions\"><nav class=\"bms24-task-tabs\" aria-label=\"Tasks\">\\n\n<a class=\"bms24-task-tab\" href=\"https://www.example.com/moodle/local/kbacompany/tasks.php?uuid=company-test&amp;scope=roles&amp;q=%3Cscript%3Ealert%281%29%3C%2Fscript%3E&amp;status&amp;stream&amp;sourcekind&amp;battleplan&amp;signal&amp;assignee=0&amp;project&amp;display=list&amp;page=0\" aria-current=\"page\">All my roles · 3</a><a class=\"bms24-task-tab\" href=\"https://www.example.com/moodle/local/kbacompany/tasks.php?uuid=company-test&amp;scope=my&amp;q=%3Cscript%3Ealert%281%29%3C%2Fscript%3E&amp;status&amp;stream&amp;sourcekind&amp;battleplan&amp;signal&amp;assignee=0&amp;project&amp;display=list&amp;page=0\">My tasks · 2</a><a class=\"bms24-task-tab\" href=\"https://www.example.com/moodle/local/kbacompany/tasks.php?uuid=company-test&amp;scope=created&amp;q=%3Cscript%3Ealert%281%29%3C%2Fscript%3E&amp;status&amp;stream&amp;sourcekind&amp;battleplan&amp;signal&amp;assignee=0&amp;project&amp;display=list&amp;page=0\">Created by me · 1</a><a class=\"bms24-task-tab\" href=\"https://www.example.com/moodle/local/kbacompany/tasks.php?uuid=company-test&amp;scope=review&amp;q=%3Cscript%3Ealert%281%29%3C%2Fscript%3E&amp;status&amp;stream&amp;sourcekind&amp;battleplan&amp;signal&amp;assignee=0&amp;project&amp;display=list&amp;page=0\">Waiting for my review · 0</a><a class=\"bms24-task-tab\" href=\"https://www.example.com/moodle/local/kbacompany/tasks.php?uuid=company-test&amp;scope=watching&amp;q=%3Cscript%3Ealert%281%29%3C%2Fscript%3E&amp;status&amp;stream&amp;sourcekind&amp;battleplan&amp;signal&amp;assignee=0&amp;project&amp;display=list&amp;page=0\">Watching · 1</a>\\n\n</nav></div>\\n\n</section><form class=\"bms24-task-quicksearch\" method=\"get\" action=\"https://www.example.com/moodle/local/kbacompany/tasks.php?uuid=company-test\" role=\"search\" data-bms-task-fast-search=\"1\"><input type=\"hidden\" name=\"scope\" value=\"roles\" /><input type=\"hidden\" name=\"status\" value=\"\" /><input type=\"hidden\" name=\"stream\" value=\"\" /><input type=\"hidden\" name=\"sourcekind\" value=\"\" /><input type=\"hidden\" name=\"battleplan\" value=\"\" /><input type=\"hidden\" name=\"signal\" value=\"\" /><input type=\"hidden\" name=\"assignee\" value=\"0\" /><input type=\"hidden\" name=\"project\" value=\"\" /><input type=\"hidden\" name=\"uuid\" value=\"company-test\" /><input type=\"hidden\" name=\"display\" value=\"list\" /><input type=\"hidden\" name=\"page\" value=\"0\" /><label for=\"bms_task1840_q\" class=\"sr-only\">Search tasks by title</label><input type=\"search\" id=\"bms_task1840_q\" name=\"q\" value=\"&lt;script&gt;alert(1)&lt;/script&gt;\" maxlength=\"200\" class=\"bms24-ui-input\" autocomplete=\"off\" placeholder=\"Search tasks by title\" /><button class=\"bms24-ui-btn bms24-ui-btn--primary\" type=\"submit\">Search</button></form><nav class=\"bms24-task-quickfilters\" aria-label=\"Quick filters\"><a class=\"bms24-task-quickchip\" aria-pressed=\"false\" href=\"https://www.example.com/moodle/local/kbacompany/tasks.php?uuid=company-test&amp;scope=roles&amp;q=%3Cscript%3Ealert%281%29%3C%2Fscript%3E&amp;status&amp;stream&amp;sourcekind&amp;battleplan&amp;signal=open&amp;assignee=0&amp;project&amp;display=list&amp;page=0\">Unfinished</a><a class=\"bms24-task-quickchip\" aria-pressed=\"false\" href=\"https://www.example.com/moodle/local/kbacompany/tasks.php?uuid=company-test&amp;scope=roles&amp;q=%3Cscript%3Ealert%281%29%3C%2Fscript%3E&amp;status&amp;stream&amp;sourcekind&amp;battleplan&amp;signal=review&amp;assignee=0&amp;project&amp;display=list&amp;page=0\">In review</a><a class=\"bms24-task-quickchip\" aria-pressed=\"false\" href=\"https://www.example.com/moodle/local/kbacompany/tasks.php?uuid=company-test&amp;scope=roles&amp;q=%3Cscript%3Ealert%281%29%3C%2Fscript%3E&amp;status&amp;stream&amp;sourcekind&amp;battleplan&amp;signal=overdue&amp;assignee=0&amp;project&amp;display=list&amp;page=0\">Overdue</a><a class=\"bms24-task-quickchip\" aria-pressed=\"false\" href=\"https://www.example.com/moodle/local/kbacompany/tasks.php?uuid=company-test&amp;scope=roles&amp;q=%3Cscript%3Ealert%281%29%3C%2Fscript%3E&amp;status&amp;stream&amp;sourcekind&amp;battleplan&amp;signal=soon&amp;assignee=0&amp;project&amp;display=list&amp;page=0\">Due within 7 days</a><a class=\"bms24-task-quickchip\" aria-pressed=\"false\" href=\"https://www.example.com/moodle/local/kbacompany/tasks.php?uuid=company-test&amp;scope=roles&amp;q=%3Cscript%3Ealert%281%29%3C%2Fscript%3E&amp;status&amp;stream&amp;sourcekind&amp;battleplan&amp;signal=done&amp;assignee=0&amp;project&amp;display=list&amp;page=0\">Completed</a></nav><details class=\"bms24-task-advanced\"><summary>More filters</summary><form class=\"bms24-ui-filterbar\" method=\"get\" action=\"https://www.example.com/moodle/local/kbacompany/tasks.php?uuid=company-test\" aria-label=\"Tasks\">\\n\n<input type=\"hidden\" name=\"uuid\" value=\"company-test\"><input type=\"hidden\" name=\"scope\" value=\"roles\"><input type=\"hidden\" name=\"display\" value=\"list\"><input type=\"hidden\" name=\"signal\" value=\"\"><input type=\"hidden\" name=\"q\" value=\"&lt;script&gt;alert(1)&lt;/script&gt;\"><input type=\"hidden\" name=\"assignee\" value=\"0\"><input type=\"hidden\" name=\"project\" value=\"\"><input type=\"hidden\" name=\"duegroup\" value=\"\">\\n\n<div class=\"bms24-ui-fieldgrid\"><div class=\"bms24-ui-field\">\\n\n<label class=\"bms24-ui-label\" for=\"tui_status\">Status</label>\\n\n<select class=\"bms24-ui-select\" id=\"tui_status\" name=\"status\"><option value=\"\" selected>All statuses</option><option value=\"open\">New</option><option value=\"doing\">In progress</option><option value=\"review\">Awaiting acceptance</option><option value=\"returned\">Returned</option><option value=\"done\">Done</option><option value=\"cancelled\">Cancelled</option></select>\\n\n\\n\n\\n\n\\n\n\\n\n</div>\\n\n<div class=\"bms24-ui-field\">\\n\n<label class=\"bms24-ui-label\" for=\"tui_stream\">Work stream</label>\\n\n<select class=\"bms24-ui-select\" id=\"tui_stream\" name=\"stream\"><option value=\"\" selected>All streams</option><option value=\"change\">Change — programs and projects</option><option value=\"run\">Recurring work</option><option value=\"operate\">Current position work</option><option value=\"develop\">Learning and development</option><option value=\"unplanned\">Unplanned</option></select>\\n\n\\n\n\\n\n\\n\n\\n\n</div>\\n\n<div class=\"bms24-ui-field\">\\n\n<label class=\"bms24-ui-label\" for=\"tui_sourcekind\">Source</label>\\n\n<select class=\"bms24-ui-select\" id=\"tui_sourcekind\" name=\"sourcekind\"><option value=\"\" selected>All BMS sources</option><option value=\"manual\">Manual task</option><option value=\"adminscale\">Administrative Scale</option><option value=\"positionwork\">Position Work Program</option><option value=\"learning\">Learning / development</option><option value=\"legacy\">Previous execution workflow</option><option value=\"communication\">Communication Center</option><option value=\"decision\">Meeting decision</option><option value=\"recurring\">Recurring task</option><option value=\"template\">Task library template</option><option value=\"bplantemplate\">Battle Plan template</option><option value=\"condition\">Indicator condition</option></select>\\n\n\\n\n\\n\n\\n\n\\n\n</div>\\n\n<div class=\"bms24-ui-field\">\\n\n<label class=\"bms24-ui-label\" for=\"tui_battleplan\">Battle Plan</label>\\n\n<select class=\"bms24-ui-select\" id=\"tui_battleplan\" name=\"battleplan\"><option value=\"\" selected>All Battle Plans</option></select>\\n\n\\n\n\\n\n\\n\n\\n\n</div>\\n\n</div>\\n\n<div class=\"bms24-ui-filter-actions\"><button class=\"bms24-ui-btn bms24-ui-btn--primary\" type=\"submit\">Apply</button><a class=\"bms24-ui-btn\" href=\"https://www.example.com/moodle/local/kbacompany/tasks.php?uuid=company-test&amp;scope=roles&amp;display=list\">Reset</a></div>\\n\n</form></details><div class=\"bms-task1849-shell bms-task1848-shell\" data-bms-task1848-shell=\"1\"><div class=\"bms-task1849-topbar\"><section class=\"bms24-task-toolbar\" aria-label=\"Tasks\">\\n\n  <div class=\"bms24-task-toolbar-lead\"><p class=\"bms24-task-note\">Records found: 0</p></div>\\n\n  <div class=\"bms24-task-toolbar-actions\"><div class=\"bms24-task-viewtools\"><details class=\"bms24-task-preferences\"><summary class=\"bms24-task-preferences-toggle\" title=\"Configure table\" aria-label=\"Configure table\"><span class=\"bms24-task-preferences-icon\" aria-hidden=\"true\">&#9881;</span><span class=\"sr-only\">Configure table</span></summary><form method=\"post\" action=\"https://www.example.com/moodle/local/kbacompany/task_list_preferences.php\" class=\"bms24-task-preferences-form\"><input type=\"hidden\" name=\"uuid\" value=\"company-test\" /><input type=\"hidden\" name=\"sesskey\" value=\"j1hW7JvHRd\" /><input type=\"hidden\" name=\"scope\" value=\"roles\" /><input type=\"hidden\" name=\"q\" value=\"&lt;script&gt;alert(1)&lt;/script&gt;\" /><input type=\"hidden\" name=\"status\" value=\"\" /><input type=\"hidden\" name=\"stream\" value=\"\" /><input type=\"hidden\" name=\"sourcekind\" value=\"\" /><input type=\"hidden\" name=\"battleplan\" value=\"\" /><input type=\"hidden\" name=\"signal\" value=\"\" /><input type=\"hidden\" name=\"assignee\" value=\"0\" /><input type=\"hidden\" name=\"project\" value=\"\" /><fieldset class=\"bms24-task-column-fieldset\"><legend>Visible columns</legend><div class=\"bms24-task-column-options\"><label class=\"bms24-task-column-option\"><input type=\"checkbox\" name=\"columns[title]\" value=\"1\" checked=\"checked\" disabled=\"disabled\" /> Task</label><label class=\"bms24-task-column-option\"><input type=\"checkbox\" name=\"columns[assignee]\" value=\"1\" checked=\"checked\" /> Assignee</label><label class=\"bms24-task-column-option\"><input type=\"checkbox\" name=\"columns[creator]\" value=\"1\" checked=\"checked\" /> Creator</label><label class=\"bms24-task-column-option\"><input type=\"checkbox\" name=\"columns[status]\" value=\"1\" checked=\"checked\" /> Status</label><label class=\"bms24-task-column-option\"><input type=\"checkbox\" name=\"columns[duedate]\" value=\"1\" checked=\"checked\" /> Deadline</label><label class=\"bms24-task-column-option\"><input type=\"checkbox\" name=\"columns[priority]\" value=\"1\" checked=\"checked\" /> Priority</label><label class=\"bms24-task-column-option\"><input type=\"checkbox\" name=\"columns[sourcekind]\" value=\"1\" checked=\"checked\" /> Source</label><label class=\"bms24-task-column-option\"><input type=\"checkbox\" name=\"columns[reviewer]\" value=\"1\" /> Reviewer / result acceptor</label><label class=\"bms24-task-column-option\"><input type=\"checkbox\" name=\"columns[observer]\" value=\"1\" /> Observer</label><label class=\"bms24-task-column-option\"><input type=\"checkbox\" name=\"columns[stream]\" value=\"1\" /> Work stream</label><label class=\"bms24-task-column-option\"><input type=\"checkbox\" name=\"columns[updated]\" value=\"1\" /> Last updated</label><label class=\"bms24-task-column-option\"><input type=\"checkbox\" name=\"columns[created]\" value=\"1\" /> Created</label></div></fieldset><div class=\"bms24-task-sort-preferences\"><div class=\"bms24-task-sort-field\"><label for=\"bms_task1841_defaultsort\">Default sort</label><select id=\"bms_task1841_defaultsort\" class=\"select custom-select bms24-ui-select\" name=\"defaultsort\"><option value=\"title\">Task</option><option value=\"assignee\">Assignee</option><option value=\"creator\">Creator</option><option value=\"status\">Status</option><option selected=\"selected\" value=\"duedate\">Deadline</option><option value=\"priority\">Priority</option><option value=\"sourcekind\">Source</option><option value=\"updated\">Last updated</option><option value=\"created\">Created</option></select></div><div class=\"bms24-task-sort-field\"><label for=\"bms_task1841_defaultdir\">Direction</label><select id=\"bms_task1841_defaultdir\" class=\"select custom-select bms24-ui-select\" name=\"defaultdir\"><option selected=\"selected\" value=\"asc\">Ascending</option><option value=\"desc\">Descending</option></select></div></div><div class=\"bms24-task-preferences-actions\"><button type=\"submit\" class=\"bms24-ui-btn bms24-ui-btn--primary\">Save preferences</button><button type=\"submit\" name=\"resetcolumns\" value=\"1\" class=\"bms24-ui-btn\">Restore default columns</button></div></form></details><nav class=\"bms24-task-tabs\" aria-label=\"List\">\\n\n<a class=\"bms24-task-tab\" href=\"https://www.example.com/moodle/local/kbacompany/tasks.php?uuid=company-test&amp;scope=roles&amp;q=%3Cscript%3Ealert%281%29%3C%2Fscript%3E&amp;status&amp;stream&amp;sourcekind&amp;battleplan&amp;signal&amp;assignee=0&amp;project&amp;display=list&amp;page=0\" aria-current=\"page\">List</a><a class=\"bms24-task-tab\" href=\"https://www.example.com/moodle/local/kbacompany/tasks.php?uuid=company-test&amp;scope=roles&amp;q=%3Cscript%3Ealert%281%29%3C%2Fscript%3E&amp;status&amp;stream&amp;sourcekind&amp;battleplan&amp;signal&amp;assignee=0&amp;project&amp;display=kanban&amp;page=0\">Board</a><a class=\"bms24-task-tab\" href=\"https://www.example.com/moodle/local/kbacompany/tasks.php?uuid=company-test&amp;scope=roles&amp;q=%3Cscript%3Ealert%281%29%3C%2Fscript%3E&amp;status&amp;stream&amp;sourcekind&amp;battleplan&amp;signal&amp;assignee=0&amp;project&amp;display=deadlines&amp;page=0\">Deadlines</a><a class=\"bms24-task-tab\" href=\"https://www.example.com/moodle/local/kbacompany/tasks.php?uuid=company-test&amp;scope=roles&amp;q=%3Cscript%3Ealert%281%29%3C%2Fscript%3E&amp;status&amp;stream&amp;sourcekind&amp;battleplan&amp;signal&amp;assignee=0&amp;project&amp;display=analytics&amp;page=0\">Summary</a>\\n\n</nav></div></div>\\n\n</section></div><section class=\"bms24-task-panel\">\\n\n  <header class=\"bms24-task-panel-head\"><h2>No tasks found</h2></header>\\n\n  <div class=\"bms24-task-panel-body\"><p class=\"bms24-task-note\">Check the selected view and filters, or create a task. Learning and legacy tasks are available under Tools → Tasks from other sources.</p><div class=\"bms-task1858-empty-actions\"><a class=\"bms24-ui-btn bms24-ui-btn--primary\" href=\"https://www.example.com/moodle/local/kbacompany/tasks.php?uuid=company-test&amp;view=create\">Create task</a><a class=\"bms24-ui-btn bms24-ui-btn--secondary\" href=\"https://www.example.com/moodle/local/kbacompany/tasks.php?uuid=company-test&amp;scope=roles&amp;display=list\">Clear filters</a></div></div>\\n\n</section></div>' contains \"Все мои роли\".\n\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/tests/task_roles_workspace1840_test.php:107\n/home/runner/work/_temp/pr48/fresh/core/lib/phpunit/classes/advanced_testcase.php:80"
+        }
+      ],
+      "schema_table_counts": {
+        "fresh-schema.json": 183,
+        "from0804-schema.json": 183,
+        "from0890-schema.json": 183,
+        "from0900-schema.json": 183,
+        "from0901-schema.json": 183,
+        "from1645-schema.json": 183,
+        "from1879-schema.json": 183,
+        "frompr530902-schema.json": 183,
+        "frompr560902-schema.json": 183,
+        "frompr570903-schema.json": 183,
+        "frompr580904-schema.json": 183
+      },
+      "preservation_log_status": {
+        "fresh-verify-data.log": "PASS preserved synthetic two-tenant data and new-column defaults",
+        "from0804-verify-data.log": "PASS preserved synthetic two-tenant data and new-column defaults",
+        "from0890-verify-data.log": "PASS preserved synthetic two-tenant data and new-column defaults",
+        "from0900-verify-data.log": "PASS preserved synthetic two-tenant data and new-column defaults",
+        "from0901-verify-data.log": "PASS preserved synthetic two-tenant data and new-column defaults",
+        "from1645-verify-data.log": "PASS preserved synthetic two-tenant data and new-column defaults",
+        "from1879-verify-data.log": "PASS preserved synthetic two-tenant data and new-column defaults",
+        "frompr530902-verify-data.log": "PASS preserved synthetic two-tenant data and new-column defaults",
+        "frompr560902-verify-data.log": "PASS preserved synthetic two-tenant data and new-column defaults",
+        "frompr570903-verify-data.log": "PASS preserved synthetic two-tenant data and new-column defaults",
+        "frompr580904-verify-data.log": "PASS preserved synthetic two-tenant data and new-column defaults",
+        "fresh-verify-repeat.log": "PASS preserved synthetic two-tenant data and new-column defaults",
+        "from0804-verify-repeat.log": "PASS preserved synthetic two-tenant data and new-column defaults",
+        "from0890-verify-repeat.log": "PASS preserved synthetic two-tenant data and new-column defaults",
+        "from0900-verify-repeat.log": "PASS preserved synthetic two-tenant data and new-column defaults",
+        "from0901-verify-repeat.log": "PASS preserved synthetic two-tenant data and new-column defaults",
+        "from1645-verify-repeat.log": "PASS preserved synthetic two-tenant data and new-column defaults",
+        "from1879-verify-repeat.log": "PASS preserved synthetic two-tenant data and new-column defaults",
+        "frompr530902-verify-repeat.log": "PASS preserved synthetic two-tenant data and new-column defaults",
+        "frompr560902-verify-repeat.log": "PASS preserved synthetic two-tenant data and new-column defaults",
+        "frompr570903-verify-repeat.log": "PASS preserved synthetic two-tenant data and new-column defaults",
+        "frompr580904-verify-repeat.log": "PASS preserved synthetic two-tenant data and new-column defaults"
+      },
+      "bootstrap_warnings": {
+        "baseline": [
+          "PHP Warning:  Constant MOODLE_INTERNAL already defined in /home/runner/work/_temp/pr48/fresh/core/local/kbacompany/tests/implementation_project_dashboard_service_test.php on line 3",
+          "PHP Warning:  Constant MOODLE_INTERNAL already defined in /home/runner/work/_temp/pr48/fresh/core/local/kbacompany/tests/implementation_project_result_service_test.php on line 3",
+          "PHP Warning:  Constant MOODLE_INTERNAL already defined in /home/runner/work/_temp/pr48/fresh/core/local/kbacompany/tests/implementation_project_weekly_service_test.php on line 3"
+        ],
+        "candidate": [
+          "PHP Warning:  Constant MOODLE_INTERNAL already defined in /home/runner/work/_temp/pr48/fresh/core/local/kbacompany/tests/implementation_project_dashboard_service_test.php on line 3",
+          "PHP Warning:  Constant MOODLE_INTERNAL already defined in /home/runner/work/_temp/pr48/fresh/core/local/kbacompany/tests/implementation_project_result_service_test.php on line 3",
+          "PHP Warning:  Constant MOODLE_INTERNAL already defined in /home/runner/work/_temp/pr48/fresh/core/local/kbacompany/tests/implementation_project_weekly_service_test.php on line 3"
+        ]
+      }
+    }
+  },
+  "install_artifact": {
+    "id": 13669259457,
+    "manifest_verified": true,
+    "component": "local_kbacompany",
+    "version": 2026110905,
+    "files": 1788,
+    "zip_sha256": "76b34d8dba9ac0b9cd04625b3fdbdd36e8e5b65fe3e7c437e1f1b0ae2dd68208",
+    "zip_name": "INSTALL_local_kbacompany_1.1.0-rc29_build2026110905.zip"
+  },
+  "artifact_source_verification": {
+    "source_sha": "6f5c3f9c3116ccc05dec77ac1ade493247d7c312",
+    "files_verified": 1788,
+    "byte_mismatches": [
+      "kbacompany/CHANGED_FILES_1.1.0-beta1.txt",
+      "kbacompany/CHANGED_PATHS_1.1.0-alpha6.txt",
+      "kbacompany/CHANGED_PATHS_1.1.0-beta2.txt",
+      "kbacompany/CHANGED_PATHS_1.1.0-rc1.txt",
+      "kbacompany/CHANGED_PATHS_1.1.0-rc13.txt",
+      "kbacompany/CHANGED_PATHS_1.1.0-rc14.txt",
+      "kbacompany/CHANGED_PATHS_1.1.0-rc15.txt",
+      "kbacompany/CHANGED_PATHS_1.1.0-rc16.txt",
+      "kbacompany/CHANGED_PATHS_1.1.0-rc9.txt",
+      "kbacompany/qa_source/run_checks.sh",
+      "kbacompany/release/CHANGED_FILES_1.1.0-beta1.txt",
+      "kbacompany/release/CHANGED_PATHS_1.1.0-alpha6.txt",
+      "kbacompany/release/CHANGED_PATHS_1.1.0-beta2.txt",
+      "kbacompany/release/CHANGED_PATHS_1.1.0-rc1.txt",
+      "kbacompany/release/CHANGED_PATHS_1.1.0-rc13.txt",
+      "kbacompany/release/CHANGED_PATHS_1.1.0-rc14.txt",
+      "kbacompany/release/CHANGED_PATHS_1.1.0-rc15.txt",
+      "kbacompany/release/CHANGED_PATHS_1.1.0-rc16.txt",
+      "kbacompany/release/CHANGED_PATHS_1.1.0-rc9.txt"
+    ],
+    "newline_only": [
+      "kbacompany/CHANGED_FILES_1.1.0-beta1.txt",
+      "kbacompany/CHANGED_PATHS_1.1.0-alpha6.txt",
+      "kbacompany/CHANGED_PATHS_1.1.0-beta2.txt",
+      "kbacompany/CHANGED_PATHS_1.1.0-rc1.txt",
+      "kbacompany/CHANGED_PATHS_1.1.0-rc13.txt",
+      "kbacompany/CHANGED_PATHS_1.1.0-rc14.txt",
+      "kbacompany/CHANGED_PATHS_1.1.0-rc15.txt",
+      "kbacompany/CHANGED_PATHS_1.1.0-rc16.txt",
+      "kbacompany/CHANGED_PATHS_1.1.0-rc9.txt",
+      "kbacompany/qa_source/run_checks.sh",
+      "kbacompany/release/CHANGED_FILES_1.1.0-beta1.txt",
+      "kbacompany/release/CHANGED_PATHS_1.1.0-alpha6.txt",
+      "kbacompany/release/CHANGED_PATHS_1.1.0-beta2.txt",
+      "kbacompany/release/CHANGED_PATHS_1.1.0-rc1.txt",
+      "kbacompany/release/CHANGED_PATHS_1.1.0-rc13.txt",
+      "kbacompany/release/CHANGED_PATHS_1.1.0-rc14.txt",
+      "kbacompany/release/CHANGED_PATHS_1.1.0-rc15.txt",
+      "kbacompany/release/CHANGED_PATHS_1.1.0-rc16.txt",
+      "kbacompany/release/CHANGED_PATHS_1.1.0-rc9.txt"
+    ],
+    "substantive_mismatches": [],
+    "excluded_development_files": 58,
+    "unexpected_excluded": []
+  },
+  "decision": "HOLD"
+}
