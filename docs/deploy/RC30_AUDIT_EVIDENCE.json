@@ -1,0 +1,123 @@
+{
+  "captured_utc": "2026-11-09 20:39:13 UTC",
+  "pull_requests": [
+    {
+      "number": 53,
+      "title": "Integrate 0804 learning workflow and PR48–50 schema repairs (2026110902)",
+      "state": "open",
+      "draft": true,
+      "merged": false,
+      "head": "28a60d010d8c59fd301a2bf1b2df628e38fb79dc",
+      "head_ref": "integration/0804-schema-0901",
+      "base": "5c59057cb7af3fd545cd661bb7c2b3daa5ae7cd9",
+      "base_ref": "fix/pr49-schema-p0",
+      "url": "https://github.com/rimanfatykhov-arch/bms24/pull/53"
+    },
+    {
+      "number": 54,
+      "title": "Stage 1898 — gated startup of isolated parity41 Moodle webserver",
+      "state": "open",
+      "draft": true,
+      "merged": false,
+      "head": "6a0c81fa731e8269881fb13ea1e28f66697a1823",
+      "head_ref": "ops/1898-parity41-webserver-gated",
+      "base": "751046db0cd7f6f2a9fe1b84ce6f8c2471050222",
+      "base_ref": "ops/1897-stage41-https-basic-auth",
+      "url": "https://github.com/rimanfatykhov-arch/bms24/pull/54"
+    },
+    {
+      "number": 55,
+      "title": "RC30 P0 / Issue #44 — baseline reconciliation audit and blocking gates",
+      "state": "open",
+      "draft": true,
+      "merged": false,
+      "head": "a2347d2192a7df498b68ca0d24795f14b4eca7b2",
+      "head_ref": "audit/rc30-issue44-baseline-reconciliation",
+      "base": "740fce16db15bb3551071cc11fe584c680fd738d",
+      "base_ref": "main",
+      "url": "https://github.com/rimanfatykhov-arch/bms24/pull/55"
+    },
+    {
+      "number": 56,
+      "title": "Issue44: repair RC30 Moodle diagnostics and preserve strict acceptance gates",
+      "state": "open",
+      "draft": true,
+      "merged": false,
+      "head": "1ced6b88e5933bb8d63aa1806411ac4d8a6a5443",
+      "head_ref": "fix/issue44-rc30-diagnostics",
+      "base": "1146e1bc330621ffcfa7dcb3881a2188110904c8",
+      "base_ref": "fix/pr50-runtime-blockers",
+      "url": "https://github.com/rimanfatykhov-arch/bms24/pull/56"
+    },
+    {
+      "number": 57,
+      "title": "RC30: selectively integrate PR53 learning and PR56 fixes (build2026110903)",
+      "state": "open",
+      "draft": true,
+      "merged": false,
+      "head": "1bfa75bf439e8cf45725c2c3bb69ca01b543fb01",
+      "head_ref": "integration/rc30-pr53-pr56-0903",
+      "base": "1ced6b88e5933bb8d63aa1806411ac4d8a6a5443",
+      "base_ref": "fix/issue44-rc30-diagnostics",
+      "url": "https://github.com/rimanfatykhov-arch/bms24/pull/57"
+    },
+    {
+      "number": 58,
+      "title": "RC30: repair document and employee acceptance blockers (build2026110904)",
+      "state": "open",
+      "draft": true,
+      "merged": false,
+      "head": "d3a16c3d08b9b10ac7edc32658157aa7f237e9a0",
+      "head_ref": "fix/pr57-document-employee-blockers",
+      "base": "1bfa75bf439e8cf45725c2c3bb69ca01b543fb01",
+      "base_ref": "integration/rc30-pr53-pr56-0903",
+      "url": "https://github.com/rimanfatykhov-arch/bms24/pull/58"
+    },
+    {
+      "number": 59,
+      "title": "RC30 P0: stabilize period, task and Battle Plan regressions (0905, HOLD)",
+      "state": "open",
+      "draft": true,
+      "merged": false,
+      "head": "2446347adf26ebb9e1520414a65c89e930dadba2",
+      "head_ref": "fix/rc30-period-task-battleplan",
+      "base": "d3a16c3d08b9b10ac7edc32658157aa7f237e9a0",
+      "base_ref": "fix/pr57-document-employee-blockers",
+      "url": "https://github.com/rimanfatykhov-arch/bms24/pull/59"
+    },
+    {
+      "number": 60,
+      "title": "RC30 P0: task membership, batch and deadline regression stabilization (0906, HOLD)",
+      "state": "open",
+      "draft": true,
+      "merged": false,
+      "head": "a60ce4e99fe1931774eaa7da3be0e23fe1d0b92f",
+      "head_ref": "fix/rc30-task-membership-batch-deadlines",
+      "base": "2446347adf26ebb9e1520414a65c89e930dadba2",
+      "base_ref": "fix/rc30-period-task-battleplan",
+      "url": "https://github.com/rimanfatykhov-arch/bms24/pull/60"
+    },
+    {
+      "number": 62,
+      "title": "RC30: repair two Kanban fixtures and preserve rendering/ACL regressions (HOLD)",
+      "state": "open",
+      "draft": true,
+      "merged": false,
+      "head": "e7e9b1b5f0c23b14da9bcc8ad2195d468ce8ee3f",
+      "head_ref": "fix/rc30-kanban-fixtures",
+      "base": "a60ce4e99fe1931774eaa7da3be0e23fe1d0b92f",
+      "base_ref": "fix/rc30-task-membership-batch-deadlines",
+      "url": "https://github.com/rimanfatykhov-arch/bms24/pull/62"
+    }
+  ],
+  "issue61": {
+    "type": "issue",
+    "url": "https://github.com/rimanfatykhov-arch/bms24/issues/61",
+    "scope": "Design System backlog, not included"
+  },
+  "access": {
+    "production_current": "NOT VERIFIED",
+    "ssh": "StrictHostKeyChecking rejected unknown ED25519 key before authentication; no bypass",
+    "saved_session": "WinSCP window capture unavailable; no remote command executed"
+  }
+}
