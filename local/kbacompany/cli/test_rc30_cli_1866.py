@@ -39,6 +39,13 @@ with tempfile.TemporaryDirectory(prefix='bms1866-cli-') as temp:
             public function index_exists($table, $index) {return true;}
         }
         class MockDB1866 {
+            public function get_indexes($table, $usecache = true) {
+                $result = [];
+                foreach (\local_kbacompany\local\task_rc30_acceptance_service::REQUIRED_INDEXES as [$target, $name, $fields]) {
+                    if ($target === $table) {$result[$name] = ['unique' => false, 'columns' => $fields];}
+                }
+                return $result;
+            }
             public function get_manager() {return new MockIndexManager1866();}
             public function get_dbfamily() {return 'mysql';}
             public function get_server_info() {return ['version'=>'5.7.21'];}

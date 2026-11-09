@@ -27,8 +27,18 @@ class TestDB1865 {
     public array $queries = [];
     public string $dbversion = '5.7.21';
     public int $tasks = 10;
+    public array $indexoverrides = [];
     public function __construct() { $this->manager = new TestIndexManager1865(); }
     public function get_manager() { return $this->manager; }
+    public function get_indexes(string $table, bool $usecache = true): array {
+        $indexes = [];
+        foreach (\local_kbacompany\local\task_rc30_acceptance_service::REQUIRED_INDEXES as [$target, $name, $fields]) {
+            if ($target === $table && !in_array($name, $this->manager->missing, true)) {
+                $indexes[$name] = $this->indexoverrides[$name] ?? ['unique' => false, 'columns' => $fields];
+            }
+        }
+        return $indexes;
+    }
     public function get_dbfamily(): string { return 'mysql'; }
     public function get_server_info(): array { return ['version'=>$this->dbversion, 'description'=>'MySQL']; }
     public function get_field_sql(string $sql, array $params = []): int {
@@ -62,6 +72,14 @@ $db->manager->missing=['lastlog_ix'];
 $result=Acceptance::assess($db, Acceptance::EXPECTED_PLUGIN_VERSION, $uuid, false);
 check1865($result['technical_gate'] === 'failed', 'Missing index blocks acceptance');
 $db->manager->missing=[];
+foreach ([['unique' => false, 'columns' => ['companyuuid', 'duedate', 'status']],
+        ['unique' => true, 'columns' => ['companyuuid', 'status', 'duedate']]] as $wrongindex) {
+    $db->indexoverrides['status_due_ix'] = $wrongindex;
+    $result = Acceptance::assess($db, Acceptance::EXPECTED_PLUGIN_VERSION, $uuid, false);
+    check1865(in_array('missing_index_status_due_ix', $result['errors'], true),
+        'Wrong order or uniqueness cannot satisfy the required index');
+}
+$db->indexoverrides=[];
 try {
     Acceptance::assess($db, Acceptance::EXPECTED_PLUGIN_VERSION, 'invalid-uuid');
     throw new RuntimeException('Invalid UUID unexpectedly accepted');

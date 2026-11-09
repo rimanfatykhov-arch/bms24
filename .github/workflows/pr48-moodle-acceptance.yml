@@ -1,7 +1,7 @@
 name: PR48 isolated Moodle acceptance
 on:
   pull_request:
-    branches: [fix/issue44-schema-parity]
+    branches: [fix/issue44-schema-parity, test/pr48-moodle-acceptance]
 permissions:
   contents: read
 concurrency:

@@ -7,7 +7,7 @@ use local_kbacompany\local\identity_registry;
 use local_kbacorporate\local\repository;
 
 /**
- * Real installed-schema regression for the 0890 checkpoint.
+ * Real installed-schema regression for field parity through the 0900 checkpoint.
  *
  * This covers a simulated missing-field state on PHPUnit's installed database.
  * Historical installation followed by the complete CLI upgrade is a separate gate.
@@ -106,12 +106,16 @@ final class schema_parity_2026110890_test extends \advanced_testcase {
 
     public static function presence_provider(): array {
         $cases = [];
-        for ($mask = 0; $mask < 8; $mask++) { $cases['presence-' . $mask] = [$mask]; }
+        foreach ([2026101879, 2026110890] as $oldversion) {
+            for ($mask = 0; $mask < 8; $mask++) {
+                $cases[$oldversion . '-presence-' . $mask] = [$mask, $oldversion];
+            }
+        }
         return $cases;
     }
 
     /** @dataProvider presence_provider */
-    public function test_checkpoint_preserves_tenants_and_repairs_every_partial_state(int $mask): void {
+    public function test_checkpoint_preserves_tenants_and_repairs_every_partial_state(int $mask, int $oldversion): void {
         global $DB;
         try {
             foreach (self::FIELDS as $index => $spec) {
@@ -119,9 +123,9 @@ final class schema_parity_2026110890_test extends \advanced_testcase {
             }
             $this->fixtures($mask);
             $before = $this->snapshot();
-            set_config('version', 2026101879, 'local_kbacompany');
-            $this->assertTrue(xmldb_local_kbacompany_upgrade(2026101879));
-            $this->assertSame('2026110890', (string)get_config('local_kbacompany', 'version'));
+            set_config('version', $oldversion, 'local_kbacompany');
+            $this->assertTrue(xmldb_local_kbacompany_upgrade($oldversion));
+            $this->assertSame('2026110900', (string)get_config('local_kbacompany', 'version'));
             $after = $this->snapshot();
             foreach (self::FIELDS as $index => [$table, $name, $length, $default]) {
                 $column = $after[$table]['columns'][$name];
@@ -161,7 +165,7 @@ final class schema_parity_2026110890_test extends \advanced_testcase {
             $once = $this->snapshot();
             local_kbacompany_upgrade_schema_parity_2026110890();
             $this->assertEquals($once, $this->snapshot(), 'Helper is idempotent');
-            $this->assertTrue(xmldb_local_kbacompany_upgrade(2026110890));
+            $this->assertTrue(xmldb_local_kbacompany_upgrade(2026110900));
             $this->assertEquals($once, $this->snapshot(), 'Applied checkpoint leaves schema and data unchanged');
         } finally {
             $this->restore_fields();

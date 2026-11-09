@@ -19,9 +19,10 @@ final class task_rc30_performance1863_test extends \advanced_testcase {
             ['local_kbacompany_bplanitem', 'legacy_task_ix', ['companyuuid', 'provider', 'taskuuid']],
             ['local_kbacompany_bplanitem', 'provider_ref_ix', ['companyuuid', 'provider', 'externalid']],
         ] as [$table, $name, $fields]) {
-            $this->assertTrue($manager->index_exists(new \xmldb_table($table),
-                new \xmldb_index($name, XMLDB_INDEX_NOTUNIQUE, $fields)),
-                'Missing read index: ' . $table . '.' . $name);
+            $matches = array_filter($DB->get_indexes($table, false), static function(array $index) use ($fields): bool {
+                return !(bool)$index['unique'] && array_values($index['columns']) === $fields;
+            });
+            $this->assertNotEmpty($matches, 'Missing ordered nonunique read index: ' . $table . '.' . $name);
         }
     }
 

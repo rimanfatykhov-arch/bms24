@@ -6116,5 +6116,13 @@ function xmldb_local_kbacompany_upgrade(int $oldversion): bool {
         upgrade_plugin_savepoint(true, 2026110890, 'local', 'kbacompany');
     }
 
+    // Reconcile sites already marked 0890 and the ordered index missed by 1863.
+    if ($oldversion < 2026110900) {
+        require_once(__DIR__ . '/upgradelib.php');
+        local_kbacompany_upgrade_schema_parity_2026110890();
+        local_kbacompany_upgrade_ordered_task_index_2026110900();
+        upgrade_plugin_savepoint(true, 2026110900, 'local', 'kbacompany');
+    }
+
     return true;
 }

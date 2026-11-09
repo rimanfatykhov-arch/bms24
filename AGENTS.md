@@ -1,6 +1,6 @@
 # BMS24 — Instructions for Codex (VS Code / repository root)
 
-Current source candidate: `local/kbacompany/version.php` → `local_kbacompany` **1.1.0-rc29**, `$plugin->version = 2026110890` (Issue44 schema repair, not deployable over newer feature trees). Approved ADR-0002 baseline is a36c5ab8; see `docs/reconcile/ISSUE44_SCHEMA_REPAIR.md`. Reconciled from PR #8 with main files retained and the PR #40 acceptance fix. See `docs/reconcile/PR8_RECONCILIATION.md`. This is NOT an accepted production release. Historical build1642 documentation is retained as history.
+Current source candidate: `local/kbacompany/version.php` → `local_kbacompany` **1.1.0-rc29**, `$plugin->version = 2026110900` (PR49 ordered-index/XMLDB repair, not deployable over newer feature trees). Approved ADR-0002 baseline is a36c5ab8; see `docs/reconcile/ISSUE44_SCHEMA_REPAIR.md`. Reconciled from PR #8 with main files retained and the PR #40 acceptance fix. See `docs/reconcile/PR8_RECONCILIATION.md`. This is NOT an accepted production release. Historical build1642 documentation is retained as history.
 
 ## Read only what is relevant
 
