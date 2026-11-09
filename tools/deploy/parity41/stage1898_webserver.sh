@@ -68,7 +68,7 @@ echo STAGE1898_TLS_AUTH_ACME_GATE_OK
 echo STAGE1898_PARITY_DB_HEALTHY
 docker image inspect moodlehq/moodle-php-apache:8.1-bookworm >/dev/null 2>&1 ||
   { echo 'STOP: Moodle PHP image unavailable locally; no implicit pull' >&2; exit 4; }
-[[ ! -e "/proc/1/root/srv/bms24-staging/parity41/DO_NOT_START" ]] ||
+[[ ! -e "$BASE/DO_NOT_START" ]] ||
   { echo 'STOP: explicit DO_NOT_START sentinel exists' >&2; exit 4; }
 
 if docker ps -a --format '{{.Names}}' | grep -Fxq "$WEB"; then
@@ -96,7 +96,7 @@ done
 # Reconfirm no unauthenticated external access after backend starts.
 code=$(curl --noproxy '*' -sS -o /dev/null -w '%{http_code}' --max-time 8 --resolve "$DOMAIN:443:127.0.0.1" "https://$DOMAIN/" )
 [[ "$code" == 401 ]] || { echo 'STOP: HTTPS gate changed after startup; inspect urgently' >&2; exit 5; }
-echo "STAGE1898_LOCAL_WEB_HTTP_$code"
+echo "STAGE1898_LOCAL_WEB_HTTP_$localcode"
 echo STAGE1898_HTTPS_STILL_401
 echo STAGE1898_ISOLATED_WEB_STARTED
 echo 'Moodle install/upgrade NOT executed. Inspect localhost response and logs before acceptance.'
