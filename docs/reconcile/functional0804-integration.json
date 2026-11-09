@@ -72,7 +72,7 @@
     {
       "path": "local/kbacompany/db/upgrade.php",
       "functional_sha256_lf": "fd26780343419f8bd7d32f67d7ab8213789f1f8b879b1de014b87756e6fe787d",
-      "integrated_sha256_lf": "ed9963b4acaccde9be874e83cb1af4bcc84243b838bc2792798f6635bbb98797",
+      "integrated_sha256_lf": "d67dfc3fe3098d9bba9d24493cb900daa92a7abf34216f0280934601cc1b8a74",
       "resolution": "reconciled-checkpoints-and-version"
     },
     {
@@ -264,7 +264,7 @@
     {
       "path": "local/kbacompany/version.php",
       "functional_sha256_lf": "9819b42e185a204c125eceecdc492ec696126ba494ad58f883ec79c4dc027d3e",
-      "integrated_sha256_lf": "d20681e6760979130c5ea9634a4bc7fa4582dabd740773a340fb2d67f68106fa",
+      "integrated_sha256_lf": "72945b72ad50549df2b848b61da44e3fe9885fbd9385dfe1f759dd2ada5c48a3",
       "resolution": "reconciled-checkpoints-and-version"
     }
   ]

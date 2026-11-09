@@ -6182,8 +6182,8 @@ function xmldb_local_kbacompany_upgrade(int $oldversion): bool {
     }
 
     // Integrated functional0804 and schema0900 candidate; no additional DDL.
-    if ($oldversion < 2026110901) {
-        upgrade_plugin_savepoint(true, 2026110901, 'local', 'kbacompany');
+    if ($oldversion < 2026110902) {
+        upgrade_plugin_savepoint(true, 2026110902, 'local', 'kbacompany');
     }
 
     return true;
