@@ -139,6 +139,13 @@ with tempfile.TemporaryDirectory(prefix='bms1870-') as dirname:
             public function index_exists($table,$index) {return true;}
         }
         class FakeDB {
+            public function get_indexes($table, $usecache = true) {
+                $result = [];
+                foreach (\local_kbacompany\local\task_rc30_acceptance_service::REQUIRED_INDEXES as [$target, $name, $fields]) {
+                    if ($target === $table) {$result[$name] = ['unique' => false, 'columns' => $fields];}
+                }
+                return $result;
+            }
             public function get_manager() {return new FakeManager();}
             public function get_field_sql($sql,$params) {
                 if (strpos($sql,'WHERE 1=1')!==false) {return 120;}

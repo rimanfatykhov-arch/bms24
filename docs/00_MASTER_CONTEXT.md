@@ -39,3 +39,7 @@ Static lint, zip CRC, единичные mock smoke tests не означают 
 Владелец утвердил базу a36c5ab8 и порядок ADR-0002. Кандидат исправления трёх полей — build2026110890/RC29, не deployment. Реально прочитанный stage41: BMS2026110802, Corporate2026102613, Moodle4.1.22/PHP8.1.34/MariaDB10.11.19. Это более новое функциональное дерево, чем Git baseline1879; сначала нужен отдельный перенос дельт, нельзя откатывать stage41 или Corporate. Отчёт: `docs/reconcile/ISSUE44_SCHEMA_REPAIR.md`. Архитектурные решения сохраняются в GitHub ADR/Issues согласно принятому ADR-0001; историческая ссылка на Drive выше не отменяет это решение.
 
 Read-only production inventory08.11.2026: BMS2026101878, Corporate2026102613, Moodle4.1.22/PHP CLI8.1.34, Percona Server8.0.46-37. Исторический MySQL5.7 не является фактической production DB. По отдельной команде владельца настроен ограниченный SSH inventory stage41→RUWEB; код/БД Moodle не менялись.
+
+## 2026-11-09 — isolated schema P0 repair
+
+Candidate build2026110900 corrects XMLDB warnings and adds the missing ordered task index through a reachable checkpoint. See docs/adr/ADR-0003-ordered-index-schema-repair.md. PR48/49 remain unmerged; unrelated full-suite blockers remain HOLD. No production or staging deployment is authorized.

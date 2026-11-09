@@ -13,7 +13,7 @@ final class task_rc30_acceptance1864_test extends \advanced_testcase {
     /** @return object fake Moodle db */
     private function fake_db(array $missingindexes = [], array $counts = [], string $family = 'mysql') {
         $manager = new class($missingindexes) {
-            private $missing;
+            public $missing;
             public function __construct(array $missing) { $this->missing = $missing; }
             public function table_exists($table): bool { return true; }
             public function index_exists($table, $index): bool {
@@ -28,6 +28,15 @@ final class task_rc30_acceptance1864_test extends \advanced_testcase {
                 $this->manager=$manager; $this->counts=$counts; $this->family=$family;
             }
             public function get_manager() { return $this->manager; }
+            public function get_indexes(string $table, bool $usecache = true): array {
+                $result = [];
+                foreach (acceptance::REQUIRED_INDEXES as [$target, $name, $fields]) {
+                    if ($target === $table && !in_array($name, $this->manager->missing, true)) {
+                        $result[$name] = ['unique' => false, 'columns' => $fields];
+                    }
+                }
+                return $result;
+            }
             public function get_dbfamily(): string { return $this->family; }
             public function get_server_info(): array {
                 return ['version'=>'5.7.21', 'description'=>'MySQL Community Server 5.7.21'];

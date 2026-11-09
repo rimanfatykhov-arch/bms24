@@ -11,7 +11,7 @@ defined('MOODLE_INTERNAL') || die();
  */
 final class task_rc30_acceptance_service {
     // Keep exact candidate identity; CI checks this against version.php.
-    public const EXPECTED_PLUGIN_VERSION = 2026110890;
+    public const EXPECTED_PLUGIN_VERSION = 2026110900;
     public const REQUIRED_INDEXES = [
         ['local_kbacompany_task', 'status_due_ix', ['companyuuid', 'status', 'duedate']],
         ['local_kbacompany_tasklog', 'lastlog_ix', ['companyuuid', 'taskuuid', 'id']],
@@ -77,9 +77,18 @@ final class task_rc30_acceptance_service {
         $indexes = [];
         foreach (self::REQUIRED_INDEXES as [$table, $name, $fields]) {
             $tablename = new \xmldb_table($table);
-            $exists = $manager->table_exists($tablename) &&
-                $manager->index_exists($tablename,
-                    new \xmldb_index($name, XMLDB_INDEX_NOTUNIQUE, $fields));
+            $exists = false;
+            if ($manager->table_exists($tablename)) {
+                // XMLDB index_exists compares an unordered set of columns and
+                // ignores uniqueness. Acceptance needs the real ordered contract.
+                foreach ($db->get_indexes($table, false) as $definition) {
+                    if (array_key_exists('unique', $definition) && $definition['unique'] === false &&
+                            isset($definition['columns']) && array_values($definition['columns']) === $fields) {
+                        $exists = true;
+                        break;
+                    }
+                }
+            }
             $indexes[$name] = ['table'=>$table, 'present'=>$exists];
             if (!$exists) {
                 $errors[] = 'missing_index_' . $name;
