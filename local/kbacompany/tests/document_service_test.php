@@ -27,6 +27,12 @@ final class document_service_test extends \advanced_testcase {
             'companyid' => $companyid, 'userid' => $reviewer->id, 'membertype' => 'employee',
             'isemployee' => 1, 'ismanager' => 0, 'isdepartmentmanager' => 0, 'ishr' => 0,
         ]);
+        // Corporate learning membership alone is not canonical BMS membership.
+        $DB->insert_record('local_kbacompany_member', (object)[
+            'uuid' => '33333333-3333-4333-8333-333333333333',
+            'companyuuid' => $company, 'userid' => $reviewer->id,
+            'membertype' => 'employee', 'isemployee' => 1, 'active' => 1,
+        ]);
         return compact('actor', 'companyid', 'company', 'reviewer');
     }
 
@@ -52,7 +58,8 @@ final class document_service_test extends \advanced_testcase {
         $effective = $this->release($f['company'], $f['actor'], (int)$f['reviewer']->id, $uuid);
         $this->assertSame('effective', $effective['status']);
         $this->assertSame(1, $effective['revision']);
-        $this->assertSame('0.3.3', document_service::contract()['version']);
+        $this->assertSame('0.3.4', document_service::contract()['version']);
+        $this->assertContains('released_file_bytes_are_immutable', document_service::contract()['rules']);
 
         $master = document_service::master_list($f['company'], $f['actor']);
         $this->assertCount(1, $master);
@@ -146,6 +153,8 @@ final class document_service_test extends \advanced_testcase {
             'ownerorgunituuid' => $board['nodes'][0]['uuid'], 'productuuid' => $product,
         ]);
         process_service::publish($f['company'], $f['actor'], $process, 1);
+        process_service::link($f['company'], $f['actor'], $process, 'supplier', $board['nodes'][0]['uuid']);
+        process_service::link($f['company'], $f['actor'], $process, 'customer', $board['nodes'][1]['uuid']);
         $modelid = process_model_service::ensure_draft($f['company'], $f['actor'], $process);
         $ctx = process_model_service::context($f['company'], $f['actor'], $process);
         process_model_service::save_element($f['company'], $f['actor'], $process, $modelid,
@@ -167,6 +176,7 @@ final class document_service_test extends \advanced_testcase {
         process_model_service::save_flow($f['company'], $f['actor'], $process, $modelid,
             $ctx['model']['change_version'], ['fromuuid' => $task, 'touuid' => $end]);
         $ctx = process_model_service::context($f['company'], $f['actor'], $process);
+        $this->assertSame([], $ctx['publication_issues']);
         process_model_service::publish($f['company'], $f['actor'], $process, $modelid, $ctx['model']['change_version']);
 
         $docuuid = document_service::create_from_stp($f['company'], $f['actor'], $process, 'Control published STP');
@@ -190,7 +200,43 @@ final class document_service_test extends \advanced_testcase {
             document_service::context($company2, $f['actor'], $uuid);
             $this->fail('A document from another company must not resolve.');
         } catch (\moodle_exception $e) {
-            $this->assertSame('document_reference', $e->errorcode);
+            $this->assertSame('document_notavailable', $e->errorcode);
         }
+    }
+
+    public static function invalid_reviewer_cases(): array {
+        return ['corporate only' => ['missing'], 'inactive BMS membership' => ['inactive'],
+            'foreign BMS membership' => ['foreign'], 'suspended user' => ['suspended'],
+            'deleted user' => ['deleted']];
+    }
+
+    /** @dataProvider invalid_reviewer_cases */
+    public function test_invalid_reviewer_is_rejected_without_document_mutation(string $case): void {
+        global $DB;
+        $f = $this->fixture();
+        $scope = ['companyuuid' => $f['company'], 'userid' => $f['reviewer']->id];
+        if ($case === 'missing') { $DB->delete_records('local_kbacompany_member', $scope); }
+        if ($case === 'inactive') { $DB->set_field('local_kbacompany_member', 'active', 0, $scope); }
+        if ($case === 'foreign') {
+            $other = identity_registry::company_uuid(repository::save_company((object)['name' => 'Foreign', 'active' => 1]));
+            $DB->set_field('local_kbacompany_member', 'companyuuid', $other, $scope);
+        }
+        if ($case === 'suspended' || $case === 'deleted') {
+            $DB->set_field('user', $case, 1, ['id' => $f['reviewer']->id]);
+        }
+        $uuid = document_service::create_manual($f['company'], $f['actor'], [
+            'code' => 'NEGATIVE', 'title' => 'Protected draft', 'doctype' => 'procedure',
+            'doclevel' => 2, 'content' => 'Unchanged',
+        ]);
+        $before = $DB->get_records('local_kbacompany_doc', ['companyuuid' => $f['company']], 'id');
+        try {
+            document_service::add_reviewer($f['company'], $f['actor'], $uuid, 1, $f['reviewer']->id);
+            $this->fail('Reviewer must be an active canonical member and active Moodle user.');
+        } catch (\moodle_exception $error) {
+            $this->assertSame('document_invalidreviewer', $error->errorcode);
+        }
+        $this->assertEquals($before, $DB->get_records('local_kbacompany_doc', ['companyuuid' => $f['company']], 'id'));
+        $this->assertFalse($DB->record_exists('local_kbacompany_docreview', ['companyuuid' => $f['company']]));
+        $this->assertDebuggingNotCalled();
     }
 }
