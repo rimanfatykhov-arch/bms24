@@ -4,7 +4,7 @@ Owner request2026-11-09: prepare a separate common candidate, run regression and
 
 Base: PR50 `5c59057cb7af3fd545cd661bb7c2b3daa5ae7cd9`. Functional source: PR51 `d4887103c13f45c42b73b455a95dba142d7ba116`, delta from1878 `a87252b642e5796c6d84105dd448d51d9a5b5241`. The histories do not share a merge-base. This is a selective content integration, not a replacement of the repository tree.
 
-Of44 functional plugin paths,41 are transferred exactly (normalized line endings); the queue test is extended with explicit second-company grant/revoke and grade visibility checks. Only upgrade.php/version.php overlap schema work: preserve1879, insert version-only0301–0804 before0890/0900, keep the schema helpers, then add monotonic0902. Current acceptance/version/CI pins move together. See functional0804-integration.json for per-file evidence. All sibling components remain from PR50; Corporate2610 is not silently replaced with a guessed2613.
+Of44 functional plugin paths,40 are transferred exactly (normalized line endings); the staffing test reads the canonical assignments projection; the queue test is extended with explicit second-company grant/revoke and grade visibility checks. Only upgrade.php/version.php overlap schema work: preserve1879, insert version-only0301–0804 before0890/0900, keep the schema helpers, then add monotonic0902. Current acceptance/version/CI pins move together. See functional0804-integration.json for per-file evidence. All sibling components remain from PR50; Corporate2610 is not silently replaced with a guessed2613.
 
 ## Acceptance scope
 

@@ -129,7 +129,7 @@ final class ordered_index_2026110900_test extends \advanced_testcase {
             $this->assertEquals($rows, $this->rows());
             local_kbacompany_upgrade_ordered_task_index_2026110900();
             $this->assertEquals($after, $DB->get_indexes(self::TABLE, false));
-            $this->assertTrue(xmldb_local_kbacompany_upgrade(2026110900));
+            $this->assertTrue(xmldb_local_kbacompany_upgrade((int)get_config('local_kbacompany', 'version')));
             $this->assertEquals($after, $DB->get_indexes(self::TABLE, false));
             $this->assertEquals($rows, $this->rows());
         } finally {

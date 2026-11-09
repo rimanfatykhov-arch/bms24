@@ -222,8 +222,8 @@
     {
       "path": "local/kbacompany/tests/company_core_test.php",
       "functional_sha256_lf": "64c6d17fe69c0e6aff479622dc166e0d30617909be3f0fffb53a1f3cbab691e3",
-      "integrated_sha256_lf": "64c6d17fe69c0e6aff479622dc166e0d30617909be3f0fffb53a1f3cbab691e3",
-      "resolution": "exact-functional-content"
+      "integrated_sha256_lf": "5334e4c92b63d1d9bb60dc91816eef6cc25baa46f7f00bb6b6f1fec467f3831f",
+      "resolution": "functional-content-with-assignment-projection-test-correction"
     },
     {
       "path": "local/kbacompany/tests/competency_review_queue_test.php",

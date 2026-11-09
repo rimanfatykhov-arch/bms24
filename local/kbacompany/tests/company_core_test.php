@@ -396,8 +396,12 @@ final class company_core_test extends \advanced_testcase {
         $this->assertEquals(1.0, $placement2['summary']['occupied_fte']);
         $this->assertEquals(0.0, $placement2['summary']['vacant_fte']);
         $this->assertSame('occupied', $placement2['slots'][0]['status']);
-        $this->assertSame((int)$employee->id, $placement2['slots'][0]['employee_id']);
-        $this->assertSame($assignmentid, $placement2['slots'][0]['assignment_id']);
+        $this->assertCount(1, $placement2['assignments']);
+        $assignment = $placement2['assignments'][0];
+        $this->assertSame((int)$employee->id, $assignment['employee_id']);
+        $this->assertSame($assignmentid, $assignment['id']);
+        $this->assertSame($placement2['slots'][0]['uuid'], $assignment['slot_uuid']);
+        $this->assertSame('current', $assignment['status']);
         $this->assertSame(1, $DB->count_records('local_kbacompany_posassign', [
             'companyuuid' => $companyuuid, 'userid' => (int)$employee->id, 'active' => 1,
         ]));
