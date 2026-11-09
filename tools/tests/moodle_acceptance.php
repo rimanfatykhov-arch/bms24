@@ -301,7 +301,7 @@ if ($fresh) {
             'task_rc30_report_comparison1867_test', 'competency_review_queue_test',
             'employee_development_courses_test', 'employee_competency_profile_service_test',
             'role_intelligence_service_test', 'role_readiness_view_test', 'company_core_test',
-            'design_service_test', 'document_service_test', 'company_employee_sync_service_test',
+            'design_service_test', 'document_service_test', 'semantic_service_test', 'company_employee_sync_service_test',
             'rc30_integrated_access_test'] as $test) {
         $focused[] = $test;
     }
