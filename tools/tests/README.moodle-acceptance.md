@@ -1,8 +1,9 @@
 # PR48 isolated Moodle acceptance
 
-Candidate under test: PR48 `e06cc96e2933e9142c1d51d2fcfa06b159737718`,
-BMS `2026110890`, Corporate `2026102610`. This branch adds test infrastructure;
-it does not authorize deployment or merge.
+Original candidate: PR48 `e06cc96e2933e9142c1d51d2fcfa06b159737718`, BMS0890.
+PR50 updates the candidate to BMS `2026110900`, Corporate `2026102610`, and adds
+the ordered-index repair and warning-free XMLDB constructor. It does not
+authorize deployment or merge. See ADR-0003 and the PR50 acceptance report.
 
 The workflow runs on disposable GitHub-hosted Ubuntu workers, with no deployment
 credentials, read-only repository permissions and isolated service containers.
@@ -31,8 +32,11 @@ plugins are outside this acceptance scope.
 3. Actual imported build1879 installation and candidate upgrade. The import
    deleted Corporate, so this scenario explicitly reconstructs the dependency
    from main; it is not an assertion about the original production deployment.
-4. Database schema validation and fresh/upgrade comparison.
-5. Moodle PHPUnit, including repair checkpoint and real two-company access tests.
+4. Actual PR48 build0890 installation followed by candidate upgrade.
+5. Database schema validation and fresh/upgrade comparison for all three origins.
+6. Moodle PHPUnit, including field and ordered-index repair checkpoints and real
+   two-company access tests. Collection-fatals remain FAIL while additional
+   per-file runs expose diagnostics for the remaining test files.
 
 The missing-field PHPUnit matrix is a simulated damaged-schema regression;
 only the historical CLI scenarios are full upgrade tests. None uses production

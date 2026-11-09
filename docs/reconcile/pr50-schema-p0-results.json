@@ -1,0 +1,603 @@
+{
+  "date": "2026-11-09",
+  "build": 2026110900,
+  "test_head": "1b44f45b35ec8710f412a496424d84b0f196adf5",
+  "tested_merge": "8a48d19c95b25bec7e3925d9200b9790ca0139ca",
+  "run": 42559953524,
+  "schema_p0": "PASS",
+  "full_acceptance": "FAIL",
+  "engines": {
+    "mariadb": {
+      "run_id": "4d50b48d69",
+      "php": "8.1.34",
+      "dbtype": "mariadb",
+      "database_server": "10.11.19-MariaDB-ubu2204",
+      "database_version_comment": "mariadb.org binary distribution",
+      "scope": "isolated Moodle core plus local_kbacompany/local_kbacorporate only",
+      "scenarios": {
+        "fresh": {
+          "status": "PASS",
+          "steps": {
+            "install": {
+              "status": "PASS",
+              "exit_code": 0
+            },
+            "historical-schema": {
+              "status": "PASS",
+              "exit_code": 0
+            },
+            "seed": {
+              "status": "PASS",
+              "exit_code": 0
+            },
+            "candidate-schema": {
+              "status": "PASS",
+              "exit_code": 0
+            },
+            "verify-data": {
+              "status": "PASS",
+              "exit_code": 0
+            },
+            "snapshot": {
+              "status": "PASS",
+              "exit_code": 0
+            },
+            "repeat-upgrade": {
+              "status": "PASS",
+              "exit_code": 0
+            },
+            "verify-repeat": {
+              "status": "PASS",
+              "exit_code": 0
+            },
+            "repeat-snapshot": {
+              "status": "PASS",
+              "exit_code": 0
+            },
+            "repeat-schema-equality": {
+              "status": "PASS"
+            }
+          },
+          "bms_source": "candidate working tree",
+          "corporate_source": "candidate working tree"
+        },
+        "from1645": {
+          "status": "PASS",
+          "steps": {
+            "install": {
+              "status": "PASS",
+              "exit_code": 0
+            },
+            "historical-schema": {
+              "status": "PASS",
+              "exit_code": 0
+            },
+            "seed": {
+              "status": "PASS",
+              "exit_code": 0
+            },
+            "upgrade": {
+              "status": "PASS",
+              "exit_code": 0
+            },
+            "candidate-schema": {
+              "status": "PASS",
+              "exit_code": 0
+            },
+            "verify-data": {
+              "status": "PASS",
+              "exit_code": 0
+            },
+            "snapshot": {
+              "status": "PASS",
+              "exit_code": 0
+            },
+            "repeat-upgrade": {
+              "status": "PASS",
+              "exit_code": 0
+            },
+            "verify-repeat": {
+              "status": "PASS",
+              "exit_code": 0
+            },
+            "repeat-snapshot": {
+              "status": "PASS",
+              "exit_code": 0
+            },
+            "repeat-schema-equality": {
+              "status": "PASS"
+            }
+          },
+          "bms_source": "740fce16db15bb3551071cc11fe584c680fd738d",
+          "corporate_source": "740fce16db15bb3551071cc11fe584c680fd738d"
+        },
+        "from1879": {
+          "status": "PASS",
+          "steps": {
+            "install": {
+              "status": "PASS",
+              "exit_code": 0
+            },
+            "historical-schema": {
+              "status": "PASS",
+              "exit_code": 0
+            },
+            "seed": {
+              "status": "PASS",
+              "exit_code": 0
+            },
+            "upgrade": {
+              "status": "PASS",
+              "exit_code": 0
+            },
+            "candidate-schema": {
+              "status": "PASS",
+              "exit_code": 0
+            },
+            "verify-data": {
+              "status": "PASS",
+              "exit_code": 0
+            },
+            "snapshot": {
+              "status": "PASS",
+              "exit_code": 0
+            },
+            "repeat-upgrade": {
+              "status": "PASS",
+              "exit_code": 0
+            },
+            "verify-repeat": {
+              "status": "PASS",
+              "exit_code": 0
+            },
+            "repeat-snapshot": {
+              "status": "PASS",
+              "exit_code": 0
+            },
+            "repeat-schema-equality": {
+              "status": "PASS"
+            }
+          },
+          "bms_source": "eccc1eb221df90675067b1011e986702d96a4985",
+          "corporate_source": "740fce16db15bb3551071cc11fe584c680fd738d",
+          "note": "Reconstructed pair: import1879 deleted Corporate; Corporate explicitly taken from main1645 SHA."
+        },
+        "from0890": {
+          "status": "PASS",
+          "steps": {
+            "install": {
+              "status": "PASS",
+              "exit_code": 0
+            },
+            "historical-schema": {
+              "status": "PASS",
+              "exit_code": 0
+            },
+            "seed": {
+              "status": "PASS",
+              "exit_code": 0
+            },
+            "upgrade": {
+              "status": "PASS",
+              "exit_code": 0
+            },
+            "candidate-schema": {
+              "status": "PASS",
+              "exit_code": 0
+            },
+            "verify-data": {
+              "status": "PASS",
+              "exit_code": 0
+            },
+            "snapshot": {
+              "status": "PASS",
+              "exit_code": 0
+            },
+            "repeat-upgrade": {
+              "status": "PASS",
+              "exit_code": 0
+            },
+            "verify-repeat": {
+              "status": "PASS",
+              "exit_code": 0
+            },
+            "repeat-snapshot": {
+              "status": "PASS",
+              "exit_code": 0
+            },
+            "repeat-schema-equality": {
+              "status": "PASS"
+            }
+          },
+          "bms_source": "e06cc96e2933e9142c1d51d2fcfa06b159737718",
+          "corporate_source": "e06cc96e2933e9142c1d51d2fcfa06b159737718"
+        }
+      },
+      "phpunit": {
+        "init": "PASS",
+        "schema_parity_2026110890_test": "PASS",
+        "ordered_index_2026110900_test": "PASS",
+        "pr48_tenant_isolation_test": "PASS",
+        "local_kbacompany": "FAIL",
+        "local_kbacorporate": "FAIL"
+      },
+      "schema_comparison": {
+        "from1645": "PASS",
+        "from1879": "PASS",
+        "from0890": "PASS"
+      },
+      "not_covered": [
+        "browser/UI",
+        "production/staging deployment",
+        "full sibling-plugin distribution",
+        "backup/restore"
+      ],
+      "diagnostic_files": {
+        "local_kbacorporate": {
+          "access_test.php": "PASS",
+          "business_role_management_test.php": "PASS",
+          "business_roles_test.php": "PASS",
+          "company_implementation_access_test.php": "PASS",
+          "competencies_test.php": "PASS",
+          "competency_audits_test.php": "PASS",
+          "competency_map_test.php": "PASS",
+          "competency_reassessment_test.php": "PASS",
+          "course_recommendations_test.php": "FAIL",
+          "development_plans_test.php": "FAIL",
+          "economic_dashboard_test.php": "PASS",
+          "economic_indicators_test.php": "PASS",
+          "employee_assessment_history_test.php": "PASS",
+          "employee_competency_profile_test.php": "PASS",
+          "employee_gap_test.php": "PASS",
+          "erp_exchange_test.php": "FAIL",
+          "implementation_actions_test.php": "FAIL",
+          "implementation_analytics_test.php": "PASS",
+          "implementation_audit_comparison_test.php": "PASS",
+          "implementation_audits_test.php": "FAIL",
+          "implementation_curator_company_scope_test.php": "PASS",
+          "implementation_curator_role_test.php": "PASS",
+          "implementation_evidence_test.php": "FAIL",
+          "implementation_kanban_test.php": "FAIL",
+          "implementation_section_progress_test.php": "PASS",
+          "implementation_task_bridge_test.php": "FAIL",
+          "individual_development_plan_test.php": "FAIL",
+          "license_reconciliation_test.php": "PASS",
+          "management_dashboards_test.php": "PASS",
+          "moodle_learning_plan_urls_test.php": "PASS",
+          "privacy_provider_test.php": "FAIL",
+          "production_hardening_test.php": "PASS",
+          "repository_lifecycle_test.php": "PASS",
+          "role_course_coverage_test.php": "PASS",
+          "study_plan_progress_test.php": "PASS",
+          "study_plan_provisioning_test.php": "PASS",
+          "target_profile_test.php": "PASS"
+        }
+      },
+      "status": "FAIL",
+      "artifact_id": 13649690932,
+      "artifact_zip_sha256": "sha256:5a6ca89e54cb38d19e8a18f17a7d7b2e43c04541dcdd187289ae0c34b2f50035",
+      "focused_fields": {
+        "tests": 21,
+        "assertions": 2489,
+        "errors": 0,
+        "failures": 0
+      },
+      "focused_index": {
+        "tests": 8,
+        "assertions": 81,
+        "errors": 0,
+        "failures": 0
+      },
+      "focused_tenants": {
+        "tests": 2,
+        "assertions": 66,
+        "errors": 0,
+        "failures": 0
+      },
+      "bms_suite": {
+        "tests": 556,
+        "assertions": 5347,
+        "errors": 40,
+        "failures": 30
+      },
+      "new_failing_bms_cases_vs_pr49": [],
+      "resolved_failing_bms_cases_vs_pr49": 11
+    },
+    "percona": {
+      "run_id": "c9579cdc99",
+      "php": "8.1.34",
+      "dbtype": "mysqli",
+      "database_server": "8.0.46-37",
+      "database_version_comment": "Percona Server (GPL), Release 37, Revision 39e2b60e",
+      "scope": "isolated Moodle core plus local_kbacompany/local_kbacorporate only",
+      "scenarios": {
+        "fresh": {
+          "status": "PASS",
+          "steps": {
+            "install": {
+              "status": "PASS",
+              "exit_code": 0
+            },
+            "historical-schema": {
+              "status": "PASS",
+              "exit_code": 0
+            },
+            "seed": {
+              "status": "PASS",
+              "exit_code": 0
+            },
+            "candidate-schema": {
+              "status": "PASS",
+              "exit_code": 0
+            },
+            "verify-data": {
+              "status": "PASS",
+              "exit_code": 0
+            },
+            "snapshot": {
+              "status": "PASS",
+              "exit_code": 0
+            },
+            "repeat-upgrade": {
+              "status": "PASS",
+              "exit_code": 0
+            },
+            "verify-repeat": {
+              "status": "PASS",
+              "exit_code": 0
+            },
+            "repeat-snapshot": {
+              "status": "PASS",
+              "exit_code": 0
+            },
+            "repeat-schema-equality": {
+              "status": "PASS"
+            }
+          },
+          "bms_source": "candidate working tree",
+          "corporate_source": "candidate working tree"
+        },
+        "from1645": {
+          "status": "PASS",
+          "steps": {
+            "install": {
+              "status": "PASS",
+              "exit_code": 0
+            },
+            "historical-schema": {
+              "status": "PASS",
+              "exit_code": 0
+            },
+            "seed": {
+              "status": "PASS",
+              "exit_code": 0
+            },
+            "upgrade": {
+              "status": "PASS",
+              "exit_code": 0
+            },
+            "candidate-schema": {
+              "status": "PASS",
+              "exit_code": 0
+            },
+            "verify-data": {
+              "status": "PASS",
+              "exit_code": 0
+            },
+            "snapshot": {
+              "status": "PASS",
+              "exit_code": 0
+            },
+            "repeat-upgrade": {
+              "status": "PASS",
+              "exit_code": 0
+            },
+            "verify-repeat": {
+              "status": "PASS",
+              "exit_code": 0
+            },
+            "repeat-snapshot": {
+              "status": "PASS",
+              "exit_code": 0
+            },
+            "repeat-schema-equality": {
+              "status": "PASS"
+            }
+          },
+          "bms_source": "740fce16db15bb3551071cc11fe584c680fd738d",
+          "corporate_source": "740fce16db15bb3551071cc11fe584c680fd738d"
+        },
+        "from1879": {
+          "status": "PASS",
+          "steps": {
+            "install": {
+              "status": "PASS",
+              "exit_code": 0
+            },
+            "historical-schema": {
+              "status": "PASS",
+              "exit_code": 0
+            },
+            "seed": {
+              "status": "PASS",
+              "exit_code": 0
+            },
+            "upgrade": {
+              "status": "PASS",
+              "exit_code": 0
+            },
+            "candidate-schema": {
+              "status": "PASS",
+              "exit_code": 0
+            },
+            "verify-data": {
+              "status": "PASS",
+              "exit_code": 0
+            },
+            "snapshot": {
+              "status": "PASS",
+              "exit_code": 0
+            },
+            "repeat-upgrade": {
+              "status": "PASS",
+              "exit_code": 0
+            },
+            "verify-repeat": {
+              "status": "PASS",
+              "exit_code": 0
+            },
+            "repeat-snapshot": {
+              "status": "PASS",
+              "exit_code": 0
+            },
+            "repeat-schema-equality": {
+              "status": "PASS"
+            }
+          },
+          "bms_source": "eccc1eb221df90675067b1011e986702d96a4985",
+          "corporate_source": "740fce16db15bb3551071cc11fe584c680fd738d",
+          "note": "Reconstructed pair: import1879 deleted Corporate; Corporate explicitly taken from main1645 SHA."
+        },
+        "from0890": {
+          "status": "PASS",
+          "steps": {
+            "install": {
+              "status": "PASS",
+              "exit_code": 0
+            },
+            "historical-schema": {
+              "status": "PASS",
+              "exit_code": 0
+            },
+            "seed": {
+              "status": "PASS",
+              "exit_code": 0
+            },
+            "upgrade": {
+              "status": "PASS",
+              "exit_code": 0
+            },
+            "candidate-schema": {
+              "status": "PASS",
+              "exit_code": 0
+            },
+            "verify-data": {
+              "status": "PASS",
+              "exit_code": 0
+            },
+            "snapshot": {
+              "status": "PASS",
+              "exit_code": 0
+            },
+            "repeat-upgrade": {
+              "status": "PASS",
+              "exit_code": 0
+            },
+            "verify-repeat": {
+              "status": "PASS",
+              "exit_code": 0
+            },
+            "repeat-snapshot": {
+              "status": "PASS",
+              "exit_code": 0
+            },
+            "repeat-schema-equality": {
+              "status": "PASS"
+            }
+          },
+          "bms_source": "e06cc96e2933e9142c1d51d2fcfa06b159737718",
+          "corporate_source": "e06cc96e2933e9142c1d51d2fcfa06b159737718"
+        }
+      },
+      "phpunit": {
+        "init": "PASS",
+        "schema_parity_2026110890_test": "PASS",
+        "ordered_index_2026110900_test": "PASS",
+        "pr48_tenant_isolation_test": "PASS",
+        "local_kbacompany": "FAIL",
+        "local_kbacorporate": "FAIL"
+      },
+      "schema_comparison": {
+        "from1645": "PASS",
+        "from1879": "PASS",
+        "from0890": "PASS"
+      },
+      "not_covered": [
+        "browser/UI",
+        "production/staging deployment",
+        "full sibling-plugin distribution",
+        "backup/restore"
+      ],
+      "diagnostic_files": {
+        "local_kbacorporate": {
+          "access_test.php": "PASS",
+          "business_role_management_test.php": "PASS",
+          "business_roles_test.php": "PASS",
+          "company_implementation_access_test.php": "PASS",
+          "competencies_test.php": "PASS",
+          "competency_audits_test.php": "PASS",
+          "competency_map_test.php": "PASS",
+          "competency_reassessment_test.php": "PASS",
+          "course_recommendations_test.php": "FAIL",
+          "development_plans_test.php": "FAIL",
+          "economic_dashboard_test.php": "PASS",
+          "economic_indicators_test.php": "PASS",
+          "employee_assessment_history_test.php": "PASS",
+          "employee_competency_profile_test.php": "PASS",
+          "employee_gap_test.php": "PASS",
+          "erp_exchange_test.php": "FAIL",
+          "implementation_actions_test.php": "FAIL",
+          "implementation_analytics_test.php": "PASS",
+          "implementation_audit_comparison_test.php": "PASS",
+          "implementation_audits_test.php": "FAIL",
+          "implementation_curator_company_scope_test.php": "PASS",
+          "implementation_curator_role_test.php": "PASS",
+          "implementation_evidence_test.php": "FAIL",
+          "implementation_kanban_test.php": "FAIL",
+          "implementation_section_progress_test.php": "PASS",
+          "implementation_task_bridge_test.php": "FAIL",
+          "individual_development_plan_test.php": "FAIL",
+          "license_reconciliation_test.php": "PASS",
+          "management_dashboards_test.php": "PASS",
+          "moodle_learning_plan_urls_test.php": "PASS",
+          "privacy_provider_test.php": "FAIL",
+          "production_hardening_test.php": "FAIL",
+          "repository_lifecycle_test.php": "PASS",
+          "role_course_coverage_test.php": "PASS",
+          "study_plan_progress_test.php": "PASS",
+          "study_plan_provisioning_test.php": "PASS",
+          "target_profile_test.php": "PASS"
+        }
+      },
+      "status": "FAIL",
+      "artifact_id": 13648894338,
+      "artifact_zip_sha256": "sha256:3098e632ebb425d3cdd86f600cd1aa7fb299f1bfd8784491456bb84d2165029b",
+      "focused_fields": {
+        "tests": 21,
+        "assertions": 2489,
+        "errors": 0,
+        "failures": 0
+      },
+      "focused_index": {
+        "tests": 8,
+        "assertions": 81,
+        "errors": 0,
+        "failures": 0
+      },
+      "focused_tenants": {
+        "tests": 2,
+        "assertions": 66,
+        "errors": 0,
+        "failures": 0
+      },
+      "bms_suite": {
+        "tests": 556,
+        "assertions": 5347,
+        "errors": 40,
+        "failures": 30
+      },
+      "new_failing_bms_cases_vs_pr49": [],
+      "resolved_failing_bms_cases_vs_pr49": 11
+    }
+  }
+}
