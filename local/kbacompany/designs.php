@@ -64,6 +64,11 @@ $end = static function(string $label): void {
     echo html_writer::end_tag('form');
 };
 echo $OUTPUT->heading($str('catalog'), 3);
+if (optional_param('firstunit', 0, PARAM_BOOL) && $object === '') {
+    $start('create', ['source' => 'firstunit', 'firstunit' => 1]);
+    $field('firstunit_name', 'name', get_string('orgunitname', 'local_kbacompany'));
+    $end($str('firstunitcreate'));
+}
 $start('create');
 $field('new_name', 'name', $str('name'));
 echo html_writer::label($str('source'), 'design_source');
@@ -362,8 +367,8 @@ if ($data['selected']) {
         $field('return_reason', 'reason', $str('returnreason'), '', true);
         $end($str('return'));
     } else if ($currentview && $p->status === 'approved') {
-        if ($data['branches']) {
-            $branchoptions = [];
+        if ($data['branches'] || $data['canstartbranch']) {
+            $branchoptions = $data['canstartbranch'] ? ['create-main' => $str('firstunitbranch')] : [];
             $defaultbranch = '';
             foreach ($data['branches'] as $branch) {
                 $branchoptions[$branch->uuid] = $branch->code . ' — ' . $branch->name;
