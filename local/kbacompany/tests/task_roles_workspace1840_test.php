@@ -104,7 +104,7 @@ final class task_roles_workspace1840_test extends \advanced_testcase {
         $this->assertStringContainsString('bms24-task-advanced',$html);
         $this->assertStringContainsString('bms24-task-quickfilters',$html);
         $this->assertStringContainsString('name="scope" value="roles"',$html);
-        $this->assertStringContainsString('Все мои роли', $html);
+        $this->assertStringContainsString(get_string('taskcenter_scope_roles', 'local_kbacompany'), $html);
         $this->assertStringNotContainsString('<script>alert(1)</script>',$html);
         $this->assertStringNotContainsString('scope=all',$html);
         $this->assertStringContainsString('method="get"',$html);

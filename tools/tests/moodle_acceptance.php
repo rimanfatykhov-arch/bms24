@@ -173,14 +173,18 @@ if (required_env('DBTYPE') === 'mysqli' && stripos($versioncomment, 'Percona') =
 $main = '740fce16db15bb3551071cc11fe584c680fd738d';
 $import = 'eccc1eb221df90675067b1011e986702d96a4985';
 $functional = 'd4887103c13f45c42b73b455a95dba142d7ba116';
+$retained2613 = getenv('CORPORATE_PROFILE') === 'retained2613';
+$corporate2613 = '687c230595bce020fc001db91b3aac276f0fee7d';
 $report = ['run_id' => $runid, 'php' => PHP_VERSION, 'dbtype' => required_env('DBTYPE'),
     'database_server' => $dbversion, 'database_version_comment' => $versioncomment,
     'scope' => 'isolated Moodle core plus local_kbacompany/local_kbacorporate only',
     'scenarios' => [], 'phpunit' => [], 'schema_comparison' => [],
     'not_covered' => ['browser/UI', 'production/staging deployment', 'full sibling-plugin distribution', 'backup/restore']];
+$report['corporate_profile'] = $retained2613 ? 'exact retained2613' : 'diagnostic0901';
+$report['corporate_source'] = $retained2613 ? $corporate2613 : 'candidate working tree';
 $self = __FILE__;
 $fresh = null;
-foreach (['fresh' => null, 'from1645' => $main, 'from1879' => $import,
+$scenarios = ['fresh' => null, 'from1645' => $main, 'from1879' => $import,
         'from0890' => 'e06cc96e2933e9142c1d51d2fcfa06b159737718',
         'from0900' => '5c59057cb7af3fd545cd661bb7c2b3daa5ae7cd9',
         'from0901' => '1146e1bc330621ffcfa7dcb3881a2188110904c8',
@@ -191,11 +195,14 @@ foreach (['fresh' => null, 'from1645' => $main, 'from1879' => $import,
         'frompr580904' => 'd3a16c3d08b9b10ac7edc32658157aa7f237e9a0',
         'frompr590905' => '2446347adf26ebb9e1520414a65c89e930dadba2',
         'frompr650906' => '4e5482df3d5bd8fd4cc604c070ed8728e7c0fc17',
-        'frompr671001' => '34763fd4b8980d36bf6de0a309a7737693e9e3dc'] as $name => $historical) {
+        'frompr671001' => '34763fd4b8980d36bf6de0a309a7737693e9e3dc'];
+if ($retained2613) { $scenarios = ['fresh'=>null, 'fromprod1878'=>'a87252b642e5796c6d84105dd448d51d9a5b5241']; }
+foreach ($scenarios as $name => $historical) {
     $scenario = $testroot . '/' . $name;
     $core = $scenario . '/core';
     $entry = ['status' => 'FAIL', 'steps' => [], 'bms_source' => $historical ?? 'candidate working tree',
         'corporate_source' => in_array($historical, [$import, $functional], true) ? $main : ($historical ?? 'candidate working tree')];
+    if ($retained2613) { $entry['corporate_source'] = $corporate2613; }
     if (in_array($historical, [$import, $functional], true)) {
         $entry['note'] = 'Reconstructed dependency pair: standalone BMS source uses Corporate from main1645 SHA; not live stage Corporate2613.';
     }
@@ -205,6 +212,7 @@ foreach (['fresh' => null, 'from1645' => $main, 'from1879' => $import,
         foreach (['kbacompany', 'kbacorporate'] as $plugin) {
             if (file_exists($core . '/local/' . $plugin)) { throw new RuntimeException('Core source already contains candidate plugin'); }
             $ref = $plugin === 'kbacorporate' && in_array($historical, [$import, $functional], true) ? $main : $historical;
+            if ($retained2613 && $plugin === 'kbacorporate') { $ref = $corporate2613; }
             if ($ref) {
                 $tar = $scenario . '/' . $plugin . '.tar';
                 must_command(['git', '-C', $candidate, 'archive', '--format=tar', '--output=' . $tar, $ref,
@@ -248,10 +256,20 @@ foreach (['fresh' => null, 'from1645' => $main, 'from1879' => $import,
             throw new RuntimeException('Full Moodle installation failed');
         }
         if ($name === 'fresh') { $fresh = $core; }
+        if ($retained2613) {
+            $step('corporate-source-before', [PHP_BINARY, $candidate . '/tools/tests/verify_corporate2613.php',
+                $core . '/local/kbacorporate', $candidate . '/docs/release/corporate2613-manifest.json']);
+        }
+        if ($name === 'fromprod1878') {
+            $step('production-schema-model', [PHP_BINARY, $candidate . '/tools/tests/production1878_schema.php',
+                $core, $candidate, $logs . '/production1878-schema-model.json']);
+        }
         $step('historical-schema', [PHP_BINARY, $core . '/admin/cli/check_database_schema.php']);
         $seeded = $step('seed', [PHP_BINARY, $self, 'seed', $core, $scenario . '/fixtures.json']);
         if ($historical) {
             foreach (['kbacompany', 'kbacorporate'] as $plugin) {
+                // The installed2613 tree must never be replaced with the0901 control.
+                if ($retained2613 && $plugin === 'kbacorporate') { continue; }
                 // Rename only our disposable historical copy; never delete source or user files.
                 rename($core . '/local/' . $plugin, $scenario . '/historical-' . $plugin);
                 must_command(['cp', '-a', $candidate . '/local/' . $plugin, $core . '/local/'], $testroot,
@@ -265,6 +283,10 @@ foreach (['fresh' => null, 'from1645' => $main, 'from1879' => $import,
         if ($seeded) { $step('verify-data', [PHP_BINARY, $self, 'verify', $core, $scenario . '/fixtures.json']); }
         $step('snapshot', [PHP_BINARY, $self, 'snapshot', $core, $scenario . '/schema.json']);
         $step('repeat-upgrade', [PHP_BINARY, $core . '/admin/cli/upgrade.php', '--non-interactive']);
+        if ($retained2613) {
+            $step('corporate-source-after', [PHP_BINARY, $candidate . '/tools/tests/verify_corporate2613.php',
+                $core . '/local/kbacorporate', $candidate . '/docs/release/corporate2613-manifest.json']);
+        }
         if ($seeded) { $step('verify-repeat', [PHP_BINARY, $self, 'verify', $core, $scenario . '/fixtures.json']); }
         $step('repeat-snapshot', [PHP_BINARY, $self, 'snapshot', $core, $scenario . '/schema-repeat.json']);
         if (is_file($scenario . '/schema.json') && is_file($scenario . '/schema-repeat.json')) {
@@ -283,8 +305,7 @@ foreach (['fresh' => null, 'from1645' => $main, 'from1879' => $import,
     write_json($logs . '/report.json', $report);
 }
 
-foreach (['from1645', 'from1879', 'from0890', 'from0900', 'from0901', 'from0804',
-        'frompr530902', 'frompr560902', 'frompr570903', 'frompr580904', 'frompr590905', 'frompr650906', 'frompr671001'] as $name) {
+foreach (array_diff(array_keys($scenarios), ['fresh']) as $name) {
     $a = $testroot . '/fresh/schema.json';
     $b = $testroot . '/' . $name . '/schema.json';
     $report['schema_comparison'][$name] = !is_file($a) || !is_file($b) ? 'NOT RUN' :

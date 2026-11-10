@@ -53,7 +53,7 @@ final class process_service_test extends \advanced_testcase {
         process_service::link($f['company'], $f['actor'], $child, 'metric', $f['metric']);
 
         $context = process_service::context($f['company'], $f['actor'], $child);
-        $this->assertSame('0.3.0', process_service::contract()['version']);
+        $this->assertSame('0.4.0', process_service::contract()['version']);
         $this->assertSame(2, $context['summary']['total']);
         $this->assertSame(2, $context['summary']['core']);
         $this->assertSame('published', $context['selected']['status']);

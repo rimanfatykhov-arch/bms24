@@ -82,7 +82,7 @@ final class process_model_service_test extends \advanced_testcase {
         $built = $this->build_valid_model($f);
         $ctx = process_model_service::context($f['company'], $f['actor'], $f['process']);
         $this->assertSame([], $ctx['publication_issues']);
-        $this->assertSame('0.3.1', process_model_service::contract()['version']);
+        $this->assertSame('0.4.4', process_model_service::contract()['version']);
         process_model_service::publish($f['company'], $f['actor'], $f['process'],
             $ctx['model']['id'], $ctx['model']['change_version']);
         $ctx = process_model_service::context($f['company'], $f['actor'], $f['process']);

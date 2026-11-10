@@ -18,7 +18,7 @@ use local_kbacorporate\local\repository;
 final class company_core_test extends \advanced_testcase {
     public function test_contract_declares_existing_source_without_duplication(): void {
         $contract = company_service::contract();
-        $this->assertSame('0.6.0', $contract['version']);
+        $this->assertSame('0.6.7', $contract['version']);
         $this->assertSame('canonical_with_compatibility_adapter', $contract['storage_mode']);
         $this->assertSame('runtime_optional_adapter', $contract['dependency_policy']);
         $this->assertSame('local_kbacompany.company', $contract['source_of_truth']['company_profile']);
@@ -76,7 +76,7 @@ final class company_core_test extends \advanced_testcase {
 
     public function test_permission_contract_centralises_company_role_policies(): void {
         $contract = permission_service::contract();
-        $this->assertSame('0.5.1.3', $contract['version']);
+        $this->assertSame('0.7.0', $contract['version']);
         $this->assertSame(['owner', 'manager', 'hr'], $contract['policies']['manage_organization']);
         $this->assertSame(['owner', 'manager'], $contract['policies']['manage_management']);
         $this->assertSame(['owner', 'manager'], $contract['policies']['manage_tasks']);

@@ -12,9 +12,9 @@ final class battle_plan_word_export_service_test extends \basic_testcase {
             'title' => 'Боевой план', 'company' => 'ООО Тест', 'employee' => 'Иван Иванов',
             'position' => 'Исполнительный директор', 'period' => '2026-09-14 — 2026-09-20',
             'status' => 'Согласован / в работе', 'reviewer' => 'Иван Иванов', 'summary' => 'Задач: 1',
-            'generated' => 'Сформировано в BMS',
+            'generated' => 'Сформировано в BMS', 'observer' => '',
             'labels' => ['company'=>'Компания','employee'=>'Сотрудник','position'=>'Должность','period'=>'Период',
-                'status'=>'Статус','reviewer'=>'Согласующий','tasks'=>'Задачи','task'=>'Задача','product'=>'Ожидаемый продукт',
+                'status'=>'Статус','reviewer'=>'Согласующий','observer'=>'Наблюдатель','tasks'=>'Задачи','task'=>'Задача','product'=>'Ожидаемый продукт',
                 'state'=>'Статус / Приоритет','dates'=>'Срок','time'=>'План / факт, мин','result'=>'Результат'],
             'streams' => [['key'=>'operate','label'=>'Операционная работа','tasks'=>[[
                 'title'=>'Подготовить отчёт','product'=>'Утверждённый отчёт','status'=>'В работе','priority'=>'Обычный',
@@ -110,7 +110,7 @@ final class battle_plan_word_export_service_test extends \basic_testcase {
         $this->assertCount(1, $model['metrics']);
         $this->assertStringContainsString('Выручка (руб.)', $model['metrics'][0]['name']);
         $this->assertStringContainsString('42', $model['metrics'][0]['previous']);
-        $this->assertStringContainsString('Факт за 1 из 7 дней', $model['metrics'][0]['previous']);
+        $this->assertSame(format_float(42000.0, 2) . ' (' . get_string('bpu_metric_previous_fact_days', 'local_kbacompany', 1) . ')', $model['metrics'][0]['previous']);
         $this->assertStringContainsString('120', $model['metrics'][0]['quota']);
         $this->assertStringContainsString('62', $model['metrics'][0]['fact']);
         $this->assertSame('12.10.2026 — 18.10.2026', $model['period']);

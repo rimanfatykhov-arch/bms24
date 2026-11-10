@@ -15,6 +15,8 @@ def check(root=ROOT):
         errors.append('conflict map coverage changed')
     # PR57 follow-up: only impossible varchar(20) fixture repaired; assertions retained/extended.
     reviewed_followup = {'local/kbacompany/tests/company_employee_sync_service_test.php': '77fb41119da22be984915d7839dfc9e8352a5a8a7d6da8ca8558e906c062e4bd'}
+    # Reviewed stale company/permission literals only; all source/policy assertions retained.
+    reviewed_followup['local/kbacompany/tests/company_core_test.php'] = '224a11b3e199a196a6334d23706ab16f8d8d3f5c3e388582a9cb9d3ccaf0116b'
     reviewed_metadata={'AGENTS.md','docs/00_MASTER_CONTEXT.md'}
     for name, expected in plan['unchanged_schema_hashes'].items():
         if digest(root/name)!=expected:
