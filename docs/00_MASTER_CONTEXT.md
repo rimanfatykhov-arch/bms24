@@ -89,3 +89,19 @@ PASS; BMS618/7274 retains1error+18failures,0skips; Corporate150/962PASS. No new 
 missing IDs or assertion decreases versus PR62. RC30 HOLD. See
 [PR66 acceptance](reconcile/PR66_ACCEPTANCE.md) and evidence. No production/staging
 access, deployment or PR merge. Backup/restore and realCorporate2613 remain unverified.
+
+## PR67 contract expectations —2026-11-10
+
+Draft PR67 on exact PR66 head4690e11811b9006386dd4bb13e9e80555f4c3137; tested source
+e7d8cc06d99ba407662fc9aed86dfc526c583521. Three proven stale overview/indicator/market
+version expectations corrected; original assertions retained and domain declarations
+covered additionally. No runtime, schema, ACL, Core or Corporate change. BMS2026111001 /
+Corporate2026110901 retained; source SHA and ZIP hash identify this test-only candidate.
+Both MariaDB10.11.19 and Percona8.0.46-37: BMS618/7292,1error+15failures,0skips;
+Corporate150/962 and focused11/39 PASS. Exactly3 resolved, no new failing/missing IDs,
+no decreased assertions across32 retained suites;35 suites now.13 install/upgrade
+scenarios,12 schema comparisons and ADR-0004 repair regression PASS. Remaining16
+failures preserve exception types/text except normalized synthetic session keys.
+See [PR67 acceptance](reconcile/PR67_ACCEPTANCE.md), evidence and19-failure triage.
+RC30 HOLD. Next priority: non-manager workspace access/data validation. No PR merge,
+deployment or production/staging access.
