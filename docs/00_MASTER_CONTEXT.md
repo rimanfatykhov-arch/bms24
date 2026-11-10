@@ -77,3 +77,15 @@ Draft PR60 source e5e5dd46d6563c3c38668505ff8a47821bdadda9, based on exact PR59 
 ## 2026-11-09 — PR62 Kanban fixture stabilization
 
 Draft PR62 source acff5299f895badb3f5efbfc84b676ef8f7ef9fd starts at exact PR60 a60ce4e99fe1931774eaa7da3be0e23fe1d0b92f. Test-only repair replaces invalid company/actor fixtures; runtime, Corporate, ACL and migrations are unchanged. BMS2026110906 / Corporate2026110901 retained; candidate is identified by Git SHA and artifact hash, not a new product build. Both MariaDB10.11.19 and Percona8.0.46-37: Kanban10/90 PASS, BMS618/7274 with1 error +18 failures and0 skipped, Corporate150/962 PASS. Exactly two old errors resolved; no new failures, missing cases or reduced assertions across30 retained suites. All12 install/upgrade scenarios,11 schema comparisons (183 tables),24 preservation/repeat logs PASS per engine. Static/artifact PASS; ZIP differs from PR60 only in two PHP tests, all runtime entries byte-identical. See [PR62 acceptance](reconcile/PR62_ACCEPTANCE.md) and exact-ID triage. RC30 HOLD; no merge or staging/production changes. Proposed next scope: three stale contract-version assertions (overview, indicator registry, market); not started.
+
+## ADR-0004 schema repair — PR66,2026-11-10
+
+Owner approved fixed fresh precision with all-values preflight. BMS2026111001 repairs
+two adminitem fields and11 DECIMAL definitions; Corporate0901 unchanged. Tested source
+98ecf00a4c39299377f056f852c7ecc8b95ecd16. Both MariaDB/Percona: specialized13-field
+repair,30 rejection cases,110 preserved rows,two-company nonempty time values,fractions
+and partial-DDL retry PASS. Full13 install/upgrade scenarios and12 schema comparisons
+PASS; BMS618/7274 retains1error+18failures,0skips; Corporate150/962PASS. No new failures,
+missing IDs or assertion decreases versus PR62. RC30 HOLD. See
+[PR66 acceptance](reconcile/PR66_ACCEPTANCE.md) and evidence. No production/staging
+access, deployment or PR merge. Backup/restore and realCorporate2613 remain unverified.
