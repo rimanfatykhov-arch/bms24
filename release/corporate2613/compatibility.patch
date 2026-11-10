@@ -416,8 +416,8 @@
 +            // Moodle4.1 XMLDB change_field_default rejects indexed columns.
 +            // Native default-only DDL preserves the field and every index;
 +            // identifiers/literals come exclusively from the closed specs above.
-+            $DB->execute('ALTER TABLE {' . $table . '} ALTER COLUMN ' . $field .
-+                ' SET DEFAULT ' . ($type === 'I' ? '0' : "'draft'"));
++            $DB->change_database_structure(['ALTER TABLE {' . $table . '} ALTER COLUMN ' . $field .
++                ' SET DEFAULT ' . ($type === 'I' ? '0' : "'draft'")], [$table]);
 +        }
 +    }
 +    foreach ($specs as [$table, $field, $type, $length, $allowed, $target, $xmltype]) {
@@ -543,8 +543,8 @@
 +                    !in_array($default, ['0','1','draft','active','unknown'], true)) {
 +                throw new \coding_exception('Unexpected synthetic default');
 +            }
-+            $DB->execute('ALTER TABLE {' . $table->getName() . '} ALTER COLUMN ' . $name .
-+                " SET DEFAULT '" . $default . "'");
++            $DB->change_database_structure(['ALTER TABLE {' . $table->getName() . '} ALTER COLUMN ' . $name .
++                " SET DEFAULT '" . $default . "'"], [$table->getName()]);
 +        };
 +        $company = repository::save_company((object)['name'=>'Migration', 'active'=>1]);
 +        $user = $this->getDataGenerator()->create_user();
