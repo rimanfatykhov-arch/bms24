@@ -27,7 +27,7 @@ final class course_recommendations_test extends \advanced_testcase {
         $competency = $generator->create_competency([
             'competencyframeworkid' => $framework->get('id'),
         ]);
-        $generator->create_course_competency([
+        $DB->insert_record('competency_coursecomp', (object)[
             'courseid' => (int)$course->id,
             'competencyid' => (int)$competency->get('id'),
             'sortorder' => 0,

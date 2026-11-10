@@ -18,16 +18,12 @@ class external_mapping {
         $metadata = self::validate_metadata($metadata);
         self::assert_company_scope(max(0, $companyid), $localentity, $localid);
         $now = time();
-        $lookupsql = 'SELECT em.* FROM {local_kbacorp_extmap} em ' .
-            'WHERE em.companyid = :companyid AND em.system = :system ' .
-            'AND em.entitytype = :entitytype AND em.externalid = :externalid';
-        $lookupparams = [
+        $existing = $DB->get_record('local_kbacorp_extmap', [
             'companyid' => max(0, $companyid),
             'system' => $system,
             'entitytype' => $entitytype,
             'externalid' => $externalid,
-        ];
-        $existing = $DB->get_record_sql($lookupsql, $lookupparams);
+        ]);
         $record = (object)[
             'companyid' => max(0, $companyid),
             'system' => $system,
@@ -43,32 +39,16 @@ class external_mapping {
         ];
         if ($existing) {
             $record->id = (int)$existing->id;
-            // Provider is part of the lookup identity and is unchanged. Omitting
-            // it avoids an unquoted SYSTEM assignment in Moodle's generic UPDATE.
-            unset($record->system);
             $DB->update_record('local_kbacorp_extmap', $record);
             return $record->id;
         }
         $record->timecreated = $now;
-        // Moodle's generic INSERT does not quote reserved column names. Keep the
-        // existing schema/API and bind every value; only the fixed identifier varies.
-        $systemcolumn = $DB->get_dbfamily() === 'mysql' ? '`system`' : 'system';
-        $DB->execute('INSERT INTO {local_kbacorp_extmap} ' .
-            '(companyid, ' . $systemcolumn . ', entitytype, localentity, localid, externalid, externalcode, ' .
-            'status, metadata, lastsync, timemodified, timecreated) VALUES ' .
-            '(:companyid, :system, :entitytype, :localentity, :localid, :externalid, :externalcode, ' .
-            ':status, :metadata, :lastsync, :timemodified, :timecreated)', (array)$record);
-        // The unique (companyid, system, entitytype, externalid) tuple identifies
-        // exactly this insert, including when other tenants use the same external ID.
-        $created = $DB->get_record_sql($lookupsql, $lookupparams, MUST_EXIST);
-        return (int)$created->id;
+        return (int)$DB->insert_record('local_kbacorp_extmap', $record);
     }
 
     public static function find_local(int $companyid, string $system, string $entitytype, string $externalid) {
         global $DB;
-        return $DB->get_record_sql('SELECT em.* FROM {local_kbacorp_extmap} em ' .
-            'WHERE em.companyid = :companyid AND em.system = :system AND em.entitytype = :entitytype ' .
-            'AND em.externalid = :externalid AND em.status = :status', [
+        return $DB->get_record('local_kbacorp_extmap', [
             'companyid' => max(0, $companyid),
             'system' => self::token($system, 30),
             'entitytype' => self::token($entitytype, 30),

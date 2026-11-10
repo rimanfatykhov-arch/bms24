@@ -69,8 +69,7 @@ final class implementation_actions_test extends \advanced_testcase {
             'audittype' => 'baseline',
             'auditdate' => time(),
         ], 2);
-        $audititems = implementation_audits::get_items($auditid);
-        $item = reset($audititems);
+        $item = reset(implementation_audits::get_items($auditid));
         $DB->update_record('local_kbacorp_impl_item', (object)[
             'id' => (int)$item->id,
             'score' => 2,
@@ -149,8 +148,7 @@ final class implementation_actions_test extends \advanced_testcase {
             'audittype' => 'baseline',
             'auditdate' => time(),
         ], 2);
-        $audititems = implementation_audits::get_items($auditid);
-        $item = reset($audititems);
+        $item = reset(implementation_audits::get_items($auditid));
 
         $this->expectException(\moodle_exception::class);
         implementation_actions::create_selected($companyid, $auditid,

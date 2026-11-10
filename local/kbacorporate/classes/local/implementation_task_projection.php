@@ -76,17 +76,6 @@ final class implementation_task_projection {
                 !self::is_active_company($companyid) || !self::is_active_user($actorid)) {
             throw new \moodle_exception('companynotallowed', 'local_kbacorporate');
         }
-        // Authorize before reading task content; curator-only access is excluded.
-        $manages = access::can_manage_company_implementation($companyid, $actorid);
-        if (!$manages && !self::is_employee($companyid, $actorid)) {
-            return null;
-        }
-        $params = ['taskid' => $taskid, 'companyid' => $companyid];
-        $ownerfilter = '';
-        if (!$manages) {
-            $ownerfilter = ' AND t.ownerid = :actorid';
-            $params['actorid'] = $actorid;
-        }
         $sql = "SELECT t.id, t.companyid, t.auditid, t.ownerid, t.createdby,
                        t.title, t.expectedresult, t.status, t.priority,
                        t.startdate, t.duedate, t.completedat, t.timemodified,
@@ -95,7 +84,7 @@ final class implementation_task_projection {
                   FROM {local_kbacorp_impl_task} t
                   JOIN {local_kbacorp_impl_program} p
                     ON p.baselineauditid = t.auditid AND p.companyid = t.companyid
-                 WHERE t.id = :taskid AND t.companyid = :companyid $ownerfilter
+                 WHERE t.id = :taskid AND t.companyid = :companyid
                    AND t.deleted = 0 AND p.commercialstatus = 'paid'
                    AND p.status IN ('active', 'paused', 'completed')
                    AND p.id = (SELECT MIN(p2.id)
@@ -104,13 +93,14 @@ final class implementation_task_projection {
                                   AND p2.companyid = t.companyid
                                   AND p2.commercialstatus = 'paid'
                                   AND p2.status IN ('active', 'paused', 'completed'))";
-        $task = $DB->get_record_sql($sql, $params);
+        $task = $DB->get_record_sql($sql, ['taskid' => $taskid, 'companyid' => $companyid]);
         if (!$task) {
             return null;
         }
         // Deliberately exclude curator-only access from this BMS-oriented bridge.
         // A curator may visit the original Corporate UI, but BMS access is separate.
         $owns = (int)$task->ownerid === $actorid && self::is_employee($companyid, $actorid);
+        $manages = access::can_manage_company_implementation($companyid, $actorid);
         if (!$owns && !$manages) {
             return null;
         }

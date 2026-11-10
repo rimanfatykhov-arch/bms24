@@ -3615,3 +3615,16 @@ a.kbacorp-workspace-stage:hover { border-color: #2166a5; text-decoration: none; 
     .kbacorp-implementation-route-row { grid-template-columns: 1fr; }
     .kbacorp-implementation-route-card { min-width: 250px; }
 }
+
+/* Corporate 0.40.12: bounded Kanban columns with independent pagination. */
+.kbacorp-kanban-pagination {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: .45rem;
+    padding: .8rem .4rem .4rem;
+    border-top: 1px solid #dce6e9;
+    margin-top: .6rem;
+}
+.kbacorp-kanban-pagelabel { font-size: .82rem; color: #516371; margin-right: auto; }
+.kbacorp-kanban-pagination .btn { white-space: normal; }

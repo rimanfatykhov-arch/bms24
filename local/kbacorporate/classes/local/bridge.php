@@ -519,8 +519,15 @@ class bridge {
         $result['incoming_roles'] = $incoming;
         $result['ignored_roles'] = $ignored;
 
-        // A successful/no-op merge is a normal result, not a developer error.
-        // Return the structured role outcome; ERP calls retain their privacy-safe audit.
+        debugging(
+            '[CORPORATE_ROLE_MERGE] userid=' . $userid .
+            ' companyid=' . $companyid .
+            ' incoming_roles=' . implode(',', $incoming) .
+            ' existing_roles=' . implode(',', $result['existing_roles'] ?? []) .
+            ' final_roles=' . implode(',', $result['roles'] ?? []) .
+            ' status=' . ($result['status'] ?? 'unknown'),
+            DEBUG_DEVELOPER
+        );
 
         return $result;
     }

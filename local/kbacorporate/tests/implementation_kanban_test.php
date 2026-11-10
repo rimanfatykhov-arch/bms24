@@ -138,8 +138,7 @@ final class implementation_kanban_test extends \advanced_testcase {
             'audittype' => 'baseline',
             'auditdate' => time(),
         ], (int)get_admin()->id);
-        $audititems = implementation_audits::get_items($auditid);
-        $item = reset($audititems);
+        $item = reset(implementation_audits::get_items($auditid));
         $DB->update_record('local_kbacorp_impl_item', (object)[
             'id' => (int)$item->id,
             'score' => 2,

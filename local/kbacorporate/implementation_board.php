@@ -39,18 +39,22 @@ if (!$hasassignments && !$canviewall) {
     throw new moodle_exception('curatorworkspacenotassigned', 'local_kbacorporate');
 }
 
+$columnpages = [];
+foreach ($statuses as $columnstatus) {
+    $columnpages[$columnstatus] = max(0, min(100000,
+        optional_param('p_' . $columnstatus, 0, PARAM_INT)));
+}
 $boardparams = [
-    'q' => $query,
-    'companyid' => $companyid,
-    'curatorid' => $curatorid,
-    'auditid' => $auditid,
-    'ownerid' => $ownerid,
-    'status' => $status,
-    'scope' => $scope,
-    'period' => $period,
-    'priority' => $priority,
+    'q' => $query, 'companyid' => $companyid, 'curatorid' => $curatorid,
+    'auditid' => $auditid, 'ownerid' => $ownerid, 'status' => $status,
+    'scope' => $scope, 'period' => $period, 'priority' => $priority,
     'evidence' => $evidence,
 ];
+foreach ($columnpages as $columnstatus => $page) {
+    if ($page > 0) {
+        $boardparams['p_' . $columnstatus] = $page;
+    }
+}
 $boardurl = new moodle_url('/local/kbacorporate/implementation_board.php', $boardparams);
 
 $PAGE->set_context($context);
@@ -59,26 +63,28 @@ $PAGE->set_pagelayout('standard');
 $PAGE->set_title(get_string('implementationboard', 'local_kbacorporate'));
 $PAGE->set_heading(get_string('implementationboard', 'local_kbacorporate'));
 
-$allthreads = \local_kbacorporate\local\implementation_task_discussion::get_curator_threads(
-    (int)$USER->id, '', '', $canviewall);
+$boardquery = \local_kbacorporate\local\implementation_board_query::class;
+$facets = $boardquery::facets((int)$USER->id, $canviewall);
 $companies = [];
 $curators = [];
 $audits = [];
 $auditcompanies = [];
 $owners = [];
-foreach ($allthreads as $thread) {
-    $companies[(int)$thread->companyid] = format_string($thread->companyname);
-    if ((int)$thread->programcuratorid > 0) {
-        $curators[(int)$thread->programcuratorid] = trim(format_string(
-            $thread->curatorfirstname . ' ' . $thread->curatorlastname));
+foreach ($facets['companies'] as $row) {
+    $companies[(int)$row->id] = format_string($row->label);
+}
+foreach ($facets['curators'] as $row) {
+    if ((int)$row->id > 0) {
+        $curators[(int)$row->id] = trim(format_string($row->firstname . ' ' . $row->lastname));
     }
-    $audits[(int)$thread->auditid] = format_string($thread->companyname) . ' — ' .
-        format_string($thread->audittitle);
-    $auditcompanies[(int)$thread->auditid] = (int)$thread->companyid;
-    if ((int)$thread->ownerid > 0) {
-        $owner = clone $thread;
-        $owner->id = (int)$thread->ownerid;
-        $owners[(int)$thread->ownerid] = fullname($owner);
+}
+foreach ($facets['audits'] as $row) {
+    $audits[(int)$row->id] = format_string($row->companyname) . ' — ' . format_string($row->title);
+    $auditcompanies[(int)$row->id] = (int)$row->companyid;
+}
+foreach ($facets['owners'] as $row) {
+    if ((int)$row->id > 0) {
+        $owners[(int)$row->id] = fullname($row);
     }
 }
 asort($companies, SORT_NATURAL | SORT_FLAG_CASE);
@@ -86,102 +92,26 @@ asort($curators, SORT_NATURAL | SORT_FLAG_CASE);
 asort($audits, SORT_NATURAL | SORT_FLAG_CASE);
 asort($owners, SORT_NATURAL | SORT_FLAG_CASE);
 
-$needle = core_text::strtolower($query);
+$filters = [
+    'q' => $query, 'companyid' => $companyid, 'curatorid' => $curatorid,
+    'auditid' => $auditid, 'ownerid' => $ownerid, 'status' => $status,
+    'scope' => $scope, 'period' => $period, 'priority' => $priority,
+    'evidence' => $evidence,
+];
+$summary = $boardquery::summary((int)$USER->id, $canviewall, $filters);
+$filteredtotal = (int)$summary['total'];
+$overduecount = (int)$summary['overdue'];
+$unassignedcount = (int)$summary['unassigned'];
+$reviewcount = (int)$summary['review'];
+$evidencependingcount = (int)$summary['evidencepending'];
+$columns = [];
+foreach ($statuses as $columnstatus) {
+    $columnpages[$columnstatus] = $boardquery::page($columnpages[$columnstatus],
+        $summary['counts'][$columnstatus]);
+    $columns[$columnstatus] = $boardquery::column((int)$USER->id, $canviewall,
+        $filters, $columnstatus, $columnpages[$columnstatus]);
+}
 $today = usergetmidnight(time());
-$due7limit = $today + (8 * DAYSECS);
-$periodstart = $period === 'all' ? 0 : $today - ((int)$period * DAYSECS);
-$threads = array_values(array_filter($allthreads, static function($thread) use (
-        $companyid, $curatorid, $auditid, $ownerid, $status, $scope, $periodstart,
-        $today, $due7limit, $priority, $evidence, $needle) {
-    if ($companyid && (int)$thread->companyid !== $companyid) {
-        return false;
-    }
-    if ($curatorid && (int)$thread->programcuratorid !== $curatorid) {
-        return false;
-    }
-    if ($auditid && (int)$thread->auditid !== $auditid) {
-        return false;
-    }
-    if ($ownerid === -1 && (int)$thread->ownerid !== 0) {
-        return false;
-    }
-    if ($ownerid > 0 && (int)$thread->ownerid !== $ownerid) {
-        return false;
-    }
-    if ($status !== '' && (string)$thread->status !== $status) {
-        return false;
-    }
-    if ($priority !== '' && (string)$thread->priority !== $priority) {
-        return false;
-    }
-    if ($evidence !== '' &&
-            \local_kbacorporate\local\implementation_kanban::evidence_filter_value(
-                $thread->latestevidence ?? null) !== $evidence) {
-        return false;
-    }
-    $active = !in_array((string)$thread->status, ['completed', 'cancelled'], true);
-    if ($scope === 'overdue' &&
-            (!((int)$thread->duedate > 0 && (int)$thread->duedate < $today) || !$active)) {
-        return false;
-    }
-    if ($scope === 'due7' &&
-            (!((int)$thread->duedate >= $today && (int)$thread->duedate < $due7limit) || !$active)) {
-        return false;
-    }
-    if ($periodstart && (int)$thread->timecreated < $periodstart) {
-        return false;
-    }
-    if ($needle === '') {
-        return true;
-    }
-    $owner = clone $thread;
-    $owner->id = (int)$thread->ownerid;
-    $ownername = $thread->ownerid ? fullname($owner) : '';
-    $haystack = core_text::strtolower(implode(' ', [
-        $thread->title,
-        $thread->companyname,
-        $thread->audittitle,
-        $thread->criterioncode,
-        $thread->criterionname,
-        $ownername,
-    ]));
-    return core_text::strpos($haystack, $needle) !== false;
-}));
-
-$columns = array_fill_keys($statuses, []);
-foreach ($threads as $thread) {
-    if (isset($columns[$thread->status])) {
-        $columns[$thread->status][] = $thread;
-    }
-}
-foreach ($columns as &$items) {
-    usort($items, static function($left, $right) {
-        $leftdue = (int)$left->duedate ?: PHP_INT_MAX;
-        $rightdue = (int)$right->duedate ?: PHP_INT_MAX;
-        return $leftdue === $rightdue
-            ? ((int)$right->timemodified <=> (int)$left->timemodified)
-            : ($leftdue <=> $rightdue);
-    });
-}
-unset($items);
-
-$filteredtotal = count($threads);
-$overduecount = count(array_filter($threads, static function($task) use ($today) {
-    return (int)$task->duedate > 0 && (int)$task->duedate < $today &&
-        !in_array((string)$task->status, ['completed', 'cancelled'], true);
-}));
-$unassignedcount = count(array_filter($threads, static function($task) {
-    return (int)$task->ownerid === 0 &&
-        !in_array((string)$task->status, ['completed', 'cancelled'], true);
-}));
-$reviewcount = count(array_filter($threads, static function($task) {
-    return (string)$task->status === 'review';
-}));
-$evidencependingcount = count(array_filter($threads, static function($task) {
-    return ($task->latestevidence ?? null) &&
-        (string)$task->latestevidence->status ===
-            \local_kbacorporate\local\implementation_evidence::STATUS_SUBMITTED;
-}));
 
 $owneroptionsbycompany = [];
 $returnlocalurl = $boardurl->out_as_local_url(false);
@@ -310,7 +240,7 @@ foreach ($columns as $columnstatus => $items) {
     echo html_writer::start_div('kbacorp-kanban-column kbacorp-kanban-' . $columnstatus);
     echo html_writer::div(html_writer::tag('strong', get_string(
         'implementationtaskstatus' . $columnstatus, 'local_kbacorporate')) .
-        html_writer::span((string)count($items), 'kbacorp-kanban-count'),
+        html_writer::span((string)$summary['counts'][$columnstatus], 'kbacorp-kanban-count'),
         'kbacorp-kanban-column-head');
     if (!$items) {
         echo html_writer::div(get_string('implementationboardcolumnempty', 'local_kbacorporate'),
@@ -464,6 +394,29 @@ foreach ($columns as $columnstatus => $items) {
             echo html_writer::end_tag('details');
         }
 
+        echo html_writer::end_div();
+    }
+    // Each column has an independent, bounded page; count always covers all filtered tasks.
+    $columncount = (int)$summary['counts'][$columnstatus];
+    $maxpage = max(0, (int)ceil($columncount / $boardquery::PAGE_SIZE) - 1);
+    if ($maxpage > 0) {
+        $currentpage = $columnpages[$columnstatus];
+        echo html_writer::start_div('kbacorp-kanban-pagination');
+        echo html_writer::span(get_string('kanbanpagingindicator', 'local_kbacorporate',
+            (object)['current' => $currentpage + 1, 'total' => $maxpage + 1]),
+            'kbacorp-kanban-pagelabel');
+        if ($currentpage > 0) {
+            $previous = clone $boardurl;
+            $previous->param('p_' . $columnstatus, $currentpage - 1);
+            echo html_writer::link($previous, get_string('kanbanpagingprevious', 'local_kbacorporate'),
+                ['class' => 'btn btn-sm btn-outline-secondary']);
+        }
+        if ($currentpage < $maxpage) {
+            $next = clone $boardurl;
+            $next->param('p_' . $columnstatus, $currentpage + 1);
+            echo html_writer::link($next, get_string('kanbanpagingnext', 'local_kbacorporate'),
+                ['class' => 'btn btn-sm btn-outline-primary']);
+        }
         echo html_writer::end_div();
     }
     echo html_writer::end_div();

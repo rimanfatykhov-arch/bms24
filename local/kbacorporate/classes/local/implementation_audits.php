@@ -146,13 +146,11 @@ class implementation_audits {
         if (property_exists($data, 'companyid') && (int)$tool->companyid !== (int)$data->companyid) {
             throw new \moodle_exception('bmstoolreadonly', 'local_kbacorporate');
         }
-        // Section "0" is a valid Point A section, not an absent classification.
-        $sectioncode = trim((string)($data->sectioncode ?? ''));
         $record = (object)[
             'toolid' => (int)$data->toolid,
             'code' => strtoupper(trim($data->code)),
             'name' => trim($data->name),
-            'sectioncode' => $sectioncode !== '' ? $sectioncode : null,
+            'sectioncode' => !empty($data->sectioncode) ? trim($data->sectioncode) : null,
             'sectionname' => !empty($data->sectionname) ? trim($data->sectionname) : null,
             'minlabel' => !empty($data->minlabel) ? trim($data->minlabel) : null,
             'maxlabel' => !empty($data->maxlabel) ? trim($data->maxlabel) : null,

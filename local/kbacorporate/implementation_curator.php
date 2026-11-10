@@ -6,6 +6,8 @@ $context = context_system::instance();
 $status = optional_param('status', '', PARAM_ALPHANUMEXT);
 $query = optional_param('q', '', PARAM_TEXT);
 $scope = optional_param('scope', '', PARAM_ALPHA);
+$page = max(0, optional_param('page', 0, PARAM_INT));
+$pagesize = 20;
 $hasassignments = $DB->record_exists('local_kbacorp_impl_program', ['curatorid' => (int)$USER->id]);
 $canviewall = has_capability('local/kbacorporate:manageimplementationaudits', $context);
 if (!$hasassignments && !$canviewall) {
@@ -14,36 +16,28 @@ if (!$hasassignments && !$canviewall) {
 $allcurators = !$hasassignments && $canviewall;
 $PAGE->set_context($context);
 $PAGE->set_url(new moodle_url('/local/kbacorporate/implementation_curator.php', [
-    'status' => $status, 'q' => $query, 'scope' => $scope,
+    'status' => $status, 'q' => $query, 'scope' => $scope, 'page' => $page,
 ]));
 $PAGE->set_pagelayout('standard');
 $PAGE->set_title(get_string('curatorworkspace', 'local_kbacorporate'));
 $PAGE->set_heading(get_string('curatorworkspace', 'local_kbacorporate'));
 
-$allthreads = \local_kbacorporate\local\implementation_task_discussion::get_curator_threads(
-    (int)$USER->id, '', '', $allcurators);
-$threads = \local_kbacorporate\local\implementation_task_discussion::get_curator_threads(
-    (int)$USER->id, $status, $query, $allcurators);
-$students = []; $unread = 0; $overdue = 0;
-$today = usergetmidnight(time());
-$statuscounts = array_fill_keys(['planned', 'inprogress', 'review', 'completed', 'cancelled'], 0);
-foreach ($allthreads as $thread) {
-    if ((int)$thread->ownerid > 0) { $students[(int)$thread->ownerid] = true; }
-    $unread += (int)$thread->unreadcount;
-    if (isset($statuscounts[$thread->status])) { $statuscounts[$thread->status]++; }
-    if ($thread->duedate && (int)$thread->duedate < $today &&
-            !in_array($thread->status, ['completed', 'cancelled'], true)) { $overdue++; }
+$overview = \local_kbacorporate\local\implementation_task_discussion::get_curator_overview(
+    (int)$USER->id, $allcurators);
+// Filters and pagination are applied in SQL; no complete discussion list is materialized.
+$result = \local_kbacorporate\local\implementation_task_discussion::get_curator_page(
+    (int)$USER->id, $status, $query, $scope, $allcurators, $page, $pagesize);
+$total = $result->total;
+if ($total && $page * $pagesize >= $total) {
+    $page = max(0, (int)ceil($total / $pagesize) - 1);
+    $result = \local_kbacorporate\local\implementation_task_discussion::get_curator_page(
+        (int)$USER->id, $status, $query, $scope, $allcurators, $page, $pagesize);
 }
-if ($scope === 'unread') {
-    $threads = array_values(array_filter($threads, static function($thread) {
-        return (int)$thread->unreadcount > 0;
-    }));
-} else if ($scope === 'overdue') {
-    $threads = array_values(array_filter($threads, static function($thread) use ($today) {
-        return $thread->duedate && (int)$thread->duedate < $today &&
-            !in_array($thread->status, ['completed', 'cancelled'], true);
-    }));
-}
+$threads = $result->threads;
+$students = $overview->students;
+$unread = $overview->unread;
+$overdue = $overview->overdue;
+$statuscounts = $overview->statuscounts;
 
 echo $OUTPUT->header();
 echo local_kbacorporate_implementation_navigation(0, 'students');
@@ -64,16 +58,7 @@ echo html_writer::start_tag('form', ['method' => 'get', 'class' => 'kbacorp-cura
 echo html_writer::empty_tag('input', ['type' => 'search', 'name' => 'q', 'value' => $query,
     'placeholder' => get_string('curatorsearchplaceholder', 'local_kbacorporate'), 'class' => 'form-control',
     'id' => 'kbacorp-curator-search', 'list' => 'kbacorp-curator-search-options', 'autocomplete' => 'off']);
-$searchsuggestions = [];
-foreach ($allthreads as $suggestionthread) {
-    if ((int)$suggestionthread->ownerid <= 0) {
-        continue;
-    }
-    $suggestionowner = clone $suggestionthread;
-    $suggestionowner->id = (int)$suggestionthread->ownerid;
-    $suggestionname = fullname($suggestionowner);
-    $searchsuggestions[$suggestionname] = format_string($suggestionthread->companyname);
-}
+$searchsuggestions = $overview->suggestions;
 echo html_writer::start_tag('datalist', ['id' => 'kbacorp-curator-search-options']);
 foreach ($searchsuggestions as $suggestionname => $suggestioncompany) {
     echo html_writer::empty_tag('option', ['value' => $suggestionname, 'label' => $suggestioncompany]);
@@ -90,7 +75,7 @@ echo html_writer::link(new moodle_url('/local/kbacorporate/implementation_curato
 echo html_writer::end_tag('form');
 
 echo html_writer::start_div('kbacorp-curator-stats');
-foreach ([[count($students), 'curatorstudents', ''], [count($allthreads), 'curatortasks', ''],
+foreach ([[count($students), 'curatorstudents', ''], [$overview->taskcount, 'curatortasks', ''],
         [$unread, 'curatorunread', 'unread'], [$overdue, 'curatoroverdue', 'overdue']] as [$value, $label, $cardscope]) {
     $cardurl = new moodle_url('/local/kbacorporate/implementation_curator.php',
         $cardscope ? ['scope' => $cardscope] : []);
@@ -111,6 +96,12 @@ echo html_writer::end_div();
 echo $OUTPUT->heading(get_string('curatorconversations', 'local_kbacorporate'), 3);
 if (!$threads) {
     echo $OUTPUT->notification(get_string('curatorworkspaceempty', 'local_kbacorporate'), 'info');
+}
+$pageurl = new moodle_url('/local/kbacorporate/implementation_curator.php', [
+    'status' => $status, 'q' => $query, 'scope' => $scope,
+]);
+if ($total > $pagesize) {
+    echo $OUTPUT->paging_bar($total, $page, $pagesize, $pageurl);
 }
 echo html_writer::start_div('kbacorp-curator-threads');
 foreach ($threads as $thread) {
@@ -159,35 +150,11 @@ foreach ($threads as $thread) {
     $meta = html_writer::div(userdate($activitytime,
         get_string('strftimedatetimekba', 'local_kbacorporate')) . $badge,
         'kbacorp-curator-thread-meta');
-    $searchtext = core_text::strtolower($studentname . ' ' . $thread->companyname . ' ' .
-        $thread->title . ' ' . $previewtext);
     echo html_writer::div($avatar . html_writer::div($body, 'kbacorp-curator-thread-body') . $meta,
-        'kbacorp-curator-thread' . ($thread->unreadcount ? ' is-unread' : ''), [
-            'data-search' => $searchtext,
-        ]);
+        'kbacorp-curator-thread' . ($thread->unreadcount ? ' is-unread' : ''));
 }
 echo html_writer::end_div();
-echo html_writer::div(get_string('curatorlivesearchempty', 'local_kbacorporate'),
-    'alert alert-info kbacorp-curator-live-empty', ['id' => 'kbacorp-curator-live-empty', 'hidden' => 'hidden']);
-$PAGE->requires->js_init_code(<<<'JS'
-(function() {
-    var input = document.getElementById('kbacorp-curator-search');
-    var rows = Array.prototype.slice.call(document.querySelectorAll('.kbacorp-curator-thread'));
-    var empty = document.getElementById('kbacorp-curator-live-empty');
-    if (!input || !rows.length) { return; }
-    var filter = function() {
-        var needle = input.value.trim().toLocaleLowerCase();
-        var visible = 0;
-        rows.forEach(function(row) {
-            var match = !needle || (row.getAttribute('data-search') || '').indexOf(needle) !== -1;
-            row.hidden = !match;
-            if (match) { visible++; }
-        });
-        if (empty) { empty.hidden = visible !== 0; }
-    };
-    input.addEventListener('input', filter);
-    filter();
-}());
-JS
-);
+if ($total > $pagesize) {
+    echo $OUTPUT->paging_bar($total, $page, $pagesize, $pageurl);
+}
 echo $OUTPUT->footer();

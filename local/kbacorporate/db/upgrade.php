@@ -2753,10 +2753,5 @@ function xmldb_local_kbacorporate_upgrade($oldversion) {
         upgrade_plugin_savepoint(true, 2026102610, 'local', 'kbacorporate');
     }
 
-    // Isolated ERP compatibility patch; no schema, roles or business-data migration.
-    if ($oldversion < 2026110901) {
-        upgrade_plugin_savepoint(true, 2026110901, 'local', 'kbacorporate');
-    }
-
     return true;
 }

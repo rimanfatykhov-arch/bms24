@@ -3285,3 +3285,7 @@ $string['curatorrolecapnotassigned'] = 'Существующая роль с т�
 $string['curatorrolepermissions'] = 'Проверить разрешения роли';
 
 $string['curatoropenreview'] = 'Открыть проверку результата';
+
+$string['kanbanpagingindicator'] = 'Страница {$a->current} из {$a->total}';
+$string['kanbanpagingprevious'] = 'Назад';
+$string['kanbanpagingnext'] = 'Следующие задачи';

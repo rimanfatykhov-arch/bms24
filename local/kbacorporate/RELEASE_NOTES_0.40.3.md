@@ -1,8 +1,8 @@
 # local_kbacorporate 0.40.3 — BMS24 Integration, Stage 1813
 
-**Дата:** 2026-10-25\
-**Компонент:** `local_kbacorporate` (НЕ `local_kbacompany`)\
-**Новая версия:** `2026102512` / `0.40.3 — Read-only BMS Implementation Task API`\
+**Дата:** 2026-10-25  
+**Компонент:** `local_kbacorporate` (НЕ `local_kbacompany`)  
+**Новая версия:** `2026102512` / `0.40.3 — Read-only BMS Implementation Task API`  
 **Совместимость:** Moodle >= 4.0, проектный сервер Moodle 4.1; PHP 8.1 — заявленная цель, работа PHP 8.1 не проверялась запуском.
 
 ## Назначение

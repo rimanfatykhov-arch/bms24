@@ -25,7 +25,7 @@ class erp_audit {
                 $errorcode = preg_replace('/[^a-zA-Z0-9_.-]/', '_', get_class($error));
                 $errorcode = substr((string)$errorcode, 0, 80);
             }
-            $record = [
+            $DB->insert_record('local_kbacorp_erp_log', (object)[
                 'companyid' => max(0, $companyid),
                 'system' => substr($system, 0, 30),
                 'entitytype' => substr($entitytype, 0, 30),
@@ -35,15 +35,7 @@ class erp_audit {
                 'durationms' => max(0, min(PHP_INT_MAX, (int)round((microtime(true) - $startedat) * 1000))),
                 'errorcode' => $errorcode,
                 'timecreated' => time(),
-            ];
-            // SYSTEM is reserved in MySQL 8; generic Moodle INSERT does not quote
-            // field names. This fixed-column insert retains bound, privacy-safe values.
-            $systemcolumn = $DB->get_dbfamily() === 'mysql' ? '`system`' : 'system';
-            $DB->execute('INSERT INTO {local_kbacorp_erp_log} ' .
-                '(companyid, ' . $systemcolumn . ', entitytype, externalidhash, idempotencyhash, ' .
-                'status, durationms, errorcode, timecreated) VALUES ' .
-                '(:companyid, :system, :entitytype, :externalidhash, :idempotencyhash, ' .
-                ':status, :durationms, :errorcode, :timecreated)', $record);
+            ]);
         } catch (\Throwable $ignored) {
             // Observability must never change the result of the business request.
         }

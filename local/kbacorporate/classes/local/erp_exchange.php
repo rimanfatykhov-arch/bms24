@@ -1049,9 +1049,7 @@ class erp_exchange {
         }
         $managed = $mapping ? !empty($metadata['managed']) : !$catalogue;
         if (!$mapping && $catalogue) {
-            $othermap = $DB->get_record_sql('SELECT em.* FROM {local_kbacorp_extmap} em ' .
-                'WHERE em.companyid = :companyid AND em.system = :system AND em.entitytype = :entitytype ' .
-                'AND em.localentity = :localentity AND em.localid = :localid', [
+            $othermap = $DB->get_record('local_kbacorp_extmap', [
                 'companyid' => (int)$company->id,
                 'system' => $system,
                 'entitytype' => 'learning_catalog_assignment',
@@ -1302,9 +1300,7 @@ class erp_exchange {
     private static function employee_snapshot(string $system, \stdClass $company, \stdClass $member): array {
         global $DB;
 
-        $mapping = $DB->get_record_sql('SELECT em.* FROM {local_kbacorp_extmap} em ' .
-            'WHERE em.companyid = :companyid AND em.system = :system AND em.entitytype = :entitytype ' .
-            'AND em.localentity = :localentity AND em.localid = :localid AND em.status = :status', [
+        $mapping = $DB->get_record('local_kbacorp_extmap', [
             'companyid' => (int)$company->id,
             'system' => $system,
             'entitytype' => 'employee',
@@ -1382,9 +1378,9 @@ class erp_exchange {
     private static function organisation_snapshot(string $system, \stdClass $company): array {
         global $DB;
 
-        $maps = $DB->get_records_sql('SELECT em.* FROM {local_kbacorp_extmap} em ' .
-            'WHERE em.companyid = :companyid AND em.system = :system AND em.status = :status ' .
-                'AND em.entitytype IN (:department, :businessrole)', [
+        $maps = $DB->get_records_select('local_kbacorp_extmap',
+            'companyid = :companyid AND system = :system AND status = :status ' .
+                'AND entitytype IN (:department, :businessrole)', [
                 'companyid' => (int)$company->id,
                 'system' => $system,
                 'status' => 'active',
@@ -1461,9 +1457,7 @@ class erp_exchange {
                 ])) {
                 continue;
             }
-            $externalmap = $DB->get_record_sql('SELECT em.* FROM {local_kbacorp_extmap} em ' .
-                'WHERE em.companyid = :companyid AND em.system = :system AND em.entitytype = :entitytype ' .
-                'AND em.localentity = :localentity AND em.localid = :localid AND em.status = :status', [
+            $externalmap = $DB->get_record('local_kbacorp_extmap', [
                 'companyid' => $companyid,
                 'system' => $system,
                 'entitytype' => 'learning_catalog_assignment',
@@ -1548,21 +1542,14 @@ class erp_exchange {
         return $DB->get_record('local_kbacorp_company', ['id' => (int)$mapping->localid]);
     }
 
-    private static function find_mapping(int $companyid, string $system, string $entitytype,
-            string $externalid): ?\stdClass {
+    private static function find_mapping(int $companyid, string $system, string $entitytype, string $externalid) {
         global $DB;
-        // Qualified identifiers also work when SYSTEM is reserved (MySQL 8).
-        // Include inactive mappings: lifecycle handlers decide whether to reactivate.
-        $mapping = $DB->get_record_sql('SELECT em.* FROM {local_kbacorp_extmap} em ' .
-            'WHERE em.companyid = :companyid AND em.system = :system ' .
-            'AND em.entitytype = :entitytype AND em.externalid = :externalid', [
+        return $DB->get_record('local_kbacorp_extmap', [
             'companyid' => $companyid,
             'system' => $system,
             'entitytype' => $entitytype,
             'externalid' => $externalid,
         ]);
-        // Moodle represents a missing record as false; typed consumers expect null.
-        return $mapping ?: null;
     }
 
     private static function mapping_metadata(string $idempotencykey, array $extra = []): array {

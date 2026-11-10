@@ -13,7 +13,7 @@ use local_kbacorporate\local\repository;
 final class implementation_task_bridge_test extends \advanced_testcase {
     public function test_contract_declares_new_read_only_methods_without_breaking_old_api(): void {
         $contract = bridge::contract();
-        $this->assertSame('1.26', bridge::API_RELEASE);
+        $this->assertSame('1.23', bridge::API_RELEASE);
         $this->assertSame(1, bridge::API_VERSION);
         $this->assertTrue($contract['backwards_compatible']);
         $this->assertSame('read', $contract['methods']['list_implementation_task_projections']['type']);
@@ -164,8 +164,7 @@ final class implementation_task_bridge_test extends \advanced_testcase {
             'audittype' => 'baseline',
             'auditdate' => time(),
         ], (int)get_admin()->id);
-        $audititems = implementation_audits::get_items($auditid);
-        $item = reset($audititems);
+        $item = reset(implementation_audits::get_items($auditid));
         $DB->update_record('local_kbacorp_impl_item', (object)[
             'id' => (int)$item->id,
             'score' => 2,

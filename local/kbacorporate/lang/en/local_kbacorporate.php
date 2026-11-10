@@ -3287,3 +3287,7 @@ $string['curatorrolecapnotassigned'] = 'An existing role with this shortname doe
 $string['curatorrolepermissions'] = 'Review role permissions';
 
 $string['curatoropenreview'] = 'Open result review';
+
+$string['kanbanpagingindicator'] = 'Page {$a->current} of {$a->total}';
+$string['kanbanpagingprevious'] = 'Previous';
+$string['kanbanpagingnext'] = 'Next tasks';

@@ -2,7 +2,6 @@
 namespace local_kbacorporate;
 
 defined('MOODLE_INTERNAL') || die();
-global $CFG;
 require_once($CFG->libdir . '/filelib.php');
 
 use local_kbacorporate\local\implementation_actions;
@@ -70,7 +69,6 @@ final class implementation_evidence_test extends \advanced_testcase {
     }
 
     public function test_pending_version_blocks_duplicate_submission_and_direct_review(): void {
-        $this->resetAfterTest();
         [$taskid, $ownerid] = $this->create_inprogress_task();
         $this->setUser(\core_user::get_user($ownerid));
         $evidence = implementation_evidence::submit(
@@ -113,8 +111,7 @@ final class implementation_evidence_test extends \advanced_testcase {
             'audittype' => 'baseline',
             'auditdate' => time(),
         ], $adminid);
-        $audititems = implementation_audits::get_items($auditid);
-        $item = reset($audititems);
+        $item = reset(implementation_audits::get_items($auditid));
         $DB->update_record('local_kbacorp_impl_item', (object)[
             'id' => (int)$item->id,
             'score' => 2,

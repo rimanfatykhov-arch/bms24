@@ -37,10 +37,6 @@ final class individual_development_plan_test extends \advanced_testcase {
         ]);
         repository::add_member($companyid, (int)$employee->id, 'employee');
         repository::add_member($companyid, (int)$mentor->id, 'employee');
-        repository::add_member($companyid, (int)$manager->id, 'manager');
-        $managerrole = $DB->get_record('role', ['shortname' => 'manager'], '*', MUST_EXIST);
-        role_assign($managerrole->id, $manager->id, \context_system::instance()->id);
-        $this->setUser($manager);
 
         $generator = $this->getDataGenerator()->get_plugin_generator('core_competency');
         $framework = $generator->create_framework();
@@ -51,7 +47,7 @@ final class individual_development_plan_test extends \advanced_testcase {
         ]);
         $roleid = business_roles::save_role((object)[
             'companyid' => $companyid,
-            'code' => 'BMS-ROLE-IPR-001',
+            'code' => 'IPR-ROLE-001',
             'name' => 'Test role',
             'active' => 1,
         ]);
