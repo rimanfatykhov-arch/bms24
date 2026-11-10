@@ -164,6 +164,11 @@ if (in_array($mode, ['seed', 'verify'], true)) {
         }
         json_write($evidence . '/row-ids.json', $idsets);
         set_config('version', '2026101878', 'local_kbacompany');
+        // set_config invalidates config cache, not the installed-plugin version cache.
+        // This fixture changes DB metadata without swapping code, so invalidate that cache explicitly.
+        core_plugin_manager::reset_caches();
+        $installed = core_plugin_manager::instance()->get_installed_plugins('local');
+        expect((string)$installed['kbacompany'] === '2026101878', 'fixture.plugin-manager-sees1878');
         echo "PASS synthetic version1878 set only in disposable DB\n";
         exit(0);
     }
