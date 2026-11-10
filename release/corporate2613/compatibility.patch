@@ -1,0 +1,1091 @@
+--- a/local/kbacorporate/classes/local/bridge.php
++++ b/local/kbacorporate/classes/local/bridge.php
+@@ -519,15 +519,8 @@
+         $result['incoming_roles'] = $incoming;
+         $result['ignored_roles'] = $ignored;
+
+-        debugging(
+-            '[CORPORATE_ROLE_MERGE] userid=' . $userid .
+-            ' companyid=' . $companyid .
+-            ' incoming_roles=' . implode(',', $incoming) .
+-            ' existing_roles=' . implode(',', $result['existing_roles'] ?? []) .
+-            ' final_roles=' . implode(',', $result['roles'] ?? []) .
+-            ' status=' . ($result['status'] ?? 'unknown'),
+-            DEBUG_DEVELOPER
+-        );
++        // A successful/no-op merge is a normal result, not a developer error.
++        // Return the structured role outcome; ERP calls retain their privacy-safe audit.
+
+         return $result;
+     }
+--- a/local/kbacorporate/classes/local/development_plans.php
++++ b/local/kbacorporate/classes/local/development_plans.php
+@@ -15,6 +15,22 @@
+     public const ITEM_PENDING_REVIEW = 'pendingreview';
+     public const ITEM_COMPLETED = 'completed';
+
++    /** Select every Moodle name field from an already-scoped user join. */
++    private static function name_fields_sql(string $alias, string $prefix = ''): string {
++        return implode(', ', array_map(static function(string $field) use ($alias, $prefix): string {
++            return $alias . '.' . $field . ($prefix === '' ? '' : ' AS ' . $prefix . $field);
++        }, \core_user\fields::get_name_fields()));
++    }
++
++    /** Render actual projected fields, including phonetic/middle/alternate names. */
++    private static function joined_fullname(\stdClass $record, string $prefix): string {
++        $user = new \stdClass();
++        foreach (\core_user\fields::get_name_fields() as $field) {
++            $user->$field = (string)($record->{$prefix . $field} ?? '');
++        }
++        return fullname($user);
++    }
++
+     public static function available(): bool {
+         global $DB;
+         $dbman = $DB->get_manager();
+@@ -41,7 +57,8 @@
+     /** Company members who may be assigned as a plan or action mentor. */
+     public static function mentor_options(int $companyid): array {
+         global $DB;
+-        $sql = "SELECT DISTINCT u.id, u.firstname, u.lastname, u.email
++        $usernames = self::name_fields_sql('u');
++        $sql = "SELECT DISTINCT u.id, {$usernames}, u.email
+                   FROM {local_kbacorp_member} m
+                   JOIN {user} u ON u.id = m.userid
+                  WHERE m.companyid = :companyid
+@@ -97,7 +114,8 @@
+         if (!self::history_available()) {
+             return [];
+         }
+-        $sql = "SELECT l.*, u.firstname, u.lastname, u.email
++        $usernames = self::name_fields_sql('u');
++        $sql = "SELECT l.*, {$usernames}, u.email
+                   FROM {local_kbacorp_devlog} l
+              LEFT JOIN {user} u ON u.id = l.actorid
+                  WHERE l.planid = :planid
+@@ -884,8 +902,10 @@
+
+     public static function get_plan(int $planid): \stdClass {
+         global $DB;
+-        $sql = "SELECT p.*, u.firstname, u.lastname, u.email, c.name AS companyname,
+-                       mu.firstname AS mentorfirstname, mu.lastname AS mentorlastname,
++        $usernames = self::name_fields_sql('u');
++        $mentornames = self::name_fields_sql('mu', 'mentor');
++        $sql = "SELECT p.*, {$usernames}, u.email, c.name AS companyname,
++                       {$mentornames},
+                        mu.email AS mentoremail
+                   FROM {local_kbacorp_devplan} p
+                   JOIN {user} u ON u.id = p.userid
+@@ -894,23 +914,21 @@
+                  WHERE p.id = :id";
+         $plan = $DB->get_record_sql($sql, ['id' => $planid], MUST_EXIST);
+         $plan->mentorname = (int)($plan->mentorid ?? 0) > 0 ?
+-            fullname((object)[
+-                'firstname' => (string)($plan->mentorfirstname ?? ''),
+-                'lastname' => (string)($plan->mentorlastname ?? ''),
+-            ]) : '';
++            self::joined_fullname($plan, 'mentor') : '';
+         return $plan;
+     }
+
+     public static function get_company_plans(int $companyid): array {
+         global $DB;
+-        $sql = "SELECT p.*, u.firstname, u.lastname, u.email,
++        $usernames = self::name_fields_sql('u');
++        $sql = "SELECT p.*, {$usernames}, u.email,
+                        COUNT(i.id) AS itemcount,
+                        SUM(CASE WHEN i.status = :completed THEN 1 ELSE 0 END) AS completedcount
+                   FROM {local_kbacorp_devplan} p
+                   JOIN {user} u ON u.id = p.userid
+              LEFT JOIN {local_kbacorp_devitem} i ON i.planid = p.id
+                  WHERE p.companyid = :companyid
+-              GROUP BY p.id, u.firstname, u.lastname, u.email
++              GROUP BY p.id, {$usernames}, u.email
+               ORDER BY p.timemodified DESC";
+         return array_values($DB->get_records_sql($sql, [
+             'companyid' => $companyid, 'completed' => self::ITEM_COMPLETED,
+@@ -1136,11 +1154,14 @@
+
+     public static function get_items(int $planid): array {
+         global $DB;
++        $mentornames = self::name_fields_sql('mu', 'mentor');
++        $evidencenames = self::name_fields_sql('eu', 'evidence');
++        $reviewernames = self::name_fields_sql('ru', 'reviewer');
+         $sql = "SELECT i.*, c.shortname AS competencyname, c.idnumber,
+                        crs.fullname AS coursename,
+-                       mu.firstname AS mentorfirstname, mu.lastname AS mentorlastname,
+-                       eu.firstname AS evidencefirstname, eu.lastname AS evidencelastname,
+-                       ru.firstname AS reviewerfirstname, ru.lastname AS reviewerlastname
++                       {$mentornames},
++                       {$evidencenames},
++                       {$reviewernames}
+                   FROM {local_kbacorp_devitem} i
+                   JOIN {competency} c ON c.id = i.competencyid
+              LEFT JOIN {course} crs ON crs.id = i.courseid
+@@ -1153,20 +1174,11 @@
+         $records = array_values($DB->get_records_sql($sql, ['planid' => $planid]));
+         foreach ($records as $record) {
+             $record->mentorname = (int)($record->mentorid ?? 0) > 0 ?
+-                fullname((object)[
+-                    'firstname' => (string)($record->mentorfirstname ?? ''),
+-                    'lastname' => (string)($record->mentorlastname ?? ''),
+-                ]) : '';
++                self::joined_fullname($record, 'mentor') : '';
+             $record->evidencesubmittername = (int)($record->evidencesubmittedby ?? 0) > 0 ?
+-                fullname((object)[
+-                    'firstname' => (string)($record->evidencefirstname ?? ''),
+-                    'lastname' => (string)($record->evidencelastname ?? ''),
+-                ]) : '';
++                self::joined_fullname($record, 'evidence') : '';
+             $record->reviewername = (int)($record->reviewedby ?? 0) > 0 ?
+-                fullname((object)[
+-                    'firstname' => (string)($record->reviewerfirstname ?? ''),
+-                    'lastname' => (string)($record->reviewerlastname ?? ''),
+-                ]) : '';
++                self::joined_fullname($record, 'reviewer') : '';
+             if (trim((string)($record->goal ?? '')) === '') {
+                 $record->goal = self::default_item_goal(
+                     (string)$record->competencyname, (int)$record->targetlevel);
+@@ -1178,11 +1190,14 @@
+     /** Return one individual development action with display metadata. */
+     public static function get_item(int $itemid): \stdClass {
+         global $DB;
++        $mentornames = self::name_fields_sql('mu', 'mentor');
++        $evidencenames = self::name_fields_sql('eu', 'evidence');
++        $reviewernames = self::name_fields_sql('ru', 'reviewer');
+         $sql = "SELECT i.*, c.shortname AS competencyname, c.idnumber,
+                        crs.fullname AS coursename,
+-                       mu.firstname AS mentorfirstname, mu.lastname AS mentorlastname,
+-                       eu.firstname AS evidencefirstname, eu.lastname AS evidencelastname,
+-                       ru.firstname AS reviewerfirstname, ru.lastname AS reviewerlastname
++                       {$mentornames},
++                       {$evidencenames},
++                       {$reviewernames}
+                   FROM {local_kbacorp_devitem} i
+                   JOIN {competency} c ON c.id = i.competencyid
+              LEFT JOIN {course} crs ON crs.id = i.courseid
+@@ -1192,20 +1207,11 @@
+                  WHERE i.id = :itemid";
+         $record = $DB->get_record_sql($sql, ['itemid' => $itemid], MUST_EXIST);
+         $record->mentorname = (int)($record->mentorid ?? 0) > 0 ?
+-            fullname((object)[
+-                'firstname' => (string)($record->mentorfirstname ?? ''),
+-                'lastname' => (string)($record->mentorlastname ?? ''),
+-            ]) : '';
++            self::joined_fullname($record, 'mentor') : '';
+         $record->evidencesubmittername = (int)($record->evidencesubmittedby ?? 0) > 0 ?
+-            fullname((object)[
+-                'firstname' => (string)($record->evidencefirstname ?? ''),
+-                'lastname' => (string)($record->evidencelastname ?? ''),
+-            ]) : '';
++            self::joined_fullname($record, 'evidence') : '';
+         $record->reviewername = (int)($record->reviewedby ?? 0) > 0 ?
+-            fullname((object)[
+-                'firstname' => (string)($record->reviewerfirstname ?? ''),
+-                'lastname' => (string)($record->reviewerlastname ?? ''),
+-            ]) : '';
++            self::joined_fullname($record, 'reviewer') : '';
+         if (trim((string)($record->goal ?? '')) === '') {
+             $record->goal = self::default_item_goal(
+                 (string)$record->competencyname, (int)$record->targetlevel);
+--- a/local/kbacorporate/classes/local/erp_audit.php
++++ b/local/kbacorporate/classes/local/erp_audit.php
+@@ -25,7 +25,7 @@
+                 $errorcode = preg_replace('/[^a-zA-Z0-9_.-]/', '_', get_class($error));
+                 $errorcode = substr((string)$errorcode, 0, 80);
+             }
+-            $DB->insert_record('local_kbacorp_erp_log', (object)[
++            $record = [
+                 'companyid' => max(0, $companyid),
+                 'system' => substr($system, 0, 30),
+                 'entitytype' => substr($entitytype, 0, 30),
+@@ -35,7 +35,15 @@
+                 'durationms' => max(0, min(PHP_INT_MAX, (int)round((microtime(true) - $startedat) * 1000))),
+                 'errorcode' => $errorcode,
+                 'timecreated' => time(),
+-            ]);
++            ];
++            // SYSTEM is reserved in MySQL 8; generic Moodle INSERT does not quote
++            // field names. This fixed-column insert retains bound, privacy-safe values.
++            $systemcolumn = $DB->get_dbfamily() === 'mysql' ? '`system`' : 'system';
++            $DB->execute('INSERT INTO {local_kbacorp_erp_log} ' .
++                '(companyid, ' . $systemcolumn . ', entitytype, externalidhash, idempotencyhash, ' .
++                'status, durationms, errorcode, timecreated) VALUES ' .
++                '(:companyid, :system, :entitytype, :externalidhash, :idempotencyhash, ' .
++                ':status, :durationms, :errorcode, :timecreated)', $record);
+         } catch (\Throwable $ignored) {
+             // Observability must never change the result of the business request.
+         }
+--- a/local/kbacorporate/classes/local/erp_exchange.php
++++ b/local/kbacorporate/classes/local/erp_exchange.php
+@@ -1049,7 +1049,9 @@
+         }
+         $managed = $mapping ? !empty($metadata['managed']) : !$catalogue;
+         if (!$mapping && $catalogue) {
+-            $othermap = $DB->get_record('local_kbacorp_extmap', [
++            $othermap = $DB->get_record_sql('SELECT em.* FROM {local_kbacorp_extmap} em ' .
++                'WHERE em.companyid = :companyid AND em.system = :system AND em.entitytype = :entitytype ' .
++                'AND em.localentity = :localentity AND em.localid = :localid', [
+                 'companyid' => (int)$company->id,
+                 'system' => $system,
+                 'entitytype' => 'learning_catalog_assignment',
+@@ -1300,7 +1302,9 @@
+     private static function employee_snapshot(string $system, \stdClass $company, \stdClass $member): array {
+         global $DB;
+
+-        $mapping = $DB->get_record('local_kbacorp_extmap', [
++        $mapping = $DB->get_record_sql('SELECT em.* FROM {local_kbacorp_extmap} em ' .
++            'WHERE em.companyid = :companyid AND em.system = :system AND em.entitytype = :entitytype ' .
++            'AND em.localentity = :localentity AND em.localid = :localid AND em.status = :status', [
+             'companyid' => (int)$company->id,
+             'system' => $system,
+             'entitytype' => 'employee',
+@@ -1378,9 +1382,9 @@
+     private static function organisation_snapshot(string $system, \stdClass $company): array {
+         global $DB;
+
+-        $maps = $DB->get_records_select('local_kbacorp_extmap',
+-            'companyid = :companyid AND system = :system AND status = :status ' .
+-                'AND entitytype IN (:department, :businessrole)', [
++        $maps = $DB->get_records_sql('SELECT em.* FROM {local_kbacorp_extmap} em ' .
++            'WHERE em.companyid = :companyid AND em.system = :system AND em.status = :status ' .
++                'AND em.entitytype IN (:department, :businessrole)', [
+                 'companyid' => (int)$company->id,
+                 'system' => $system,
+                 'status' => 'active',
+@@ -1457,7 +1461,9 @@
+                 ])) {
+                 continue;
+             }
+-            $externalmap = $DB->get_record('local_kbacorp_extmap', [
++            $externalmap = $DB->get_record_sql('SELECT em.* FROM {local_kbacorp_extmap} em ' .
++                'WHERE em.companyid = :companyid AND em.system = :system AND em.entitytype = :entitytype ' .
++                'AND em.localentity = :localentity AND em.localid = :localid AND em.status = :status', [
+                 'companyid' => $companyid,
+                 'system' => $system,
+                 'entitytype' => 'learning_catalog_assignment',
+@@ -1542,14 +1548,21 @@
+         return $DB->get_record('local_kbacorp_company', ['id' => (int)$mapping->localid]);
+     }
+
+-    private static function find_mapping(int $companyid, string $system, string $entitytype, string $externalid) {
+-        global $DB;
+-        return $DB->get_record('local_kbacorp_extmap', [
++    private static function find_mapping(int $companyid, string $system, string $entitytype,
++            string $externalid): ?\stdClass {
++        global $DB;
++        // Qualified identifiers also work when SYSTEM is reserved (MySQL 8).
++        // Include inactive mappings: lifecycle handlers decide whether to reactivate.
++        $mapping = $DB->get_record_sql('SELECT em.* FROM {local_kbacorp_extmap} em ' .
++            'WHERE em.companyid = :companyid AND em.system = :system ' .
++            'AND em.entitytype = :entitytype AND em.externalid = :externalid', [
+             'companyid' => $companyid,
+             'system' => $system,
+             'entitytype' => $entitytype,
+             'externalid' => $externalid,
+         ]);
++        // Moodle represents a missing record as false; typed consumers expect null.
++        return $mapping ?: null;
+     }
+
+     private static function mapping_metadata(string $idempotencykey, array $extra = []): array {
+--- a/local/kbacorporate/classes/local/external_mapping.php
++++ b/local/kbacorporate/classes/local/external_mapping.php
+@@ -18,12 +18,16 @@
+         $metadata = self::validate_metadata($metadata);
+         self::assert_company_scope(max(0, $companyid), $localentity, $localid);
+         $now = time();
+-        $existing = $DB->get_record('local_kbacorp_extmap', [
++        $lookupsql = 'SELECT em.* FROM {local_kbacorp_extmap} em ' .
++            'WHERE em.companyid = :companyid AND em.system = :system ' .
++            'AND em.entitytype = :entitytype AND em.externalid = :externalid';
++        $lookupparams = [
+             'companyid' => max(0, $companyid),
+             'system' => $system,
+             'entitytype' => $entitytype,
+             'externalid' => $externalid,
+-        ]);
++        ];
++        $existing = $DB->get_record_sql($lookupsql, $lookupparams);
+         $record = (object)[
+             'companyid' => max(0, $companyid),
+             'system' => $system,
+@@ -39,16 +43,32 @@
+         ];
+         if ($existing) {
+             $record->id = (int)$existing->id;
++            // Provider is part of the lookup identity and is unchanged. Omitting
++            // it avoids an unquoted SYSTEM assignment in Moodle's generic UPDATE.
++            unset($record->system);
+             $DB->update_record('local_kbacorp_extmap', $record);
+             return $record->id;
+         }
+         $record->timecreated = $now;
+-        return (int)$DB->insert_record('local_kbacorp_extmap', $record);
++        // Moodle's generic INSERT does not quote reserved column names. Keep the
++        // existing schema/API and bind every value; only the fixed identifier varies.
++        $systemcolumn = $DB->get_dbfamily() === 'mysql' ? '`system`' : 'system';
++        $DB->execute('INSERT INTO {local_kbacorp_extmap} ' .
++            '(companyid, ' . $systemcolumn . ', entitytype, localentity, localid, externalid, externalcode, ' .
++            'status, metadata, lastsync, timemodified, timecreated) VALUES ' .
++            '(:companyid, :system, :entitytype, :localentity, :localid, :externalid, :externalcode, ' .
++            ':status, :metadata, :lastsync, :timemodified, :timecreated)', (array)$record);
++        // The unique (companyid, system, entitytype, externalid) tuple identifies
++        // exactly this insert, including when other tenants use the same external ID.
++        $created = $DB->get_record_sql($lookupsql, $lookupparams, MUST_EXIST);
++        return (int)$created->id;
+     }
+
+     public static function find_local(int $companyid, string $system, string $entitytype, string $externalid) {
+         global $DB;
+-        return $DB->get_record('local_kbacorp_extmap', [
++        return $DB->get_record_sql('SELECT em.* FROM {local_kbacorp_extmap} em ' .
++            'WHERE em.companyid = :companyid AND em.system = :system AND em.entitytype = :entitytype ' .
++            'AND em.externalid = :externalid AND em.status = :status', [
+             'companyid' => max(0, $companyid),
+             'system' => self::token($system, 30),
+             'entitytype' => self::token($entitytype, 30),
+--- a/local/kbacorporate/classes/local/implementation_audits.php
++++ b/local/kbacorporate/classes/local/implementation_audits.php
+@@ -146,11 +146,13 @@
+         if (property_exists($data, 'companyid') && (int)$tool->companyid !== (int)$data->companyid) {
+             throw new \moodle_exception('bmstoolreadonly', 'local_kbacorporate');
+         }
++        // Section "0" is a valid Point A section, not an absent classification.
++        $sectioncode = trim((string)($data->sectioncode ?? ''));
+         $record = (object)[
+             'toolid' => (int)$data->toolid,
+             'code' => strtoupper(trim($data->code)),
+             'name' => trim($data->name),
+-            'sectioncode' => !empty($data->sectioncode) ? trim($data->sectioncode) : null,
++            'sectioncode' => $sectioncode !== '' ? $sectioncode : null,
+             'sectionname' => !empty($data->sectionname) ? trim($data->sectionname) : null,
+             'minlabel' => !empty($data->minlabel) ? trim($data->minlabel) : null,
+             'maxlabel' => !empty($data->maxlabel) ? trim($data->maxlabel) : null,
+--- a/local/kbacorporate/db/upgrade.php
++++ b/local/kbacorporate/db/upgrade.php
+@@ -2753,5 +2753,10 @@
+         upgrade_plugin_savepoint(true, 2026102610, 'local', 'kbacorporate');
+     }
+
++    // Code-only2613 compatibility repair; preserve schema, data and permissions.
++    if ($oldversion < 2026111003) {
++        upgrade_plugin_savepoint(true, 2026111003, 'local', 'kbacorporate');
++    }
++
+     return true;
+ }
+--- a/local/kbacorporate/tests/course_recommendations_test.php
++++ b/local/kbacorporate/tests/course_recommendations_test.php
+@@ -27,7 +27,7 @@
+         $competency = $generator->create_competency([
+             'competencyframeworkid' => $framework->get('id'),
+         ]);
+-        $DB->insert_record('competency_coursecomp', (object)[
++        $generator->create_course_competency([
+             'courseid' => (int)$course->id,
+             'competencyid' => (int)$competency->get('id'),
+             'sortorder' => 0,
+--- a/local/kbacorporate/tests/development_plans_test.php
++++ b/local/kbacorporate/tests/development_plans_test.php
+@@ -10,6 +10,59 @@
+ use local_kbacorporate\local\repository;
+
+ final class development_plans_test extends \advanced_testcase {
++    public function test_name_projections_preserve_all_configured_fields_for_each_actor(): void {
++        global $CFG, $DB;
++        $this->resetAfterTest();
++        $this->setAdminUser();
++        $CFG->fullnamedisplay = 'firstname middlename lastname firstnamephonetic lastnamephonetic alternatename';
++        $CFG->alternativefullnameformat = $CFG->fullnamedisplay;
++        $companyid = repository::save_company((object)['name' => 'Name Fields', 'active' => 1]);
++        $users = [];
++        $names = [];
++        foreach (['Employee', 'Mentor', 'Submitter', 'Reviewer'] as $actor) {
++            $users[$actor] = $this->getDataGenerator()->create_user([
++                'firstname' => $actor, 'lastname' => 'Family', 'middlename' => $actor . 'Middle',
++                'firstnamephonetic' => $actor . 'Phonetic', 'lastnamephonetic' => 'FamilyPhonetic',
++                'alternatename' => $actor . 'Alias',
++            ]);
++            repository::add_member($companyid, (int)$users[$actor]->id, 'employee');
++            $names[$actor] = $actor . ' ' . $actor . 'Middle Family ' .
++                $actor . 'Phonetic FamilyPhonetic ' . $actor . 'Alias';
++        }
++        $planid = $DB->insert_record('local_kbacorp_devplan', (object)[
++            'companyid' => $companyid, 'userid' => $users['Employee']->id,
++            'title' => 'Names', 'mentorid' => $users['Mentor']->id,
++        ]);
++        $generator = $this->getDataGenerator()->get_plugin_generator('core_competency');
++        $framework = $generator->create_framework();
++        $competency = $generator->create_competency(['competencyframeworkid' => $framework->get('id')]);
++        $itemid = $DB->insert_record('local_kbacorp_devitem', (object)[
++            'planid' => $planid, 'competencyid' => $competency->get('id'), 'goal' => 'Verify names',
++            'mentorid' => $users['Mentor']->id, 'evidencesubmittedby' => $users['Submitter']->id,
++            'reviewedby' => $users['Reviewer']->id,
++        ]);
++        $options = development_plans::mentor_options($companyid);
++        foreach ($users as $actor => $user) { $this->assertSame($names[$actor], $options[$user->id]); }
++        $plan = development_plans::get_plan($planid);
++        $this->assertSame($names['Employee'], fullname($plan));
++        $this->assertSame($names['Mentor'], $plan->mentorname);
++        $plans = development_plans::get_company_plans($companyid);
++        $this->assertCount(1, $plans);
++        $this->assertSame($names['Employee'], fullname($plans[0]));
++        $items = development_plans::get_items($planid);
++        $this->assertCount(1, $items);
++        foreach ([$items[0], development_plans::get_item($itemid)] as $item) {
++            $this->assertSame($names['Mentor'], $item->mentorname);
++            $this->assertSame($names['Submitter'], $item->evidencesubmittername);
++            $this->assertSame($names['Reviewer'], $item->reviewername);
++        }
++        development_plans::log_event($planid, $itemid, $users['Reviewer']->id, 'name-check');
++        $history = development_plans::get_history($planid);
++        $this->assertCount(1, $history);
++        $this->assertSame($names['Reviewer'], fullname($history[0]));
++        $this->assertDebuggingNotCalled();
++    }
++
+     public function test_learning_plan_schedule_uses_priority_phases_and_deadlines(): void {
+         $critical = development_plans::learning_plan_schedule(business_roles::PRIORITY_CRITICAL);
+         $core = development_plans::learning_plan_schedule(business_roles::PRIORITY_CORE);
+@@ -93,6 +146,10 @@
+             'timecreated' => time(), 'timemodified' => time(),
+         ]);
+         repository::add_member($companyid, (int)$user->id, 'employee');
++        repository::add_member($companyid, (int)$manager->id, 'manager');
++        $managerrole = $DB->get_record('role', ['shortname' => 'manager'], '*', MUST_EXIST);
++        role_assign($managerrole->id, $manager->id, \context_system::instance()->id);
++        $this->setUser($manager);
+         $generator = $this->getDataGenerator()->get_plugin_generator('core_competency');
+         $framework = $generator->create_framework();
+         $competency = $generator->create_competency(['competencyframeworkid' => $framework->get('id')]);
+--- a/local/kbacorporate/tests/erp_exchange_test.php
++++ b/local/kbacorporate/tests/erp_exchange_test.php
+@@ -9,6 +9,114 @@
+
+ /** Regression tests for the provider-neutral ERP exchange boundary. */
+ final class erp_exchange_test extends \advanced_testcase {
++    private const AUDIT_SALT = 'erp-regression-test-salt';
++
++    public function test_provider_isolation_with_same_company_and_employee_external_id(): void {
++        global $DB;
++        $this->resetAfterTest();
++        $company = erp_exchange::push_entity('erp_a', 'company', 'shared-company', ['name' => 'Shared Company']);
++        $companyid = (int)$company['moodle_company_id'];
++        \local_kbacorporate\local\external_mapping::upsert(
++            0, 'erp_b', 'company', 'company', $companyid, 'shared-company');
++        $users = [];
++        foreach (['erp_a', 'erp_b'] as $provider) {
++            $users[$provider] = $this->getDataGenerator()->create_user();
++            $result = erp_exchange::push_entity($provider, 'employee', 'shared-employee', [
++                'company_external_id' => 'shared-company', 'moodle_user_id' => (int)$users[$provider]->id,
++            ]);
++            $this->assertSame($companyid, (int)$result['moodle_company_id']);
++            $this->assertSame((int)$users[$provider]->id, (int)$result['moodle_user_id']);
++            $this->assertTrue($result['created']);
++        }
++        $before = \local_kbacorporate\local\external_mapping::find_local(
++            $companyid, 'erp_b', 'employee', 'shared-employee');
++        $this->assertNotFalse($before);
++        erp_exchange::push_entity('erp_a', 'employee', 'shared-employee', [
++            'company_external_id' => 'shared-company', 'active' => false,
++        ]);
++        $this->assertFalse(\local_kbacorporate\local\external_mapping::find_local(
++            $companyid, 'erp_a', 'employee', 'shared-employee'));
++        $this->assertEquals($before, \local_kbacorporate\local\external_mapping::find_local(
++            $companyid, 'erp_b', 'employee', 'shared-employee'));
++        $this->assertSame(0, (int)$DB->get_field('local_kbacorp_member', 'isemployee',
++            ['companyid' => $companyid, 'userid' => $users['erp_a']->id], MUST_EXIST));
++        $this->assertSame(1, (int)$DB->get_field('local_kbacorp_member', 'isemployee',
++            ['companyid' => $companyid, 'userid' => $users['erp_b']->id], MUST_EXIST));
++        $this->assertDebuggingNotCalled();
++    }
++
++    public function test_unmapped_inactive_employee_is_noop_and_records_success_audit(): void {
++        global $CFG, $DB;
++        $this->resetAfterTest();
++        $CFG->passwordsaltmain = self::AUDIT_SALT;
++        $company = erp_exchange::push_entity('erp_missing', 'company', 'company-missing', ['name' => 'Missing Mapping']);
++        $usersbefore = $DB->count_records('user');
++        $mapsbefore = $DB->count_records('local_kbacorp_extmap');
++        $result = erp_exchange::push_entity('erp_missing', 'employee', 'employee-never-mapped', [
++            'company_external_id' => 'company-missing', 'active' => false,
++        ], 'request-inactive');
++        $this->assertTrue($result['success']);
++        $this->assertSame('unmapped_inactive', $result['status']);
++        $this->assertFalse($result['changed']);
++        $this->assertFalse($result['created']);
++        $this->assertSame($usersbefore, $DB->count_records('user'));
++        $this->assertSame($mapsbefore, $DB->count_records('local_kbacorp_extmap'));
++        $this->assertFalse($DB->record_exists('local_kbacorp_member', ['companyid' => $company['moodle_company_id']]));
++        $audit = $DB->get_record('local_kbacorp_erp_log', [
++            'companyid' => $company['moodle_company_id'], 'entitytype' => 'employee',
++        ], '*', MUST_EXIST);
++        $this->assertSame('success', $audit->status);
++        $this->assertSame('erp_missing', $audit->system);
++        $this->assertSame(hash_hmac('sha256', 'employee-never-mapped', self::AUDIT_SALT), $audit->externalidhash);
++        $this->assertSame(hash_hmac('sha256', 'request-inactive', self::AUDIT_SALT), $audit->idempotencyhash);
++        $this->assertDebuggingNotCalled();
++    }
++
++    public function test_same_employee_external_id_is_isolated_by_company_and_provider(): void {
++        global $CFG, $DB;
++        $this->resetAfterTest();
++        $CFG->passwordsaltmain = self::AUDIT_SALT;
++        $scopes = [['erp_a', 'company-shared'], ['erp_a', 'company-other'], ['erp_b', 'company-shared']];
++        $fixtures = [];
++        foreach ($scopes as $index => [$provider, $externalcompany]) {
++            $company = erp_exchange::push_entity($provider, 'company', $externalcompany,
++                ['name' => 'Scope ' . $index]);
++            $user = $this->getDataGenerator()->create_user();
++            $employee = erp_exchange::push_entity($provider, 'employee', 'employee-shared', [
++                'company_external_id' => $externalcompany, 'moodle_user_id' => (int)$user->id,
++            ]);
++            $this->assertTrue($employee['created']);
++            $this->assertSame((int)$user->id, (int)$employee['moodle_user_id']);
++            $companyid = (int)$company['moodle_company_id'];
++            $mapping = $DB->get_record('local_kbacorp_extmap', [
++                'companyid' => $companyid, 'entitytype' => 'employee', 'externalid' => 'employee-shared',
++            ], '*', MUST_EXIST);
++            $this->assertSame($provider, $mapping->system);
++            $this->assertSame((int)$user->id, (int)$mapping->localid);
++            $audit = $DB->get_record('local_kbacorp_erp_log', [
++                'companyid' => $companyid, 'entitytype' => 'employee',
++            ], '*', MUST_EXIST);
++            $this->assertSame('success', $audit->status);
++            $this->assertSame($provider, $audit->system);
++            $this->assertSame(hash_hmac('sha256', 'employee-shared', self::AUDIT_SALT), $audit->externalidhash);
++            $fixtures[] = [$companyid, (int)$user->id];
++        }
++        $this->assertCount(3, array_unique(array_column($fixtures, 0)));
++        $inactive = erp_exchange::push_entity('erp_a', 'employee', 'employee-shared', [
++            'company_external_id' => 'company-shared', 'active' => false,
++        ]);
++        $this->assertSame('employee_deactivated', $inactive['status']);
++        foreach ($fixtures as $index => [$companyid, $userid]) {
++            $this->assertSame($index === 0 ? 0 : 1, (int)$DB->get_field('local_kbacorp_member', 'isemployee',
++                ['companyid' => $companyid, 'userid' => $userid], MUST_EXIST));
++            $mapping = $DB->get_record('local_kbacorp_extmap', [
++                'companyid' => $companyid, 'entitytype' => 'employee', 'externalid' => 'employee-shared',
++            ], '*', MUST_EXIST);
++            $this->assertSame($index === 0 ? 'inactive' : 'active', $mapping->status);
++        }
++        $this->assertDebuggingNotCalled();
++    }
++
+     public function test_contract_is_versioned_and_declares_data_authorities(): void {
+         $contract = erp_exchange::contract();
+         $this->assertSame(1, $contract['version']);
+@@ -22,7 +130,7 @@
+         $this->assertFalse($contract['privacy']['employee_pii_exported']);
+         $this->assertContains('unassessed_competency_is_null_not_zero', $contract['semantic_guards']);
+         $this->assertSame('erp_created_accounts_only', $contract['push_entities']['employee']['profile_update_policy']);
+-        $this->assertSame('1.23', bridge::API_RELEASE);
++        $this->assertSame('1.26', bridge::API_RELEASE);
+         $this->assertTrue($contract['hardening']['entity_locking']);
+         $this->assertTrue($contract['hardening']['transactional_writes']);
+         $this->assertSame('hashed_identifiers_no_payload_or_pii',
+@@ -57,7 +165,9 @@
+         $this->assertTrue($first['created']);
+         $this->assertFalse($second['created']);
+         $this->assertSame($first['moodle_company_id'], $second['moodle_company_id']);
+-        $this->assertSame(1, $DB->count_records('local_kbacorp_extmap', [
++        $this->assertSame(1, $DB->count_records_sql('SELECT COUNT(*) FROM {local_kbacorp_extmap} em
++            WHERE em.companyid = :companyid AND em.system = :system
++              AND em.entitytype = :entitytype AND em.externalid = :externalid', [
+             'companyid' => 0, 'system' => 'odoo', 'entitytype' => 'company',
+             'externalid' => 'company-42',
+         ]));
+@@ -122,9 +232,12 @@
+             'companyid' => (int)$company['moodle_company_id'], 'userid' => $userid,
+         ]));
+         $this->assertSame(0, (int)$DB->get_field('user', 'suspended', ['id' => $userid]));
+-        $this->assertSame('inactive', $DB->get_field('local_kbacorp_extmap', 'status', [
++        $this->assertSame('inactive', $DB->get_field_sql('SELECT em.status FROM {local_kbacorp_extmap} em
++            WHERE em.companyid = :companyid AND em.system = :system
++              AND em.entitytype = :entitytype AND em.externalid = :externalid', [
+             'companyid' => (int)$company['moodle_company_id'],
+-            'system' => 'erp_test', 'entitytype' => 'employee', 'externalid' => 'employee-created',
++            'system' => 'erp_test',
++            'entitytype' => 'employee', 'externalid' => 'employee-created',
+         ]));
+
+         $reactivated = erp_exchange::push_entity('erp_test', 'employee', 'employee-created', [
+@@ -498,9 +611,12 @@
+         $this->assertCount(0, business_roles::get_user_roles(
+             (int)$user->id, (int)$company['moodle_company_id']
+         ));
+-        $this->assertSame('inactive', $DB->get_field('local_kbacorp_extmap', 'status', [
++        $this->assertSame('inactive', $DB->get_field_sql('SELECT em.status FROM {local_kbacorp_extmap} em
++            WHERE em.companyid = :companyid AND em.system = :system
++              AND em.entitytype = :entitytype AND em.externalid = :externalid', [
+             'companyid' => $company['moodle_company_id'],
+-            'system' => 'bms_erp', 'entitytype' => 'business_role_assignment', 'externalid' => 'a-1',
++            'system' => 'bms_erp',
++            'entitytype' => 'business_role_assignment', 'externalid' => 'a-1',
+         ]));
+     }
+
+--- a/local/kbacorporate/tests/implementation_actions_test.php
++++ b/local/kbacorporate/tests/implementation_actions_test.php
+@@ -69,7 +69,8 @@
+             'audittype' => 'baseline',
+             'auditdate' => time(),
+         ], 2);
+-        $item = reset(implementation_audits::get_items($auditid));
++        $audititems = implementation_audits::get_items($auditid);
++        $item = reset($audititems);
+         $DB->update_record('local_kbacorp_impl_item', (object)[
+             'id' => (int)$item->id,
+             'score' => 2,
+@@ -148,7 +149,8 @@
+             'audittype' => 'baseline',
+             'auditdate' => time(),
+         ], 2);
+-        $item = reset(implementation_audits::get_items($auditid));
++        $audititems = implementation_audits::get_items($auditid);
++        $item = reset($audititems);
+
+         $this->expectException(\moodle_exception::class);
+         implementation_actions::create_selected($companyid, $auditid,
+--- a/local/kbacorporate/tests/implementation_audits_test.php
++++ b/local/kbacorporate/tests/implementation_audits_test.php
+@@ -97,7 +97,8 @@
+             'companyid' => $companyid, 'toolid' => $toolid, 'title' => 'Gap test',
+             'audittype' => 'baseline', 'auditdate' => time(),
+         ], 2);
+-        $item = reset(implementation_audits::get_items($auditid));
++        $audititems = implementation_audits::get_items($auditid);
++        $item = reset($audititems);
+         $this->assertSame(7, (int)$item->targetscore);
+         $DB->set_field('local_kbacorp_impl_item', 'score', 2, ['id' => $item->id]);
+         $DB->set_field('local_kbacorp_impl_item', 'evidencestatus',
+@@ -118,7 +119,8 @@
+         $version1 = implementation_audits::ensure_versioned($toolid, 2);
+         $this->assertSame('v1', $version1->versionlabel);
+
+-        $criterion = reset(implementation_audits::get_criteria($toolid));
++        $criteria = implementation_audits::get_criteria($toolid);
++        $criterion = reset($criteria);
+         $oldname = $criterion->name;
+         $DB->set_field('local_kbacorp_bms_crit', 'name', 'Updated criterion', ['id' => $criterion->id]);
+         implementation_audits::mark_tool_draft($toolid);
+@@ -162,7 +164,8 @@
+         $this->resetAfterTest();
+         $companyid = $this->create_company();
+         $toolid = point_a_template::install($companyid);
+-        $criterion = reset(implementation_audits::get_criteria($toolid));
++        $criteria = implementation_audits::get_criteria($toolid);
++        $criterion = reset($criteria);
+         $generator = $this->getDataGenerator()->get_plugin_generator('core_competency');
+         $framework = $generator->create_framework();
+         $competency = $generator->create_competency([
+@@ -216,7 +219,8 @@
+         $toolid = point_a_template::install($companyid);
+         $auditid = implementation_audits::create_audit((object)['companyid' => $companyid,
+             'toolid' => $toolid, 'title' => 'Task test', 'audittype' => 'baseline', 'auditdate' => time()], 2);
+-        $item = reset(implementation_audits::get_items($auditid));
++        $audititems = implementation_audits::get_items($auditid);
++        $item = reset($audititems);
+         $DB->set_field('local_kbacorp_impl_item', 'score', 2, ['id' => $item->id]);
+         $DB->set_field('local_kbacorp_impl_item', 'evidencestatus', implementation_audits::EVIDENCE_SUBMITTED,
+             ['id' => $item->id]);
+@@ -268,7 +272,8 @@
+             'audittype' => 'baseline',
+             'auditdate' => time(),
+         ], $adminid);
+-        $item = reset(implementation_audits::get_items($auditid));
++        $audititems = implementation_audits::get_items($auditid);
++        $item = reset($audititems);
+         $taskdata = (object)[
+             'companyid' => $companyid,
+             'auditid' => $auditid,
+@@ -293,10 +298,9 @@
+         $this->assertSame($taskid, (int)$deleted->deletionkey);
+         $this->assertGreaterThan(0, (int)$deleted->deletedat);
+         $this->assertCount(0, implementation_audits::get_tasks($companyid, ['auditid' => $auditid]));
+-        $this->assertTrue($DB->record_exists('local_kbacorp_impl_comment', [
+-            'taskid' => $taskid,
+-            'message' => 'Audit trail message',
+-        ]));
++        $this->assertTrue($DB->record_exists_select('local_kbacorp_impl_comment',
++            'taskid = :taskid AND ' . $DB->sql_compare_text('message') . ' = :message',
++            ['taskid' => $taskid, 'message' => 'Audit trail message']));
+         $history = implementation_task_lifecycle::get_history($taskid);
+         $this->assertSame('delete', (string)$history[0]->eventtype);
+
+--- a/local/kbacorporate/tests/implementation_board_query_test.php
++++ b/local/kbacorporate/tests/implementation_board_query_test.php
+@@ -68,7 +68,8 @@
+             'title' => 'Board query audit', 'audittype' => 'baseline',
+             'auditdate' => time(),
+         ], (int)get_admin()->id);
+-        $item = reset(implementation_audits::get_items($auditid));
++        $audititems = implementation_audits::get_items($auditid);
++        $item = reset($audititems);
+         $DB->update_record('local_kbacorp_impl_item', (object)[
+             'id' => (int)$item->id, 'score' => 2,
+             'evidencestatus' => implementation_audits::EVIDENCE_SUBMITTED,
+--- a/local/kbacorporate/tests/implementation_evidence_test.php
++++ b/local/kbacorporate/tests/implementation_evidence_test.php
+@@ -2,6 +2,7 @@
+ namespace local_kbacorporate;
+
+ defined('MOODLE_INTERNAL') || die();
++global $CFG;
+ require_once($CFG->libdir . '/filelib.php');
+
+ use local_kbacorporate\local\implementation_actions;
+@@ -69,6 +70,7 @@
+     }
+
+     public function test_pending_version_blocks_duplicate_submission_and_direct_review(): void {
++        $this->resetAfterTest();
+         [$taskid, $ownerid] = $this->create_inprogress_task();
+         $this->setUser(\core_user::get_user($ownerid));
+         $evidence = implementation_evidence::submit(
+@@ -111,7 +113,8 @@
+             'audittype' => 'baseline',
+             'auditdate' => time(),
+         ], $adminid);
+-        $item = reset(implementation_audits::get_items($auditid));
++        $audititems = implementation_audits::get_items($auditid);
++        $item = reset($audititems);
+         $DB->update_record('local_kbacorp_impl_item', (object)[
+             'id' => (int)$item->id,
+             'score' => 2,
+--- a/local/kbacorporate/tests/implementation_kanban_test.php
++++ b/local/kbacorporate/tests/implementation_kanban_test.php
+@@ -138,7 +138,8 @@
+             'audittype' => 'baseline',
+             'auditdate' => time(),
+         ], (int)get_admin()->id);
+-        $item = reset(implementation_audits::get_items($auditid));
++        $audititems = implementation_audits::get_items($auditid);
++        $item = reset($audititems);
+         $DB->update_record('local_kbacorp_impl_item', (object)[
+             'id' => (int)$item->id,
+             'score' => 2,
+--- a/local/kbacorporate/tests/implementation_program_result_projection_test.php
++++ b/local/kbacorporate/tests/implementation_program_result_projection_test.php
+@@ -1,45 +1,48 @@
+ <?php
+-// Corporate 0.40.8 evidence result API: pure fixtures; no live Moodle database.
+-define('MOODLE_INTERNAL', true);
+-require_once dirname(__DIR__) . '/classes/local/implementation_program_result_projection.php';
++namespace local_kbacorporate;
++defined('MOODLE_INTERNAL') || die();
+ use local_kbacorporate\local\implementation_program_result_projection as R;
+-$n = 0;
+-$ok = static function(bool $value, string $message) use (&$n): void {
+-    $n++;
+-    if (!$value) { throw new RuntimeException($message); }
+-};
+-$cases = [
+-    ['planned','none','not_started'], ['inprogress','none','in_work'],
+-    ['review','submitted','awaiting_review'], ['review','none','review_without_evidence'],
+-    ['inprogress','rejected','returned'], ['completed','accepted','accepted'],
+-    ['completed','none','completed_unverified'], ['completed','submitted','inconsistent'],
+-    ['review','rejected','inconsistent'], ['planned','accepted','inconsistent'],
+-    ['inprogress','submitted','inconsistent'], ['cancelled','submitted','cancelled'],
+-];
+-foreach ($cases as [$taskstatus,$evidencestatus,$expected]) {
+-    $ok(R::state($taskstatus,$evidencestatus)===$expected,$taskstatus.'/'.$evidencestatus);
++
++final class implementation_program_result_projection_test extends \basic_testcase {
++    public function test_projection_contract(): void {
++        $n = 0;
++        $ok = function(bool $value, string $message) use (&$n): void {
++            $n++;
++            $this->assertTrue($value, $message);
++        };
++        $cases = [
++            ['planned','none','not_started'], ['inprogress','none','in_work'],
++            ['review','submitted','awaiting_review'], ['review','none','review_without_evidence'],
++            ['inprogress','rejected','returned'], ['completed','accepted','accepted'],
++            ['completed','none','completed_unverified'], ['completed','submitted','inconsistent'],
++            ['review','rejected','inconsistent'], ['planned','accepted','inconsistent'],
++            ['inprogress','submitted','inconsistent'], ['cancelled','submitted','cancelled'],
++        ];
++        foreach ($cases as [$taskstatus,$evidencestatus,$expected]) {
++            $ok(R::state($taskstatus,$evidencestatus)===$expected,$taskstatus.'/'.$evidencestatus);
++        }
++        $tasks = [];
++        foreach ($cases as $i => $row) {
++            $tasks[]=['external_id'=>'impltask:'.($i+1), 'section_code'=>'A', 'status'=>$row[0]];
++        }
++        $evidence=[];
++        foreach ($cases as $i => $row) {
++            if ($row[1]==='none') {continue;}
++            $evidence[$i+1]=(object)['status'=>$row[1],'versionno'=>2,'submittedat'=>10,'reviewedat'=>20,
++                'summary'=>'TOP SECRET','reviewcomment'=>'TOP SECRET','filename'=>'private.pdf'];
++        }
++        $projected=R::project_rows($tasks,$evidence,7,11,23);
++        $ok($projected['complete'] && $projected['company_id']===7 && $projected['audit_id']===23,'identities');
++        $ok(count($projected['tasks'])===count($cases),'all tasks projected');
++        foreach ($projected['tasks'] as $i=>$row) {
++            $ok($row['result_state']===$cases[$i][2], 'projected state '.$i);
++            $ok(!isset($row['summary'])&&!isset($row['reviewcomment'])&&!isset($row['filename']), 'no PII '.$i);
++            $ok(!isset($row['reviewerid'])&&!isset($row['evidence_url']), 'no personal reviewer data '.$i);
++        }
++        $tasks[]=$tasks[0];
++        $projected=R::project_rows($tasks,$evidence,7,11,23);
++        $ok(count($projected['tasks'])===count($cases),'duplicate task omitted');
++        $ok($projected['tasks'][0]['evidence_version']===0,'no evidence is not version 1');
++        $ok($projected['tasks'][2]['reviewed_at']===20,'review timestamps safe');
++    }
+ }
+-$tasks = [];
+-foreach ($cases as $i => $row) {
+-    $tasks[]=['external_id'=>'impltask:'.($i+1), 'section_code'=>'A', 'status'=>$row[0]];
+-}
+-$evidence=[];
+-foreach ($cases as $i => $row) {
+-    if ($row[1]==='none') {continue;}
+-    $evidence[$i+1]=(object)['status'=>$row[1],'versionno'=>2,'submittedat'=>10,'reviewedat'=>20,
+-        'summary'=>'TOP SECRET','reviewcomment'=>'TOP SECRET','filename'=>'private.pdf'];
+-}
+-$projected=R::project_rows($tasks,$evidence,7,11,23);
+-$ok($projected['complete'] && $projected['company_id']===7 && $projected['audit_id']===23,'identities');
+-$ok(count($projected['tasks'])===count($cases),'all tasks projected');
+-foreach ($projected['tasks'] as $i=>$row) {
+-    $ok($row['result_state']===$cases[$i][2], 'projected state '.$i);
+-    $ok(!isset($row['summary'])&&!isset($row['reviewcomment'])&&!isset($row['filename']), 'no PII '.$i);
+-    $ok(!isset($row['reviewerid'])&&!isset($row['evidence_url']), 'no personal reviewer data '.$i);
+-}
+-$tasks[]=$tasks[0];
+-$projected=R::project_rows($tasks,$evidence,7,11,23);
+-$ok(count($projected['tasks'])===count($cases),'duplicate task omitted');
+-$ok($projected['tasks'][0]['evidence_version']===0,'no evidence is not version 1');
+-$ok($projected['tasks'][2]['reviewed_at']===20,'review timestamps safe');
+-echo "PASS Corporate evidence decision projection: $n assertions\n";
+--- a/local/kbacorporate/tests/implementation_program_sections_projection_test.php
++++ b/local/kbacorporate/tests/implementation_program_sections_projection_test.php
+@@ -1,46 +1,49 @@
+ <?php
+-// Standalone fixture-based contract check: no Moodle DB used here.
+-define('MOODLE_INTERNAL', true);
+-require_once dirname(__DIR__) . '/classes/local/implementation_program_sections_projection.php';
++namespace local_kbacorporate;
++defined('MOODLE_INTERNAL') || die();
+ use local_kbacorporate\local\implementation_program_sections_projection as stages;
+-$tests = 0;
+-$check = static function(bool $condition, string $label) use (&$tests): void {
+-    $tests++;
+-    if (!$condition) { throw new RuntimeException('FAIL: ' . $label); }
+-};
+-$section = (object)[
+-    'code' => 'A1', 'name' => 'Objectives', 'status' => 'risk',
+-    'totalcriteria' => 5, 'gapcriteria' => 3, 'coveredcriteria' => 2,
+-    'tasktotal' => 4, 'completedtasks' => 1, 'reviewtasks' => 1,
+-    'overduetasks' => 2, 'unassignedtasks' => 0, 'acceptedevidence' => 1,
+-    'criteria' => [(object)['criterionname' => 'private details']],
+-    'internal_user' => 'private@example.test',
+-];
+-$blank = clone $section;
+-$blank->code = 'A2'; $blank->name = 'Processes';
+-$blank->tasktotal = 0; $blank->completedtasks = 0;
+-$model = (object)['sections' => [$section, $blank],
+-    'summary' => (object)['tasktotal' => 4, 'completedtasks' => 1, 'overduetasks' => 2, 'acceptedevidence' => 1],
+-    'raw_admin_notes' => 'secret'];
+-$program = ['company_id' => 81, 'program_id' => 52, 'audit_id' => 99, 'curator_email' => 'secret@example.test'];
+-$result = stages::sanitize_model($model, $program);
+-$check($result['company_id'] === 81, 'company identity retained');
+-$check($result['program_id'] === 52, 'program identity retained');
+-$check($result['audit_id'] === 99, 'audit identity retained');
+-$check($result['available'] === true, 'confirmed model available');
+-$check(count($result['sections']) === 2, 'two sections');
+-$check($result['sections'][0]['code'] === 'A1', 'section codes retained');
+-$check($result['sections'][0]['status'] === 'risk', 'source status preserved');
+-$check($result['sections'][0]['completed_count'] === 1, 'completed tasks count');
+-$check($result['sections'][0]['review_count'] === 1, 'review tasks count');
+-$check($result['sections'][0]['overdue_count'] === 2, 'overdue tasks count');
+-$check($result['sections'][0]['accepted_evidence_count'] === 1, 'accepted evidence count');
+-$check($result['sections'][0]['task_completion_percent'] === 25.0, 'task completion math');
+-$check($result['sections'][1]['task_completion_percent'] === null, 'no false zero for no tasks');
+-$check($result['summary']['section_count'] === 2, 'section count');
+-$check(!isset($result['sections'][0]['criteria']), 'no raw criteria');
+-$check(!isset($result['sections'][0]['internal_user']), 'no member identifiers');
+-$check(!isset($result['curator_email']), 'no curator data');
+-$check(!isset($result['raw_admin_notes']), 'no raw notes');
+-$check(count($result['sections'][0]) === 13, 'strict section allowlist');
+-echo 'PASS implementation program sections projection: ' . $tests . " cases\n";
++
++final class implementation_program_sections_projection_test extends \basic_testcase {
++    public function test_projection_contract(): void {
++        $tests = 0;
++        $check = function(bool $condition, string $label) use (&$tests): void {
++            $tests++;
++            $this->assertTrue($condition, $label);
++        };
++        $section = (object)[
++            'code' => 'A1', 'name' => 'Objectives', 'status' => 'risk',
++            'totalcriteria' => 5, 'gapcriteria' => 3, 'coveredcriteria' => 2,
++            'tasktotal' => 4, 'completedtasks' => 1, 'reviewtasks' => 1,
++            'overduetasks' => 2, 'unassignedtasks' => 0, 'acceptedevidence' => 1,
++            'criteria' => [(object)['criterionname' => 'private details']],
++            'internal_user' => 'private@example.test',
++        ];
++        $blank = clone $section;
++        $blank->code = 'A2'; $blank->name = 'Processes';
++        $blank->tasktotal = 0; $blank->completedtasks = 0;
++        $model = (object)['sections' => [$section, $blank],
++            'summary' => (object)['tasktotal' => 4, 'completedtasks' => 1, 'overduetasks' => 2, 'acceptedevidence' => 1],
++            'raw_admin_notes' => 'secret'];
++        $program = ['company_id' => 81, 'program_id' => 52, 'audit_id' => 99, 'curator_email' => 'secret@example.test'];
++        $result = stages::sanitize_model($model, $program);
++        $check($result['company_id'] === 81, 'company identity retained');
++        $check($result['program_id'] === 52, 'program identity retained');
++        $check($result['audit_id'] === 99, 'audit identity retained');
++        $check($result['available'] === true, 'confirmed model available');
++        $check(count($result['sections']) === 2, 'two sections');
++        $check($result['sections'][0]['code'] === 'A1', 'section codes retained');
++        $check($result['sections'][0]['status'] === 'risk', 'source status preserved');
++        $check($result['sections'][0]['completed_count'] === 1, 'completed tasks count');
++        $check($result['sections'][0]['review_count'] === 1, 'review tasks count');
++        $check($result['sections'][0]['overdue_count'] === 2, 'overdue tasks count');
++        $check($result['sections'][0]['accepted_evidence_count'] === 1, 'accepted evidence count');
++        $check($result['sections'][0]['task_completion_percent'] === 25.0, 'task completion math');
++        $check($result['sections'][1]['task_completion_percent'] === null, 'no false zero for no tasks');
++        $check($result['summary']['section_count'] === 2, 'section count');
++        $check(!isset($result['sections'][0]['criteria']), 'no raw criteria');
++        $check(!isset($result['sections'][0]['internal_user']), 'no member identifiers');
++        $check(!isset($result['curator_email']), 'no curator data');
++        $check(!isset($result['raw_admin_notes']), 'no raw notes');
++        $check(count($result['sections'][0]) === 13, 'strict section allowlist');
++    }
++}
+--- a/local/kbacorporate/tests/implementation_program_task_sections_projection_test.php
++++ b/local/kbacorporate/tests/implementation_program_task_sections_projection_test.php
+@@ -1,30 +1,33 @@
+ <?php
+-// Standalone projection unit tests: no Moodle installation, PHP 8.1-compatible.
+-define('MOODLE_INTERNAL', true);
+-require_once dirname(__DIR__) . '/classes/local/implementation_program_task_sections_projection.php';
++namespace local_kbacorporate;
++defined('MOODLE_INTERNAL') || die();
+ use local_kbacorporate\local\implementation_program_task_sections_projection as P;
+-$count=0;
+-$ok=static function($assertion,$name) use (&$count){$count++;if(!$assertion){throw new RuntimeException($name);}};
+-$record=static function($id,$company,$audit,$section,$status,$owner=3){return (object)[
+-    'id'=>$id, 'companyid'=>$company,'auditid'=>$audit,'sectioncode'=>$section,
+-    'status'=>$status,'title'=>'Test task '.$id, 'ownerid'=>$owner,'duedate'=>0, 'secret'=>'restricted'];};
+-$source=[ $record(11,7,22,'A1','planned'),$record(12,7,22,'','inprogress'),
+-    $record(13,7,22,'A1','review'),$record(14,7,22,'A2','completed'),
+-    $record(15,7,22,'A2','cancelled'),$record(16,8,22,'A2','planned'),
+-    $record(17,7,23,'A1','planned'),$record(11,7,22,'A1','planned'),
+-    $record(18,7,22,'A1','secretstatus') ];
+-$r=P::project_rows($source,7,5,22);
+-$ok($r['company_id']===7&&$r['program_id']===5&&$r['audit_id']===22,'identity');
+-$ok($r['complete']===true,'complete');
+-$ok(count($r['tasks'])===5,'same company & audit; unique ids & allowed statuses');
+-$ok($r['tasks'][1]['section_code']==='general','fallback section');
+-$ok($r['tasks'][2]['status']==='review','review distinct');
+-$ok($r['tasks'][3]['status']==='completed','completed distinct');
+-$ok($r['tasks'][4]['status']==='cancelled','cancelled retained');
+-$ok($r['tasks'][0]['external_id']==='impltask:11','source identity');
+-$ok(!array_key_exists('secret',$r['tasks'][0]),'no secrets');
+-$ok(!array_key_exists('companyid',$r['tasks'][0]),'minimal task projection');
+-$truncated=P::project_rows($source,7,5,22,false);
+-$ok($truncated['complete']===false&&!$truncated['tasks'],'fail closed incomplete');
+-$ok($truncated['reason']==='limit_exceeded','incomplete reason');
+-echo "PASS Corporate task-section projection: $count assertions\n";
++
++final class implementation_program_task_sections_projection_test extends \basic_testcase {
++    public function test_projection_contract(): void {
++        $count=0;
++        $ok=function($assertion,$name) use (&$count){$count++;$this->assertTrue($assertion,$name);};
++        $record=static function($id,$company,$audit,$section,$status,$owner=3){return (object)[
++            'id'=>$id, 'companyid'=>$company,'auditid'=>$audit,'sectioncode'=>$section,
++            'status'=>$status,'title'=>'Test task '.$id, 'ownerid'=>$owner,'duedate'=>0, 'secret'=>'restricted'];};
++        $source=[ $record(11,7,22,'A1','planned'),$record(12,7,22,'','inprogress'),
++            $record(13,7,22,'A1','review'),$record(14,7,22,'A2','completed'),
++            $record(15,7,22,'A2','cancelled'),$record(16,8,22,'A2','planned'),
++            $record(17,7,23,'A1','planned'),$record(11,7,22,'A1','planned'),
++            $record(18,7,22,'A1','secretstatus') ];
++        $r=P::project_rows($source,7,5,22);
++        $ok($r['company_id']===7&&$r['program_id']===5&&$r['audit_id']===22,'identity');
++        $ok($r['complete']===true,'complete');
++        $ok(count($r['tasks'])===5,'same company & audit; unique ids & allowed statuses');
++        $ok($r['tasks'][1]['section_code']==='general','fallback section');
++        $ok($r['tasks'][2]['status']==='review','review distinct');
++        $ok($r['tasks'][3]['status']==='completed','completed distinct');
++        $ok($r['tasks'][4]['status']==='cancelled','cancelled retained');
++        $ok($r['tasks'][0]['external_id']==='impltask:11','source identity');
++        $ok(!array_key_exists('secret',$r['tasks'][0]),'no secrets');
++        $ok(!array_key_exists('companyid',$r['tasks'][0]),'minimal task projection');
++        $truncated=P::project_rows($source,7,5,22,false);
++        $ok($truncated['complete']===false&&!$truncated['tasks'],'fail closed incomplete');
++        $ok($truncated['reason']==='limit_exceeded','incomplete reason');
++    }
++}
+--- a/local/kbacorporate/tests/implementation_task_bridge_test.php
++++ b/local/kbacorporate/tests/implementation_task_bridge_test.php
+@@ -13,7 +13,7 @@
+ final class implementation_task_bridge_test extends \advanced_testcase {
+     public function test_contract_declares_new_read_only_methods_without_breaking_old_api(): void {
+         $contract = bridge::contract();
+-        $this->assertSame('1.23', bridge::API_RELEASE);
++        $this->assertSame('1.26', bridge::API_RELEASE);
+         $this->assertSame(1, bridge::API_VERSION);
+         $this->assertTrue($contract['backwards_compatible']);
+         $this->assertSame('read', $contract['methods']['list_implementation_task_projections']['type']);
+@@ -164,7 +164,8 @@
+             'audittype' => 'baseline',
+             'auditdate' => time(),
+         ], (int)get_admin()->id);
+-        $item = reset(implementation_audits::get_items($auditid));
++        $audititems = implementation_audits::get_items($auditid);
++        $item = reset($audititems);
+         $DB->update_record('local_kbacorp_impl_item', (object)[
+             'id' => (int)$item->id,
+             'score' => 2,
+--- a/local/kbacorporate/tests/individual_development_plan_test.php
++++ b/local/kbacorporate/tests/individual_development_plan_test.php
+@@ -37,6 +37,10 @@
+         ]);
+         repository::add_member($companyid, (int)$employee->id, 'employee');
+         repository::add_member($companyid, (int)$mentor->id, 'employee');
++        repository::add_member($companyid, (int)$manager->id, 'manager');
++        $managerrole = $DB->get_record('role', ['shortname' => 'manager'], '*', MUST_EXIST);
++        role_assign($managerrole->id, $manager->id, \context_system::instance()->id);
++        $this->setUser($manager);
+
+         $generator = $this->getDataGenerator()->get_plugin_generator('core_competency');
+         $framework = $generator->create_framework();
+@@ -47,7 +51,7 @@
+         ]);
+         $roleid = business_roles::save_role((object)[
+             'companyid' => $companyid,
+-            'code' => 'IPR-ROLE-001',
++            'code' => 'BMS-ROLE-IPR-001',
+             'name' => 'Test role',
+             'active' => 1,
+         ]);
+--- a/local/kbacorporate/tests/privacy_provider_test.php
++++ b/local/kbacorporate/tests/privacy_provider_test.php
+@@ -10,7 +10,11 @@
+ final class privacy_provider_test extends \advanced_testcase {
+     public function test_new_personal_data_tables_are_declared(): void {
+         $collection = provider::get_metadata(new collection('local_kbacorporate'));
+-        $metadata = $collection->get_collection();
++        // Moodle returns a numeric list of metadata objects, not a map by table.
++        $metadata = [];
++        foreach ($collection->get_collection() as $item) {
++            $metadata[$item->get_name()] = $item;
++        }
+         $this->assertArrayHasKey('local_kbacorp_member_busrole', $metadata);
+         $this->assertArrayHasKey('local_kbacorp_rolever', $metadata);
+         $this->assertArrayHasKey('local_kbacorp_extmap', $metadata);
+--- a/local/kbacorporate/version.php
++++ b/local/kbacorporate/version.php
+@@ -4,7 +4,7 @@
+ defined('MOODLE_INTERNAL') || die();
+
+ $plugin->component = 'local_kbacorporate';
+-$plugin->version   = 2026102613;
++$plugin->version   = 2026111003;
+ $plugin->requires  = 2022041900; // Moodle 4.0.
+ $plugin->maturity  = MATURITY_RC;
+-$plugin->release   = '0.40.13 — integration acceptance and performance diagnostics';
++$plugin->release   = '0.40.13-bms.1 — selective2613 compatibility candidate';

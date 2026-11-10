@@ -174,7 +174,16 @@ $main = '740fce16db15bb3551071cc11fe584c680fd738d';
 $import = 'eccc1eb221df90675067b1011e986702d96a4985';
 $functional = 'd4887103c13f45c42b73b455a95dba142d7ba116';
 $retained2613 = getenv('CORPORATE_PROFILE') === 'retained2613';
+$repaired2613 = getenv('CORPORATE_PROFILE') === 'repaired2613';
+$productionprofile = $retained2613 || $repaired2613;
 $corporate2613 = '687c230595bce020fc001db91b3aac276f0fee7d';
+$materialized = $testroot . '/corporate2613-repaired';
+if ($repaired2613) {
+    must_command(['python3', $candidate . '/tools/build_corporate2613.py', '--output', $materialized],
+        $candidate, $logs . '/corporate-build.log');
+    copy($materialized . '/IDENTITY.json', $logs . '/corporate-identity.json');
+    foreach (glob($materialized . '/*.zip') as $artifact) { copy($artifact, $logs . '/' . basename($artifact)); }
+}
 $report = ['run_id' => $runid, 'php' => PHP_VERSION, 'dbtype' => required_env('DBTYPE'),
     'database_server' => $dbversion, 'database_version_comment' => $versioncomment,
     'scope' => 'isolated Moodle core plus local_kbacompany/local_kbacorporate only',
@@ -182,6 +191,10 @@ $report = ['run_id' => $runid, 'php' => PHP_VERSION, 'dbtype' => required_env('D
     'not_covered' => ['browser/UI', 'production/staging deployment', 'full sibling-plugin distribution', 'backup/restore']];
 $report['corporate_profile'] = $retained2613 ? 'exact retained2613' : 'diagnostic0901';
 $report['corporate_source'] = $retained2613 ? $corporate2613 : 'candidate working tree';
+if ($repaired2613) {
+    $report['corporate_profile'] = 'selective repaired2613';
+    $report['corporate_source'] = json_decode(file_get_contents($materialized . '/IDENTITY.json'), true);
+}
 $self = __FILE__;
 $fresh = null;
 $scenarios = ['fresh' => null, 'from1645' => $main, 'from1879' => $import,
@@ -196,13 +209,14 @@ $scenarios = ['fresh' => null, 'from1645' => $main, 'from1879' => $import,
         'frompr590905' => '2446347adf26ebb9e1520414a65c89e930dadba2',
         'frompr650906' => '4e5482df3d5bd8fd4cc604c070ed8728e7c0fc17',
         'frompr671001' => '34763fd4b8980d36bf6de0a309a7737693e9e3dc'];
-if ($retained2613) { $scenarios = ['fresh'=>null, 'fromprod1878'=>'a87252b642e5796c6d84105dd448d51d9a5b5241']; }
+if ($productionprofile) { $scenarios = ['fresh'=>null, 'fromprod1878'=>'a87252b642e5796c6d84105dd448d51d9a5b5241']; }
 foreach ($scenarios as $name => $historical) {
     $scenario = $testroot . '/' . $name;
     $core = $scenario . '/core';
     $entry = ['status' => 'FAIL', 'steps' => [], 'bms_source' => $historical ?? 'candidate working tree',
         'corporate_source' => in_array($historical, [$import, $functional], true) ? $main : ($historical ?? 'candidate working tree')];
     if ($retained2613) { $entry['corporate_source'] = $corporate2613; }
+    if ($repaired2613) { $entry['corporate_source'] = $historical ? $corporate2613 : $report['corporate_source']; }
     if (in_array($historical, [$import, $functional], true)) {
         $entry['note'] = 'Reconstructed dependency pair: standalone BMS source uses Corporate from main1645 SHA; not live stage Corporate2613.';
     }
@@ -212,14 +226,15 @@ foreach ($scenarios as $name => $historical) {
         foreach (['kbacompany', 'kbacorporate'] as $plugin) {
             if (file_exists($core . '/local/' . $plugin)) { throw new RuntimeException('Core source already contains candidate plugin'); }
             $ref = $plugin === 'kbacorporate' && in_array($historical, [$import, $functional], true) ? $main : $historical;
-            if ($retained2613 && $plugin === 'kbacorporate') { $ref = $corporate2613; }
+            if ($productionprofile && $plugin === 'kbacorporate') { $ref = ($retained2613 || $historical) ? $corporate2613 : null; }
             if ($ref) {
                 $tar = $scenario . '/' . $plugin . '.tar';
                 must_command(['git', '-C', $candidate, 'archive', '--format=tar', '--output=' . $tar, $ref,
                     'local/' . $plugin], $candidate, $logs . '/' . $name . '-' . $plugin . '-archive.log');
                 must_command(['tar', '-xf', $tar, '-C', $core], $testroot, $logs . '/' . $name . '-' . $plugin . '-extract.log');
             } else {
-                must_command(['cp', '-a', $candidate . '/local/' . $plugin, $core . '/local/'], $testroot,
+                $pluginsource = $repaired2613 && $plugin === 'kbacorporate' ? $materialized : $candidate;
+                must_command(['cp', '-a', $pluginsource . '/local/' . $plugin, $core . '/local/'], $testroot,
                     $logs . '/' . $name . '-' . $plugin . '-copy.log');
             }
         }
@@ -256,7 +271,7 @@ foreach ($scenarios as $name => $historical) {
             throw new RuntimeException('Full Moodle installation failed');
         }
         if ($name === 'fresh') { $fresh = $core; }
-        if ($retained2613) {
+        if ($retained2613 || ($repaired2613 && $historical)) {
             $step('corporate-source-before', [PHP_BINARY, $candidate . '/tools/tests/verify_corporate2613.php',
                 $core . '/local/kbacorporate', $candidate . '/docs/release/corporate2613-manifest.json']);
         }
@@ -266,13 +281,17 @@ foreach ($scenarios as $name => $historical) {
         }
         $step('historical-schema', [PHP_BINARY, $core . '/admin/cli/check_database_schema.php']);
         $seeded = $step('seed', [PHP_BINARY, $self, 'seed', $core, $scenario . '/fixtures.json']);
+        if ($repaired2613 && $historical) {
+            $step('corporate-before-snapshot', [PHP_BINARY, $self, 'snapshot', $core, $scenario . '/before-schema.json']);
+        }
         if ($historical) {
             foreach (['kbacompany', 'kbacorporate'] as $plugin) {
                 // The installed2613 tree must never be replaced with the0901 control.
                 if ($retained2613 && $plugin === 'kbacorporate') { continue; }
                 // Rename only our disposable historical copy; never delete source or user files.
                 rename($core . '/local/' . $plugin, $scenario . '/historical-' . $plugin);
-                must_command(['cp', '-a', $candidate . '/local/' . $plugin, $core . '/local/'], $testroot,
+                $pluginsource = $repaired2613 && $plugin === 'kbacorporate' ? $materialized : $candidate;
+                must_command(['cp', '-a', $pluginsource . '/local/' . $plugin, $core . '/local/'], $testroot,
                     $logs . '/' . $name . '-' . $plugin . '-candidate.log');
             }
             if (!$step('upgrade', [PHP_BINARY, $core . '/admin/cli/upgrade.php', '--non-interactive'])) {
@@ -282,10 +301,28 @@ foreach ($scenarios as $name => $historical) {
         $step('candidate-schema', [PHP_BINARY, $core . '/admin/cli/check_database_schema.php']);
         if ($seeded) { $step('verify-data', [PHP_BINARY, $self, 'verify', $core, $scenario . '/fixtures.json']); }
         $step('snapshot', [PHP_BINARY, $self, 'snapshot', $core, $scenario . '/schema.json']);
+        if ($repaired2613 && $historical && is_file($scenario . '/before-schema.json')) {
+            $before = json_decode(file_get_contents($scenario . '/before-schema.json'), true);
+            $after = json_decode(file_get_contents($scenario . '/schema.json'), true);
+            $corporatetables = static function(array $schema): array {
+                return array_filter($schema['tables'], static function(string $table): bool {
+                    return strpos($table, 'local_kbacorp_') === 0;
+                }, ARRAY_FILTER_USE_KEY);
+            };
+            $preserved = $corporatetables($before) === $corporatetables($after)
+                && $before['versions']['local_kbacorporate'] === '2026102613'
+                && $after['versions']['local_kbacorporate'] === '2026111003';
+            $entry['steps']['corporate-historical-schema-preserved'] = ['status'=>$preserved ? 'PASS' : 'FAIL'];
+            copy($scenario . '/before-schema.json', $logs . '/fromprod1878-before-schema.json');
+        }
         $step('repeat-upgrade', [PHP_BINARY, $core . '/admin/cli/upgrade.php', '--non-interactive']);
         if ($retained2613) {
             $step('corporate-source-after', [PHP_BINARY, $candidate . '/tools/tests/verify_corporate2613.php',
                 $core . '/local/kbacorporate', $candidate . '/docs/release/corporate2613-manifest.json']);
+        }
+        if ($repaired2613) {
+            $step('corporate-repaired-source-after', ['python3', $candidate . '/tools/build_corporate2613.py',
+                '--verify', $core . '/local/kbacorporate']);
         }
         if ($seeded) { $step('verify-repeat', [PHP_BINARY, $self, 'verify', $core, $scenario . '/fixtures.json']); }
         $step('repeat-snapshot', [PHP_BINARY, $self, 'snapshot', $core, $scenario . '/schema-repeat.json']);
