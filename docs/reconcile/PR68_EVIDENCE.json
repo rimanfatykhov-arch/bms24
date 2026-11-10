@@ -1,0 +1,2438 @@
+{
+  "source_sha": "303f47d1ad4acafc0286746ea1700d47b35997c4",
+  "base_sha": "34763fd4b8980d36bf6de0a309a7737693e9e3dc",
+  "bms_version": 2026111002,
+  "corporate_version": 2026110901,
+  "runs": {
+    "full": 42794988475,
+    "repair": 42794988159,
+    "static": 42794988462
+  },
+  "release_acceptance": "HOLD",
+  "engines": {
+    "mariadb": {
+      "engine": "mariadb",
+      "database": "10.11.19-MariaDB-ubu2204",
+      "full_acceptance": "FAIL",
+      "failure_message_normalization": "Only synthetic PHPUnit HTML sesskey value is redacted; all other text and exception types compared exactly.",
+      "manager_workspace_reproduction": {
+        "status": "PASS",
+        "meaning": "Pinned baseline must fail the unchanged non-manager assertion",
+        "source_sha": "34763fd4b8980d36bf6de0a309a7737693e9e3dc",
+        "renderer_sha256": "469fa1e2a4e67744f23b74f7802e8b5a0f6dff68659630eeb6f7cc5f2676bfb7",
+        "exit_code": 1
+      },
+      "scenarios": {
+        "fresh": "PASS",
+        "from1645": "PASS",
+        "from1879": "PASS",
+        "from0890": "PASS",
+        "from0900": "PASS",
+        "from0901": "PASS",
+        "from0804": "PASS",
+        "frompr530902": "PASS",
+        "frompr560902": "PASS",
+        "frompr570903": "PASS",
+        "frompr580904": "PASS",
+        "frompr590905": "PASS",
+        "frompr650906": "PASS",
+        "frompr671001": "PASS"
+      },
+      "schema_comparison": {
+        "from1645": "PASS",
+        "from1879": "PASS",
+        "from0890": "PASS",
+        "from0900": "PASS",
+        "from0901": "PASS",
+        "from0804": "PASS",
+        "frompr530902": "PASS",
+        "frompr560902": "PASS",
+        "frompr570903": "PASS",
+        "frompr580904": "PASS",
+        "frompr590905": "PASS",
+        "frompr650906": "PASS",
+        "frompr671001": "PASS"
+      },
+      "suites": {
+        "battle_plan_management_overview_service_test-junit": {
+          "counts": {
+            "tests": 1,
+            "assertions": 6,
+            "error": 0,
+            "failure": 0,
+            "skipped": 0
+          },
+          "baseline_counts": {
+            "tests": 1,
+            "assertions": 6,
+            "error": 0,
+            "failure": 0,
+            "skipped": 0
+          },
+          "missing_ids": {},
+          "added_ids": {},
+          "new_failures": [],
+          "resolved": [],
+          "changed_existing_failures": {},
+          "assertion_decreases": {},
+          "remaining_failures": {}
+        },
+        "battle_plan_service_test-junit": {
+          "counts": {
+            "tests": 14,
+            "assertions": 74,
+            "error": 0,
+            "failure": 0,
+            "skipped": 0
+          },
+          "baseline_counts": {
+            "tests": 14,
+            "assertions": 74,
+            "error": 0,
+            "failure": 0,
+            "skipped": 0
+          },
+          "missing_ids": {},
+          "added_ids": {},
+          "new_failures": [],
+          "resolved": [],
+          "changed_existing_failures": {},
+          "assertion_decreases": {},
+          "remaining_failures": {}
+        },
+        "communication_center_service_test-junit": {
+          "counts": {
+            "tests": 5,
+            "assertions": 26,
+            "error": 0,
+            "failure": 0,
+            "skipped": 0
+          },
+          "baseline_counts": {
+            "tests": 5,
+            "assertions": 26,
+            "error": 0,
+            "failure": 0,
+            "skipped": 0
+          },
+          "missing_ids": {},
+          "added_ids": {},
+          "new_failures": [],
+          "resolved": [],
+          "changed_existing_failures": {},
+          "assertion_decreases": {},
+          "remaining_failures": {}
+        },
+        "communication_live_service_test-junit": {
+          "counts": {
+            "tests": 1,
+            "assertions": 4,
+            "error": 0,
+            "failure": 0,
+            "skipped": 0
+          },
+          "baseline_counts": {
+            "tests": 1,
+            "assertions": 4,
+            "error": 0,
+            "failure": 0,
+            "skipped": 0
+          },
+          "missing_ids": {},
+          "added_ids": {},
+          "new_failures": [],
+          "resolved": [],
+          "changed_existing_failures": {},
+          "assertion_decreases": {},
+          "remaining_failures": {}
+        },
+        "communication_service_test-junit": {
+          "counts": {
+            "tests": 17,
+            "assertions": 55,
+            "error": 0,
+            "failure": 0,
+            "skipped": 0
+          },
+          "baseline_counts": {
+            "tests": 17,
+            "assertions": 55,
+            "error": 0,
+            "failure": 0,
+            "skipped": 0
+          },
+          "missing_ids": {},
+          "added_ids": {},
+          "new_failures": [],
+          "resolved": [],
+          "changed_existing_failures": {},
+          "assertion_decreases": {},
+          "remaining_failures": {}
+        },
+        "company_core_test-junit": {
+          "counts": {
+            "tests": 16,
+            "assertions": 78,
+            "error": 0,
+            "failure": 2,
+            "skipped": 0
+          },
+          "baseline_counts": {
+            "tests": 16,
+            "assertions": 78,
+            "error": 0,
+            "failure": 2,
+            "skipped": 0
+          },
+          "missing_ids": {},
+          "added_ids": {},
+          "new_failures": [],
+          "resolved": [],
+          "changed_existing_failures": {},
+          "assertion_decreases": {},
+          "remaining_failures": {
+            "local_kbacompany\\company_core_test::test_contract_declares_existing_source_without_duplication": {
+              "assertions": 1,
+              "outcome": "failure",
+              "exception_type": "PHPUnit\\Framework\\ExpectationFailedException",
+              "message": "local_kbacompany\\company_core_test::test_contract_declares_existing_source_without_duplication\nFailed asserting that two strings are identical.\n--- Expected\n+++ Actual\n@@ @@\n-'0.6.0'\n+'0.6.7'\n\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/tests/company_core_test.php:21\n/home/runner/work/_temp/pr48/fresh/core/lib/phpunit/classes/advanced_testcase.php:80"
+            },
+            "local_kbacompany\\company_core_test::test_permission_contract_centralises_company_role_policies": {
+              "assertions": 1,
+              "outcome": "failure",
+              "exception_type": "PHPUnit\\Framework\\ExpectationFailedException",
+              "message": "local_kbacompany\\company_core_test::test_permission_contract_centralises_company_role_policies\nFailed asserting that two strings are identical.\n--- Expected\n+++ Actual\n@@ @@\n-'0.5.1.3'\n+'0.7.0'\n\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/tests/company_core_test.php:79\n/home/runner/work/_temp/pr48/fresh/core/lib/phpunit/classes/advanced_testcase.php:80"
+            }
+          }
+        },
+        "company_employee_sync_service_test-junit": {
+          "counts": {
+            "tests": 11,
+            "assertions": 57,
+            "error": 0,
+            "failure": 0,
+            "skipped": 0
+          },
+          "baseline_counts": {
+            "tests": 11,
+            "assertions": 57,
+            "error": 0,
+            "failure": 0,
+            "skipped": 0
+          },
+          "missing_ids": {},
+          "added_ids": {},
+          "new_failures": [],
+          "resolved": [],
+          "changed_existing_failures": {},
+          "assertion_decreases": {},
+          "remaining_failures": {}
+        },
+        "competency_review_queue_test-junit": {
+          "counts": {
+            "tests": 9,
+            "assertions": 99,
+            "error": 0,
+            "failure": 0,
+            "skipped": 0
+          },
+          "baseline_counts": {
+            "tests": 9,
+            "assertions": 99,
+            "error": 0,
+            "failure": 0,
+            "skipped": 0
+          },
+          "missing_ids": {},
+          "added_ids": {},
+          "new_failures": [],
+          "resolved": [],
+          "changed_existing_failures": {},
+          "assertion_decreases": {},
+          "remaining_failures": {}
+        },
+        "design_service_test-junit": {
+          "counts": {
+            "tests": 3,
+            "assertions": 13,
+            "error": 0,
+            "failure": 0,
+            "skipped": 0
+          },
+          "baseline_counts": {
+            "tests": 3,
+            "assertions": 13,
+            "error": 0,
+            "failure": 0,
+            "skipped": 0
+          },
+          "missing_ids": {},
+          "added_ids": {},
+          "new_failures": [],
+          "resolved": [],
+          "changed_existing_failures": {},
+          "assertion_decreases": {},
+          "remaining_failures": {}
+        },
+        "deviation_service_test-junit": {
+          "counts": {
+            "tests": 11,
+            "assertions": 25,
+            "error": 0,
+            "failure": 0,
+            "skipped": 0
+          },
+          "baseline_counts": {
+            "tests": 11,
+            "assertions": 25,
+            "error": 0,
+            "failure": 0,
+            "skipped": 0
+          },
+          "missing_ids": {},
+          "added_ids": {},
+          "new_failures": [],
+          "resolved": [],
+          "changed_existing_failures": {},
+          "assertion_decreases": {},
+          "remaining_failures": {}
+        },
+        "document_service_test-junit": {
+          "counts": {
+            "tests": 10,
+            "assertions": 53,
+            "error": 0,
+            "failure": 0,
+            "skipped": 0
+          },
+          "baseline_counts": {
+            "tests": 10,
+            "assertions": 53,
+            "error": 0,
+            "failure": 0,
+            "skipped": 0
+          },
+          "missing_ids": {},
+          "added_ids": {},
+          "new_failures": [],
+          "resolved": [],
+          "changed_existing_failures": {},
+          "assertion_decreases": {},
+          "remaining_failures": {}
+        },
+        "employee_competency_profile_service_test-junit": {
+          "counts": {
+            "tests": 1,
+            "assertions": 5,
+            "error": 0,
+            "failure": 0,
+            "skipped": 0
+          },
+          "baseline_counts": {
+            "tests": 1,
+            "assertions": 5,
+            "error": 0,
+            "failure": 0,
+            "skipped": 0
+          },
+          "missing_ids": {},
+          "added_ids": {},
+          "new_failures": [],
+          "resolved": [],
+          "changed_existing_failures": {},
+          "assertion_decreases": {},
+          "remaining_failures": {}
+        },
+        "employee_development_courses_test-junit": {
+          "counts": {
+            "tests": 5,
+            "assertions": 65,
+            "error": 0,
+            "failure": 0,
+            "skipped": 0
+          },
+          "baseline_counts": {
+            "tests": 5,
+            "assertions": 65,
+            "error": 0,
+            "failure": 0,
+            "skipped": 0
+          },
+          "missing_ids": {},
+          "added_ids": {},
+          "new_failures": [],
+          "resolved": [],
+          "changed_existing_failures": {},
+          "assertion_decreases": {},
+          "remaining_failures": {}
+        },
+        "indicator_registry_service_test-junit": {
+          "counts": {
+            "tests": 9,
+            "assertions": 26,
+            "error": 0,
+            "failure": 0,
+            "skipped": 0
+          },
+          "baseline_counts": {
+            "tests": 9,
+            "assertions": 26,
+            "error": 0,
+            "failure": 0,
+            "skipped": 0
+          },
+          "missing_ids": {},
+          "added_ids": {},
+          "new_failures": [],
+          "resolved": [],
+          "changed_existing_failures": {},
+          "assertion_decreases": {},
+          "remaining_failures": {}
+        },
+        "kbacorporate_impl_task_provider_test-junit": {
+          "counts": {
+            "tests": 4,
+            "assertions": 23,
+            "error": 0,
+            "failure": 0,
+            "skipped": 0
+          },
+          "baseline_counts": {
+            "tests": 4,
+            "assertions": 23,
+            "error": 0,
+            "failure": 0,
+            "skipped": 0
+          },
+          "missing_ids": {},
+          "added_ids": {},
+          "new_failures": [],
+          "resolved": [],
+          "changed_existing_failures": {},
+          "assertion_decreases": {},
+          "remaining_failures": {}
+        },
+        "local_kbacompany-junit": {
+          "counts": {
+            "tests": 626,
+            "assertions": 7523,
+            "error": 1,
+            "failure": 14,
+            "skipped": 0
+          },
+          "baseline_counts": {
+            "tests": 618,
+            "assertions": 7292,
+            "error": 1,
+            "failure": 15,
+            "skipped": 0
+          },
+          "missing_ids": {},
+          "added_ids": {
+            "local_kbacompany\\task_manager_access_regression_test::test_non_manager_all_filter_keeps_personal_data_and_denies_foreign_company": 1,
+            "local_kbacompany\\task_manager_access_regression_test::test_explicit_manager_grant_is_company_scoped_and_revocation_is_immediate with data set \"assignment\"": 1,
+            "local_kbacompany\\task_manager_access_regression_test::test_explicit_manager_grant_is_company_scoped_and_revocation_is_immediate with data set \"grant\"": 1,
+            "local_kbacompany\\task_manager_access_regression_test::test_explicit_manager_grant_is_company_scoped_and_revocation_is_immediate with data set \"inactive role\"": 1,
+            "local_kbacompany\\task_manager_access_regression_test::test_membership_revocation_denies_reports_despite_remaining_acl_and_task with data set \"inactive\"": 1,
+            "local_kbacompany\\task_manager_access_regression_test::test_membership_revocation_denies_reports_despite_remaining_acl_and_task with data set \"removed\"": 1,
+            "local_kbacompany\\task_manager_workspace1853_test::test_denied_manager_state_is_removed_before_links_and_forms with data set \"owned\"": 1,
+            "local_kbacompany\\task_manager_workspace1853_test::test_denied_manager_state_is_removed_before_links_and_forms with data set \"legacy\"": 1
+          },
+          "new_failures": [],
+          "resolved": [
+            "local_kbacompany\\task_manager_workspace1853_test::test_non_manager_never_receives_manager_workspace"
+          ],
+          "changed_existing_failures": {},
+          "assertion_decreases": {},
+          "remaining_failures": {
+            "local_kbacompany\\battle_plan_indicator_service_test::test_historical_projection_uses_last_52_periods_relative_to_plan_week": {
+              "assertions": 4,
+              "outcome": "failure",
+              "exception_type": "PHPUnit\\Framework\\ExpectationFailedException",
+              "message": "local_kbacompany\\battle_plan_indicator_service_test::test_historical_projection_uses_last_52_periods_relative_to_plan_week\nFailed asserting that two strings are not identical.\n\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/tests/battle_plan_indicator_service_test.php:104\n/home/runner/work/_temp/pr48/fresh/core/lib/phpunit/classes/advanced_testcase.php:80"
+            },
+            "local_kbacompany\\battle_plan_word_export_service_test::test_ooxml_contains_real_word_document_and_cyrillic_text": {
+              "assertions": 0,
+              "outcome": "error",
+              "exception_type": "PHPUnit\\Framework\\Error\\Warning",
+              "message": "local_kbacompany\\battle_plan_word_export_service_test::test_ooxml_contains_real_word_document_and_cyrillic_text\nUndefined array key \"observer\"\n\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/battle_plan_word_export_service.php:383\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/tests/battle_plan_word_export_service_test.php:24\n/home/runner/work/_temp/pr48/fresh/core/lib/phpunit/classes/basic_testcase.php:64"
+            },
+            "local_kbacompany\\battle_plan_word_export_service_test::test_model_projects_previous_partial_week_and_current_target": {
+              "assertions": 4,
+              "outcome": "failure",
+              "exception_type": "PHPUnit\\Framework\\ExpectationFailedException",
+              "message": "local_kbacompany\\battle_plan_word_export_service_test::test_model_projects_previous_partial_week_and_current_target\nFailed asserting that '42000.00 (Actual for 1 of 7 days)' contains \"Факт за 1 из 7 дней\".\n\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/tests/battle_plan_word_export_service_test.php:113\n/home/runner/work/_temp/pr48/fresh/core/lib/phpunit/classes/basic_testcase.php:64"
+            },
+            "local_kbacompany\\bms_navigation_test::test_only_allowlisted_context_is_propagated": {
+              "assertions": 2,
+              "outcome": "failure",
+              "exception_type": "PHPUnit\\Framework\\ExpectationFailedException",
+              "message": "local_kbacompany\\bms_navigation_test::test_only_allowlisted_context_is_propagated\nFailed asserting that true is identical to false.\n\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/tests/bms_navigation_test.php:36\n/home/runner/work/_temp/pr48/fresh/core/lib/phpunit/classes/advanced_testcase.php:80"
+            },
+            "local_kbacompany\\bms_page_shell_service_test::test_contract_versions_are_aligned": {
+              "assertions": 1,
+              "outcome": "failure",
+              "exception_type": "PHPUnit\\Framework\\ExpectationFailedException",
+              "message": "local_kbacompany\\bms_page_shell_service_test::test_contract_versions_are_aligned\nFailed asserting that two strings are identical.\n--- Expected\n+++ Actual\n@@ @@\n-'0.4.9'\n+'0.6.0'\n\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/tests/bms_page_shell_service_test.php:12\n/home/runner/work/_temp/pr48/fresh/core/lib/phpunit/classes/advanced_testcase.php:80"
+            },
+            "local_kbacompany\\bms_page_shell_service_test::test_business_architecture_semantics_follow_bms_methodology": {
+              "assertions": 5,
+              "outcome": "failure",
+              "exception_type": "PHPUnit\\Framework\\ExpectationFailedException",
+              "message": "local_kbacompany\\bms_page_shell_service_test::test_business_architecture_semantics_follow_bms_methodology\nFailed asserting that two arrays are identical.\n--- Expected\n+++ Actual\n@@ @@\n     1 => 'functions'\n     2 => 'flows'\n     3 => 'products'\n+    4 => 'metrics'\n+    5 => 'informationcenter'\n )\n\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/tests/bms_page_shell_service_test.php:44\n/home/runner/work/_temp/pr48/fresh/core/lib/phpunit/classes/advanced_testcase.php:80"
+            },
+            "local_kbacompany\\company_core_test::test_contract_declares_existing_source_without_duplication": {
+              "assertions": 1,
+              "outcome": "failure",
+              "exception_type": "PHPUnit\\Framework\\ExpectationFailedException",
+              "message": "local_kbacompany\\company_core_test::test_contract_declares_existing_source_without_duplication\nFailed asserting that two strings are identical.\n--- Expected\n+++ Actual\n@@ @@\n-'0.6.0'\n+'0.6.7'\n\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/tests/company_core_test.php:21\n/home/runner/work/_temp/pr48/fresh/core/lib/phpunit/classes/advanced_testcase.php:80"
+            },
+            "local_kbacompany\\company_core_test::test_permission_contract_centralises_company_role_policies": {
+              "assertions": 1,
+              "outcome": "failure",
+              "exception_type": "PHPUnit\\Framework\\ExpectationFailedException",
+              "message": "local_kbacompany\\company_core_test::test_permission_contract_centralises_company_role_policies\nFailed asserting that two strings are identical.\n--- Expected\n+++ Actual\n@@ @@\n-'0.5.1.3'\n+'0.7.0'\n\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/tests/company_core_test.php:79\n/home/runner/work/_temp/pr48/fresh/core/lib/phpunit/classes/advanced_testcase.php:80"
+            },
+            "local_kbacompany\\financial_statement_service_test::test_bdr_and_bdds_calculations_match_bms_finance_rules": {
+              "assertions": 4,
+              "outcome": "failure",
+              "exception_type": "PHPUnit\\Framework\\ExpectationFailedException",
+              "message": "local_kbacompany\\financial_statement_service_test::test_bdr_and_bdds_calculations_match_bms_finance_rules\nFailed asserting that 500.0 matches expected 450.0.\n\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/tests/financial_statement_service_test.php:32\n/home/runner/work/_temp/pr48/fresh/core/lib/phpunit/classes/advanced_testcase.php:80"
+            },
+            "local_kbacompany\\integration_event_service_test::test_event_outbox_lifecycle_is_independent_from_legacy_command_status": {
+              "assertions": 4,
+              "outcome": "failure",
+              "exception_type": "PHPUnit\\Framework\\ExpectationFailedException",
+              "message": "local_kbacompany\\integration_event_service_test::test_event_outbox_lifecycle_is_independent_from_legacy_command_status\nFailed asserting that 2 is identical to 1.\n\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/tests/integration_event_service_test.php:78\n/home/runner/work/_temp/pr48/fresh/core/lib/phpunit/classes/advanced_testcase.php:80"
+            },
+            "local_kbacompany\\ofs_service_test::test_ofs_projects_company_unit_function_products_and_internal_customer": {
+              "assertions": 10,
+              "outcome": "failure",
+              "exception_type": "PHPUnit\\Framework\\ExpectationFailedException",
+              "message": "local_kbacompany\\ofs_service_test::test_ofs_projects_company_unit_function_products_and_internal_customer\nFailed asserting that true is false.\n\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/tests/ofs_service_test.php:73\n/home/runner/work/_temp/pr48/fresh/core/lib/phpunit/classes/advanced_testcase.php:80"
+            },
+            "local_kbacompany\\process_model_service_test::test_complete_sipoc_bpmn_model_publishes_and_activity_becomes_semantic": {
+              "assertions": 2,
+              "outcome": "failure",
+              "exception_type": "PHPUnit\\Framework\\ExpectationFailedException",
+              "message": "local_kbacompany\\process_model_service_test::test_complete_sipoc_bpmn_model_publishes_and_activity_becomes_semantic\nFailed asserting that two strings are identical.\n--- Expected\n+++ Actual\n@@ @@\n-'0.3.1'\n+'0.4.4'\n\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/tests/process_model_service_test.php:85\n/home/runner/work/_temp/pr48/fresh/core/lib/phpunit/classes/advanced_testcase.php:80"
+            },
+            "local_kbacompany\\process_service_test::test_process_hierarchy_publish_and_cross_functional_links": {
+              "assertions": 1,
+              "outcome": "failure",
+              "exception_type": "PHPUnit\\Framework\\ExpectationFailedException",
+              "message": "local_kbacompany\\process_service_test::test_process_hierarchy_publish_and_cross_functional_links\nFailed asserting that two strings are identical.\n--- Expected\n+++ Actual\n@@ @@\n-'0.3.0'\n+'0.4.0'\n\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/tests/process_service_test.php:56\n/home/runner/work/_temp/pr48/fresh/core/lib/phpunit/classes/advanced_testcase.php:80"
+            },
+            "local_kbacompany\\project_execution_service_test::test_management_planning_does_not_link_to_retired_editor": {
+              "assertions": 1,
+              "outcome": "failure",
+              "exception_type": "PHPUnit\\Framework\\ExpectationFailedException",
+              "message": "local_kbacompany\\project_execution_service_test::test_management_planning_does_not_link_to_retired_editor\nFailed asserting that two arrays are identical.\n--- Expected\n+++ Actual\n@@ @@\n Array &0 (\n-    0 => 'week'\n-    1 => 'battleplan'\n-    2 => 'cycles'\n+    0 => 'coordweek'\n+    1 => 'decisionsregistry'\n+    2 => 'week'\n+    3 => 'battleplan'\n+    4 => 'cycles'\n )\n\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/tests/project_execution_service_test.php:55\n/home/runner/work/_temp/pr48/fresh/core/lib/phpunit/classes/advanced_testcase.php:80"
+            },
+            "local_kbacompany\\task_roles_workspace1840_test::test_compact_workspace_escapes_search_and_has_progressive_get_fallback": {
+              "assertions": 6,
+              "outcome": "failure",
+              "exception_type": "PHPUnit\\Framework\\ExpectationFailedException",
+              "message": "local_kbacompany\\task_roles_workspace1840_test::test_compact_workspace_escapes_search_and_has_progressive_get_fallback\nFailed asserting that '<header class=\"bms24-task-header\">\\n\n  <div class=\"bms24-task-heading\"><h1>Tasks</h1></div>\\n\n  \\n\n  <div class=\"bms24-task-header-actions\"><a class=\"bms24-ui-btn bms24-ui-btn--primary\" href=\"https://www.example.com/moodle/local/kbacompany/tasks.php?uuid=company-test&amp;view=create\">Create task</a><details class=\"bms24-task-menu\"><summary class=\"bms24-ui-btn\">Tools</summary><div class=\"bms24-task-menu-items\"><a href=\"https://www.example.com/moodle/local/kbacompany/tasks.php?uuid=company-test&amp;view=sources\">Tasks from other sources</a><a href=\"https://www.example.com/moodle/local/kbacompany/recurring_task_library.php?uuid=company-test\">Recurring task library</a><a href=\"https://www.example.com/moodle/local/kbacompany/battle_plan.php?uuid=company-test\">Battle Plan</a><a href=\"https://www.example.com/moodle/local/kbacompany/communication_center.php?uuid=company-test\">Communication Center</a></div></details></div>\\n\n</header><section class=\"bms24-task-toolbar\" aria-label=\"Tasks\">\\n\n  \\n\n  <div class=\"bms24-task-toolbar-actions\"><nav class=\"bms24-task-tabs\" aria-label=\"Tasks\">\\n\n<a class=\"bms24-task-tab\" href=\"https://www.example.com/moodle/local/kbacompany/tasks.php?uuid=company-test&amp;scope=roles&amp;q=%3Cscript%3Ealert%281%29%3C%2Fscript%3E&amp;status&amp;stream&amp;sourcekind&amp;battleplan&amp;signal&amp;assignee=0&amp;project&amp;display=list&amp;page=0\" aria-current=\"page\">All my roles · 3</a><a class=\"bms24-task-tab\" href=\"https://www.example.com/moodle/local/kbacompany/tasks.php?uuid=company-test&amp;scope=my&amp;q=%3Cscript%3Ealert%281%29%3C%2Fscript%3E&amp;status&amp;stream&amp;sourcekind&amp;battleplan&amp;signal&amp;assignee=0&amp;project&amp;display=list&amp;page=0\">My tasks · 2</a><a class=\"bms24-task-tab\" href=\"https://www.example.com/moodle/local/kbacompany/tasks.php?uuid=company-test&amp;scope=created&amp;q=%3Cscript%3Ealert%281%29%3C%2Fscript%3E&amp;status&amp;stream&amp;sourcekind&amp;battleplan&amp;signal&amp;assignee=0&amp;project&amp;display=list&amp;page=0\">Created by me · 1</a><a class=\"bms24-task-tab\" href=\"https://www.example.com/moodle/local/kbacompany/tasks.php?uuid=company-test&amp;scope=review&amp;q=%3Cscript%3Ealert%281%29%3C%2Fscript%3E&amp;status&amp;stream&amp;sourcekind&amp;battleplan&amp;signal&amp;assignee=0&amp;project&amp;display=list&amp;page=0\">Waiting for my review · 0</a><a class=\"bms24-task-tab\" href=\"https://www.example.com/moodle/local/kbacompany/tasks.php?uuid=company-test&amp;scope=watching&amp;q=%3Cscript%3Ealert%281%29%3C%2Fscript%3E&amp;status&amp;stream&amp;sourcekind&amp;battleplan&amp;signal&amp;assignee=0&amp;project&amp;display=list&amp;page=0\">Watching · 1</a>\\n\n</nav></div>\\n\n</section><form class=\"bms24-task-quicksearch\" method=\"get\" action=\"https://www.example.com/moodle/local/kbacompany/tasks.php?uuid=company-test\" role=\"search\" data-bms-task-fast-search=\"1\"><input type=\"hidden\" name=\"scope\" value=\"roles\" /><input type=\"hidden\" name=\"status\" value=\"\" /><input type=\"hidden\" name=\"stream\" value=\"\" /><input type=\"hidden\" name=\"sourcekind\" value=\"\" /><input type=\"hidden\" name=\"battleplan\" value=\"\" /><input type=\"hidden\" name=\"signal\" value=\"\" /><input type=\"hidden\" name=\"assignee\" value=\"0\" /><input type=\"hidden\" name=\"project\" value=\"\" /><input type=\"hidden\" name=\"uuid\" value=\"company-test\" /><input type=\"hidden\" name=\"display\" value=\"list\" /><input type=\"hidden\" name=\"page\" value=\"0\" /><label for=\"bms_task1840_q\" class=\"sr-only\">Search tasks by title</label><input type=\"search\" id=\"bms_task1840_q\" name=\"q\" value=\"&lt;script&gt;alert(1)&lt;/script&gt;\" maxlength=\"200\" class=\"bms24-ui-input\" autocomplete=\"off\" placeholder=\"Search tasks by title\" /><button class=\"bms24-ui-btn bms24-ui-btn--primary\" type=\"submit\">Search</button></form><nav class=\"bms24-task-quickfilters\" aria-label=\"Quick filters\"><a class=\"bms24-task-quickchip\" aria-pressed=\"false\" href=\"https://www.example.com/moodle/local/kbacompany/tasks.php?uuid=company-test&amp;scope=roles&amp;q=%3Cscript%3Ealert%281%29%3C%2Fscript%3E&amp;status&amp;stream&amp;sourcekind&amp;battleplan&amp;signal=open&amp;assignee=0&amp;project&amp;display=list&amp;page=0\">Unfinished</a><a class=\"bms24-task-quickchip\" aria-pressed=\"false\" href=\"https://www.example.com/moodle/local/kbacompany/tasks.php?uuid=company-test&amp;scope=roles&amp;q=%3Cscript%3Ealert%281%29%3C%2Fscript%3E&amp;status&amp;stream&amp;sourcekind&amp;battleplan&amp;signal=review&amp;assignee=0&amp;project&amp;display=list&amp;page=0\">In review</a><a class=\"bms24-task-quickchip\" aria-pressed=\"false\" href=\"https://www.example.com/moodle/local/kbacompany/tasks.php?uuid=company-test&amp;scope=roles&amp;q=%3Cscript%3Ealert%281%29%3C%2Fscript%3E&amp;status&amp;stream&amp;sourcekind&amp;battleplan&amp;signal=overdue&amp;assignee=0&amp;project&amp;display=list&amp;page=0\">Overdue</a><a class=\"bms24-task-quickchip\" aria-pressed=\"false\" href=\"https://www.example.com/moodle/local/kbacompany/tasks.php?uuid=company-test&amp;scope=roles&amp;q=%3Cscript%3Ealert%281%29%3C%2Fscript%3E&amp;status&amp;stream&amp;sourcekind&amp;battleplan&amp;signal=soon&amp;assignee=0&amp;project&amp;display=list&amp;page=0\">Due within 7 days</a><a class=\"bms24-task-quickchip\" aria-pressed=\"false\" href=\"https://www.example.com/moodle/local/kbacompany/tasks.php?uuid=company-test&amp;scope=roles&amp;q=%3Cscript%3Ealert%281%29%3C%2Fscript%3E&amp;status&amp;stream&amp;sourcekind&amp;battleplan&amp;signal=done&amp;assignee=0&amp;project&amp;display=list&amp;page=0\">Completed</a></nav><details class=\"bms24-task-advanced\"><summary>More filters</summary><form class=\"bms24-ui-filterbar\" method=\"get\" action=\"https://www.example.com/moodle/local/kbacompany/tasks.php?uuid=company-test\" aria-label=\"Tasks\">\\n\n<input type=\"hidden\" name=\"uuid\" value=\"company-test\"><input type=\"hidden\" name=\"scope\" value=\"roles\"><input type=\"hidden\" name=\"display\" value=\"list\"><input type=\"hidden\" name=\"signal\" value=\"\"><input type=\"hidden\" name=\"q\" value=\"&lt;script&gt;alert(1)&lt;/script&gt;\"><input type=\"hidden\" name=\"assignee\" value=\"0\"><input type=\"hidden\" name=\"project\" value=\"\"><input type=\"hidden\" name=\"duegroup\" value=\"\">\\n\n<div class=\"bms24-ui-fieldgrid\"><div class=\"bms24-ui-field\">\\n\n<label class=\"bms24-ui-label\" for=\"tui_status\">Status</label>\\n\n<select class=\"bms24-ui-select\" id=\"tui_status\" name=\"status\"><option value=\"\" selected>All statuses</option><option value=\"open\">New</option><option value=\"doing\">In progress</option><option value=\"review\">Awaiting acceptance</option><option value=\"returned\">Returned</option><option value=\"done\">Done</option><option value=\"cancelled\">Cancelled</option></select>\\n\n\\n\n\\n\n\\n\n\\n\n</div>\\n\n<div class=\"bms24-ui-field\">\\n\n<label class=\"bms24-ui-label\" for=\"tui_stream\">Work stream</label>\\n\n<select class=\"bms24-ui-select\" id=\"tui_stream\" name=\"stream\"><option value=\"\" selected>All streams</option><option value=\"change\">Change — programs and projects</option><option value=\"run\">Recurring work</option><option value=\"operate\">Current position work</option><option value=\"develop\">Learning and development</option><option value=\"unplanned\">Unplanned</option></select>\\n\n\\n\n\\n\n\\n\n\\n\n</div>\\n\n<div class=\"bms24-ui-field\">\\n\n<label class=\"bms24-ui-label\" for=\"tui_sourcekind\">Source</label>\\n\n<select class=\"bms24-ui-select\" id=\"tui_sourcekind\" name=\"sourcekind\"><option value=\"\" selected>All BMS sources</option><option value=\"manual\">Manual task</option><option value=\"adminscale\">Administrative Scale</option><option value=\"positionwork\">Position Work Program</option><option value=\"learning\">Learning / development</option><option value=\"legacy\">Previous execution workflow</option><option value=\"communication\">Communication Center</option><option value=\"decision\">Meeting decision</option><option value=\"recurring\">Recurring task</option><option value=\"template\">Task library template</option><option value=\"bplantemplate\">Battle Plan template</option><option value=\"condition\">Indicator condition</option></select>\\n\n\\n\n\\n\n\\n\n\\n\n</div>\\n\n<div class=\"bms24-ui-field\">\\n\n<label class=\"bms24-ui-label\" for=\"tui_battleplan\">Battle Plan</label>\\n\n<select class=\"bms24-ui-select\" id=\"tui_battleplan\" name=\"battleplan\"><option value=\"\" selected>All Battle Plans</option></select>\\n\n\\n\n\\n\n\\n\n\\n\n</div>\\n\n</div>\\n\n<div class=\"bms24-ui-filter-actions\"><button class=\"bms24-ui-btn bms24-ui-btn--primary\" type=\"submit\">Apply</button><a class=\"bms24-ui-btn\" href=\"https://www.example.com/moodle/local/kbacompany/tasks.php?uuid=company-test&amp;scope=roles&amp;display=list\">Reset</a></div>\\n\n</form></details><div class=\"bms-task1849-shell bms-task1848-shell\" data-bms-task1848-shell=\"1\"><div class=\"bms-task1849-topbar\"><section class=\"bms24-task-toolbar\" aria-label=\"Tasks\">\\n\n  <div class=\"bms24-task-toolbar-lead\"><p class=\"bms24-task-note\">Records found: 0</p></div>\\n\n  <div class=\"bms24-task-toolbar-actions\"><div class=\"bms24-task-viewtools\"><details class=\"bms24-task-preferences\"><summary class=\"bms24-task-preferences-toggle\" title=\"Configure table\" aria-label=\"Configure table\"><span class=\"bms24-task-preferences-icon\" aria-hidden=\"true\">&#9881;</span><span class=\"sr-only\">Configure table</span></summary><form method=\"post\" action=\"https://www.example.com/moodle/local/kbacompany/task_list_preferences.php\" class=\"bms24-task-preferences-form\"><input type=\"hidden\" name=\"uuid\" value=\"company-test\" /><input type=\"hidden\" name=\"sesskey\" value=\"<SYNTHETIC_SESSION_KEY>\" /><input type=\"hidden\" name=\"scope\" value=\"roles\" /><input type=\"hidden\" name=\"q\" value=\"&lt;script&gt;alert(1)&lt;/script&gt;\" /><input type=\"hidden\" name=\"status\" value=\"\" /><input type=\"hidden\" name=\"stream\" value=\"\" /><input type=\"hidden\" name=\"sourcekind\" value=\"\" /><input type=\"hidden\" name=\"battleplan\" value=\"\" /><input type=\"hidden\" name=\"signal\" value=\"\" /><input type=\"hidden\" name=\"assignee\" value=\"0\" /><input type=\"hidden\" name=\"project\" value=\"\" /><fieldset class=\"bms24-task-column-fieldset\"><legend>Visible columns</legend><div class=\"bms24-task-column-options\"><label class=\"bms24-task-column-option\"><input type=\"checkbox\" name=\"columns[title]\" value=\"1\" checked=\"checked\" disabled=\"disabled\" /> Task</label><label class=\"bms24-task-column-option\"><input type=\"checkbox\" name=\"columns[assignee]\" value=\"1\" checked=\"checked\" /> Assignee</label><label class=\"bms24-task-column-option\"><input type=\"checkbox\" name=\"columns[creator]\" value=\"1\" checked=\"checked\" /> Creator</label><label class=\"bms24-task-column-option\"><input type=\"checkbox\" name=\"columns[status]\" value=\"1\" checked=\"checked\" /> Status</label><label class=\"bms24-task-column-option\"><input type=\"checkbox\" name=\"columns[duedate]\" value=\"1\" checked=\"checked\" /> Deadline</label><label class=\"bms24-task-column-option\"><input type=\"checkbox\" name=\"columns[priority]\" value=\"1\" checked=\"checked\" /> Priority</label><label class=\"bms24-task-column-option\"><input type=\"checkbox\" name=\"columns[sourcekind]\" value=\"1\" checked=\"checked\" /> Source</label><label class=\"bms24-task-column-option\"><input type=\"checkbox\" name=\"columns[reviewer]\" value=\"1\" /> Reviewer / result acceptor</label><label class=\"bms24-task-column-option\"><input type=\"checkbox\" name=\"columns[observer]\" value=\"1\" /> Observer</label><label class=\"bms24-task-column-option\"><input type=\"checkbox\" name=\"columns[stream]\" value=\"1\" /> Work stream</label><label class=\"bms24-task-column-option\"><input type=\"checkbox\" name=\"columns[updated]\" value=\"1\" /> Last updated</label><label class=\"bms24-task-column-option\"><input type=\"checkbox\" name=\"columns[created]\" value=\"1\" /> Created</label></div></fieldset><div class=\"bms24-task-sort-preferences\"><div class=\"bms24-task-sort-field\"><label for=\"bms_task1841_defaultsort\">Default sort</label><select id=\"bms_task1841_defaultsort\" class=\"select custom-select bms24-ui-select\" name=\"defaultsort\"><option value=\"title\">Task</option><option value=\"assignee\">Assignee</option><option value=\"creator\">Creator</option><option value=\"status\">Status</option><option selected=\"selected\" value=\"duedate\">Deadline</option><option value=\"priority\">Priority</option><option value=\"sourcekind\">Source</option><option value=\"updated\">Last updated</option><option value=\"created\">Created</option></select></div><div class=\"bms24-task-sort-field\"><label for=\"bms_task1841_defaultdir\">Direction</label><select id=\"bms_task1841_defaultdir\" class=\"select custom-select bms24-ui-select\" name=\"defaultdir\"><option selected=\"selected\" value=\"asc\">Ascending</option><option value=\"desc\">Descending</option></select></div></div><div class=\"bms24-task-preferences-actions\"><button type=\"submit\" class=\"bms24-ui-btn bms24-ui-btn--primary\">Save preferences</button><button type=\"submit\" name=\"resetcolumns\" value=\"1\" class=\"bms24-ui-btn\">Restore default columns</button></div></form></details><nav class=\"bms24-task-tabs\" aria-label=\"List\">\\n\n<a class=\"bms24-task-tab\" href=\"https://www.example.com/moodle/local/kbacompany/tasks.php?uuid=company-test&amp;scope=roles&amp;q=%3Cscript%3Ealert%281%29%3C%2Fscript%3E&amp;status&amp;stream&amp;sourcekind&amp;battleplan&amp;signal&amp;assignee=0&amp;project&amp;display=list&amp;page=0\" aria-current=\"page\">List</a><a class=\"bms24-task-tab\" href=\"https://www.example.com/moodle/local/kbacompany/tasks.php?uuid=company-test&amp;scope=roles&amp;q=%3Cscript%3Ealert%281%29%3C%2Fscript%3E&amp;status&amp;stream&amp;sourcekind&amp;battleplan&amp;signal&amp;assignee=0&amp;project&amp;display=kanban&amp;page=0\">Board</a><a class=\"bms24-task-tab\" href=\"https://www.example.com/moodle/local/kbacompany/tasks.php?uuid=company-test&amp;scope=roles&amp;q=%3Cscript%3Ealert%281%29%3C%2Fscript%3E&amp;status&amp;stream&amp;sourcekind&amp;battleplan&amp;signal&amp;assignee=0&amp;project&amp;display=deadlines&amp;page=0\">Deadlines</a><a class=\"bms24-task-tab\" href=\"https://www.example.com/moodle/local/kbacompany/tasks.php?uuid=company-test&amp;scope=roles&amp;q=%3Cscript%3Ealert%281%29%3C%2Fscript%3E&amp;status&amp;stream&amp;sourcekind&amp;battleplan&amp;signal&amp;assignee=0&amp;project&amp;display=analytics&amp;page=0\">Summary</a>\\n\n</nav></div></div>\\n\n</section></div><section class=\"bms24-task-panel\">\\n\n  <header class=\"bms24-task-panel-head\"><h2>No tasks found</h2></header>\\n\n  <div class=\"bms24-task-panel-body\"><p class=\"bms24-task-note\">Check the selected view and filters, or create a task. Learning and legacy tasks are available under Tools → Tasks from other sources.</p><div class=\"bms-task1858-empty-actions\"><a class=\"bms24-ui-btn bms24-ui-btn--primary\" href=\"https://www.example.com/moodle/local/kbacompany/tasks.php?uuid=company-test&amp;view=create\">Create task</a><a class=\"bms24-ui-btn bms24-ui-btn--secondary\" href=\"https://www.example.com/moodle/local/kbacompany/tasks.php?uuid=company-test&amp;scope=roles&amp;display=list\">Clear filters</a></div></div>\\n\n</section></div>' contains \"Все мои роли\".\n\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/tests/task_roles_workspace1840_test.php:107\n/home/runner/work/_temp/pr48/fresh/core/lib/phpunit/classes/advanced_testcase.php:80"
+            }
+          }
+        },
+        "local_kbacorporate-junit": {
+          "counts": {
+            "tests": 150,
+            "assertions": 962,
+            "error": 0,
+            "failure": 0,
+            "skipped": 0
+          },
+          "baseline_counts": {
+            "tests": 150,
+            "assertions": 962,
+            "error": 0,
+            "failure": 0,
+            "skipped": 0
+          },
+          "missing_ids": {},
+          "added_ids": {},
+          "new_failures": [],
+          "resolved": [],
+          "changed_existing_failures": {},
+          "assertion_decreases": {},
+          "remaining_failures": {}
+        },
+        "market_model_service_test-junit": {
+          "counts": {
+            "tests": 1,
+            "assertions": 7,
+            "error": 0,
+            "failure": 0,
+            "skipped": 0
+          },
+          "baseline_counts": {
+            "tests": 1,
+            "assertions": 7,
+            "error": 0,
+            "failure": 0,
+            "skipped": 0
+          },
+          "missing_ids": {},
+          "added_ids": {},
+          "new_failures": [],
+          "resolved": [],
+          "changed_existing_failures": {},
+          "assertion_decreases": {},
+          "remaining_failures": {}
+        },
+        "ordered_index_2026110900_test-junit": {
+          "counts": {
+            "tests": 9,
+            "assertions": 103,
+            "error": 0,
+            "failure": 0,
+            "skipped": 0
+          },
+          "baseline_counts": {
+            "tests": 9,
+            "assertions": 103,
+            "error": 0,
+            "failure": 0,
+            "skipped": 0
+          },
+          "missing_ids": {},
+          "added_ids": {},
+          "new_failures": [],
+          "resolved": [],
+          "changed_existing_failures": {},
+          "assertion_decreases": {},
+          "remaining_failures": {}
+        },
+        "pr48_tenant_isolation_test-junit": {
+          "counts": {
+            "tests": 2,
+            "assertions": 66,
+            "error": 0,
+            "failure": 0,
+            "skipped": 0
+          },
+          "baseline_counts": {
+            "tests": 2,
+            "assertions": 66,
+            "error": 0,
+            "failure": 0,
+            "skipped": 0
+          },
+          "missing_ids": {},
+          "added_ids": {},
+          "new_failures": [],
+          "resolved": [],
+          "changed_existing_failures": {},
+          "assertion_decreases": {},
+          "remaining_failures": {}
+        },
+        "privacy_provider_test-junit": {
+          "counts": {
+            "tests": 6,
+            "assertions": 37,
+            "error": 0,
+            "failure": 0,
+            "skipped": 0
+          },
+          "baseline_counts": {
+            "tests": 6,
+            "assertions": 37,
+            "error": 0,
+            "failure": 0,
+            "skipped": 0
+          },
+          "missing_ids": {},
+          "added_ids": {},
+          "new_failures": [],
+          "resolved": [],
+          "changed_existing_failures": {},
+          "assertion_decreases": {},
+          "remaining_failures": {}
+        },
+        "rc30_integrated_access_test-junit": {
+          "counts": {
+            "tests": 4,
+            "assertions": 19,
+            "error": 0,
+            "failure": 0,
+            "skipped": 0
+          },
+          "baseline_counts": {
+            "tests": 4,
+            "assertions": 19,
+            "error": 0,
+            "failure": 0,
+            "skipped": 0
+          },
+          "missing_ids": {},
+          "added_ids": {},
+          "new_failures": [],
+          "resolved": [],
+          "changed_existing_failures": {},
+          "assertion_decreases": {},
+          "remaining_failures": {}
+        },
+        "role_intelligence_service_test-junit": {
+          "counts": {
+            "tests": 4,
+            "assertions": 16,
+            "error": 0,
+            "failure": 0,
+            "skipped": 0
+          },
+          "baseline_counts": {
+            "tests": 4,
+            "assertions": 16,
+            "error": 0,
+            "failure": 0,
+            "skipped": 0
+          },
+          "missing_ids": {},
+          "added_ids": {},
+          "new_failures": [],
+          "resolved": [],
+          "changed_existing_failures": {},
+          "assertion_decreases": {},
+          "remaining_failures": {}
+        },
+        "role_readiness_view_test-junit": {
+          "counts": {
+            "tests": 3,
+            "assertions": 9,
+            "error": 0,
+            "failure": 0,
+            "skipped": 0
+          },
+          "baseline_counts": {
+            "tests": 3,
+            "assertions": 9,
+            "error": 0,
+            "failure": 0,
+            "skipped": 0
+          },
+          "missing_ids": {},
+          "added_ids": {},
+          "new_failures": [],
+          "resolved": [],
+          "changed_existing_failures": {},
+          "assertion_decreases": {},
+          "remaining_failures": {}
+        },
+        "schema_parity_2026110890_test-junit": {
+          "counts": {
+            "tests": 29,
+            "assertions": 3721,
+            "error": 0,
+            "failure": 0,
+            "skipped": 0
+          },
+          "baseline_counts": {
+            "tests": 29,
+            "assertions": 3721,
+            "error": 0,
+            "failure": 0,
+            "skipped": 0
+          },
+          "missing_ids": {},
+          "added_ids": {},
+          "new_failures": [],
+          "resolved": [],
+          "changed_existing_failures": {},
+          "assertion_decreases": {},
+          "remaining_failures": {}
+        },
+        "semantic_service_test-junit": {
+          "counts": {
+            "tests": 4,
+            "assertions": 29,
+            "error": 0,
+            "failure": 0,
+            "skipped": 0
+          },
+          "baseline_counts": {
+            "tests": 4,
+            "assertions": 29,
+            "error": 0,
+            "failure": 0,
+            "skipped": 0
+          },
+          "missing_ids": {},
+          "added_ids": {},
+          "new_failures": [],
+          "resolved": [],
+          "changed_existing_failures": {},
+          "assertion_decreases": {},
+          "remaining_failures": {}
+        },
+        "task_batch_actions1842_test-junit": {
+          "counts": {
+            "tests": 4,
+            "assertions": 39,
+            "error": 0,
+            "failure": 0,
+            "skipped": 0
+          },
+          "baseline_counts": {
+            "tests": 4,
+            "assertions": 39,
+            "error": 0,
+            "failure": 0,
+            "skipped": 0
+          },
+          "missing_ids": {},
+          "added_ids": {},
+          "new_failures": [],
+          "resolved": [],
+          "changed_existing_failures": {},
+          "assertion_decreases": {},
+          "remaining_failures": {}
+        },
+        "task_deadlines1843_test-junit": {
+          "counts": {
+            "tests": 3,
+            "assertions": 37,
+            "error": 0,
+            "failure": 0,
+            "skipped": 0
+          },
+          "baseline_counts": {
+            "tests": 3,
+            "assertions": 37,
+            "error": 0,
+            "failure": 0,
+            "skipped": 0
+          },
+          "missing_ids": {},
+          "added_ids": {},
+          "new_failures": [],
+          "resolved": [],
+          "changed_existing_failures": {},
+          "assertion_decreases": {},
+          "remaining_failures": {}
+        },
+        "task_execution_analytics_test-junit": {
+          "counts": {
+            "tests": 7,
+            "assertions": 24,
+            "error": 0,
+            "failure": 0,
+            "skipped": 0
+          }
+        },
+        "task_kanban1846_test-junit": {
+          "counts": {
+            "tests": 5,
+            "assertions": 51,
+            "error": 0,
+            "failure": 0,
+            "skipped": 0
+          },
+          "baseline_counts": {
+            "tests": 5,
+            "assertions": 51,
+            "error": 0,
+            "failure": 0,
+            "skipped": 0
+          },
+          "missing_ids": {},
+          "added_ids": {},
+          "new_failures": [],
+          "resolved": [],
+          "changed_existing_failures": {},
+          "assertion_decreases": {},
+          "remaining_failures": {}
+        },
+        "task_kanban1850_test-junit": {
+          "counts": {
+            "tests": 5,
+            "assertions": 39,
+            "error": 0,
+            "failure": 0,
+            "skipped": 0
+          },
+          "baseline_counts": {
+            "tests": 5,
+            "assertions": 39,
+            "error": 0,
+            "failure": 0,
+            "skipped": 0
+          },
+          "missing_ids": {},
+          "added_ids": {},
+          "new_failures": [],
+          "resolved": [],
+          "changed_existing_failures": {},
+          "assertion_decreases": {},
+          "remaining_failures": {}
+        },
+        "task_manager_access_regression_test-junit": {
+          "counts": {
+            "tests": 6,
+            "assertions": 211,
+            "error": 0,
+            "failure": 0,
+            "skipped": 0
+          }
+        },
+        "task_manager_workspace1853_test-junit": {
+          "counts": {
+            "tests": 4,
+            "assertions": 33,
+            "error": 0,
+            "failure": 0,
+            "skipped": 0
+          }
+        },
+        "task_membership_regression_test-junit": {
+          "counts": {
+            "tests": 8,
+            "assertions": 110,
+            "error": 0,
+            "failure": 0,
+            "skipped": 0
+          },
+          "baseline_counts": {
+            "tests": 8,
+            "assertions": 110,
+            "error": 0,
+            "failure": 0,
+            "skipped": 0
+          },
+          "missing_ids": {},
+          "added_ids": {},
+          "new_failures": [],
+          "resolved": [],
+          "changed_existing_failures": {},
+          "assertion_decreases": {},
+          "remaining_failures": {}
+        },
+        "task_rc30_acceptance1864_test-junit": {
+          "counts": {
+            "tests": 12,
+            "assertions": 118,
+            "error": 0,
+            "failure": 0,
+            "skipped": 0
+          },
+          "baseline_counts": {
+            "tests": 12,
+            "assertions": 118,
+            "error": 0,
+            "failure": 0,
+            "skipped": 0
+          },
+          "missing_ids": {},
+          "added_ids": {},
+          "new_failures": [],
+          "resolved": [],
+          "changed_existing_failures": {},
+          "assertion_decreases": {},
+          "remaining_failures": {}
+        },
+        "task_rc30_cli_response1866_test-junit": {
+          "counts": {
+            "tests": 4,
+            "assertions": 48,
+            "error": 0,
+            "failure": 0,
+            "skipped": 0
+          },
+          "baseline_counts": {
+            "tests": 4,
+            "assertions": 48,
+            "error": 0,
+            "failure": 0,
+            "skipped": 0
+          },
+          "missing_ids": {},
+          "added_ids": {},
+          "new_failures": [],
+          "resolved": [],
+          "changed_existing_failures": {},
+          "assertion_decreases": {},
+          "remaining_failures": {}
+        },
+        "task_rc30_report_comparison1867_test-junit": {
+          "counts": {
+            "tests": 15,
+            "assertions": 32,
+            "error": 0,
+            "failure": 0,
+            "skipped": 0
+          },
+          "baseline_counts": {
+            "tests": 15,
+            "assertions": 32,
+            "error": 0,
+            "failure": 0,
+            "skipped": 0
+          },
+          "missing_ids": {},
+          "added_ids": {},
+          "new_failures": [],
+          "resolved": [],
+          "changed_existing_failures": {},
+          "assertion_decreases": {},
+          "remaining_failures": {}
+        },
+        "task_service_test-junit": {
+          "counts": {
+            "tests": 12,
+            "assertions": 48,
+            "error": 0,
+            "failure": 0,
+            "skipped": 0
+          },
+          "baseline_counts": {
+            "tests": 12,
+            "assertions": 48,
+            "error": 0,
+            "failure": 0,
+            "skipped": 0
+          },
+          "missing_ids": {},
+          "added_ids": {},
+          "new_failures": [],
+          "resolved": [],
+          "changed_existing_failures": {},
+          "assertion_decreases": {},
+          "remaining_failures": {}
+        }
+      },
+      "sha256": {
+        "battle_plan_management_overview_service_test-junit.xml": "70b1c04d47ee3a2ce59044f3d213b91b43ae20e08aff3f547a98cb058216226c",
+        "battle_plan_service_test-junit.xml": "890610f88464fb937d062bb9beb20c39d1e679d01d2a7bf7329d482fa585cd5e",
+        "communication_center_service_test-junit.xml": "ce8c8f6ef364e6364eeacf4d5c9564d7e10220dee17441503b031e7556062d22",
+        "communication_live_service_test-junit.xml": "59b09638f6b378f3f6100a1e09e9578f5b7fdcc0e8eda282ef799708f8b7d2f4",
+        "communication_service_test-junit.xml": "232f24c4aeec3ed77086f133286905f3bff9143031429c30defaa4c5dc7ec27c",
+        "company_core_test-junit.xml": "087662e38a9c601c63b0d2df756e64edaec23be5b0fc093a432409a993ada5e3",
+        "company_employee_sync_service_test-junit.xml": "776080831b545956e95c684f38a6ac592d95b4fe9bcd83f17541eb1c2b19ba43",
+        "competency_review_queue_test-junit.xml": "af993eae65a9f9d273950843663e6ad7f60f5707ad63a2a5ca7a0dba68017e68",
+        "design_service_test-junit.xml": "c38c453a73bc1300fbb06347f8adac8afb401e064f934dd26c9cd36ec18385e9",
+        "deviation_service_test-junit.xml": "62e37d31bcf68a6bb4ac341d6ded668c7ac2097b467147b714e282198fa19f6a",
+        "document_service_test-junit.xml": "34118e1638917f9f1a6f55d00905499265ac901227efbba1f913cf4b761fd127",
+        "employee_competency_profile_service_test-junit.xml": "fd80a9da56708b98db3222d4a58950bd68f82e5ed6383ca76e0f202c27a4d239",
+        "employee_development_courses_test-junit.xml": "cebef694f61d1cf19d7772dbd06f21ad1e97463590a648e1425bc20673b32df6",
+        "indicator_registry_service_test-junit.xml": "75630dcd830d94b5d6da577feb8b2e5640cc835dd0450590e21b78728d3c5731",
+        "kbacorporate_impl_task_provider_test-junit.xml": "fba88ec1b05cdda8757bd35c6a2d4337577eecf5535c183ac55e876559020025",
+        "local_kbacompany-junit.xml": "0dfb5d6885867d156a2c343c84b4d137751ea695e222cd7f2cb000dba92e4497",
+        "local_kbacorporate-junit.xml": "2d75025d60c8169e1911c9e75e1f2c568c2d2c967ba06151cfe82be6bcceeea8",
+        "market_model_service_test-junit.xml": "ab2e8aba48abe80c0d14e549c94f00c3c4fbb80893a683a3d40d9da7ce78e3ea",
+        "ordered_index_2026110900_test-junit.xml": "06e04785543da3a0e8843cd8375dc8ec5cec1c0457341187e5791bc1a8821ec9",
+        "pr48_tenant_isolation_test-junit.xml": "a7c25e4382e0b5cc4f4e9f7069ea25987208f20e14454fd175c9af93e900f10e",
+        "privacy_provider_test-junit.xml": "c23bfb62aac27bc64587d7fcc41c3f034e18563b515555ae1f00cf909036ba82",
+        "rc30_integrated_access_test-junit.xml": "90220d6f0834e2e85940e16047db07defc1f3e134078f11d40fa3d684044c856",
+        "role_intelligence_service_test-junit.xml": "a9f50f8efbae2552c62e6cce01bb6455690810a5328aef718b8dac9d5c621bdf",
+        "role_readiness_view_test-junit.xml": "835f91964ae5512286598ab80f39954f31a60fc8c48f6cec9175e922a87d7d77",
+        "schema_parity_2026110890_test-junit.xml": "a66ac2e8c37bfbf02a57e410f807467185e30d957c629da45fe420bff2c5f394",
+        "semantic_service_test-junit.xml": "64aaef31d619376e85002308226efc6b4c46cec7d47a7515d2763f3a166d0b26",
+        "task_batch_actions1842_test-junit.xml": "13903e7bee02566dea51bab25ab874fa666e108787b85475e4991eb97e443f2a",
+        "task_deadlines1843_test-junit.xml": "fe34c897258af7e772995767eb2b583d741e5c39425302e5f3c4a2eeb15653c5",
+        "task_execution_analytics_test-junit.xml": "ad93c9108892408f06cd2bdaa21a7b54a5294ac42fada8312bc13e44c191a476",
+        "task_kanban1846_test-junit.xml": "e9c025aba2750718e8d517c5b99834b29d616272b832113bbd6ba0a93f38cb14",
+        "task_kanban1850_test-junit.xml": "aa2da75e214300b0d7d524a910b4eb6cfa2133d7177bdb325e00bfd9cc512565",
+        "task_manager_access_regression_test-junit.xml": "22f60ceb063c07e8718d22539be062e746593eb37a0de81ebf764e90e54f6b34",
+        "task_manager_workspace1853_test-junit.xml": "fd9374961bfb2406872cbc259c69738445becb8606c0ea3c5a3bea999b891f52",
+        "task_membership_regression_test-junit.xml": "57434b8a4f4072769b00a9991f68515b90fb1f897bbfb0bdb11c1780a6f0af59",
+        "task_rc30_acceptance1864_test-junit.xml": "cd88cb52715f62adde97180c1fdf3df832b55439e3c0a4aab81878734f6219f9",
+        "task_rc30_cli_response1866_test-junit.xml": "ddd8b20194f79221d6ac0088b48713aaaa6a654823345bcbc9ce5c02e00398e0",
+        "task_rc30_report_comparison1867_test-junit.xml": "f102e2006559e92c7c042b2cd23801b9c005e9c319b4497e33a7a4af0a402dd5",
+        "task_service_test-junit.xml": "ca558d59a0715404737d64da900790c2148fe999d1dfc5ddced73fa896d72cba"
+      },
+      "repair_evidence": {
+        "environment.json": {
+          "php": "8.1.34",
+          "database": "10.11.19-MariaDB-ubu2204",
+          "vendor": "mariadb.org binary distribution",
+          "fixture_sha256": "be4b64f4cb1c0641ec6e0bf218395e387008501370260b242053904824efc160",
+          "github_sha": "d62018779285bd2eae8f14a6da5e6eaaa6c4833d",
+          "scope": "Synthetic metadata-derived repair acceptance; no deployed environment contacted"
+        },
+        "fractions.json": {
+          "local_kbacompany_finbudfact.actualamount": "PASS: signed extrema and smallest fractions in both companies",
+          "local_kbacompany_finbudline.limitamount": "PASS: signed extrema and smallest fractions in both companies",
+          "local_kbacompany_finbudline.planamount": "PASS: signed extrema and smallest fractions in both companies",
+          "local_kbacompany_finline.amount": "PASS: signed extrema and smallest fractions in both companies",
+          "local_kbacompany_statbind.weight": "PASS: signed extrema and smallest fractions in both companies",
+          "local_kbacompany_statnorm.maxval": "PASS: signed extrema and smallest fractions in both companies",
+          "local_kbacompany_statnorm.minval": "PASS: signed extrema and smallest fractions in both companies",
+          "local_kbacompany_statnorm.targetvalue": "PASS: signed extrema and smallest fractions in both companies",
+          "local_kbacompany_statpolicy.affluencegrowth": "PASS: signed extrema and smallest fractions in both companies",
+          "local_kbacompany_statpolicy.dangerdecline": "PASS: signed extrema and smallest fractions in both companies",
+          "local_kbacompany_statpolicy.powerlevel": "PASS: signed extrema and smallest fractions in both companies"
+        },
+        "partial-failure.json": {
+          "status": "PASS",
+          "version_after_failure": "2026110906",
+          "ddl_committed": [
+            "adminitem.starttime",
+            "adminitem.duetime",
+            "finbudfact.actualamount"
+          ],
+          "fault": "test-only manager proxy throws before second DECIMAL DDL; no production hook"
+        },
+        "rejections.json": {
+          "range.local_kbacompany_finbudfact.actualamount.positive": "PASS",
+          "range.local_kbacompany_finbudfact.actualamount.negative": "PASS",
+          "range.local_kbacompany_finbudline.limitamount.positive": "PASS",
+          "range.local_kbacompany_finbudline.limitamount.negative": "PASS",
+          "range.local_kbacompany_finbudline.planamount.positive": "PASS",
+          "range.local_kbacompany_finbudline.planamount.negative": "PASS",
+          "range.local_kbacompany_finline.amount.positive": "PASS",
+          "range.local_kbacompany_finline.amount.negative": "PASS",
+          "range.local_kbacompany_statbind.weight.positive": "PASS",
+          "range.local_kbacompany_statbind.weight.negative": "PASS",
+          "range.local_kbacompany_statnorm.maxval.positive": "PASS",
+          "range.local_kbacompany_statnorm.maxval.negative": "PASS",
+          "range.local_kbacompany_statnorm.minval.positive": "PASS",
+          "range.local_kbacompany_statnorm.minval.negative": "PASS",
+          "range.local_kbacompany_statnorm.targetvalue.positive": "PASS",
+          "range.local_kbacompany_statnorm.targetvalue.negative": "PASS",
+          "range.local_kbacompany_statpolicy.affluencegrowth.positive": "PASS",
+          "range.local_kbacompany_statpolicy.affluencegrowth.negative": "PASS",
+          "range.local_kbacompany_statpolicy.dangerdecline.positive": "PASS",
+          "range.local_kbacompany_statpolicy.dangerdecline.negative": "PASS",
+          "range.local_kbacompany_statpolicy.powerlevel.positive": "PASS",
+          "range.local_kbacompany_statpolicy.powerlevel.negative": "PASS",
+          "definition.wrong-precision": "PASS",
+          "definition.unexpected-scale": "PASS",
+          "definition.wrong-default": "PASS",
+          "definition.wrong-nullability": "PASS",
+          "definition.unsigned": "PASS",
+          "definition.wrong-type": "PASS",
+          "definition.adminitem-duetime": "PASS",
+          "connection.non-strict": "PASS"
+        },
+        "repair.json": {
+          "repair": "PASS",
+          "schema_parity": "PASS",
+          "release_acceptance": "HOLD",
+          "individual_results": {
+            "repaired.local_kbacompany_adminitem.starttime": "PASS: field restored",
+            "repaired.local_kbacompany_adminitem.duetime": "PASS: field restored",
+            "repaired.local_kbacompany_finbudfact.actualamount": "PASS: fresh precision and scale",
+            "repaired.local_kbacompany_finbudline.limitamount": "PASS: fresh precision and scale",
+            "repaired.local_kbacompany_finbudline.planamount": "PASS: fresh precision and scale",
+            "repaired.local_kbacompany_finline.amount": "PASS: fresh precision and scale",
+            "repaired.local_kbacompany_statbind.weight": "PASS: fresh precision and scale",
+            "repaired.local_kbacompany_statnorm.maxval": "PASS: fresh precision and scale",
+            "repaired.local_kbacompany_statnorm.minval": "PASS: fresh precision and scale",
+            "repaired.local_kbacompany_statnorm.targetvalue": "PASS: fresh precision and scale",
+            "repaired.local_kbacompany_statpolicy.affluencegrowth": "PASS: fresh precision and scale",
+            "repaired.local_kbacompany_statpolicy.dangerdecline": "PASS: fresh precision and scale",
+            "repaired.local_kbacompany_statpolicy.powerlevel": "PASS: fresh precision and scale"
+          },
+          "preserved_rows": 110,
+          "positive_controls": {
+            "deviation_field": "PASS",
+            "ordered_index": "PASS"
+          },
+          "not_covered": [
+            "real1878/Corporate2613 stack",
+            "production data",
+            "ACL",
+            "full PHPUnit"
+          ]
+        }
+      },
+      "repair_sha256": {
+        "current-schema.json": "86916e920f024c10c576751ff06c9aa54c06310146c6f83e9ecd60856365066f",
+        "environment.json": "9b7b79b75b111c780fdfc9231f65140c174cf1babd05943601a1daf72ab1619e",
+        "first-repair.json": "2cb02305197ac4cd12bee4383aa54d6f2360fdfb611cbb27be4dd442113fd180",
+        "first-schema.json": "86916e920f024c10c576751ff06c9aa54c06310146c6f83e9ecd60856365066f",
+        "fractions.json": "a6ef6725319944d742c5801aec3f8f4abc4a4b6228931f5a76039e77e1c6a792",
+        "fresh-schema.json": "020066a4cf77119c68c1aec0a07a6d7f4642d8969a83bbd5e6edcbec23233ec7",
+        "legacy-indexes.json": "e7b0093cc0f059dd78c312c543cc0ae79b5af96e270dcd9afd9ddb30a3c3b116",
+        "partial-failure.json": "aba37acbe572cc98ac3845f7928a252b9391ab619dd4eff911a52a1a496d0986",
+        "partial-schema.json": "af44ef141825f96bed52b5df3b5d81bda2b93bfdf121275a5544a1fc63ce5ee4",
+        "rejections.json": "535481f2bb701586440539345ed7b998c9b599efbc17b51e58cf04ba545a18ae",
+        "repair.json": "2cb02305197ac4cd12bee4383aa54d6f2360fdfb611cbb27be4dd442113fd180",
+        "repeat-repair.json": "2cb02305197ac4cd12bee4383aa54d6f2360fdfb611cbb27be4dd442113fd180",
+        "repeat-schema.json": "86916e920f024c10c576751ff06c9aa54c06310146c6f83e9ecd60856365066f",
+        "row-ids.json": "b9f20473b77387a747616208830645170ab797479d5e9e9b9ec7c98e91a149e4",
+        "synthetic-rows.json": "98f96a578c77d592826ac14962a49b393dab759e1e9130be6473255411923728"
+      },
+      "report_sha256": "68fa7fe10259c2df829537c948b3d782e9fc979219ba7a1302c6c7a4e3a6296a",
+      "baseline_reproduction_xml_sha256": "8da0a722f163557de14800d6a597da21bf6a2351ef405258f167d47a4356eae7"
+    },
+    "percona": {
+      "engine": "percona",
+      "database": "8.0.46-37",
+      "full_acceptance": "FAIL",
+      "failure_message_normalization": "Only synthetic PHPUnit HTML sesskey value is redacted; all other text and exception types compared exactly.",
+      "manager_workspace_reproduction": {
+        "status": "PASS",
+        "meaning": "Pinned baseline must fail the unchanged non-manager assertion",
+        "source_sha": "34763fd4b8980d36bf6de0a309a7737693e9e3dc",
+        "renderer_sha256": "469fa1e2a4e67744f23b74f7802e8b5a0f6dff68659630eeb6f7cc5f2676bfb7",
+        "exit_code": 1
+      },
+      "scenarios": {
+        "fresh": "PASS",
+        "from1645": "PASS",
+        "from1879": "PASS",
+        "from0890": "PASS",
+        "from0900": "PASS",
+        "from0901": "PASS",
+        "from0804": "PASS",
+        "frompr530902": "PASS",
+        "frompr560902": "PASS",
+        "frompr570903": "PASS",
+        "frompr580904": "PASS",
+        "frompr590905": "PASS",
+        "frompr650906": "PASS",
+        "frompr671001": "PASS"
+      },
+      "schema_comparison": {
+        "from1645": "PASS",
+        "from1879": "PASS",
+        "from0890": "PASS",
+        "from0900": "PASS",
+        "from0901": "PASS",
+        "from0804": "PASS",
+        "frompr530902": "PASS",
+        "frompr560902": "PASS",
+        "frompr570903": "PASS",
+        "frompr580904": "PASS",
+        "frompr590905": "PASS",
+        "frompr650906": "PASS",
+        "frompr671001": "PASS"
+      },
+      "suites": {
+        "battle_plan_management_overview_service_test-junit": {
+          "counts": {
+            "tests": 1,
+            "assertions": 6,
+            "error": 0,
+            "failure": 0,
+            "skipped": 0
+          },
+          "baseline_counts": {
+            "tests": 1,
+            "assertions": 6,
+            "error": 0,
+            "failure": 0,
+            "skipped": 0
+          },
+          "missing_ids": {},
+          "added_ids": {},
+          "new_failures": [],
+          "resolved": [],
+          "changed_existing_failures": {},
+          "assertion_decreases": {},
+          "remaining_failures": {}
+        },
+        "battle_plan_service_test-junit": {
+          "counts": {
+            "tests": 14,
+            "assertions": 74,
+            "error": 0,
+            "failure": 0,
+            "skipped": 0
+          },
+          "baseline_counts": {
+            "tests": 14,
+            "assertions": 74,
+            "error": 0,
+            "failure": 0,
+            "skipped": 0
+          },
+          "missing_ids": {},
+          "added_ids": {},
+          "new_failures": [],
+          "resolved": [],
+          "changed_existing_failures": {},
+          "assertion_decreases": {},
+          "remaining_failures": {}
+        },
+        "communication_center_service_test-junit": {
+          "counts": {
+            "tests": 5,
+            "assertions": 26,
+            "error": 0,
+            "failure": 0,
+            "skipped": 0
+          },
+          "baseline_counts": {
+            "tests": 5,
+            "assertions": 26,
+            "error": 0,
+            "failure": 0,
+            "skipped": 0
+          },
+          "missing_ids": {},
+          "added_ids": {},
+          "new_failures": [],
+          "resolved": [],
+          "changed_existing_failures": {},
+          "assertion_decreases": {},
+          "remaining_failures": {}
+        },
+        "communication_live_service_test-junit": {
+          "counts": {
+            "tests": 1,
+            "assertions": 4,
+            "error": 0,
+            "failure": 0,
+            "skipped": 0
+          },
+          "baseline_counts": {
+            "tests": 1,
+            "assertions": 4,
+            "error": 0,
+            "failure": 0,
+            "skipped": 0
+          },
+          "missing_ids": {},
+          "added_ids": {},
+          "new_failures": [],
+          "resolved": [],
+          "changed_existing_failures": {},
+          "assertion_decreases": {},
+          "remaining_failures": {}
+        },
+        "communication_service_test-junit": {
+          "counts": {
+            "tests": 17,
+            "assertions": 55,
+            "error": 0,
+            "failure": 0,
+            "skipped": 0
+          },
+          "baseline_counts": {
+            "tests": 17,
+            "assertions": 55,
+            "error": 0,
+            "failure": 0,
+            "skipped": 0
+          },
+          "missing_ids": {},
+          "added_ids": {},
+          "new_failures": [],
+          "resolved": [],
+          "changed_existing_failures": {},
+          "assertion_decreases": {},
+          "remaining_failures": {}
+        },
+        "company_core_test-junit": {
+          "counts": {
+            "tests": 16,
+            "assertions": 78,
+            "error": 0,
+            "failure": 2,
+            "skipped": 0
+          },
+          "baseline_counts": {
+            "tests": 16,
+            "assertions": 78,
+            "error": 0,
+            "failure": 2,
+            "skipped": 0
+          },
+          "missing_ids": {},
+          "added_ids": {},
+          "new_failures": [],
+          "resolved": [],
+          "changed_existing_failures": {},
+          "assertion_decreases": {},
+          "remaining_failures": {
+            "local_kbacompany\\company_core_test::test_contract_declares_existing_source_without_duplication": {
+              "assertions": 1,
+              "outcome": "failure",
+              "exception_type": "PHPUnit\\Framework\\ExpectationFailedException",
+              "message": "local_kbacompany\\company_core_test::test_contract_declares_existing_source_without_duplication\nFailed asserting that two strings are identical.\n--- Expected\n+++ Actual\n@@ @@\n-'0.6.0'\n+'0.6.7'\n\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/tests/company_core_test.php:21\n/home/runner/work/_temp/pr48/fresh/core/lib/phpunit/classes/advanced_testcase.php:80"
+            },
+            "local_kbacompany\\company_core_test::test_permission_contract_centralises_company_role_policies": {
+              "assertions": 1,
+              "outcome": "failure",
+              "exception_type": "PHPUnit\\Framework\\ExpectationFailedException",
+              "message": "local_kbacompany\\company_core_test::test_permission_contract_centralises_company_role_policies\nFailed asserting that two strings are identical.\n--- Expected\n+++ Actual\n@@ @@\n-'0.5.1.3'\n+'0.7.0'\n\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/tests/company_core_test.php:79\n/home/runner/work/_temp/pr48/fresh/core/lib/phpunit/classes/advanced_testcase.php:80"
+            }
+          }
+        },
+        "company_employee_sync_service_test-junit": {
+          "counts": {
+            "tests": 11,
+            "assertions": 57,
+            "error": 0,
+            "failure": 0,
+            "skipped": 0
+          },
+          "baseline_counts": {
+            "tests": 11,
+            "assertions": 57,
+            "error": 0,
+            "failure": 0,
+            "skipped": 0
+          },
+          "missing_ids": {},
+          "added_ids": {},
+          "new_failures": [],
+          "resolved": [],
+          "changed_existing_failures": {},
+          "assertion_decreases": {},
+          "remaining_failures": {}
+        },
+        "competency_review_queue_test-junit": {
+          "counts": {
+            "tests": 9,
+            "assertions": 99,
+            "error": 0,
+            "failure": 0,
+            "skipped": 0
+          },
+          "baseline_counts": {
+            "tests": 9,
+            "assertions": 99,
+            "error": 0,
+            "failure": 0,
+            "skipped": 0
+          },
+          "missing_ids": {},
+          "added_ids": {},
+          "new_failures": [],
+          "resolved": [],
+          "changed_existing_failures": {},
+          "assertion_decreases": {},
+          "remaining_failures": {}
+        },
+        "design_service_test-junit": {
+          "counts": {
+            "tests": 3,
+            "assertions": 13,
+            "error": 0,
+            "failure": 0,
+            "skipped": 0
+          },
+          "baseline_counts": {
+            "tests": 3,
+            "assertions": 13,
+            "error": 0,
+            "failure": 0,
+            "skipped": 0
+          },
+          "missing_ids": {},
+          "added_ids": {},
+          "new_failures": [],
+          "resolved": [],
+          "changed_existing_failures": {},
+          "assertion_decreases": {},
+          "remaining_failures": {}
+        },
+        "deviation_service_test-junit": {
+          "counts": {
+            "tests": 11,
+            "assertions": 25,
+            "error": 0,
+            "failure": 0,
+            "skipped": 0
+          },
+          "baseline_counts": {
+            "tests": 11,
+            "assertions": 25,
+            "error": 0,
+            "failure": 0,
+            "skipped": 0
+          },
+          "missing_ids": {},
+          "added_ids": {},
+          "new_failures": [],
+          "resolved": [],
+          "changed_existing_failures": {},
+          "assertion_decreases": {},
+          "remaining_failures": {}
+        },
+        "document_service_test-junit": {
+          "counts": {
+            "tests": 10,
+            "assertions": 53,
+            "error": 0,
+            "failure": 0,
+            "skipped": 0
+          },
+          "baseline_counts": {
+            "tests": 10,
+            "assertions": 53,
+            "error": 0,
+            "failure": 0,
+            "skipped": 0
+          },
+          "missing_ids": {},
+          "added_ids": {},
+          "new_failures": [],
+          "resolved": [],
+          "changed_existing_failures": {},
+          "assertion_decreases": {},
+          "remaining_failures": {}
+        },
+        "employee_competency_profile_service_test-junit": {
+          "counts": {
+            "tests": 1,
+            "assertions": 5,
+            "error": 0,
+            "failure": 0,
+            "skipped": 0
+          },
+          "baseline_counts": {
+            "tests": 1,
+            "assertions": 5,
+            "error": 0,
+            "failure": 0,
+            "skipped": 0
+          },
+          "missing_ids": {},
+          "added_ids": {},
+          "new_failures": [],
+          "resolved": [],
+          "changed_existing_failures": {},
+          "assertion_decreases": {},
+          "remaining_failures": {}
+        },
+        "employee_development_courses_test-junit": {
+          "counts": {
+            "tests": 5,
+            "assertions": 65,
+            "error": 0,
+            "failure": 0,
+            "skipped": 0
+          },
+          "baseline_counts": {
+            "tests": 5,
+            "assertions": 65,
+            "error": 0,
+            "failure": 0,
+            "skipped": 0
+          },
+          "missing_ids": {},
+          "added_ids": {},
+          "new_failures": [],
+          "resolved": [],
+          "changed_existing_failures": {},
+          "assertion_decreases": {},
+          "remaining_failures": {}
+        },
+        "indicator_registry_service_test-junit": {
+          "counts": {
+            "tests": 9,
+            "assertions": 26,
+            "error": 0,
+            "failure": 0,
+            "skipped": 0
+          },
+          "baseline_counts": {
+            "tests": 9,
+            "assertions": 26,
+            "error": 0,
+            "failure": 0,
+            "skipped": 0
+          },
+          "missing_ids": {},
+          "added_ids": {},
+          "new_failures": [],
+          "resolved": [],
+          "changed_existing_failures": {},
+          "assertion_decreases": {},
+          "remaining_failures": {}
+        },
+        "kbacorporate_impl_task_provider_test-junit": {
+          "counts": {
+            "tests": 4,
+            "assertions": 23,
+            "error": 0,
+            "failure": 0,
+            "skipped": 0
+          },
+          "baseline_counts": {
+            "tests": 4,
+            "assertions": 23,
+            "error": 0,
+            "failure": 0,
+            "skipped": 0
+          },
+          "missing_ids": {},
+          "added_ids": {},
+          "new_failures": [],
+          "resolved": [],
+          "changed_existing_failures": {},
+          "assertion_decreases": {},
+          "remaining_failures": {}
+        },
+        "local_kbacompany-junit": {
+          "counts": {
+            "tests": 626,
+            "assertions": 7523,
+            "error": 1,
+            "failure": 14,
+            "skipped": 0
+          },
+          "baseline_counts": {
+            "tests": 618,
+            "assertions": 7292,
+            "error": 1,
+            "failure": 15,
+            "skipped": 0
+          },
+          "missing_ids": {},
+          "added_ids": {
+            "local_kbacompany\\task_manager_access_regression_test::test_non_manager_all_filter_keeps_personal_data_and_denies_foreign_company": 1,
+            "local_kbacompany\\task_manager_access_regression_test::test_explicit_manager_grant_is_company_scoped_and_revocation_is_immediate with data set \"assignment\"": 1,
+            "local_kbacompany\\task_manager_access_regression_test::test_explicit_manager_grant_is_company_scoped_and_revocation_is_immediate with data set \"grant\"": 1,
+            "local_kbacompany\\task_manager_access_regression_test::test_explicit_manager_grant_is_company_scoped_and_revocation_is_immediate with data set \"inactive role\"": 1,
+            "local_kbacompany\\task_manager_access_regression_test::test_membership_revocation_denies_reports_despite_remaining_acl_and_task with data set \"inactive\"": 1,
+            "local_kbacompany\\task_manager_access_regression_test::test_membership_revocation_denies_reports_despite_remaining_acl_and_task with data set \"removed\"": 1,
+            "local_kbacompany\\task_manager_workspace1853_test::test_denied_manager_state_is_removed_before_links_and_forms with data set \"owned\"": 1,
+            "local_kbacompany\\task_manager_workspace1853_test::test_denied_manager_state_is_removed_before_links_and_forms with data set \"legacy\"": 1
+          },
+          "new_failures": [],
+          "resolved": [
+            "local_kbacompany\\task_manager_workspace1853_test::test_non_manager_never_receives_manager_workspace"
+          ],
+          "changed_existing_failures": {},
+          "assertion_decreases": {},
+          "remaining_failures": {
+            "local_kbacompany\\battle_plan_indicator_service_test::test_historical_projection_uses_last_52_periods_relative_to_plan_week": {
+              "assertions": 4,
+              "outcome": "failure",
+              "exception_type": "PHPUnit\\Framework\\ExpectationFailedException",
+              "message": "local_kbacompany\\battle_plan_indicator_service_test::test_historical_projection_uses_last_52_periods_relative_to_plan_week\nFailed asserting that two strings are not identical.\n\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/tests/battle_plan_indicator_service_test.php:104\n/home/runner/work/_temp/pr48/fresh/core/lib/phpunit/classes/advanced_testcase.php:80"
+            },
+            "local_kbacompany\\battle_plan_word_export_service_test::test_ooxml_contains_real_word_document_and_cyrillic_text": {
+              "assertions": 0,
+              "outcome": "error",
+              "exception_type": "PHPUnit\\Framework\\Error\\Warning",
+              "message": "local_kbacompany\\battle_plan_word_export_service_test::test_ooxml_contains_real_word_document_and_cyrillic_text\nUndefined array key \"observer\"\n\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/battle_plan_word_export_service.php:383\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/tests/battle_plan_word_export_service_test.php:24\n/home/runner/work/_temp/pr48/fresh/core/lib/phpunit/classes/basic_testcase.php:64"
+            },
+            "local_kbacompany\\battle_plan_word_export_service_test::test_model_projects_previous_partial_week_and_current_target": {
+              "assertions": 4,
+              "outcome": "failure",
+              "exception_type": "PHPUnit\\Framework\\ExpectationFailedException",
+              "message": "local_kbacompany\\battle_plan_word_export_service_test::test_model_projects_previous_partial_week_and_current_target\nFailed asserting that '42000.00 (Actual for 1 of 7 days)' contains \"Факт за 1 из 7 дней\".\n\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/tests/battle_plan_word_export_service_test.php:113\n/home/runner/work/_temp/pr48/fresh/core/lib/phpunit/classes/basic_testcase.php:64"
+            },
+            "local_kbacompany\\bms_navigation_test::test_only_allowlisted_context_is_propagated": {
+              "assertions": 2,
+              "outcome": "failure",
+              "exception_type": "PHPUnit\\Framework\\ExpectationFailedException",
+              "message": "local_kbacompany\\bms_navigation_test::test_only_allowlisted_context_is_propagated\nFailed asserting that true is identical to false.\n\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/tests/bms_navigation_test.php:36\n/home/runner/work/_temp/pr48/fresh/core/lib/phpunit/classes/advanced_testcase.php:80"
+            },
+            "local_kbacompany\\bms_page_shell_service_test::test_contract_versions_are_aligned": {
+              "assertions": 1,
+              "outcome": "failure",
+              "exception_type": "PHPUnit\\Framework\\ExpectationFailedException",
+              "message": "local_kbacompany\\bms_page_shell_service_test::test_contract_versions_are_aligned\nFailed asserting that two strings are identical.\n--- Expected\n+++ Actual\n@@ @@\n-'0.4.9'\n+'0.6.0'\n\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/tests/bms_page_shell_service_test.php:12\n/home/runner/work/_temp/pr48/fresh/core/lib/phpunit/classes/advanced_testcase.php:80"
+            },
+            "local_kbacompany\\bms_page_shell_service_test::test_business_architecture_semantics_follow_bms_methodology": {
+              "assertions": 5,
+              "outcome": "failure",
+              "exception_type": "PHPUnit\\Framework\\ExpectationFailedException",
+              "message": "local_kbacompany\\bms_page_shell_service_test::test_business_architecture_semantics_follow_bms_methodology\nFailed asserting that two arrays are identical.\n--- Expected\n+++ Actual\n@@ @@\n     1 => 'functions'\n     2 => 'flows'\n     3 => 'products'\n+    4 => 'metrics'\n+    5 => 'informationcenter'\n )\n\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/tests/bms_page_shell_service_test.php:44\n/home/runner/work/_temp/pr48/fresh/core/lib/phpunit/classes/advanced_testcase.php:80"
+            },
+            "local_kbacompany\\company_core_test::test_contract_declares_existing_source_without_duplication": {
+              "assertions": 1,
+              "outcome": "failure",
+              "exception_type": "PHPUnit\\Framework\\ExpectationFailedException",
+              "message": "local_kbacompany\\company_core_test::test_contract_declares_existing_source_without_duplication\nFailed asserting that two strings are identical.\n--- Expected\n+++ Actual\n@@ @@\n-'0.6.0'\n+'0.6.7'\n\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/tests/company_core_test.php:21\n/home/runner/work/_temp/pr48/fresh/core/lib/phpunit/classes/advanced_testcase.php:80"
+            },
+            "local_kbacompany\\company_core_test::test_permission_contract_centralises_company_role_policies": {
+              "assertions": 1,
+              "outcome": "failure",
+              "exception_type": "PHPUnit\\Framework\\ExpectationFailedException",
+              "message": "local_kbacompany\\company_core_test::test_permission_contract_centralises_company_role_policies\nFailed asserting that two strings are identical.\n--- Expected\n+++ Actual\n@@ @@\n-'0.5.1.3'\n+'0.7.0'\n\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/tests/company_core_test.php:79\n/home/runner/work/_temp/pr48/fresh/core/lib/phpunit/classes/advanced_testcase.php:80"
+            },
+            "local_kbacompany\\financial_statement_service_test::test_bdr_and_bdds_calculations_match_bms_finance_rules": {
+              "assertions": 4,
+              "outcome": "failure",
+              "exception_type": "PHPUnit\\Framework\\ExpectationFailedException",
+              "message": "local_kbacompany\\financial_statement_service_test::test_bdr_and_bdds_calculations_match_bms_finance_rules\nFailed asserting that 500.0 matches expected 450.0.\n\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/tests/financial_statement_service_test.php:32\n/home/runner/work/_temp/pr48/fresh/core/lib/phpunit/classes/advanced_testcase.php:80"
+            },
+            "local_kbacompany\\integration_event_service_test::test_event_outbox_lifecycle_is_independent_from_legacy_command_status": {
+              "assertions": 4,
+              "outcome": "failure",
+              "exception_type": "PHPUnit\\Framework\\ExpectationFailedException",
+              "message": "local_kbacompany\\integration_event_service_test::test_event_outbox_lifecycle_is_independent_from_legacy_command_status\nFailed asserting that 2 is identical to 1.\n\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/tests/integration_event_service_test.php:78\n/home/runner/work/_temp/pr48/fresh/core/lib/phpunit/classes/advanced_testcase.php:80"
+            },
+            "local_kbacompany\\ofs_service_test::test_ofs_projects_company_unit_function_products_and_internal_customer": {
+              "assertions": 10,
+              "outcome": "failure",
+              "exception_type": "PHPUnit\\Framework\\ExpectationFailedException",
+              "message": "local_kbacompany\\ofs_service_test::test_ofs_projects_company_unit_function_products_and_internal_customer\nFailed asserting that true is false.\n\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/tests/ofs_service_test.php:73\n/home/runner/work/_temp/pr48/fresh/core/lib/phpunit/classes/advanced_testcase.php:80"
+            },
+            "local_kbacompany\\process_model_service_test::test_complete_sipoc_bpmn_model_publishes_and_activity_becomes_semantic": {
+              "assertions": 2,
+              "outcome": "failure",
+              "exception_type": "PHPUnit\\Framework\\ExpectationFailedException",
+              "message": "local_kbacompany\\process_model_service_test::test_complete_sipoc_bpmn_model_publishes_and_activity_becomes_semantic\nFailed asserting that two strings are identical.\n--- Expected\n+++ Actual\n@@ @@\n-'0.3.1'\n+'0.4.4'\n\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/tests/process_model_service_test.php:85\n/home/runner/work/_temp/pr48/fresh/core/lib/phpunit/classes/advanced_testcase.php:80"
+            },
+            "local_kbacompany\\process_service_test::test_process_hierarchy_publish_and_cross_functional_links": {
+              "assertions": 1,
+              "outcome": "failure",
+              "exception_type": "PHPUnit\\Framework\\ExpectationFailedException",
+              "message": "local_kbacompany\\process_service_test::test_process_hierarchy_publish_and_cross_functional_links\nFailed asserting that two strings are identical.\n--- Expected\n+++ Actual\n@@ @@\n-'0.3.0'\n+'0.4.0'\n\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/tests/process_service_test.php:56\n/home/runner/work/_temp/pr48/fresh/core/lib/phpunit/classes/advanced_testcase.php:80"
+            },
+            "local_kbacompany\\project_execution_service_test::test_management_planning_does_not_link_to_retired_editor": {
+              "assertions": 1,
+              "outcome": "failure",
+              "exception_type": "PHPUnit\\Framework\\ExpectationFailedException",
+              "message": "local_kbacompany\\project_execution_service_test::test_management_planning_does_not_link_to_retired_editor\nFailed asserting that two arrays are identical.\n--- Expected\n+++ Actual\n@@ @@\n Array &0 (\n-    0 => 'week'\n-    1 => 'battleplan'\n-    2 => 'cycles'\n+    0 => 'coordweek'\n+    1 => 'decisionsregistry'\n+    2 => 'week'\n+    3 => 'battleplan'\n+    4 => 'cycles'\n )\n\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/tests/project_execution_service_test.php:55\n/home/runner/work/_temp/pr48/fresh/core/lib/phpunit/classes/advanced_testcase.php:80"
+            },
+            "local_kbacompany\\task_roles_workspace1840_test::test_compact_workspace_escapes_search_and_has_progressive_get_fallback": {
+              "assertions": 6,
+              "outcome": "failure",
+              "exception_type": "PHPUnit\\Framework\\ExpectationFailedException",
+              "message": "local_kbacompany\\task_roles_workspace1840_test::test_compact_workspace_escapes_search_and_has_progressive_get_fallback\nFailed asserting that '<header class=\"bms24-task-header\">\\n\n  <div class=\"bms24-task-heading\"><h1>Tasks</h1></div>\\n\n  \\n\n  <div class=\"bms24-task-header-actions\"><a class=\"bms24-ui-btn bms24-ui-btn--primary\" href=\"https://www.example.com/moodle/local/kbacompany/tasks.php?uuid=company-test&amp;view=create\">Create task</a><details class=\"bms24-task-menu\"><summary class=\"bms24-ui-btn\">Tools</summary><div class=\"bms24-task-menu-items\"><a href=\"https://www.example.com/moodle/local/kbacompany/tasks.php?uuid=company-test&amp;view=sources\">Tasks from other sources</a><a href=\"https://www.example.com/moodle/local/kbacompany/recurring_task_library.php?uuid=company-test\">Recurring task library</a><a href=\"https://www.example.com/moodle/local/kbacompany/battle_plan.php?uuid=company-test\">Battle Plan</a><a href=\"https://www.example.com/moodle/local/kbacompany/communication_center.php?uuid=company-test\">Communication Center</a></div></details></div>\\n\n</header><section class=\"bms24-task-toolbar\" aria-label=\"Tasks\">\\n\n  \\n\n  <div class=\"bms24-task-toolbar-actions\"><nav class=\"bms24-task-tabs\" aria-label=\"Tasks\">\\n\n<a class=\"bms24-task-tab\" href=\"https://www.example.com/moodle/local/kbacompany/tasks.php?uuid=company-test&amp;scope=roles&amp;q=%3Cscript%3Ealert%281%29%3C%2Fscript%3E&amp;status&amp;stream&amp;sourcekind&amp;battleplan&amp;signal&amp;assignee=0&amp;project&amp;display=list&amp;page=0\" aria-current=\"page\">All my roles · 3</a><a class=\"bms24-task-tab\" href=\"https://www.example.com/moodle/local/kbacompany/tasks.php?uuid=company-test&amp;scope=my&amp;q=%3Cscript%3Ealert%281%29%3C%2Fscript%3E&amp;status&amp;stream&amp;sourcekind&amp;battleplan&amp;signal&amp;assignee=0&amp;project&amp;display=list&amp;page=0\">My tasks · 2</a><a class=\"bms24-task-tab\" href=\"https://www.example.com/moodle/local/kbacompany/tasks.php?uuid=company-test&amp;scope=created&amp;q=%3Cscript%3Ealert%281%29%3C%2Fscript%3E&amp;status&amp;stream&amp;sourcekind&amp;battleplan&amp;signal&amp;assignee=0&amp;project&amp;display=list&amp;page=0\">Created by me · 1</a><a class=\"bms24-task-tab\" href=\"https://www.example.com/moodle/local/kbacompany/tasks.php?uuid=company-test&amp;scope=review&amp;q=%3Cscript%3Ealert%281%29%3C%2Fscript%3E&amp;status&amp;stream&amp;sourcekind&amp;battleplan&amp;signal&amp;assignee=0&amp;project&amp;display=list&amp;page=0\">Waiting for my review · 0</a><a class=\"bms24-task-tab\" href=\"https://www.example.com/moodle/local/kbacompany/tasks.php?uuid=company-test&amp;scope=watching&amp;q=%3Cscript%3Ealert%281%29%3C%2Fscript%3E&amp;status&amp;stream&amp;sourcekind&amp;battleplan&amp;signal&amp;assignee=0&amp;project&amp;display=list&amp;page=0\">Watching · 1</a>\\n\n</nav></div>\\n\n</section><form class=\"bms24-task-quicksearch\" method=\"get\" action=\"https://www.example.com/moodle/local/kbacompany/tasks.php?uuid=company-test\" role=\"search\" data-bms-task-fast-search=\"1\"><input type=\"hidden\" name=\"scope\" value=\"roles\" /><input type=\"hidden\" name=\"status\" value=\"\" /><input type=\"hidden\" name=\"stream\" value=\"\" /><input type=\"hidden\" name=\"sourcekind\" value=\"\" /><input type=\"hidden\" name=\"battleplan\" value=\"\" /><input type=\"hidden\" name=\"signal\" value=\"\" /><input type=\"hidden\" name=\"assignee\" value=\"0\" /><input type=\"hidden\" name=\"project\" value=\"\" /><input type=\"hidden\" name=\"uuid\" value=\"company-test\" /><input type=\"hidden\" name=\"display\" value=\"list\" /><input type=\"hidden\" name=\"page\" value=\"0\" /><label for=\"bms_task1840_q\" class=\"sr-only\">Search tasks by title</label><input type=\"search\" id=\"bms_task1840_q\" name=\"q\" value=\"&lt;script&gt;alert(1)&lt;/script&gt;\" maxlength=\"200\" class=\"bms24-ui-input\" autocomplete=\"off\" placeholder=\"Search tasks by title\" /><button class=\"bms24-ui-btn bms24-ui-btn--primary\" type=\"submit\">Search</button></form><nav class=\"bms24-task-quickfilters\" aria-label=\"Quick filters\"><a class=\"bms24-task-quickchip\" aria-pressed=\"false\" href=\"https://www.example.com/moodle/local/kbacompany/tasks.php?uuid=company-test&amp;scope=roles&amp;q=%3Cscript%3Ealert%281%29%3C%2Fscript%3E&amp;status&amp;stream&amp;sourcekind&amp;battleplan&amp;signal=open&amp;assignee=0&amp;project&amp;display=list&amp;page=0\">Unfinished</a><a class=\"bms24-task-quickchip\" aria-pressed=\"false\" href=\"https://www.example.com/moodle/local/kbacompany/tasks.php?uuid=company-test&amp;scope=roles&amp;q=%3Cscript%3Ealert%281%29%3C%2Fscript%3E&amp;status&amp;stream&amp;sourcekind&amp;battleplan&amp;signal=review&amp;assignee=0&amp;project&amp;display=list&amp;page=0\">In review</a><a class=\"bms24-task-quickchip\" aria-pressed=\"false\" href=\"https://www.example.com/moodle/local/kbacompany/tasks.php?uuid=company-test&amp;scope=roles&amp;q=%3Cscript%3Ealert%281%29%3C%2Fscript%3E&amp;status&amp;stream&amp;sourcekind&amp;battleplan&amp;signal=overdue&amp;assignee=0&amp;project&amp;display=list&amp;page=0\">Overdue</a><a class=\"bms24-task-quickchip\" aria-pressed=\"false\" href=\"https://www.example.com/moodle/local/kbacompany/tasks.php?uuid=company-test&amp;scope=roles&amp;q=%3Cscript%3Ealert%281%29%3C%2Fscript%3E&amp;status&amp;stream&amp;sourcekind&amp;battleplan&amp;signal=soon&amp;assignee=0&amp;project&amp;display=list&amp;page=0\">Due within 7 days</a><a class=\"bms24-task-quickchip\" aria-pressed=\"false\" href=\"https://www.example.com/moodle/local/kbacompany/tasks.php?uuid=company-test&amp;scope=roles&amp;q=%3Cscript%3Ealert%281%29%3C%2Fscript%3E&amp;status&amp;stream&amp;sourcekind&amp;battleplan&amp;signal=done&amp;assignee=0&amp;project&amp;display=list&amp;page=0\">Completed</a></nav><details class=\"bms24-task-advanced\"><summary>More filters</summary><form class=\"bms24-ui-filterbar\" method=\"get\" action=\"https://www.example.com/moodle/local/kbacompany/tasks.php?uuid=company-test\" aria-label=\"Tasks\">\\n\n<input type=\"hidden\" name=\"uuid\" value=\"company-test\"><input type=\"hidden\" name=\"scope\" value=\"roles\"><input type=\"hidden\" name=\"display\" value=\"list\"><input type=\"hidden\" name=\"signal\" value=\"\"><input type=\"hidden\" name=\"q\" value=\"&lt;script&gt;alert(1)&lt;/script&gt;\"><input type=\"hidden\" name=\"assignee\" value=\"0\"><input type=\"hidden\" name=\"project\" value=\"\"><input type=\"hidden\" name=\"duegroup\" value=\"\">\\n\n<div class=\"bms24-ui-fieldgrid\"><div class=\"bms24-ui-field\">\\n\n<label class=\"bms24-ui-label\" for=\"tui_status\">Status</label>\\n\n<select class=\"bms24-ui-select\" id=\"tui_status\" name=\"status\"><option value=\"\" selected>All statuses</option><option value=\"open\">New</option><option value=\"doing\">In progress</option><option value=\"review\">Awaiting acceptance</option><option value=\"returned\">Returned</option><option value=\"done\">Done</option><option value=\"cancelled\">Cancelled</option></select>\\n\n\\n\n\\n\n\\n\n\\n\n</div>\\n\n<div class=\"bms24-ui-field\">\\n\n<label class=\"bms24-ui-label\" for=\"tui_stream\">Work stream</label>\\n\n<select class=\"bms24-ui-select\" id=\"tui_stream\" name=\"stream\"><option value=\"\" selected>All streams</option><option value=\"change\">Change — programs and projects</option><option value=\"run\">Recurring work</option><option value=\"operate\">Current position work</option><option value=\"develop\">Learning and development</option><option value=\"unplanned\">Unplanned</option></select>\\n\n\\n\n\\n\n\\n\n\\n\n</div>\\n\n<div class=\"bms24-ui-field\">\\n\n<label class=\"bms24-ui-label\" for=\"tui_sourcekind\">Source</label>\\n\n<select class=\"bms24-ui-select\" id=\"tui_sourcekind\" name=\"sourcekind\"><option value=\"\" selected>All BMS sources</option><option value=\"manual\">Manual task</option><option value=\"adminscale\">Administrative Scale</option><option value=\"positionwork\">Position Work Program</option><option value=\"learning\">Learning / development</option><option value=\"legacy\">Previous execution workflow</option><option value=\"communication\">Communication Center</option><option value=\"decision\">Meeting decision</option><option value=\"recurring\">Recurring task</option><option value=\"template\">Task library template</option><option value=\"bplantemplate\">Battle Plan template</option><option value=\"condition\">Indicator condition</option></select>\\n\n\\n\n\\n\n\\n\n\\n\n</div>\\n\n<div class=\"bms24-ui-field\">\\n\n<label class=\"bms24-ui-label\" for=\"tui_battleplan\">Battle Plan</label>\\n\n<select class=\"bms24-ui-select\" id=\"tui_battleplan\" name=\"battleplan\"><option value=\"\" selected>All Battle Plans</option></select>\\n\n\\n\n\\n\n\\n\n\\n\n</div>\\n\n</div>\\n\n<div class=\"bms24-ui-filter-actions\"><button class=\"bms24-ui-btn bms24-ui-btn--primary\" type=\"submit\">Apply</button><a class=\"bms24-ui-btn\" href=\"https://www.example.com/moodle/local/kbacompany/tasks.php?uuid=company-test&amp;scope=roles&amp;display=list\">Reset</a></div>\\n\n</form></details><div class=\"bms-task1849-shell bms-task1848-shell\" data-bms-task1848-shell=\"1\"><div class=\"bms-task1849-topbar\"><section class=\"bms24-task-toolbar\" aria-label=\"Tasks\">\\n\n  <div class=\"bms24-task-toolbar-lead\"><p class=\"bms24-task-note\">Records found: 0</p></div>\\n\n  <div class=\"bms24-task-toolbar-actions\"><div class=\"bms24-task-viewtools\"><details class=\"bms24-task-preferences\"><summary class=\"bms24-task-preferences-toggle\" title=\"Configure table\" aria-label=\"Configure table\"><span class=\"bms24-task-preferences-icon\" aria-hidden=\"true\">&#9881;</span><span class=\"sr-only\">Configure table</span></summary><form method=\"post\" action=\"https://www.example.com/moodle/local/kbacompany/task_list_preferences.php\" class=\"bms24-task-preferences-form\"><input type=\"hidden\" name=\"uuid\" value=\"company-test\" /><input type=\"hidden\" name=\"sesskey\" value=\"<SYNTHETIC_SESSION_KEY>\" /><input type=\"hidden\" name=\"scope\" value=\"roles\" /><input type=\"hidden\" name=\"q\" value=\"&lt;script&gt;alert(1)&lt;/script&gt;\" /><input type=\"hidden\" name=\"status\" value=\"\" /><input type=\"hidden\" name=\"stream\" value=\"\" /><input type=\"hidden\" name=\"sourcekind\" value=\"\" /><input type=\"hidden\" name=\"battleplan\" value=\"\" /><input type=\"hidden\" name=\"signal\" value=\"\" /><input type=\"hidden\" name=\"assignee\" value=\"0\" /><input type=\"hidden\" name=\"project\" value=\"\" /><fieldset class=\"bms24-task-column-fieldset\"><legend>Visible columns</legend><div class=\"bms24-task-column-options\"><label class=\"bms24-task-column-option\"><input type=\"checkbox\" name=\"columns[title]\" value=\"1\" checked=\"checked\" disabled=\"disabled\" /> Task</label><label class=\"bms24-task-column-option\"><input type=\"checkbox\" name=\"columns[assignee]\" value=\"1\" checked=\"checked\" /> Assignee</label><label class=\"bms24-task-column-option\"><input type=\"checkbox\" name=\"columns[creator]\" value=\"1\" checked=\"checked\" /> Creator</label><label class=\"bms24-task-column-option\"><input type=\"checkbox\" name=\"columns[status]\" value=\"1\" checked=\"checked\" /> Status</label><label class=\"bms24-task-column-option\"><input type=\"checkbox\" name=\"columns[duedate]\" value=\"1\" checked=\"checked\" /> Deadline</label><label class=\"bms24-task-column-option\"><input type=\"checkbox\" name=\"columns[priority]\" value=\"1\" checked=\"checked\" /> Priority</label><label class=\"bms24-task-column-option\"><input type=\"checkbox\" name=\"columns[sourcekind]\" value=\"1\" checked=\"checked\" /> Source</label><label class=\"bms24-task-column-option\"><input type=\"checkbox\" name=\"columns[reviewer]\" value=\"1\" /> Reviewer / result acceptor</label><label class=\"bms24-task-column-option\"><input type=\"checkbox\" name=\"columns[observer]\" value=\"1\" /> Observer</label><label class=\"bms24-task-column-option\"><input type=\"checkbox\" name=\"columns[stream]\" value=\"1\" /> Work stream</label><label class=\"bms24-task-column-option\"><input type=\"checkbox\" name=\"columns[updated]\" value=\"1\" /> Last updated</label><label class=\"bms24-task-column-option\"><input type=\"checkbox\" name=\"columns[created]\" value=\"1\" /> Created</label></div></fieldset><div class=\"bms24-task-sort-preferences\"><div class=\"bms24-task-sort-field\"><label for=\"bms_task1841_defaultsort\">Default sort</label><select id=\"bms_task1841_defaultsort\" class=\"select custom-select bms24-ui-select\" name=\"defaultsort\"><option value=\"title\">Task</option><option value=\"assignee\">Assignee</option><option value=\"creator\">Creator</option><option value=\"status\">Status</option><option selected=\"selected\" value=\"duedate\">Deadline</option><option value=\"priority\">Priority</option><option value=\"sourcekind\">Source</option><option value=\"updated\">Last updated</option><option value=\"created\">Created</option></select></div><div class=\"bms24-task-sort-field\"><label for=\"bms_task1841_defaultdir\">Direction</label><select id=\"bms_task1841_defaultdir\" class=\"select custom-select bms24-ui-select\" name=\"defaultdir\"><option selected=\"selected\" value=\"asc\">Ascending</option><option value=\"desc\">Descending</option></select></div></div><div class=\"bms24-task-preferences-actions\"><button type=\"submit\" class=\"bms24-ui-btn bms24-ui-btn--primary\">Save preferences</button><button type=\"submit\" name=\"resetcolumns\" value=\"1\" class=\"bms24-ui-btn\">Restore default columns</button></div></form></details><nav class=\"bms24-task-tabs\" aria-label=\"List\">\\n\n<a class=\"bms24-task-tab\" href=\"https://www.example.com/moodle/local/kbacompany/tasks.php?uuid=company-test&amp;scope=roles&amp;q=%3Cscript%3Ealert%281%29%3C%2Fscript%3E&amp;status&amp;stream&amp;sourcekind&amp;battleplan&amp;signal&amp;assignee=0&amp;project&amp;display=list&amp;page=0\" aria-current=\"page\">List</a><a class=\"bms24-task-tab\" href=\"https://www.example.com/moodle/local/kbacompany/tasks.php?uuid=company-test&amp;scope=roles&amp;q=%3Cscript%3Ealert%281%29%3C%2Fscript%3E&amp;status&amp;stream&amp;sourcekind&amp;battleplan&amp;signal&amp;assignee=0&amp;project&amp;display=kanban&amp;page=0\">Board</a><a class=\"bms24-task-tab\" href=\"https://www.example.com/moodle/local/kbacompany/tasks.php?uuid=company-test&amp;scope=roles&amp;q=%3Cscript%3Ealert%281%29%3C%2Fscript%3E&amp;status&amp;stream&amp;sourcekind&amp;battleplan&amp;signal&amp;assignee=0&amp;project&amp;display=deadlines&amp;page=0\">Deadlines</a><a class=\"bms24-task-tab\" href=\"https://www.example.com/moodle/local/kbacompany/tasks.php?uuid=company-test&amp;scope=roles&amp;q=%3Cscript%3Ealert%281%29%3C%2Fscript%3E&amp;status&amp;stream&amp;sourcekind&amp;battleplan&amp;signal&amp;assignee=0&amp;project&amp;display=analytics&amp;page=0\">Summary</a>\\n\n</nav></div></div>\\n\n</section></div><section class=\"bms24-task-panel\">\\n\n  <header class=\"bms24-task-panel-head\"><h2>No tasks found</h2></header>\\n\n  <div class=\"bms24-task-panel-body\"><p class=\"bms24-task-note\">Check the selected view and filters, or create a task. Learning and legacy tasks are available under Tools → Tasks from other sources.</p><div class=\"bms-task1858-empty-actions\"><a class=\"bms24-ui-btn bms24-ui-btn--primary\" href=\"https://www.example.com/moodle/local/kbacompany/tasks.php?uuid=company-test&amp;view=create\">Create task</a><a class=\"bms24-ui-btn bms24-ui-btn--secondary\" href=\"https://www.example.com/moodle/local/kbacompany/tasks.php?uuid=company-test&amp;scope=roles&amp;display=list\">Clear filters</a></div></div>\\n\n</section></div>' contains \"Все мои роли\".\n\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/tests/task_roles_workspace1840_test.php:107\n/home/runner/work/_temp/pr48/fresh/core/lib/phpunit/classes/advanced_testcase.php:80"
+            }
+          }
+        },
+        "local_kbacorporate-junit": {
+          "counts": {
+            "tests": 150,
+            "assertions": 962,
+            "error": 0,
+            "failure": 0,
+            "skipped": 0
+          },
+          "baseline_counts": {
+            "tests": 150,
+            "assertions": 962,
+            "error": 0,
+            "failure": 0,
+            "skipped": 0
+          },
+          "missing_ids": {},
+          "added_ids": {},
+          "new_failures": [],
+          "resolved": [],
+          "changed_existing_failures": {},
+          "assertion_decreases": {},
+          "remaining_failures": {}
+        },
+        "market_model_service_test-junit": {
+          "counts": {
+            "tests": 1,
+            "assertions": 7,
+            "error": 0,
+            "failure": 0,
+            "skipped": 0
+          },
+          "baseline_counts": {
+            "tests": 1,
+            "assertions": 7,
+            "error": 0,
+            "failure": 0,
+            "skipped": 0
+          },
+          "missing_ids": {},
+          "added_ids": {},
+          "new_failures": [],
+          "resolved": [],
+          "changed_existing_failures": {},
+          "assertion_decreases": {},
+          "remaining_failures": {}
+        },
+        "ordered_index_2026110900_test-junit": {
+          "counts": {
+            "tests": 9,
+            "assertions": 103,
+            "error": 0,
+            "failure": 0,
+            "skipped": 0
+          },
+          "baseline_counts": {
+            "tests": 9,
+            "assertions": 103,
+            "error": 0,
+            "failure": 0,
+            "skipped": 0
+          },
+          "missing_ids": {},
+          "added_ids": {},
+          "new_failures": [],
+          "resolved": [],
+          "changed_existing_failures": {},
+          "assertion_decreases": {},
+          "remaining_failures": {}
+        },
+        "pr48_tenant_isolation_test-junit": {
+          "counts": {
+            "tests": 2,
+            "assertions": 66,
+            "error": 0,
+            "failure": 0,
+            "skipped": 0
+          },
+          "baseline_counts": {
+            "tests": 2,
+            "assertions": 66,
+            "error": 0,
+            "failure": 0,
+            "skipped": 0
+          },
+          "missing_ids": {},
+          "added_ids": {},
+          "new_failures": [],
+          "resolved": [],
+          "changed_existing_failures": {},
+          "assertion_decreases": {},
+          "remaining_failures": {}
+        },
+        "privacy_provider_test-junit": {
+          "counts": {
+            "tests": 6,
+            "assertions": 37,
+            "error": 0,
+            "failure": 0,
+            "skipped": 0
+          },
+          "baseline_counts": {
+            "tests": 6,
+            "assertions": 37,
+            "error": 0,
+            "failure": 0,
+            "skipped": 0
+          },
+          "missing_ids": {},
+          "added_ids": {},
+          "new_failures": [],
+          "resolved": [],
+          "changed_existing_failures": {},
+          "assertion_decreases": {},
+          "remaining_failures": {}
+        },
+        "rc30_integrated_access_test-junit": {
+          "counts": {
+            "tests": 4,
+            "assertions": 19,
+            "error": 0,
+            "failure": 0,
+            "skipped": 0
+          },
+          "baseline_counts": {
+            "tests": 4,
+            "assertions": 19,
+            "error": 0,
+            "failure": 0,
+            "skipped": 0
+          },
+          "missing_ids": {},
+          "added_ids": {},
+          "new_failures": [],
+          "resolved": [],
+          "changed_existing_failures": {},
+          "assertion_decreases": {},
+          "remaining_failures": {}
+        },
+        "role_intelligence_service_test-junit": {
+          "counts": {
+            "tests": 4,
+            "assertions": 16,
+            "error": 0,
+            "failure": 0,
+            "skipped": 0
+          },
+          "baseline_counts": {
+            "tests": 4,
+            "assertions": 16,
+            "error": 0,
+            "failure": 0,
+            "skipped": 0
+          },
+          "missing_ids": {},
+          "added_ids": {},
+          "new_failures": [],
+          "resolved": [],
+          "changed_existing_failures": {},
+          "assertion_decreases": {},
+          "remaining_failures": {}
+        },
+        "role_readiness_view_test-junit": {
+          "counts": {
+            "tests": 3,
+            "assertions": 9,
+            "error": 0,
+            "failure": 0,
+            "skipped": 0
+          },
+          "baseline_counts": {
+            "tests": 3,
+            "assertions": 9,
+            "error": 0,
+            "failure": 0,
+            "skipped": 0
+          },
+          "missing_ids": {},
+          "added_ids": {},
+          "new_failures": [],
+          "resolved": [],
+          "changed_existing_failures": {},
+          "assertion_decreases": {},
+          "remaining_failures": {}
+        },
+        "schema_parity_2026110890_test-junit": {
+          "counts": {
+            "tests": 29,
+            "assertions": 3721,
+            "error": 0,
+            "failure": 0,
+            "skipped": 0
+          },
+          "baseline_counts": {
+            "tests": 29,
+            "assertions": 3721,
+            "error": 0,
+            "failure": 0,
+            "skipped": 0
+          },
+          "missing_ids": {},
+          "added_ids": {},
+          "new_failures": [],
+          "resolved": [],
+          "changed_existing_failures": {},
+          "assertion_decreases": {},
+          "remaining_failures": {}
+        },
+        "semantic_service_test-junit": {
+          "counts": {
+            "tests": 4,
+            "assertions": 29,
+            "error": 0,
+            "failure": 0,
+            "skipped": 0
+          },
+          "baseline_counts": {
+            "tests": 4,
+            "assertions": 29,
+            "error": 0,
+            "failure": 0,
+            "skipped": 0
+          },
+          "missing_ids": {},
+          "added_ids": {},
+          "new_failures": [],
+          "resolved": [],
+          "changed_existing_failures": {},
+          "assertion_decreases": {},
+          "remaining_failures": {}
+        },
+        "task_batch_actions1842_test-junit": {
+          "counts": {
+            "tests": 4,
+            "assertions": 39,
+            "error": 0,
+            "failure": 0,
+            "skipped": 0
+          },
+          "baseline_counts": {
+            "tests": 4,
+            "assertions": 39,
+            "error": 0,
+            "failure": 0,
+            "skipped": 0
+          },
+          "missing_ids": {},
+          "added_ids": {},
+          "new_failures": [],
+          "resolved": [],
+          "changed_existing_failures": {},
+          "assertion_decreases": {},
+          "remaining_failures": {}
+        },
+        "task_deadlines1843_test-junit": {
+          "counts": {
+            "tests": 3,
+            "assertions": 37,
+            "error": 0,
+            "failure": 0,
+            "skipped": 0
+          },
+          "baseline_counts": {
+            "tests": 3,
+            "assertions": 37,
+            "error": 0,
+            "failure": 0,
+            "skipped": 0
+          },
+          "missing_ids": {},
+          "added_ids": {},
+          "new_failures": [],
+          "resolved": [],
+          "changed_existing_failures": {},
+          "assertion_decreases": {},
+          "remaining_failures": {}
+        },
+        "task_execution_analytics_test-junit": {
+          "counts": {
+            "tests": 7,
+            "assertions": 24,
+            "error": 0,
+            "failure": 0,
+            "skipped": 0
+          }
+        },
+        "task_kanban1846_test-junit": {
+          "counts": {
+            "tests": 5,
+            "assertions": 51,
+            "error": 0,
+            "failure": 0,
+            "skipped": 0
+          },
+          "baseline_counts": {
+            "tests": 5,
+            "assertions": 51,
+            "error": 0,
+            "failure": 0,
+            "skipped": 0
+          },
+          "missing_ids": {},
+          "added_ids": {},
+          "new_failures": [],
+          "resolved": [],
+          "changed_existing_failures": {},
+          "assertion_decreases": {},
+          "remaining_failures": {}
+        },
+        "task_kanban1850_test-junit": {
+          "counts": {
+            "tests": 5,
+            "assertions": 39,
+            "error": 0,
+            "failure": 0,
+            "skipped": 0
+          },
+          "baseline_counts": {
+            "tests": 5,
+            "assertions": 39,
+            "error": 0,
+            "failure": 0,
+            "skipped": 0
+          },
+          "missing_ids": {},
+          "added_ids": {},
+          "new_failures": [],
+          "resolved": [],
+          "changed_existing_failures": {},
+          "assertion_decreases": {},
+          "remaining_failures": {}
+        },
+        "task_manager_access_regression_test-junit": {
+          "counts": {
+            "tests": 6,
+            "assertions": 211,
+            "error": 0,
+            "failure": 0,
+            "skipped": 0
+          }
+        },
+        "task_manager_workspace1853_test-junit": {
+          "counts": {
+            "tests": 4,
+            "assertions": 33,
+            "error": 0,
+            "failure": 0,
+            "skipped": 0
+          }
+        },
+        "task_membership_regression_test-junit": {
+          "counts": {
+            "tests": 8,
+            "assertions": 110,
+            "error": 0,
+            "failure": 0,
+            "skipped": 0
+          },
+          "baseline_counts": {
+            "tests": 8,
+            "assertions": 110,
+            "error": 0,
+            "failure": 0,
+            "skipped": 0
+          },
+          "missing_ids": {},
+          "added_ids": {},
+          "new_failures": [],
+          "resolved": [],
+          "changed_existing_failures": {},
+          "assertion_decreases": {},
+          "remaining_failures": {}
+        },
+        "task_rc30_acceptance1864_test-junit": {
+          "counts": {
+            "tests": 12,
+            "assertions": 118,
+            "error": 0,
+            "failure": 0,
+            "skipped": 0
+          },
+          "baseline_counts": {
+            "tests": 12,
+            "assertions": 118,
+            "error": 0,
+            "failure": 0,
+            "skipped": 0
+          },
+          "missing_ids": {},
+          "added_ids": {},
+          "new_failures": [],
+          "resolved": [],
+          "changed_existing_failures": {},
+          "assertion_decreases": {},
+          "remaining_failures": {}
+        },
+        "task_rc30_cli_response1866_test-junit": {
+          "counts": {
+            "tests": 4,
+            "assertions": 48,
+            "error": 0,
+            "failure": 0,
+            "skipped": 0
+          },
+          "baseline_counts": {
+            "tests": 4,
+            "assertions": 48,
+            "error": 0,
+            "failure": 0,
+            "skipped": 0
+          },
+          "missing_ids": {},
+          "added_ids": {},
+          "new_failures": [],
+          "resolved": [],
+          "changed_existing_failures": {},
+          "assertion_decreases": {},
+          "remaining_failures": {}
+        },
+        "task_rc30_report_comparison1867_test-junit": {
+          "counts": {
+            "tests": 15,
+            "assertions": 32,
+            "error": 0,
+            "failure": 0,
+            "skipped": 0
+          },
+          "baseline_counts": {
+            "tests": 15,
+            "assertions": 32,
+            "error": 0,
+            "failure": 0,
+            "skipped": 0
+          },
+          "missing_ids": {},
+          "added_ids": {},
+          "new_failures": [],
+          "resolved": [],
+          "changed_existing_failures": {},
+          "assertion_decreases": {},
+          "remaining_failures": {}
+        },
+        "task_service_test-junit": {
+          "counts": {
+            "tests": 12,
+            "assertions": 48,
+            "error": 0,
+            "failure": 0,
+            "skipped": 0
+          },
+          "baseline_counts": {
+            "tests": 12,
+            "assertions": 48,
+            "error": 0,
+            "failure": 0,
+            "skipped": 0
+          },
+          "missing_ids": {},
+          "added_ids": {},
+          "new_failures": [],
+          "resolved": [],
+          "changed_existing_failures": {},
+          "assertion_decreases": {},
+          "remaining_failures": {}
+        }
+      },
+      "sha256": {
+        "battle_plan_management_overview_service_test-junit.xml": "c1a013f498cbba19c9d6871ac4b53672a843e3250b6377dbe522eaab38c2bc2a",
+        "battle_plan_service_test-junit.xml": "3c1648a5b81f9c47d0f5ac9f7649fa990f96e66c2e1dfad9a092d6e4dfb0d2e8",
+        "communication_center_service_test-junit.xml": "080f4ded6685b0ffac793a1a9bc4c686d508053b82ddb4904f9e80d2b0c54234",
+        "communication_live_service_test-junit.xml": "61dfe3bc1cd77dd7e8f79431ed6cefdc5c3fc2a8dc7dc984987b32bcd5538857",
+        "communication_service_test-junit.xml": "689a9f9012add6880d5692957a976e354d4f97ca23cd17fde2eec8860e41df72",
+        "company_core_test-junit.xml": "46e04c0f396767cb2b167df1b079ef03721b6f11e980d2234b454ecf24641217",
+        "company_employee_sync_service_test-junit.xml": "f9e8397feda5229cf667030c1d43207adb9a7eaf216a0a8591dc44d1ace308c5",
+        "competency_review_queue_test-junit.xml": "7464eec784f1c1c0a4fca5f9db35eda47d07749e0bfb47d183eaa62064f0f634",
+        "design_service_test-junit.xml": "29780ec96b1991dc1a92372eece7be6e2d5f7948c9df2e634273cfb47cea8c5d",
+        "deviation_service_test-junit.xml": "73ababf36b7a909efbfada577086c03e8403d99fae420506d4f9f1540d7829b9",
+        "document_service_test-junit.xml": "153de0c2c5bef33f98b3ee603eeed0d3ec7174ee661f08239ab95322f1d03c0f",
+        "employee_competency_profile_service_test-junit.xml": "dca33b8d52f839a9222ebee26a9e1f8d54f6958ad4a168cf44cbc75d182fcd08",
+        "employee_development_courses_test-junit.xml": "5ed2b93e90f50a2642a883f056182dd48b76ec45fad4d1783c10e8ab762a4f15",
+        "indicator_registry_service_test-junit.xml": "0d1e49e9b29ab0dbf13b7f5d70a458242fa68df7038fe5c87497a29e49a2f6b6",
+        "kbacorporate_impl_task_provider_test-junit.xml": "bd30fecaaaf64792b0fba33a733f3a591b7d7735d7d4da7353ed162ab85c3e30",
+        "local_kbacompany-junit.xml": "86b56a4af959c785ed875906e8513e0cb4341b19f95a70c3c6e0094eafad6dee",
+        "local_kbacorporate-junit.xml": "8d1e2c23e8a7281fa0de05eb2dc3d5d2fc79bde2254b0f69838af3b3225ab5a5",
+        "market_model_service_test-junit.xml": "f19f5645d357967f02275882851cb3cfe714b8d2ac9231725b6de4a073bb3592",
+        "ordered_index_2026110900_test-junit.xml": "1e8af7744dc401dbe64d86b0bc407ec7187dc76374a1d3427d6c0a224f15ac2b",
+        "pr48_tenant_isolation_test-junit.xml": "678a035f179775ab73327ba0a2290cf9def9923465a3a6a14edbe8bd6e8bf369",
+        "privacy_provider_test-junit.xml": "22dcb26f4882ce0d64e9cf814f6c89ff99a325d85774ccb2eb039ca41db20817",
+        "rc30_integrated_access_test-junit.xml": "429326080e6958c4c02510c12454a57263d76a10d7b1016bc8d4ebce884fccc9",
+        "role_intelligence_service_test-junit.xml": "8ab4e36160fb879e29a9665bf8d991e04011e8e941d83e2dd1cfd5dc3a0c0822",
+        "role_readiness_view_test-junit.xml": "a1be2e2e03dd4e487c45b52c40250971cc12b47ed20bdf5e76fa1dd57554bbb9",
+        "schema_parity_2026110890_test-junit.xml": "a247bffbbfbda12a68a570dd4304d00a87a20a690d43399d5ec54eb290293c83",
+        "semantic_service_test-junit.xml": "9cbc40ee6b03117160f2e97fd8017196eaffe812c5c8f8aeb2e3a4dc84d345a1",
+        "task_batch_actions1842_test-junit.xml": "241daaf223655543028682bff3053b399371e9a2b1c166d6700f61ffbb0ac2fc",
+        "task_deadlines1843_test-junit.xml": "1cb3528690672948407eb958dcab31904d03a1e2dff8132fde62983a1d0d393d",
+        "task_execution_analytics_test-junit.xml": "1341070d7c8f881472ae5e678dcdf7cc9493fdfd66b9ac3bc24a1cc70a263246",
+        "task_kanban1846_test-junit.xml": "06e47ad9d4551a5eeb41e4daf0aaff54626dd2264d82f457692694060da19594",
+        "task_kanban1850_test-junit.xml": "439b074bd7a47a109f6c06decedf1d38d504342d4287d1b7e3258c082c31d0d3",
+        "task_manager_access_regression_test-junit.xml": "3a38db3b32d098abaf9a0662212306037895357539af9b854880b45bb08534a0",
+        "task_manager_workspace1853_test-junit.xml": "ef1aa92661351ff8dc001e3a62af22e545acb0c804d1a74ff36cab6955b49920",
+        "task_membership_regression_test-junit.xml": "92bd219cb4e2e7254efa56a786bcd6efb20aca642d6867d1f13933d34ae279ef",
+        "task_rc30_acceptance1864_test-junit.xml": "401e353c4953d90dd34e44b049b5043146a42a6225179fdb0ac1efbdf4bfca5d",
+        "task_rc30_cli_response1866_test-junit.xml": "4e30a25d50d0f0b26a2eadd9df2eb66beedc385e2e677d7d7d0a28e9dfe529fa",
+        "task_rc30_report_comparison1867_test-junit.xml": "dfa97755ccd60a3ffcf63c4017f704fcaa9c601216be297116aede2de064b41e",
+        "task_service_test-junit.xml": "5d3e7bef4f4fbc1485c47acd963dc6c96b77bc1db602879e23abfba2b2301d00"
+      },
+      "repair_evidence": {
+        "environment.json": {
+          "php": "8.1.34",
+          "database": "8.0.46-37",
+          "vendor": "Percona Server (GPL), Release 37, Revision 39e2b60e",
+          "fixture_sha256": "be4b64f4cb1c0641ec6e0bf218395e387008501370260b242053904824efc160",
+          "github_sha": "d62018779285bd2eae8f14a6da5e6eaaa6c4833d",
+          "scope": "Synthetic metadata-derived repair acceptance; no deployed environment contacted"
+        },
+        "fractions.json": {
+          "local_kbacompany_finbudfact.actualamount": "PASS: signed extrema and smallest fractions in both companies",
+          "local_kbacompany_finbudline.limitamount": "PASS: signed extrema and smallest fractions in both companies",
+          "local_kbacompany_finbudline.planamount": "PASS: signed extrema and smallest fractions in both companies",
+          "local_kbacompany_finline.amount": "PASS: signed extrema and smallest fractions in both companies",
+          "local_kbacompany_statbind.weight": "PASS: signed extrema and smallest fractions in both companies",
+          "local_kbacompany_statnorm.maxval": "PASS: signed extrema and smallest fractions in both companies",
+          "local_kbacompany_statnorm.minval": "PASS: signed extrema and smallest fractions in both companies",
+          "local_kbacompany_statnorm.targetvalue": "PASS: signed extrema and smallest fractions in both companies",
+          "local_kbacompany_statpolicy.affluencegrowth": "PASS: signed extrema and smallest fractions in both companies",
+          "local_kbacompany_statpolicy.dangerdecline": "PASS: signed extrema and smallest fractions in both companies",
+          "local_kbacompany_statpolicy.powerlevel": "PASS: signed extrema and smallest fractions in both companies"
+        },
+        "partial-failure.json": {
+          "status": "PASS",
+          "version_after_failure": "2026110906",
+          "ddl_committed": [
+            "adminitem.starttime",
+            "adminitem.duetime",
+            "finbudfact.actualamount"
+          ],
+          "fault": "test-only manager proxy throws before second DECIMAL DDL; no production hook"
+        },
+        "rejections.json": {
+          "range.local_kbacompany_finbudfact.actualamount.positive": "PASS",
+          "range.local_kbacompany_finbudfact.actualamount.negative": "PASS",
+          "range.local_kbacompany_finbudline.limitamount.positive": "PASS",
+          "range.local_kbacompany_finbudline.limitamount.negative": "PASS",
+          "range.local_kbacompany_finbudline.planamount.positive": "PASS",
+          "range.local_kbacompany_finbudline.planamount.negative": "PASS",
+          "range.local_kbacompany_finline.amount.positive": "PASS",
+          "range.local_kbacompany_finline.amount.negative": "PASS",
+          "range.local_kbacompany_statbind.weight.positive": "PASS",
+          "range.local_kbacompany_statbind.weight.negative": "PASS",
+          "range.local_kbacompany_statnorm.maxval.positive": "PASS",
+          "range.local_kbacompany_statnorm.maxval.negative": "PASS",
+          "range.local_kbacompany_statnorm.minval.positive": "PASS",
+          "range.local_kbacompany_statnorm.minval.negative": "PASS",
+          "range.local_kbacompany_statnorm.targetvalue.positive": "PASS",
+          "range.local_kbacompany_statnorm.targetvalue.negative": "PASS",
+          "range.local_kbacompany_statpolicy.affluencegrowth.positive": "PASS",
+          "range.local_kbacompany_statpolicy.affluencegrowth.negative": "PASS",
+          "range.local_kbacompany_statpolicy.dangerdecline.positive": "PASS",
+          "range.local_kbacompany_statpolicy.dangerdecline.negative": "PASS",
+          "range.local_kbacompany_statpolicy.powerlevel.positive": "PASS",
+          "range.local_kbacompany_statpolicy.powerlevel.negative": "PASS",
+          "definition.wrong-precision": "PASS",
+          "definition.unexpected-scale": "PASS",
+          "definition.wrong-default": "PASS",
+          "definition.wrong-nullability": "PASS",
+          "definition.unsigned": "PASS",
+          "definition.wrong-type": "PASS",
+          "definition.adminitem-duetime": "PASS",
+          "connection.non-strict": "PASS"
+        },
+        "repair.json": {
+          "repair": "PASS",
+          "schema_parity": "PASS",
+          "release_acceptance": "HOLD",
+          "individual_results": {
+            "repaired.local_kbacompany_adminitem.starttime": "PASS: field restored",
+            "repaired.local_kbacompany_adminitem.duetime": "PASS: field restored",
+            "repaired.local_kbacompany_finbudfact.actualamount": "PASS: fresh precision and scale",
+            "repaired.local_kbacompany_finbudline.limitamount": "PASS: fresh precision and scale",
+            "repaired.local_kbacompany_finbudline.planamount": "PASS: fresh precision and scale",
+            "repaired.local_kbacompany_finline.amount": "PASS: fresh precision and scale",
+            "repaired.local_kbacompany_statbind.weight": "PASS: fresh precision and scale",
+            "repaired.local_kbacompany_statnorm.maxval": "PASS: fresh precision and scale",
+            "repaired.local_kbacompany_statnorm.minval": "PASS: fresh precision and scale",
+            "repaired.local_kbacompany_statnorm.targetvalue": "PASS: fresh precision and scale",
+            "repaired.local_kbacompany_statpolicy.affluencegrowth": "PASS: fresh precision and scale",
+            "repaired.local_kbacompany_statpolicy.dangerdecline": "PASS: fresh precision and scale",
+            "repaired.local_kbacompany_statpolicy.powerlevel": "PASS: fresh precision and scale"
+          },
+          "preserved_rows": 110,
+          "positive_controls": {
+            "deviation_field": "PASS",
+            "ordered_index": "PASS"
+          },
+          "not_covered": [
+            "real1878/Corporate2613 stack",
+            "production data",
+            "ACL",
+            "full PHPUnit"
+          ]
+        }
+      },
+      "repair_sha256": {
+        "current-schema.json": "617862045c8ac5c313b2c30a021be253d2b9b9d01f1f2a63bd81d04c858bd726",
+        "environment.json": "8674b8b47ccedd3de78565d7102536b83955e03993627ee574242c66502c1902",
+        "first-repair.json": "2cb02305197ac4cd12bee4383aa54d6f2360fdfb611cbb27be4dd442113fd180",
+        "first-schema.json": "617862045c8ac5c313b2c30a021be253d2b9b9d01f1f2a63bd81d04c858bd726",
+        "fractions.json": "a6ef6725319944d742c5801aec3f8f4abc4a4b6228931f5a76039e77e1c6a792",
+        "fresh-schema.json": "ed3cc322083d9d106d9dbe7e47aef6018e0cc5bb9358421614810e0680fee09c",
+        "legacy-indexes.json": "e7b0093cc0f059dd78c312c543cc0ae79b5af96e270dcd9afd9ddb30a3c3b116",
+        "partial-failure.json": "aba37acbe572cc98ac3845f7928a252b9391ab619dd4eff911a52a1a496d0986",
+        "partial-schema.json": "cc025a785bc483ece6cbb9f11f8d703add20552695450d307ccab100970d6d7e",
+        "rejections.json": "535481f2bb701586440539345ed7b998c9b599efbc17b51e58cf04ba545a18ae",
+        "repair.json": "2cb02305197ac4cd12bee4383aa54d6f2360fdfb611cbb27be4dd442113fd180",
+        "repeat-repair.json": "2cb02305197ac4cd12bee4383aa54d6f2360fdfb611cbb27be4dd442113fd180",
+        "repeat-schema.json": "617862045c8ac5c313b2c30a021be253d2b9b9d01f1f2a63bd81d04c858bd726",
+        "row-ids.json": "b9f20473b77387a747616208830645170ab797479d5e9e9b9ec7c98e91a149e4",
+        "synthetic-rows.json": "c44a1d9ccddc016e4d0d8c1fef20ad4258521abcc03261988ac4c3488611e569"
+      },
+      "report_sha256": "2eee665456332c0efe3ba0eb1bad01cba671cefba3f7043bdcab8ec0062228e1",
+      "baseline_reproduction_xml_sha256": "79d2cd24321623a09f8c5777e5dd4105e4ec6d46c331e042221ff9bcc15960c6"
+    }
+  },
+  "artifact_provenance": {
+    "42794988462": [
+      {
+        "id": 13751869344,
+        "node_id": "MDg6QXJ0aWZhY3QxMzc1MTg2OTM0NA==",
+        "name": "bms24-candidate-68-build2026111002",
+        "size_in_bytes": 3518672,
+        "url": "https://api.github.com/repos/rimanfatykhov-arch/bms24/actions/artifacts/13751869344",
+        "archive_download_url": "https://api.github.com/repos/rimanfatykhov-arch/bms24/actions/artifacts/13751869344/zip",
+        "expired": false,
+        "digest": "sha256:e2ce5e01d8fad98993907035ff951e551f75f679ce5a9d3a9f269dd322c5f1a3",
+        "created_at": "2026-11-10T09:58:38Z",
+        "updated_at": "2026-11-10T09:58:38Z",
+        "expires_at": "2026-11-24T09:58:36Z",
+        "workflow_run": {
+          "id": 42794988462,
+          "repository_id": 1424268344,
+          "head_repository_id": 1424268344,
+          "head_branch": "fix/rc30-manager-workspace-boundary",
+          "head_sha": "303f47d1ad4acafc0286746ea1700d47b35997c4"
+        }
+      }
+    ],
+    "42794988159": [
+      {
+        "id": 13753279074,
+        "node_id": "MDg6QXJ0aWZhY3QxMzc1MzI3OTA3NA==",
+        "name": "rc30-repair-mariadb-d62018779285bd2eae8f14a6da5e6eaaa6c4833d",
+        "size_in_bytes": 142197,
+        "url": "https://api.github.com/repos/rimanfatykhov-arch/bms24/actions/artifacts/13753279074",
+        "archive_download_url": "https://api.github.com/repos/rimanfatykhov-arch/bms24/actions/artifacts/13753279074/zip",
+        "expired": false,
+        "digest": "sha256:abd10db2f50fcf0a191e20a8eca20f2f51f54ade605137f14c879104fe09921d",
+        "created_at": "2026-11-10T09:59:21Z",
+        "updated_at": "2026-11-10T09:59:21Z",
+        "expires_at": "2026-11-24T09:59:20Z",
+        "workflow_run": {
+          "id": 42794988159,
+          "repository_id": 1424268344,
+          "head_repository_id": 1424268344,
+          "head_branch": "fix/rc30-manager-workspace-boundary",
+          "head_sha": "303f47d1ad4acafc0286746ea1700d47b35997c4"
+        }
+      },
+      {
+        "id": 13751779886,
+        "node_id": "MDg6QXJ0aWZhY3QxMzc1MTc3OTg4Ng==",
+        "name": "rc30-repair-percona-d62018779285bd2eae8f14a6da5e6eaaa6c4833d",
+        "size_in_bytes": 142653,
+        "url": "https://api.github.com/repos/rimanfatykhov-arch/bms24/actions/artifacts/13751779886",
+        "archive_download_url": "https://api.github.com/repos/rimanfatykhov-arch/bms24/actions/artifacts/13751779886/zip",
+        "expired": false,
+        "digest": "sha256:99ec92eefd9a04fbf853443e64d67c4ee91fb9f3729f4ee3f6c4a4b6490680d9",
+        "created_at": "2026-11-10T10:00:53Z",
+        "updated_at": "2026-11-10T10:00:53Z",
+        "expires_at": "2026-11-24T10:00:52Z",
+        "workflow_run": {
+          "id": 42794988159,
+          "repository_id": 1424268344,
+          "head_repository_id": 1424268344,
+          "head_branch": "fix/rc30-manager-workspace-boundary",
+          "head_sha": "303f47d1ad4acafc0286746ea1700d47b35997c4"
+        }
+      }
+    ],
+    "42794988475": [
+      {
+        "id": 13756950203,
+        "node_id": "MDg6QXJ0aWZhY3QxMzc1Njk1MDIwMw==",
+        "name": "pr48-moodle-percona-d62018779285bd2eae8f14a6da5e6eaaa6c4833d",
+        "size_in_bytes": 883147,
+        "url": "https://api.github.com/repos/rimanfatykhov-arch/bms24/actions/artifacts/13756950203",
+        "archive_download_url": "https://api.github.com/repos/rimanfatykhov-arch/bms24/actions/artifacts/13756950203/zip",
+        "expired": false,
+        "digest": "sha256:140538419b61f23aeb350c8219f427e8a8570e1294c4aab960d377260d93a086",
+        "created_at": "2026-11-10T10:38:10Z",
+        "updated_at": "2026-11-10T10:38:10Z",
+        "expires_at": "2026-11-24T10:38:09Z",
+        "workflow_run": {
+          "id": 42794988475,
+          "repository_id": 1424268344,
+          "head_repository_id": 1424268344,
+          "head_branch": "fix/rc30-manager-workspace-boundary",
+          "head_sha": "303f47d1ad4acafc0286746ea1700d47b35997c4"
+        }
+      },
+      {
+        "id": 13754743773,
+        "node_id": "MDg6QXJ0aWZhY3QxMzc1NDc0Mzc3Mw==",
+        "name": "pr48-moodle-mariadb-d62018779285bd2eae8f14a6da5e6eaaa6c4833d",
+        "size_in_bytes": 878448,
+        "url": "https://api.github.com/repos/rimanfatykhov-arch/bms24/actions/artifacts/13754743773",
+        "archive_download_url": "https://api.github.com/repos/rimanfatykhov-arch/bms24/actions/artifacts/13754743773/zip",
+        "expired": false,
+        "digest": "sha256:4d4ceac12ee03b0e2bafb0c94f0f35477241da2fe72f0517920f199e70e717a3",
+        "created_at": "2026-11-10T10:25:07Z",
+        "updated_at": "2026-11-10T10:25:07Z",
+        "expires_at": "2026-11-24T10:25:06Z",
+        "workflow_run": {
+          "id": 42794988475,
+          "repository_id": 1424268344,
+          "head_repository_id": 1424268344,
+          "head_branch": "fix/rc30-manager-workspace-boundary",
+          "head_sha": "303f47d1ad4acafc0286746ea1700d47b35997c4"
+        }
+      }
+    ]
+  },
+  "ci_merge_sha": "d62018779285bd2eae8f14a6da5e6eaaa6c4833d",
+  "artifact_comparison": {
+    "sha256": "7a2073678328bfd08ba0dde9bf6215ad6c6706056019ef482d393619797bc303",
+    "entries": 1794,
+    "added": [
+      "kbacompany/release/RELEASE_NOTES_RC29_build2026111002.md",
+      "kbacompany/tests/task_manager_access_regression_test.php"
+    ],
+    "removed": [],
+    "changed": [
+      "kbacompany/classes/local/task_rc30_acceptance_service.php",
+      "kbacompany/classes/local/task_ui_service.php",
+      "kbacompany/cli/test_schema_parity_2026110890.php",
+      "kbacompany/db/upgrade.php",
+      "kbacompany/tests/ordered_index_2026110900_test.php",
+      "kbacompany/tests/schema_parity_2026110890_test.php",
+      "kbacompany/tests/task_manager_workspace1853_test.php",
+      "kbacompany/version.php"
+    ]
+  }
+}
