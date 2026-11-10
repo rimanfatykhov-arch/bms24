@@ -300,7 +300,7 @@ if ($fresh) {
     foreach (glob($fresh . '/local/kbacompany/tests/communication*_test.php') as $file) {
         $focused[] = basename($file, '.php');
     }
-    foreach (['task_rc30_acceptance1864_test', 'task_rc30_cli_response1866_test',
+    foreach (['battle_plan_management_overview_service_test', 'indicator_registry_service_test', 'market_model_service_test', 'task_rc30_acceptance1864_test', 'task_rc30_cli_response1866_test',
             'task_rc30_report_comparison1867_test', 'competency_review_queue_test',
             'employee_development_courses_test', 'employee_competency_profile_service_test',
             'role_intelligence_service_test', 'role_readiness_view_test', 'company_core_test',
