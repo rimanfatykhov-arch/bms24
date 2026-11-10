@@ -58,7 +58,7 @@ class ReleaseGateTests(unittest.TestCase):
         self.assertEqual('INCOMPLETE', evaluate(self.bundle, self.root)['evidence_status'])
 
     def test_repaired_corporate_requires_exact_zip_and_lineage(self):
-        self.bundle['corporate_version'] = 2026111003
+        self.bundle['corporate_version'] = 2026111004
         self.assertEqual('INCOMPLETE', evaluate(self.bundle, self.root)['evidence_status'])
         manifest = self.root / 'reviewed-manifest.json'
         manifest.write_text(json.dumps({'base_sha': 'b' * 40, 'patch_sha256': 'c' * 64,

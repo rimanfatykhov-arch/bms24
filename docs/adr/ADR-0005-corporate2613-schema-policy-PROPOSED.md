@@ -1,6 +1,37 @@
 # ADR-0005 — Corporate2613 fresh/historical defaults and indexes
 
-Status: PROPOSED, owner decision required; NOT implemented.
+Status: ACCEPTED by owner, 2026-11-10. Filename retained for existing links.
+
+## Accepted decision (supersedes proposal below)
+
+New omitted-field inserts use member.isemployee DEFAULT0 and devplan.status
+DEFAULT'draft'. Existing rows, IDs, values, links and ownership remain unchanged.
+Corporate2026111004 (0.40.13-bms.2) follows code-only1003; BMS stays2026111002.
+Both known column definitions/defaults are validated before ALTER, defaults are
+changed through XMLDB, postconditions precede savepoint. Unknown definitions stop.
+No DML, Core, role/capability or runtime authorization changes are authorized.
+
+Retain both historical index pairs named below. Only these exact extra copies
+may differ from fresh, with names, columns/order, uniqueness, prefixes and type
+checked. The comparator removes them only from a comparison copy, never the DB;
+all remaining schema is compared. No table/test exclusions or general waiver.
+Future index cleanup requires a separate decision and workload/recovery evidence.
+
+Known runtime add_member calls explicitly write employee1/manager0; both plan
+creation paths explicitly write draft. ERP/bridge/license/member callers use
+the service. No index-name optimizer hints found in checked source. Unknown
+external SQL/workload remain unverified. Plan owner/pending-state tests are not
+HTTP capability/session acceptance; revoked-membership self-plan access requires
+clone browser review without silently changing the existing authorization policy.
+
+Both engines must pass fresh, observed1878/2613 upgrade, repeat, Corporate all-table
+row hashes/counts, physical schema policy and full PHPUnit. Historical raw schema
+FAIL is retained as an observation; only exact known output plus pinned source
+and complete metadata model establish the baseline. Candidate schema must PASS.
+Synthetic reconstruction is not backup restore. Production release remains HOLD
+pending actual isolated recovery/browser/rollback and separate owner approval.
+
+## Historical proposal (superseded by accepted decision above)
 
 ## Verified context
 

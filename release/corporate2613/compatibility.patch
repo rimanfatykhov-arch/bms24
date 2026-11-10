@@ -362,15 +362,86 @@
              'sectionname' => !empty($data->sectionname) ? trim($data->sectionname) : null,
              'minlabel' => !empty($data->minlabel) ? trim($data->minlabel) : null,
              'maxlabel' => !empty($data->maxlabel) ? trim($data->maxlabel) : null,
+--- a/local/kbacorporate/db/install.xml
++++ b/local/kbacorporate/db/install.xml
+@@ -35,7 +35,7 @@
+         <FIELD NAME="companyid" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false"/>
+         <FIELD NAME="userid" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false"/>
+         <FIELD NAME="membertype" TYPE="char" LENGTH="20" NOTNULL="true" DEFAULT="employee" SEQUENCE="false"/>
+-        <FIELD NAME="isemployee" TYPE="int" LENGTH="1" NOTNULL="true" DEFAULT="1" SEQUENCE="false"/>
++        <FIELD NAME="isemployee" TYPE="int" LENGTH="1" NOTNULL="true" DEFAULT="0" SEQUENCE="false"/>
+         <FIELD NAME="ismanager" TYPE="int" LENGTH="1" NOTNULL="true" DEFAULT="0" SEQUENCE="false"/>
+         <FIELD NAME="isdepartmentmanager" TYPE="int" LENGTH="1" NOTNULL="true" DEFAULT="0" SEQUENCE="false"/>
+         <FIELD NAME="ishr" TYPE="int" LENGTH="1" NOTNULL="true" DEFAULT="0" SEQUENCE="false"/>
 --- a/local/kbacorporate/db/upgrade.php
 +++ b/local/kbacorporate/db/upgrade.php
-@@ -2753,5 +2753,10 @@
+@@ -3,6 +3,53 @@
+
+ defined('MOODLE_INTERNAL') || die();
+ require_once(__DIR__ . '/../classes/local/economic_indicators.php');
++
++
++/** ADR-0005: defaults for future rows only; never update membership/status data. */
++function local_kbacorporate_adr0005_defaults(): void {
++    global $DB;
++    if ($DB->get_dbfamily() !== 'mysql') {
++        throw new coding_exception('ADR-0005 requires verified MySQL/MariaDB definitions');
++    }
++    $specs = [
++        ['local_kbacorp_member', 'isemployee', 'I', 1, ['0', '1'], '0', XMLDB_TYPE_INTEGER],
++        ['local_kbacorp_devplan', 'status', 'C', 20, ['draft', 'active'], 'draft', XMLDB_TYPE_CHAR],
++    ];
++    // Validate both definitions before the first ALTER. Unknown shape/default is
++    // not authorization for coercion; MySQL DDL is not transactionally reversible.
++    foreach ($specs as [$table, $field, $type, $length, $allowed, $target, $xmltype]) {
++        $column = $DB->get_columns($table, false)[$field] ?? null;
++        $metasize = $type === 'I' ? 2 : $length; // Moodle reports signed TINYINT capacity as2.
++        if (!$column || $column->meta_type !== $type || (int)$column->max_length !== $metasize ||
++                !$column->not_null || $column->auto_increment ||
++                !in_array((string)$column->default_value, $allowed, true)) {
++            throw new coding_exception('ADR-0005 unexpected column definition: ' . $table . '.' . $field);
++        }
++        $native = $DB->get_record_sql('SELECT COLUMN_TYPE AS columntype, EXTRA AS extra
++            FROM information_schema.COLUMNS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME=? AND COLUMN_NAME=?',
++            [$DB->get_prefix() . $table, $field], MUST_EXIST);
++        $validtype = $type === 'I' ? preg_match('/^tinyint(?:\\([0-9]+\\))?$/D', $native->columntype) :
++            $native->columntype === 'varchar(20)';
++        if (!$validtype || $native->extra !== '') {
++            throw new coding_exception('ADR-0005 unexpected native definition: ' . $table . '.' . $field);
++        }
++    }
++    foreach ($specs as [$table, $field, $type, $length, $allowed, $target, $xmltype]) {
++        $column = $DB->get_columns($table, false)[$field];
++        if ((string)$column->default_value !== $target) {
++            $DB->get_manager()->change_field_default(new xmldb_table($table),
++                new xmldb_field($field, $xmltype, (string)$length, null, XMLDB_NOTNULL, null, $target));
++        }
++    }
++    foreach ($specs as [$table, $field, $type, $length, $allowed, $target, $xmltype]) {
++        $column = $DB->get_columns($table, false)[$field];
++        if ((string)$column->default_value !== $target || $column->meta_type !== $type ||
++                !$column->not_null || $column->auto_increment ||
++                (int)$column->max_length !== ($type === 'I' ? 2 : $length)) {
++            throw new coding_exception('ADR-0005 default postcondition failed: ' . $table . '.' . $field);
++        }
++    }
++}
+
+ /**
+  * Upgrade steps for KBA Corporate Dashboard.
+@@ -2753,5 +2800,16 @@
          upgrade_plugin_savepoint(true, 2026102610, 'local', 'kbacorporate');
      }
 
 +    // Code-only2613 compatibility repair; preserve schema, data and permissions.
 +    if ($oldversion < 2026111003) {
 +        upgrade_plugin_savepoint(true, 2026111003, 'local', 'kbacorporate');
++    }
++
++    // Accepted ADR-0005; retain all existing rows and historical indexes.
++    if ($oldversion < 2026111004) {
++        local_kbacorporate_adr0005_defaults();
++        upgrade_plugin_savepoint(true, 2026111004, 'local', 'kbacorporate');
 +    }
 +
      return true;
@@ -388,10 +459,123 @@
              'sortorder' => 0,
 --- a/local/kbacorporate/tests/development_plans_test.php
 +++ b/local/kbacorporate/tests/development_plans_test.php
-@@ -10,6 +10,59 @@
+@@ -10,6 +10,172 @@
  use local_kbacorporate\local\repository;
 
  final class development_plans_test extends \advanced_testcase {
++    public function test_adr0005_defaults_and_explicit_membership_contracts(): void {
++        global $DB;
++        $this->resetAfterTest();
++        $this->setAdminUser();
++        $company = repository::save_company((object)['name'=>'Defaults', 'active'=>1]);
++        $omitted = $this->getDataGenerator()->create_user();
++        $id = $DB->insert_record('local_kbacorp_member', (object)[
++            'companyid'=>$company, 'userid'=>$omitted->id, 'membertype'=>'manager']);
++        $this->assertSame(0, (int)$DB->get_field('local_kbacorp_member', 'isemployee', ['id'=>$id]));
++        foreach (['employee'=>1, 'manager'=>0] as $role=>$expected) {
++            $user = $this->getDataGenerator()->create_user();
++            repository::add_member($company, (int)$user->id, $role);
++            $this->assertSame($expected, (int)$DB->get_field('local_kbacorp_member', 'isemployee',
++                ['companyid'=>$company, 'userid'=>$user->id], MUST_EXIST));
++        }
++        $planid = $DB->insert_record('local_kbacorp_devplan', (object)[
++            'companyid'=>$company, 'userid'=>$omitted->id, 'title'=>'Omitted status']);
++        $this->assertSame('draft', $DB->get_field('local_kbacorp_devplan', 'status', ['id'=>$planid]));
++        foreach (['draft','active'] as $status) {
++            $id = $DB->insert_record('local_kbacorp_devplan', (object)[
++                'companyid'=>$company, 'userid'=>$omitted->id, 'title'=>'Explicit', 'status'=>$status]);
++            $this->assertSame($status, $DB->get_field('local_kbacorp_devplan', 'status', ['id'=>$id]));
++        }
++    }
++
++    public function test_adr0005_defaults_do_not_bypass_plan_owner_or_pending_state(): void {
++        global $DB;
++        $this->resetAfterTest();
++        $this->setAdminUser();
++        $companies = []; $users = []; $plans = [];
++        foreach (['A','B'] as $name) {
++            $companies[] = repository::save_company((object)['name'=>$name,'active'=>1]);
++            $users[] = $this->getDataGenerator()->create_user();
++            $index = count($users)-1;
++            repository::add_member($companies[$index], (int)$users[$index]->id, 'employee');
++            $plans[] = $DB->insert_record('local_kbacorp_devplan', (object)[
++                'companyid'=>$companies[$index], 'userid'=>$users[$index]->id, 'title'=>$name]);
++        }
++        foreach ([$users[0],$users[1]] as $actor) {
++            $this->setUser($actor);
++            try {
++                development_plans::employee_decision($plans[0], (int)$actor->id, true, '');
++                $this->fail('Draft cannot activate without pending agreement');
++            } catch (\moodle_exception $error) {
++                $this->assertSame('developmentplandecisionnotallowed', $error->errorcode);
++            }
++        }
++        $DB->set_field('local_kbacorp_devplan', 'status', 'pending', ['id'=>$plans[0]]);
++        $this->setUser($users[1]);
++        try {
++            development_plans::employee_decision($plans[0], (int)$users[1]->id, true, '');
++            $this->fail('Foreign owner cannot accept a pending plan');
++        } catch (\moodle_exception $error) {
++            $this->assertSame('developmentplandecisionnotallowed', $error->errorcode);
++        }
++        $this->assertSame('pending', $DB->get_field('local_kbacorp_devplan','status',['id'=>$plans[0]]));
++        $this->setUser($users[0]);
++        development_plans::employee_decision($plans[0], (int)$users[0]->id, true, 'Agreed');
++        $this->assertSame('active', $DB->get_field('local_kbacorp_devplan','status',['id'=>$plans[0]]));
++        $this->assertSame('draft', $DB->get_field('local_kbacorp_devplan','status',['id'=>$plans[1]]));
++    }
++
++    public function test_adr0005_migration_preflight_preservation_and_repeat(): void {
++        global $DB, $CFG;
++        $this->resetAfterTest();
++        $this->preventResetByRollback();
++        $this->setAdminUser();
++        require_once($CFG->libdir . '/ddllib.php');
++        require_once($CFG->dirroot . '/local/kbacorporate/db/upgrade.php');
++        $manager = $DB->get_manager();
++        $member = new \xmldb_table('local_kbacorp_member');
++        $plan = new \xmldb_table('local_kbacorp_devplan');
++        $set = static function($table, $name, $type, $size, $default) use ($manager): void {
++            $manager->change_field_default($table,
++                new \xmldb_field($name, $type, $size, null, XMLDB_NOTNULL, null, $default));
++        };
++        $company = repository::save_company((object)['name'=>'Migration', 'active'=>1]);
++        $user = $this->getDataGenerator()->create_user();
++        foreach ([0,1] as $employee) {
++            $other = $this->getDataGenerator()->create_user();
++            $DB->insert_record('local_kbacorp_member', (object)['companyid'=>$company,
++                'userid'=>$other->id, 'membertype'=>'employee', 'isemployee'=>$employee]);
++        }
++        foreach (['draft','active'] as $status) {
++            $DB->insert_record('local_kbacorp_devplan', (object)['companyid'=>$company,
++                'userid'=>$user->id, 'title'=>'Preserved', 'status'=>$status]);
++        }
++        $rows = [$DB->get_records('local_kbacorp_member'), $DB->get_records('local_kbacorp_devplan')];
++        $indexes = [$DB->get_indexes('local_kbacorp_member', false), $DB->get_indexes('local_kbacorp_devplan', false)];
++        try {
++            $set($member, 'isemployee', XMLDB_TYPE_INTEGER, '1', '1');
++            $set($plan, 'status', XMLDB_TYPE_CHAR, '20', 'unknown');
++            try {
++                \local_kbacorporate_adr0005_defaults();
++                $this->fail('Unknown second definition must stop before first ALTER');
++            } catch (\coding_exception $error) {
++                $this->assertStringContainsString('unexpected column definition', $error->getMessage());
++            }
++            $this->assertSame('1', (string)$DB->get_columns('local_kbacorp_member', false)['isemployee']->default_value);
++            $set($plan, 'status', XMLDB_TYPE_CHAR, '20', 'active');
++            for ($repeat=0; $repeat<2; $repeat++) {
++                \local_kbacorporate_adr0005_defaults();
++                $this->assertSame('0', (string)$DB->get_columns('local_kbacorp_member', false)['isemployee']->default_value);
++                $this->assertSame('draft', $DB->get_columns('local_kbacorp_devplan', false)['status']->default_value);
++                $this->assertEquals($rows, [$DB->get_records('local_kbacorp_member'), $DB->get_records('local_kbacorp_devplan')]);
++                $this->assertEquals($indexes, [$DB->get_indexes('local_kbacorp_member', false), $DB->get_indexes('local_kbacorp_devplan', false)]);
++            }
++        } finally {
++            $set($member, 'isemployee', XMLDB_TYPE_INTEGER, '1', '0');
++            $set($plan, 'status', XMLDB_TYPE_CHAR, '20', 'draft');
++        }
++    }
++
 +    public function test_name_projections_preserve_all_configured_fields_for_each_actor(): void {
 +        global $CFG, $DB;
 +        $this->resetAfterTest();
@@ -448,7 +632,7 @@
      public function test_learning_plan_schedule_uses_priority_phases_and_deadlines(): void {
          $critical = development_plans::learning_plan_schedule(business_roles::PRIORITY_CRITICAL);
          $core = development_plans::learning_plan_schedule(business_roles::PRIORITY_CORE);
-@@ -93,6 +146,10 @@
+@@ -93,6 +259,10 @@
              'timecreated' => time(), 'timemodified' => time(),
          ]);
          repository::add_member($companyid, (int)$user->id, 'employee');
@@ -1102,8 +1286,8 @@
 
  $plugin->component = 'local_kbacorporate';
 -$plugin->version   = 2026102613;
-+$plugin->version   = 2026111003;
++$plugin->version   = 2026111004;
  $plugin->requires  = 2022041900; // Moodle 4.0.
  $plugin->maturity  = MATURITY_RC;
 -$plugin->release   = '0.40.13 — integration acceptance and performance diagnostics';
-+$plugin->release   = '0.40.13-bms.1 — selective2613 compatibility candidate';
++$plugin->release   = '0.40.13-bms.2 — ADR-0005 defaults candidate';

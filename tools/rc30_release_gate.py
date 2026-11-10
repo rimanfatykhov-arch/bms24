@@ -62,9 +62,9 @@ def evaluate(bundle, root):
             raise ValueError('artifact digest mismatch')
     except (OSError, KeyError, TypeError, ValueError):
         blockers.append('missing or mismatched actual artifact')
-    if bundle.get('bms_version') != 2026111002 or bundle.get('corporate_version') not in (2026102613, 2026111003):
+    if bundle.get('bms_version') != 2026111002 or bundle.get('corporate_version') not in (2026102613, 2026111004):
         blockers.append('unexpected dependency versions')
-    if bundle.get('corporate_version') == 2026111003:
+    if bundle.get('corporate_version') == 2026111004:
         try:
             verify_repaired_corporate(bundle, root)
         except (OSError, ValueError, KeyError, TypeError, zipfile.BadZipFile):

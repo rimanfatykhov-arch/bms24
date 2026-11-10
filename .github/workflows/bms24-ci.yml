@@ -48,6 +48,7 @@ jobs:
           python tools/test_workflow_policy_1878.py
           python tools/test_rc30_release_gate.py
           python tools/test_corporate2613_builder.py
+          python tools/test_adr0005_schema_policy.py
       - name: Agent policy and packaging tests
         run: |
           python tools/dev_ai_gate.py

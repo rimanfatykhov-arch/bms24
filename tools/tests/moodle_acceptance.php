@@ -38,7 +38,7 @@ if (!$runner || !$testroot || !inside($testroot, $runner) || is_link(required_en
 $mode = $argv[1] ?? '';
 
 // Child processes load only the scratch config created by the parent driver.
-if (in_array($mode, ['seed', 'verify', 'snapshot'], true)) {
+if (in_array($mode, ['seed', 'verify', 'snapshot', 'corporate-seed', 'corporate-verify'], true)) {
     $core = realpath($argv[2] ?? '');
     $output = $argv[3] ?? '';
     if (!$core || !inside($core, $testroot) || !inside($output, $testroot)) {
@@ -48,6 +48,18 @@ if (in_array($mode, ['seed', 'verify', 'snapshot'], true)) {
     require $core . '/config.php';
     if ($CFG->dbhost !== '127.0.0.1' || !preg_match('/^bmsci_[a-f0-9]{10}_[a-z0-9]+$/D', $CFG->dbname)) {
         throw new RuntimeException('Refusing non-disposable database');
+    }
+    if (strpos($mode, 'corporate-') === 0) {
+        require_once(__DIR__ . '/adr0005_data.php');
+        if ($mode === 'corporate-seed') {
+            adr0005_seed();
+            write_json($output, adr0005_data_digest());
+        } else {
+            $expected = json_decode(file_get_contents($output), true, 512, JSON_THROW_ON_ERROR);
+            if ($expected !== adr0005_data_digest()) { throw new RuntimeException('Corporate rows/counts changed'); }
+        }
+        echo "PASS Corporate all-table row counts and content hashes; synthetic two-company data\n";
+        exit(0);
     }
     if ($mode === 'snapshot') {
         $tables = [];
@@ -71,8 +83,13 @@ if (in_array($mode, ['seed', 'verify', 'snapshot'], true)) {
             }
         }
         ksort($tables);
-        write_json($output, ['versions' => ['local_kbacompany' => get_config('local_kbacompany', 'version'),
-            'local_kbacorporate' => get_config('local_kbacorporate', 'version')], 'tables' => $tables]);
+        $snapshot = ['versions' => ['local_kbacompany' => get_config('local_kbacompany', 'version'),
+            'local_kbacorporate' => get_config('local_kbacorporate', 'version')], 'tables' => $tables];
+        if (getenv('CORPORATE_PROFILE') === 'repaired2613') {
+            require_once(__DIR__ . '/adr0005_physical.php');
+            $snapshot['physical'] = adr0005_physical_snapshot();
+        }
+        write_json($output, $snapshot);
         echo 'PASS plugin schema snapshot: ' . count($tables) . " tables\n";
         exit(0);
     }
@@ -279,7 +296,25 @@ foreach ($scenarios as $name => $historical) {
             $step('production-schema-model', [PHP_BINARY, $candidate . '/tools/tests/production1878_schema.php',
                 $core, $candidate, $logs . '/production1878-schema-model.json']);
         }
-        $step('historical-schema', [PHP_BINARY, $core . '/admin/cli/check_database_schema.php']);
+        if ($repaired2613 && $name === 'fromprod1878') {
+            // Preserve the original CLI FAIL as an observation. Only the exact
+            // pinned known historical output is accepted as a baseline, never as
+            // a candidate result. Source and complete metadata model must PASS.
+            $raw = command([PHP_BINARY, $core . '/admin/cli/check_database_schema.php'], $core,
+                $logs . '/' . $name . '-historical-schema.log');
+            $hash = hash_file('sha256', $logs . '/' . $name . '-historical-schema.log');
+            $known = $raw === 1 && $hash === '6c4903f85dc481cf56f747600657e39c48a4e8c175f4a16d0f03f704f25c2d0d'
+                && ($entry['steps']['corporate-source-before']['status'] ?? '') === 'PASS'
+                && ($entry['steps']['production-schema-model']['status'] ?? '') === 'PASS';
+            $entry['observations']['historical-schema'] = ['status'=>$raw === 0 ? 'PASS' : 'FAIL',
+                'exit_code'=>$raw, 'sha256'=>$hash, 'meaning'=>'Known pre-upgrade defects, not candidate acceptance'];
+            $entry['steps']['historical-schema-known-defects'] = ['status'=>$known ? 'PASS' : 'FAIL'];
+        } else {
+            $step('historical-schema', [PHP_BINARY, $core . '/admin/cli/check_database_schema.php']);
+        }
+        if ($repaired2613) {
+            $step('corporate-seed', [PHP_BINARY, $self, 'corporate-seed', $core, $scenario . '/corporate-data.json']);
+        }
         $seeded = $step('seed', [PHP_BINARY, $self, 'seed', $core, $scenario . '/fixtures.json']);
         if ($repaired2613 && $historical) {
             $step('corporate-before-snapshot', [PHP_BINARY, $self, 'snapshot', $core, $scenario . '/before-schema.json']);
@@ -302,19 +337,11 @@ foreach ($scenarios as $name => $historical) {
         if ($seeded) { $step('verify-data', [PHP_BINARY, $self, 'verify', $core, $scenario . '/fixtures.json']); }
         $step('snapshot', [PHP_BINARY, $self, 'snapshot', $core, $scenario . '/schema.json']);
         if ($repaired2613 && $historical && is_file($scenario . '/before-schema.json')) {
-            $before = json_decode(file_get_contents($scenario . '/before-schema.json'), true);
-            $after = json_decode(file_get_contents($scenario . '/schema.json'), true);
-            $corporatetables = static function(array $schema): array {
-                return array_filter($schema['tables'], static function(string $table): bool {
-                    return strpos($table, 'local_kbacorp_') === 0;
-                }, ARRAY_FILTER_USE_KEY);
-            };
-            $preserved = $corporatetables($before) === $corporatetables($after)
-                && $before['versions']['local_kbacorporate'] === '2026102613'
-                && $after['versions']['local_kbacorporate'] === '2026111003';
-            $entry['steps']['corporate-historical-logical-schema-preserved'] = ['status'=>$preserved ? 'PASS' : 'FAIL',
-                'scope'=>'XMLDB-listed tables, column metadata and index structures; excludes index names, FK, triggers and engine/collation'];
+            // Full physical/logical approved-delta comparison runs below against fresh.
             copy($scenario . '/before-schema.json', $logs . '/fromprod1878-before-schema.json');
+        }
+        if ($repaired2613) {
+            $step('corporate-data-preserved', [PHP_BINARY, $self, 'corporate-verify', $core, $scenario . '/corporate-data.json']);
         }
         $step('repeat-upgrade', [PHP_BINARY, $core . '/admin/cli/upgrade.php', '--non-interactive']);
         if ($retained2613) {
@@ -326,6 +353,9 @@ foreach ($scenarios as $name => $historical) {
                 '--verify', $core . '/local/kbacorporate']);
         }
         if ($seeded) { $step('verify-repeat', [PHP_BINARY, $self, 'verify', $core, $scenario . '/fixtures.json']); }
+        if ($repaired2613) {
+            $step('corporate-repeat-data-preserved', [PHP_BINARY, $self, 'corporate-verify', $core, $scenario . '/corporate-data.json']);
+        }
         $step('repeat-snapshot', [PHP_BINARY, $self, 'snapshot', $core, $scenario . '/schema-repeat.json']);
         if (is_file($scenario . '/schema.json') && is_file($scenario . '/schema-repeat.json')) {
             $entry['steps']['repeat-schema-equality'] = ['status' =>
@@ -337,7 +367,7 @@ foreach ($scenarios as $name => $historical) {
         echo $name . ': FAIL (see report/logs)' . "\n";
     }
     $report['scenarios'][$name] = $entry;
-    foreach (['schema.json', 'schema-repeat.json', 'fixtures.json'] as $artifact) {
+    foreach (['schema.json', 'schema-repeat.json', 'fixtures.json', 'corporate-data.json'] as $artifact) {
         if (is_file($scenario . '/' . $artifact)) { copy($scenario . '/' . $artifact, $logs . '/' . $name . '-' . $artifact); }
     }
     write_json($logs . '/report.json', $report);
@@ -346,8 +376,16 @@ foreach ($scenarios as $name => $historical) {
 foreach (array_diff(array_keys($scenarios), ['fresh']) as $name) {
     $a = $testroot . '/fresh/schema.json';
     $b = $testroot . '/' . $name . '/schema.json';
-    $report['schema_comparison'][$name] = !is_file($a) || !is_file($b) ? 'NOT RUN' :
-        (file_get_contents($a) === file_get_contents($b) ? 'PASS' : 'FAIL');
+    if ($repaired2613) {
+        $result = command(['python3', $candidate . '/tools/adr0005_schema_policy.py',
+            '--fresh', $a, '--before', $logs . '/fromprod1878-before-schema.json', '--after', $b,
+            '--model', $logs . '/production1878-schema-model.json', '--output', $logs . '/adr0005-policy.json'],
+            $candidate, $logs . '/adr0005-policy.log');
+        $report['schema_comparison'][$name] = $result === 0 ? 'PASS' : 'FAIL';
+    } else {
+        $report['schema_comparison'][$name] = !is_file($a) || !is_file($b) ? 'NOT RUN' :
+            (file_get_contents($a) === file_get_contents($b) ? 'PASS' : 'FAIL');
+    }
 }
 
 // Independent from historical upgrade results. Initialization uses a fourth database.

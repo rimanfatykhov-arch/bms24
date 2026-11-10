@@ -64,7 +64,7 @@ def build(output):
         subprocess.run(['git', '-c', 'core.autocrlf=false', '-c', 'core.eol=lf',
             'apply', *flags, str(patch)], cwd=output, check=True)
     tree = verify(plugin, manifest['files'])
-    zipname = 'INSTALL_local_kbacorporate_0.40.13-bms.1_build2026111003.zip'
+    zipname = 'INSTALL_local_kbacorporate_0.40.13-bms.2_build2026111004.zip'
     # Stored entries avoid platform/zlib-dependent compressed bytes. Actions may
     # compress the outer evidence download; the reviewed install ZIP stays exact.
     with zipfile.ZipFile(output / zipname, 'w', zipfile.ZIP_STORED) as archive:

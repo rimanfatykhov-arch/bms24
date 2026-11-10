@@ -1,5 +1,19 @@
 # Selective Corporate2613 repair in PR69
 
+## Current ADR-0005 candidate
+
+Version2026111004 /0.40.13-bms.2 supersedes the1003 code-only candidate described
+below. Owner accepted defaults0/draft for future omitted-field inserts. Existing
+data and both historical duplicate index pairs remain intact. Fresh XMLDB and a
+new prevalidated/idempotent XMLDB upgrade checkpoint implement this decision.
+Three additional PHPUnit cases cover defaults, explicit values, owner/pending
+state and migration preflight/preservation/repeat. Full physical index/column
+and all-table Corporate data evidence are required by the repaired profile.
+Only two exact historical extra indexes are permitted by the schema comparator;
+no DB index is dropped. See accepted ADR-0005 for policy and release HOLD gates.
+
+The following1003 description remains history of the cumulative code repair.
+
 This source candidate is based on the exact830-file production-verified Corporate
 commit `687c230595bce020fc001db91b3aac276f0fee7d`. It is NOT the canonical0901
 diagnostic plugin in `local/kbacorporate`, and must never be replaced by that tree.
