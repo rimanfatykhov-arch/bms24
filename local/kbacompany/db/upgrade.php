@@ -6212,5 +6212,12 @@ function xmldb_local_kbacompany_upgrade(int $oldversion): bool {
         upgrade_plugin_savepoint(true, 2026110906, 'local', 'kbacompany');
     }
 
+    // ADR-0004: all-field/all-value preflight, additive admin times and exact DECIMAL precision repair.
+    if ($oldversion < 2026111001) {
+        require_once(__DIR__ . '/upgrade_schema_2026111001.php');
+        local_kbacompany_upgrade_schema_2026111001();
+        upgrade_plugin_savepoint(true, 2026111001, 'local', 'kbacompany');
+    }
+
     return true;
 }

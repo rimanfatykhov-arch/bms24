@@ -1,6 +1,6 @@
 # ADR-0004 — Historical adminitem and DECIMAL schema parity
 
-Status: **Proposed — owner decision required before remediation**. Date: 2026-11-10.
+Status: **Accepted for isolated implementation** by the owner on 2026-11-10: retain fresh precision; validate all values before ALTER and stop on incompatibility. Deployment is not authorized.
 Scope: Issue #44, RC30; follows ADR-0002/0003. RC30 remains **HOLD**.
 
 ## Evidence and limits
@@ -32,15 +32,15 @@ database acquired its state. Rewriting old migrations cannot fix checkpoints alr
 passed. Current 0890/0900 repairs cover task time fields, deviation.executionstatus
 and the ordered task index, not these thirteen differences.
 
-## Proposed decisions
+## Accepted decision and alternatives considered
 
 1. Add absent adminitem time fields in a **new reachable checkpoint greater than
    2026110906**, after approval and dependency/order review. Preserve existing values;
    validate existing definitions first and stop on incompatibility. Use XMLDB CHAR
    length 5, NOT NULL, empty default represented according to the driver convention.
    Do not infer missing historical times or replay old savepoints.
-2. Choose the DECIMAL policy explicitly before implementation:
-   - **Recommended: retain the fresh contract**, preflight all eleven fields and all
+2. Owner selected the first option below; other options are not authorized:
+   - **Accepted: retain the fresh contract**, preflight all eleven fields and all
      existing values before the first DDL, stop without conversion when any value or
      definition is incompatible. Preserve nullability/defaults and exact decimal strings.
    - Expand precision to `(20,2)`, `(24,6)`, `(11,3)` to preserve the former integer
@@ -57,7 +57,7 @@ and the ordered task index, not these thirteen differences.
    schema/data rollback; a verified backup/restore procedure is a later deployment gate.
 5. Corporate 2613 vs 0901 and Corporate default differences remain separate blockers.
    Do not change Corporate authorization, defaults, company UUID/RBAC, Moodle Core,
-   existing migration history, runtime version or release artifact in this proposal.
+   existing migration history. A new runtime version identifies the newly implemented checkpoint.
 
 ## Reproduction contract
 
@@ -83,11 +83,22 @@ are not implemented or claimed by the present reproduction task.
 
 ## Rollback and acceptance
 
-This change adds documentation and isolated test tooling only. Close/revert its PR
-to remove it; no deployed schema or business data requires rollback. Test databases
-and credentials exist only on the ephemeral runner. Do not execute fixture modes on
-an existing Moodle installation. No production/staging changes or PR merge.
+The original PR65 added documentation and reproduction tooling only. The follow-up
+implements new DDL in build2026111001 but is still restricted to source and isolated CI.
+Closing/reverting the unmerged PR removes the source changes. After any future authorized
+migration, reverting code alone is not schema rollback: restore a verified coherent
+code/DB/moodledata/config backup. Never shrink DECIMAL back to scale0 after fractions
+have been written. Partial DDL may already have committed; retry after resolving the
+cause, without manually marking the checkpoint complete.
 
-Owner acceptance of a DECIMAL option is required before remediation; it is not an
-authorization to deploy. Full regression, exact source/artifact identity, Corporate
+Owner acceptance of the fixed-precision option authorizes this isolated implementation,
+not deployment. Full regression, exact source/artifact identity, Corporate
 compatibility, backup/restore and deployment approval remain independent gates.
+
+## Implementation follow-up
+
+Build2026111001 implements the accepted option in a new checkpoint. The reproduction
+section above records the frozen PR65/0906 baseline. New repair tests cover rejection
+before any group DDL, exact parity, fractions and partial-DDL retry. All writers must
+be quiesced during any future authorized migration; strict SQL mode alone cannot
+eliminate concurrent-write races. See release notes for1001 and the PR test report.

@@ -189,7 +189,8 @@ foreach (['fresh' => null, 'from1645' => $main, 'from1879' => $import,
         'frompr560902' => '1ced6b88e5933bb8d63aa1806411ac4d8a6a5443',
         'frompr570903' => '1bfa75bf439e8cf45725c2c3bb69ca01b543fb01',
         'frompr580904' => 'd3a16c3d08b9b10ac7edc32658157aa7f237e9a0',
-        'frompr590905' => '2446347adf26ebb9e1520414a65c89e930dadba2'] as $name => $historical) {
+        'frompr590905' => '2446347adf26ebb9e1520414a65c89e930dadba2',
+        'frompr650906' => '4e5482df3d5bd8fd4cc604c070ed8728e7c0fc17'] as $name => $historical) {
     $scenario = $testroot . '/' . $name;
     $core = $scenario . '/core';
     $entry = ['status' => 'FAIL', 'steps' => [], 'bms_source' => $historical ?? 'candidate working tree',
@@ -282,7 +283,7 @@ foreach (['fresh' => null, 'from1645' => $main, 'from1879' => $import,
 }
 
 foreach (['from1645', 'from1879', 'from0890', 'from0900', 'from0901', 'from0804',
-        'frompr530902', 'frompr560902', 'frompr570903', 'frompr580904', 'frompr590905'] as $name) {
+        'frompr530902', 'frompr560902', 'frompr570903', 'frompr580904', 'frompr590905', 'frompr650906'] as $name) {
     $a = $testroot . '/fresh/schema.json';
     $b = $testroot . '/' . $name . '/schema.json';
     $report['schema_comparison'][$name] = !is_file($a) || !is_file($b) ? 'NOT RUN' :
