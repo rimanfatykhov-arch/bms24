@@ -3,6 +3,9 @@ import copy
 import hashlib
 import tempfile
 import unittest
+import json
+import zipfile
+from unittest.mock import patch
 from pathlib import Path
 from rc30_release_gate import REQUIRED, evaluate
 
@@ -54,6 +57,26 @@ class ReleaseGateTests(unittest.TestCase):
         (self.root / 'candidate.zip').unlink()
         self.assertEqual('INCOMPLETE', evaluate(self.bundle, self.root)['evidence_status'])
 
+    def test_repaired_corporate_requires_exact_zip_and_lineage(self):
+        self.bundle['corporate_version'] = 2026111003
+        self.assertEqual('INCOMPLETE', evaluate(self.bundle, self.root)['evidence_status'])
+        manifest = self.root / 'reviewed-manifest.json'
+        manifest.write_text(json.dumps({'base_sha': 'b' * 40, 'patch_sha256': 'c' * 64,
+            'files': {'acl.php': hashlib.sha256(b'approved ACL').hexdigest()}}))
+        artifact = self.root / 'corporate.zip'
+        with zipfile.ZipFile(artifact, 'w') as archive:
+            archive.writestr('kbacorporate/acl.php', b'approved ACL')
+        self.bundle.update(corporate_artifact_path='corporate.zip',
+            corporate_artifact_sha256=hashlib.sha256(artifact.read_bytes()).hexdigest(),
+            corporate_base_sha='b' * 40, corporate_patch_sha256='c' * 64)
+        with patch('rc30_release_gate.CORPORATE_MANIFEST', manifest):
+            self.assertEqual('EVIDENCE_COMPLETE', evaluate(self.bundle, self.root)['evidence_status'])
+            self.assertEqual('HOLD', evaluate(self.bundle, self.root)['decision'])
+            # Updating the zip digest cannot authorize modified source/permissions.
+            with zipfile.ZipFile(artifact, 'w') as archive:
+                archive.writestr('kbacorporate/acl.php', b'weakened ACL')
+            self.bundle['corporate_artifact_sha256'] = hashlib.sha256(artifact.read_bytes()).hexdigest()
+            self.assertEqual('INCOMPLETE', evaluate(self.bundle, self.root)['evidence_status'])
     def test_unavailable_tampered_or_external_report(self):
         for patch in ({'path': 'missing'}, {'path': '../report.txt'}, {'sha256': '0' * 64}):
             bundle = copy.deepcopy(self.bundle)

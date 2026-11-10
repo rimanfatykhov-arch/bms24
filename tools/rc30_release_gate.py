@@ -3,7 +3,31 @@ import argparse
 import hashlib
 import json
 import re
+import zipfile
 from pathlib import Path
+
+CORPORATE_MANIFEST = Path(__file__).resolve().parents[1] / 'release/corporate2613/manifest.json'
+
+
+def verify_repaired_corporate(bundle, root):
+    """A numeric version cannot substitute0901 or a different2613 feature tree."""
+    relative = bundle['corporate_artifact_path']
+    if not isinstance(relative, str) or Path(relative).is_absolute():
+        raise ValueError('relative Corporate artifact required')
+    artifact = (root / relative).resolve(strict=True)
+    artifact.relative_to(root)
+    if hashlib.sha256(artifact.read_bytes()).hexdigest() != bundle['corporate_artifact_sha256']:
+        raise ValueError('Corporate artifact hash mismatch')
+    manifest = json.loads(CORPORATE_MANIFEST.read_text())
+    if bundle.get('corporate_base_sha') != manifest['base_sha'] or bundle.get('corporate_patch_sha256') != manifest['patch_sha256']:
+        raise ValueError('Corporate lineage mismatch')
+    with zipfile.ZipFile(artifact) as archive:
+        expected = {'kbacorporate/' + p: value for p, value in manifest['files'].items()}
+        if sorted(archive.namelist()) != sorted(expected):
+            raise ValueError('Corporate file inventory mismatch')
+        for name, sha in expected.items():
+            if hashlib.sha256(archive.read(name)).hexdigest() != sha:
+                raise ValueError('Corporate source content mismatch')
 
 REQUIRED = (
     'ci', 'artifact', 'corporate2613_identity', 'production1878_identity',
@@ -35,8 +59,13 @@ def evaluate(bundle, root):
             raise ValueError('artifact digest mismatch')
     except (OSError, KeyError, TypeError, ValueError):
         blockers.append('missing or mismatched actual artifact')
-    if bundle.get('bms_version') != 2026111002 or bundle.get('corporate_version') != 2026102613:
+    if bundle.get('bms_version') != 2026111002 or bundle.get('corporate_version') not in (2026102613, 2026111003):
         blockers.append('unexpected dependency versions')
+    if bundle.get('corporate_version') == 2026111003:
+        try:
+            verify_repaired_corporate(bundle, root)
+        except (OSError, ValueError, KeyError, TypeError, zipfile.BadZipFile):
+            blockers.append('missing or mismatched repaired Corporate artifact/lineage')
     checks = bundle.get('checks', {})
     if not isinstance(checks, dict):
         checks = {}
