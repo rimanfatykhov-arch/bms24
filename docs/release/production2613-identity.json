@@ -1,0 +1,25 @@
+{
+  "captured": "2026-11-10T16:07:12+03:00",
+  "method": "Trusted stored SSH session, stdin PHP, no Moodle bootstrap or DB connection",
+  "read_only": true,
+  "corporate_version": 2026102613,
+  "source_sha": "687c230595bce020fc001db91b3aac276f0fee7d",
+  "archive_sha256": "a78cb62fc629b29a7e5fb991faaa830c81063404dbc97f403ad9967ba4b68226",
+  "checked_files": 830,
+  "missing": [],
+  "extra": [],
+  "changed": [],
+  "status": "PASS",
+  "raw_report_sha256": "7913721688b834ad161b7c32cb9ce29a56aad148c9590c9ee67152e4ee717cb3",
+  "version_sha256": {
+    "local/kbacompany/version.php": "01008b765846248a253bd614751942dafffd332834da751546a7b379514fec02",
+    "local/kbacorporate/version.php": "d2510b7503f2d257f5e5027f665fe523c93b361b0738b861ba315a18e4cfb3c6",
+    "version.php": "d267c899d8e692b5a71ee4f3f88e8afab5b913e21fb1398b2fd05cce68184cf7"
+  },
+  "backup_created": false,
+  "backup_destination_exists": false,
+  "host_volume_free_bytes": 2420055494656,
+  "account_quota": "NOT VERIFIED",
+  "public_alias_exclusion": "NOT VERIFIED",
+  "restore": "NOT RUN"
+}

@@ -1,9 +1,5 @@
 # BMS24 Fast Workflow
 
-RC30 uses one integration candidate, Draft PR69, through development → isolated
-testing → owner-approved publication. Follow [the current release runbook](deploy/RC30_RELEASE69_RUNBOOK.md).
-Every failed/missing recovery or ACL gate keeps HOLD; CI is not publication approval.
-
 1. Start feature:
    `.\scripts\start_feature.ps1 "task-name"`
 

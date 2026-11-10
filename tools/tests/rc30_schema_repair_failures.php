@@ -5,6 +5,9 @@ require_once($core . '/lib/upgradelib.php');
 require_once($core . '/local/kbacompany/db/upgrade.php');
 set_config('version', '2026110906', 'local_kbacompany');
 $negative = [];
+// Load the scratch copy once, as Moodle upgrade.php will do, before the reader
+// reuses the same frozen definitions. Candidate/core are separate filesystem paths.
+require_once $core . '/local/kbacompany/db/upgrade_schema_2026111001.php';
 require_once $candidate . '/tools/rc30_preupgrade_preflight.php';
 $readonlypreflight = static function() use ($DB, $CFG): array {
     return rc30_preupgrade_preflight(static function(string $sql, array $params) use ($DB): array {

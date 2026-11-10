@@ -13,8 +13,10 @@
 - Сохраняемый Corporate: **2026102613**, дерево
   `687c230595bce020fc001db91b3aac276f0fee7d`, manifest
   `../release/corporate2613-manifest.json`. Все830 файлов проверяются до/после
-  upgrade. Это точная копия найденного ZIP, совпадающая с830 stage41 fingerprints;
-  production проверен только по9 доступным hashes, полный tree требует backup.
+  upgrade. Это точная копия найденного ZIP, совпадающая с830 stage41 fingerprints.
+  Read-only SSH 10.11.2026 также подтвердил точное совпадение всех830 файлов
+  Corporate на production: нет missing/extra/changed. См. `../release/production2613-identity.json`.
+  Это доказательство code identity, не успешного restore/поведения/DB compatibility.
 - Corporate0901 в основном checkout/старом workflow — диагностический контроль.
   Его PASS не разрешает публикацию поверх2613. BMS install ZIP не содержит Corporate.
 - Target: Moodle4.1.22, PHP8.1, MariaDB10.11 и Percona8.0; production снимок
