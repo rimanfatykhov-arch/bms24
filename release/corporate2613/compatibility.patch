@@ -384,7 +384,7 @@
 +/** ADR-0005: defaults for future rows only; never update membership/status data. */
 +function local_kbacorporate_adr0005_defaults(): void {
 +    global $DB;
-+    if ($DB->get_dbfamily() !== 'mysql') {
++    if ($DB->get_dbfamily() !== 'mysql' || !preg_match('/^[a-zA-Z0-9_]+$/D', $DB->get_prefix())) {
 +        throw new coding_exception('ADR-0005 requires verified MySQL/MariaDB definitions');
 +    }
 +    $specs = [
@@ -416,7 +416,7 @@
 +            // Moodle4.1 XMLDB change_field_default rejects indexed columns.
 +            // Native default-only DDL preserves the field and every index;
 +            // identifiers/literals come exclusively from the closed specs above.
-+            $DB->change_database_structure(['ALTER TABLE {' . $table . '} ALTER COLUMN ' . $field .
++            $DB->change_database_structure(['ALTER TABLE `' . $DB->get_prefix() . $table . '` ALTER COLUMN `' . $field . '`' .
 +                ' SET DEFAULT ' . ($type === 'I' ? '0' : "'draft'")], [$table]);
 +        }
 +    }
@@ -543,7 +543,7 @@
 +                    !in_array($default, ['0','1','draft','active','unknown'], true)) {
 +                throw new \coding_exception('Unexpected synthetic default');
 +            }
-+            $DB->change_database_structure(['ALTER TABLE {' . $table->getName() . '} ALTER COLUMN ' . $name .
++            $DB->change_database_structure(['ALTER TABLE `' . $DB->get_prefix() . $table->getName() . '` ALTER COLUMN `' . $name . '`' .
 +                " SET DEFAULT '" . $default . "'"], [$table->getName()]);
 +        };
 +        $company = repository::save_company((object)['name'=>'Migration', 'active'=>1]);
