@@ -68,6 +68,8 @@ def build(output):
     with zipfile.ZipFile(output / zipname, 'w', zipfile.ZIP_DEFLATED) as archive:
         for path in sorted(manifest['files']):
             info = zipfile.ZipInfo('kbacorporate/' + path, date_time=(2026, 11, 10, 0, 0, 0))
+            # Keep ZIP metadata identical on Windows authoring and Linux CI.
+            info.create_system = 3
             info.compress_type = zipfile.ZIP_DEFLATED
             info.external_attr = 0o100644 << 16
             archive.writestr(info, (plugin / path).read_bytes())
