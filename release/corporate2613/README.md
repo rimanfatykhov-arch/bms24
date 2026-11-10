@@ -21,6 +21,10 @@ numeric privacy-metadata adapter, valid business-role code and real manager acto
 fixtures. Preserve all existing test IDs and assertions. Three standalone projection
 scripts become genuine PHPUnit cases, with every original assertion executed.
 Bring forward additional ERP isolation and name-projection regressions only.
+The2613 paging fixture also violated the existing unique(itemid,routeid,deletionkey)
+constraint once its by-reference error was fixed. Its22 extra tasks now use distinct
+existing items in the same audit, with matching criterion/section snapshots. All10
+original paging assertions remain, with one added fixture-size check; no index change.
 
 Version2026111003 (`0.40.13-bms.1`) is greater than2613 and diagnostic0901. Its only
 upgrade checkpoint is code-only: no DDL, data rewriting or permission changes.

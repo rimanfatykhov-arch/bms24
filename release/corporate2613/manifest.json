@@ -2,7 +2,7 @@
   "base_sha": "687c230595bce020fc001db91b3aac276f0fee7d",
   "version": 2026111003,
   "release": "0.40.13-bms.1",
-  "patch_sha256": "7fd55f8c825ffdb8f560d83f76c2fbf6d29d88612aa7a210aa8eb785dca6351d",
+  "patch_sha256": "b585bbfdd34dd2c50b36dc39c9964af81c0e3968682403e910c00462f3f86cb7",
   "changed_paths": [
     "classes/local/bridge.php",
     "classes/local/development_plans.php",
@@ -831,7 +831,7 @@
     "tests/implementation_audit_comparison_test.php": "7ff03eb31f8dcf4188da2ef7e62bb8ad396a7f3b144a2d32e7735d5a8322392b",
     "tests/implementation_audits_test.php": "6dfc0b3473919ec6de995207f3a32df7c09985a93af693e7513792046927039e",
     "tests/implementation_board_contract_1824.php": "df9157cb74145d5d208b6789caae46e31a9c9844b65b19d189f1032c2ed3e6c7",
-    "tests/implementation_board_query_test.php": "7cf84d5348775f7904aecd8196d2b05be6ae75dfefe4eed5408753da10776406",
+    "tests/implementation_board_query_test.php": "1fac35d13b1f861371c385c8e2dadda928dcac97af786c6c55d365d4844764c5",
     "tests/implementation_curator_company_scope_test.php": "35b410b6015efc0c6e20870e4638bdbb6acc7447325d2bd424538db189379db1",
     "tests/implementation_curator_paging_test.php": "0aa5a0b285e9b63137efd476c0b9894090e6a047ee8800160cac5a6bd8b818ff",
     "tests/implementation_curator_role_test.php": "95e45f338fa71ea62e46467880fbfbb8a014850ab221f5008486cff3d4fb0d52",

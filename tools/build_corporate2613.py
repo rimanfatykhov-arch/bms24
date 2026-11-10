@@ -65,12 +65,14 @@ def build(output):
             'apply', *flags, str(patch)], cwd=output, check=True)
     tree = verify(plugin, manifest['files'])
     zipname = 'INSTALL_local_kbacorporate_0.40.13-bms.1_build2026111003.zip'
-    with zipfile.ZipFile(output / zipname, 'w', zipfile.ZIP_DEFLATED) as archive:
+    # Stored entries avoid platform/zlib-dependent compressed bytes. Actions may
+    # compress the outer evidence download; the reviewed install ZIP stays exact.
+    with zipfile.ZipFile(output / zipname, 'w', zipfile.ZIP_STORED) as archive:
         for path in sorted(manifest['files']):
             info = zipfile.ZipInfo('kbacorporate/' + path, date_time=(2026, 11, 10, 0, 0, 0))
             # Keep ZIP metadata identical on Windows authoring and Linux CI.
             info.create_system = 3
-            info.compress_type = zipfile.ZIP_DEFLATED
+            info.compress_type = zipfile.ZIP_STORED
             info.external_attr = 0o100644 << 16
             archive.writestr(info, (plugin / path).read_bytes())
     identity = {'base_sha': SOURCE, 'version': manifest['version'], 'patch_sha256': manifest['patch_sha256'],

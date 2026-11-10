@@ -716,7 +716,25 @@
 
 --- a/local/kbacorporate/tests/implementation_board_query_test.php
 +++ b/local/kbacorporate/tests/implementation_board_query_test.php
-@@ -68,7 +68,8 @@
+@@ -17,9 +17,17 @@
+         $this->setAdminUser();
+         [$taskid, $companyid, $auditid] = $this->fixture();
+         $task = $DB->get_record('local_kbacorp_impl_task', ['id' => $taskid], '*', MUST_EXIST);
++        // Active tasks are unique by (itemid, routeid, deletionkey). Each paging
++        // fixture must belong to a distinct real item in this same audit.
++        $items = array_values(array_filter(implementation_audits::get_items($auditid),
++            static fn($item): bool => (int)$item->id !== (int)$task->itemid));
++        $this->assertGreaterThanOrEqual(22, count($items));
+         for ($i = 1; $i <= 22; $i++) {
+             $copy = clone $task;
+             unset($copy->id);
++            $copy->itemid = (int)$items[$i - 1]->id;
++            $copy->criterionname = $items[$i - 1]->criterionname;
++            $copy->sectionname = $items[$i - 1]->sectionname;
+             $copy->title = 'Implementation batch ' . $i;
+             $copy->status = $i > 18 ? 'review' : 'planned';
+             $copy->timecreated += $i;
+@@ -68,7 +76,8 @@
              'title' => 'Board query audit', 'audittype' => 'baseline',
              'auditdate' => time(),
          ], (int)get_admin()->id);

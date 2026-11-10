@@ -6,8 +6,11 @@ Status: PROPOSED, owner decision required; NOT implemented.
 
 Production1878/Corporate2613 metadata has member.isemployee default0 and
 devplan.status defaultactive. Exact2613 install.xml declares1 anddraft respectively.
-There are also two historical extra index structures on course(courseid) and
-member(userid). Both MariaDB10.11 and Percona8.0 reproduce these differences.
+There are also two historical extra physical indexes on course(courseid) and
+member(userid). Each duplicates an existing nonunique index with the same ordered
+columns: `mdl_locakbaccour_cou_ix`/`mdl_locakbaccour_cou2_ix` and
+`mdl_locakbacmemb_use_ix`/`mdl_locakbacmemb_use2_ix`. Compare multiplicity/names,
+not a set that would hide duplicates. Both engines reproduce these differences.
 
 Selective PR69 repair changes code-only; it preserves existing records, defaults,
 indexes, membership rules and plan lifecycle. Strict fresh/upgrade comparison stays
@@ -27,6 +30,15 @@ retain and declare the observed indexes, or prove redundancy and approve removal
 with workload/locking/recovery evidence. Do not silently drop indexes for parity.
 
 ## Required evidence before implementation
+
+Proposed owner choice (NOT accepted): member.isemployee DEFAULT0 and devplan.status
+DEFAULT'draft'; never rewrite existing rows. Exact2613 repository::add_member()
+explicitly writes1 for employee and0 for manager. Its bridge/ERP callers use that
+service. Both development_plans insert paths explicitly write STATUS_DRAFT.
+Thus known service-created values stay unchanged, but omitted-field external/sibling
+callers may behave differently and require inventory. Retain duplicate physical
+indexes pending a separate workload/locking/recovery decision; do not conflate
+their cleanup with the membership/lifecycle decision.
 
 - Trace every insert/default-dependent path and distinguish draft/active plan state.
 - Tests for omitted and explicit0/1 membership, inactive/manual membership, and
