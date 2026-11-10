@@ -15,6 +15,15 @@ Retain both historical index pairs named below. Only these exact extra copies
 may differ from fresh, with names, columns/order, uniqueness, prefixes and type
 checked. The comparator removes them only from a comparison copy, never the DB;
 all remaining schema is compared. No table/test exclusions or general waiver.
+Two results are distinguished: historical Corporate preservation compares full
+physical metadata including index names and ordinal positions before/after;
+fresh compatibility compares all logical definitions and native column/index
+structures (types/null/default/extra/charset/collation, ordered columns, prefix,
+type and multiplicity). XMLDB-generated names and column ordinal positions may
+differ between fresh and a historical upgrade. They are fully listed in the
+report and preserved historically, not normalized by DDL. This is structural
+compatibility, not a claim of complete physical identity. No structural exception
+beyond the two named duplicate indexes is allowed.
 Future index cleanup requires a separate decision and workload/recovery evidence.
 
 Known runtime add_member calls explicitly write employee1/manager0; both plan

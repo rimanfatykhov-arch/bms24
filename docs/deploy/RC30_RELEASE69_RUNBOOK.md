@@ -111,7 +111,8 @@ backup+restore, измеренные сроки/место, полный invento
 
 После отдельного разрешения: остановить новые записи и все writers, дождаться
 jobs/transactions, создать согласованный private backup, повторить read-only
-preflight, установить BMS artifact без замены Corporate2613, выполнить upgrade,
+preflight, установить проверенные BMS1002 и выборочный Corporate1004 artifacts
+из одного протокола (не диагностический0901), выполнить upgrade,
 проверить версии/schema/данные/ACL/health. Вернуть исходные состояния сервисов.
 
 STOP до upgrade: недостаточно места, stale/missing backup, mismatch hashes/

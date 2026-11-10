@@ -1,5 +1,20 @@
 # RC30 — матрица совместимости и рисков
 
+## Текущий кандидат PR69 / ADR-0005, 10.11.2026
+
+Целевая пара BMS2026111002 + Corporate2026111004 (0.40.13-bms.2), исходная
+пара1878/2613. Ниже0906 описывает историческую проверку, не текущий ZIP.
+Corporate1004 строится из точного2613 с сохранением всех830 файлов и выборочным
+патчем;0901 остаётся отдельным диагностическим контролем. Defaults0/draft приняты,
+существующие строки и исторические индексы сохраняются. Schema evidence отдельно
+доказывает historical physical preservation и fresh structural compatibility;
+имена/позиции исторического XMLDB перечисляются, а не перестраиваются ради parity.
+Матрица MariaDB10.11/Percona8.0 привязывается к release SHA в отчёте PR69.
+До её завершения1004 NOT RUN; прежние результаты1003 не заменяют новую приёмку.
+Full production restore, browser/session ACL, sibling/theme compatibility,
+backup storage/quota и rollback rehearsal — NOT RUN/HOLD. План выполнения:
+[recovery/smoke](RC30_RECOVERY_SMOKE.md). Production/staging не изменяются.
+
 2026-11-09. **HOLD.** Это анализ кода/сохранённых evidence, не результат
 текущей установки на edu.kzn.mba. База/артефакт зафиксированы в
 [preflight](RC30_PRODUCTION_PREFLIGHT.md). Source candidate0906 не изменялся.

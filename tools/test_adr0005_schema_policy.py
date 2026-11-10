@@ -42,6 +42,34 @@ def evidence():
 
 
 class SchemaPolicyTest(unittest.TestCase):
+    def test_common_extra_physical_copy_is_not_a_valid_fresh_reference(self):
+        args=evidence()
+        table,stem,_=policy.EXCEPTIONS[0]
+        for side in (0,1,2):
+            indexes=args[side]['physical']['indexes'][table]
+            indexes['mdl_'+stem+'3_ix']=copy.deepcopy(indexes['mdl_'+stem+'_ix'])
+        self.assertEqual('FAIL',policy.evaluate(*args)['status'])
+
+    def test_layout_is_reported_but_historical_positions_must_be_preserved(self):
+        args = evidence()
+        key = 'local_kbacorp_member.isemployee'
+        args[0]['physical']['columns'][key]['position'] = 3
+        for side in (1, 2):
+            args[side]['physical']['columns'][key]['position'] = 7
+        result = policy.evaluate(*args)
+        self.assertEqual('PASS', result['status'])
+        self.assertEqual({'fresh':3,'upgraded':7}, result['historical_layout']['column_positions'][key])
+        args[2]['physical']['columns'][key]['position'] = 8
+        self.assertEqual('FAIL', policy.evaluate(*args)['status'])
+
+    def test_physical_definition_cannot_hide_behind_logical_snapshot(self):
+        for key,value in [('type','char(20)'),('extra','GENERATED'),('collation','other'),('nullable',True)]:
+            with self.subTest(key=key):
+                args=evidence()
+                for side in (1,2):
+                    args[side]['physical']['columns']['local_kbacorp_devplan.status'][key]=value
+                self.assertEqual('FAIL',policy.evaluate(*args)['status'])
+
     def test_exact_two_pairs_pass_without_mutating_input(self):
         args = evidence()
         original = copy.deepcopy(args)

@@ -32,8 +32,12 @@ def evaluate(fresh,before,after,model,origin=ORIGIN):
             indexes=physical['indexes'].get(table,{})
             if indexes.get(base)!=spec or indexes.get(extra)!=spec:
                 errors.append(label+': invalid retained index pair '+table)
+            if list(indexes.values()).count(spec)!=2:
+                errors.append(label+': physical duplicate multiplicity '+table)
         if extra in fp['indexes'].get(table,{}) or fp['indexes'].get(table,{}).get(base)!=spec:
             errors.append('fresh cannot use historical exception '+table)
+        if list(fp['indexes'].get(table,{}).values()).count(spec)!=1:
+            errors.append('fresh physical duplicate multiplicity '+table)
         logical={'unique':False,'columns':[column]}
         fi=f['tables'][table]['indexes'];ai=a['tables'][table]['indexes']
         if fi.count(logical)!=1 or ai.count(logical)!=2:
@@ -54,15 +58,25 @@ def evaluate(fresh,before,after,model,origin=ORIGIN):
     if expected!=corp(ap['columns']): errors.append('unapproved Corporate physical column change')
     # Engine/collation and full table inventory must also agree fresh/upgrade.
     if fp['tables']!=ap['tables']: errors.append('fresh/upgrade physical table mismatch')
-    # Compare every physical index, including name, uniqueness, prefix and type.
-    # Only the two named historical copies are removed from this comparison copy.
+    # Historical physical identity is checked above, including names/positions.
+    # Fresh compatibility is structural: XMLDB can assign different names and
+    # ordinal positions when columns/indexes were added by historical upgrades.
+    # Never rebuild the database merely to match those fresh layout details.
     physicalindexes=copy.deepcopy(ap['indexes'])
     for table,stem,column in EXCEPTIONS:
         physicalindexes.get(table,{}).pop('mdl_'+stem+'2_ix',None)
-    if fp['indexes']!=physicalindexes: errors.append('unapproved fresh/upgrade physical index difference')
-    if fp['columns']!=ap['columns']: errors.append('unapproved fresh/upgrade physical column difference')
+    signatures=lambda indexes:{t:sorted((json.dumps(v,sort_keys=True) for v in names.values())) for t,names in indexes.items()}
+    if signatures(fp['indexes'])!=signatures(physicalindexes): errors.append('unapproved fresh/upgrade physical index definition')
+    structural=lambda columns:{k:{n:v for n,v in spec.items() if n!='position'} for k,spec in columns.items()}
+    if structural(fp['columns'])!=structural(ap['columns']): errors.append('unapproved fresh/upgrade physical column definition')
+    layouts={'column_positions':{k:{'fresh':fp['columns'][k].get('position'),'upgraded':ap['columns'].get(k,{}).get('position')}
+        for k in fp['columns'] if fp['columns'][k].get('position')!=ap['columns'].get(k,{}).get('position')},
+        'index_names':{t:{'fresh':fp['indexes'][t],'upgraded':physicalindexes.get(t)}
+            for t in fp['indexes'] if fp['indexes'][t]!=physicalindexes.get(t)}}
     return {'status':'FAIL' if errors else 'PASS','policy':'Accepted ADR-0005, exact2retained physical duplicates',
-        'origin_sha':origin,'allowed_differences':allowed,'errors':errors,'deployment':'HOLD'}
+        'origin_sha':origin,'allowed_differences':allowed,'historical_layout':layouts,
+        'historical_preservation':'FAIL' if any('Corporate physical' in e for e in errors) else 'PASS',
+        'errors':errors,'deployment':'HOLD'}
 
 if __name__=='__main__':
     parser=argparse.ArgumentParser(description=__doc__)
