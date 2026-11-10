@@ -31,7 +31,7 @@ def check(root=ROOT):
         errors.append('one historical0902 release note was lost')
     upgrade=(root/'local/kbacompany/db/upgrade.php').read_text(encoding='utf-8')
     versions=[int(v) for v in re.findall(r'upgrade_plugin_savepoint\(true,\s*(\d+)',upgrade)]
-    if len(versions)!=481 or versions!=sorted(set(versions)) or versions[-1]!=2026111001:
+    if len(versions)!=482 or versions!=sorted(set(versions)) or versions[-1]!=2026111002:
         errors.append('merged upgrade chronology/identity changed')
     driver=(root/'tools/tests/moodle_acceptance.php').read_text(encoding='utf-8')
     for ref in [plan['pr53_sha'],plan['pr56_sha']]:

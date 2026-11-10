@@ -190,7 +190,8 @@ foreach (['fresh' => null, 'from1645' => $main, 'from1879' => $import,
         'frompr570903' => '1bfa75bf439e8cf45725c2c3bb69ca01b543fb01',
         'frompr580904' => 'd3a16c3d08b9b10ac7edc32658157aa7f237e9a0',
         'frompr590905' => '2446347adf26ebb9e1520414a65c89e930dadba2',
-        'frompr650906' => '4e5482df3d5bd8fd4cc604c070ed8728e7c0fc17'] as $name => $historical) {
+        'frompr650906' => '4e5482df3d5bd8fd4cc604c070ed8728e7c0fc17',
+        'frompr671001' => '34763fd4b8980d36bf6de0a309a7737693e9e3dc'] as $name => $historical) {
     $scenario = $testroot . '/' . $name;
     $core = $scenario . '/core';
     $entry = ['status' => 'FAIL', 'steps' => [], 'bms_source' => $historical ?? 'candidate working tree',
@@ -283,7 +284,7 @@ foreach (['fresh' => null, 'from1645' => $main, 'from1879' => $import,
 }
 
 foreach (['from1645', 'from1879', 'from0890', 'from0900', 'from0901', 'from0804',
-        'frompr530902', 'frompr560902', 'frompr570903', 'frompr580904', 'frompr590905', 'frompr650906'] as $name) {
+        'frompr530902', 'frompr560902', 'frompr570903', 'frompr580904', 'frompr590905', 'frompr650906', 'frompr671001'] as $name) {
     $a = $testroot . '/fresh/schema.json';
     $b = $testroot . '/' . $name . '/schema.json';
     $report['schema_comparison'][$name] = !is_file($a) || !is_file($b) ? 'NOT RUN' :
@@ -294,13 +295,48 @@ foreach (['from1645', 'from1879', 'from0890', 'from0900', 'from0901', 'from0804'
 if ($fresh) {
     $code = command([PHP_BINARY, $fresh . '/admin/tool/phpunit/cli/init.php'], $fresh, $logs . '/phpunit-init.log');
     $report['phpunit']['init'] = $code === 0 ? 'PASS' : 'FAIL';
+    // Reproduce the pinned PR67 renderer failure in disposable Moodle, then restore
+    // candidate bytes before every focused/full test. Expected RED is evidence only.
+    $report['manager_workspace_reproduction'] = ['status'=>'NOT RUN'];
+    if ($code === 0) {
+        $relative = 'local/kbacompany/classes/local/task_ui_service.php';
+        $target = $fresh . '/' . $relative;
+        $original = file_get_contents($target);
+        $baseline = $logs . '/manager-workspace-baseline.php';
+        $baselinejunit = $logs . '/manager-workspace-baseline.xml';
+        $basesha = '34763fd4b8980d36bf6de0a309a7737693e9e3dc';
+        try {
+            must_command(['git', '-C', $candidate, 'show', $basesha . ':' . $relative], $candidate, $baseline);
+            if (file_put_contents($target, file_get_contents($baseline)) === false) {
+                throw new RuntimeException('Cannot install reproduction renderer');
+            }
+            $red = command([PHP_BINARY, $fresh . '/vendor/bin/phpunit', '--configuration', $fresh . '/phpunit.xml',
+                '--filter', '::test_non_manager_never_receives_manager_workspace$',
+                '--log-junit', $baselinejunit,
+                $fresh . '/local/kbacompany/tests/task_manager_workspace1853_test.php'], $fresh,
+                $logs . '/manager-workspace-baseline.log');
+            $xml = is_file($baselinejunit) ? simplexml_load_file($baselinejunit) : false;
+            $cases = $xml ? $xml->xpath('//testcase') : [];
+            $expectedred = $red === 1 && count($cases) === 1 && isset($cases[0]->failure)
+                && !isset($cases[0]->error) && !isset($cases[0]->skipped)
+                && strpos((string)$cases[0]->failure, 'display=manager') !== false;
+            $report['manager_workspace_reproduction'] = ['status'=>$expectedred ? 'PASS' : 'FAIL',
+                'meaning'=>'Pinned baseline must fail the unchanged non-manager assertion',
+                'source_sha'=>$basesha, 'renderer_sha256'=>hash_file('sha256', $baseline), 'exit_code'=>$red];
+        } finally {
+            if (file_put_contents($target, $original) === false || hash_file('sha256', $target) !== hash('sha256', $original)) {
+                throw new RuntimeException('Candidate renderer restoration failed');
+            }
+        }
+    }
     // Run focused files in separate PHP processes before broad legacy discovery.
     $focused = ['schema_parity_2026110890_test', 'ordered_index_2026110900_test', 'pr48_tenant_isolation_test',
         'privacy_provider_test', 'kbacorporate_impl_task_provider_test'];
     foreach (glob($fresh . '/local/kbacompany/tests/communication*_test.php') as $file) {
         $focused[] = basename($file, '.php');
     }
-    foreach (['battle_plan_management_overview_service_test', 'indicator_registry_service_test', 'market_model_service_test', 'task_rc30_acceptance1864_test', 'task_rc30_cli_response1866_test',
+    foreach (['task_manager_workspace1853_test', 'task_manager_access_regression_test', 'task_execution_analytics_test',
+            'battle_plan_management_overview_service_test', 'indicator_registry_service_test', 'market_model_service_test', 'task_rc30_acceptance1864_test', 'task_rc30_cli_response1866_test',
             'task_rc30_report_comparison1867_test', 'competency_review_queue_test',
             'employee_development_courses_test', 'employee_competency_profile_service_test',
             'role_intelligence_service_test', 'role_readiness_view_test', 'company_core_test',
@@ -344,6 +380,7 @@ if ($fresh) {
     $report['phpunit'] = ['init' => 'NOT RUN', 'reason' => 'Fresh Moodle installation failed'];
 }
 $failed = false;
+$failed = ($report['manager_workspace_reproduction']['status'] ?? 'NOT RUN') !== 'PASS';
 foreach ($report['scenarios'] as $scenario) { $failed = $failed || $scenario['status'] !== 'PASS'; }
 foreach ($report['schema_comparison'] as $status) { $failed = $failed || $status !== 'PASS'; }
 foreach ($report['phpunit'] as $status) { $failed = $failed || $status !== 'PASS'; }

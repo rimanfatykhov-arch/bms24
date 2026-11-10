@@ -105,3 +105,20 @@ failures preserve exception types/text except normalized synthetic session keys.
 See [PR67 acceptance](reconcile/PR67_ACCEPTANCE.md), evidence and19-failure triage.
 RC30 HOLD. Next priority: non-manager workspace access/data validation. No PR merge,
 deployment or production/staging access.
+
+## PR68 non-manager workspace —2026-11-10
+
+Draft PR68 starts at exact PR67 head34763fd4b8980d36bf6de0a309a7737693e9e3dc.
+Tested source303f47d1ad4acafc0286746ea1700d47b35997c4, BMS2026111002/Corporate2026110901.
+Confirmed renderer state defect: manager links/forms preceded the late non-manager
+guard. Normalize display/scope before rendering; route/service ACL and Corporate unchanged.
+Code-only1002 savepoint appends without changing historical schema/data migrations.
+Both MariaDB10.11.19 and Percona8.0.46-37: old renderer failure reproduced; targeted UI4/33,
+access6/211,analytics7/24 PASS. Full BMS626/7523,E1/F14/S0: one old failure resolved,
+eight added passing cases, no new failures/missing IDs/decreased assertions;35 prior
+suites retained,38 total. Corporate150/962,14 install/upgrades,13 schema comparisons and
+ADR-0004 repair regression PASS. Independent QA verified both artifacts. No unauthorized
+projection observed in tested native two-tenant/revocation cases; HTTP/browser/deployed
+stack NOT RUN. See [PR68 acceptance](reconcile/PR68_ACCEPTANCE.md) and evidence.
+RC30 HOLD with15 remaining failures. Next bounded priority: Word export/locale tests.
+No production/staging access, deployment or PR merge.

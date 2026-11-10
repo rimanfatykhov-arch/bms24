@@ -57,4 +57,26 @@ final class task_manager_workspace1853_test extends \advanced_testcase {
         $this->assertStringNotContainsString('bms-task1853-metrics', $html);
         $this->assertStringNotContainsString('display=manager', $html);
     }
+
+    public static function shell_modes(): array {
+        return ['owned'=>['owned'], 'legacy'=>['legacy']];
+    }
+
+    /** @dataProvider shell_modes */
+    public function test_denied_manager_state_is_removed_before_links_and_forms(string $mode): void {
+        $this->resetAfterTest();
+        set_config('bms24_shell_mode', $mode, 'local_kbacompany');
+        $filters = $this->filters() + ['display'=>'manager'];
+        $html = ui::listing('test-company', $this->model(false), $filters, 'manager');
+        $this->assertStringNotContainsString('display=manager', $html);
+        $this->assertStringNotContainsString('value="manager"', $html);
+        $this->assertStringNotContainsString('scope=all', $html);
+        $this->assertStringNotContainsString('bms-task1853-workspace', $html);
+        $this->assertStringNotContainsString('bms-task1853-metrics', $html);
+        $this->assertStringNotContainsString('11111111-1111-4111-8111-111111111111', $html);
+        $this->assertStringNotContainsString('22222222-2222-4222-8222-222222222222', $html);
+        $this->assertStringNotContainsString('bad()', $html);
+        $this->assertStringContainsString('display=list', $html);
+        $this->assertStringContainsString('scope=roles', $html);
+    }
 }

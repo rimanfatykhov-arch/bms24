@@ -46,7 +46,7 @@ def check(root=ROOT):
             errors.append('missing inventoried dependency: ' + dep['source_path'])
     version = (root / 'local/kbacompany/version.php').read_text(encoding='utf-8')
     service = (root / 'local/kbacompany/classes/local/task_rc30_acceptance_service.php').read_text(encoding='utf-8')
-    if not re.search(r'\$plugin->version\s*=\s*2026111001;', version) or not re.search(r'EXPECTED_PLUGIN_VERSION\s*=\s*2026111001;', service):
+    if not re.search(r'\$plugin->version\s*=\s*2026111002;', version) or not re.search(r'EXPECTED_PLUGIN_VERSION\s*=\s*2026111002;', service):
         errors.append('candidate/acceptance version drift')
     return errors
 
