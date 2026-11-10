@@ -25,10 +25,26 @@ foreach ($decimals as $item) {
     $results[$table . '.' . $field] = 'PASS: signed extrema and smallest fractions in both companies';
 }
 $data = [];
-foreach (array_unique(array_column($decimals, 'table')) as $table) { $data[$table] = $DB->get_records($table, null, 'id'); }
+foreach (['aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb'] as $tenant) {
+    $row = new stdClass();
+    foreach ($DB->get_columns($admin, false) as $field => $column) {
+        if (!$column->auto_increment && $column->not_null && $column->default_value === null) {
+            $row->$field = in_array($column->meta_type, ['I', 'N', 'F', 'R', 'L'], true) ? 0 : '';
+        }
+    }
+    $row->companyuuid = $tenant;
+    $row->uuid = $tenant;
+    $row->starttime = '09:15'; $row->duetime = '17:20';
+    $id = $DB->insert_record($admin, $row);
+    expect($DB->get_field($admin, 'starttime', ['id' => $id]) === '09:15' &&
+        $DB->get_field($admin, 'duetime', ['id' => $id]) === '17:20', 'admin.nonempty-times-seeded');
+}
+foreach (array_unique(array_merge([$admin], array_column($decimals, 'table'))) as $table) {
+    $data[$table] = $DB->get_records($table, null, 'id');
+}
 local_kbacompany_upgrade_schema_2026111001();
 expect(schema_snapshot() === $before, 'fraction.repeat-helper-no-ddl');
 foreach ($data as $table => $records) {
-    expect($DB->get_records($table, null, 'id') == $records, 'fraction.repeat-helper-data-preserved');
+    expect(serialize($DB->get_records($table, null, 'id')) === serialize($records), 'fraction.repeat-helper-data-preserved');
 }
 json_write($evidence . '/fractions.json', $results);

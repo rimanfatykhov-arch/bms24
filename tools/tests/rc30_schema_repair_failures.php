@@ -23,7 +23,7 @@ $reject = static function(string $id, string $reason) use (&$negative, $evidence
     }
     expect($caught, $id . '.rejected');
     expect(schema_snapshot() === $before, $id . '.no-ddl');
-    expect($allrows() == $data, $id . '.all-data-unchanged');
+    expect(serialize($allrows()) === serialize($data), $id . '.all-data-unchanged');
     expect((string)get_config('local_kbacompany', 'version') === '2026110906', $id . '.no-savepoint');
     $negative[$id] = 'PASS';
     json_write($evidence . '/rejections.json', $negative);
