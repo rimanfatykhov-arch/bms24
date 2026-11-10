@@ -1,7 +1,7 @@
 name: RC30 ADR-0004 schema repair
 on:
   pull_request:
-    branches: [fix/rc30-adminitem-decimal-parity, test/rc30-adminitem-decimal-reproduction]
+    branches: [fix/rc30-domain-contract-tests, fix/rc30-adminitem-decimal-parity, test/rc30-adminitem-decimal-reproduction]
 permissions:
   contents: read
 concurrency:

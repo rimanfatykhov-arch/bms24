@@ -1,7 +1,7 @@
 name: PR48 isolated Moodle acceptance
 on:
   pull_request:
-    branches: [fix/rc30-adminitem-decimal-parity, test/rc30-adminitem-decimal-reproduction, fix/issue44-schema-parity, test/pr48-moodle-acceptance, fix/pr49-schema-p0, fix/pr50-runtime-blockers, fix/issue44-rc30-diagnostics, integration/rc30-pr53-pr56-0903, fix/pr57-document-employee-blockers, fix/rc30-period-task-battleplan, fix/rc30-task-membership-batch-deadlines]
+    branches: [fix/rc30-domain-contract-tests, fix/rc30-adminitem-decimal-parity, test/rc30-adminitem-decimal-reproduction, fix/issue44-schema-parity, test/pr48-moodle-acceptance, fix/pr49-schema-p0, fix/pr50-runtime-blockers, fix/issue44-rc30-diagnostics, integration/rc30-pr53-pr56-0903, fix/pr57-document-employee-blockers, fix/rc30-period-task-battleplan, fix/rc30-task-membership-batch-deadlines]
 permissions:
   contents: read
 concurrency:

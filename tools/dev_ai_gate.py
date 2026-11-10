@@ -116,7 +116,7 @@ def validate_repo(root: Path) -> list[str]:
         "local/kbacompany/db/upgrade.php", "local/kbacompany/db/install.xml",
         "local/kbacompany/lang/ru/local_kbacompany.php",
         "local/kbacompany/lang/en/local_kbacompany.php",
-        "local/kbacompany/release/RELEASE_NOTES_RC29_build2026111001.md",
+        "local/kbacompany/release/RELEASE_NOTES_RC29_build2026111002.md",
     ]
     for name in expected:
         if not (root / name).is_file():
@@ -125,8 +125,8 @@ def validate_repo(root: Path) -> list[str]:
         return problems + ["Moodle plugin source directory missing"]
     versiontext = (plugin / "version.php").read_text(encoding="utf-8")
     match = re.search(r"\$plugin->version\s*=\s*(\d+)\s*;", versiontext)
-    if not match or int(match.group(1)) != 2026111001:
-        problems.append("plugin version must be 2026111001")
+    if not match or int(match.group(1)) != 2026111002:
+        problems.append("plugin version must be 2026111002")
     if "1.1.0-rc29" not in versiontext:
         problems.append("RC30 must not be promoted before live acceptance")
     try:

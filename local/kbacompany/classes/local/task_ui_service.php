@@ -643,6 +643,13 @@ class task_ui_service {
     }
 
     public static function listing(string $company, array $model, array $filters, string $display): string {
+        // Apply the route's non-manager fallback before generating any links or forms.
+        // The model must already come from the company/permission-scoped task service.
+        if ($display === 'manager' && empty($model['can_manage'])) {
+            $display = 'list';
+            $filters['scope'] = task_service::normalise_scope((string)($filters['scope'] ?? 'roles'), false);
+            if (isset($filters['display'])) { $filters['display'] = 'list'; }
+        }
         $actions=self::link(self::url($company,['view'=>'create']),self::tr('taskcenter_create'),true).self::tools($company,$model['can_manage']);
         $html=self::heading(self::tr('taskcenter_title'),self::owned()?'':self::tr('tui_intro'),'', $actions);
         // The role-union is the default; overdue is now a quick status filter, not a competing role.
