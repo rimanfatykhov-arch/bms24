@@ -5,6 +5,13 @@ require_once($core . '/lib/upgradelib.php');
 require_once($core . '/local/kbacompany/db/upgrade.php');
 set_config('version', '2026110906', 'local_kbacompany');
 $negative = [];
+require_once $candidate . '/tools/rc30_preupgrade_preflight.php';
+$readonlypreflight = static function() use ($DB, $CFG): array {
+    return rc30_preupgrade_preflight(static function(string $sql, array $params) use ($DB): array {
+        return array_map(static function($row): array { return (array)$row; }, array_values($DB->get_records_sql($sql, $params)));
+    }, $CFG->prefix);
+};
+expect($readonlypreflight()['status'] === 'PASS', 'readonly-preflight.safe-baseline');
 $allrows = static function() use ($DB, $decimals): array {
     $result = [];
     foreach (array_unique(array_column($decimals, 'table')) as $table) {
@@ -12,9 +19,18 @@ $allrows = static function() use ($DB, $decimals): array {
     }
     return $result;
 };
-$reject = static function(string $id, string $reason) use (&$negative, $evidence, $allrows): void {
+$reject = static function(string $id, string $reason) use (&$negative, $evidence, $allrows, $readonlypreflight): void {
     $before = schema_snapshot();
     $data = $allrows();
+    $readcaught = false;
+    try { $readonlypreflight(); }
+    catch (RuntimeException $error) {
+        expect(strpos($error->getMessage(), $reason) !== false, $id . '.readonly-specific-rejection');
+        $readcaught = true;
+    }
+    expect($readcaught, $id . '.readonly-rejected');
+    expect(schema_snapshot() === $before, $id . '.readonly-no-ddl');
+    expect(serialize($allrows()) === serialize($data), $id . '.readonly-data-unchanged');
     $caught = false;
     try { xmldb_local_kbacompany_upgrade(2026110906); }
     catch (upgrade_exception $error) {

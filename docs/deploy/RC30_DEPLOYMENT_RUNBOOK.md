@@ -1,5 +1,9 @@
 # RC30 — воспроизводимый deployment runbook
 
+**Исторический PR62/build0906.** Для текущего кандидата используйте
+[PR69 release runbook](RC30_RELEASE69_RUNBOOK.md). Не выполнять команды ниже
+с устаревшими SHA/артефактами как текущую процедуру публикации.
+
 2026-11-09. **PLAN ONLY / HOLD. Не выполнять сейчас.**
 Это последовательность будущей отдельно разрешённой операции на `edu.kzn.mba`.
 Ни maintenance, ни cron, ни backup, ни installation/upgrade/purge/restore здесь
