@@ -159,7 +159,7 @@ if (in_array($mode, ['seed', 'verify'], true)) {
         expect(count($rows) === 198, 'seed.exactly-198-boundary-rows');
         $idsets = [];
         foreach (array_unique(array_column($decimals, 'table')) as $table) {
-            $ids = $DB->get_fieldset_select($table, 'id', '1=1', [], 'id');
+            $ids = $DB->get_fieldset_sql('SELECT id FROM {' . $table . '} ORDER BY id');
             $idsets[$table] = array_map('strval', $ids);
         }
         json_write($evidence . '/row-ids.json', $idsets);
@@ -194,7 +194,7 @@ if (in_array($mode, ['seed', 'verify'], true)) {
     $rows = json_decode(file_get_contents($evidence . '/synthetic-rows.json'), true, 512, JSON_THROW_ON_ERROR);
     expect(count($rows) === 198, 'preserved.fixture-row-count');
     foreach (json_decode(file_get_contents($evidence . '/row-ids.json'), true) as $table => $ids) {
-        $actualids = array_map('strval', $DB->get_fieldset_select($table, 'id', '1=1', [], 'id'));
+        $actualids = array_map('strval', $DB->get_fieldset_sql('SELECT id FROM {' . $table . '} ORDER BY id'));
         expect($actualids === $ids, 'preserved.exact-row-id-set.' . $table);
     }
     foreach ($rows as $row) {
