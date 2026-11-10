@@ -312,7 +312,8 @@ foreach ($scenarios as $name => $historical) {
             $preserved = $corporatetables($before) === $corporatetables($after)
                 && $before['versions']['local_kbacorporate'] === '2026102613'
                 && $after['versions']['local_kbacorporate'] === '2026111003';
-            $entry['steps']['corporate-historical-schema-preserved'] = ['status'=>$preserved ? 'PASS' : 'FAIL'];
+            $entry['steps']['corporate-historical-logical-schema-preserved'] = ['status'=>$preserved ? 'PASS' : 'FAIL',
+                'scope'=>'XMLDB-listed tables, column metadata and index structures; excludes index names, FK, triggers and engine/collation'];
             copy($scenario . '/before-schema.json', $logs . '/fromprod1878-before-schema.json');
         }
         $step('repeat-upgrade', [PHP_BINARY, $core . '/admin/cli/upgrade.php', '--non-interactive']);

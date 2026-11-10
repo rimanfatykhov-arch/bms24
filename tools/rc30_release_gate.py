@@ -4,6 +4,7 @@ import hashlib
 import json
 import re
 import zipfile
+import stat
 from pathlib import Path
 
 CORPORATE_MANIFEST = Path(__file__).resolve().parents[1] / 'release/corporate2613/manifest.json'
@@ -26,6 +27,8 @@ def verify_repaired_corporate(bundle, root):
         if sorted(archive.namelist()) != sorted(expected):
             raise ValueError('Corporate file inventory mismatch')
         for name, sha in expected.items():
+            if not stat.S_ISREG(archive.getinfo(name).external_attr >> 16):
+                raise ValueError('Corporate archive entry is not a regular file')
             if hashlib.sha256(archive.read(name)).hexdigest() != sha:
                 raise ValueError('Corporate source content mismatch')
 

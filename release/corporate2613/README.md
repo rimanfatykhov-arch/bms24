@@ -30,7 +30,9 @@ identity and the approved migration origin remain mandatory gates.
 Acceptance profiles stay separate: diagnostic0901, immutable retained2613, and
 repaired2613 (fresh + exact1878/2613 observed-metadata upgrade). The repaired profile
 must load the materialized tree, verify all830 resulting hashes and prove Corporate
-historical schema preservation. Full fresh/upgrade comparison is NOT waived.
+historical logical schema preservation (XMLDB-listed tables/fields/index structures;
+not names/FK/triggers/engine/collation or real production data). Full fresh/upgrade
+comparison is NOT waived.
 
 Unresolved schema decision: production devplan.status default `active` versus fresh
 `draft`, member.isemployee default `0` versus fresh `1`, and two additional historical
