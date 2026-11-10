@@ -80,6 +80,20 @@ class SchemaParityDatabase {
     public function get_manager() { return $this->manager; }
     public function get_columns($table, $cache = true) {
         $columns = $this->columns[$table] ?? [];
+        if ($table === 'local_kbacompany_adminitem' || preg_match('/_(finbudfact|finbudline|finline|statbind|statnorm|statpolicy)$/', $table)) {
+            $xml = simplexml_load_file(__DIR__ . '/../db/install.xml');
+            foreach ($xml->TABLES->TABLE as $definition) {
+                if ((string)$definition['NAME'] !== $table) { continue; }
+                foreach ($definition->FIELDS->FIELD as $field) {
+                    $numeric = (string)$field['TYPE'] === 'number';
+                    $default = isset($field['DEFAULT']) ? (string)$field['DEFAULT'] : null;
+                    $columns[(string)$field['NAME']] = (object)['meta_type' => $numeric ? 'N' : 'C',
+                        'max_length' => (int)$field['LENGTH'], 'scale' => (int)$field['DECIMALS'],
+                        'not_null' => (string)$field['NOTNULL'] === 'true', 'auto_increment' => false,
+                        'default_value' => $default];
+                }
+            }
+        }
         if ($table === 'local_kbacompany_task') {
             foreach (['companyuuid', 'status', 'duedate'] as $name) {
                 $columns[$name] = (object)['meta_type' => 'C'];
@@ -88,6 +102,19 @@ class SchemaParityDatabase {
         return $columns;
     }
     public function get_prefix() { return 'qa_'; }
+    // Later ADR-0004 fields are modelled as already matching install.xml. The real
+    // two-engine repair suite covers their DDL/ranges; retain every original0890 case.
+    public function get_dbfamily() { return 'mysql'; }
+    public function get_field_sql($sql, $params = []) {
+        return strpos($sql, 'sql_mode') !== false ? 'STRICT_TRANS_TABLES' : 'InnoDB';
+    }
+    public function record_exists_sql($sql, $params = []) { return false; }
+    public function get_record_sql($sql, $params = []) {
+        $table = substr($params['tablename'], 3);
+        $column = $this->get_columns($table)[$params['fieldname']];
+        return (object)['coltype' => $column->meta_type === 'N' ?
+            'decimal(' . $column->max_length . ',' . $column->scale . ')' : 'varchar(5)', 'extra' => ''];
+    }
     // Ordered-index semantics are covered by the real SQL test. This field-focused
     // double models the unrelated ordered index as present, like historical tables.
     public function get_indexes($table, $cache = true) {
@@ -139,7 +166,7 @@ foreach ([2026101645, 2026101879, 2026110802, 2026110804, 2026110890] as $oldver
         $before = $DB->rows;
         $savepoints = [];
         parity_check(xmldb_local_kbacompany_upgrade($oldversion), 'actual upgrade returns success');
-        parity_check(end($savepoints) === 2026110906, 'repair checkpoint reached from ' . $oldversion);
+        parity_check(end($savepoints) === 2026111001, 'repair checkpoint reached from ' . $oldversion);
         foreach ($targets as $key => $metadata) {
             [$table, $field] = explode('.', $key);
             parity_check($DB->columns[$table][$field] == $metadata, 'matches fresh XMLDB: ' . $key);
@@ -156,7 +183,7 @@ foreach ([2026101645, 2026101879, 2026110802, 2026110804, 2026110890] as $oldver
         xmldb_local_kbacompany_upgrade($oldversion);
         parity_check($DB->manager->adds === $adds, 'retry adds no duplicate fields');
         $savepoints = [];
-        xmldb_local_kbacompany_upgrade(2026110906);
+        xmldb_local_kbacompany_upgrade(2026111001);
         parity_check(!$savepoints && $DB->manager->adds === $adds, 'installed target is no-op');
     }
 }
@@ -185,7 +212,7 @@ foreach (['failon', 'silenton'] as $failuremode) {
     parity_check(isset($DB->columns['local_kbacompany_task']['starttime']), 'partial DDL model exercised');
     $DB->manager->$failuremode = null;
     xmldb_local_kbacompany_upgrade(2026101879);
-    parity_check(end($savepoints) === 2026110906, 'partial DDL retry reaches checkpoint');
+    parity_check(end($savepoints) === 2026111001, 'partial DDL retry reaches checkpoint');
 }
 $DB = new SchemaParityDatabase($targets, 0);
 $DB->missingtable = 'local_kbacompany_deviation';

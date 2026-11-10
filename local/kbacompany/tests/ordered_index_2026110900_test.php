@@ -121,7 +121,7 @@ final class ordered_index_2026110900_test extends \advanced_testcase {
             $this->assertEmpty($this->matching($before, self::TARGET, false));
             set_config('version', $oldversion, 'local_kbacompany');
             $this->assertTrue(xmldb_local_kbacompany_upgrade($oldversion));
-            $this->assertSame('2026110906', (string)get_config('local_kbacompany', 'version'));
+            $this->assertSame('2026111001', (string)get_config('local_kbacompany', 'version'));
             $after = $DB->get_indexes(self::TABLE, false);
             $this->assertCount(1, $this->matching($after, self::TARGET, false));
             $this->assertCount(count($before) + 1, $after);

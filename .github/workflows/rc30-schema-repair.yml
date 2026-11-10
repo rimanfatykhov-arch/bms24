@@ -1,0 +1,84 @@
+name: RC30 ADR-0004 schema repair
+on:
+  pull_request:
+    branches: [test/rc30-adminitem-decimal-reproduction]
+permissions:
+  contents: read
+concurrency:
+  group: rc30-repair-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  moodle:
+    name: Moodle 4.1.22 / ${{ matrix.engine }}
+    runs-on: ubuntu-22.04
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - engine: MariaDB 10.11.19
+            dbtype: mariadb
+            image: mariadb:10.11.19@sha256:d769e37960821dfdcf096954f6e7ac89f747e116c1bba98e48edd265dfc7deae
+            artifact: mariadb
+          - engine: Percona 8.0.46-37
+            dbtype: mysqli
+            image: percona/percona-server:8.0.46-37@sha256:a4ba7d1afd325f40bc6d65b6455fb4f15388638dfa39e3b85f9755755fd9ec2d
+            artifact: percona
+    services:
+      database:
+        image: ${{ matrix.image }}
+        env:
+          MYSQL_ROOT_PASSWORD: isolated-ci-only
+          MYSQL_ROOT_HOST: '%'
+        ports:
+          - 127.0.0.1:3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -uroot -pisolated-ci-only"
+          --health-interval=10s --health-timeout=5s --health-retries=20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+          path: candidate
+      - uses: actions/checkout@v4
+        with:
+          repository: moodle/moodle
+          ref: b27f0816159a7555a0b3ad9ff2f8f8ef701a29fa
+          persist-credentials: false
+          path: moodle-core
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.1'
+          extensions: mysqli, intl, zip, gd, soap, mbstring, curl, sodium
+          ini-values: max_input_vars=5000, memory_limit=1024M
+          coverage: none
+          tools: composer:2.8
+      - name: Install Moodle test dependencies
+        working-directory: moodle-core
+        run: |
+          cp ../candidate/tools/tests/moodle-4.1-composer.lock composer.lock
+          composer install --no-interaction --prefer-dist --no-progress
+      - name: Provision Moodle PHPUnit locales
+        run: sudo locale-gen en_AU.UTF-8
+      - name: Repair thirteen defects and verify fail-closed preflight
+        env:
+          MOODLE_ROOT: ${{ github.workspace }}/moodle-core
+          CANDIDATE_ROOT: ${{ github.workspace }}/candidate
+          TEST_ROOT: ${{ runner.temp }}/rc30-repair
+          DBTYPE: ${{ matrix.dbtype }}
+          DBHOST: 127.0.0.1
+          DBPORT: '3306'
+          DBUSER: root
+          DBPASS: isolated-ci-only
+        run: |
+          mkdir -p "$TEST_ROOT"
+          php candidate/tools/tests/rc30_schema_repair.php run
+      - name: Upload repair evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: rc30-repair-${{ matrix.artifact }}-${{ github.sha }}
+          path: ${{ runner.temp }}/rc30-repair/evidence/
+          retention-days: 14
+          if-no-files-found: warn
