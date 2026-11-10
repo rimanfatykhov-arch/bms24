@@ -169,11 +169,17 @@ if (in_array($mode, ['seed', 'verify'], true)) {
         core_plugin_manager::reset_caches();
         $installed = core_plugin_manager::instance()->get_installed_plugins('local');
         expect((string)$installed['kbacompany'] === '2026101878', 'fixture.plugin-manager-sees1878');
+        // Moodle's CLI first compares the cached aggregate code-version hash, not DB plugin versions.
+        // Invalidate it only in this synthetic DB, since code files have deliberately not changed.
+        unset_config('allversionshash');
+        unset($CFG->allversionshash);
+        expect(moodle_needs_upgrading(), 'fixture.actual-cli-upgrade-pending');
         echo "PASS synthetic version1878 set only in disposable DB\n";
         exit(0);
     }
     $results = [];
     expect((string)get_config('local_kbacompany', 'version') === '2026110906', 'upgrade.version0906');
+    expect(!moodle_needs_upgrading(), 'upgrade.lifecycle-complete');
     foreach (['starttime', 'duetime'] as $field) {
         $id = 'reproduced.' . $admin . '.' . $field;
         expect(!isset($DB->get_columns($admin, false)[$field]), $id);
