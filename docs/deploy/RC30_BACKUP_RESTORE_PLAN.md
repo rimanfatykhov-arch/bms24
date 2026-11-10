@@ -213,7 +213,11 @@ DocumentRoot/alias всех сайтов и moodledata, владельца, ACL,
    статусы полей. Соединение локальное или через доверенный SSH tunnel,
    транзакция READ ONLY; нужен SELECT-only account. Код Moodle/config.php
    reader не исполняет, migration helper не вызывает. Не использовать shell
-   tracing или пароль в командной строке. Reader в production ещё **NOT RUN**.
+   tracing или пароль в командной строке.
+   Сам PDO CLI wrapper пока NOT RUN на production. Общая SELECT-only функция
+   прошла live preliminary-проверку через совместимый libmysqlclient adapter
+   10.11.2026:13 definitions/11ranges PASS, без остановки writers; это не финальный
+   pre-upgrade gate. Протокол: `../release/production-decimal-preflight.json`.
    Запускать PHP с `-d auto_prepend_file= -d auto_append_file= -d display_errors=0
    -d display_startup_errors=0 -d log_errors=0`, чтобы никакой host prepend не
    выполнился раньше reader. Не применять `-n` без отдельно подключённых PDO drivers.

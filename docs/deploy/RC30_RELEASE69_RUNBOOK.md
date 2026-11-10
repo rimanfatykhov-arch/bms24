@@ -21,6 +21,13 @@
   Его PASS не разрешает публикацию поверх2613. BMS install ZIP не содержит Corporate.
 - Target: Moodle4.1.22, PHP8.1, MariaDB10.11 и Percona8.0; production снимок
   09.11.2026 показывает Percona8.0.46-37. Перед окном inventory обновляется.
+- Предварительный read-only preflight production 10.11.2026:13 definitions и11
+  DECIMAL ranges PASS (`../release/production-decimal-preflight.json`). Writers
+  не останавливались: повтор после quiesce остаётся обязательным NOT RUN.
+  Исходная reader session была non-strict; STRICT_ALL_TABLES установлен только
+  на время этого соединения, без GLOBAL/config изменений. Strict mode будущего
+  upgrade-соединения должен быть проверен отдельно. Серверный libmysqlclient
+  требует bind_param/bind_result; переносить mysqlnd-only способы чтения нельзя.
 - Единственный release SHA, SHA256 ZIP и manifest фиксируются в итоговом протоколе
   после проверок. Изменение executable/test inputs требует нового привязанного
   доказательства; одинаковый build не означает одинаковые bytes.

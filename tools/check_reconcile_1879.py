@@ -9,6 +9,12 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 BASE = '740fce16db15bb3551071cc11fe584c680fd738d'
 REVIEWED_UPDATES = {'.github/workflows/prepare-release.yml', 'docs/00_MASTER_CONTEXT.md'}
+# Issue63 adds publication governance without discarding the retained main docs.
+# Exact reviewed blobs, not a blanket exemption for future edits.
+REVIEWED_DOC_CONTENT = {
+    'docs/DEVELOPMENT_WORKFLOW.md': '555a050f9edb7a513b55d6a5e22063eaf768f94b',
+    'docs/05_RELEASE_QA_STANDARD.md': '47b200efa4aefa2f062874afdc78e3e58848d1f4',
+}
 
 def check(root=ROOT):
     errors, corporate_updates = check_source(root)
@@ -34,10 +40,10 @@ def check(root=ROOT):
     hashes = subprocess.check_output(['git', '-C', str(root), 'hash-object', '--stdin-paths'],
         input=('\n'.join(paths)+'\n').encode()).decode().splitlines()
     for path, actual in zip(paths, hashes):
-        if actual != baseline[path]:
+        if actual != REVIEWED_DOC_CONTENT.get(path, baseline[path]):
             errors.append('protected main content changed: ' + path)
     for row in deleted:
-        expected = 'preserve_with_reviewed_update' if row['path'] in REVIEWED_UPDATES else 'preserve_main'
+        expected = 'preserve_with_reviewed_update' if row['path'] in REVIEWED_UPDATES | REVIEWED_DOC_CONTENT.keys() else 'preserve_main'
         if row['decision'] != expected or row['main_blob'] != baseline.get(row['path']):
             errors.append('invalid preservation decision: ' + row['path'])
     deps = json.loads((root / 'docs/reconcile/plugin-class-dependencies.json').read_text(encoding='utf-8'))

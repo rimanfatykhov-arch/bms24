@@ -1,0 +1,28 @@
+{
+    "status": "PASS",
+    "scope": "13 definitions and 11 DECIMAL ranges; not release approval",
+    "checks": {
+        "local_kbacompany_adminitem.starttime": "PASS: add permitted",
+        "local_kbacompany_adminitem.duetime": "PASS: add permitted",
+        "local_kbacompany_finbudfact.actualamount": "PASS",
+        "local_kbacompany_finbudline.planamount": "PASS",
+        "local_kbacompany_finbudline.limitamount": "PASS",
+        "local_kbacompany_finline.amount": "PASS",
+        "local_kbacompany_statbind.weight": "PASS",
+        "local_kbacompany_statnorm.targetvalue": "PASS",
+        "local_kbacompany_statnorm.minval": "PASS",
+        "local_kbacompany_statnorm.maxval": "PASS",
+        "local_kbacompany_statpolicy.dangerdecline": "PASS",
+        "local_kbacompany_statpolicy.affluencegrowth": "PASS",
+        "local_kbacompany_statpolicy.powerlevel": "PASS"
+    },
+    "writers_quiesced": "NOT VERIFIED",
+    "backup_restore": "NOT RUN",
+    "captured": "2026-11-10T13:22:00+00:00",
+    "read_only": true,
+    "moodle_bootstrap": false,
+    "release_decision": "HOLD",
+    "initial_reader_session_strict": false,
+    "reader_session_strict": true,
+    "future_upgrade_session_strict": "NOT VERIFIED"
+}

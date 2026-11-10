@@ -108,8 +108,8 @@
       "main_blob": "5fbc598beb2ec86c04f67740efbdb15764839c67",
       "category": "repository_governance_and_tooling",
       "exact_content_at_import_paths": [],
-      "decision": "preserve_main",
-      "reason": "Preserve repository component and existing dependency/governance contract"
+      "decision": "preserve_with_reviewed_update",
+      "reason": "Retain main requirements; add owner-requested Issue63 publication acceptance with exact reviewed blob gate"
     },
     {
       "path": "docs/06_INTEGRATION_ARCHITECTURE.md",
@@ -244,8 +244,8 @@
       "main_blob": "4ef39f75ff66277d5bf28a8042455b7df0b4f97f",
       "category": "repository_governance_and_tooling",
       "exact_content_at_import_paths": [],
-      "decision": "preserve_main",
-      "reason": "Preserve repository component and existing dependency/governance contract"
+      "decision": "preserve_with_reviewed_update",
+      "reason": "Retain main workflow; add owner-requested Issue63 release cycle with exact reviewed blob gate"
     },
     {
       "path": "docs/tasks/ARCHITECT_TASK_TEMPLATE.md",
