@@ -5,6 +5,7 @@ defined('MOODLE_INTERNAL') || die();
 
 use local_kbacompany\local\access_role_service as acl;
 use local_kbacompany\local\task_service as tasks;
+use local_kbacompany\local\task_ui_service as ui;
 
 /** Real service boundaries behind manager/list/analytics; no mocked authorization. */
 final class task_manager_access_regression_test extends \advanced_testcase {
@@ -67,6 +68,19 @@ final class task_manager_access_regression_test extends \advanced_testcase {
             sort($expected); sort($actual);
             $this->assertSame($expected, $actual, $key.' must use the same tenant/permission scope');
         }
+        // Exercise the renderer with real permission-scoped model data, not a fake grant.
+        set_config('bms24_shell_mode', 'owned', 'local_kbacompany');
+        $model = $list + ['actor'=>$actor, 'execution_report'=>$report,
+            'scope_counts'=>tasks::scope_counts($company, $actor), 'filter_plans'=>[], 'plan_memberships'=>[]];
+        $renderfilters = $filters + ['q'=>'', 'status'=>'', 'stream'=>'', 'sourcekind'=>'',
+            'battleplan'=>'', 'signal'=>'', 'assignee'=>0, 'project'=>'', 'sort'=>'duedate', 'dir'=>'asc'];
+        $html = ui::listing($company, $model, $renderfilters, 'manager');
+        $this->assertSame($manager, strpos($html, 'bms-task1853-workspace') !== false);
+        $this->assertSame($manager, strpos($html, 'display=manager') !== false);
+        $this->assertStringContainsString('Private task 0', $html);
+        $this->assertSame($manager, strpos($html, 'Private task 1') !== false);
+        $this->assertStringNotContainsString('Private task 2', $html);
+        $this->assertStringNotContainsString($f['ids'][2], $html);
         $this->assertEquals($before, $DB->get_records('local_kbacompany_task', null, 'id ASC'));
         $this->assertEquals($audit, $DB->get_records('local_kbacompany_tasklog', null, 'id ASC'));
     }
