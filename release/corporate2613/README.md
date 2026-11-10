@@ -5,7 +5,9 @@
 Version2026111004 /0.40.13-bms.2 supersedes the1003 code-only candidate described
 below. Owner accepted defaults0/draft for future omitted-field inserts. Existing
 data and both historical duplicate index pairs remain intact. Fresh XMLDB and a
-new prevalidated/idempotent XMLDB upgrade checkpoint implement this decision.
+new prevalidated/idempotent default-only upgrade checkpoint implement this decision.
+Moodle4.1 XMLDB refuses default changes on indexed columns; native ALTER COLUMN
+SET DEFAULT preserves their complete definitions and indexes without dropping them.
 Three additional PHPUnit cases cover defaults, explicit values, owner/pending
 state and migration preflight/preservation/repeat. Full physical index/column
 and all-table Corporate data evidence are required by the repaired profile.

@@ -375,7 +375,7 @@
          <FIELD NAME="ishr" TYPE="int" LENGTH="1" NOTNULL="true" DEFAULT="0" SEQUENCE="false"/>
 --- a/local/kbacorporate/db/upgrade.php
 +++ b/local/kbacorporate/db/upgrade.php
-@@ -3,6 +3,53 @@
+@@ -3,6 +3,56 @@
 
  defined('MOODLE_INTERNAL') || die();
  require_once(__DIR__ . '/../classes/local/economic_indicators.php');
@@ -413,8 +413,11 @@
 +    foreach ($specs as [$table, $field, $type, $length, $allowed, $target, $xmltype]) {
 +        $column = $DB->get_columns($table, false)[$field];
 +        if ((string)$column->default_value !== $target) {
-+            $DB->get_manager()->change_field_default(new xmldb_table($table),
-+                new xmldb_field($field, $xmltype, (string)$length, null, XMLDB_NOTNULL, null, $target));
++            // Moodle4.1 XMLDB change_field_default rejects indexed columns.
++            // Native default-only DDL preserves the field and every index;
++            // identifiers/literals come exclusively from the closed specs above.
++            $DB->execute('ALTER TABLE {' . $table . '} ALTER COLUMN ' . $field .
++                ' SET DEFAULT ' . ($type === 'I' ? '0' : "'draft'"));
 +        }
 +    }
 +    foreach ($specs as [$table, $field, $type, $length, $allowed, $target, $xmltype]) {
@@ -429,7 +432,7 @@
 
  /**
   * Upgrade steps for KBA Corporate Dashboard.
-@@ -2753,5 +2800,16 @@
+@@ -2753,5 +2803,16 @@
          upgrade_plugin_savepoint(true, 2026102610, 'local', 'kbacorporate');
      }
 
@@ -459,7 +462,7 @@
              'sortorder' => 0,
 --- a/local/kbacorporate/tests/development_plans_test.php
 +++ b/local/kbacorporate/tests/development_plans_test.php
-@@ -10,6 +10,172 @@
+@@ -10,6 +10,176 @@
  use local_kbacorporate\local\repository;
 
  final class development_plans_test extends \advanced_testcase {
@@ -535,9 +538,13 @@
 +        $manager = $DB->get_manager();
 +        $member = new \xmldb_table('local_kbacorp_member');
 +        $plan = new \xmldb_table('local_kbacorp_devplan');
-+        $set = static function($table, $name, $type, $size, $default) use ($manager): void {
-+            $manager->change_field_default($table,
-+                new \xmldb_field($name, $type, $size, null, XMLDB_NOTNULL, null, $default));
++        $set = static function($table, $name, $type, $size, $default) use ($DB): void {
++            if (!in_array($name, ['isemployee','status'], true) ||
++                    !in_array($default, ['0','1','draft','active','unknown'], true)) {
++                throw new \coding_exception('Unexpected synthetic default');
++            }
++            $DB->execute('ALTER TABLE {' . $table->getName() . '} ALTER COLUMN ' . $name .
++                " SET DEFAULT '" . $default . "'");
 +        };
 +        $company = repository::save_company((object)['name'=>'Migration', 'active'=>1]);
 +        $user = $this->getDataGenerator()->create_user();
@@ -632,7 +639,7 @@
      public function test_learning_plan_schedule_uses_priority_phases_and_deadlines(): void {
          $critical = development_plans::learning_plan_schedule(business_roles::PRIORITY_CRITICAL);
          $core = development_plans::learning_plan_schedule(business_roles::PRIORITY_CORE);
-@@ -93,6 +259,10 @@
+@@ -93,6 +263,10 @@
              'timecreated' => time(), 'timemodified' => time(),
          ]);
          repository::add_member($companyid, (int)$user->id, 'employee');

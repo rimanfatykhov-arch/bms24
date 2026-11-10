@@ -8,7 +8,11 @@ New omitted-field inserts use member.isemployee DEFAULT0 and devplan.status
 DEFAULT'draft'. Existing rows, IDs, values, links and ownership remain unchanged.
 Corporate2026111004 (0.40.13-bms.2) follows code-only1003; BMS stays2026111002.
 Both known column definitions/defaults are validated before ALTER, defaults are
-changed through XMLDB, postconditions precede savepoint. Unknown definitions stop.
+changed with native default-only ALTER, postconditions precede savepoint. Unknown definitions stop.
+The first isolated run reproduced Moodle4.1 XMLDB change_field_default refusing
+indexed fields (ddl_dependency_exception). Dropping/recreating their indexes is
+not authorized. MySQL/MariaDB ALTER COLUMN SET DEFAULT avoids both the dependency
+and a full column MODIFY; closed literal specs and native preflight bound the DDL.
 No DML, Core, role/capability or runtime authorization changes are authorized.
 
 Retain both historical index pairs named below. Only these exact extra copies
