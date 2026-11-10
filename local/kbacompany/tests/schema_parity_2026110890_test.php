@@ -125,7 +125,7 @@ final class schema_parity_2026110890_test extends \advanced_testcase {
             $before = $this->snapshot();
             set_config('version', $oldversion, 'local_kbacompany');
             $this->assertTrue(xmldb_local_kbacompany_upgrade($oldversion));
-            $this->assertSame('2026111001', (string)get_config('local_kbacompany', 'version'));
+            $this->assertSame('2026111002', (string)get_config('local_kbacompany', 'version'));
             $after = $this->snapshot();
             foreach (self::FIELDS as $index => [$table, $name, $length, $default]) {
                 $column = $after[$table]['columns'][$name];

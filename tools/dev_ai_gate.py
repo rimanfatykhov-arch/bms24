@@ -139,6 +139,8 @@ def validate_repo(root: Path) -> list[str]:
     upgrade = (plugin / "db" / "upgrade.php").read_text(encoding="utf-8")
     if upgrade.count("if ($oldversion < 2026111001)") != 1 or upgrade.count("upgrade_plugin_savepoint(true, 2026111001") != 1:
         problems.append("current upgrade checkpoint missing or duplicated")
+    if upgrade.count("if ($oldversion < 2026111002)") != 1 or upgrade.count("upgrade_plugin_savepoint(true, 2026111002") != 1:
+        problems.append("current version-only checkpoint missing or duplicated")
     # Never allow local runtime state or credentials inside installable code.
     for path in plugin.rglob("*"):
         if path.is_symlink():

@@ -6219,5 +6219,10 @@ function xmldb_local_kbacompany_upgrade(int $oldversion): bool {
         upgrade_plugin_savepoint(true, 2026111001, 'local', 'kbacompany');
     }
 
+    // Non-manager workspace rendering boundary; version identity only, no DDL/data changes.
+    if ($oldversion < 2026111002) {
+        upgrade_plugin_savepoint(true, 2026111002, 'local', 'kbacompany');
+    }
+
     return true;
 }
