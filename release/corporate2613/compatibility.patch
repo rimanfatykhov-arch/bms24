@@ -1,3 +1,32 @@
+--- a/local/kbacorporate/classes/external/erp_api.php
++++ b/local/kbacorporate/classes/external/erp_api.php
+@@ -3,9 +3,23 @@
+
+ defined('MOODLE_INTERNAL') || die();
+
+-use core_external\external_api;
+-use core_external\external_function_parameters;
+-use core_external\external_value;
++use local_kbacorporate\external\compat_external_api as external_api;
++use local_kbacorporate\external\compat_external_function_parameters as external_function_parameters;
++use local_kbacorporate\external\compat_external_value as external_value;
++
++// Moodle 4.1 exposes the External API in the global namespace; later versions
++// provide core_external. Keep this facade compatible without patching Moodle.
++if (class_exists('\\core_external\\external_api')) {
++    foreach (['external_api', 'external_function_parameters', 'external_value'] as $classname) {
++        class_alias('\\core_external\\' . $classname, __NAMESPACE__ . '\\compat_' . $classname);
++    }
++} else {
++    global $CFG;
++    require_once($CFG->libdir . '/externallib.php');
++    foreach (['external_api', 'external_function_parameters', 'external_value'] as $classname) {
++        class_alias('\\' . $classname, __NAMESPACE__ . '\\compat_' . $classname);
++    }
++}
+
+ /** Moodle External Service facade for the stable ERP exchange contract. */
+ class erp_api extends external_api {
 --- a/local/kbacorporate/classes/local/access.php
 +++ b/local/kbacorporate/classes/local/access.php
 @@ -4,6 +4,23 @@
@@ -1177,11 +1206,28 @@
          $competency = $generator->create_competency(['competencyframeworkid' => $framework->get('id')]);
 --- a/local/kbacorporate/tests/erp_exchange_test.php
 +++ b/local/kbacorporate/tests/erp_exchange_test.php
-@@ -9,6 +9,114 @@
+@@ -9,6 +9,131 @@
 
  /** Regression tests for the provider-neutral ERP exchange boundary. */
  final class erp_exchange_test extends \advanced_testcase {
 +    private const AUDIT_SALT = 'erp-regression-test-salt';
++
++    public function test_external_facade_loads_on_supported_moodle_and_keeps_contract(): void {
++        $this->resetAfterTest();
++        $this->setAdminUser();
++        $facade = \local_kbacorporate\external\erp_api::class;
++        $this->assertNotEmpty($facade::pull_company_snapshot_parameters()->keys);
++        $this->assertEquals(erp_exchange::contract(), json_decode($facade::contract(), true));
++        $this->assertDebuggingNotCalled();
++    }
++
++    public function test_external_facade_requires_erp_capability(): void {
++        $this->resetAfterTest();
++        $this->setUser($this->getDataGenerator()->create_user());
++        $this->expectException(\required_capability_exception::class);
++        \local_kbacorporate\external\erp_api::contract();
++    }
++
 +
 +    public function test_provider_isolation_with_same_company_and_employee_external_id(): void {
 +        global $DB;
@@ -1292,7 +1338,7 @@
      public function test_contract_is_versioned_and_declares_data_authorities(): void {
          $contract = erp_exchange::contract();
          $this->assertSame(1, $contract['version']);
-@@ -22,7 +130,7 @@
+@@ -22,7 +147,7 @@
          $this->assertFalse($contract['privacy']['employee_pii_exported']);
          $this->assertContains('unassessed_competency_is_null_not_zero', $contract['semantic_guards']);
          $this->assertSame('erp_created_accounts_only', $contract['push_entities']['employee']['profile_update_policy']);
@@ -1301,7 +1347,7 @@
          $this->assertTrue($contract['hardening']['entity_locking']);
          $this->assertTrue($contract['hardening']['transactional_writes']);
          $this->assertSame('hashed_identifiers_no_payload_or_pii',
-@@ -57,7 +165,9 @@
+@@ -57,7 +182,9 @@
          $this->assertTrue($first['created']);
          $this->assertFalse($second['created']);
          $this->assertSame($first['moodle_company_id'], $second['moodle_company_id']);
@@ -1312,7 +1358,7 @@
              'companyid' => 0, 'system' => 'odoo', 'entitytype' => 'company',
              'externalid' => 'company-42',
          ]));
-@@ -122,9 +232,12 @@
+@@ -122,9 +249,12 @@
              'companyid' => (int)$company['moodle_company_id'], 'userid' => $userid,
          ]));
          $this->assertSame(0, (int)$DB->get_field('user', 'suspended', ['id' => $userid]));
@@ -1327,7 +1373,7 @@
          ]));
 
          $reactivated = erp_exchange::push_entity('erp_test', 'employee', 'employee-created', [
-@@ -498,9 +611,12 @@
+@@ -498,9 +628,12 @@
          $this->assertCount(0, business_roles::get_user_roles(
              (int)$user->id, (int)$company['moodle_company_id']
          ));

@@ -1648,8 +1648,8 @@
     {
       "path": "local/kbacorporate/classes/external/erp_api.php",
       "archive_sha256": "5b2f591ef7449f4ab4465ec3708a665e60404b74adc48274bf2a0714fe8e52c7",
-      "source_sha256": "5b2f591ef7449f4ab4465ec3708a665e60404b74adc48274bf2a0714fe8e52c7",
-      "status": "unchanged"
+      "source_sha256": "47b424ace2eb4dd4b45a7066bd289a386261b9b6104bcc5d965a7b5c61d09144",
+      "status": "modified"
     },
     {
       "path": "local/kbacorporate/classes/forms/bms_mapping_validator_form.php",
@@ -4267,7 +4267,7 @@
     {
       "path": "local/kbacorporate/tests/erp_exchange_test.php",
       "archive_sha256": "b64030ac003a1dac4ebcec8eda455775ba17ba18d31d29ced10abab922938731",
-      "source_sha256": "569057a26f010c5bf3a4c657478da4bc3d7d748f1f1effe5a2fb2cb1ddd639dc",
+      "source_sha256": "2e6833c34401bbb21b10bf998bad968b043b0cb426f4da71f639f7e6c7ee9583",
       "status": "modified"
     },
     {
@@ -5083,6 +5083,12 @@
       "status": "added"
     },
     {
+      "path": "local/kbacorporate/classes/external/erp_api.php",
+      "archive_sha256": "5b2f591ef7449f4ab4465ec3708a665e60404b74adc48274bf2a0714fe8e52c7",
+      "source_sha256": "47b424ace2eb4dd4b45a7066bd289a386261b9b6104bcc5d965a7b5c61d09144",
+      "status": "modified"
+    },
+    {
       "path": "local/kbacorporate/implementation_curator_role_setup.php",
       "archive_sha256": "becc232ee647ae879c3a87be926815abd826f3af92bac862f014869921ccbe84",
       "source_sha256": "becc232ee647ae879c3a87be926815abd826f3af92bac862f014869921ccbe84",
@@ -5286,7 +5292,7 @@
     {
       "path": "local/kbacorporate/tests/erp_exchange_test.php",
       "archive_sha256": "b64030ac003a1dac4ebcec8eda455775ba17ba18d31d29ced10abab922938731",
-      "source_sha256": "569057a26f010c5bf3a4c657478da4bc3d7d748f1f1effe5a2fb2cb1ddd639dc",
+      "source_sha256": "2e6833c34401bbb21b10bf998bad968b043b0cb426f4da71f639f7e6c7ee9583",
       "status": "modified"
     },
     {

@@ -3,9 +3,23 @@ namespace local_kbacorporate\external;
 
 defined('MOODLE_INTERNAL') || die();
 
-use core_external\external_api;
-use core_external\external_function_parameters;
-use core_external\external_value;
+use local_kbacorporate\external\compat_external_api as external_api;
+use local_kbacorporate\external\compat_external_function_parameters as external_function_parameters;
+use local_kbacorporate\external\compat_external_value as external_value;
+
+// Moodle 4.1 exposes the External API in the global namespace; later versions
+// provide core_external. Keep this facade compatible without patching Moodle.
+if (class_exists('\\core_external\\external_api')) {
+    foreach (['external_api', 'external_function_parameters', 'external_value'] as $classname) {
+        class_alias('\\core_external\\' . $classname, __NAMESPACE__ . '\\compat_' . $classname);
+    }
+} else {
+    global $CFG;
+    require_once($CFG->libdir . '/externallib.php');
+    foreach (['external_api', 'external_function_parameters', 'external_value'] as $classname) {
+        class_alias('\\' . $classname, __NAMESPACE__ . '\\compat_' . $classname);
+    }
+}
 
 /** Moodle External Service facade for the stable ERP exchange contract. */
 class erp_api extends external_api {
