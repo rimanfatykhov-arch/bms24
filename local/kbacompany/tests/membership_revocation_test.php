@@ -123,6 +123,50 @@ final class membership_revocation_test extends \advanced_testcase {
         $this->assertTrue($DB->record_exists('local_kbacorp_impl_task',['id'=>$ids[0]]));
     }
 
+    public function test_curator_threads_exclude_revoked_company_before_enrichment_and_counts(): void {
+        global $DB;
+        [$u,$a,$b,$au,$bu,$plan]=$this->fixture(); $ids=[];
+        foreach ([$a,$b] as $company) {
+            $tool=$DB->insert_record('local_kbacorp_bms_tool',(object)[
+                'companyid'=>$company,'code'=>'revoke'.$company,'name'=>'Revocation fixture']);
+            $criterion=$DB->insert_record('local_kbacorp_bms_crit',(object)[
+                'toolid'=>$tool,'code'=>'criterion','name'=>'Test criterion']);
+            $audit=$DB->insert_record('local_kbacorp_impl_audit',(object)[
+                'companyid'=>$company,'toolid'=>$tool,'title'=>'Revocation audit']);
+            $item=$DB->insert_record('local_kbacorp_impl_item',(object)[
+                'auditid'=>$audit,'criterionid'=>$criterion,'criterioncode'=>'criterion','criterionname'=>'Test criterion']);
+            $DB->insert_record('local_kbacorp_impl_program',(object)[
+                'companyid'=>$company,'baselineauditid'=>$audit,'code'=>'revoke'.$company,
+                'title'=>'Retained curator program','curatorid'=>$u->id]);
+            $ids[]=$DB->insert_record('local_kbacorp_impl_task',(object)[
+                'companyid'=>$company,'auditid'=>$audit,'itemid'=>$item,'title'=>'Retained task',
+                'criterionname'=>'Test criterion','ownerid'=>$u->id]);
+        }
+        foreach ([false,true] as $all) {
+            $this->assertCount(2,\local_kbacorporate\local\implementation_task_discussion::get_curator_threads((int)$u->id,'','',$all));
+        }
+        employee_service::close_membership($au,(int)$u->id,(int)get_admin()->id);
+        foreach ([false,true] as $all) {
+            foreach (['','Retained'] as $query) {
+                $tasks=\local_kbacorporate\local\implementation_task_discussion::get_curator_threads((int)$u->id,'',$query,$all);
+                $this->assertSame([$ids[1]],array_map(static function($t) { return (int)$t->id; },$tasks));
+            }
+        }
+        foreach ([false,true] as $all) {
+            $rows=\local_kbacorporate\local\implementation_analytics::get_task_rows((int)$u->id,$all);
+            $this->assertSame([$ids[1]],array_map(static function($t) { return (int)$t->id; },$rows));
+            $this->assertSame(1,\local_kbacorporate\local\implementation_analytics::summarize($rows)->total);
+            $this->assertSame([],\local_kbacorporate\local\implementation_analytics::get_task_rows((int)$u->id,$all,$a));
+            $companies=\local_kbacorporate\local\implementation_section_progress::get_accessible_companies((int)$u->id,$all);
+            $this->assertArrayNotHasKey($a,$companies);
+            $this->assertArrayHasKey($b,$companies);
+            $this->assertFalse(\local_kbacorporate\local\implementation_section_progress::can_view_company($a,(int)$u->id,$all));
+            $this->assertTrue(\local_kbacorporate\local\implementation_section_progress::can_view_company($b,(int)$u->id,$all));
+        }
+        $this->assertCount(2,$DB->get_records('local_kbacorp_impl_program',['curatorid'=>$u->id]));
+        $this->assertTrue($DB->record_exists('local_kbacorp_impl_task',['id'=>$ids[0]]));
+    }
+
     public function test_privacy_erasure_does_not_restore_access_for_live_account(): void {
         global $DB;
         [$u,$a,$b,$au,$bu,$plan]=$this->fixture();

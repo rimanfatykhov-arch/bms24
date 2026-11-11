@@ -1456,7 +1456,7 @@
     {
       "path": "local/kbacorporate/classes/local/implementation_task_discussion.php",
       "archive_sha256": "9aa022df0eacf5fc0037a6012b0c3ab37023d83445f117f54e5627e66887ea8e",
-      "source_sha256": "c5f29718eccedff6ba290781eaaaf38e4adfff2ba65513c5ef86aa577cbb228a",
+      "source_sha256": "b3da88febb3b9fc161ce1ff65d2403f9c248ba77a5258d0a4dec79a01740e25c",
       "status": "modified"
     },
     {
@@ -1618,13 +1618,13 @@
     {
       "path": "local/kbacorporate/classes/local/implementation_analytics.php",
       "archive_sha256": "890b83bb506aac5a92021203744ed24dd9418b7290ccfd81e5f4e9ba2343b45c",
-      "source_sha256": "890b83bb506aac5a92021203744ed24dd9418b7290ccfd81e5f4e9ba2343b45c",
+      "source_sha256": "c005399e61c90e6d2d7f2df171532161f3722da6422825ecac17342ac71537d7",
       "status": "modified"
     },
     {
       "path": "local/kbacorporate/classes/local/implementation_section_progress.php",
       "archive_sha256": "79d4885e8299e9ba207898ca9dabb3b6dbf1f14acf7a42054d5ed4813fa11faa",
-      "source_sha256": "79d4885e8299e9ba207898ca9dabb3b6dbf1f14acf7a42054d5ed4813fa11faa",
+      "source_sha256": "a8a21d0a68853a6ff71f2f89ff9d95cb1fc44b662229bade348f0449cbf4faaa",
       "status": "modified"
     },
     {
@@ -5025,7 +5025,7 @@
     {
       "path": "local/kbacorporate/classes/local/implementation_task_discussion.php",
       "archive_sha256": "9aa022df0eacf5fc0037a6012b0c3ab37023d83445f117f54e5627e66887ea8e",
-      "source_sha256": "c5f29718eccedff6ba290781eaaaf38e4adfff2ba65513c5ef86aa577cbb228a",
+      "source_sha256": "b3da88febb3b9fc161ce1ff65d2403f9c248ba77a5258d0a4dec79a01740e25c",
       "status": "modified"
     },
     {
@@ -5055,13 +5055,13 @@
     {
       "path": "local/kbacorporate/classes/local/implementation_analytics.php",
       "archive_sha256": "890b83bb506aac5a92021203744ed24dd9418b7290ccfd81e5f4e9ba2343b45c",
-      "source_sha256": "890b83bb506aac5a92021203744ed24dd9418b7290ccfd81e5f4e9ba2343b45c",
+      "source_sha256": "c005399e61c90e6d2d7f2df171532161f3722da6422825ecac17342ac71537d7",
       "status": "modified"
     },
     {
       "path": "local/kbacorporate/classes/local/implementation_section_progress.php",
       "archive_sha256": "79d4885e8299e9ba207898ca9dabb3b6dbf1f14acf7a42054d5ed4813fa11faa",
-      "source_sha256": "79d4885e8299e9ba207898ca9dabb3b6dbf1f14acf7a42054d5ed4813fa11faa",
+      "source_sha256": "a8a21d0a68853a6ff71f2f89ff9d95cb1fc44b662229bade348f0449cbf4faaa",
       "status": "modified"
     },
     {

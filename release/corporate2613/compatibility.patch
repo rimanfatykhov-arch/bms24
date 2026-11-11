@@ -595,6 +595,17 @@
              'companyid' => max(0, $companyid),
              'system' => self::token($system, 30),
              'entitytype' => self::token($entitytype, 30),
+--- a/local/kbacorporate/classes/local/implementation_analytics.php
++++ b/local/kbacorporate/classes/local/implementation_analytics.php
+@@ -11,7 +11,7 @@
+             int $curatorid = 0, string $period = 'all'): array {
+         global $DB;
+         $params = [];
+-        $where = ['p.curatorid > 0', 't.deleted = 0'];
++        $where = ['p.curatorid > 0', 't.deleted = 0', access::not_revoked_sql('t.companyid', $userid)];
+         if (!$allcurators) {
+             $where[] = 'p.curatorid = :scopeuserid';
+             $params['scopeuserid'] = $userid;
 --- a/local/kbacorporate/classes/local/implementation_audits.php
 +++ b/local/kbacorporate/classes/local/implementation_audits.php
 @@ -146,11 +146,13 @@
@@ -612,6 +623,31 @@
              'sectionname' => !empty($data->sectionname) ? trim($data->sectionname) : null,
              'minlabel' => !empty($data->minlabel) ? trim($data->minlabel) : null,
              'maxlabel' => !empty($data->maxlabel) ? trim($data->maxlabel) : null,
+--- a/local/kbacorporate/classes/local/implementation_section_progress.php
++++ b/local/kbacorporate/classes/local/implementation_section_progress.php
+@@ -32,12 +32,13 @@
+             }
+         }
+
++        $revocationsql = access::not_revoked_sql('c.id', $userid);
+         $curated = $DB->get_records_sql(
+             "SELECT DISTINCT c.*
+                FROM {local_kbacorp_company} c
+                JOIN {local_kbacorp_impl_program} p ON p.companyid = c.id
+               WHERE p.curatorid = :curatorid
+-                AND c.active = 1
++                AND c.active = 1 AND ($revocationsql)
+            ORDER BY c.name ASC",
+             ['curatorid' => $userid]
+         );
+@@ -53,6 +54,7 @@
+
+     /** Whether a user may open section progress for the company. */
+     public static function can_view_company(int $companyid, int $userid, bool $canmanage): bool {
++        if (access::is_revoked($companyid, $userid)) { return false; }
+         global $DB;
+
+         if ($canmanage && access::has_full_company_access($companyid, $userid)) {
 --- a/local/kbacorporate/classes/local/implementation_task_discussion.php
 +++ b/local/kbacorporate/classes/local/implementation_task_discussion.php
 @@ -17,6 +17,7 @@
@@ -630,6 +666,23 @@
          global $DB;
          // All three identifiers must match: a shared audit ID alone is not
          // evidence that the curator is assigned to this task's company.
+@@ -114,6 +116,7 @@
+     public static function get_curator_threads(int $userid, string $status = '', string $query = '',
+             bool $allcurators = false): array {
+         global $DB;
++        $revocationsql = access::not_revoked_sql('t.companyid', $userid);
+         $params = [];
+         $curatorsql = '';
+         if (!$allcurators) {
+@@ -146,7 +149,7 @@
+              LEFT JOIN {user} u ON u.id = t.ownerid
+              LEFT JOIN {user} cu ON cu.id = p.curatorid
+              LEFT JOIN {local_kbacorp_impl_read} r ON r.taskid = t.id AND r.userid = :readuserid
+-                 WHERE p.curatorid > 0 AND t.deleted = 0 $curatorsql $statussql
++                 WHERE p.curatorid > 0 AND t.deleted = 0 AND ($revocationsql) $curatorsql $statussql
+               ORDER BY t.timemodified DESC, t.id DESC";
+         $params['readuserid'] = $userid;
+         $threads = $DB->get_records_sql($sql, $params);
 --- a/local/kbacorporate/classes/local/implementation_task_lifecycle.php
 +++ b/local/kbacorporate/classes/local/implementation_task_lifecycle.php
 @@ -130,6 +130,7 @@
