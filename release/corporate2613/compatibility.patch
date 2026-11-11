@@ -683,6 +683,15 @@
                ORDER BY t.timemodified DESC, t.id DESC";
          $params['readuserid'] = $userid;
          $threads = $DB->get_records_sql($sql, $params);
+@@ -365,7 +368,7 @@
+             LEFT JOIN {user} cu ON cu.id = p.curatorid
+             LEFT JOIN {local_kbacorp_impl_read} r ON r.taskid = t.id AND r.userid = :readuserid";
+         $params = ['readuserid' => $userid];
+-        $where = 'p.curatorid > 0 AND t.deleted = 0';
++        $where = 'p.curatorid > 0 AND t.deleted = 0 AND (' . access::not_revoked_sql('t.companyid', $userid) . ')';
+         if (!$allcurators) {
+             $where .= ' AND p.curatorid = :curatorid';
+             $params['curatorid'] = $userid;
 --- a/local/kbacorporate/classes/local/implementation_task_lifecycle.php
 +++ b/local/kbacorporate/classes/local/implementation_task_lifecycle.php
 @@ -130,6 +130,7 @@
@@ -1451,6 +1460,48 @@
          $DB->update_record('local_kbacorp_impl_item', (object)[
              'id' => (int)$item->id, 'score' => 2,
              'evidencestatus' => implementation_audits::EVIDENCE_SUBMITTED,
+--- a/local/kbacorporate/tests/implementation_curator_paging_test.php
++++ b/local/kbacorporate/tests/implementation_curator_paging_test.php
+@@ -83,6 +83,39 @@
+         $this->assertSame(count($tasksfirst) + count($taskssecond), $all->total);
+     }
+
++    public function test_revocation_filters_pages_counters_search_and_preserves_history(): void {
++        global $DB;
++        $this->resetAfterTest();
++        $this->setAdminUser();
++        $curator = $this->getDataGenerator()->create_user();
++        $owner = $this->getDataGenerator()->create_user();
++        [$a,, $tasksA] = $this->make_tasks($curator, $owner);
++        [$b,, $tasksB] = $this->make_tasks($curator, $owner);
++        $au = \local_kbacompany\local\identity_registry::company_uuid($a);
++        \local_kbacompany\local\employee_service::ensure_membership($au, (int)$curator->id, [], 'bms');
++        $role = create_role('Curator acceptance', 'curatoracceptance', 'Synthetic test');
++        assign_capability('local/kbacorporate:manageimplementationaudits', CAP_ALLOW, $role, \context_system::instance()->id);
++        role_assign($role, (int)$curator->id, \context_system::instance()->id);
++        $before = $DB->get_records('local_kbacorp_impl_task', ['companyid' => $a]);
++        $this->assertSame(count($tasksA) + count($tasksB), implementation_task_discussion::get_curator_overview((int)$curator->id)->taskcount);
++        \local_kbacompany\local\employee_service::close_membership($au, (int)$curator->id, (int)get_admin()->id);
++        foreach ([false, true] as $all) {
++            $summary = implementation_task_discussion::get_curator_overview((int)$curator->id, $all);
++            $this->assertSame(count($tasksB), $summary->taskcount);
++            $this->assertNotContains($DB->get_field('local_kbacorp_company', 'name', ['id' => $a]), $summary->suggestions);
++            $page = implementation_task_discussion::get_curator_page((int)$curator->id, '', '', '', $all, 0, 1);
++            $this->assertSame(count($tasksB), $page->total);
++            $this->assertCount(1, $page->threads);
++            $this->assertSame($b, (int)$page->threads[0]->companyid);
++            $filtered = implementation_task_discussion::get_curator_page((int)$curator->id, '',
++                $DB->get_field('local_kbacorp_company', 'name', ['id' => $a]), '', $all);
++            $this->assertSame(0, $filtered->total);
++            $this->assertSame([], $filtered->threads);
++        }
++        $this->assertEquals($before, $DB->get_records('local_kbacorp_impl_task', ['companyid' => $a]));
++        $this->assertTrue($DB->record_exists('local_kbacorp_impl_program', ['companyid' => $a, 'curatorid' => $curator->id]));
++    }
++
+     /** @return array{0:int,1:int,2:array<int,int>} */
+     private function make_tasks(\stdClass $curator, \stdClass $owner): array {
+         global $DB;
 --- a/local/kbacorporate/tests/implementation_evidence_test.php
 +++ b/local/kbacorporate/tests/implementation_evidence_test.php
 @@ -2,6 +2,7 @@
