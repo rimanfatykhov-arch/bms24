@@ -128,7 +128,7 @@ final class membership_revocation_test extends \advanced_testcase {
         [$u,$a,$b,$au,$bu,$plan]=$this->fixture();
         employee_service::close_membership($au,(int)$u->id,(int)get_admin()->id);
         $contexts=\local_kbacompany\privacy\provider::get_contexts_for_userid((int)$u->id);
-        $this->assertContains(\context_system::instance()->id,$contexts->get_contextids());
+        $this->assertContains(\context_system::instance()->id,array_map('intval',$contexts->get_contextids()));
         $approved=new \core_privacy\local\request\approved_contextlist($u,'local_kbacompany',
             [\context_system::instance()->id]);
         \local_kbacompany\privacy\provider::delete_data_for_user($approved);
@@ -142,7 +142,10 @@ final class membership_revocation_test extends \advanced_testcase {
         employee_service::close_membership($au,(int)$u->id,(int)get_admin()->id);
         $this->setUser($u);
         try { employee_service::reopen_membership_access($au,(int)$u->id,(int)$u->id); $this->fail('Unauthorised reopen'); }
-        catch (\required_capability_exception $e) { $this->assertTrue(membership_access_service::is_revoked($au,(int)$u->id)); }
+        catch (\moodle_exception $e) {
+            $this->assertSame('companynotavailable',$e->errorcode);
+            $this->assertTrue(membership_access_service::is_revoked($au,(int)$u->id));
+        }
     }
 
     public function test_legacy_revoke_denies_active_canonical_alias_and_sync(): void {

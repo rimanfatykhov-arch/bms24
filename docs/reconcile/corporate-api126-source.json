@@ -4150,8 +4150,8 @@
     {
       "path": "local/kbacorporate/tests/curator_scope_contract_1822.php",
       "archive_sha256": "165eec8d27051dd17d9a6079cd109cee7f28f1122cfc45ef4e7cfc08f9d1877c",
-      "source_sha256": "165eec8d27051dd17d9a6079cd109cee7f28f1122cfc45ef4e7cfc08f9d1877c",
-      "status": "added"
+      "source_sha256": "3dd71ad3304c9a2d343a21405a7f0d8376ce8a129a4a2a1a1e64ffc99bd042e1",
+      "status": "modified"
     },
     {
       "path": "local/kbacorporate/tests/company_implementation_access_test.php",
@@ -5229,8 +5229,8 @@
     {
       "path": "local/kbacorporate/tests/curator_scope_contract_1822.php",
       "archive_sha256": "165eec8d27051dd17d9a6079cd109cee7f28f1122cfc45ef4e7cfc08f9d1877c",
-      "source_sha256": "165eec8d27051dd17d9a6079cd109cee7f28f1122cfc45ef4e7cfc08f9d1877c",
-      "status": "added"
+      "source_sha256": "3dd71ad3304c9a2d343a21405a7f0d8376ce8a129a4a2a1a1e64ffc99bd042e1",
+      "status": "modified"
     },
     {
       "path": "local/kbacorporate/tests/implementation_evidence_test.php",

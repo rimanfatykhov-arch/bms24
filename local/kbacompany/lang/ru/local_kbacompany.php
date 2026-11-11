@@ -9660,3 +9660,5 @@ $string['reviewqueue_grade_not_published'] = 'Нет доступной опуб
 $string['employee2_open_assignment_feedback'] = 'Откройте задание по ссылке выше, чтобы прочитать отзыв преподавателя.';
 
 $string['privacy:metadata:companyrevocation'] = 'История отзыва доступа к компании. После удаления персональных данных сохраняется только действующий запрет company/user, пока учётная запись допускает вход: удаление данных не восстанавливает доступ.';
+
+$string['kbacompany:manageorganization'] = 'Управлять организационной структурой компании';
