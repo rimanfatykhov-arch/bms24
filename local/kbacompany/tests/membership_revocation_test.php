@@ -104,8 +104,16 @@ final class membership_revocation_test extends \advanced_testcase {
         global $DB;
         [$u,$a,$b,$au,$bu,$plan]=$this->fixture(); $ids=[];
         foreach ([$a,$b] as $company) {
+            $tool=$DB->insert_record('local_kbacorp_bms_tool',(object)[
+                'companyid'=>$company,'code'=>'revoke'.$company,'name'=>'Revocation fixture']);
+            $criterion=$DB->insert_record('local_kbacorp_bms_crit',(object)[
+                'toolid'=>$tool,'code'=>'criterion','name'=>'Test criterion']);
+            $audit=$DB->insert_record('local_kbacorp_impl_audit',(object)[
+                'companyid'=>$company,'toolid'=>$tool,'title'=>'Revocation audit']);
+            $item=$DB->insert_record('local_kbacorp_impl_item',(object)[
+                'auditid'=>$audit,'criterionid'=>$criterion,'criterioncode'=>'criterion','criterionname'=>'Test criterion']);
             $ids[]=$DB->insert_record('local_kbacorp_impl_task',(object)[
-                'companyid'=>$company,'auditid'=>0,'itemid'=>0,'title'=>'Retained task',
+                'companyid'=>$company,'auditid'=>$audit,'itemid'=>$item,'title'=>'Retained task',
                 'criterionname'=>'Test criterion','ownerid'=>$u->id]);
         }
         $this->assertCount(2,\local_kbacorporate\local\implementation_task_lifecycle::get_user_tasks((int)$u->id));
@@ -135,6 +143,33 @@ final class membership_revocation_test extends \advanced_testcase {
         $this->setUser($u);
         try { employee_service::reopen_membership_access($au,(int)$u->id,(int)$u->id); $this->fail('Unauthorised reopen'); }
         catch (\required_capability_exception $e) { $this->assertTrue(membership_access_service::is_revoked($au,(int)$u->id)); }
+    }
+
+    public function test_legacy_revoke_denies_active_canonical_alias_and_sync(): void {
+        global $DB;
+        [$u,$a,$b,$au,$bu,$plan]=$this->fixture();
+        $alias='22222222-2222-4222-8222-222222222222';
+        $DB->insert_record('local_kbacompany_company',(object)[
+            'uuid'=>$alias,'name'=>'Canonical alias','legacycompanyid'=>$a]);
+        employee_service::ensure_membership($alias,(int)$u->id,[],'bms');
+        employee_service::close_membership($au,(int)$u->id,(int)get_admin()->id);
+        $this->assertTrue(membership_access_service::is_revoked($alias,(int)$u->id));
+        $this->assertNotContains($alias,array_column(company_service::companies_for_user((int)$u->id),'uuid'));
+        try { company_service::company_context($alias,(int)$u->id); $this->fail('Canonical alias bypassed revoke'); }
+        catch (\moodle_exception $e) { $this->assertSame('companynotavailable',$e->errorcode); }
+        try { employee_service::ensure_membership($alias,(int)$u->id,[],'bitrix24'); $this->fail('Alias sync bypassed revoke'); }
+        catch (\moodle_exception $e) { $this->assertSame('companynotavailable',$e->errorcode); }
+    }
+
+    public function test_department_update_cannot_move_revoked_company_record(): void {
+        global $DB;
+        [$u,$a,$b,$au,$bu,$plan]=$this->fixture();
+        $id=repository::save_department((object)['companyid'=>$a,'name'=>'Retained department','active'=>1]);
+        $before=$DB->get_record('local_kbacorp_department',['id'=>$id]);
+        employee_service::close_membership($au,(int)$u->id,(int)get_admin()->id);$this->setUser($u);
+        try { repository::save_department((object)['id'=>$id,'companyid'=>$b,'name'=>'Forged move','active'=>1]); $this->fail('Department target mismatch accepted'); }
+        catch (\moodle_exception $e) { $this->assertNotEmpty($e->errorcode); }
+        $this->assertEquals($before,$DB->get_record('local_kbacorp_department',['id'=>$id]));
     }
 
 }

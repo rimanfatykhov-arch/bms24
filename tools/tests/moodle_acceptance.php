@@ -428,7 +428,7 @@ if ($fresh) {
     }
     // Run focused files in separate PHP processes before broad legacy discovery.
     $focused = ['schema_parity_2026110890_test', 'ordered_index_2026110900_test', 'pr48_tenant_isolation_test',
-        'privacy_provider_test', 'kbacorporate_impl_task_provider_test'];
+        'privacy_provider_test', 'kbacorporate_impl_task_provider_test', 'membership_revocation_test'];
     foreach (glob($fresh . '/local/kbacompany/tests/communication*_test.php') as $file) {
         $focused[] = basename($file, '.php');
     }

@@ -21,6 +21,8 @@ if ($form->is_cancelled()) {
     redirect(new moodle_url('/local/kbacorporate/departments.php', ['companyid' => $companyid]));
 }
 if ($data = $form->get_data()) {
+    $data->id = $id;
+    $data->companyid = $companyid;
     \local_kbacorporate\local\repository::save_department($data);
     redirect(new moodle_url('/local/kbacorporate/departments.php', ['companyid' => $companyid]), get_string('saved', 'local_kbacorporate'));
 }

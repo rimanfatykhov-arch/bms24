@@ -24,8 +24,15 @@ final class membership_access_service {
     public static function canonical_sql(string $companyexpression, int $userid): string {
         $companyexpression = self::expression($companyexpression);
         if (!self::ready()) { return '1=1'; }
+        $aliases = "SELECT uuid, sourceid AS legacyid FROM {local_kbacompany_idreg}
+            WHERE sourcecomponent = 'local_kbacorporate' AND sourceentity = 'company'
+            UNION ALL SELECT uuid, legacycompanyid AS legacyid FROM {local_kbacompany_company}
+            WHERE legacycompanyid > 0";
         return "NOT EXISTS (SELECT 1 FROM {local_kbacompany_revoke} rv
-            WHERE rv.companyuuid = {$companyexpression} AND rv.userid = " . (int)$userid . " AND rv.timereopened = 0)";
+            WHERE rv.userid = " . (int)$userid . " AND rv.timereopened = 0 AND
+            (rv.companyuuid = {$companyexpression} OR EXISTS (
+                SELECT 1 FROM ({$aliases}) ra JOIN ({$aliases}) rb ON ra.legacyid = rb.legacyid
+                WHERE ra.uuid = {$companyexpression} AND rb.uuid = rv.companyuuid)))";
     }
 
     /** Corporate adapter uses the existing immutable identity registry, without creating IDs. */
@@ -43,8 +50,16 @@ final class membership_access_service {
 
     public static function is_revoked(string $companyuuid, int $userid): bool {
         global $DB;
-        return self::ready() && $DB->record_exists('local_kbacompany_revoke',
-            ['companyuuid'=>$companyuuid, 'userid'=>$userid, 'timereopened'=>0]);
+        if (!self::ready()) { return false; }
+        if ($DB->record_exists('local_kbacompany_revoke',
+                ['companyuuid'=>$companyuuid, 'userid'=>$userid, 'timereopened'=>0])) { return true; }
+        $company = company_registry_service::by_uuid($companyuuid);
+        if ($company && (int)$company->legacycompanyid > 0) {
+            return self::is_legacy_revoked((int)$company->legacycompanyid, $userid);
+        }
+        $identity = identity_registry::resolve($companyuuid);
+        return $identity && $identity->sourcecomponent === 'local_kbacorporate' &&
+            $identity->sourceentity === 'company' && self::is_legacy_revoked((int)$identity->sourceid, $userid);
     }
 
     public static function is_legacy_revoked(int $companyid, int $userid): bool {
