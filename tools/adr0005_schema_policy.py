@@ -14,7 +14,7 @@ def evaluate(fresh,before,after,model,origin=ORIGIN):
         errors.append('unverified exact2613 origin')
     if before.get('versions')!={'local_kbacompany':'2026101878','local_kbacorporate':'2026102613'}:
         errors.append('wrong historical versions')
-    if after.get('versions')!={'local_kbacompany':'2026111002','local_kbacorporate':'2026111004'} or fresh.get('versions')!=after.get('versions'):
+    if after.get('versions')!={'local_kbacompany':'2026111100','local_kbacorporate':'2026111100'} or fresh.get('versions')!=after.get('versions'):
         errors.append('wrong candidate versions')
     f=copy.deepcopy(fresh);a=copy.deepcopy(after)
     fp=f.pop('physical');ap=a.pop('physical');bp=before['physical']

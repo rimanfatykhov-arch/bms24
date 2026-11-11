@@ -6224,5 +6224,20 @@ function xmldb_local_kbacompany_upgrade(int $oldversion): bool {
         upgrade_plugin_savepoint(true, 2026111002, 'local', 'kbacompany');
     }
 
+    // ADR-0006: additive explicit revocations; no historical membership backfill.
+    if ($oldversion < 2026111100) {
+        $table = new xmldb_table('local_kbacompany_revoke');
+        $table->add_field('id', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, XMLDB_SEQUENCE);
+        $table->add_field('companyuuid', XMLDB_TYPE_CHAR, '36', null, XMLDB_NOTNULL);
+        $table->add_field('userid', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL);
+        foreach (['revokedby', 'timecreated', 'reopenedby', 'timereopened'] as $field) {
+            $table->add_field($field, XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, '0');
+        }
+        $table->add_key('primary', XMLDB_KEY_PRIMARY, ['id']);
+        $table->add_index('company_user_open_ix', XMLDB_INDEX_NOTUNIQUE, ['companyuuid', 'userid', 'timereopened']);
+        if (!$dbman->table_exists($table)) { $dbman->create_table($table); }
+        upgrade_plugin_savepoint(true, 2026111100, 'local', 'kbacompany');
+    }
+
     return true;
 }

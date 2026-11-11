@@ -5,6 +5,7 @@ require_login();
 $context = context_system::instance();
 require_capability('local/kbacorporate:managecompanies', $context);
 $id = optional_param('id', 0, PARAM_INT);
+\local_kbacorporate\local\access::require_not_revoked($id, (int)$USER->id);
 
 $PAGE->set_context($context);
 $PAGE->set_url(new moodle_url('/local/kbacorporate/company_edit.php', ['id' => $id]));
@@ -32,6 +33,7 @@ if ($id) {
 if ($form->is_cancelled()) {
     redirect(new moodle_url('/local/kbacorporate/companies.php'));
 } else if ($data = $form->get_data()) {
+    \local_kbacorporate\local\access::require_not_revoked((int)($data->id ?? 0), (int)$USER->id);
     \local_kbacorporate\local\repository::save_company($data);
     redirect(new moodle_url('/local/kbacorporate/companies.php'), get_string('saved', 'local_kbacorporate'));
 }

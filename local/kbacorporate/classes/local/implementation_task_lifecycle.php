@@ -130,6 +130,7 @@ final class implementation_task_lifecycle {
 
     public static function get_user_tasks(int $userid, string $status = ''): array {
         global $DB;
+        $revocationwhere = access::not_revoked_sql('t.companyid', $userid);
         $params = ['ownerid' => $userid]; $statussql = '';
         if ($status === 'duesoon') {
             $days = get_config('local_kbacorporate', 'implementationreminderdays');
@@ -156,7 +157,7 @@ final class implementation_task_lifecycle {
                       WHERE ck.taskid = t.id AND ck.isdone = 1) AS checklistdone
               FROM {local_kbacorp_impl_task} t
               JOIN {local_kbacorp_company} c ON c.id = t.companyid
-              WHERE t.ownerid = :ownerid
+              WHERE t.ownerid = :ownerid AND {$revocationwhere}
                 AND t.deleted = 0
                 AND EXISTS (SELECT 1 FROM {local_kbacorp_member} m
                              WHERE m.companyid = t.companyid AND m.userid = t.ownerid

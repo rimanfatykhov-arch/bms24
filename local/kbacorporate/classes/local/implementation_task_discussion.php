@@ -17,6 +17,7 @@ final class implementation_task_discussion {
 
     /** Managers with implementation access and the assigned employee may open the task. */
     public static function can_access(\stdClass $task, int $userid): bool {
+        if (access::is_revoked((int)$task->companyid, $userid)) { return false; }
         global $DB;
         if ($userid <= 0 || !empty($task->deleted)) {
             return false;
@@ -81,6 +82,7 @@ final class implementation_task_discussion {
     }
 
     public static function is_curator(\stdClass $task, int $userid): bool {
+        if (access::is_revoked((int)$task->companyid, $userid)) { return false; }
         global $DB;
         // All three identifiers must match: a shared audit ID alone is not
         // evidence that the curator is assigned to this task's company.

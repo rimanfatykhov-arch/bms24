@@ -41,14 +41,15 @@ class legacy_company_adapter {
         global $DB;
 
         self::require_ready();
+        $revocationwhere = membership_access_service::legacy_sql('c.id', $userid);
         $context = \context_system::instance();
         if (is_siteadmin($userid) || has_capability('local/kbacompany:viewallcompanies', $context, $userid)) {
-            return array_values($DB->get_records('local_kbacorp_company', ['active' => 1], 'name ASC, id ASC'));
+            return array_values($DB->get_records_sql("SELECT c.* FROM {local_kbacorp_company} c WHERE c.active = 1 AND {$revocationwhere} ORDER BY c.name, c.id"));
         }
         $sql = "SELECT c.*
                   FROM {local_kbacorp_company} c
                   JOIN {local_kbacorp_member} m ON m.companyid = c.id
-                 WHERE m.userid = :userid AND c.active = 1
+                 WHERE m.userid = :userid AND c.active = 1 AND {$revocationwhere}
               ORDER BY c.name ASC, c.id ASC";
         return array_values($DB->get_records_sql($sql, ['userid' => $userid]));
     }
@@ -79,6 +80,7 @@ class legacy_company_adapter {
     }
 
     public static function can_access(int $companyid, int $userid): bool {
+        if (membership_access_service::is_legacy_revoked($companyid, $userid)) { return false; }
         $company = self::company($companyid);
         if (!$company || empty($company->active)) {
             return false;

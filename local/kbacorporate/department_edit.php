@@ -4,6 +4,7 @@ require_login();
 $context = context_system::instance();
 require_capability('local/kbacorporate:managedepartments', $context);
 $companyid = required_param('companyid', PARAM_INT);
+\local_kbacorporate\local\access::require_not_revoked($companyid, (int)$USER->id);
 $id = optional_param('id', 0, PARAM_INT);
 $company = $DB->get_record('local_kbacorp_company', ['id' => $companyid], '*', MUST_EXIST);
 $department = $id ? $DB->get_record('local_kbacorp_department', ['id' => $id, 'companyid' => $companyid], '*', MUST_EXIST) : null;

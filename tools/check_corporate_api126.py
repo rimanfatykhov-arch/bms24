@@ -17,7 +17,7 @@ def check_source(root=ROOT):
     entries = manifest['entries']
     versiontext = (root / 'local/kbacorporate/version.php').read_text()
     version = re.search(r'\$plugin->version\s*=\s*(\d+)', versiontext)
-    if manifest.get('candidate_version') != 2026110901 or not version or int(version.group(1)) != 2026110901:
+    if manifest.get('candidate_version') != 2026111100 or not version or int(version.group(1)) != 2026111100:
         errors.append('Corporate local candidate version mismatch')
     paths = [row['path'] for row in entries]
     if len(paths) != 817 or len(set(paths)) != len(paths):

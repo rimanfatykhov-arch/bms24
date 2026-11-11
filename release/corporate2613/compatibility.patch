@@ -1,9 +1,97 @@
+--- a/local/kbacorporate/classes/local/access.php
++++ b/local/kbacorporate/classes/local/access.php
+@@ -4,6 +4,23 @@
+ defined('MOODLE_INTERNAL') || die();
+ 
+ class access {
++    /** Optional BMS policy bridge: explicit revoke precedes every positive grant. */
++    public static function not_revoked_sql(string $companyexpression, int $userid): string {
++        if (!class_exists('\\local_kbacompany\\local\\membership_access_service')) { return '1=1'; }
++        return \local_kbacompany\local\membership_access_service::legacy_sql($companyexpression, $userid);
++    }
++    public static function is_revoked(int $companyid, int $userid): bool {
++        return class_exists('\\local_kbacompany\\local\\membership_access_service') &&
++            \local_kbacompany\local\membership_access_service::is_legacy_revoked($companyid, $userid);
++    }
++    public static function require_not_revoked(int $companyid, int $userid): void {
++        global $USER;
++        $userid = $userid > 0 ? $userid : (int)($USER->id ?? 0);
++        if (self::is_revoked($companyid, $userid)) {
++            throw new \moodle_exception('companynotallowed', 'local_kbacorporate');
++        }
++    }
++
+     /**
+      * Return active company memberships that may be used for a competency view.
+      *
+@@ -13,13 +30,14 @@
+      */
+     public static function get_competency_company_options(int $employeeid, int $viewerid): array {
+         global $DB;
++        $revocationwhere = self::not_revoked_sql('c.id', $viewerid);
+ 
+         $sql = "SELECT c.*
+                   FROM {local_kbacorp_company} c
+                   JOIN {local_kbacorp_member} m ON m.companyid = c.id
+                  WHERE m.userid = :employeeid
+                    AND m.isemployee = 1
+-                   AND c.active = 1
++                   AND c.active = 1 AND {$revocationwhere}
+               ORDER BY c.name ASC";
+         $memberships = $DB->get_records_sql($sql, ['employeeid' => $employeeid]);
+         if (!$memberships || $employeeid === $viewerid || is_siteadmin($viewerid)) {
+@@ -59,10 +77,11 @@
+ 
+     public static function get_allowed_companies(int $userid): array {
+         global $DB;
++        $revocationwhere = self::not_revoked_sql('c.id', $userid);
+         $context = \context_system::instance();
+ 
+         if (is_siteadmin($userid) || has_capability('local/kbacorporate:viewallcompanies', $context, $userid)) {
+-            return $DB->get_records('local_kbacorp_company', ['active' => 1], 'name ASC');
++            return $DB->get_records_sql("SELECT c.* FROM {local_kbacorp_company} c WHERE c.active = 1 AND {$revocationwhere} ORDER BY c.name");
+         }
+ 
+         $sql = "SELECT DISTINCT c.*
+@@ -77,7 +96,7 @@
+                     ON dm.departmentid = d.id
+                    AND dm.userid = :deptuserid
+                    AND dm.deptrole = :deptrole
+-                 WHERE c.active = 1
++                 WHERE c.active = 1 AND {$revocationwhere}
+                    AND (m.id IS NOT NULL OR dm.id IS NOT NULL)
+               ORDER BY c.name ASC";
+         return $DB->get_records_sql($sql, [
+@@ -107,6 +126,7 @@
+     }
+ 
+     public static function has_full_company_access(int $companyid, int $userid): bool {
++        if (self::is_revoked($companyid, $userid)) { return false; }
+         global $DB;
+         $context = \context_system::instance();
+         if (is_siteadmin($userid) || has_capability('local/kbacorporate:viewallcompanies', $context, $userid)) {
+@@ -120,6 +140,7 @@
+     }
+ 
+     public static function get_allowed_departments(int $companyid, int $userid): array {
++        if (self::is_revoked($companyid, $userid)) { return []; }
+         global $DB;
+         if (self::has_full_company_access($companyid, $userid)) {
+             return $DB->get_records('local_kbacorp_department', ['companyid' => $companyid, 'active' => 1], 'name ASC');
+@@ -129,6 +150,7 @@
+ 
+     /** Return company employee IDs visible to a viewer, optionally restricted to one department. */
+     public static function get_visible_employee_ids(int $companyid, int $userid, int $departmentid = 0): array {
++        if (self::is_revoked($companyid, $userid)) { return []; }
+         global $DB;
+         if ($departmentid < 0) {
+             $departmentid = 0;
 --- a/local/kbacorporate/classes/local/bridge.php
 +++ b/local/kbacorporate/classes/local/bridge.php
 @@ -519,15 +519,8 @@
          $result['incoming_roles'] = $incoming;
          $result['ignored_roles'] = $ignored;
-
+ 
 -        debugging(
 -            '[CORPORATE_ROLE_MERGE] userid=' . $userid .
 -            ' companyid=' . $companyid .
@@ -15,7 +103,7 @@
 -        );
 +        // A successful/no-op merge is a normal result, not a developer error.
 +        // Return the structured role outcome; ERP calls retain their privacy-safe audit.
-
+ 
          return $result;
      }
 --- a/local/kbacorporate/classes/local/development_plans.php
@@ -23,7 +111,7 @@
 @@ -15,6 +15,22 @@
      public const ITEM_PENDING_REVIEW = 'pendingreview';
      public const ITEM_COMPLETED = 'completed';
-
+ 
 +    /** Select every Moodle name field from an already-scoped user join. */
 +    private static function name_fields_sql(string $alias, string $prefix = ''): string {
 +        return implode(', ', array_map(static function(string $field) use ($alias, $prefix): string {
@@ -53,22 +141,83 @@
                    FROM {local_kbacorp_member} m
                    JOIN {user} u ON u.id = m.userid
                   WHERE m.companyid = :companyid
-@@ -97,7 +114,8 @@
+@@ -93,14 +110,17 @@
+ 
+     /** Return newest-first operational history for one individual development plan. */
+     public static function get_history(int $planid): array {
+-        global $DB;
++        global $DB, $USER;
          if (!self::history_available()) {
              return [];
          }
 -        $sql = "SELECT l.*, u.firstname, u.lastname, u.email
 +        $usernames = self::name_fields_sql('u');
++        $revocationwhere = access::not_revoked_sql('rp.companyid', (int)($USER->id ?? 0));
 +        $sql = "SELECT l.*, {$usernames}, u.email
                    FROM {local_kbacorp_devlog} l
++                  JOIN {local_kbacorp_devplan} rp ON rp.id = l.planid
               LEFT JOIN {user} u ON u.id = l.actorid
-                  WHERE l.planid = :planid
-@@ -884,8 +902,10 @@
-
+-                 WHERE l.planid = :planid
++                 WHERE {$revocationwhere} AND l.planid = :planid
+               ORDER BY l.timecreated DESC, l.id DESC";
+         $records = array_values($DB->get_records_sql($sql, ['planid' => $planid]));
+         foreach ($records as $record) {
+@@ -120,6 +140,7 @@
+             int $mentorid, int $targetdate, int $reviewdate, int $actorid): void {
+         global $DB;
+         $plan = $DB->get_record('local_kbacorp_devplan', ['id' => $planid], '*', MUST_EXIST);
++        access::require_not_revoked((int)$plan->companyid, $actorid);
+         self::require_draft($plan);
+         $title = trim($title);
+         $objective = trim($objective);
+@@ -178,6 +199,7 @@
+         global $DB;
+         $item = $DB->get_record('local_kbacorp_devitem', ['id' => $itemid], '*', MUST_EXIST);
+         $plan = $DB->get_record('local_kbacorp_devplan', ['id' => $item->planid], '*', MUST_EXIST);
++        access::require_not_revoked((int)$plan->companyid, $actorid);
+         self::require_draft($plan);
+         self::validate_course((int)$plan->companyid, $courseid);
+         self::validate_mentor((int)$plan->companyid, $mentorid);
+@@ -250,6 +272,7 @@
+         global $DB;
+         $item = $DB->get_record('local_kbacorp_devitem', ['id' => $itemid], '*', MUST_EXIST);
+         $plan = $DB->get_record('local_kbacorp_devplan', ['id' => $item->planid], '*', MUST_EXIST);
++        access::require_not_revoked((int)$plan->companyid, $actorid);
+         if ((string)$plan->status !== self::STATUS_ACTIVE) {
+             throw new \moodle_exception('developmentplanstatuslocked', 'local_kbacorporate');
+         }
+@@ -274,6 +297,7 @@
+         global $DB;
+         $item = $DB->get_record('local_kbacorp_devitem', ['id' => $itemid], '*', MUST_EXIST);
+         $plan = $DB->get_record('local_kbacorp_devplan', ['id' => $item->planid], '*', MUST_EXIST);
++        access::require_not_revoked((int)$plan->companyid, $actorid);
+         if ((string)$plan->status !== self::STATUS_ACTIVE) {
+             throw new \moodle_exception('developmentplanstatuslocked', 'local_kbacorporate');
+         }
+@@ -315,6 +339,7 @@
+         global $DB;
+         $item = $DB->get_record('local_kbacorp_devitem', ['id' => $itemid], '*', MUST_EXIST);
+         $plan = $DB->get_record('local_kbacorp_devplan', ['id' => $item->planid], '*', MUST_EXIST);
++        access::require_not_revoked((int)$plan->companyid, $actorid);
+         if ((string)$plan->status !== self::STATUS_ACTIVE ||
+                 (string)$item->status !== self::ITEM_PENDING_REVIEW) {
+             throw new \moodle_exception('iprevidencecannotreview', 'local_kbacorporate');
+@@ -352,6 +377,7 @@
+         global $DB;
+         $item = $DB->get_record('local_kbacorp_devitem', ['id' => $itemid], '*', MUST_EXIST);
+         $plan = $DB->get_record('local_kbacorp_devplan', ['id' => $item->planid], '*', MUST_EXIST);
++        access::require_not_revoked((int)$plan->companyid, $actorid);
+         if (!in_array((string)$plan->status, [self::STATUS_DRAFT, self::STATUS_ACTIVE], true)) {
+             throw new \moodle_exception('developmentplanstatuslocked', 'local_kbacorporate');
+         }
+@@ -884,33 +910,37 @@
+ 
      public static function get_plan(int $planid): \stdClass {
          global $DB;
 -        $sql = "SELECT p.*, u.firstname, u.lastname, u.email, c.name AS companyname,
 -                       mu.firstname AS mentorfirstname, mu.lastname AS mentorlastname,
++        global $USER;
++        $revocationwhere = access::not_revoked_sql('p.companyid', (int)($USER->id ?? 0));
 +        $usernames = self::name_fields_sql('u');
 +        $mentornames = self::name_fields_sql('mu', 'mentor');
 +        $sql = "SELECT p.*, {$usernames}, u.email, c.name AS companyname,
@@ -76,8 +225,10 @@
                         mu.email AS mentoremail
                    FROM {local_kbacorp_devplan} p
                    JOIN {user} u ON u.id = p.userid
-@@ -894,23 +914,21 @@
-                  WHERE p.id = :id";
+                   JOIN {local_kbacorp_company} c ON c.id = p.companyid
+              LEFT JOIN {user} mu ON mu.id = p.mentorid
+-                 WHERE p.id = :id";
++                 WHERE p.id = :id AND {$revocationwhere}";
          $plan = $DB->get_record_sql($sql, ['id' => $planid], MUST_EXIST);
          $plan->mentorname = (int)($plan->mentorid ?? 0) > 0 ?
 -            fullname((object)[
@@ -87,10 +238,12 @@
 +            self::joined_fullname($plan, 'mentor') : '';
          return $plan;
      }
-
+ 
      public static function get_company_plans(int $companyid): array {
          global $DB;
 -        $sql = "SELECT p.*, u.firstname, u.lastname, u.email,
++        global $USER;
++        access::require_not_revoked($companyid, (int)($USER->id ?? 0));
 +        $usernames = self::name_fields_sql('u');
 +        $sql = "SELECT p.*, {$usernames}, u.email,
                         COUNT(i.id) AS itemcount,
@@ -104,13 +257,16 @@
                ORDER BY p.timemodified DESC";
          return array_values($DB->get_records_sql($sql, [
              'companyid' => $companyid, 'completed' => self::ITEM_COMPLETED,
-@@ -1136,11 +1154,14 @@
-
+@@ -1135,38 +1165,34 @@
+     }
+ 
      public static function get_items(int $planid): array {
-         global $DB;
+-        global $DB;
++        global $DB, $USER;
 +        $mentornames = self::name_fields_sql('mu', 'mentor');
 +        $evidencenames = self::name_fields_sql('eu', 'evidence');
 +        $reviewernames = self::name_fields_sql('ru', 'reviewer');
++        $revocationwhere = access::not_revoked_sql('rp.companyid', (int)($USER->id ?? 0));
          $sql = "SELECT i.*, c.shortname AS competencyname, c.idnumber,
                         crs.fullname AS coursename,
 -                       mu.firstname AS mentorfirstname, mu.lastname AS mentorlastname,
@@ -120,9 +276,16 @@
 +                       {$evidencenames},
 +                       {$reviewernames}
                    FROM {local_kbacorp_devitem} i
++                  JOIN {local_kbacorp_devplan} rp ON rp.id = i.planid
                    JOIN {competency} c ON c.id = i.competencyid
               LEFT JOIN {course} crs ON crs.id = i.courseid
-@@ -1153,20 +1174,11 @@
+              LEFT JOIN {user} mu ON mu.id = i.mentorid
+              LEFT JOIN {user} eu ON eu.id = i.evidencesubmittedby
+              LEFT JOIN {user} ru ON ru.id = i.reviewedby
+-                 WHERE i.planid = :planid
++                 WHERE {$revocationwhere} AND i.planid = :planid
+               ORDER BY CASE i.priority WHEN 'critical' THEN 1 WHEN 'core' THEN 2 ELSE 3 END,
+                        c.shortname";
          $records = array_values($DB->get_records_sql($sql, ['planid' => $planid]));
          foreach ($records as $record) {
              $record->mentorname = (int)($record->mentorid ?? 0) > 0 ?
@@ -146,13 +309,16 @@
              if (trim((string)($record->goal ?? '')) === '') {
                  $record->goal = self::default_item_goal(
                      (string)$record->competencyname, (int)$record->targetlevel);
-@@ -1178,11 +1190,14 @@
+@@ -1177,35 +1203,31 @@
+ 
      /** Return one individual development action with display metadata. */
      public static function get_item(int $itemid): \stdClass {
-         global $DB;
+-        global $DB;
++        global $DB, $USER;
 +        $mentornames = self::name_fields_sql('mu', 'mentor');
 +        $evidencenames = self::name_fields_sql('eu', 'evidence');
 +        $reviewernames = self::name_fields_sql('ru', 'reviewer');
++        $revocationwhere = access::not_revoked_sql('rp.companyid', (int)($USER->id ?? 0));
          $sql = "SELECT i.*, c.shortname AS competencyname, c.idnumber,
                         crs.fullname AS coursename,
 -                       mu.firstname AS mentorfirstname, mu.lastname AS mentorlastname,
@@ -162,10 +328,14 @@
 +                       {$evidencenames},
 +                       {$reviewernames}
                    FROM {local_kbacorp_devitem} i
++                  JOIN {local_kbacorp_devplan} rp ON rp.id = i.planid
                    JOIN {competency} c ON c.id = i.competencyid
               LEFT JOIN {course} crs ON crs.id = i.courseid
-@@ -1192,20 +1207,11 @@
-                  WHERE i.id = :itemid";
+              LEFT JOIN {user} mu ON mu.id = i.mentorid
+              LEFT JOIN {user} eu ON eu.id = i.evidencesubmittedby
+              LEFT JOIN {user} ru ON ru.id = i.reviewedby
+-                 WHERE i.id = :itemid";
++                 WHERE {$revocationwhere} AND i.id = :itemid";
          $record = $DB->get_record_sql($sql, ['itemid' => $itemid], MUST_EXIST);
          $record->mentorname = (int)($record->mentorid ?? 0) > 0 ?
 -            fullname((object)[
@@ -188,6 +358,72 @@
          if (trim((string)($record->goal ?? '')) === '') {
              $record->goal = self::default_item_goal(
                  (string)$record->competencyname, (int)$record->targetlevel);
+@@ -1377,7 +1399,8 @@
+             throw new \invalid_parameter_exception('Unknown development item status.');
+         }
+         $item = $DB->get_record('local_kbacorp_devitem', ['id' => $itemid], '*', MUST_EXIST);
+-        $plan = $DB->get_record('local_kbacorp_devplan', ['id' => $item->planid], 'id,status', MUST_EXIST);
++        $plan = $DB->get_record('local_kbacorp_devplan', ['id' => $item->planid], 'id,status,companyid', MUST_EXIST);
++        access::require_not_revoked((int)$plan->companyid, $actorid);
+         if ((string)$plan->status !== self::STATUS_ACTIVE) {
+             throw new \moodle_exception('developmentplanstatuslocked', 'local_kbacorporate');
+         }
+@@ -1400,6 +1423,7 @@
+     public static function update_plan(int $planid, string $title, int $targetdate, int $actorid = 0): void {
+         global $DB;
+         $plan = $DB->get_record('local_kbacorp_devplan', ['id' => $planid], '*', MUST_EXIST);
++        access::require_not_revoked((int)$plan->companyid, $actorid);
+         self::require_draft($plan);
+         $title = trim($title);
+         if ($title === '' || \core_text::strlen($title) > 255) {
+@@ -1435,6 +1459,7 @@
+         global $DB;
+         $item = $DB->get_record('local_kbacorp_devitem', ['id' => $itemid], '*', MUST_EXIST);
+         $plan = $DB->get_record('local_kbacorp_devplan', ['id' => $item->planid], '*', MUST_EXIST);
++        access::require_not_revoked((int)$plan->companyid, $actorid);
+         self::require_draft($plan);
+         self::validate_course((int)$plan->companyid, $courseid);
+         if ($duedate <= 0 || $duedate < (int)$plan->startdate || $duedate > (int)$plan->targetdate) {
+@@ -1465,6 +1490,7 @@
+     public static function add_profile_item(int $planid, int $competencyid, int $courseid, int $duedate, int $actorid = 0): int {
+         global $DB;
+         $plan = $DB->get_record('local_kbacorp_devplan', ['id' => $planid], '*', MUST_EXIST);
++        access::require_not_revoked((int)$plan->companyid, $actorid);
+         self::require_draft($plan);
+         if ($DB->record_exists('local_kbacorp_devitem', [
+             'planid' => $planid, 'competencyid' => $competencyid,
+@@ -1529,6 +1555,7 @@
+         global $DB;
+         $item = $DB->get_record('local_kbacorp_devitem', ['id' => $itemid], '*', MUST_EXIST);
+         $plan = $DB->get_record('local_kbacorp_devplan', ['id' => $item->planid], '*', MUST_EXIST);
++        access::require_not_revoked((int)$plan->companyid, $actorid);
+         self::require_draft($plan);
+         self::log_event((int)$item->planid, $itemid, $actorid, 'item_deleted',
+             (string)$item->status, '', '', [
+@@ -1558,6 +1585,7 @@
+     public static function submit_for_agreement(int $planid, int $actorid): void {
+         global $DB;
+         $plan = $DB->get_record('local_kbacorp_devplan', ['id' => $planid], '*', MUST_EXIST);
++        access::require_not_revoked((int)$plan->companyid, $actorid);
+         self::require_draft($plan);
+         if (!$DB->record_exists('local_kbacorp_devitem', ['planid' => $planid])) {
+             throw new \moodle_exception('developmentplancannotsubmitempty', 'local_kbacorporate');
+@@ -1577,6 +1605,7 @@
+     public static function employee_decision(int $planid, int $userid, bool $accepted, string $comment): void {
+         global $DB;
+         $plan = $DB->get_record('local_kbacorp_devplan', ['id' => $planid], '*', MUST_EXIST);
++        access::require_not_revoked((int)$plan->companyid, $userid);
+         if ((int)$plan->userid !== $userid || (string)$plan->status !== self::STATUS_PENDING) {
+             throw new \moodle_exception('developmentplandecisionnotallowed', 'local_kbacorporate');
+         }
+@@ -1598,6 +1627,7 @@
+     public static function manager_transition(int $planid, string $action, int $actorid = 0): void {
+         global $DB;
+         $plan = $DB->get_record('local_kbacorp_devplan', ['id' => $planid], '*', MUST_EXIST);
++        access::require_not_revoked((int)$plan->companyid, $actorid);
+         if ($action === 'cancel' && !in_array((string)$plan->status,
+                 [self::STATUS_DRAFT, self::STATUS_PENDING, self::STATUS_ACTIVE], true)) {
+             throw new \moodle_exception('developmentplantransitioninvalid', 'local_kbacorporate');
 --- a/local/kbacorporate/classes/local/erp_audit.php
 +++ b/local/kbacorporate/classes/local/erp_audit.php
 @@ -25,7 +25,7 @@
@@ -218,7 +454,16 @@
          }
 --- a/local/kbacorporate/classes/local/erp_exchange.php
 +++ b/local/kbacorporate/classes/local/erp_exchange.php
-@@ -1049,7 +1049,9 @@
+@@ -366,6 +366,8 @@
+         $changed = false;
+         $now = time();
+         if ($mapping) {
++            global $USER;
++            access::require_not_revoked((int)$mapping->localid, (int)($USER->id ?? 0));
+             $company = $DB->get_record('local_kbacorp_company', ['id' => (int)$mapping->localid], '*', MUST_EXIST);
+         } else {
+             $company = (object)[
+@@ -1049,7 +1051,9 @@
          }
          $managed = $mapping ? !empty($metadata['managed']) : !$catalogue;
          if (!$mapping && $catalogue) {
@@ -229,10 +474,10 @@
                  'companyid' => (int)$company->id,
                  'system' => $system,
                  'entitytype' => 'learning_catalog_assignment',
-@@ -1300,7 +1302,9 @@
+@@ -1300,7 +1304,9 @@
      private static function employee_snapshot(string $system, \stdClass $company, \stdClass $member): array {
          global $DB;
-
+ 
 -        $mapping = $DB->get_record('local_kbacorp_extmap', [
 +        $mapping = $DB->get_record_sql('SELECT em.* FROM {local_kbacorp_extmap} em ' .
 +            'WHERE em.companyid = :companyid AND em.system = :system AND em.entitytype = :entitytype ' .
@@ -240,10 +485,10 @@
              'companyid' => (int)$company->id,
              'system' => $system,
              'entitytype' => 'employee',
-@@ -1378,9 +1382,9 @@
+@@ -1378,9 +1384,9 @@
      private static function organisation_snapshot(string $system, \stdClass $company): array {
          global $DB;
-
+ 
 -        $maps = $DB->get_records_select('local_kbacorp_extmap',
 -            'companyid = :companyid AND system = :system AND status = :status ' .
 -                'AND entitytype IN (:department, :businessrole)', [
@@ -253,7 +498,7 @@
                  'companyid' => (int)$company->id,
                  'system' => $system,
                  'status' => 'active',
-@@ -1457,7 +1461,9 @@
+@@ -1457,7 +1463,9 @@
                  ])) {
                  continue;
              }
@@ -264,10 +509,15 @@
                  'companyid' => $companyid,
                  'system' => $system,
                  'entitytype' => 'learning_catalog_assignment',
-@@ -1542,14 +1548,21 @@
+@@ -1539,17 +1547,26 @@
+         if (!$mapping || (string)$mapping->localentity !== 'company') {
+             return false;
+         }
++        global $USER;
++        access::require_not_revoked((int)$mapping->localid, (int)($USER->id ?? 0));
          return $DB->get_record('local_kbacorp_company', ['id' => (int)$mapping->localid]);
      }
-
+ 
 -    private static function find_mapping(int $companyid, string $system, string $entitytype, string $externalid) {
 -        global $DB;
 -        return $DB->get_record('local_kbacorp_extmap', [
@@ -287,7 +537,7 @@
 +        // Moodle represents a missing record as false; typed consumers expect null.
 +        return $mapping ?: null;
      }
-
+ 
      private static function mapping_metadata(string $idempotencykey, array $extra = []): array {
 --- a/local/kbacorporate/classes/local/external_mapping.php
 +++ b/local/kbacorporate/classes/local/external_mapping.php
@@ -335,7 +585,7 @@
 +        $created = $DB->get_record_sql($lookupsql, $lookupparams, MUST_EXIST);
 +        return (int)$created->id;
      }
-
+ 
      public static function find_local(int $companyid, string $system, string $entitytype, string $externalid) {
          global $DB;
 -        return $DB->get_record('local_kbacorp_extmap', [
@@ -362,6 +612,82 @@
              'sectionname' => !empty($data->sectionname) ? trim($data->sectionname) : null,
              'minlabel' => !empty($data->minlabel) ? trim($data->minlabel) : null,
              'maxlabel' => !empty($data->maxlabel) ? trim($data->maxlabel) : null,
+--- a/local/kbacorporate/classes/local/implementation_task_discussion.php
++++ b/local/kbacorporate/classes/local/implementation_task_discussion.php
+@@ -17,6 +17,7 @@
+ 
+     /** Managers with implementation access and the assigned employee may open the task. */
+     public static function can_access(\stdClass $task, int $userid): bool {
++        if (access::is_revoked((int)$task->companyid, $userid)) { return false; }
+         global $DB;
+         if ($userid <= 0 || !empty($task->deleted)) {
+             return false;
+@@ -81,6 +82,7 @@
+     }
+ 
+     public static function is_curator(\stdClass $task, int $userid): bool {
++        if (access::is_revoked((int)$task->companyid, $userid)) { return false; }
+         global $DB;
+         // All three identifiers must match: a shared audit ID alone is not
+         // evidence that the curator is assigned to this task's company.
+--- a/local/kbacorporate/classes/local/implementation_task_lifecycle.php
++++ b/local/kbacorporate/classes/local/implementation_task_lifecycle.php
+@@ -130,6 +130,7 @@
+ 
+     public static function get_user_tasks(int $userid, string $status = ''): array {
+         global $DB;
++        $revocationwhere = access::not_revoked_sql('t.companyid', $userid);
+         $params = ['ownerid' => $userid]; $statussql = '';
+         if ($status === 'duesoon') {
+             $days = get_config('local_kbacorporate', 'implementationreminderdays');
+@@ -156,7 +157,7 @@
+                       WHERE ck.taskid = t.id AND ck.isdone = 1) AS checklistdone
+               FROM {local_kbacorp_impl_task} t
+               JOIN {local_kbacorp_company} c ON c.id = t.companyid
+-              WHERE t.ownerid = :ownerid
++              WHERE t.ownerid = :ownerid AND {$revocationwhere}
+                 AND t.deleted = 0
+                 AND EXISTS (SELECT 1 FROM {local_kbacorp_member} m
+                              WHERE m.companyid = t.companyid AND m.userid = t.ownerid
+--- a/local/kbacorporate/companies.php
++++ b/local/kbacorporate/companies.php
+@@ -14,6 +14,7 @@
+ 
+ $delete = optional_param('delete', 0, PARAM_INT);
+ if ($delete && confirm_sesskey()) {
++    \local_kbacorporate\local\access::require_not_revoked($delete, (int)$USER->id);
+     $company = $DB->get_record('local_kbacorp_company', ['id' => $delete], '*', MUST_EXIST);
+     \local_kbacorporate\local\repository::delete_company($company->id);
+     redirect(new moodle_url('/local/kbacorporate/companies.php'), get_string('deleted', 'local_kbacorporate'));
+@@ -26,7 +27,9 @@
+ $PAGE->set_title(get_string('companies', 'local_kbacorporate'));
+ $PAGE->set_heading(get_string('pluginname', 'local_kbacorporate'));
+ 
+-$allcompanies = array_values($DB->get_records('local_kbacorp_company', [], 'name ASC'));
++$revocationwhere = \local_kbacorporate\local\access::not_revoked_sql('c.id', (int)$USER->id);
++$allcompanies = array_values($DB->get_records_sql(
++    "SELECT c.* FROM {local_kbacorp_company} c WHERE {$revocationwhere} ORDER BY c.name ASC"));
+ $companies = $allcompanies;
+ if ($filtercompanyid > 0) {
+     $companies = array_values(array_filter($companies, static function($company) use ($filtercompanyid) {
+--- a/local/kbacorporate/company_edit.php
++++ b/local/kbacorporate/company_edit.php
+@@ -5,6 +5,7 @@
+ $context = context_system::instance();
+ require_capability('local/kbacorporate:managecompanies', $context);
+ $id = optional_param('id', 0, PARAM_INT);
++\local_kbacorporate\local\access::require_not_revoked($id, (int)$USER->id);
+ 
+ $PAGE->set_context($context);
+ $PAGE->set_url(new moodle_url('/local/kbacorporate/company_edit.php', ['id' => $id]));
+@@ -32,6 +33,7 @@
+ if ($form->is_cancelled()) {
+     redirect(new moodle_url('/local/kbacorporate/companies.php'));
+ } else if ($data = $form->get_data()) {
++    \local_kbacorporate\local\access::require_not_revoked((int)($data->id ?? 0), (int)$USER->id);
+     \local_kbacorporate\local\repository::save_company($data);
+     redirect(new moodle_url('/local/kbacorporate/companies.php'), get_string('saved', 'local_kbacorporate'));
+ }
 --- a/local/kbacorporate/db/install.xml
 +++ b/local/kbacorporate/db/install.xml
 @@ -35,7 +35,7 @@
@@ -376,7 +702,7 @@
 --- a/local/kbacorporate/db/upgrade.php
 +++ b/local/kbacorporate/db/upgrade.php
 @@ -3,6 +3,56 @@
-
+ 
  defined('MOODLE_INTERNAL') || die();
  require_once(__DIR__ . '/../classes/local/economic_indicators.php');
 +
@@ -429,13 +755,13 @@
 +        }
 +    }
 +}
-
+ 
  /**
   * Upgrade steps for KBA Corporate Dashboard.
-@@ -2753,5 +2803,16 @@
+@@ -2753,5 +2803,20 @@
          upgrade_plugin_savepoint(true, 2026102610, 'local', 'kbacorporate');
      }
-
+ 
 +    // Code-only2613 compatibility repair; preserve schema, data and permissions.
 +    if ($oldversion < 2026111003) {
 +        upgrade_plugin_savepoint(true, 2026111003, 'local', 'kbacorporate');
@@ -447,8 +773,92 @@
 +        upgrade_plugin_savepoint(true, 2026111004, 'local', 'kbacorporate');
 +    }
 +
++    if ($oldversion < 2026111100) {
++        upgrade_plugin_savepoint(true, 2026111100, 'local', 'kbacorporate');
++    }
++
      return true;
  }
+--- a/local/kbacorporate/department_edit.php
++++ b/local/kbacorporate/department_edit.php
+@@ -4,6 +4,7 @@
+ $context = context_system::instance();
+ require_capability('local/kbacorporate:managedepartments', $context);
+ $companyid = required_param('companyid', PARAM_INT);
++\local_kbacorporate\local\access::require_not_revoked($companyid, (int)$USER->id);
+ $id = optional_param('id', 0, PARAM_INT);
+ $company = $DB->get_record('local_kbacorp_company', ['id' => $companyid], '*', MUST_EXIST);
+ $department = $id ? $DB->get_record('local_kbacorp_department', ['id' => $id, 'companyid' => $companyid], '*', MUST_EXIST) : null;
+--- a/local/kbacorporate/department_members.php
++++ b/local/kbacorporate/department_members.php
+@@ -6,6 +6,7 @@
+ $departmentid = required_param('departmentid', PARAM_INT);
+ $delete = optional_param('delete', 0, PARAM_INT);
+ $department = \local_kbacorporate\local\departments::get_department($departmentid);
++\local_kbacorporate\local\access::require_not_revoked((int)$department->companyid, (int)$USER->id);
+ $company = $DB->get_record('local_kbacorp_company', ['id' => $department->companyid], '*', MUST_EXIST);
+ if ($delete && confirm_sesskey()) {
+     \local_kbacorporate\local\repository::delete_department_member($delete, $departmentid);
+--- a/local/kbacorporate/departments.php
++++ b/local/kbacorporate/departments.php
+@@ -4,6 +4,7 @@
+ $context = context_system::instance();
+ require_capability('local/kbacorporate:managedepartments', $context);
+ $companyid = required_param('companyid', PARAM_INT);
++\local_kbacorporate\local\access::require_not_revoked($companyid, (int)$USER->id);
+ $delete = optional_param('delete', 0, PARAM_INT);
+ $company = $DB->get_record('local_kbacorp_company', ['id' => $companyid], '*', MUST_EXIST);
+ if ($delete && confirm_sesskey()) {
+--- a/local/kbacorporate/development_plan.php
++++ b/local/kbacorporate/development_plan.php
+@@ -16,6 +16,7 @@
+ $context = context_system::instance();
+ $planid = required_param('id', PARAM_INT);
+ $plan = \local_kbacorporate\local\development_plans::get_plan($planid);
++\local_kbacorporate\local\access::require_not_revoked((int)$plan->companyid, (int)$USER->id);
+ $isself = (int)$plan->userid === (int)$USER->id;
+ $canmanage = has_capability('local/kbacorporate:managedevelopmentplans', $context) &&
+     \local_kbacorporate\local\access::can_view_employee((int)$plan->companyid, $USER->id, (int)$plan->userid);
+--- a/local/kbacorporate/license_edit.php
++++ b/local/kbacorporate/license_edit.php
+@@ -5,6 +5,7 @@
+ $context = context_system::instance();
+ require_capability('local/kbacorporate:managelicenses', $context);
+ $companyid = required_param('companyid', PARAM_INT);
++\local_kbacorporate\local\access::require_not_revoked($companyid, (int)$USER->id);
+ $id = optional_param('id', 0, PARAM_INT);
+ $company = $DB->get_record('local_kbacorp_company', ['id' => $companyid], '*', MUST_EXIST);
+ $license = $id ? \local_kbacorporate\local\licenses::get_license($id, $companyid) : null;
+--- a/local/kbacorporate/license_users.php
++++ b/local/kbacorporate/license_users.php
+@@ -5,6 +5,7 @@
+ $context = context_system::instance();
+ require_capability('local/kbacorporate:managelicenses', $context);
+ $companyid = required_param('companyid', PARAM_INT);
++\local_kbacorporate\local\access::require_not_revoked($companyid, (int)$USER->id);
+ $licenseid = required_param('licenseid', PARAM_INT);
+ $releaseuserid = optional_param('releaseuserid', 0, PARAM_INT);
+ $company = $DB->get_record('local_kbacorp_company', ['id' => $companyid], '*', MUST_EXIST);
+--- a/local/kbacorporate/licenses_manage.php
++++ b/local/kbacorporate/licenses_manage.php
+@@ -5,6 +5,7 @@
+ $context = context_system::instance();
+ require_capability('local/kbacorporate:managelicenses', $context);
+ $companyid = required_param('companyid', PARAM_INT);
++\local_kbacorporate\local\access::require_not_revoked($companyid, (int)$USER->id);
+ $deactivate = optional_param('deactivate', 0, PARAM_INT);
+ $company = $DB->get_record('local_kbacorp_company', ['id' => $companyid], '*', MUST_EXIST);
+ 
+--- a/local/kbacorporate/members.php
++++ b/local/kbacorporate/members.php
+@@ -5,6 +5,7 @@
+ $context = context_system::instance();
+ require_capability('local/kbacorporate:managemembers', $context);
+ $companyid = required_param('companyid', PARAM_INT);
++\local_kbacorporate\local\access::require_not_revoked($companyid, (int)$USER->id);
+ $delete = optional_param('delete', 0, PARAM_INT);
+ $company = $DB->get_record('local_kbacorp_company', ['id' => $companyid], '*', MUST_EXIST);
+ 
 --- a/local/kbacorporate/tests/course_recommendations_test.php
 +++ b/local/kbacorporate/tests/course_recommendations_test.php
 @@ -27,7 +27,7 @@
@@ -464,7 +874,7 @@
 +++ b/local/kbacorporate/tests/development_plans_test.php
 @@ -10,6 +10,176 @@
  use local_kbacorporate\local\repository;
-
+ 
  final class development_plans_test extends \advanced_testcase {
 +    public function test_adr0005_defaults_and_explicit_membership_contracts(): void {
 +        global $DB;
@@ -653,7 +1063,7 @@
 --- a/local/kbacorporate/tests/erp_exchange_test.php
 +++ b/local/kbacorporate/tests/erp_exchange_test.php
 @@ -9,6 +9,114 @@
-
+ 
  /** Regression tests for the provider-neutral ERP exchange boundary. */
  final class erp_exchange_test extends \advanced_testcase {
 +    private const AUDIT_SALT = 'erp-regression-test-salt';
@@ -800,7 +1210,7 @@
 +            'system' => 'erp_test',
 +            'entitytype' => 'employee', 'externalid' => 'employee-created',
          ]));
-
+ 
          $reactivated = erp_exchange::push_entity('erp_test', 'employee', 'employee-created', [
 @@ -498,9 +611,12 @@
          $this->assertCount(0, business_roles::get_user_roles(
@@ -816,7 +1226,7 @@
 +            'entitytype' => 'business_role_assignment', 'externalid' => 'a-1',
          ]));
      }
-
+ 
 --- a/local/kbacorporate/tests/implementation_actions_test.php
 +++ b/local/kbacorporate/tests/implementation_actions_test.php
 @@ -69,7 +69,8 @@
@@ -836,7 +1246,7 @@
 -        $item = reset(implementation_audits::get_items($auditid));
 +        $audititems = implementation_audits::get_items($auditid);
 +        $item = reset($audititems);
-
+ 
          $this->expectException(\moodle_exception::class);
          implementation_actions::create_selected($companyid, $auditid,
 --- a/local/kbacorporate/tests/implementation_audits_test.php
@@ -854,7 +1264,7 @@
 @@ -118,7 +119,8 @@
          $version1 = implementation_audits::ensure_versioned($toolid, 2);
          $this->assertSame('v1', $version1->versionlabel);
-
+ 
 -        $criterion = reset(implementation_audits::get_criteria($toolid));
 +        $criteria = implementation_audits::get_criteria($toolid);
 +        $criterion = reset($criteria);
@@ -904,7 +1314,7 @@
 +            ['taskid' => $taskid, 'message' => 'Audit trail message']));
          $history = implementation_task_lifecycle::get_history($taskid);
          $this->assertSame('delete', (string)$history[0]->eventtype);
-
+ 
 --- a/local/kbacorporate/tests/implementation_board_query_test.php
 +++ b/local/kbacorporate/tests/implementation_board_query_test.php
 @@ -17,9 +17,17 @@
@@ -939,15 +1349,15 @@
 +++ b/local/kbacorporate/tests/implementation_evidence_test.php
 @@ -2,6 +2,7 @@
  namespace local_kbacorporate;
-
+ 
  defined('MOODLE_INTERNAL') || die();
 +global $CFG;
  require_once($CFG->libdir . '/filelib.php');
-
+ 
  use local_kbacorporate\local\implementation_actions;
 @@ -69,6 +70,7 @@
      }
-
+ 
      public function test_pending_version_blocks_duplicate_submission_and_direct_review(): void {
 +        $this->resetAfterTest();
          [$taskid, $ownerid] = $this->create_inprogress_task();
@@ -1259,7 +1669,7 @@
 +        $managerrole = $DB->get_record('role', ['shortname' => 'manager'], '*', MUST_EXIST);
 +        role_assign($managerrole->id, $manager->id, \context_system::instance()->id);
 +        $this->setUser($manager);
-
+ 
          $generator = $this->getDataGenerator()->get_plugin_generator('core_competency');
          $framework = $generator->create_framework();
 @@ -47,7 +51,7 @@
@@ -1290,11 +1700,11 @@
 +++ b/local/kbacorporate/version.php
 @@ -4,7 +4,7 @@
  defined('MOODLE_INTERNAL') || die();
-
+ 
  $plugin->component = 'local_kbacorporate';
 -$plugin->version   = 2026102613;
-+$plugin->version   = 2026111004;
++$plugin->version = 2026111100;
  $plugin->requires  = 2022041900; // Moodle 4.0.
  $plugin->maturity  = MATURITY_RC;
 -$plugin->release   = '0.40.13 — integration acceptance and performance diagnostics';
-+$plugin->release   = '0.40.13-bms.2 — ADR-0005 defaults candidate';
++$plugin->release = '0.40.13-bms.3';

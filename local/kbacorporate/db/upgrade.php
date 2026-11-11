@@ -2758,5 +2758,9 @@ function xmldb_local_kbacorporate_upgrade($oldversion) {
         upgrade_plugin_savepoint(true, 2026110901, 'local', 'kbacorporate');
     }
 
+    if ($oldversion < 2026111100) {
+        upgrade_plugin_savepoint(true, 2026111100, 'local', 'kbacorporate');
+    }
+
     return true;
 }

@@ -232,16 +232,17 @@ class company_service {
         global $DB;
 
         $result = [];
+        $revocationwhere = membership_access_service::canonical_sql('c.uuid', $userid);
         if (company_registry_service::ready()) {
             if (is_siteadmin($userid) || has_capability('local/kbacompany:viewallcompanies',
                     \context_system::instance(), $userid)) {
-                $records = $DB->get_records('local_kbacompany_company', ['active' => 1], 'name ASC, id ASC');
+                $records = $DB->get_records_sql("SELECT c.* FROM {local_kbacompany_company} c WHERE c.active = 1 AND {$revocationwhere} ORDER BY c.name, c.id");
             } else {
                 $records = $DB->get_records_sql(
                     "SELECT c.*
                        FROM {local_kbacompany_company} c
                        JOIN {local_kbacompany_member} m ON m.companyuuid = c.uuid AND m.userid = :userid AND m.active = 1
-                      WHERE c.active = 1
+                      WHERE c.active = 1 AND {$revocationwhere}
                    ORDER BY c.name, c.id", ['userid' => $userid]);
             }
             foreach ($records as $company) {
@@ -264,6 +265,7 @@ class company_service {
     /** Resolve one authorised company context by stable UUID. */
     public static function company_context(string $uuid, int $userid): array {
         $uuid = strtolower(trim($uuid));
+        membership_access_service::require_access($uuid, $userid);
         $canonical = company_registry_service::by_uuid($uuid);
         if ($canonical) {
             if (!self::can_access_canonical($canonical, $userid)) {

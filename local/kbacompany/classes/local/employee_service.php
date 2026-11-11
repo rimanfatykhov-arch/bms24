@@ -655,6 +655,7 @@ class employee_service {
             throw new \moodle_exception('identitylockfailed', 'local_kbacompany');
         }
         try {
+            membership_access_service::require_access($companyuuid, $userid);
             $existing = $DB->get_record('local_kbacompany_member', [
                 'companyuuid' => $companyuuid, 'userid' => $userid, 'active' => 1,
             ], '*', IGNORE_MULTIPLE);
@@ -683,25 +684,12 @@ class employee_service {
     }
 
     public static function close_membership(string $companyuuid, int $userid, int $actorid): void {
-        global $DB;
-        if (!permission_service::can_manage_organization($companyuuid, $actorid) && !is_siteadmin($actorid)) {
-            throw new \required_capability_exception(\context_system::instance(),
-                'local/kbacompany:manageorganization', 'nopermissions', '');
-        }
-        $rows = $DB->get_records('local_kbacompany_member', [
-            'companyuuid' => $companyuuid, 'userid' => $userid, 'active' => 1,
-        ]);
-        $now = time();
-        foreach ($rows as $row) {
-            $row->active = 0; $row->effectiveto = $now; $row->timemodified = $now;
-            $DB->update_record('local_kbacompany_member', $row);
-        }
-        if ($rows) {
-            integration_service::enqueue('employee_close', $companyuuid, $userid,
-                ['company_uuid' => $companyuuid, 'moodle_user_id' => $userid,
-                    'external_contact_id' => integration_service::external_id(
-                        integration_service::BITRIX_PROVIDER, 'user', (string)$userid)]);
-        }
+        membership_access_service::change($companyuuid, $userid, $actorid);
+    }
+
+    /** Explicit reopen removes the deny only; positive membership grants remain separately managed. */
+    public static function reopen_membership_access(string $companyuuid, int $userid, int $actorid): void {
+        membership_access_service::change($companyuuid, $userid, $actorid, true);
     }
 
     private static function ensure_company_registry(array $company, int $actorid): void {

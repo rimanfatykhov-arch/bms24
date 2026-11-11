@@ -4,6 +4,23 @@ namespace local_kbacorporate\local;
 defined('MOODLE_INTERNAL') || die();
 
 class access {
+    /** Optional BMS policy bridge: explicit revoke precedes every positive grant. */
+    public static function not_revoked_sql(string $companyexpression, int $userid): string {
+        if (!class_exists('\\local_kbacompany\\local\\membership_access_service')) { return '1=1'; }
+        return \local_kbacompany\local\membership_access_service::legacy_sql($companyexpression, $userid);
+    }
+    public static function is_revoked(int $companyid, int $userid): bool {
+        return class_exists('\\local_kbacompany\\local\\membership_access_service') &&
+            \local_kbacompany\local\membership_access_service::is_legacy_revoked($companyid, $userid);
+    }
+    public static function require_not_revoked(int $companyid, int $userid): void {
+        global $USER;
+        $userid = $userid > 0 ? $userid : (int)($USER->id ?? 0);
+        if (self::is_revoked($companyid, $userid)) {
+            throw new \moodle_exception('companynotallowed', 'local_kbacorporate');
+        }
+    }
+
     /**
      * Return active company memberships that may be used for a competency view.
      *
@@ -13,13 +30,14 @@ class access {
      */
     public static function get_competency_company_options(int $employeeid, int $viewerid): array {
         global $DB;
+        $revocationwhere = self::not_revoked_sql('c.id', $viewerid);
 
         $sql = "SELECT c.*
                   FROM {local_kbacorp_company} c
                   JOIN {local_kbacorp_member} m ON m.companyid = c.id
                  WHERE m.userid = :employeeid
                    AND m.isemployee = 1
-                   AND c.active = 1
+                   AND c.active = 1 AND {$revocationwhere}
               ORDER BY c.name ASC";
         $memberships = $DB->get_records_sql($sql, ['employeeid' => $employeeid]);
         if (!$memberships || $employeeid === $viewerid || is_siteadmin($viewerid)) {
@@ -59,10 +77,11 @@ class access {
 
     public static function get_allowed_companies(int $userid): array {
         global $DB;
+        $revocationwhere = self::not_revoked_sql('c.id', $userid);
         $context = \context_system::instance();
 
         if (is_siteadmin($userid) || has_capability('local/kbacorporate:viewallcompanies', $context, $userid)) {
-            return $DB->get_records('local_kbacorp_company', ['active' => 1], 'name ASC');
+            return $DB->get_records_sql("SELECT c.* FROM {local_kbacorp_company} c WHERE c.active = 1 AND {$revocationwhere} ORDER BY c.name");
         }
 
         $sql = "SELECT DISTINCT c.*
@@ -77,7 +96,7 @@ class access {
                     ON dm.departmentid = d.id
                    AND dm.userid = :deptuserid
                    AND dm.deptrole = :deptrole
-                 WHERE c.active = 1
+                 WHERE c.active = 1 AND {$revocationwhere}
                    AND (m.id IS NOT NULL OR dm.id IS NOT NULL)
               ORDER BY c.name ASC";
         return $DB->get_records_sql($sql, [
@@ -107,6 +126,7 @@ class access {
     }
 
     public static function has_full_company_access(int $companyid, int $userid): bool {
+        if (self::is_revoked($companyid, $userid)) { return false; }
         global $DB;
         $context = \context_system::instance();
         if (is_siteadmin($userid) || has_capability('local/kbacorporate:viewallcompanies', $context, $userid)) {
@@ -120,6 +140,7 @@ class access {
     }
 
     public static function get_allowed_departments(int $companyid, int $userid): array {
+        if (self::is_revoked($companyid, $userid)) { return []; }
         global $DB;
         if (self::has_full_company_access($companyid, $userid)) {
             return $DB->get_records('local_kbacorp_department', ['companyid' => $companyid, 'active' => 1], 'name ASC');
@@ -129,6 +150,7 @@ class access {
 
     /** Return company employee IDs visible to a viewer, optionally restricted to one department. */
     public static function get_visible_employee_ids(int $companyid, int $userid, int $departmentid = 0): array {
+        if (self::is_revoked($companyid, $userid)) { return []; }
         global $DB;
         if ($departmentid < 0) {
             $departmentid = 0;

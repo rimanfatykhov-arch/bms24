@@ -14,6 +14,7 @@ if (!in_array($statusfilter, ['all', 'active', 'inactive'], true)) {
 
 $delete = optional_param('delete', 0, PARAM_INT);
 if ($delete && confirm_sesskey()) {
+    \local_kbacorporate\local\access::require_not_revoked($delete, (int)$USER->id);
     $company = $DB->get_record('local_kbacorp_company', ['id' => $delete], '*', MUST_EXIST);
     \local_kbacorporate\local\repository::delete_company($company->id);
     redirect(new moodle_url('/local/kbacorporate/companies.php'), get_string('deleted', 'local_kbacorporate'));
@@ -26,7 +27,9 @@ $PAGE->set_pagelayout('admin');
 $PAGE->set_title(get_string('companies', 'local_kbacorporate'));
 $PAGE->set_heading(get_string('pluginname', 'local_kbacorporate'));
 
-$allcompanies = array_values($DB->get_records('local_kbacorp_company', [], 'name ASC'));
+$revocationwhere = \local_kbacorporate\local\access::not_revoked_sql('c.id', (int)$USER->id);
+$allcompanies = array_values($DB->get_records_sql(
+    "SELECT c.* FROM {local_kbacorp_company} c WHERE {$revocationwhere} ORDER BY c.name ASC"));
 $companies = $allcompanies;
 if ($filtercompanyid > 0) {
     $companies = array_values(array_filter($companies, static function($company) use ($filtercompanyid) {
