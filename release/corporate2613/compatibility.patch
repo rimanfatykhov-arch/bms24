@@ -1462,7 +1462,7 @@
              'evidencestatus' => implementation_audits::EVIDENCE_SUBMITTED,
 --- a/local/kbacorporate/tests/implementation_curator_paging_test.php
 +++ b/local/kbacorporate/tests/implementation_curator_paging_test.php
-@@ -83,6 +83,39 @@
+@@ -83,6 +83,40 @@
          $this->assertSame(count($tasksfirst) + count($taskssecond), $all->total);
      }
 
@@ -1473,7 +1473,8 @@
 +        $curator = $this->getDataGenerator()->create_user();
 +        $owner = $this->getDataGenerator()->create_user();
 +        [$a,, $tasksA] = $this->make_tasks($curator, $owner);
-+        [$b,, $tasksB] = $this->make_tasks($curator, $owner);
++        $otherowner = $this->getDataGenerator()->create_user();
++        [$b,, $tasksB] = $this->make_tasks($curator, $otherowner);
 +        $au = \local_kbacompany\local\identity_registry::company_uuid($a);
 +        \local_kbacompany\local\employee_service::ensure_membership($au, (int)$curator->id, [], 'bms');
 +        $role = create_role('Curator acceptance', 'curatoracceptance', 'Synthetic test');

@@ -2,7 +2,7 @@
   "base_sha": "687c230595bce020fc001db91b3aac276f0fee7d",
   "version": 2026111100,
   "release": "0.40.13-bms.2",
-  "patch_sha256": "8b8864b8397020ee26d5e2617fe31c4f7c781044d95a5059ff88cdaa53fdd82f",
+  "patch_sha256": "c0fc45d5a967df0cbc2bdad3188ec9ff3fc4f621ead67938311bbbb020c5f340",
   "changed_paths": [
     "classes/local/access.php",
     "classes/local/bridge.php",
@@ -852,7 +852,7 @@
     "tests/implementation_board_contract_1824.php": "df9157cb74145d5d208b6789caae46e31a9c9844b65b19d189f1032c2ed3e6c7",
     "tests/implementation_board_query_test.php": "1fac35d13b1f861371c385c8e2dadda928dcac97af786c6c55d365d4844764c5",
     "tests/implementation_curator_company_scope_test.php": "35b410b6015efc0c6e20870e4638bdbb6acc7447325d2bd424538db189379db1",
-    "tests/implementation_curator_paging_test.php": "215e1ef7ad02c96f3bb5ed4c5fc391e8f88cbc29cdb9e07f92d08049ef2de1e8",
+    "tests/implementation_curator_paging_test.php": "03f29ee7edce3fe5a9d6e7fc3342c2d739fa18361ed81f6e3f93655619598e8b",
     "tests/implementation_curator_role_test.php": "95e45f338fa71ea62e46467880fbfbb8a014850ab221f5008486cff3d4fb0d52",
     "tests/implementation_evidence_test.php": "978505f830a27cbfe5cd090587da3f4177c0d95a3fd1eed1028ccb43dd7fb8cf",
     "tests/implementation_kanban_test.php": "a93a380aa37905f2fc4863f43b20d88ad964e2e5ae358f82ce39b12f959e10a1",
