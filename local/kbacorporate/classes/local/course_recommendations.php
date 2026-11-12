@@ -17,6 +17,11 @@ class course_recommendations {
         if ($companyid <= 0 || $competencyid <= 0) {
             return [];
         }
+        // An explicit company revocation precedes every positive grant: a revoked
+        // member must not receive this company's course catalogue.
+        if (access::is_revoked($companyid, $userid)) {
+            return [];
+        }
         $dbman = $DB->get_manager();
         foreach (['local_kbacorp_course', 'competency_coursecomp'] as $tablename) {
             if (!$dbman->table_exists(new \xmldb_table($tablename))) {
@@ -24,7 +29,7 @@ class course_recommendations {
             }
         }
 
-        $sql = "SELECT DISTINCT c.id, c.fullname, c.shortname, c.visible, c.enablecompletion
+        $sql = "SELECT DISTINCT c.id, c.category, c.fullname, c.shortname, c.visible, c.enablecompletion
                   FROM {local_kbacorp_course} kc
                   JOIN {course} c ON c.id = kc.courseid
                   JOIN {competency_coursecomp} cc ON cc.courseid = c.id
@@ -43,9 +48,11 @@ class course_recommendations {
             $enrolled = is_enrolled($context, $userid, '', true);
             $licensed = self::has_active_licence($userid, $companyid, (int)$course->id);
             $selfavailable = self::has_open_enrolment((int)$course->id);
-            $canview = is_siteadmin($userid) || has_capability('moodle/course:view', $context, $userid);
+            // moodle/course:view means "view without participation" (managers);
+            // an ordinary enrolled learner opens the course through enrolment.
+            $canaccess = $enrolled && can_access_course($course, $userid, '', true);
             $canopen = is_siteadmin($userid) || (!empty($course->visible) &&
-                (($enrolled && $canview) || $selfavailable));
+                ($canaccess || $selfavailable));
 
             if ($enrolled && $canopen) {
                 $enrolmentstatus = 'enrolled';

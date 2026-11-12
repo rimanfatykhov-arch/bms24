@@ -135,6 +135,43 @@
 
          return $result;
      }
+--- a/local/kbacorporate/classes/local/course_recommendations.php
++++ b/local/kbacorporate/classes/local/course_recommendations.php
+@@ -17,6 +17,11 @@
+         if ($companyid <= 0 || $competencyid <= 0) {
+             return [];
+         }
++        // An explicit company revocation precedes every positive grant: a revoked
++        // member must not receive this company's course catalogue.
++        if (access::is_revoked($companyid, $userid)) {
++            return [];
++        }
+         $dbman = $DB->get_manager();
+         foreach (['local_kbacorp_course', 'competency_coursecomp'] as $tablename) {
+             if (!$dbman->table_exists(new \xmldb_table($tablename))) {
+@@ -24,7 +29,7 @@
+             }
+         }
+
+-        $sql = "SELECT DISTINCT c.id, c.fullname, c.shortname, c.visible, c.enablecompletion
++        $sql = "SELECT DISTINCT c.id, c.category, c.fullname, c.shortname, c.visible, c.enablecompletion
+                   FROM {local_kbacorp_course} kc
+                   JOIN {course} c ON c.id = kc.courseid
+                   JOIN {competency_coursecomp} cc ON cc.courseid = c.id
+@@ -43,9 +48,11 @@
+             $enrolled = is_enrolled($context, $userid, '', true);
+             $licensed = self::has_active_licence($userid, $companyid, (int)$course->id);
+             $selfavailable = self::has_open_enrolment((int)$course->id);
+-            $canview = is_siteadmin($userid) || has_capability('moodle/course:view', $context, $userid);
++            // moodle/course:view means "view without participation" (managers);
++            // an ordinary enrolled learner opens the course through enrolment.
++            $canaccess = $enrolled && can_access_course($course, $userid, '', true);
+             $canopen = is_siteadmin($userid) || (!empty($course->visible) &&
+-                (($enrolled && $canview) || $selfavailable));
++                ($canaccess || $selfavailable));
+
+             if ($enrolled && $canopen) {
+                 $enrolmentstatus = 'enrolled';
 --- a/local/kbacorporate/classes/local/development_plans.php
 +++ b/local/kbacorporate/classes/local/development_plans.php
 @@ -15,6 +15,22 @@
@@ -987,6 +1024,138 @@
              'courseid' => (int)$course->id,
              'competencyid' => (int)$competency->get('id'),
              'sortorder' => 0,
+@@ -41,6 +41,131 @@
+         ));
+     }
+
++    /** Company with one course linked to one competency. */
++    private function scenario(array $courseoptions = []): array {
++        global $DB;
++        $course = $this->getDataGenerator()->create_course($courseoptions + ['visible' => 1]);
++        $companyid = (int)$DB->insert_record('local_kbacorp_company', (object)[
++            'name' => 'Recommendation Company ' . random_string(6),
++            'active' => 1,
++            'timecreated' => time(),
++            'timemodified' => time(),
++        ]);
++        repository::add_course($companyid, (int)$course->id, 0);
++        $generator = $this->getDataGenerator()->get_plugin_generator('core_competency');
++        $framework = $generator->create_framework();
++        $competency = $generator->create_competency(['competencyframeworkid' => $framework->get('id')]);
++        $generator->create_course_competency([
++            'courseid' => (int)$course->id,
++            'competencyid' => (int)$competency->get('id'),
++            'sortorder' => 0,
++            'ruleoutcome' => 0,
++        ]);
++        return [$course, $companyid, (int)$competency->get('id')];
++    }
++
++    private function disable_non_manual_enrolment(int $courseid): void {
++        foreach (enrol_get_instances($courseid, false) as $instance) {
++            if ($instance->enrol !== 'manual') {
++                enrol_get_plugin($instance->enrol)->update_status($instance, ENROL_INSTANCE_DISABLED);
++            }
++        }
++    }
++
++    public function test_enrolled_student_without_course_view_receives_recommendation(): void {
++        $this->resetAfterTest();
++        [$course, $companyid, $competencyid] = $this->scenario();
++        $this->disable_non_manual_enrolment((int)$course->id);
++        $user = $this->getDataGenerator()->create_user();
++        $this->getDataGenerator()->enrol_user((int)$user->id, (int)$course->id, 'student');
++        $this->assertFalse(has_capability('moodle/course:view', \context_course::instance((int)$course->id), $user));
++
++        $result = course_recommendations::for_competency((int)$user->id, $companyid, $competencyid);
++        $this->assertCount(1, $result);
++        $this->assertSame((int)$course->id, $result[0]->courseid);
++        $this->assertSame('enrolled', $result[0]->enrolmentstatus);
++        $this->assertNotSame('', $result[0]->url);
++    }
++
++    public function test_suspended_enrolment_is_not_recommended_as_enrolled(): void {
++        $this->resetAfterTest();
++        [$course, $companyid, $competencyid] = $this->scenario();
++        $this->disable_non_manual_enrolment((int)$course->id);
++        $user = $this->getDataGenerator()->create_user();
++        $this->getDataGenerator()->enrol_user((int)$user->id, (int)$course->id, 'student', 'manual', 0, 0,
++            ENROL_USER_SUSPENDED);
++        $this->assertSame([], course_recommendations::for_competency((int)$user->id, $companyid, $competencyid));
++    }
++
++    public function test_unenrolled_user_without_licence_or_self_enrolment_gets_nothing(): void {
++        $this->resetAfterTest();
++        [$course, $companyid, $competencyid] = $this->scenario();
++        $this->disable_non_manual_enrolment((int)$course->id);
++        $user = $this->getDataGenerator()->create_user();
++        $this->assertSame([], course_recommendations::for_competency((int)$user->id, $companyid, $competencyid));
++    }
++
++    public function test_open_self_enrolment_is_available_with_link(): void {
++        $this->resetAfterTest();
++        [$course, $companyid, $competencyid] = $this->scenario();
++        $this->disable_non_manual_enrolment((int)$course->id);
++        enrol_get_plugin('self')->add_instance($course, ['status' => ENROL_INSTANCE_ENABLED]);
++        $user = $this->getDataGenerator()->create_user();
++
++        $result = course_recommendations::for_competency((int)$user->id, $companyid, $competencyid);
++        $this->assertCount(1, $result);
++        $this->assertSame('available', $result[0]->enrolmentstatus);
++        $this->assertNotSame('', $result[0]->url);
++    }
++
++    public function test_course_of_another_company_is_not_disclosed(): void {
++        global $DB;
++        $this->resetAfterTest();
++        [$course, $companyb, $competencyid] = $this->scenario();
++        $companya = (int)$DB->insert_record('local_kbacorp_company', (object)[
++            'name' => 'Foreign Company', 'active' => 1, 'timecreated' => time(), 'timemodified' => time(),
++        ]);
++        $user = $this->getDataGenerator()->create_user();
++        $this->getDataGenerator()->enrol_user((int)$user->id, (int)$course->id, 'student');
++        $this->assertSame([], course_recommendations::for_competency((int)$user->id, $companya, $competencyid));
++        $this->assertCount(1, course_recommendations::for_competency((int)$user->id, $companyb, $competencyid));
++    }
++
++    public function test_revoked_company_member_gets_no_recommendations(): void {
++        global $DB;
++        $this->resetAfterTest();
++        if (!class_exists('\local_kbacompany\local\membership_access_service') ||
++                !$DB->get_manager()->table_exists('local_kbacompany_revoke')) {
++            $this->markTestSkipped('BMS revocation policy is not installed.');
++        }
++        [$course, $companyid, $competencyid] = $this->scenario();
++        $user = $this->getDataGenerator()->create_user();
++        $this->getDataGenerator()->enrol_user((int)$user->id, (int)$course->id, 'student');
++        $this->assertCount(1, course_recommendations::for_competency((int)$user->id, $companyid, $competencyid));
++
++        $uuid = \core\uuid::generate();
++        $DB->insert_record('local_kbacompany_idreg', (object)['sourcecomponent' => 'local_kbacorporate',
++            'sourceentity' => 'company', 'sourceid' => $companyid, 'uuid' => $uuid,
++            'timecreated' => time(), 'timemodified' => time()]);
++        $DB->insert_record('local_kbacompany_revoke', (object)['companyuuid' => $uuid, 'userid' => (int)$user->id,
++            'revokedby' => 2, 'timecreated' => time(), 'reopenedby' => 0, 'timereopened' => 0]);
++        $this->assertSame([], course_recommendations::for_competency((int)$user->id, $companyid, $competencyid));
++    }
++
++    public function test_admin_sees_hidden_course_but_ordinary_employee_does_not(): void {
++        $this->resetAfterTest();
++        [$course, $companyid, $competencyid] = $this->scenario(['visible' => 0]);
++        $admin = get_admin();
++        $this->getDataGenerator()->enrol_user((int)$admin->id, (int)$course->id, 'student');
++        $employee = $this->getDataGenerator()->create_user();
++        $this->getDataGenerator()->enrol_user((int)$employee->id, (int)$course->id, 'student');
++
++        $adminresult = course_recommendations::for_competency((int)$admin->id, $companyid, $competencyid);
++        $this->assertCount(1, $adminresult);
++        $this->assertSame('enrolled', $adminresult[0]->enrolmentstatus);
++        $this->assertSame([], course_recommendations::for_competency((int)$employee->id, $companyid, $competencyid));
++    }
++
+     public function test_recommendations_require_company_and_competency_context(): void {
+         $this->resetAfterTest();
+         $user = $this->getDataGenerator()->create_user();
 --- a/local/kbacorporate/tests/curator_scope_contract_1822.php
 +++ b/local/kbacorporate/tests/curator_scope_contract_1822.php
 @@ -2,6 +2,10 @@
