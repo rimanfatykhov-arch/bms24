@@ -152,7 +152,7 @@
 @@ -24,7 +29,7 @@
              }
          }
- 
+
 -        $sql = "SELECT DISTINCT c.id, c.fullname, c.shortname, c.visible, c.enablecompletion
 +        $sql = "SELECT DISTINCT c.id, c.category, c.fullname, c.shortname, c.visible, c.enablecompletion
                    FROM {local_kbacorp_course} kc
@@ -169,7 +169,7 @@
              $canopen = is_siteadmin($userid) || (!empty($course->visible) &&
 -                (($enrolled && $canview) || $selfavailable));
 +                ($canaccess || $selfavailable));
- 
+
              if ($enrolled && $canopen) {
                  $enrolmentstatus = 'enrolled';
 --- a/local/kbacorporate/classes/local/development_plans.php
@@ -1027,7 +1027,7 @@
 @@ -41,6 +41,131 @@
          ));
      }
- 
+
 +    /** Company with one course linked to one competency. */
 +    private function scenario(array $courseoptions = []): array {
 +        global $DB;

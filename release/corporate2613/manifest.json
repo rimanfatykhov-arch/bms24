@@ -2,7 +2,7 @@
   "base_sha": "687c230595bce020fc001db91b3aac276f0fee7d",
   "version": 2026111100,
   "release": "0.40.13-bms.2",
-  "patch_sha256": "ce4954114244e35c056d144b89879cdf98b4862813f81468fcaa34eebd5ae307",
+  "patch_sha256": "9431457141dbded072227d09b33fb16cbe8161b2c6dbbb77b0017b23f15e6e16",
   "changed_paths": [
     "classes/external/erp_api.php",
     "classes/local/access.php",
