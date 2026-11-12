@@ -9656,3 +9656,7 @@ $string['reviewqueue_open_work_tab'] = 'Open work — new tab';
 $string['reviewqueue_review_tab'] = 'Review competency — new tab';
 $string['reviewqueue_grade_not_published'] = 'No published grade available';
 $string['employee2_open_assignment_feedback'] = 'Open the assignment link above to read the teacher feedback.';
+
+$string['privacy:metadata:companyrevocation'] = 'Company access revocation history. After erasure, only the active company/user denial is retained while the account can log in, so erasure cannot restore access.';
+
+$string['kbacompany:manageorganization'] = 'Manage company organisation';

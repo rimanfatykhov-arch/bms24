@@ -4,6 +4,7 @@ require_login();
 $context = context_system::instance();
 require_capability('local/kbacorporate:managedepartments', $context);
 $companyid = required_param('companyid', PARAM_INT);
+\local_kbacorporate\local\access::require_not_revoked($companyid, (int)$USER->id);
 $id = optional_param('id', 0, PARAM_INT);
 $company = $DB->get_record('local_kbacorp_company', ['id' => $companyid], '*', MUST_EXIST);
 $department = $id ? $DB->get_record('local_kbacorp_department', ['id' => $id, 'companyid' => $companyid], '*', MUST_EXIST) : null;
@@ -20,6 +21,8 @@ if ($form->is_cancelled()) {
     redirect(new moodle_url('/local/kbacorporate/departments.php', ['companyid' => $companyid]));
 }
 if ($data = $form->get_data()) {
+    $data->id = $id;
+    $data->companyid = $companyid;
     \local_kbacorporate\local\repository::save_department($data);
     redirect(new moodle_url('/local/kbacorporate/departments.php', ['companyid' => $companyid]), get_string('saved', 'local_kbacorporate'));
 }

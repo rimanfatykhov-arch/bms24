@@ -889,7 +889,13 @@ class repository {
 
 
     public static function save_department(\stdClass $data): int {
-        global $DB;
+        global $DB, $USER;
+        access::require_not_revoked((int)$data->companyid, (int)($USER->id ?? 0));
+        if (!empty($data->id)) {
+            $existing = $DB->get_record('local_kbacorp_department',
+                ['id'=>(int)$data->id,'companyid'=>(int)$data->companyid], '*', MUST_EXIST);
+            access::require_not_revoked((int)$existing->companyid, (int)($USER->id ?? 0));
+        }
         $now = time();
         $record = (object)[
             'companyid' => (int)$data->companyid,

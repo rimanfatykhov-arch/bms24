@@ -3603,5 +3603,18 @@
         <INDEX NAME="template_ix" UNIQUE="false" FIELDS="companyuuid, templateuuid" />
       </INDEXES>
     </TABLE>
+        <TABLE NAME="local_kbacompany_revoke" COMMENT="Explicit company access revocations; history retained on reopen">
+        <FIELDS>
+          <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true" />
+          <FIELD NAME="companyuuid" TYPE="char" LENGTH="36" NOTNULL="true" />
+          <FIELD NAME="userid" TYPE="int" LENGTH="10" NOTNULL="true" />
+          <FIELD NAME="revokedby" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" />
+          <FIELD NAME="timecreated" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" />
+          <FIELD NAME="reopenedby" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" />
+          <FIELD NAME="timereopened" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" />
+        </FIELDS>
+        <KEYS><KEY NAME="primary" TYPE="primary" FIELDS="id" /></KEYS>
+        <INDEXES><INDEX NAME="company_user_open_ix" UNIQUE="false" FIELDS="companyuuid,userid,timereopened" /></INDEXES>
+      </TABLE>
   </TABLES>
 </XMLDB>

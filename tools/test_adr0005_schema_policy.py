@@ -26,7 +26,7 @@ def evidence():
     physical['indexes']['local_kbacorp_devplan'] = {}
     physical['columns']['local_kbacorp_member.isemployee'] = {'type': 'tinyint', 'default': '0', 'nullable': False}
     physical['columns']['local_kbacorp_devplan.status'] = {'type': 'varchar(20)', 'default': 'draft', 'nullable': False}
-    fresh = {'versions': {'local_kbacompany': '2026111002', 'local_kbacorporate': '2026111004'},
+    fresh = {'versions': {'local_kbacompany': '2026111100', 'local_kbacorporate': '2026111100'},
              'tables': tables, 'physical': physical}
     after = copy.deepcopy(fresh)
     for table, stem, column in policy.EXCEPTIONS:

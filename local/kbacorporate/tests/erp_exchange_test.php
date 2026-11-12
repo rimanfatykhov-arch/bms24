@@ -11,6 +11,23 @@ use local_kbacorporate\local\erp_exchange;
 final class erp_exchange_test extends \advanced_testcase {
     private const AUDIT_SALT = 'erp-regression-test-salt';
 
+    public function test_external_facade_loads_on_supported_moodle_and_keeps_contract(): void {
+        $this->resetAfterTest();
+        $this->setAdminUser();
+        $facade = \local_kbacorporate\external\erp_api::class;
+        $this->assertNotEmpty($facade::pull_company_snapshot_parameters()->keys);
+        $this->assertEquals(erp_exchange::contract(), json_decode($facade::contract(), true));
+        $this->assertDebuggingNotCalled();
+    }
+
+    public function test_external_facade_requires_erp_capability(): void {
+        $this->resetAfterTest();
+        $this->setUser($this->getDataGenerator()->create_user());
+        $this->expectException(\required_capability_exception::class);
+        \local_kbacorporate\external\erp_api::contract();
+    }
+
+
     public function test_provider_isolation_with_same_company_and_employee_external_id(): void {
         global $DB;
         $this->resetAfterTest();

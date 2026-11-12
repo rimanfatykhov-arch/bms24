@@ -2,6 +2,10 @@
 /** Standalone contract assertions, no Moodle database required. */
 namespace local_kbacorporate\local {
     final class access {
+        public static array $revoked = [];
+        public static function is_revoked(int $companyid, int $userid): bool {
+            return !empty(self::$revoked[$companyid][$userid]);
+        }
         public static function can_manage_company_implementation(int $companyid, int $userid): bool {
             return false;
         }
@@ -34,6 +38,13 @@ namespace {
     $task = (object)['companyid'=>10, 'auditid'=>100, 'ownerid'=>13, 'deleted'=>0];
     $check(S::is_curator($task,7),true,'assigned');
     $check(S::can_access($task,7),true,'assigned task access');
+    \local_kbacorporate\local\access::$revoked[10][7] = true;
+    $check(S::is_curator($task,7),false,'revoked curator');
+    $check(S::can_access($task,7),false,'revoked curator task access');
+    \local_kbacorporate\local\access::$revoked[10][13] = true;
+    $check(S::can_access($task,13),false,'revoked owner task access');
+    \local_kbacorporate\local\access::$revoked = [];
+    $check(S::can_access($task,7),true,'reopened curator retains positive grant');
     $check(S::is_curator($task,8),false,'other curator');
     $check(S::can_access($task,8),false,'foreign curator access');
     $other = clone $task;

@@ -17,9 +17,12 @@ def check(root=ROOT):
     reviewed_followup = {'local/kbacompany/tests/company_employee_sync_service_test.php': '77fb41119da22be984915d7839dfc9e8352a5a8a7d6da8ca8558e906c062e4bd'}
     # Reviewed stale company/permission literals only; all source/policy assertions retained.
     reviewed_followup['local/kbacompany/tests/company_core_test.php'] = '224a11b3e199a196a6334d23706ab16f8d8d3f5c3e388582a9cb9d3ccaf0116b'
+    # ADR-0006 source changes are bound by exact hashes; original parent manifests remain intact.
+    reviewed_followup.update({'docs/reconcile/corporate-api126-source.json': 'b8addcb93fe259586a4d46d2abcecef5bde99ebc65b356b6ba6b4a75748f702b', 'local/kbacompany/classes/local/employee_service.php': '7b81291e7d1fd4987e905e0c67edb1db24780484c128c3039a59b60a2521f237', 'local/kbacompany/lang/en/local_kbacompany.php': '82590f9febf9255ff009f4cbbba64240442d4fe78935caf8d253e57825824a9d', 'local/kbacompany/lang/ru/local_kbacompany.php': 'aa3c2f2597160717bc48070b0803ef4f865a3e413e886bd4918f4135cc869da9', 'local/kbacompany/tests/company_core_test.php': '224a11b3e199a196a6334d23706ab16f8d8d3f5c3e388582a9cb9d3ccaf0116b', 'local/kbacorporate/classes/local/development_plans.php': 'ffe609b47fe2c7e590c4b64599816e2612a5ee46ef3316dfa25376cca31a2415', 'local/kbacorporate/classes/local/erp_exchange.php': '1ed5b8dd2c1c6a11d86882dabee7bc1b9c22cccc1e37c787bf4849469c718c5d', 'local/kbacorporate/db/upgrade.php': '0e3972020a43537c1524b4c8ade694e3b5df5a9c3563c85fdebf02d70a868374', 'local/kbacorporate/tests/erp_exchange_test.php': '2e6833c34401bbb21b10bf998bad968b043b0cb426f4da71f639f7e6c7ee9583', 'local/kbacorporate/version.php': '165bbcf6953d38a0ba716f10969fdcb0d0f57a3e2f6ef095994df71b4e69f342', 'tools/check_corporate_api126.py': '8cd273417f3a75dd1955b8ec5f30285ef527d45767afdd92c3fc3d151e26bf92'})
     reviewed_metadata={'AGENTS.md','docs/00_MASTER_CONTEXT.md'}
     for name, expected in plan['unchanged_schema_hashes'].items():
-        if digest(root/name)!=expected:
+        target = {'local/kbacompany/db/install.xml': '5d61fb813ca0e1da1ab67db808b5a1da321cadfccef3e2c499e8dee279f5e576'}.get(name, expected)
+        if digest(root/name)!=target:
             errors.append('shared schema/helper changed: '+name)
     for row in plan['rows']:
         path=root/row['path']
@@ -33,7 +36,7 @@ def check(root=ROOT):
         errors.append('one historical0902 release note was lost')
     upgrade=(root/'local/kbacompany/db/upgrade.php').read_text(encoding='utf-8')
     versions=[int(v) for v in re.findall(r'upgrade_plugin_savepoint\(true,\s*(\d+)',upgrade)]
-    if len(versions)!=482 or versions!=sorted(set(versions)) or versions[-1]!=2026111002:
+    if len(versions)!=483 or versions!=sorted(set(versions)) or versions[-1]!=2026111100:
         errors.append('merged upgrade chronology/identity changed')
     driver=(root/'tools/tests/moodle_acceptance.php').read_text(encoding='utf-8')
     for ref in [plan['pr53_sha'],plan['pr56_sha']]:

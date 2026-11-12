@@ -15,6 +15,11 @@ class provider implements
         \core_privacy\local\request\plugin\provider {
 
     public static function get_metadata(collection $collection): collection {
+        $collection->add_database_table('local_kbacompany_revoke', [
+            'userid'=>'privacy:metadata:companyrevocation', 'companyuuid'=>'privacy:metadata:companyrevocation',
+            'revokedby'=>'privacy:metadata:companyrevocation', 'reopenedby'=>'privacy:metadata:companyrevocation',
+            'timecreated'=>'privacy:metadata:companyrevocation', 'timereopened'=>'privacy:metadata:companyrevocation',
+        ], 'privacy:metadata:companyrevocation');
         $collection->add_database_table('local_kbacompany_compfw', [
             'createdby' => 'privacy:metadata:peoplefoundation',
         ], 'privacy:metadata:peoplefoundation');
@@ -442,6 +447,10 @@ class provider implements
 
     public static function get_contexts_for_userid(int $userid): contextlist {
         $contextlist = new contextlist();
+        $contextlist->add_from_sql('SELECT ctx.id FROM {context} ctx WHERE ctx.contextlevel = :level
+            AND EXISTS (SELECT 1 FROM {local_kbacompany_revoke} r
+                WHERE r.userid = :subject OR r.revokedby = :revoker OR r.reopenedby = :opener)',
+            ['level'=>CONTEXT_SYSTEM,'subject'=>$userid,'revoker'=>$userid,'opener'=>$userid]);
         $sql = 'SELECT ctx.id
                   FROM {context} ctx
                  WHERE ctx.contextlevel = :contextlevel
@@ -606,6 +615,13 @@ class provider implements
         if (!in_array($systemcontext->id, $contextlist->get_contextids())) {
             return;
         }
+        $revocations = $DB->get_records_select('local_kbacompany_revoke',
+            'userid = :subject OR revokedby = :revoker OR reopenedby = :opener',
+            ['subject'=>$contextlist->get_user()->id,'revoker'=>$contextlist->get_user()->id,
+             'opener'=>$contextlist->get_user()->id], 'id ASC');
+        writer::with_context($systemcontext)->export_data(
+            [get_string('privacy:metadata:companyrevocation','local_kbacompany')],
+            (object)['records'=>array_values($revocations)]);
         $assignments = $DB->get_records('local_kbacompany_posassign', [
             'userid' => $contextlist->get_user()->id,
         ], 'timecreated ASC');
@@ -1040,6 +1056,7 @@ class provider implements
     public static function delete_data_for_all_users_in_context(\context $context): void {
         global $DB;
         if ($context->contextlevel === CONTEXT_SYSTEM) {
+            self::forget_revocation_audit(null);
             $DB->delete_records('local_kbacompany_commrev');
             self::document_files_for_privacy(null, true);
             self::forget_workflow(null);
@@ -1178,6 +1195,7 @@ class provider implements
         global $DB;
         $systemcontext = \context_system::instance();
         if (in_array($systemcontext->id, $contextlist->get_contextids())) {
+            self::forget_revocation_audit((int)$contextlist->get_user()->id);
             self::document_files_for_privacy((int)$contextlist->get_user()->id, true);
             self::forget_workflow((int)$contextlist->get_user()->id);
             $where = ['actorid' => $contextlist->get_user()->id];
@@ -1454,4 +1472,25 @@ class provider implements
         }
         $records->close();
     }
+    /** Erasure must not grant access: retain only active deny identity while an account can log in. */
+    private static function forget_revocation_audit(?int $userid): void {
+        global $DB;
+        if ($userid === null) {
+            $DB->delete_records_select('local_kbacompany_revoke', 'timereopened > 0');
+            foreach (['revokedby','reopenedby','timecreated'] as $field) {
+                $DB->set_field_select('local_kbacompany_revoke', $field, 0, 'timereopened = 0');
+            }
+            return;
+        }
+        foreach (['revokedby','reopenedby'] as $field) {
+            $DB->set_field('local_kbacompany_revoke', $field, 0, [$field=>$userid]);
+        }
+        if ($DB->record_exists('user',['id'=>$userid,'deleted'=>1])) {
+            $DB->delete_records('local_kbacompany_revoke',['userid'=>$userid]);
+        } else {
+            $DB->delete_records_select('local_kbacompany_revoke', 'userid = :userid AND timereopened > 0', ['userid'=>$userid]);
+            $DB->set_field('local_kbacompany_revoke','timecreated',0,['userid'=>$userid]);
+        }
+    }
+
 }

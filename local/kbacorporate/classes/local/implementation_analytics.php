@@ -11,7 +11,7 @@ final class implementation_analytics {
             int $curatorid = 0, string $period = 'all'): array {
         global $DB;
         $params = [];
-        $where = ['p.curatorid > 0', 't.deleted = 0'];
+        $where = ['p.curatorid > 0', 't.deleted = 0', access::not_revoked_sql('t.companyid', $userid)];
         if (!$allcurators) {
             $where[] = 'p.curatorid = :scopeuserid';
             $params['scopeuserid'] = $userid;

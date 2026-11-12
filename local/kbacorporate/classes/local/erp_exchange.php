@@ -366,6 +366,8 @@ class erp_exchange {
         $changed = false;
         $now = time();
         if ($mapping) {
+            global $USER;
+            access::require_not_revoked((int)$mapping->localid, (int)($USER->id ?? 0));
             $company = $DB->get_record('local_kbacorp_company', ['id' => (int)$mapping->localid], '*', MUST_EXIST);
         } else {
             $company = (object)[
@@ -1545,6 +1547,8 @@ class erp_exchange {
         if (!$mapping || (string)$mapping->localentity !== 'company') {
             return false;
         }
+        global $USER;
+        access::require_not_revoked((int)$mapping->localid, (int)($USER->id ?? 0));
         return $DB->get_record('local_kbacorp_company', ['id' => (int)$mapping->localid]);
     }
 

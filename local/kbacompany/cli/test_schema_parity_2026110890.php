@@ -6,6 +6,9 @@
  * or the correctness of every historical migration between 1645 and 1879.
  */
 define('MOODLE_INTERNAL', true);
+define('XMLDB_TYPE_INTEGER', 'int');
+define('XMLDB_SEQUENCE', true);
+define('XMLDB_KEY_PRIMARY', 'primary');
 define('XMLDB_TYPE_CHAR', 'char');
 define('XMLDB_TYPE_TEXT', 'text');
 define('XMLDB_NOTNULL', true);
@@ -21,6 +24,10 @@ class ddl_field_missing_exception extends RuntimeException {
 class xmldb_table {
     public $name;
     public function __construct($name) { $this->name = $name; }
+    // Non-target table definitions are constructed even when already installed.
+    public function add_field(...$args) {}
+    public function add_key(...$args) {}
+    public function add_index(...$args) {}
 }
 class xmldb_field {
     public $name;
@@ -166,7 +173,7 @@ foreach ([2026101645, 2026101879, 2026110802, 2026110804, 2026110890] as $oldver
         $before = $DB->rows;
         $savepoints = [];
         parity_check(xmldb_local_kbacompany_upgrade($oldversion), 'actual upgrade returns success');
-        parity_check(end($savepoints) === 2026111002, 'repair checkpoint reached from ' . $oldversion);
+        parity_check(end($savepoints) === 2026111100, 'repair checkpoint reached from ' . $oldversion);
         foreach ($targets as $key => $metadata) {
             [$table, $field] = explode('.', $key);
             parity_check($DB->columns[$table][$field] == $metadata, 'matches fresh XMLDB: ' . $key);
@@ -183,7 +190,7 @@ foreach ([2026101645, 2026101879, 2026110802, 2026110804, 2026110890] as $oldver
         xmldb_local_kbacompany_upgrade($oldversion);
         parity_check($DB->manager->adds === $adds, 'retry adds no duplicate fields');
         $savepoints = [];
-        xmldb_local_kbacompany_upgrade(2026111002);
+        xmldb_local_kbacompany_upgrade(2026111100);
         parity_check(!$savepoints && $DB->manager->adds === $adds, 'installed target is no-op');
     }
 }
@@ -212,7 +219,7 @@ foreach (['failon', 'silenton'] as $failuremode) {
     parity_check(isset($DB->columns['local_kbacompany_task']['starttime']), 'partial DDL model exercised');
     $DB->manager->$failuremode = null;
     xmldb_local_kbacompany_upgrade(2026101879);
-    parity_check(end($savepoints) === 2026111002, 'partial DDL retry reaches checkpoint');
+    parity_check(end($savepoints) === 2026111100, 'partial DDL retry reaches checkpoint');
 }
 $DB = new SchemaParityDatabase($targets, 0);
 $DB->missingtable = 'local_kbacompany_deviation';

@@ -91,7 +91,7 @@ if (in_array($mode, ['seed', 'verify', 'fractions', 'partial'], true)) {
     $ordered = ['companyuuid', 'status', 'duedate'];
     if ($mode === 'seed') {
         expect(!file_exists($evidence . '/synthetic-rows.json'), 'fixture.not-reused');
-        expect((string)get_config('local_kbacompany', 'version') === '2026111002', 'fresh.version1002');
+        expect((string)get_config('local_kbacompany', 'version') === '2026111100', 'fresh.version1002');
         json_write($evidence . '/fresh-schema.json', schema_snapshot());
         foreach (['starttime', 'duetime'] as $field) {
             $dbman->drop_field(new xmldb_table($admin), new xmldb_field($field));
@@ -181,7 +181,7 @@ if (in_array($mode, ['seed', 'verify', 'fractions', 'partial'], true)) {
     if ($mode === 'partial') { require __DIR__ . '/rc30_schema_repair_partial.php'; exit(0); }
     if ($mode === 'fractions') { require __DIR__ . '/rc30_schema_repair_fractions.php'; exit(0); }
     $results = [];
-    expect((string)get_config('local_kbacompany', 'version') === '2026111002', 'upgrade.version1002');
+    expect((string)get_config('local_kbacompany', 'version') === '2026111100', 'upgrade.version1002');
     expect(!moodle_needs_upgrading(), 'upgrade.lifecycle-complete');
     foreach (['starttime', 'duetime'] as $field) {
         $id = 'repaired.' . $admin . '.' . $field;
