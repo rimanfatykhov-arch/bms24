@@ -377,3 +377,24 @@ Next: **v0.7.0 — Competency Architecture**.
 - Implemented: separate BMS access role registry and UI, company-scoped grants, assignments, audit; management cycles view/create/edit permissions with existing compatibility fallback.
 - Next: live two-company permission acceptance and finer own/team/department scopes. **All other BMS object permissions are NOT yet enforceable through RBAC 2.0**; integrate each canonical service one at a time, then broaden matrix.
 - 1.1.0 FINAL still NOT READY; RC28 needs migration/regression acceptance.
+
+
+---
+
+## Proposed release stream after RC30 — BMOS Agent Platform (owner decision 2026-11-13)
+
+**Planning proposal only:** future RC31–RC42 numbers are targets for backlog planning, not shipped release claims. The deployed RC30 candidate and production remain outside this documentation change.
+
+| Planned stage | Scope / exit gate |
+|---|---|
+| RC31 | Release Pipeline 1.0 — small changes through feature PR → CI → isolated staging → versioned ZIP → owner-approved production → smoke/rollback |
+| RC32 / BMOS-A0 | BMS UI/CRUD stabilization and design of typed human/agent principals, functional-post occupancy, SIPOC output/handoff contract, API v2 ADR, provider-neutral model router |
+| RC33 / BMOS-A1 | Communication center, corporate feed and MAX integration via approved API/events, minimal agent registry, permissioned SIPOC handoff foundation |
+| RC34 / BMOS-A2 | Daily reports of humans and AI agents, human manager acceptance, audit, idempotent inter-post output delivery and approval workflow |
+| BMOS-A3 (dedicated release after RC34) | First supervised AI functional post via Timeweb Cloud AI Gateway adapter; bounded read of metrics → draft report → another post / human supervisor handoff; no unauthorized autonomous writes |
+| BMOS-A4 (future) | Multi-agent coordination, controlled schedules/delegation, tenant cost budgets, workload metrics, hardening |
+| RC35–RC42 / 1.0 | Continue management operations, organizational architecture, metrics/finance, competencies, commercial subscriptions, integrations, SaaS infrastructure, pilot companies, public product launch; sequence is subject to acceptance and owner prioritization |
+
+**Architecture:** [BMOS AI Control Layer + SIPOC Handoff](../../docs/architecture/BMOS_AI_CONTROL_LAYER.md), [ADR-0007 proposed](../../docs/adr/ADR-0007-bmos-ai-control-layer-timeweb-provider-PROPOSED.md), [BMOS agent issue #76](https://github.com/rimanfatykhov-arch/bms24/issues/76), [communication and daily reports #75](https://github.com/rimanfatykhov-arch/bms24/issues/75).
+
+**Invariants:** Functional Position is independent of its human/AI/hybrid occupant; validated SIPOC output becomes an authorized input to the following post; Timeweb is a ModelProvider, **BMOS owns authorizations and execution**. Do not redefine `task.assigneeid` (Moodle user), overwrite `dutypositionuuid`, bypass canonical company UUID RBAC or treat model output as an executable instruction. Each future feature requires independent acceptance and approval.
