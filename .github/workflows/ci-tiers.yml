@@ -211,3 +211,88 @@ jobs:
             ${{ runner.temp }}/standard/logs/
           retention-days: 14
           if-no-files-found: warn
+
+  browser:
+    name: BROWSER / ${{ matrix.target.name }}
+    needs: plan
+    runs-on: ubuntu-22.04
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        target: ${{ fromJson(needs.plan.outputs.targets) }}
+    services:
+      database:
+        image: mariadb:10.11.19@sha256:d769e37960821dfdcf096954f6e7ac89f747e116c1bba98e48edd265dfc7deae
+        env: {MYSQL_ROOT_PASSWORD: isolated-ci-only, MYSQL_ROOT_HOST: '%'}
+        ports: ['3306:3306']
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -uroot -pisolated-ci-only"
+          --health-interval=5s --health-timeout=5s --health-retries=30
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false, fetch-depth: 0, path: candidate}
+      - name: Classify change
+        id: classify
+        working-directory: candidate
+        run: |
+          python3 tools/ci/classify_change.py --base ${{ matrix.target.base }} --head ${{ matrix.target.head }} \
+            --json $RUNNER_TEMP/classification.json --github-output $GITHUB_OUTPUT
+      - name: Decide
+        id: need
+        run: |
+          if [ "${{ steps.classify.outputs.profile }}" = "FAST" ]; then echo "run=false" >> $GITHUB_OUTPUT; echo "BROWSER NOT REQUIRED - profile FAST" >> $GITHUB_STEP_SUMMARY;
+          elif [ "${{ matrix.target.expect }}" = "fail" ]; then echo "run=false" >> $GITHUB_OUTPUT; echo "BROWSER not used for the negative control (covered by FAST/STANDARD)" >> $GITHUB_STEP_SUMMARY;
+          else echo "run=true" >> $GITHUB_OUTPUT; fi
+      - name: Candidate source at target head
+        if: steps.need.outputs.run == 'true'
+        working-directory: candidate
+        run: git worktree add $RUNNER_TEMP/target ${{ matrix.target.head }}
+      - uses: actions/checkout@v4
+        if: steps.need.outputs.run == 'true'
+        with: {repository: moodle/moodle, ref: b27f0816159a7555a0b3ad9ff2f8f8ef701a29fa, persist-credentials: false, path: moodle-core}
+      - uses: shivammathur/setup-php@v2
+        if: steps.need.outputs.run == 'true'
+        with:
+          php-version: '8.1'
+          extensions: mysqli, intl, zip, gd, soap, mbstring, curl, sodium
+          ini-values: max_input_vars=5000, memory_limit=1024M
+          coverage: none
+          tools: none
+      - name: Cache Playwright browsers
+        if: steps.need.outputs.run == 'true'
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-1.48.2-chromium-ubuntu-22.04
+      - name: Install Playwright (Chromium)
+        if: steps.need.outputs.run == 'true'
+        run: |
+          python3 -m pip install --quiet playwright==1.48.2
+          python3 -m playwright install --with-deps chromium
+      - name: HTTP + browser acceptance (fresh Moodle, PHP built-in server, synthetic companies A/B)
+        if: steps.need.outputs.run == 'true'
+        env:
+          MOODLE_ROOT: ${{ github.workspace }}/moodle-core
+          CANDIDATE_ROOT: ${{ runner.temp }}/target
+          TEST_ROOT: ${{ runner.temp }}/browser
+          DBHOST: 127.0.0.1
+          DBPORT: '3306'
+          DBUSER: root
+          DBPASS: isolated-ci-only
+        run: python3 candidate/tools/ci/browser_acceptance.py
+      - name: Report
+        if: always() && steps.need.outputs.run == 'true'
+        run: python3 candidate/tools/ci/tier_summary.py --classification $RUNNER_TEMP/classification.json --browser $RUNNER_TEMP/browser/browser-report.json --target ${{ matrix.target.name }} >> $GITHUB_STEP_SUMMARY
+      - uses: actions/upload-artifact@v4
+        if: always() && steps.need.outputs.run == 'true'
+        with:
+          name: ci-tiers-browser-${{ matrix.target.name }}
+          path: |
+            ${{ runner.temp }}/browser/browser-report.json
+            ${{ runner.temp }}/browser/logs/
+            ${{ runner.temp }}/browser/evidence/*.json
+            ${{ runner.temp }}/browser/evidence/*.png
+            !${{ runner.temp }}/browser/evidence/actors.private.json
+          retention-days: 14
+          if-no-files-found: warn

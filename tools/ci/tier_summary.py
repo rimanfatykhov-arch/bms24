@@ -14,9 +14,9 @@ def load(path):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument('--classification'); ap.add_argument('--fast'); ap.add_argument('--standard'); ap.add_argument('--target', default='')
+    ap.add_argument('--classification'); ap.add_argument('--fast'); ap.add_argument('--standard'); ap.add_argument('--browser'); ap.add_argument('--target', default='')
     a = ap.parse_args()
-    c = load(a.classification); f = load(a.fast); s = load(a.standard)
+    c = load(a.classification); f = load(a.fast); s = load(a.standard); b = load(a.browser)
     print('## CI tiers — %s' % a.target)
     if c:
         print('**Profile: %s** (`%s..%s`, %d files). %s' % (c['profile'], c['base'][:7], c['head'][:7], len(c['changed_files']), c['explanation']))
@@ -50,6 +50,16 @@ def main():
             print('NOT REQUIRED (profile FAST)')
         else:
             print('STANDARD report: NOT RUN')
+    if a.browser is not None:
+        print('\n### BROWSER')
+        if b:
+            print('Status: **%s** — %s\n' % (b['status'], b['scope']))
+            print('| Check | Status |\n|---|---|')
+            for k, v in b['checks'].items(): print('| %s | %s |' % (k, v['status']))
+            print('\nTimings: ' + ', '.join('%s %ss' % (k, v) for k, v in b['timing_s'].items()))
+            if b.get('error'): print('\nError: `%s`' % b['error'])
+        else:
+            print('BROWSER report: NOT RUN')
 
 
 if __name__ == '__main__':
