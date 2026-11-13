@@ -294,11 +294,41 @@ define([], function() {
         var submit = form.querySelector('button[type="submit"]');
         if (!input || !submit) { return; }
         var submitting = false;
+        // A message is text, a file, or both: the selected file counts as content.
+        var file = form.querySelector('input[type="file"][name="attachment"]');
+        var fileName = form.querySelector('[data-bms-comm-filename]');
+        var fileClear = form.querySelector('[data-bms-comm-file-clear]');
+        var maxBytes = parseInt(form.dataset.maxbytes || '0', 10) || 0;
+        var hasFile = function() { return !!(file && file.files && file.files.length); };
+        var fileTooLarge = function() { return hasFile() && maxBytes > 0 && file.files[0].size > maxBytes; };
+        var describeSize = function(bytes) {
+            if (bytes < 1024) { return bytes + ' B'; }
+            if (bytes < 1048576) { return Math.round(bytes / 1024) + ' KB'; }
+            return (Math.round(bytes / 104857.6) / 10) + ' MB';
+        };
+        var showFile = function() {
+            if (!file) { return; }
+            var chosen = hasFile() ? file.files[0] : null;
+            file.setCustomValidity(fileTooLarge() ? (form.dataset.msgToolarge || '') : '');
+            if (fileName) { fileName.textContent = chosen ? chosen.name + ' · ' + describeSize(chosen.size) : ''; }
+            if (fileClear) { fileClear.hidden = !chosen; }
+            if (chosen) { input.setCustomValidity(''); }
+        };
+        if (file) { file.addEventListener('change', showFile); }
+        if (fileClear && file) {
+            fileClear.addEventListener('click', function() {
+                file.value = '';
+                showFile();
+                file.focus();
+            });
+        }
+        input.addEventListener('input', function() { input.setCustomValidity(''); });
+        var hasContent = function() { return !!input.value.trim() || hasFile(); };
         input.addEventListener('keydown', function(event) {
             if (event.key !== 'Enter' || event.shiftKey || event.ctrlKey || event.altKey ||
                     event.metaKey || event.isComposing || event.keyCode === 229) { return; }
             event.preventDefault();
-            if (!submitting && input.value.trim()) {
+            if (!submitting && hasContent()) {
                 if (form.requestSubmit) { form.requestSubmit(submit); }
                 else { submit.click(); }
             }
@@ -311,7 +341,10 @@ define([], function() {
                 event.preventDefault();
                 return;
             }
-            if (!input.value.trim() || !form.checkValidity()) {
+            if (!hasContent()) {
+                input.setCustomValidity(form.dataset.msgEmpty || '');
+            }
+            if (!hasContent() || fileTooLarge() || !form.checkValidity()) {
                 event.preventDefault();
                 form.reportValidity();
                 return;

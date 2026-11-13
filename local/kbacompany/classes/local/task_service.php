@@ -1213,7 +1213,8 @@ class task_service {
     }
 
     /** Append a message to the task discussion. Posting explicitly joins an authorised manager to the thread. */
-    public static function post_discussion_message(string $companyuuid, int $actor, string $taskuuid, string $body): string {
+    public static function post_discussion_message(string $companyuuid, int $actor, string $taskuuid, string $body,
+            ?array $upload = null): string {
         global $DB;
         company_context_service::context($companyuuid, $actor);
         $row = self::task($companyuuid, $taskuuid);
@@ -1222,9 +1223,12 @@ class task_service {
                 !self::can_post_discussion($row, $actor, $canmanage)) { self::fail('permission'); }
         if ((string)$row->status === 'deleted') { self::fail('state'); }
         $body = trim($body);
-        if ($body === '' || \core_text::strlen($body) > 12000) { self::fail('invalid'); }
+        $hasfile = $upload !== null && (int)($upload['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_NO_FILE;
+        if (($body === '' && !$hasfile) || \core_text::strlen($body) > 12000) { self::fail('invalid'); }
         $threaduuid = self::ensure_discussion($companyuuid, $actor, $row);
-        $messageuuid = communication_service::send_message($companyuuid, $actor, $threaduuid, $body);
+        // Same canonical Communication Center message + protected Moodle File API attachment (stored together).
+        $messageuuid = communication_service::send_message_with_attachment($companyuuid, $actor, $threaduuid, $body,
+            $hasfile ? $upload : null);
         self::log($companyuuid, $taskuuid, $actor, 'discussion_post', $row->status, $row->status,
             ['threaduuid' => $threaduuid, 'messageuuid' => $messageuuid]);
         return $messageuuid;

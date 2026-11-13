@@ -462,6 +462,19 @@
                 if (event.key === 'Enter') { event.preventDefault(); button.click(); }
             });
         });
+        // RC31 Pilot 02: task discussion composer — a selected file can be removed before sending.
+        document.querySelectorAll('[data-bms-file-clear]').forEach(function(clear) {
+            var file = document.getElementById(clear.getAttribute('data-bms-file-clear'));
+            if (!file) { return; }
+            var sync = function() { clear.hidden = !(file.files && file.files.length); };
+            file.addEventListener('change', sync);
+            clear.addEventListener('click', function() {
+                file.value = '';
+                sync();
+                file.focus();
+            });
+            sync();
+        });
     }
     if (document.readyState === 'loading') { document.addEventListener('DOMContentLoaded', init); } else { init(); }
 }());
