@@ -1388,6 +1388,28 @@ class task_ui_service {
         }
         return $html.\html_writer::tag('form',$form,$formattrs);
     }
+    /** One task-discussion message with its protected Communication Center attachments (pluginfile links). */
+    private static function discussion_message(array $msg): string {
+        $files = '';
+        foreach (($msg['attachments'] ?? []) as $attachment) {
+            $label = (string)($attachment['label'] !== '' ? $attachment['label'] : $attachment['value']);
+            $files .= !empty($attachment['url']) ?
+                \html_writer::link($attachment['url'], s($label), ['class' => 'btn btn-sm btn-outline-secondary bms-tui-message-file']) :
+                \html_writer::span(s($label), 'badge badge-light');
+        }
+        $text = trim((string)$msg['body']) !== '' ? \html_writer::div(format_text($msg['body'], FORMAT_PLAIN), 'bms-tui-prose') : '';
+        return \html_writer::tag('article', \html_writer::tag('strong', s($msg['author_name'])) .
+            self::note(userdate($msg['time_created'])) . $text .
+            ($files !== '' ? \html_writer::div($files, 'bms-tui-message-files') : ''), ['class' => 'bms-tui-message']);
+    }
+    /** Task discussion composer: text and/or one file (sent as one Communication Center message). */
+    private static function discussion_fields(array $values): string {
+        return self::control('message', ['label' => 'tui_message', 'type' => 'textarea', 'maxlength' => 12000], $values['message'] ?? '') .
+            \html_writer::div(self::control('discussionattachment', ['label' => 'communication_attachment', 'type' => 'file']) .
+                \html_writer::tag('button', s(self::tr('communication_file_remove')), ['type' => 'button',
+                    'class' => 'btn btn-sm btn-link bms-tui-file-clear', 'data-bms-file-clear' => 'tui_discussionattachment', 'hidden' => 'hidden']),
+                'bms-tui-discussion-file');
+    }
     public static function post_form(string $company, array $task, string $action, string $body, string $label, string $tab = 'overview', array $extra = []): string {
         $hidden=self::hidden(['uuid'=>$company,'task'=>$task['uuid'],'view'=>'detail','tab'=>$tab,'revision'=>$task['revision'],
             'action'=>$action,'sesskey'=>sesskey(),'requestkey'=>bin2hex(random_bytes(16))]+$extra);
@@ -1829,12 +1851,10 @@ class task_ui_service {
             $discussion=$model['discussion'];$messages='';
             if(!empty($discussion['restricted'])){$messages=self::note(self::tr('taskcenter_discussion_restricted'));}
             else{foreach(($discussion['messages']??[]) as $msg){if($msg['status']!=='active'){continue;}
-                $messages.=\html_writer::tag('article',\html_writer::tag('strong',s($msg['author_name'])).
-                self::note(userdate($msg['time_created'])).\html_writer::div(format_text($msg['body'],FORMAT_PLAIN),'bms-tui-prose'),['class'=>'bms-tui-message']);}}
+                $messages.=self::discussion_message($msg);}}
             if(!$messages){$messages=self::note(self::tr('taskcenter_discussion_empty'));}
             if(!empty($discussion['can_post'])){$messages.=self::post_form($company,$task,'discussionpost',
-                self::control('message',['label'=>'tui_message','type'=>'textarea','required'=>true,'maxlength'=>12000],$values['message']??''),
-                self::tr('taskcenter_discussion_send'),'overview');}
+                self::discussion_fields($values),self::tr('taskcenter_discussion_send'),'overview');}
             // The full communication thread remains canonical. This is its task-scoped preview,
             // not a second discussion source; ACL and permissions come from $model['discussion'].
             $messages .= self::link(self::url($company,['task'=>$id,'tab'=>'discussion']),
@@ -1888,10 +1908,9 @@ class task_ui_service {
         }else if($tab==='discussion'){
             $d=$model['discussion'];$body='';
             if(!empty($d['restricted'])){$body=self::note(self::tr('taskcenter_discussion_restricted'));}
-            else{foreach($d['messages'] as $msg){if($msg['status']!=='active'){continue;}$body.=\html_writer::tag('article',\html_writer::tag('strong',s($msg['author_name'])).
-                self::note(userdate($msg['time_created'])).\html_writer::div(format_text($msg['body'],FORMAT_PLAIN),'bms-tui-prose'),['class'=>'bms-tui-message']);}}
+            else{foreach($d['messages'] as $msg){if($msg['status']!=='active'){continue;}$body.=self::discussion_message($msg);}}
             if(!$body){$body=self::note(self::tr('taskcenter_discussion_empty'));}
-            if(!empty($d['can_post'])){$body.=self::post_form($company,$task,'discussionpost',self::control('message',['label'=>'tui_message','type'=>'textarea','required'=>true,'maxlength'=>12000],$values['message']??''),self::tr('taskcenter_discussion_send'),'discussion');}
+            if(!empty($d['can_post'])){$body.=self::post_form($company,$task,'discussionpost',self::discussion_fields($values),self::tr('taskcenter_discussion_send'),'discussion');}
             if(empty($d['restricted'])){
                 $discussionparams=['uuid'=>$company,'tab'=>'discussions'];
                 if(!empty($d['thread_uuid'])){$discussionparams['thread']=$d['thread_uuid'];}

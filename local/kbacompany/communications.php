@@ -43,12 +43,9 @@ if ($action !== '') {
             ]);
         } else if ($action === 'send') {
             $selected = required_param('thread', PARAM_RAW_TRIMMED);
-            $messageuuid = communication_service::send_message($uuid, (int)$USER->id, $selected,
-                required_param('body', PARAM_RAW), optional_param_array('mentions', [], PARAM_INT),
-                optional_param('replytouuid', '', PARAM_RAW_TRIMMED));
-            if (!empty($_FILES['attachment']) && (int)($_FILES['attachment']['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_NO_FILE) {
-                communication_service::add_uploaded_attachment($uuid, (int)$USER->id, $messageuuid, $_FILES['attachment']);
-            }
+            communication_service::send_message_with_attachment($uuid, (int)$USER->id, $selected,
+                optional_param('body', '', PARAM_RAW), $_FILES['attachment'] ?? null,
+                optional_param_array('mentions', [], PARAM_INT), optional_param('replytouuid', '', PARAM_RAW_TRIMMED));
         } else if ($action === 'addparticipant') {
             $selected = required_param('thread', PARAM_RAW_TRIMMED);
             communication_service::add_participant($uuid, (int)$USER->id, $selected,
@@ -289,7 +286,7 @@ if ($data['selected']) {
     echo html_writer::start_tag('form', ['method' => 'post', 'enctype' => 'multipart/form-data', 'class' => 'kbacompany-form border rounded p-3 mb-3']);
     echo $hidden('send', $thread['uuid']);
     echo html_writer::label(get_string('communication_message', 'local_kbacompany'), 'communication_body');
-    echo $textarea('body', '', true, 4);
+    echo $textarea('body', '', false, 4); // text or a file (or both); the server rejects an empty message
     $mentionoptions = [];
     foreach ($thread['participants'] as $participant) {
         if ((int)$participant['user_id'] !== (int)$USER->id) {

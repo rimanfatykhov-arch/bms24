@@ -343,4 +343,87 @@ final class communication_service_test extends \advanced_testcase {
             'edit', 'Attempted', hash('sha256', "\nwithdrawn"));
     }
 
+    /** RC31 Pilot 02: count messages of a thread (used to prove that a failed upload writes nothing). */
+    private function messages_in(string $company, string $thread): int {
+        global $DB;
+        return $DB->count_records('local_kbacompany_commmsg', ['companyuuid' => $company, 'threaduuid' => $thread]);
+    }
+
+    public function test_send_with_attachment_without_file_behaves_like_text_message(): void {
+        $f = $this->fixture();
+        $thread = communication_service::create_thread($f['company'], $f['admin'], [
+            'threadtype' => 'direct', 'title' => '', 'participants' => [(int)$f['employee']->id],
+        ]);
+        $nofile = ['name' => '', 'type' => '', 'tmp_name' => '', 'error' => UPLOAD_ERR_NO_FILE, 'size' => 0];
+        $uuid = communication_service::send_message_with_attachment($f['company'], $f['admin'], $thread, 'Text only', $nofile);
+        $this->assertNotEmpty($uuid);
+        $uuid2 = communication_service::send_message_with_attachment($f['company'], $f['admin'], $thread, 'Text again', null);
+        $this->assertNotSame($uuid, $uuid2);
+        $this->assertSame(2, $this->messages_in($f['company'], $thread));
+    }
+
+    public function test_empty_message_without_file_is_rejected_and_not_stored(): void {
+        $f = $this->fixture();
+        $thread = communication_service::create_thread($f['company'], $f['admin'], [
+            'threadtype' => 'direct', 'title' => '', 'participants' => [(int)$f['employee']->id],
+        ]);
+        $nofile = ['name' => '', 'type' => '', 'tmp_name' => '', 'error' => UPLOAD_ERR_NO_FILE, 'size' => 0];
+        try {
+            communication_service::send_message_with_attachment($f['company'], $f['admin'], $thread, "  \n ", $nofile);
+            $this->fail('An empty message without a file must be rejected');
+        } catch (\moodle_exception $e) {
+            $this->assertSame('communication_invalid', $e->errorcode);
+        }
+        $this->assertSame(0, $this->messages_in($f['company'], $thread));
+    }
+
+    public function test_failed_upload_never_leaves_a_message_without_its_file(): void {
+        $f = $this->fixture();
+        $thread = communication_service::create_thread($f['company'], $f['admin'], [
+            'threadtype' => 'direct', 'title' => '', 'participants' => [(int)$f['employee']->id],
+        ]);
+        $cases = [
+            'communication_filesize' => ['name' => 'big.txt', 'type' => 'text/plain', 'tmp_name' => '', 'error' => UPLOAD_ERR_INI_SIZE, 'size' => 0],
+            'communication_upload' => ['name' => 'partial.txt', 'type' => 'text/plain', 'tmp_name' => '', 'error' => UPLOAD_ERR_PARTIAL, 'size' => 3],
+            // A path that is not a PHP upload (e.g. a forged tmp_name) is refused before anything is stored.
+            'communication_upload ' => ['name' => 'forged.txt', 'type' => 'text/plain', 'tmp_name' => __FILE__, 'error' => UPLOAD_ERR_OK, 'size' => 10],
+        ];
+        foreach ($cases as $expected => $upload) {
+            foreach (['With text', ''] as $body) {
+                try {
+                    communication_service::send_message_with_attachment($f['company'], $f['admin'], $thread, $body, $upload);
+                    $this->fail('Upload must be rejected: ' . $expected);
+                } catch (\moodle_exception $e) {
+                    $this->assertSame(trim($expected), $e->errorcode);
+                }
+            }
+        }
+        $this->assertSame(0, $this->messages_in($f['company'], $thread));
+        $fs = get_file_storage();
+        $this->assertCount(0, $fs->get_area_files(\context_system::instance()->id, 'local_kbacompany',
+            'communication_attachment', false, 'id', false));
+    }
+
+    public function test_non_participant_and_foreign_company_cannot_send_with_attachment(): void {
+        $f = $this->fixture();
+        $thread = communication_service::create_thread($f['company'], $f['admin'], [
+            'threadtype' => 'direct', 'title' => '', 'participants' => [(int)$f['employee']->id],
+        ]);
+        $nofile = ['name' => '', 'type' => '', 'tmp_name' => '', 'error' => UPLOAD_ERR_NO_FILE, 'size' => 0];
+        try {
+            communication_service::send_message_with_attachment($f['company'], (int)$f['peer']->id, $thread, 'Intrusion', $nofile);
+            $this->fail('A non-participant must not post');
+        } catch (\moodle_exception $e) {
+            $this->assertNotEmpty($e->errorcode);
+        }
+        $othercompanyid = repository::save_company((object)['name' => 'Foreign Company', 'active' => 1]);
+        $other = identity_registry::company_uuid($othercompanyid);
+        try {
+            communication_service::send_message_with_attachment($other, $f['admin'], $thread, 'Cross-company', $nofile);
+            $this->fail('A thread must not be reachable through another company');
+        } catch (\moodle_exception $e) {
+            $this->assertNotEmpty($e->errorcode);
+        }
+        $this->assertSame(0, $this->messages_in($f['company'], $thread));
+    }
 }

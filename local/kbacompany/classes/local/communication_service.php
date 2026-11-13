@@ -348,6 +348,47 @@ class communication_service {
     /** Append one message and notify other active participants. */
     public static function send_message(string $companyuuid, int $actor, string $threaduuid, string $body,
             array $mentionids = [], string $replytouuid = ''): string {
+        return self::append_message($companyuuid, $actor, $threaduuid, $body, $mentionids, $replytouuid, false);
+    }
+
+    /**
+     * Send text and/or one uploaded file as one message. The upload is validated before anything is written and the
+     * message, its protected Moodle File API file and attachment reference commit together: a failed upload never
+     * leaves a message that silently lost its file. A message may consist of the file only.
+     *
+     * @param array|null $upload one $_FILES entry; null or UPLOAD_ERR_NO_FILE means "no file"
+     */
+    public static function send_message_with_attachment(string $companyuuid, int $actor, string $threaduuid,
+            string $body, ?array $upload, array $mentionids = [], string $replytouuid = ''): string {
+        global $DB;
+        $hasfile = $upload !== null && self::validated_upload($upload) !== null;
+        if (!$hasfile) {
+            return self::send_message($companyuuid, $actor, $threaduuid, $body, $mentionids, $replytouuid);
+        }
+        $tx = $DB->start_delegated_transaction();
+        $messageuuid = self::append_message($companyuuid, $actor, $threaduuid, $body, $mentionids, $replytouuid, true);
+        self::add_uploaded_attachment($companyuuid, $actor, $messageuuid, $upload);
+        $tx->allow_commit();
+        return $messageuuid;
+    }
+
+    /** Validate one $_FILES entry without storing it; null when no file was chosen. */
+    private static function validated_upload(array $upload): ?array {
+        $error = (int)($upload['error'] ?? UPLOAD_ERR_NO_FILE);
+        if ($error === UPLOAD_ERR_NO_FILE) { return null; }
+        if ($error === UPLOAD_ERR_INI_SIZE || $error === UPLOAD_ERR_FORM_SIZE) { self::fail('filesize'); }
+        if ($error !== UPLOAD_ERR_OK) { self::fail('upload'); }
+        $tmp = (string)($upload['tmp_name'] ?? '');
+        $name = clean_filename((string)($upload['name'] ?? ''));
+        $size = (int)($upload['size'] ?? 0);
+        if ($tmp === '' || $name === '' || $size < 0 || !is_uploaded_file($tmp)) { self::fail('upload'); }
+        $maxbytes = get_max_upload_file_size();
+        if ($maxbytes > 0 && $size > $maxbytes) { self::fail('filesize'); }
+        return ['tmp' => $tmp, 'name' => $name, 'size' => $size];
+    }
+
+    private static function append_message(string $companyuuid, int $actor, string $threaduuid, string $body,
+            array $mentionids, string $replytouuid, bool $withfile): string {
         global $DB;
         company_context_service::context($companyuuid, $actor);
         self::require_participant($companyuuid, $threaduuid, $actor);
@@ -355,7 +396,7 @@ class communication_service {
         self::require_thread_context($companyuuid, $actor, $thread);
         if ($thread->status !== 'active') { self::fail('state'); }
         $body = trim($body);
-        if ($body === '' || \core_text::strlen($body) > 20000) { self::fail('invalid'); }
+        if (($body === '' && !$withfile) || \core_text::strlen($body) > 20000) { self::fail('invalid'); }
         if ($replytouuid !== '') {
             $reply = self::message($companyuuid, $replytouuid);
             if ($reply->threaduuid !== $threaduuid || $reply->status !== 'active') { self::fail('reference'); }
@@ -549,15 +590,9 @@ class communication_service {
         $message = self::message($companyuuid, $messageuuid);
         self::require_participant($companyuuid, (string)$message->threaduuid, $actor);
         if ((int)$message->authorid !== $actor || $message->status !== 'active') { self::fail('permission'); }
-        $error = (int)($upload['error'] ?? UPLOAD_ERR_NO_FILE);
-        if ($error === UPLOAD_ERR_NO_FILE) { return; }
-        if ($error !== UPLOAD_ERR_OK) { self::fail('upload'); }
-        $tmp = (string)($upload['tmp_name'] ?? '');
-        $name = clean_filename((string)($upload['name'] ?? ''));
-        $size = (int)($upload['size'] ?? 0);
-        if ($tmp === '' || $name === '' || $size < 0 || !is_uploaded_file($tmp)) { self::fail('upload'); }
-        $maxbytes = get_max_upload_file_size();
-        if ($maxbytes > 0 && $size > $maxbytes) { self::fail('filesize'); }
+        $valid = self::validated_upload($upload);
+        if ($valid === null) { return; }
+        $tmp = $valid['tmp']; $name = $valid['name'];
         $context = \context_system::instance();
         $fs = get_file_storage();
         $filename = $name;

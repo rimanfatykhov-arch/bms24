@@ -176,7 +176,7 @@ if($action!=='') {
         // Bounded, session-local replay protection. Not durable exactly-once across session loss.
         $receiptkey=$uuid.':'.$actor.':'.$requestkey;
         $payload=$_POST;unset($payload['sesskey'],$payload['requestkey']);ksort($payload);
-        foreach(['attachment','resultattachment'] as $filekey){if(!empty($_FILES[$filekey])&&(int)($_FILES[$filekey]['error']??UPLOAD_ERR_NO_FILE)!==UPLOAD_ERR_NO_FILE){
+        foreach(['attachment','resultattachment','discussionattachment'] as $filekey){if(!empty($_FILES[$filekey])&&(int)($_FILES[$filekey]['error']??UPLOAD_ERR_NO_FILE)!==UPLOAD_ERR_NO_FILE){
             $tmp=(string)($_FILES[$filekey]['tmp_name']??'');$payload['upload_'.$filekey]=['name'=>$_FILES[$filekey]['name']??'',
                 'sha256'=>is_uploaded_file($tmp)?hash_file('sha256',$tmp):'invalid'];}}
         $fingerprint=hash('sha256',json_encode($payload));
@@ -250,7 +250,7 @@ if($action!=='') {
             else{task_service::add_result_attachment($uuid,$actor,$selected,$_FILES[$key]);$tab='result';}
         }else if($action==='attachmentdelete'){task_service::delete_attachment($uuid,$actor,$selected,$values['filename']);$tab='files';}
         else if($action==='resultattachmentdelete'){task_service::delete_result_attachment($uuid,$actor,$selected,$values['filename']);$tab='result';}
-        else if($action==='discussionpost'){task_service::post_discussion_message($uuid,$actor,$selected,required_param('message',PARAM_RAW));$tab='discussion';}
+        else if($action==='discussionpost'){task_service::post_discussion_message($uuid,$actor,$selected,optional_param('message','',PARAM_RAW),$_FILES['discussionattachment']??null);$tab='discussion';}
         else if($action==='checkadd'){task_service::add_checklist($uuid,$actor,$selected,required_param('itemtext',PARAM_RAW),optional_param('checkassigneeid',0,PARAM_INT));}
         else if($action==='checkset'){task_service::set_checklist_state($uuid,$actor,$selected,required_param('checkuuid',PARAM_RAW_TRIMMED),required_param('done',PARAM_BOOL));}
         else if($action==='checkedit'){task_service::update_checklist($uuid,$actor,$selected,

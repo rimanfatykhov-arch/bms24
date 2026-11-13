@@ -6547,6 +6547,37 @@ body.bms-comm-page .bms-comm2 .bms-comm3-file-input {
   opacity:0;
   pointer-events:none;
 }
+/* RC31 Pilot 02: the hidden native file input is keyboard-focusable; show its focus on the visible 📎 button,
+   and show which file is attached (name/size + remove button). */
+body.bms-comm-page .bms-comm2 .bms-comm3-file-input:focus-visible + .bms-comm3-tool {
+  outline:3px solid #1777B5;
+  outline-offset:2px;
+}
+body.bms-comm-page .bms-comm2 .bms-comm3-file-name {
+  min-width:0;
+  max-width:260px;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+  color:#0C6C52;
+  font-size:.85rem;
+}
+body.bms-comm-page .bms-comm2 .bms-comm3-file-name:empty { display:none; }
+body.bms-comm-page .bms-comm2 .bms-comm3-file-clear {
+  width:26px;
+  height:26px;
+  border:1px solid #dce7e9;
+  border-radius:8px;
+  background:#fff;
+  color:#345a69;
+  line-height:1;
+  padding:0;
+}
+body.bms-comm-page .bms-comm2 .bms-comm3-file-clear[hidden] { display:none; }
+body.bms-comm-page .bms-comm2 .bms-comm3-file-clear:focus-visible {
+  outline:3px solid #1777B5;
+  outline-offset:2px;
+}
 body.bms-comm-page .bms-comm2 .bms-comm3-mention-picker {
   position:relative;
 }

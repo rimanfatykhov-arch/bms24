@@ -331,13 +331,19 @@ class communication_center_ui_service {
         $form = self::post_base($company, 'send', $thread['uuid']);
         $form .= \html_writer::label(s(self::tr('communication_message')), 'bms_comm2_body', false, ['class' => 'sr-only']);
         $form .= \html_writer::tag('textarea', '', ['id' => 'bms_comm2_body', 'name' => 'body', 'rows' => 3,
-            'class' => 'form-control', 'placeholder' => self::tr('communicationcenter_message_placeholder'), 'required' => 'required']);
+            'class' => 'form-control', 'placeholder' => self::tr('communicationcenter_message_placeholder')]);
         $tools = '';
+        // The native file input stays in the form (multipart POST) and keyboard-focusable; the label is its visible
+        // button. The chosen file name and a remove button are shown next to it (communication_live_ui.js).
+        $tools .= \html_writer::empty_tag('input', ['type' => 'file', 'name' => 'attachment', 'id' => 'bms_comm2_attachment',
+            'class' => 'bms-comm3-file-input']);
         $tools .= \html_writer::label('📎', 'bms_comm2_attachment', false,
             ['class' => 'bms-comm3-tool', 'title' => self::tr('communication_attachment'),
              'aria-label' => self::tr('communication_attachment')]);
-        $tools .= \html_writer::empty_tag('input', ['type' => 'file', 'name' => 'attachment', 'id' => 'bms_comm2_attachment',
-            'class' => 'bms-comm3-file-input']);
+        $tools .= \html_writer::span('', 'bms-comm3-file-name', ['data-bms-comm-filename' => '1', 'aria-live' => 'polite']);
+        $tools .= \html_writer::tag('button', '×', ['type' => 'button', 'class' => 'bms-comm3-file-clear',
+            'data-bms-comm-file-clear' => '1', 'hidden' => 'hidden', 'title' => self::tr('communication_file_remove'),
+            'aria-label' => self::tr('communication_file_remove')]);
         if ($mentionoptions) {
             $mentionbody = \html_writer::label(s(self::tr('communication_mentions')), 'bms_comm2_mentions');
             $mentionbody .= \html_writer::select($mentionoptions, 'mentions[]', [], false,
@@ -358,7 +364,10 @@ class communication_center_ui_service {
             \html_writer::div($send, 'bms-comm3-compose-actions'),
             'bms-comm3-compose-bar');
         $body .= \html_writer::tag('form', $form, ['method' => 'post', 'enctype' => 'multipart/form-data',
-            'class' => 'bms-comm2-compose', 'data-bms-comm-compose'=>'1']);
+            'class' => 'bms-comm2-compose', 'data-bms-comm-compose'=>'1',
+            'data-maxbytes' => (int)get_max_upload_file_size(),
+            'data-msg-empty' => self::tr('communication_body_or_file'),
+            'data-msg-toolarge' => self::tr('communication_filesize')]);
         return \html_writer::tag('main', $body, ['class' => 'bms-comm2-panel bms-comm2-feed', 'aria-label' => self::tr('communicationcenter_selectthread')]);
     }
 

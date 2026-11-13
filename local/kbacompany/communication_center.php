@@ -74,13 +74,10 @@ if ($action !== '') {
             $objectkind = $postkind; $objectuuid = $postuuid; $objectrevision = $postrevision;
         } else if ($action === 'send') {
             $selected = required_param('thread', PARAM_RAW_TRIMMED);
-            $messageuuid = communication_service::send_message($uuid, $actor, $selected,
-                required_param('body', PARAM_RAW), optional_param_array('mentions', [], PARAM_INT),
-                optional_param('replytouuid', '', PARAM_RAW_TRIMMED));
-            if (!empty($_FILES['attachment']) &&
-                    (int)($_FILES['attachment']['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_NO_FILE) {
-                communication_service::add_uploaded_attachment($uuid, $actor, $messageuuid, $_FILES['attachment']);
-            }
+            // Text, text + file, or file only; message and file are stored together or not at all.
+            communication_service::send_message_with_attachment($uuid, $actor, $selected,
+                optional_param('body', '', PARAM_RAW), $_FILES['attachment'] ?? null,
+                optional_param_array('mentions', [], PARAM_INT), optional_param('replytouuid', '', PARAM_RAW_TRIMMED));
         } else if ($action === 'editmessage' || $action === 'withdrawmessage') {
             if ($action === 'withdrawmessage' && required_param('confirmwithdraw', PARAM_INT) !== 1) {
                 throw new moodle_exception('communication_invalid', 'local_kbacompany');
