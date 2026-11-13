@@ -25,14 +25,13 @@ Verified on the completed releases: PR #80 (CSS) → **FAST**; PR #81 (attachmen
 | Plan | targets = this PR; when `tools/ci/**` or this workflow changes, also replays PR #80 and PR #81 | seconds |
 | FAST | classifier (+ unit tests), `git diff --check`, PHP 8.1 lint, JS syntax, AMD src/build sync, EN/RU parity, CSS brace + BMS UI scoping, deterministic ZIP from `git archive` with source identity (every entry == Git blob) and SHA256 | 1–3 min |
 | STANDARD | runs for STANDARD and FULL: fresh Moodle 4.1.22 PHPUnit site (MariaDB, composer vendor cached, **no historical upgrades**), focused PHPUnit + security gates (`pr48_tenant_isolation`, `membership_revocation`, `rc30_integrated_access`, `task_membership_regression`, `privacy_provider`) | 5–10 min |
+| BROWSER | runs for STANDARD and FULL in parallel with STANDARD: fresh Moodle 4.1.22 (MariaDB) + candidate plugins, PHP built-in server, synthetic companies A/B, Chromium with outbound requests blocked. 21 checks: task-tab keyboard focus; attachments in the compact task discussion and Communication Center (text, text+file, file only, double submit, invalid sesskey, size limit at `upload_max_filesize=64K`, no orphan files); protected download for participant / other company / anonymous / revoked / reopened | ~3.5 min |
 | FULL | unchanged existing workflows: PR48 Moodle acceptance (MariaDB + Percona, historical upgrades, PHPUnit, schema parity), ADR-0004, Corporate2613 repaired/retained, BMS24 Dev AI checks (required) | 25–40 min |
 
 Every job writes a summary with PASS/FAIL/NOT RUN and per-step timing, and uploads JSON evidence. NOT RUN is never PASS.
 
 ## Not yet implemented
 
-- HTTP/browser acceptance (multipart, CSRF, company A/B, revoked user) inside Actions: today it runs on the isolated
-  recovery clone (Pilot 01/02 evidence). Needs a web server + synthetic fixtures in CI.
 - Percona in STANDARD (FULL keeps it).
 - Cached pre-installed PHPUnit database (init still installs from scratch each run).
 - Required-check / branch-protection changes — owner decision (see Issue #82).
