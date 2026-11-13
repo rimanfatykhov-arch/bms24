@@ -14,10 +14,23 @@ function write_json(string $path, array $data): void {
     file_put_contents($path, json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR) . "\n");
 }
 function command(array $args, string $cwd, string $log): int {
+    $started = microtime(true);
+    $cpu = getrusage(1);
     $process = proc_open($args, [0 => ['file', '/dev/null', 'r'],
         1 => ['file', $log, 'w'], 2 => ['redirect', 1]], $pipes, $cwd);
     if (!is_resource($process)) { throw new RuntimeException('Cannot start test process'); }
     $code = proc_close($process);
+    $after = getrusage(1);
+    $seconds = static function(array $r): float {
+        return ($r['ru_utime.tv_sec'] + $r['ru_stime.tv_sec']) +
+            ($r['ru_utime.tv_usec'] + $r['ru_stime.tv_usec']) / 1000000;
+    };
+    // Labels only: command arguments can contain synthetic passwords.
+    file_put_contents(dirname($log) . '/timings.jsonl', json_encode([
+        'label'=>basename($log), 'started_epoch'=>$started, 'wall_seconds'=>microtime(true)-$started,
+        'child_cpu_seconds'=>$seconds($after)-$seconds($cpu), 'exit_code'=>$code,
+        'dbtype'=>getenv('DBTYPE'), 'sha'=>getenv('GITHUB_SHA') ?: null,
+    ], JSON_THROW_ON_ERROR) . "\n", FILE_APPEND | LOCK_EX);
     if ($code !== 0 && is_file($log)) {
         echo 'FAIL log tail: ' . basename($log) . "\n";
         $lines = file($log);
@@ -163,6 +176,12 @@ if (in_array($mode, ['seed', 'verify', 'snapshot', 'corporate-seed', 'corporate-
     exit(0);
 }
 if ($mode !== 'run') { throw new RuntimeException('Expected run|seed|verify|snapshot'); }
+$profile = getenv('MOODLE_ACCEPTANCE_PROFILE') ?: 'full';
+if (!in_array($profile, ['full', 'standard'], true)) { throw new RuntimeException('Unknown acceptance profile'); }
+$standard = $profile === 'standard';
+if ($standard && getenv('CORPORATE_PROFILE') !== 'repaired2613') {
+    throw new RuntimeException('STANDARD requires the deployed repaired Corporate pair');
+}
 $source = realpath(required_env('MOODLE_ROOT'));
 $candidate = realpath(required_env('CANDIDATE_ROOT'));
 if (!$source || !$candidate || inside($testroot, $source) || inside($testroot, $candidate)) {
@@ -206,6 +225,8 @@ $report = ['run_id' => $runid, 'php' => PHP_VERSION, 'dbtype' => required_env('D
     'scope' => 'isolated Moodle core plus local_kbacompany/local_kbacorporate only',
     'scenarios' => [], 'phpunit' => [], 'schema_comparison' => [],
     'not_covered' => ['browser/UI', 'production/staging deployment', 'full sibling-plugin distribution', 'backup/restore']];
+$report['acceptance_profile'] = $profile;
+$report['release_permission'] = 'NONE: owner approval and mandatory FULL remain required';
 $report['corporate_profile'] = $retained2613 ? 'exact retained2613' : 'diagnostic0901';
 $report['corporate_source'] = $retained2613 ? $corporate2613 : 'candidate working tree';
 if ($repaired2613) {
@@ -227,6 +248,10 @@ $scenarios = ['fresh' => null, 'from1645' => $main, 'from1879' => $import,
         'frompr650906' => '4e5482df3d5bd8fd4cc604c070ed8728e7c0fc17',
         'frompr671001' => '34763fd4b8980d36bf6de0a309a7737693e9e3dc'];
 if ($productionprofile) { $scenarios = ['fresh'=>null, 'fromprod1878'=>'a87252b642e5796c6d84105dd448d51d9a5b5241']; }
+if ($standard) {
+    $report['not_covered'][] = 'historical upgrades and full PHPUnit suites (separate mandatory FULL)';
+    $scenarios = ['fresh'=>null];
+}
 foreach ($scenarios as $name => $historical) {
     $scenario = $testroot . '/' . $name;
     $core = $scenario . '/core';
@@ -266,7 +291,7 @@ foreach ($scenarios as $name => $historical) {
         $config = ['dbtype' => required_env('DBTYPE'), 'dblibrary' => 'native', 'dbhost' => '127.0.0.1',
             'dbname' => $dbname, 'dbuser' => required_env('DBUSER'), 'dbpass' => required_env('DBPASS'),
             'prefix' => 'mdl_', 'dboptions' => ['dbpersist' => false, 'dbport' => $port, 'dbsocket' => '',
-                'dbcollation' => 'utf8mb4_unicode_ci'], 'wwwroot' => 'http://127.0.0.1.invalid/' . $name,
+                'dbcollation' => 'utf8mb4_unicode_ci'], 'wwwroot' => $standard ? 'http://127.0.0.1:8080' : 'http://127.0.0.1.invalid/' . $name,
             'dataroot' => $scenario . '/data', 'admin' => 'admin', 'directorypermissions' => 0700,
             'phpunit_prefix' => 'pht_', 'phpunit_dataroot' => $scenario . '/phpunitdata',
             'phpunit_dbname' => $phpunitname, 'passwordpolicy' => 0,
@@ -444,6 +469,13 @@ if ($fresh) {
             'rc30_integrated_access_test'] as $test) {
         $focused[] = $test;
     }
+    if ($standard) {
+        // Fixed benchmark allowlist; never user-supplied filters or automatic security skips.
+        $focused = ['communication_service_test', 'communication_center_service_test',
+            'communication_live_service_test', 'task_service_test',
+            'membership_revocation_test', 'pr48_tenant_isolation_test',
+            'task_manager_workspace1853_test', 'task_manager_access_regression_test'];
+    }
     foreach ($focused as $test) {
         if ($code !== 0) { $report['phpunit'][$test] = 'NOT RUN'; continue; }
         $exit = command([PHP_BINARY, $fresh . '/vendor/bin/phpunit', '--configuration', $fresh . '/phpunit.xml',
@@ -452,7 +484,7 @@ if ($fresh) {
         $report['phpunit'][$test] = $exit === 0 ? 'PASS' : 'FAIL';
         echo $test . ': ' . $report['phpunit'][$test] . "\n";
     }
-    foreach (['local_kbacompany', 'local_kbacorporate'] as $component) {
+    foreach ($standard ? [] : ['local_kbacompany', 'local_kbacorporate'] as $component) {
         if ($code !== 0) { $report['phpunit'][$component] = 'NOT RUN'; continue; }
         $exit = command([PHP_BINARY, $fresh . '/vendor/bin/phpunit', '--configuration', $fresh . '/phpunit.xml',
             '--testsuite', $component . '_testsuite', '--log-junit', $logs . '/' . $component . '-junit.xml'],
@@ -484,5 +516,5 @@ foreach ($report['phpunit'] as $status) { $failed = $failed || $status !== 'PASS
 $report['status'] = $failed ? 'FAIL' : 'PASS';
 write_json($logs . '/report.json', $report);
 echo json_encode($report, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR) . "\n";
-echo 'Full isolated acceptance: ' . $report['status'] . "\n";
+echo ucfirst($profile) . ' isolated acceptance: ' . $report['status'] . "\n";
 exit($failed ? 1 : 0);
