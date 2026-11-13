@@ -537,3 +537,5 @@
 .bms24-app .bms24-task-center .bms24-task-table--1841 th[aria-sort="ascending"],
 .bms24-app .bms24-task-center .bms24-task-table--1841 th[aria-sort="descending"] {background:#e5f5ed;}
 @media(max-width:720px) {.bms24-app .bms24-task-center .bms24-task-column-options {grid-template-columns:repeat(2,minmax(0,1fr));}}
+/* RC31 Pilot 01: 44px tap target for Task Center tabs on touch screens; mouse/desktop layout unchanged. */
+@media (pointer:coarse) {.bms24-app nav.bms24-task-tabs a.bms24-task-tab[href] {min-height:44px;}}
