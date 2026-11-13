@@ -134,6 +134,8 @@ Crash до commit → ничего; после commit до ACK → replay receip
 
 Каждый read/write/download/export/worker command проверяет company **в запросе к хранилищу**, authenticated principal status/epoch, membership либо agent grant, действующий post/occupancy, function/action scope, object/field/file ACL и policy. Для human дополнительно Moodle capability и канонические BMS domain permissions. Для non-human отдельный bounded authentication adapter; v1 Moodle token не превращать в agent token и не выдавать site-admin пользователя.
 
+Это требования будущего контракта, а не подтверждение, что все существующие сервисы уже обеспечивают revoke. В CI исходного head PR89 выявлены пять failures `membership_revocation_test` (см. §11). Переиспользование canonical service само по себе не закрывает A3/A4: до пилота обязательны отдельное исправление владельцем runtime и повторный положительный прогон revocation/tenant matrix. Этот documentation PR не исправляет и не ослабляет такие проверки.
+
 Передача не расширяет source ACL. Для receiver предъявляется только разрешённая проекция; если required input содержит недоступное поле, передача блокируется или producer создаёт явно разрешённый обезличенный artifact. Нельзя вырезать обязательные поля и пометить incomplete projection accepted. Каждый download снова проверяет source object + artifact + receiver grant; hash/file ID и знание URL не право доступа. Existing human `pluginfile` остаётся human route; будущий agent download facade обязан сохранить эквивалентный tenant/object check. Revoke останавливает новые reads, но не может стереть уже законно полученные bytes; это учитывается в минимизации и retention.
 
 Руководитель видит company/post inbox, pinned versions, producer/sponsor, AI provenance, критерии PASS/FAIL, diff новой submission, expiry, retry и blocked advance. Действия: accept, return с критериями, reject, cancel незавершённую передачу, suspend agent/contract, запросить переназначение. Никакого «override ACL» или изменения accepted payload. Отзыв принятого бизнес-решения — новая компенсирующая запись и impact review для уже запущенных downstream tasks; история не удаляется. Просмотр руководителя тоже ограничен object/file policy.
@@ -218,4 +220,22 @@ Rollout только отдельным разрешённым релизом: a
 
 ## 11. Проверки этого review
 
-Выполнена статическая сверка таблиц/полей, ключевых entry points, существующих тестов и diff PR77 на закреплённых SHA. Полная тестовая матрица выше — план будущей реализации, не выполненные тесты BMOS. Результаты локальных repository gates фиксируются в описании Draft PR после запуска. Moodle PHPUnit, DB upgrade/races, HTTP/browser, live provider и production acceptance здесь **NOT RUN**. Изменение — только этот документ; действующие ACL, DB, services, Core/theme и deployments не меняются.
+Выполнена статическая сверка таблиц/полей, ключевых entry points, существующих тестов и diff PR77 на закреплённых SHA. Полная тестовая матрица выше — план будущей реализации, не выполненные тесты BMOS. Изменение — только этот документ; действующие ACL, DB, services, Core/theme и deployments не меняются.
+
+### Локальная проверка и GitHub CI — разные свидетельства
+
+Локально прошли source-preservation, upgrade-sequence, XMLDB names, static PHP81 scan, RC29 gate 24/24, RU/EN parity 9098/9098 и XML parse. Полный `qa_local.py` не прошёл из-за отсутствия PHP CLI; native lint и offline PHP runner не выполнены. Symlink fixtures в dev-ai/import tests завершились `WinError 1314`. Это ограничения локального Windows-прогона, не диагноз GitHub runners. Локальные Moodle PHPUnit/DB upgrade/races, HTTP/browser, live provider и production acceptance **NOT RUN**.
+
+Снимок GitHub CI 13.11.2026, 20:55 МСК для первоначального head **bd697139c83376531d053ab7eff92482e8a06a0e**; workflows проверяют synthetic PR merge **f7704930d81f45346ca310da16a5db840d350ab1**. Результаты относятся к этим SHA, не к последующим правкам документа:
+
+| Workflow / ссылка на evidence | Наблюдаемый результат |
+|---|---|
+| [BMS24 Dev AI checks #145](https://github.com/rimanfatykhov-arch/bms24/actions/runs/43476645672) | SUCCESS: jobs PHP 7.4 compatibility и checks, включая PHP 8.1 syntax, static checks, packaging и deterministic candidate. Локальные PHP/symlink ограничения не помешали этому Linux CI. |
+| [ADR-0004 schema repair #44](https://github.com/rimanfatykhov-arch/bms24/actions/runs/43476645608) | SUCCESS на MariaDB и Percona; отдельный repair profile, не доказательство PASS всех acceptance workflows. |
+| [Retained Corporate2613 #38, MariaDB job](https://github.com/rimanfatykhov-arch/bms24/actions/runs/43476645558/job/132062077122) | FAILURE: `local_kbacompany` — 641 tests, 7696 assertions, 5 failures в `membership_revocation_test`; `local_kbacorporate` FAIL, в том числе discovery `Failed opening required '/filelib.php'`; `schema_comparison.fromprod1878` FAIL. Остальные диагностические ошибки перечислены в job log и приложенном evidence. Percona на момент снимка ещё выполнялся. |
+| [Repaired Corporate2613 #34](https://github.com/rimanfatykhov-arch/bms24/actions/runs/43476645583) | IN_PROGRESS, обе DB; итог не объявлен PASS. |
+| [PR48 isolated Moodle acceptance #65](https://github.com/rimanfatykhov-arch/bms24/actions/runs/43476645757) | IN_PROGRESS, обе DB; итог не объявлен PASS. |
+
+Следовательно, общее утверждение «Moodle/DB тесты не запускались» применимо только к локальному окружению и новой BMOS-матрице, но не к GitHub CI: существующие runtime tests там запускались и уже выявили ошибки. Docs-only diff не меняет исполняемый код; без сопоставления с отдельным baseline run нельзя объявлять все найденные failures доказанно прежними или исправленными. Runtime/schema/Corporate failures требуют отдельных профильных PR, не правок этого документа и не отключения CI.
+
+При проверке PR89 в этом снимке список reviews, inline review threads и issue comments пуст. Шесть замечаний Agent 4 в §10 относятся к **PR77**, а не к полученному review PR89; исправленные внешние замечания PR89 не заявляются. После следующего commit проверять checks заново по его head SHA. PR остаётся Draft; ни результаты отдельных gates, ни данный документ не дают разрешения на merge/deployment.
