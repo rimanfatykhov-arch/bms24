@@ -25,7 +25,7 @@ with sync_playwright() as pw:
     p.on('request', lambda r: posts.append({'url': urlparse(r.url).path, 'ctype': (r.headers.get('content-type') or '').split(';')[0],
                                            'has_file': (r.post_data_buffer or b'').find(b'filename="p02-') >= 0 if r.method == 'POST' else None}) if r.method == 'POST' else None)
     p.on('pageerror', lambda e: errs.append('pageerror:' + type(e).__name__))
-    p.goto(base + '/login/index.php'); p.locator('[name=username]').fill(ma['username']); p.locator('[name=password]').fill(ma['password'])
+    p.goto(base + '/login/index.php'); p.locator('#username').fill(ma['username']); p.locator('#password').fill(ma['password'])
     p.locator('#loginbtn').click(); p.wait_for_load_state('networkidle')
     def download_all(scope, names):
         out = {}
@@ -109,6 +109,16 @@ with sync_playwright() as pw:
             'uuid': A, 'action': 'send', 'thread': thread, 'sesskey': key, 'tab': 'discussions', 'body': '',
             'attachment': {'name': 'p02-file-only.txt', 'mimeType': 'text/plain', 'buffer': (tmp / 'p02-file-only.txt').read_bytes()}}, max_redirects=0)
         note('server_file_only_direct', http=r.status, location=r.headers.get('location', '')[:200].replace(A, 'A'))
+        # Real HTTP CSRF rejection, followed by a fresh read proving no insertion.
+        marker = 'STANDARD_FORGED_CSRF_MESSAGE'
+        denied = p.request.post(base + '/local/kbacompany/communication_center.php', form={
+            'uuid': A, 'action': 'send', 'thread': thread, 'sesskey': 'invalid-ci-key',
+            'tab': 'discussions', 'body': marker}, max_redirects=0)
+        assert denied.status != 303, 'Forged CSRF request redirected as success'
+        assert 'sesskey' in denied.text().lower(), 'Expected Moodle invalidsesskey error'
+        p.reload(wait_until='networkidle')
+        assert marker not in p.content(), 'Forged message persisted'
+        note('csrf', rejected=True, no_message=True)
         obs['thread'] = thread
         # double submit: two fast clicks must create one message
         p.goto(base + '/local/kbacompany/communication_center.php?' + urlparse(p.url).query if 'communication_center.php' not in p.url else p.url, wait_until='networkidle')
@@ -151,8 +161,8 @@ with sync_playwright() as pw:
         if actor:
             account = f['actors'][actor]
             page.goto(base + '/login/index.php')
-            page.locator('[name=username]').fill(account['username'])
-            page.locator('[name=password]').fill(account['password'])
+            page.locator('#username').fill(account['username'])
+            page.locator('#password').fill(account['password'])
             page.locator('#loginbtn').click(); page.wait_for_load_state('networkidle')
         for url in urls:
             assert urlparse(url).netloc == '127.0.0.1:8080'

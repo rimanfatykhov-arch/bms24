@@ -132,6 +132,3 @@ try {
     fclose($handle);
     fwrite(STDERR, "FAIL clone fixture setup; private evidence retained.\n"); exit(1);
 }
-
-
-

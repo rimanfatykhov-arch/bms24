@@ -282,10 +282,16 @@ foreach ($scenarios as $name => $historical) {
         }
         $dbname = 'bmsci_' . $runid . '_' . $name;
         $phpunitname = 'bmsci_' . $runid . '_unit';
+        $dbstarted = microtime(true);
         $connection->query('CREATE DATABASE `' . $dbname . '` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci');
         if ($name === 'fresh') {
             $connection->query('CREATE DATABASE `' . $phpunitname . '` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci');
         }
+        file_put_contents($logs . '/timings.jsonl', json_encode([
+            'label'=>$name . '-create-databases', 'started_epoch'=>$dbstarted,
+            'wall_seconds'=>microtime(true)-$dbstarted, 'child_cpu_seconds'=>null,
+            'dbtype'=>getenv('DBTYPE'), 'exit_code'=>0, 'sha'=>getenv('GITHUB_SHA') ?: null,
+        ], JSON_THROW_ON_ERROR) . "\n", FILE_APPEND | LOCK_EX);
         mkdir($scenario . '/data', 0700);
         mkdir($scenario . '/phpunitdata', 0700);
         $config = ['dbtype' => required_env('DBTYPE'), 'dblibrary' => 'native', 'dbhost' => '127.0.0.1',
@@ -481,6 +487,12 @@ if ($fresh) {
         $exit = command([PHP_BINARY, $fresh . '/vendor/bin/phpunit', '--configuration', $fresh . '/phpunit.xml',
             '--log-junit', $logs . '/' . $test . '-junit.xml',
             $fresh . '/local/kbacompany/tests/' . $test . '.php'], $fresh, $logs . '/' . $test . '.log');
+        if ($standard && $exit === 0) {
+            $junit = is_file($logs . '/' . $test . '-junit.xml') ?
+                simplexml_load_file($logs . '/' . $test . '-junit.xml') : false;
+            $cases = $junit ? $junit->xpath('//testcase') : [];
+            if (!$cases || $junit->xpath('//skipped|//failure|//error')) { $exit = 1; }
+        }
         $report['phpunit'][$test] = $exit === 0 ? 'PASS' : 'FAIL';
         echo $test . ': ' . $report['phpunit'][$test] . "\n";
     }
