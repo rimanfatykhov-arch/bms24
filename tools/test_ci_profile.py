@@ -9,7 +9,7 @@ from ci_profile import classify, inspect
 
 class ProfileTest(unittest.TestCase):
     def test_sensitive_semantics_override_extension(self):
-        for text in ['+ .upload {color:red}', '+ /* sesskey */', '+ @import "x";', '+ .x {display:none}']:
+        for text in ['+ .upload {color:red}', '+ /* sesskey */', '+ @import "x";', '+ .x {display:none}', '+ .x {opacity:0}', '+ .x {height:0;overflow:hidden}', r'+ .x {background:u\72l(https://example.invalid/x)}']:
             self.assertEqual('FULL', classify('local/kbacompany/bms_ui/base.css', 'M', text)[0])
 
     def test_binary_and_mode_only_css_are_not_cosmetic(self):
@@ -36,10 +36,10 @@ class ProfileTest(unittest.TestCase):
                 def git(*args):
                     return subprocess.check_output(['git', *args], stderr=subprocess.DEVNULL).decode().strip()
                 git('init'); git('config','user.email','ci@example.invalid'); git('config','user.name','CI')
-                css=Path('local/kbacompany/bms_ui/base.css'); css.parent.mkdir(parents=True)
-                css.write_text('.x {color: red;}\n'); Path('unknown.txt').write_text('a')
+                css=Path('local/kbacompany/lang/en/local_kbacompany.php'); css.parent.mkdir(parents=True)
+                css.write_text("$string['hello'] = 'Hello';\n"); Path('unknown.txt').write_text('a')
                 git('add','.'); git('commit','-m','base'); base=git('rev-parse','HEAD')
-                css.write_text('.x {color: blue;}\n'); git('add','.'); git('commit','-m','cosmetic')
+                css.write_text("$string['hello'] = 'Welcome';\n"); git('add','.'); git('commit','-m','cosmetic')
                 self.assertEqual('FAST', inspect(base,'HEAD')['recommendation'])
                 Path('unknown.txt').write_text('b'); git('add','.'); git('commit','-m','mixed')
                 result=inspect(base,'HEAD'); self.assertEqual('FULL',result['recommendation'])

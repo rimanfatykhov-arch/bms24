@@ -15,7 +15,7 @@ Draft implementation for Issue82. No product files or release gates changed.
 
 Old run43412388734: MariaDB harness26m41s; Percona harness35m04s. Composer installation3s for each. Percona setup before harness65s, MariaDB37s. Whole-run37m22s includes scheduling overhead. Fine-grained phases were not independently timestamped; new harness emits labels, wall/child CPU, engine and SHA without command arguments.
 
-New runs: pending. No speedup or release readiness claim. Staging acceptance is NOT RUN; this CI pilot does not change staging.
+Initial head341159b passed STANDARD runs43471029216 and43471989444 (4:51/7:48), FULL43471029251 (37:02), and repaired Corporate43471029245. These results are historical evidence for that head; review fixes require their own CI links in PR86. No release readiness claim. Staging acceptance is NOT RUN; this CI pilot does not change staging.
 
 ## Release discipline and rollback
 
@@ -25,7 +25,7 @@ PR → unchanged CI/FULL → isolated staging acceptance → exact artifact mani
 
 | Lane | Scope | Target (not a measured guarantee) |
 |---|---|---|
-| FAST | Literal translation / narrow presentation diff; static, lint, UI contract and isolated visual smoke still required | 1–3 minutes |
+| FAST | Literal translation / literal translation diff (CSS remains FULL); static, lint, UI contract and isolated visual smoke still required | 1–3 minutes |
 | STANDARD | First implementation: fixed Issue79 shadow benchmark, fresh install +62 focused tests + known ACL negative control + real HTTP/browser on both engines | 5–10 minutes |
 | FULL | Existing fresh/historical upgrades, schema parity, complete BMS/Corporate suites, data preservation and security regressions | No reduced coverage |
 
@@ -40,3 +40,12 @@ Upload limit fixture uses PHP upload_max_filesize=64K/post_max_size=8M, matching
 Logs contain stage labels, wall and child-process CPU (not database server CPU), engine and tested merge SHA. Browser/packaging have separate timings. JUnit must contain testcases with no errors/failures/skips in STANDARD. Actor credentials, config.php, moodledata and HTTP server logs stay outside the uploaded evidence directory. Compare final run URLs and exact test identities in the PR before acceptance; repository prose is not evidence of a completed run.
 
 Independent QA/security review remains required before merge. This Draft does not assert that review or staging acceptance has occurred. For subsequent small fixes: classify the actual diff, run shadow feedback and all existing FULL gates, examine exact-source artifact evidence, perform isolated staging acceptance, then request owner approval for the exact ZIP/SHA/host/window and rollback plan. Do not infer permission from a green STANDARD badge.
+
+
+## Independent review follow-up
+
+Independent QA reproduced a false green by mutating real successful browser observations: text rendering false and direct POST500 were not included in the verdict. The fix requires all text observations,303 for direct upload and a unique rendered attachment with verified download hash. Negative mutation tests are part of STANDARD CI, including optimized Python. Terminal browser JSON defaults FAIL and becomes PASS only after the contract, SQL and per-actor ACL checks.
+
+Security review found no current FULL/release bypass: classification is advisory. Nevertheless CSS opacity/escaped-resource values were incorrectly labelled FAST; all CSS is now FULL. Browser contexts restrict navigation to loopback; API downloads validate exact HTTP origin before the request and refuse redirects. This is request-level containment, not an OS-level egress firewall. The original PHPUnit lists, FULL workflows, release policy and production/staging remain unchanged.
+
+Independent AI review is not human owner approval. Review findings, final source SHA, rerun evidence and the approval card are maintained in PR86; no automatic merge or deployment is authorized.

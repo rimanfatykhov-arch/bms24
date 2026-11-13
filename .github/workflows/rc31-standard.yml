@@ -76,6 +76,8 @@ jobs:
         working-directory: candidate
         run: |
           python3 tools/test_ci_profile.py
+          python3 tools/tests/test_standard_browser_contract.py
+          python3 -O tools/tests/test_standard_browser_contract.py
           python3 tools/ci_profile.py --base "$BASE_SHA" --head "$HEAD_SHA"
       - name: Install browser runtime
         run: |

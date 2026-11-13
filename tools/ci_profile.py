@@ -23,9 +23,7 @@ def classify(path, status, patch):
         # PHP translations can execute code: unrecognised syntax is FULL.
         return 'FULL', 'translation syntax requires review'
     if re.fullmatch(r'local/kbacompany/bms_ui/[a-zA-Z0-9_/-]+\.css', path):
-        if re.search(r'(?i)(url\s*\(|@import|content\s*:|display\s*:|visibility\s*:|pointer-events)', changed):
-            return 'FULL', 'CSS can hide controls or load resources'
-        return 'FAST', 'presentation CSS; isolated visual smoke still required'
+        return 'FULL', 'CSS semantics require review; no approved property/value allowlist'
     if path == 'local/kbacompany/classes/local/deviation_service.php':
         # Not currently eligible: service includes company and domain boundaries.
         return 'FULL', 'domain service requires full regression'
