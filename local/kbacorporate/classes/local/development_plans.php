@@ -15,6 +15,22 @@ class development_plans {
     public const ITEM_PENDING_REVIEW = 'pendingreview';
     public const ITEM_COMPLETED = 'completed';
 
+    /** Select every Moodle name field from an already-scoped user join. */
+    private static function name_fields_sql(string $alias, string $prefix = ''): string {
+        return implode(', ', array_map(static function(string $field) use ($alias, $prefix): string {
+            return $alias . '.' . $field . ($prefix === '' ? '' : ' AS ' . $prefix . $field);
+        }, \core_user\fields::get_name_fields()));
+    }
+
+    /** Render actual projected fields, including phonetic/middle/alternate names. */
+    private static function joined_fullname(\stdClass $record, string $prefix): string {
+        $user = new \stdClass();
+        foreach (\core_user\fields::get_name_fields() as $field) {
+            $user->$field = (string)($record->{$prefix . $field} ?? '');
+        }
+        return fullname($user);
+    }
+
     public static function available(): bool {
         global $DB;
         $dbman = $DB->get_manager();
@@ -41,7 +57,8 @@ class development_plans {
     /** Company members who may be assigned as a plan or action mentor. */
     public static function mentor_options(int $companyid): array {
         global $DB;
-        $sql = "SELECT DISTINCT u.id, u.firstname, u.lastname, u.email
+        $usernames = self::name_fields_sql('u');
+        $sql = "SELECT DISTINCT u.id, {$usernames}, u.email
                   FROM {local_kbacorp_member} m
                   JOIN {user} u ON u.id = m.userid
                  WHERE m.companyid = :companyid
@@ -93,14 +110,17 @@ class development_plans {
 
     /** Return newest-first operational history for one individual development plan. */
     public static function get_history(int $planid): array {
-        global $DB;
+        global $DB, $USER;
         if (!self::history_available()) {
             return [];
         }
-        $sql = "SELECT l.*, u.firstname, u.lastname, u.email
+        $usernames = self::name_fields_sql('u');
+        $revocationwhere = access::not_revoked_sql('rp.companyid', (int)($USER->id ?? 0));
+        $sql = "SELECT l.*, {$usernames}, u.email
                   FROM {local_kbacorp_devlog} l
+                  JOIN {local_kbacorp_devplan} rp ON rp.id = l.planid
              LEFT JOIN {user} u ON u.id = l.actorid
-                 WHERE l.planid = :planid
+                 WHERE {$revocationwhere} AND l.planid = :planid
               ORDER BY l.timecreated DESC, l.id DESC";
         $records = array_values($DB->get_records_sql($sql, ['planid' => $planid]));
         foreach ($records as $record) {
@@ -120,6 +140,7 @@ class development_plans {
             int $mentorid, int $targetdate, int $reviewdate, int $actorid): void {
         global $DB;
         $plan = $DB->get_record('local_kbacorp_devplan', ['id' => $planid], '*', MUST_EXIST);
+        access::require_not_revoked((int)$plan->companyid, $actorid);
         self::require_draft($plan);
         $title = trim($title);
         $objective = trim($objective);
@@ -178,6 +199,7 @@ class development_plans {
         global $DB;
         $item = $DB->get_record('local_kbacorp_devitem', ['id' => $itemid], '*', MUST_EXIST);
         $plan = $DB->get_record('local_kbacorp_devplan', ['id' => $item->planid], '*', MUST_EXIST);
+        access::require_not_revoked((int)$plan->companyid, $actorid);
         self::require_draft($plan);
         self::validate_course((int)$plan->companyid, $courseid);
         self::validate_mentor((int)$plan->companyid, $mentorid);
@@ -250,6 +272,7 @@ class development_plans {
         global $DB;
         $item = $DB->get_record('local_kbacorp_devitem', ['id' => $itemid], '*', MUST_EXIST);
         $plan = $DB->get_record('local_kbacorp_devplan', ['id' => $item->planid], '*', MUST_EXIST);
+        access::require_not_revoked((int)$plan->companyid, $actorid);
         if ((string)$plan->status !== self::STATUS_ACTIVE) {
             throw new \moodle_exception('developmentplanstatuslocked', 'local_kbacorporate');
         }
@@ -274,6 +297,7 @@ class development_plans {
         global $DB;
         $item = $DB->get_record('local_kbacorp_devitem', ['id' => $itemid], '*', MUST_EXIST);
         $plan = $DB->get_record('local_kbacorp_devplan', ['id' => $item->planid], '*', MUST_EXIST);
+        access::require_not_revoked((int)$plan->companyid, $actorid);
         if ((string)$plan->status !== self::STATUS_ACTIVE) {
             throw new \moodle_exception('developmentplanstatuslocked', 'local_kbacorporate');
         }
@@ -315,6 +339,7 @@ class development_plans {
         global $DB;
         $item = $DB->get_record('local_kbacorp_devitem', ['id' => $itemid], '*', MUST_EXIST);
         $plan = $DB->get_record('local_kbacorp_devplan', ['id' => $item->planid], '*', MUST_EXIST);
+        access::require_not_revoked((int)$plan->companyid, $actorid);
         if ((string)$plan->status !== self::STATUS_ACTIVE ||
                 (string)$item->status !== self::ITEM_PENDING_REVIEW) {
             throw new \moodle_exception('iprevidencecannotreview', 'local_kbacorporate');
@@ -352,6 +377,7 @@ class development_plans {
         global $DB;
         $item = $DB->get_record('local_kbacorp_devitem', ['id' => $itemid], '*', MUST_EXIST);
         $plan = $DB->get_record('local_kbacorp_devplan', ['id' => $item->planid], '*', MUST_EXIST);
+        access::require_not_revoked((int)$plan->companyid, $actorid);
         if (!in_array((string)$plan->status, [self::STATUS_DRAFT, self::STATUS_ACTIVE], true)) {
             throw new \moodle_exception('developmentplanstatuslocked', 'local_kbacorporate');
         }
@@ -884,33 +910,37 @@ class development_plans {
 
     public static function get_plan(int $planid): \stdClass {
         global $DB;
-        $sql = "SELECT p.*, u.firstname, u.lastname, u.email, c.name AS companyname,
-                       mu.firstname AS mentorfirstname, mu.lastname AS mentorlastname,
+        global $USER;
+        $revocationwhere = access::not_revoked_sql('p.companyid', (int)($USER->id ?? 0));
+        $usernames = self::name_fields_sql('u');
+        $mentornames = self::name_fields_sql('mu', 'mentor');
+        $sql = "SELECT p.*, {$usernames}, u.email, c.name AS companyname,
+                       {$mentornames},
                        mu.email AS mentoremail
                   FROM {local_kbacorp_devplan} p
                   JOIN {user} u ON u.id = p.userid
                   JOIN {local_kbacorp_company} c ON c.id = p.companyid
              LEFT JOIN {user} mu ON mu.id = p.mentorid
-                 WHERE p.id = :id";
+                 WHERE p.id = :id AND {$revocationwhere}";
         $plan = $DB->get_record_sql($sql, ['id' => $planid], MUST_EXIST);
         $plan->mentorname = (int)($plan->mentorid ?? 0) > 0 ?
-            fullname((object)[
-                'firstname' => (string)($plan->mentorfirstname ?? ''),
-                'lastname' => (string)($plan->mentorlastname ?? ''),
-            ]) : '';
+            self::joined_fullname($plan, 'mentor') : '';
         return $plan;
     }
 
     public static function get_company_plans(int $companyid): array {
         global $DB;
-        $sql = "SELECT p.*, u.firstname, u.lastname, u.email,
+        global $USER;
+        access::require_not_revoked($companyid, (int)($USER->id ?? 0));
+        $usernames = self::name_fields_sql('u');
+        $sql = "SELECT p.*, {$usernames}, u.email,
                        COUNT(i.id) AS itemcount,
                        SUM(CASE WHEN i.status = :completed THEN 1 ELSE 0 END) AS completedcount
                   FROM {local_kbacorp_devplan} p
                   JOIN {user} u ON u.id = p.userid
              LEFT JOIN {local_kbacorp_devitem} i ON i.planid = p.id
                  WHERE p.companyid = :companyid
-              GROUP BY p.id, u.firstname, u.lastname, u.email
+              GROUP BY p.id, {$usernames}, u.email
               ORDER BY p.timemodified DESC";
         return array_values($DB->get_records_sql($sql, [
             'companyid' => $companyid, 'completed' => self::ITEM_COMPLETED,
@@ -1135,38 +1165,34 @@ class development_plans {
     }
 
     public static function get_items(int $planid): array {
-        global $DB;
+        global $DB, $USER;
+        $mentornames = self::name_fields_sql('mu', 'mentor');
+        $evidencenames = self::name_fields_sql('eu', 'evidence');
+        $reviewernames = self::name_fields_sql('ru', 'reviewer');
+        $revocationwhere = access::not_revoked_sql('rp.companyid', (int)($USER->id ?? 0));
         $sql = "SELECT i.*, c.shortname AS competencyname, c.idnumber,
                        crs.fullname AS coursename,
-                       mu.firstname AS mentorfirstname, mu.lastname AS mentorlastname,
-                       eu.firstname AS evidencefirstname, eu.lastname AS evidencelastname,
-                       ru.firstname AS reviewerfirstname, ru.lastname AS reviewerlastname
+                       {$mentornames},
+                       {$evidencenames},
+                       {$reviewernames}
                   FROM {local_kbacorp_devitem} i
+                  JOIN {local_kbacorp_devplan} rp ON rp.id = i.planid
                   JOIN {competency} c ON c.id = i.competencyid
              LEFT JOIN {course} crs ON crs.id = i.courseid
              LEFT JOIN {user} mu ON mu.id = i.mentorid
              LEFT JOIN {user} eu ON eu.id = i.evidencesubmittedby
              LEFT JOIN {user} ru ON ru.id = i.reviewedby
-                 WHERE i.planid = :planid
+                 WHERE {$revocationwhere} AND i.planid = :planid
               ORDER BY CASE i.priority WHEN 'critical' THEN 1 WHEN 'core' THEN 2 ELSE 3 END,
                        c.shortname";
         $records = array_values($DB->get_records_sql($sql, ['planid' => $planid]));
         foreach ($records as $record) {
             $record->mentorname = (int)($record->mentorid ?? 0) > 0 ?
-                fullname((object)[
-                    'firstname' => (string)($record->mentorfirstname ?? ''),
-                    'lastname' => (string)($record->mentorlastname ?? ''),
-                ]) : '';
+                self::joined_fullname($record, 'mentor') : '';
             $record->evidencesubmittername = (int)($record->evidencesubmittedby ?? 0) > 0 ?
-                fullname((object)[
-                    'firstname' => (string)($record->evidencefirstname ?? ''),
-                    'lastname' => (string)($record->evidencelastname ?? ''),
-                ]) : '';
+                self::joined_fullname($record, 'evidence') : '';
             $record->reviewername = (int)($record->reviewedby ?? 0) > 0 ?
-                fullname((object)[
-                    'firstname' => (string)($record->reviewerfirstname ?? ''),
-                    'lastname' => (string)($record->reviewerlastname ?? ''),
-                ]) : '';
+                self::joined_fullname($record, 'reviewer') : '';
             if (trim((string)($record->goal ?? '')) === '') {
                 $record->goal = self::default_item_goal(
                     (string)$record->competencyname, (int)$record->targetlevel);
@@ -1177,35 +1203,31 @@ class development_plans {
 
     /** Return one individual development action with display metadata. */
     public static function get_item(int $itemid): \stdClass {
-        global $DB;
+        global $DB, $USER;
+        $mentornames = self::name_fields_sql('mu', 'mentor');
+        $evidencenames = self::name_fields_sql('eu', 'evidence');
+        $reviewernames = self::name_fields_sql('ru', 'reviewer');
+        $revocationwhere = access::not_revoked_sql('rp.companyid', (int)($USER->id ?? 0));
         $sql = "SELECT i.*, c.shortname AS competencyname, c.idnumber,
                        crs.fullname AS coursename,
-                       mu.firstname AS mentorfirstname, mu.lastname AS mentorlastname,
-                       eu.firstname AS evidencefirstname, eu.lastname AS evidencelastname,
-                       ru.firstname AS reviewerfirstname, ru.lastname AS reviewerlastname
+                       {$mentornames},
+                       {$evidencenames},
+                       {$reviewernames}
                   FROM {local_kbacorp_devitem} i
+                  JOIN {local_kbacorp_devplan} rp ON rp.id = i.planid
                   JOIN {competency} c ON c.id = i.competencyid
              LEFT JOIN {course} crs ON crs.id = i.courseid
              LEFT JOIN {user} mu ON mu.id = i.mentorid
              LEFT JOIN {user} eu ON eu.id = i.evidencesubmittedby
              LEFT JOIN {user} ru ON ru.id = i.reviewedby
-                 WHERE i.id = :itemid";
+                 WHERE {$revocationwhere} AND i.id = :itemid";
         $record = $DB->get_record_sql($sql, ['itemid' => $itemid], MUST_EXIST);
         $record->mentorname = (int)($record->mentorid ?? 0) > 0 ?
-            fullname((object)[
-                'firstname' => (string)($record->mentorfirstname ?? ''),
-                'lastname' => (string)($record->mentorlastname ?? ''),
-            ]) : '';
+            self::joined_fullname($record, 'mentor') : '';
         $record->evidencesubmittername = (int)($record->evidencesubmittedby ?? 0) > 0 ?
-            fullname((object)[
-                'firstname' => (string)($record->evidencefirstname ?? ''),
-                'lastname' => (string)($record->evidencelastname ?? ''),
-            ]) : '';
+            self::joined_fullname($record, 'evidence') : '';
         $record->reviewername = (int)($record->reviewedby ?? 0) > 0 ?
-            fullname((object)[
-                'firstname' => (string)($record->reviewerfirstname ?? ''),
-                'lastname' => (string)($record->reviewerlastname ?? ''),
-            ]) : '';
+            self::joined_fullname($record, 'reviewer') : '';
         if (trim((string)($record->goal ?? '')) === '') {
             $record->goal = self::default_item_goal(
                 (string)$record->competencyname, (int)$record->targetlevel);
@@ -1377,7 +1399,8 @@ class development_plans {
             throw new \invalid_parameter_exception('Unknown development item status.');
         }
         $item = $DB->get_record('local_kbacorp_devitem', ['id' => $itemid], '*', MUST_EXIST);
-        $plan = $DB->get_record('local_kbacorp_devplan', ['id' => $item->planid], 'id,status', MUST_EXIST);
+        $plan = $DB->get_record('local_kbacorp_devplan', ['id' => $item->planid], 'id,status,companyid', MUST_EXIST);
+        access::require_not_revoked((int)$plan->companyid, $actorid);
         if ((string)$plan->status !== self::STATUS_ACTIVE) {
             throw new \moodle_exception('developmentplanstatuslocked', 'local_kbacorporate');
         }
@@ -1400,6 +1423,7 @@ class development_plans {
     public static function update_plan(int $planid, string $title, int $targetdate, int $actorid = 0): void {
         global $DB;
         $plan = $DB->get_record('local_kbacorp_devplan', ['id' => $planid], '*', MUST_EXIST);
+        access::require_not_revoked((int)$plan->companyid, $actorid);
         self::require_draft($plan);
         $title = trim($title);
         if ($title === '' || \core_text::strlen($title) > 255) {
@@ -1435,6 +1459,7 @@ class development_plans {
         global $DB;
         $item = $DB->get_record('local_kbacorp_devitem', ['id' => $itemid], '*', MUST_EXIST);
         $plan = $DB->get_record('local_kbacorp_devplan', ['id' => $item->planid], '*', MUST_EXIST);
+        access::require_not_revoked((int)$plan->companyid, $actorid);
         self::require_draft($plan);
         self::validate_course((int)$plan->companyid, $courseid);
         if ($duedate <= 0 || $duedate < (int)$plan->startdate || $duedate > (int)$plan->targetdate) {
@@ -1465,6 +1490,7 @@ class development_plans {
     public static function add_profile_item(int $planid, int $competencyid, int $courseid, int $duedate, int $actorid = 0): int {
         global $DB;
         $plan = $DB->get_record('local_kbacorp_devplan', ['id' => $planid], '*', MUST_EXIST);
+        access::require_not_revoked((int)$plan->companyid, $actorid);
         self::require_draft($plan);
         if ($DB->record_exists('local_kbacorp_devitem', [
             'planid' => $planid, 'competencyid' => $competencyid,
@@ -1529,6 +1555,7 @@ class development_plans {
         global $DB;
         $item = $DB->get_record('local_kbacorp_devitem', ['id' => $itemid], '*', MUST_EXIST);
         $plan = $DB->get_record('local_kbacorp_devplan', ['id' => $item->planid], '*', MUST_EXIST);
+        access::require_not_revoked((int)$plan->companyid, $actorid);
         self::require_draft($plan);
         self::log_event((int)$item->planid, $itemid, $actorid, 'item_deleted',
             (string)$item->status, '', '', [
@@ -1558,6 +1585,7 @@ class development_plans {
     public static function submit_for_agreement(int $planid, int $actorid): void {
         global $DB;
         $plan = $DB->get_record('local_kbacorp_devplan', ['id' => $planid], '*', MUST_EXIST);
+        access::require_not_revoked((int)$plan->companyid, $actorid);
         self::require_draft($plan);
         if (!$DB->record_exists('local_kbacorp_devitem', ['planid' => $planid])) {
             throw new \moodle_exception('developmentplancannotsubmitempty', 'local_kbacorporate');
@@ -1577,6 +1605,7 @@ class development_plans {
     public static function employee_decision(int $planid, int $userid, bool $accepted, string $comment): void {
         global $DB;
         $plan = $DB->get_record('local_kbacorp_devplan', ['id' => $planid], '*', MUST_EXIST);
+        access::require_not_revoked((int)$plan->companyid, $userid);
         if ((int)$plan->userid !== $userid || (string)$plan->status !== self::STATUS_PENDING) {
             throw new \moodle_exception('developmentplandecisionnotallowed', 'local_kbacorporate');
         }
@@ -1598,6 +1627,7 @@ class development_plans {
     public static function manager_transition(int $planid, string $action, int $actorid = 0): void {
         global $DB;
         $plan = $DB->get_record('local_kbacorp_devplan', ['id' => $planid], '*', MUST_EXIST);
+        access::require_not_revoked((int)$plan->companyid, $actorid);
         if ($action === 'cancel' && !in_array((string)$plan->status,
                 [self::STATUS_DRAFT, self::STATUS_PENDING, self::STATUS_ACTIVE], true)) {
             throw new \moodle_exception('developmentplantransitioninvalid', 'local_kbacorporate');

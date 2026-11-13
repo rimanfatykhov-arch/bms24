@@ -198,6 +198,25 @@ if ($canedit) {
     echo html_writer::end_div();
 }
 echo html_writer::end_div();
+// BMS24 deep-link: a GET-only navigation action, not a task mutation.
+// Corporate remains the task/result/discussion source of truth.
+if ($isowner && in_array((string)$task->status, ['planned', 'inprogress'], true) &&
+        is_readable($CFG->dirroot . '/local/kbacompany/implementation_battle_plan_attach.php')) {
+    try {
+        $projection = \local_kbacorporate\local\bridge::get_implementation_task_projection(
+            (int)$task->companyid, (int)$USER->id, (int)$task->id);
+        if ($projection && !empty($projection['attachable'])) {
+            $attachurl = new moodle_url('/local/kbacompany/implementation_battle_plan_attach.php', [
+                'companyid' => (int)$task->companyid, 'taskid' => (int)$task->id,
+            ]);
+            echo html_writer::div(html_writer::link($attachurl,
+                get_string('implementationaddtobattleplan', 'local_kbacorporate'),
+                ['class' => 'btn btn-outline-primary']), 'kbacorp-task-battle-plan-action');
+        }
+    } catch (\Throwable $e) {
+        // An unavailable bridge must not break the Corporate task page.
+    }
+}
 echo html_writer::end_div();
 
 echo html_writer::start_div('kbacorp-task-detail-grid');

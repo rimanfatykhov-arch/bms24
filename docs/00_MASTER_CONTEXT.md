@@ -11,6 +11,8 @@
 
 ## Текущая версия
 
+Актуализация 08.11.2026: в reconcile-кандидате код плагина — **2026101879 / RC29**, с исправлением acceptance из PR #40. Main baseline: `740fce16`; импорт: `eccc1eb`. Все файлы main сохранены. Ниже оставлена историческая точка 1642; новый статус, риски схемы и условия приёмки описаны в `docs/reconcile/PR8_RECONCILIATION.md`. Deployment не выполнен, RC30 не принят.
+
 - `local_kbacompany`, `1.1.0-rc29`, плагин `$plugin->version = 2026101642`.
 - `requires=2022041900` соответствует минимальному Moodle 4.0 по `version.php` (не заменяет проверку рабочей версии Moodle и PHP).
 - Этот контекст фиксирует **кодовую точку**, не состояние production Moodle.
@@ -31,3 +33,92 @@ BMS24 management → `local_kbacompany`. Moodle → авторизация/LMS/c
 ## Ограничения приёмки
 
 Static lint, zip CRC, единичные mock smoke tests не означают реальную Moodle DB / cron / RBAC / PHPUnit / Boost / KBA Theme acceptance или соответствие prod.
+
+## 08.11.2026 — утверждение ADR-0002 и schema repair
+
+Владелец утвердил базу a36c5ab8 и порядок ADR-0002. Кандидат исправления трёх полей — build2026110890/RC29, не deployment. Реально прочитанный stage41: BMS2026110802, Corporate2026102613, Moodle4.1.22/PHP8.1.34/MariaDB10.11.19. Это более новое функциональное дерево, чем Git baseline1879; сначала нужен отдельный перенос дельт, нельзя откатывать stage41 или Corporate. Отчёт: `docs/reconcile/ISSUE44_SCHEMA_REPAIR.md`. Архитектурные решения сохраняются в GitHub ADR/Issues согласно принятому ADR-0001; историческая ссылка на Drive выше не отменяет это решение.
+
+Read-only production inventory08.11.2026: BMS2026101878, Corporate2026102613, Moodle4.1.22/PHP CLI8.1.34, Percona Server8.0.46-37. Исторический MySQL5.7 не является фактической production DB. По отдельной команде владельца настроен ограниченный SSH inventory stage41→RUWEB; код/БД Moodle не менялись.
+
+## 2026-11-09 — isolated schema P0 repair
+
+Candidate build2026110900 corrects XMLDB warnings and adds the missing ordered task index through a reachable checkpoint. See docs/adr/ADR-0003-ordered-index-schema-repair.md. PR48/49 remain unmerged; unrelated full-suite blockers remain HOLD. No production or staging deployment is authorized.
+
+## 2026-11-09 — communication/Corporate runtime candidate
+
+BMS2026110901 and local Corporate0.40.10-bms.1 build2026110901 preserve the approved source lineage while fixing observed runtime blockers. See docs/reconcile/COMMUNICATION_CORPORATE_RUNTIME_FIXES.md. Live Corporate.13 and stage0802 remain separate unreconciled feature trees; no deployment/merge authorization.
+
+PR52 tested source469afad: complete MariaDB/Percona matrix confirms Corporate150/962 and communication/privacy/provider/schema/tenant gates PASS. Full BMS558/5397 retains23 errors/22 failures on both engines: release acceptance HOLD. Evidence: docs/reconcile/PR52_RUNTIME_ACCEPTANCE.md. PR48/49/50/52 remain draft and unmerged.
+
+## 2026-11-09 — Issue44 re-audit and RC30 diagnostics
+
+The current owner prompt preserves approved ADR-0002. PR55 historical observations do not supersede that decision or PR52 evidence. Separate candidate BMS2026110902 repairs Moodle exception classification and RC30 severity fixtures; Corporate2026110901 is unchanged. See docs/reconcile/ISSUE44_REAUDIT_RC30_DIAGNOSTICS.md. No new main-based integration, merge, staging/production deployment or Issue45 operational rollout is authorized by this source increment.
+
+PR56 tested979a23e: MariaDB/Percona both pass31 focused RC30 tests, six install/upgrade scenarios and full Corporate150/962. Full BMS563/5496 still has23 errors/20 failures; no new failing identities. Issue44/release HOLD. Report: docs/reconcile/PR56_RC30_ACCEPTANCE.md. CI artifact verified; no deployment. Cross-checkout CRLF/LF packaging difference is recorded for Issue45.
+
+## 2026-11-09 — selective PR53 + PR56 candidate
+
+Owner requested integration of two distinct BMS0902 candidates. Conflict map was prepared first; new branch starts at exactPR56, selects functional0804/queue/learning fromPR53 and preserves Corporate0901/communication/RC30. New BMS0903 has no new DDL; both exact0902 sources are separate upgrade origins. See docs/reconcile/PR53_PR56_CONFLICT_MAP.md. Read-only stage41 hashes confirm Corporate2613 has additional/different source; candidate is not its accepted replacement. No main merge or staging/production changes.
+
+Draft PR57 tested80f454b: both MariaDB10.11/Percona8.0 pass9 install/upgrade scenarios,8 exact183-table schema comparisons,12 preserved storage fixtures per scenario, full Corporate150/962 and targeted learning/queue/communication/RC30/access checks. Full BMS598/6981 retains20 errors/19 failures: exactly the39 shared parent failures, no new regressions. The old PR53 inbox identity is explicitly mapped to two passing PR56 datasets. Static/artifact CI PASS; release HOLD. See docs/reconcile/PR57_ACCEPTANCE.md and pr57-integration-results.json. Next work is focused diagnosis of those blockers plus separate Corporate2613 semantic reconciliation; no deployment authorization.
+
+## 2026-11-09 — PR58 document/employee acceptance repair
+
+All39 PR57 failures triaged; seven document/semantic/employee fixture blockers repaired without runtime-policy changes. Draft PR58 build0904 tested e37bb2a: MariaDB/Percona both pass documents10/53, employee sync11/57, semantic4/29, full Corporate150/962 and10 install/upgrade scenarios with9 schema comparisons. Full BMS603/7042 retains14 errors/18 failures:32 prior identities, zero new failures/missing tests, five added negative reviewer cases. Static/artifact PASS; release HOLD. See docs/reconcile/PR58_ACCEPTANCE.md and PR58_FAILURE_TRIAGE.md. Next scope: valid date/task/reviewer fixtures and explicit contract review; hidden manager-display presentation needs a separate decision. No staging/production access or PR merge.
+
+## 2026-11-09 — PR59 bounded P0 regression stabilization
+
+Draft PR59 starts at exact PR58 d3a16c3; tested source 6f5c3f9, BMS2026110905 / Corporate2026110901. All eight period/task/Battle Plan errors were independently reproduced on unchanged PR58. Proven fixture contradictions were repaired; date, chronology, approval, closure and authorization guards remain unchanged. Seven negative/date cases were added; original assertions are retained. MariaDB10.11.19 and Percona8.0.46-37 both confirm BMS610/7095, six errors and18 failures, zero skipped: exactly eight prior failing identities resolved, no new failures or missing parent tests. All24 parent suites retain identities without decreased per-test assertion counts; full Corporate150/962 and the37 targeted tests pass. All11 install/upgrade scenarios,10 schema comparisons and22 preservation/repeat checks per engine pass. Static CI and verified0905 artifact pass. Full BMS and RC30 remain HOLD with24 prior failures; see docs/reconcile/PR59_ACCEPTANCE.md and pr59-acceptance-results.json. Next bounded priority: two task_batch_actions1842 cases and one task_deadlines1843 membership/isolation fixture case. No Core/Corporate authorization changes, staging/production access, or merge.
+
+## 2026-11-09 — PR60 task membership fixtures and regression protection
+
+Draft PR60 source e5e5dd46d6563c3c38668505ff8a47821bdadda9, based on exact PR59 2446347adf26ebb9e1520414a65c89e930dadba2: BMS2026110906 / Corporate2026110901. Three independently reproduced task batch/deadline fixture errors repaired without domain authorization or business-rule changes. Both MariaDB10.11.19 and Percona8.0.46-37: BMS618/7245, 3 errors + 18 failures, zero skipped; exactly three resolved, eight added passing cases, no new regressions by exact IDs. Focused15/186 and Corporate150/962 PASS. Fresh plus11 historical upgrades,11 schema comparisons (183 tables),24 preservation/repeat logs PASS per engine. Static/artifact checks PASS. Independent QA confirmed both engines. See [PR60 acceptance](reconcile/PR60_ACCEPTANCE.md) and exact-ID triage. RC30 HOLD; browser/HTTP, full siblings, Corporate2613 reconciliation and operational restore remain NOT RUN. No staging/production changes or merge. Next proposed bounded scope: two Kanban fixture errors; no next PR created.
+
+## 2026-11-09 — PR62 Kanban fixture stabilization
+
+Draft PR62 source acff5299f895badb3f5efbfc84b676ef8f7ef9fd starts at exact PR60 a60ce4e99fe1931774eaa7da3be0e23fe1d0b92f. Test-only repair replaces invalid company/actor fixtures; runtime, Corporate, ACL and migrations are unchanged. BMS2026110906 / Corporate2026110901 retained; candidate is identified by Git SHA and artifact hash, not a new product build. Both MariaDB10.11.19 and Percona8.0.46-37: Kanban10/90 PASS, BMS618/7274 with1 error +18 failures and0 skipped, Corporate150/962 PASS. Exactly two old errors resolved; no new failures, missing cases or reduced assertions across30 retained suites. All12 install/upgrade scenarios,11 schema comparisons (183 tables),24 preservation/repeat logs PASS per engine. Static/artifact PASS; ZIP differs from PR60 only in two PHP tests, all runtime entries byte-identical. See [PR62 acceptance](reconcile/PR62_ACCEPTANCE.md) and exact-ID triage. RC30 HOLD; no merge or staging/production changes. Proposed next scope: three stale contract-version assertions (overview, indicator registry, market); not started.
+
+## ADR-0004 schema repair — PR66,2026-11-10
+
+Owner approved fixed fresh precision with all-values preflight. BMS2026111001 repairs
+two adminitem fields and11 DECIMAL definitions; Corporate0901 unchanged. Tested source
+98ecf00a4c39299377f056f852c7ecc8b95ecd16. Both MariaDB/Percona: specialized13-field
+repair,30 rejection cases,110 preserved rows,two-company nonempty time values,fractions
+and partial-DDL retry PASS. Full13 install/upgrade scenarios and12 schema comparisons
+PASS; BMS618/7274 retains1error+18failures,0skips; Corporate150/962PASS. No new failures,
+missing IDs or assertion decreases versus PR62. RC30 HOLD. See
+[PR66 acceptance](reconcile/PR66_ACCEPTANCE.md) and evidence. No production/staging
+access, deployment or PR merge. Backup/restore and realCorporate2613 remain unverified.
+
+## PR67 contract expectations —2026-11-10
+
+Draft PR67 on exact PR66 head4690e11811b9006386dd4bb13e9e80555f4c3137; tested source
+e7d8cc06d99ba407662fc9aed86dfc526c583521. Three proven stale overview/indicator/market
+version expectations corrected; original assertions retained and domain declarations
+covered additionally. No runtime, schema, ACL, Core or Corporate change. BMS2026111001 /
+Corporate2026110901 retained; source SHA and ZIP hash identify this test-only candidate.
+Both MariaDB10.11.19 and Percona8.0.46-37: BMS618/7292,1error+15failures,0skips;
+Corporate150/962 and focused11/39 PASS. Exactly3 resolved, no new failing/missing IDs,
+no decreased assertions across32 retained suites;35 suites now.13 install/upgrade
+scenarios,12 schema comparisons and ADR-0004 repair regression PASS. Remaining16
+failures preserve exception types/text except normalized synthetic session keys.
+See [PR67 acceptance](reconcile/PR67_ACCEPTANCE.md), evidence and19-failure triage.
+RC30 HOLD. Next priority: non-manager workspace access/data validation. No PR merge,
+deployment or production/staging access.
+
+## PR68 non-manager workspace —2026-11-10
+
+Draft PR68 starts at exact PR67 head34763fd4b8980d36bf6de0a309a7737693e9e3dc.
+Tested source303f47d1ad4acafc0286746ea1700d47b35997c4, BMS2026111002/Corporate2026110901.
+Confirmed renderer state defect: manager links/forms preceded the late non-manager
+guard. Normalize display/scope before rendering; route/service ACL and Corporate unchanged.
+Code-only1002 savepoint appends without changing historical schema/data migrations.
+Both MariaDB10.11.19 and Percona8.0.46-37: old renderer failure reproduced; targeted UI4/33,
+access6/211,analytics7/24 PASS. Full BMS626/7523,E1/F14/S0: one old failure resolved,
+eight added passing cases, no new failures/missing IDs/decreased assertions;35 prior
+suites retained,38 total. Corporate150/962,14 install/upgrades,13 schema comparisons and
+ADR-0004 repair regression PASS. Independent QA verified both artifacts. No unauthorized
+projection observed in tested native two-tenant/revocation cases; HTTP/browser/deployed
+stack NOT RUN. See [PR68 acceptance](reconcile/PR68_ACCEPTANCE.md) and evidence.
+RC30 HOLD with15 remaining failures. Next bounded priority: Word export/locale tests.
+No production/staging access, deployment or PR merge.

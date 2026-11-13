@@ -1,0 +1,744 @@
+{
+  "baseline": "PR57 integrated source80f454bf01a3a925ca302fb3e46cf64b4585386d; actual MariaDB+Percona final JUnit",
+  "scope": "read-only triage of first failure per testcase; no runtime changes or new execution",
+  "counts": {
+    "confirmed_fixture_or_contract": 34,
+    "canonical_membership_fixture": 4,
+    "needs_decision": 1
+  },
+  "caution": "First reached failure only; later defects may emerge after fixture repair. Independent reviewer flagged four membership cases for compatibility clarification; lead preserves existing canonical policy without adding an adapter. One UI presentation-contract question remains outside this focused PR.",
+  "cases": [
+    {
+      "number": 1,
+      "identity": "local_kbacompany\\battle_plan_indicator_service_test::test_historical_projection_uses_last_52_periods_relative_to_plan_week",
+      "kind": "failure",
+      "classification": "confirmed_fixture_or_contract",
+      "reason": "Only two historical facts (2026-08-31 and 09-07) are seeded. Future facts must not count; trend sustained-shape classification explicitly requires three facts. The retained previous_fact assertion already proves historical lookup.",
+      "source_evidence": [
+        "local/kbacompany/tests/battle_plan_indicator_service_test.php:104",
+        "tests/battle_plan_indicator_service_test.php:66",
+        "classes/local/indicator_trend_service.php:15"
+      ],
+      "next_safe_step": "Seed >=3 pre-plan observations and retain future-noise/history assertions; do not relax cutoff.",
+      "actual_failure": "local_kbacompany\\battle_plan_indicator_service_test::test_historical_projection_uses_last_52_periods_relative_to_plan_week\nFailed asserting that two strings are not identical.\n\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/tests/battle_plan_indicator_service_test.php:104\n/home/runner/work/_temp/pr48/fresh/core/lib/phpunit/classes/advanced_testcase.php:80",
+      "independent_initial_classification": "confirmed_fixture_or_contract",
+      "in_this_pr": false
+    },
+    {
+      "number": 2,
+      "identity": "local_kbacompany\\battle_plan_management_overview_service_test::test_contract_is_schema_neutral_read_model",
+      "kind": "failure",
+      "classification": "confirmed_fixture_or_contract",
+      "reason": "Failure is an obsolete literal contract version, not a failed behavioral assertion. JUnit expected/actual version diff must be reviewed with the owning service contract; preserve all later semantic assertions.",
+      "source_evidence": [
+        "local/kbacompany/tests/battle_plan_management_overview_service_test.php:11"
+      ],
+      "next_safe_step": "Align the declared version assertion to the actual approved component contract and rerun the entire method; do not delete version/semantic checks.",
+      "actual_failure": "local_kbacompany\\battle_plan_management_overview_service_test::test_contract_is_schema_neutral_read_model\nFailed asserting that two strings are identical.\n--- Expected\n+++ Actual\n@@ @@\n-'0.5.10'\n+'0.5.11'\n\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/tests/battle_plan_management_overview_service_test.php:11\n/home/runner/work/_temp/pr48/fresh/core/lib/phpunit/classes/advanced_testcase.php:80",
+      "independent_initial_classification": "confirmed_fixture_or_contract",
+      "in_this_pr": false
+    },
+    {
+      "number": 3,
+      "identity": "local_kbacompany\\battle_plan_service_test::test_battle_plan_references_one_canonical_task_and_closes_after_execution",
+      "kind": "error",
+      "classification": "confirmed_fixture_or_contract",
+      "reason": "create_manual_task inherits plan reviewer when reviewerid=0. Test submits task then closes plan without that reviewer accepting it; close correctly rejects open work.",
+      "source_evidence": [
+        "local/kbacompany/classes/local/battle_plan_service.php:70",
+        "local/kbacompany/classes/local/battle_plan_service.php:944",
+        "local/kbacompany/tests/battle_plan_service_test.php:122",
+        "classes/local/battle_plan_service.php:853",
+        "tests/battle_plan_service_test.php:118",
+        "classes/local/battle_plan_service.php:944"
+      ],
+      "next_safe_step": "Perform explicit reviewer acceptance before close; add negative close-before-accept assertion.",
+      "actual_failure": "local_kbacompany\\battle_plan_service_test::test_battle_plan_references_one_canonical_task_and_closes_after_execution\nmoodle_exception: The week cannot be closed: finish the open tasks or explicitly carry them into the next Battle Plan.\n\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/battle_plan_service.php:70\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/battle_plan_service.php:944\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/tests/battle_plan_service_test.php:122\n/home/runner/work/_temp/pr48/fresh/core/lib/phpunit/classes/advanced_testcase.php:80",
+      "independent_initial_classification": "confirmed_fixture_or_contract",
+      "in_this_pr": false
+    },
+    {
+      "number": 4,
+      "identity": "local_kbacompany\\battle_plan_service_test::test_active_plan_accepts_scoped_manual_task_but_closed_plan_rejects_it",
+      "kind": "error",
+      "classification": "confirmed_fixture_or_contract",
+      "reason": "Test creates an empty plan and immediately submits it. Runtime explicitly rejects empty submission before testing later manual task behavior.",
+      "source_evidence": [
+        "local/kbacompany/classes/local/battle_plan_service.php:70",
+        "local/kbacompany/classes/local/battle_plan_service.php:898",
+        "local/kbacompany/tests/battle_plan_service_test.php:294",
+        "tests/battle_plan_service_test.php:291",
+        "classes/local/battle_plan_service.php:898"
+      ],
+      "next_safe_step": "Seed valid baseline work before submit/approve, then test post-approval addition and closed-plan denial.",
+      "actual_failure": "local_kbacompany\\battle_plan_service_test::test_active_plan_accepts_scoped_manual_task_but_closed_plan_rejects_it\nmoodle_exception: An empty Battle Plan cannot be submitted.\n\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/battle_plan_service.php:70\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/battle_plan_service.php:898\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/tests/battle_plan_service_test.php:294\n/home/runner/work/_temp/pr48/fresh/core/lib/phpunit/classes/advanced_testcase.php:80",
+      "independent_initial_classification": "confirmed_fixture_or_contract",
+      "in_this_pr": false
+    },
+    {
+      "number": 5,
+      "identity": "local_kbacompany\\battle_plan_word_export_service_test::test_ooxml_contains_real_word_document_and_cyrillic_text",
+      "kind": "error",
+      "classification": "confirmed_fixture_or_contract",
+      "reason": "Handcrafted OOXML model omits labels.observer. Production model builder supplies it; exporter reads it directly.",
+      "source_evidence": [
+        "local/kbacompany/classes/local/battle_plan_word_export_service.php:383",
+        "local/kbacompany/tests/battle_plan_word_export_service_test.php:24",
+        "tests/battle_plan_word_export_service_test.php:16",
+        "classes/local/battle_plan_word_export_service.php:212",
+        "classes/local/battle_plan_word_export_service.php:383"
+      ],
+      "next_safe_step": "Construct the complete model including observer label; retain Cyrillic/OOXML assertions. Optional model validation is separate.",
+      "actual_failure": "local_kbacompany\\battle_plan_word_export_service_test::test_ooxml_contains_real_word_document_and_cyrillic_text\nUndefined array key \"observer\"\n\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/battle_plan_word_export_service.php:383\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/tests/battle_plan_word_export_service_test.php:24\n/home/runner/work/_temp/pr48/fresh/core/lib/phpunit/classes/basic_testcase.php:64",
+      "independent_initial_classification": "confirmed_fixture_or_contract",
+      "in_this_pr": false
+    },
+    {
+      "number": 6,
+      "identity": "local_kbacompany\\battle_plan_word_export_service_test::test_model_projects_previous_partial_week_and_current_target",
+      "kind": "failure",
+      "classification": "confirmed_fixture_or_contract",
+      "reason": "Test hardcodes Russian output while actual Moodle runner language is English. Rendering is localized; expected assertion is not language-independent.",
+      "source_evidence": [
+        "local/kbacompany/tests/battle_plan_word_export_service_test.php:113",
+        "tests/battle_plan_word_export_service_test.php:113",
+        "tests/task_roles_workspace1840_test.php:107"
+      ],
+      "next_safe_step": "Use the owning get_string key or explicitly provision/select the intended language; retain escaping and semantic checks.",
+      "actual_failure": "local_kbacompany\\battle_plan_word_export_service_test::test_model_projects_previous_partial_week_and_current_target\nFailed asserting that '42000.00 (Actual for 1 of 7 days)' contains \"Факт за 1 из 7 дней\".\n\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/tests/battle_plan_word_export_service_test.php:113\n/home/runner/work/_temp/pr48/fresh/core/lib/phpunit/classes/basic_testcase.php:64",
+      "independent_initial_classification": "confirmed_fixture_or_contract",
+      "in_this_pr": false
+    },
+    {
+      "number": 7,
+      "identity": "local_kbacompany\\bms_navigation_test::test_only_allowlisted_context_is_propagated",
+      "kind": "failure",
+      "classification": "confirmed_fixture_or_contract",
+      "reason": "Allowlist expectation only names week/battleplan. Management navigation now explicitly marks coordweek as week-context aware; this is a fixed allowlisted route, not arbitrary propagation.",
+      "source_evidence": [
+        "local/kbacompany/tests/bms_navigation_test.php:36",
+        "tests/bms_navigation_test.php:36",
+        "classes/local/bms_workspace_ux_service.php:231",
+        "classes/local/bms_workspace_ux_service.php:264"
+      ],
+      "next_safe_step": "Verify expanded route contract and include coordweek; keep invalid-calendar and unrelated-parameter rejection tests.",
+      "actual_failure": "local_kbacompany\\bms_navigation_test::test_only_allowlisted_context_is_propagated\nFailed asserting that true is identical to false.\n\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/tests/bms_navigation_test.php:36\n/home/runner/work/_temp/pr48/fresh/core/lib/phpunit/classes/advanced_testcase.php:80",
+      "independent_initial_classification": "confirmed_fixture_or_contract",
+      "in_this_pr": false
+    },
+    {
+      "number": 8,
+      "identity": "local_kbacompany\\bms_page_shell_service_test::test_contract_versions_are_aligned",
+      "kind": "failure",
+      "classification": "confirmed_fixture_or_contract",
+      "reason": "Failure is an obsolete literal contract version, not a failed behavioral assertion. JUnit expected/actual version diff must be reviewed with the owning service contract; preserve all later semantic assertions.",
+      "source_evidence": [
+        "local/kbacompany/tests/bms_page_shell_service_test.php:12"
+      ],
+      "next_safe_step": "Align the declared version assertion to the actual approved component contract and rerun the entire method; do not delete version/semantic checks.",
+      "actual_failure": "local_kbacompany\\bms_page_shell_service_test::test_contract_versions_are_aligned\nFailed asserting that two strings are identical.\n--- Expected\n+++ Actual\n@@ @@\n-'0.4.9'\n+'0.6.0'\n\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/tests/bms_page_shell_service_test.php:12\n/home/runner/work/_temp/pr48/fresh/core/lib/phpunit/classes/advanced_testcase.php:80",
+      "independent_initial_classification": "confirmed_fixture_or_contract",
+      "in_this_pr": false
+    },
+    {
+      "number": 9,
+      "identity": "local_kbacompany\\bms_page_shell_service_test::test_business_architecture_semantics_follow_bms_methodology",
+      "kind": "failure",
+      "classification": "confirmed_fixture_or_contract",
+      "reason": "Exact old navigation/taxonomy array predates implemented metrics/informationcenter or coordweek/decisionsregistry entries. Failure is the added allowlisted entries, not an unauthorized URL.",
+      "source_evidence": [
+        "local/kbacompany/tests/bms_page_shell_service_test.php:44",
+        "tests/bms_page_shell_service_test.php:44",
+        "tests/project_execution_service_test.php:55",
+        "classes/local/bms_workspace_ux_service.php:248"
+      ],
+      "next_safe_step": "Reconcile explicit current information architecture; retain order, visibility, destination and retired-editor assertions.",
+      "actual_failure": "local_kbacompany\\bms_page_shell_service_test::test_business_architecture_semantics_follow_bms_methodology\nFailed asserting that two arrays are identical.\n--- Expected\n+++ Actual\n@@ @@\n     1 => 'functions'\n     2 => 'flows'\n     3 => 'products'\n+    4 => 'metrics'\n+    5 => 'informationcenter'\n )\n\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/tests/bms_page_shell_service_test.php:44\n/home/runner/work/_temp/pr48/fresh/core/lib/phpunit/classes/advanced_testcase.php:80",
+      "independent_initial_classification": "confirmed_fixture_or_contract",
+      "in_this_pr": false
+    },
+    {
+      "number": 10,
+      "identity": "local_kbacompany\\company_core_test::test_contract_declares_existing_source_without_duplication",
+      "kind": "failure",
+      "classification": "confirmed_fixture_or_contract",
+      "reason": "Failure is an obsolete literal contract version, not a failed behavioral assertion. JUnit expected/actual version diff must be reviewed with the owning service contract; preserve all later semantic assertions.",
+      "source_evidence": [
+        "local/kbacompany/tests/company_core_test.php:21"
+      ],
+      "next_safe_step": "Align the declared version assertion to the actual approved component contract and rerun the entire method; do not delete version/semantic checks.",
+      "actual_failure": "local_kbacompany\\company_core_test::test_contract_declares_existing_source_without_duplication\nFailed asserting that two strings are identical.\n--- Expected\n+++ Actual\n@@ @@\n-'0.6.0'\n+'0.6.7'\n\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/tests/company_core_test.php:21\n/home/runner/work/_temp/pr48/fresh/core/lib/phpunit/classes/advanced_testcase.php:80",
+      "independent_initial_classification": "confirmed_fixture_or_contract",
+      "in_this_pr": false
+    },
+    {
+      "number": 11,
+      "identity": "local_kbacompany\\company_core_test::test_permission_contract_centralises_company_role_policies",
+      "kind": "failure",
+      "classification": "confirmed_fixture_or_contract",
+      "reason": "Failure is an obsolete literal contract version, not a failed behavioral assertion. JUnit expected/actual version diff must be reviewed with the owning service contract; preserve all later semantic assertions.",
+      "source_evidence": [
+        "local/kbacompany/tests/company_core_test.php:79"
+      ],
+      "next_safe_step": "Align the declared version assertion to the actual approved component contract and rerun the entire method; do not delete version/semantic checks.",
+      "actual_failure": "local_kbacompany\\company_core_test::test_permission_contract_centralises_company_role_policies\nFailed asserting that two strings are identical.\n--- Expected\n+++ Actual\n@@ @@\n-'0.5.1.3'\n+'0.7.0'\n\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/tests/company_core_test.php:79\n/home/runner/work/_temp/pr48/fresh/core/lib/phpunit/classes/advanced_testcase.php:80",
+      "independent_initial_classification": "confirmed_fixture_or_contract",
+      "in_this_pr": false
+    },
+    {
+      "number": 12,
+      "identity": "local_kbacompany\\company_employee_sync_service_test::test_external_contact_replaces_email_like_phone_but_never_uses_email_as_phone",
+      "kind": "error",
+      "classification": "confirmed_fixture_or_contract",
+      "reason": "Fixture inserts phone1='badphone@example.test' (21 characters) into Moodle's 20-character phone field; DB rejects before contact-sync code runs.",
+      "source_evidence": [
+        "local/kbacompany/tests/company_employee_sync_service_test.php:103",
+        "tests/company_employee_sync_service_test.php",
+        "moodle/lib/db/install.xml:user.phone1"
+      ],
+      "next_safe_step": "Use <=20-character email-like phone sentinel and preserve replacement/never-email-as-phone assertions. Root owns this change.",
+      "actual_failure": "local_kbacompany\\company_employee_sync_service_test::test_external_contact_replaces_email_like_phone_but_never_uses_email_as_phone\ndml_write_exception: Error writing to database (Data too long for column 'phone1' at row 1\nINSERT INTO pht_user (email,phone1,institution,auth,firstname,lastname,firstnamephonetic,lastnamephonetic,middlename,alternatename,idnumber,mnethostid,username,confirmed,lastip,calendartype,maildisplay,mailformat,maildigest,autosubscribe,trackforums,lang,city,country,timecreated,timemodified) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)\n[array (\n  0 => 'invalidphone@example.test',\n  1 => 'badphone@example.test',\n  2 => '',\n  3 => 'manual',\n  4 => 'Leonie',\n  5 => 'Schulz',\n  6 => '大翔',\n  7 => 'Морозова',\n  8 => 'Sophia',\n  9 => 'Emma',\n  10 => '',\n  11 => '1',\n  12 => 'username1',\n  13 => 1,\n  14 => '0.0.0.0',\n  15 => 'gregorian',\n  16 => '2',\n  17 => '1',\n  18 => '0',\n  19 => '1',\n  20 => '0',\n  21 => 'en',\n  22 => '',\n  23 => '',\n  24 => 1794218636,\n  25 => 1794218636,\n)])\n\n/home/runner/work/_temp/pr48/fresh/core/lib/dml/moodle_database.php:497\n/home/runner/work/_temp/pr48/fresh/core/lib/dml/moodle_read_slave_trait.php:293\n/home/runner/work/_temp/pr48/fresh/core/lib/dml/mysqli_native_moodle_database.php:1366\n/home/runner/work/_temp/pr48/fresh/core/lib/dml/mysqli_native_moodle_database.php:1412\n/home/runner/work/_temp/pr48/fresh/core/user/lib.php:118\n/home/runner/work/_temp/pr48/fresh/core/lib/testing/generator/data_generator.php:239\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/tests/company_employee_sync_service_test.php:103\n/home/runner/work/_temp/pr48/fresh/core/lib/phpunit/classes/advanced_testcase.php:80",
+      "independent_initial_classification": "confirmed_fixture_or_contract",
+      "in_this_pr": true
+    },
+    {
+      "number": 13,
+      "identity": "local_kbacompany\\deviation_service_test::test_accepted_task_does_not_close_deviation",
+      "kind": "error",
+      "classification": "confirmed_fixture_or_contract",
+      "reason": "Fixture uses userdate(time(), '%Y-%m-%d') with Moodle fixday=true default: leading day zero is removed on days1–9. validate_period requires exact Y-m-d; fails before deviation business flow.",
+      "source_evidence": [
+        "local/kbacompany/classes/local/product_service.php:215",
+        "local/kbacompany/classes/local/deviation_service.php:89",
+        "local/kbacompany/classes/local/deviation_service.php:167",
+        "local/kbacompany/classes/local/deviation_service.php:467",
+        "local/kbacompany/tests/deviation_service_test.php:54",
+        "local/kbacompany/tests/deviation_service_test.php:61",
+        "tests/deviation_service_test.php:33",
+        "classes/local/deviation_service.php:89",
+        "classes/local/product_service.php:206",
+        "moodle/lib/moodlelib.php:2316"
+      ],
+      "next_safe_step": "Use canonical padded UTC date or explicitly disable fixday; retain period-boundary and all workflow assertions.",
+      "actual_failure": "local_kbacompany\\deviation_service_test::test_accepted_task_does_not_close_deviation\nmoodle_exception: Invalid period: YYYY-MM-DD, Monday for weekly and first day for monthly.\n\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/product_service.php:215\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/deviation_service.php:89\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/deviation_service.php:167\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/deviation_service.php:467\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/tests/deviation_service_test.php:54\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/tests/deviation_service_test.php:61\n/home/runner/work/_temp/pr48/fresh/core/lib/phpunit/classes/advanced_testcase.php:80",
+      "independent_initial_classification": "confirmed_fixture_or_contract",
+      "in_this_pr": false
+    },
+    {
+      "number": 14,
+      "identity": "local_kbacompany\\deviation_service_test::test_recheck_and_explicit_closure_do_not_create_statistics",
+      "kind": "error",
+      "classification": "confirmed_fixture_or_contract",
+      "reason": "Fixture uses userdate(time(), '%Y-%m-%d') with Moodle fixday=true default: leading day zero is removed on days1–9. validate_period requires exact Y-m-d; fails before deviation business flow.",
+      "source_evidence": [
+        "local/kbacompany/classes/local/product_service.php:215",
+        "local/kbacompany/classes/local/deviation_service.php:89",
+        "local/kbacompany/classes/local/deviation_service.php:167",
+        "local/kbacompany/classes/local/deviation_service.php:467",
+        "local/kbacompany/tests/deviation_service_test.php:54",
+        "local/kbacompany/tests/deviation_service_test.php:71",
+        "tests/deviation_service_test.php:33",
+        "classes/local/deviation_service.php:89",
+        "classes/local/product_service.php:206",
+        "moodle/lib/moodlelib.php:2316"
+      ],
+      "next_safe_step": "Use canonical padded UTC date or explicitly disable fixday; retain period-boundary and all workflow assertions.",
+      "actual_failure": "local_kbacompany\\deviation_service_test::test_recheck_and_explicit_closure_do_not_create_statistics\nmoodle_exception: Invalid period: YYYY-MM-DD, Monday for weekly and first day for monthly.\n\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/product_service.php:215\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/deviation_service.php:89\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/deviation_service.php:167\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/deviation_service.php:467\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/tests/deviation_service_test.php:54\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/tests/deviation_service_test.php:71\n/home/runner/work/_temp/pr48/fresh/core/lib/phpunit/classes/advanced_testcase.php:80",
+      "independent_initial_classification": "confirmed_fixture_or_contract",
+      "in_this_pr": false
+    },
+    {
+      "number": 15,
+      "identity": "local_kbacompany\\deviation_service_test::test_lowered_norm_cannot_be_used_as_improvement",
+      "kind": "error",
+      "classification": "confirmed_fixture_or_contract",
+      "reason": "Fixture uses userdate(time(), '%Y-%m-%d') with Moodle fixday=true default: leading day zero is removed on days1–9. validate_period requires exact Y-m-d; fails before deviation business flow.",
+      "source_evidence": [
+        "local/kbacompany/classes/local/product_service.php:215",
+        "local/kbacompany/classes/local/deviation_service.php:89",
+        "local/kbacompany/classes/local/deviation_service.php:167",
+        "local/kbacompany/classes/local/deviation_service.php:467",
+        "local/kbacompany/tests/deviation_service_test.php:54",
+        "local/kbacompany/tests/deviation_service_test.php:84",
+        "tests/deviation_service_test.php:33",
+        "classes/local/deviation_service.php:89",
+        "classes/local/product_service.php:206",
+        "moodle/lib/moodlelib.php:2316"
+      ],
+      "next_safe_step": "Use canonical padded UTC date or explicitly disable fixday; retain period-boundary and all workflow assertions.",
+      "actual_failure": "local_kbacompany\\deviation_service_test::test_lowered_norm_cannot_be_used_as_improvement\nmoodle_exception: Invalid period: YYYY-MM-DD, Monday for weekly and first day for monthly.\n\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/product_service.php:215\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/deviation_service.php:89\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/deviation_service.php:167\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/deviation_service.php:467\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/tests/deviation_service_test.php:54\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/tests/deviation_service_test.php:84\n/home/runner/work/_temp/pr48/fresh/core/lib/phpunit/classes/advanced_testcase.php:80",
+      "independent_initial_classification": "confirmed_fixture_or_contract",
+      "in_this_pr": false
+    },
+    {
+      "number": 16,
+      "identity": "local_kbacompany\\deviation_service_test::test_regular_user_cannot_read_deviations",
+      "kind": "error",
+      "classification": "confirmed_fixture_or_contract",
+      "reason": "Fixture uses userdate(time(), '%Y-%m-%d') with Moodle fixday=true default: leading day zero is removed on days1–9. validate_period requires exact Y-m-d; fails before deviation business flow.",
+      "source_evidence": [
+        "local/kbacompany/classes/local/product_service.php:215",
+        "local/kbacompany/classes/local/deviation_service.php:89",
+        "local/kbacompany/classes/local/deviation_service.php:167",
+        "local/kbacompany/classes/local/deviation_service.php:467",
+        "local/kbacompany/tests/deviation_service_test.php:54",
+        "local/kbacompany/tests/deviation_service_test.php:102",
+        "tests/deviation_service_test.php:33",
+        "classes/local/deviation_service.php:89",
+        "classes/local/product_service.php:206",
+        "moodle/lib/moodlelib.php:2316"
+      ],
+      "next_safe_step": "Use canonical padded UTC date or explicitly disable fixday; retain period-boundary and all workflow assertions.",
+      "actual_failure": "local_kbacompany\\deviation_service_test::test_regular_user_cannot_read_deviations\nmoodle_exception: Invalid period: YYYY-MM-DD, Monday for weekly and first day for monthly.\n\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/product_service.php:215\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/deviation_service.php:89\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/deviation_service.php:167\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/deviation_service.php:467\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/tests/deviation_service_test.php:54\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/tests/deviation_service_test.php:102\n/home/runner/work/_temp/pr48/fresh/core/lib/phpunit/classes/advanced_testcase.php:80",
+      "independent_initial_classification": "confirmed_fixture_or_contract",
+      "in_this_pr": false
+    },
+    {
+      "number": 17,
+      "identity": "local_kbacompany\\document_service_test::test_lifecycle_master_list_acknowledgement_and_semantic_document",
+      "kind": "error",
+      "classification": "canonical_membership_fixture",
+      "reason": "Fixtures insert reviewer only into local_kbacorp_member. document_service::company_member queries canonical local_kbacompany_member. Runtime fails before review lifecycle. Need decide supported legacy membership adaptation vs canonical-fixture-only setup; do not bypass membership checks.",
+      "source_evidence": [
+        "local/kbacompany/classes/local/document_service.php:62",
+        "local/kbacompany/classes/local/document_service.php:423",
+        "local/kbacompany/classes/local/document_service.php:415",
+        "local/kbacompany/classes/local/document_service.php:1015",
+        "local/kbacompany/classes/local/document_service.php:416",
+        "local/kbacompany/tests/document_service_test.php:36",
+        "local/kbacompany/tests/document_service_test.php:52",
+        "tests/document_service_test.php:24",
+        "tests/semantic_service_test.php:134",
+        "classes/local/document_service.php:130",
+        "classes/local/document_service.php:423"
+      ],
+      "next_safe_step": "Run the repaired positive lifecycle and negative membership cases on both databases; reconsider runtime behavior only if these tests expose a defect.",
+      "actual_failure": "local_kbacompany\\document_service_test::test_lifecycle_master_list_acknowledgement_and_semantic_document\nmoodle_exception: The selected reviewer/user is not a member of this company.\n\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/document_service.php:62\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/document_service.php:423\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/document_service.php:415\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/document_service.php:1015\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/document_service.php:416\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/tests/document_service_test.php:36\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/tests/document_service_test.php:52\n/home/runner/work/_temp/pr48/fresh/core/lib/phpunit/classes/advanced_testcase.php:80",
+      "independent_initial_classification": "needs_decision",
+      "lead_resolution": "Preserve the existing canonical BMS reviewer boundary under ADR-0002. Add explicit active BMS membership to a positive fixture; do not grant review eligibility from Corporate or admin status. No runtime policy change or legacy adapter is introduced.",
+      "independent_initial_next_step": "Root to confirm canonical/legacy compatibility contract. Add active canonical membership only if that is the intended fixture, otherwise repair scoped adapter with revoke/foreign-user tests.",
+      "in_this_pr": true
+    },
+    {
+      "number": 18,
+      "identity": "local_kbacompany\\document_service_test::test_new_effective_revision_supersedes_old_without_rewriting_history",
+      "kind": "error",
+      "classification": "canonical_membership_fixture",
+      "reason": "Fixtures insert reviewer only into local_kbacorp_member. document_service::company_member queries canonical local_kbacompany_member. Runtime fails before review lifecycle. Need decide supported legacy membership adaptation vs canonical-fixture-only setup; do not bypass membership checks.",
+      "source_evidence": [
+        "local/kbacompany/classes/local/document_service.php:62",
+        "local/kbacompany/classes/local/document_service.php:423",
+        "local/kbacompany/classes/local/document_service.php:415",
+        "local/kbacompany/classes/local/document_service.php:1015",
+        "local/kbacompany/classes/local/document_service.php:416",
+        "local/kbacompany/tests/document_service_test.php:36",
+        "local/kbacompany/tests/document_service_test.php:89",
+        "tests/document_service_test.php:24",
+        "tests/semantic_service_test.php:134",
+        "classes/local/document_service.php:130",
+        "classes/local/document_service.php:423"
+      ],
+      "next_safe_step": "Run the repaired positive lifecycle and negative membership cases on both databases; reconsider runtime behavior only if these tests expose a defect.",
+      "actual_failure": "local_kbacompany\\document_service_test::test_new_effective_revision_supersedes_old_without_rewriting_history\nmoodle_exception: The selected reviewer/user is not a member of this company.\n\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/document_service.php:62\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/document_service.php:423\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/document_service.php:415\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/document_service.php:1015\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/document_service.php:416\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/tests/document_service_test.php:36\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/tests/document_service_test.php:89\n/home/runner/work/_temp/pr48/fresh/core/lib/phpunit/classes/advanced_testcase.php:80",
+      "independent_initial_classification": "needs_decision",
+      "lead_resolution": "Preserve the existing canonical BMS reviewer boundary under ADR-0002. Add explicit active BMS membership to a positive fixture; do not grant review eligibility from Corporate or admin status. No runtime policy change or legacy adapter is introduced.",
+      "independent_initial_next_step": "Root to confirm canonical/legacy compatibility contract. Add active canonical membership only if that is the intended fixture, otherwise repair scoped adapter with revoke/foreign-user tests.",
+      "in_this_pr": true
+    },
+    {
+      "number": 19,
+      "identity": "local_kbacompany\\document_service_test::test_form_record_is_bound_to_exact_effective_form_revision",
+      "kind": "error",
+      "classification": "canonical_membership_fixture",
+      "reason": "Fixtures insert reviewer only into local_kbacorp_member. document_service::company_member queries canonical local_kbacompany_member. Runtime fails before review lifecycle. Need decide supported legacy membership adaptation vs canonical-fixture-only setup; do not bypass membership checks.",
+      "source_evidence": [
+        "local/kbacompany/classes/local/document_service.php:62",
+        "local/kbacompany/classes/local/document_service.php:423",
+        "local/kbacompany/classes/local/document_service.php:415",
+        "local/kbacompany/classes/local/document_service.php:1015",
+        "local/kbacompany/classes/local/document_service.php:416",
+        "local/kbacompany/tests/document_service_test.php:36",
+        "local/kbacompany/tests/document_service_test.php:115",
+        "tests/document_service_test.php:24",
+        "tests/semantic_service_test.php:134",
+        "classes/local/document_service.php:130",
+        "classes/local/document_service.php:423"
+      ],
+      "next_safe_step": "Run the repaired positive lifecycle and negative membership cases on both databases; reconsider runtime behavior only if these tests expose a defect.",
+      "actual_failure": "local_kbacompany\\document_service_test::test_form_record_is_bound_to_exact_effective_form_revision\nmoodle_exception: The selected reviewer/user is not a member of this company.\n\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/document_service.php:62\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/document_service.php:423\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/document_service.php:415\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/document_service.php:1015\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/document_service.php:416\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/tests/document_service_test.php:36\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/tests/document_service_test.php:115\n/home/runner/work/_temp/pr48/fresh/core/lib/phpunit/classes/advanced_testcase.php:80",
+      "independent_initial_classification": "needs_decision",
+      "lead_resolution": "Preserve the existing canonical BMS reviewer boundary under ADR-0002. Add explicit active BMS membership to a positive fixture; do not grant review eligibility from Corporate or admin status. No runtime policy change or legacy adapter is introduced.",
+      "independent_initial_next_step": "Root to confirm canonical/legacy compatibility contract. Add active canonical membership only if that is the intended fixture, otherwise repair scoped adapter with revoke/foreign-user tests.",
+      "in_this_pr": true
+    },
+    {
+      "number": 20,
+      "identity": "local_kbacompany\\document_service_test::test_stp_controlled_document_snapshots_published_process_model",
+      "kind": "error",
+      "classification": "confirmed_fixture_or_contract",
+      "reason": "STP fixture reaches process publish without supplier/customer semantic links. Published SIPOC explicitly requires supplier/input/output/customer; runtime rejects missing two links.",
+      "source_evidence": [
+        "local/kbacompany/classes/local/process_model_service.php:1036",
+        "local/kbacompany/tests/document_service_test.php:170",
+        "tests/document_service_test.php:170",
+        "classes/local/process_model_service.php:43",
+        "classes/local/process_model_service.php:962"
+      ],
+      "next_safe_step": "Create scoped supplier/customer semantic links; keep snapshot-of-published-model assertion and negative missing-link tests.",
+      "actual_failure": "local_kbacompany\\document_service_test::test_stp_controlled_document_snapshots_published_process_model\nmoodle_exception: The process model cannot be published. Missing or invalid: supplier, customer.\n\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/process_model_service.php:1036\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/tests/document_service_test.php:170\n/home/runner/work/_temp/pr48/fresh/core/lib/phpunit/classes/advanced_testcase.php:80",
+      "independent_initial_classification": "confirmed_fixture_or_contract",
+      "in_this_pr": true
+    },
+    {
+      "number": 21,
+      "identity": "local_kbacompany\\document_service_test::test_cross_company_document_is_not_resolved",
+      "kind": "failure",
+      "classification": "confirmed_fixture_or_contract",
+      "reason": "Read path intentionally returns generic document_notavailable for missing/foreign documents; test expects older document_reference. Actual integrated access test verifies no cross-company read/write.",
+      "source_evidence": [
+        "local/kbacompany/tests/document_service_test.php:193",
+        "tests/document_service_test.php:193",
+        "classes/local/document_service.php:1043",
+        "tests/rc30_integrated_access_test.php"
+      ],
+      "next_safe_step": "Expect public non-disclosing code and retain foreign-document non-resolution plus nonmutation checks.",
+      "actual_failure": "local_kbacompany\\document_service_test::test_cross_company_document_is_not_resolved\nFailed asserting that two strings are identical.\n--- Expected\n+++ Actual\n@@ @@\n-'document_reference'\n+'document_notavailable'\n\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/tests/document_service_test.php:193\n/home/runner/work/_temp/pr48/fresh/core/lib/phpunit/classes/advanced_testcase.php:80",
+      "independent_initial_classification": "confirmed_fixture_or_contract",
+      "in_this_pr": true
+    },
+    {
+      "number": 22,
+      "identity": "local_kbacompany\\financial_statement_service_test::test_bdr_and_bdds_calculations_match_bms_finance_rules",
+      "kind": "failure",
+      "classification": "confirmed_fixture_or_contract",
+      "reason": "Fixture arithmetic is 1000-300-200+50-20-30=500, matching runtime. Expected netprofit450 is arithmetically inconsistent with its input values.",
+      "source_evidence": [
+        "local/kbacompany/tests/financial_statement_service_test.php:32",
+        "tests/financial_statement_service_test.php:25",
+        "classes/local/financial_statement_service.php:198"
+      ],
+      "next_safe_step": "Correct expectation to500 with intermediate PBT/NP assertions; preserve BDR/BDDS distinction.",
+      "actual_failure": "local_kbacompany\\financial_statement_service_test::test_bdr_and_bdds_calculations_match_bms_finance_rules\nFailed asserting that 500.0 matches expected 450.0.\n\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/tests/financial_statement_service_test.php:32\n/home/runner/work/_temp/pr48/fresh/core/lib/phpunit/classes/advanced_testcase.php:80",
+      "independent_initial_classification": "confirmed_fixture_or_contract",
+      "in_this_pr": false
+    },
+    {
+      "number": 23,
+      "identity": "local_kbacompany\\indicator_registry_service_test::test_contract_keeps_one_canonical_indicator_registry",
+      "kind": "failure",
+      "classification": "confirmed_fixture_or_contract",
+      "reason": "Failure is an obsolete literal contract version, not a failed behavioral assertion. JUnit expected/actual version diff must be reviewed with the owning service contract; preserve all later semantic assertions.",
+      "source_evidence": [
+        "local/kbacompany/tests/indicator_registry_service_test.php:14"
+      ],
+      "next_safe_step": "Align the declared version assertion to the actual approved component contract and rerun the entire method; do not delete version/semantic checks.",
+      "actual_failure": "local_kbacompany\\indicator_registry_service_test::test_contract_keeps_one_canonical_indicator_registry\nFailed asserting that two strings are identical.\n--- Expected\n+++ Actual\n@@ @@\n-'0.5.2'\n+'0.5.5.2'\n\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/tests/indicator_registry_service_test.php:14\n/home/runner/work/_temp/pr48/fresh/core/lib/phpunit/classes/advanced_testcase.php:80",
+      "independent_initial_classification": "confirmed_fixture_or_contract",
+      "in_this_pr": false
+    },
+    {
+      "number": 24,
+      "identity": "local_kbacompany\\integration_event_service_test::test_event_outbox_lifecycle_is_independent_from_legacy_command_status",
+      "kind": "failure",
+      "classification": "confirmed_fixture_or_contract",
+      "reason": "fail_event increments attempts, retry_event does not erase history, complete_event increments again. One failure + one completion gives2 total attempts, while test expects1.",
+      "source_evidence": [
+        "local/kbacompany/tests/integration_event_service_test.php:78",
+        "tests/integration_event_service_test.php:68",
+        "classes/local/integration_event_service.php:192",
+        "classes/local/integration_event_service.php:208",
+        "classes/local/integration_event_service.php:214"
+      ],
+      "next_safe_step": "Assert0→1 after failure→1 after retry→2 after completion; preserve independent legacy-command status assertions.",
+      "actual_failure": "local_kbacompany\\integration_event_service_test::test_event_outbox_lifecycle_is_independent_from_legacy_command_status\nFailed asserting that 2 is identical to 1.\n\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/tests/integration_event_service_test.php:78\n/home/runner/work/_temp/pr48/fresh/core/lib/phpunit/classes/advanced_testcase.php:80",
+      "independent_initial_classification": "confirmed_fixture_or_contract",
+      "in_this_pr": false
+    },
+    {
+      "number": 25,
+      "identity": "local_kbacompany\\market_model_service_test::test_contract",
+      "kind": "failure",
+      "classification": "confirmed_fixture_or_contract",
+      "reason": "Failure is an obsolete literal contract version, not a failed behavioral assertion. JUnit expected/actual version diff must be reviewed with the owning service contract; preserve all later semantic assertions.",
+      "source_evidence": [
+        "local/kbacompany/tests/market_model_service_test.php:8"
+      ],
+      "next_safe_step": "Align the declared version assertion to the actual approved component contract and rerun the entire method; do not delete version/semantic checks.",
+      "actual_failure": "local_kbacompany\\market_model_service_test::test_contract\nFailed asserting that two strings are identical.\n--- Expected\n+++ Actual\n@@ @@\n-'0.3.5'\n+'0.4.11'\n\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/tests/market_model_service_test.php:8\n/home/runner/work/_temp/pr48/fresh/core/lib/phpunit/classes/advanced_testcase.php:80",
+      "independent_initial_classification": "confirmed_fixture_or_contract",
+      "in_this_pr": false
+    },
+    {
+      "number": 26,
+      "identity": "local_kbacompany\\ofs_service_test::test_ofs_projects_company_unit_function_products_and_internal_customer",
+      "kind": "failure",
+      "classification": "confirmed_fixture_or_contract",
+      "reason": "OFS now declares processes_available=true; test still expects false after checking valid product/function/interface projection.",
+      "source_evidence": [
+        "local/kbacompany/tests/ofs_service_test.php:73",
+        "tests/ofs_service_test.php:73",
+        "classes/local/ofs_service.php:345"
+      ],
+      "next_safe_step": "Align availability contract with implemented process subsystem; retain all preceding projection checks.",
+      "actual_failure": "local_kbacompany\\ofs_service_test::test_ofs_projects_company_unit_function_products_and_internal_customer\nFailed asserting that true is false.\n\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/tests/ofs_service_test.php:73\n/home/runner/work/_temp/pr48/fresh/core/lib/phpunit/classes/advanced_testcase.php:80",
+      "independent_initial_classification": "confirmed_fixture_or_contract",
+      "in_this_pr": false
+    },
+    {
+      "number": 27,
+      "identity": "local_kbacompany\\process_model_service_test::test_complete_sipoc_bpmn_model_publishes_and_activity_becomes_semantic",
+      "kind": "failure",
+      "classification": "confirmed_fixture_or_contract",
+      "reason": "Failure is an obsolete literal contract version, not a failed behavioral assertion. JUnit expected/actual version diff must be reviewed with the owning service contract; preserve all later semantic assertions.",
+      "source_evidence": [
+        "local/kbacompany/tests/process_model_service_test.php:85"
+      ],
+      "next_safe_step": "Align the declared version assertion to the actual approved component contract and rerun the entire method; do not delete version/semantic checks.",
+      "actual_failure": "local_kbacompany\\process_model_service_test::test_complete_sipoc_bpmn_model_publishes_and_activity_becomes_semantic\nFailed asserting that two strings are identical.\n--- Expected\n+++ Actual\n@@ @@\n-'0.3.1'\n+'0.4.4'\n\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/tests/process_model_service_test.php:85\n/home/runner/work/_temp/pr48/fresh/core/lib/phpunit/classes/advanced_testcase.php:80",
+      "independent_initial_classification": "confirmed_fixture_or_contract",
+      "in_this_pr": false
+    },
+    {
+      "number": 28,
+      "identity": "local_kbacompany\\process_service_test::test_process_hierarchy_publish_and_cross_functional_links",
+      "kind": "failure",
+      "classification": "confirmed_fixture_or_contract",
+      "reason": "Failure is an obsolete literal contract version, not a failed behavioral assertion. JUnit expected/actual version diff must be reviewed with the owning service contract; preserve all later semantic assertions.",
+      "source_evidence": [
+        "local/kbacompany/tests/process_service_test.php:56"
+      ],
+      "next_safe_step": "Align the declared version assertion to the actual approved component contract and rerun the entire method; do not delete version/semantic checks.",
+      "actual_failure": "local_kbacompany\\process_service_test::test_process_hierarchy_publish_and_cross_functional_links\nFailed asserting that two strings are identical.\n--- Expected\n+++ Actual\n@@ @@\n-'0.3.0'\n+'0.4.0'\n\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/tests/process_service_test.php:56\n/home/runner/work/_temp/pr48/fresh/core/lib/phpunit/classes/advanced_testcase.php:80",
+      "independent_initial_classification": "confirmed_fixture_or_contract",
+      "in_this_pr": false
+    },
+    {
+      "number": 29,
+      "identity": "local_kbacompany\\project_execution_service_test::test_management_planning_does_not_link_to_retired_editor",
+      "kind": "failure",
+      "classification": "confirmed_fixture_or_contract",
+      "reason": "Exact old navigation/taxonomy array predates implemented metrics/informationcenter or coordweek/decisionsregistry entries. Failure is the added allowlisted entries, not an unauthorized URL.",
+      "source_evidence": [
+        "local/kbacompany/tests/project_execution_service_test.php:55",
+        "tests/bms_page_shell_service_test.php:44",
+        "tests/project_execution_service_test.php:55",
+        "classes/local/bms_workspace_ux_service.php:248"
+      ],
+      "next_safe_step": "Reconcile explicit current information architecture; retain order, visibility, destination and retired-editor assertions.",
+      "actual_failure": "local_kbacompany\\project_execution_service_test::test_management_planning_does_not_link_to_retired_editor\nFailed asserting that two arrays are identical.\n--- Expected\n+++ Actual\n@@ @@\n Array &0 (\n-    0 => 'week'\n-    1 => 'battleplan'\n-    2 => 'cycles'\n+    0 => 'coordweek'\n+    1 => 'decisionsregistry'\n+    2 => 'week'\n+    3 => 'battleplan'\n+    4 => 'cycles'\n )\n\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/tests/project_execution_service_test.php:55\n/home/runner/work/_temp/pr48/fresh/core/lib/phpunit/classes/advanced_testcase.php:80",
+      "independent_initial_classification": "confirmed_fixture_or_contract",
+      "in_this_pr": false
+    },
+    {
+      "number": 30,
+      "identity": "local_kbacompany\\semantic_service_test::test_effective_document_is_a_writable_semantic_endpoint",
+      "kind": "error",
+      "classification": "canonical_membership_fixture",
+      "reason": "The semantic fixture uses the site administrator as reviewer without canonical BMS membership. Admin management privilege does not itself satisfy document reviewer eligibility.",
+      "source_evidence": [
+        "local/kbacompany/classes/local/document_service.php:62",
+        "local/kbacompany/classes/local/document_service.php:423",
+        "local/kbacompany/classes/local/document_service.php:415",
+        "local/kbacompany/classes/local/document_service.php:1015",
+        "local/kbacompany/classes/local/document_service.php:416",
+        "local/kbacompany/tests/semantic_service_test.php:134",
+        "tests/document_service_test.php:24",
+        "tests/semantic_service_test.php:134",
+        "classes/local/document_service.php:130",
+        "classes/local/document_service.php:423"
+      ],
+      "next_safe_step": "Run the repaired positive lifecycle and negative membership cases on both databases; reconsider runtime behavior only if these tests expose a defect.",
+      "actual_failure": "local_kbacompany\\semantic_service_test::test_effective_document_is_a_writable_semantic_endpoint\nmoodle_exception: The selected reviewer/user is not a member of this company.\n\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/document_service.php:62\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/document_service.php:423\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/document_service.php:415\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/document_service.php:1015\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/document_service.php:416\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/tests/semantic_service_test.php:134\n/home/runner/work/_temp/pr48/fresh/core/lib/phpunit/classes/advanced_testcase.php:80",
+      "independent_initial_classification": "needs_decision",
+      "lead_resolution": "Preserve the existing canonical BMS reviewer boundary under ADR-0002. Add explicit active BMS membership to a positive fixture; do not grant review eligibility from Corporate or admin status. No runtime policy change or legacy adapter is introduced.",
+      "independent_initial_next_step": "Root to confirm canonical/legacy compatibility contract. Add active canonical membership only if that is the intended fixture, otherwise repair scoped adapter with revoke/foreign-user tests.",
+      "in_this_pr": true
+    },
+    {
+      "number": 31,
+      "identity": "local_kbacompany\\task_batch_actions1842_test::test_batch_start_accept_and_stale_revisions",
+      "kind": "error",
+      "classification": "confirmed_fixture_or_contract",
+      "reason": "Fixture passes site administrator as task reviewer but only worker/replacement are company employees. require_employee correctly rejects unlisted reviewer; admin privilege is not membership.",
+      "source_evidence": [
+        "local/kbacompany/classes/local/task_service.php:68",
+        "local/kbacompany/classes/local/task_service.php:197",
+        "local/kbacompany/classes/local/task_service.php:550",
+        "local/kbacompany/classes/local/task_service.php:590",
+        "local/kbacompany/tests/task_batch_actions1842_test.php:38",
+        "local/kbacompany/tests/task_batch_actions1842_test.php:60",
+        "tests/task_batch_actions1842_test.php:60",
+        "classes/local/task_service.php:550",
+        "classes/local/task_service.php:197"
+      ],
+      "next_safe_step": "Create an eligible reviewer membership and keep stale-revision/batch acceptance tests.",
+      "actual_failure": "local_kbacompany\\task_batch_actions1842_test::test_batch_start_accept_and_stale_revisions\nmoodle_exception: Employee is not available in this company.\n\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/task_service.php:68\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/task_service.php:197\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/task_service.php:550\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/task_service.php:590\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/tests/task_batch_actions1842_test.php:38\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/tests/task_batch_actions1842_test.php:60\n/home/runner/work/_temp/pr48/fresh/core/lib/phpunit/classes/advanced_testcase.php:80",
+      "independent_initial_classification": "confirmed_fixture_or_contract",
+      "in_this_pr": false
+    },
+    {
+      "number": 32,
+      "identity": "local_kbacompany\\task_batch_actions1842_test::test_generated_tasks_cannot_be_bulk_reassigned_and_cross_company_task_is_not_updated",
+      "kind": "error",
+      "classification": "confirmed_fixture_or_contract",
+      "reason": "Cross-company fixture creates an Other-company task assigned to admin without employee membership in that Other company. Fails at creation before the isolation assertion.",
+      "source_evidence": [
+        "local/kbacompany/classes/local/task_service.php:68",
+        "local/kbacompany/classes/local/task_service.php:197",
+        "local/kbacompany/classes/local/task_service.php:546",
+        "local/kbacompany/classes/local/task_service.php:590",
+        "local/kbacompany/tests/task_batch_actions1842_test.php:38",
+        "local/kbacompany/tests/task_batch_actions1842_test.php:99",
+        "tests/task_batch_actions1842_test.php:99",
+        "tests/task_deadlines1843_test.php",
+        "classes/local/task_service.php:546"
+      ],
+      "next_safe_step": "Seed legitimate target-company employee then assert original scope cannot mutate/read foreign task; do not remove validation.",
+      "actual_failure": "local_kbacompany\\task_batch_actions1842_test::test_generated_tasks_cannot_be_bulk_reassigned_and_cross_company_task_is_not_updated\nmoodle_exception: Employee is not available in this company.\n\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/task_service.php:68\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/task_service.php:197\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/task_service.php:546\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/task_service.php:590\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/tests/task_batch_actions1842_test.php:38\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/tests/task_batch_actions1842_test.php:99\n/home/runner/work/_temp/pr48/fresh/core/lib/phpunit/classes/advanced_testcase.php:80",
+      "independent_initial_classification": "confirmed_fixture_or_contract",
+      "in_this_pr": false
+    },
+    {
+      "number": 33,
+      "identity": "local_kbacompany\\task_deadlines1843_test::test_bucket_filter_and_global_counts_are_separate_and_acl_scoped",
+      "kind": "error",
+      "classification": "confirmed_fixture_or_contract",
+      "reason": "Cross-company fixture creates an Other-company task assigned to admin without employee membership in that Other company. Fails at creation before the isolation assertion.",
+      "source_evidence": [
+        "local/kbacompany/classes/local/task_service.php:68",
+        "local/kbacompany/classes/local/task_service.php:197",
+        "local/kbacompany/classes/local/task_service.php:546",
+        "local/kbacompany/classes/local/task_service.php:590",
+        "local/kbacompany/tests/task_deadlines1843_test.php:35",
+        "local/kbacompany/tests/task_deadlines1843_test.php:74",
+        "tests/task_batch_actions1842_test.php:99",
+        "tests/task_deadlines1843_test.php",
+        "classes/local/task_service.php:546"
+      ],
+      "next_safe_step": "Seed legitimate target-company employee then assert original scope cannot mutate/read foreign task; do not remove validation.",
+      "actual_failure": "local_kbacompany\\task_deadlines1843_test::test_bucket_filter_and_global_counts_are_separate_and_acl_scoped\nmoodle_exception: Employee is not available in this company.\n\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/task_service.php:68\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/task_service.php:197\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/task_service.php:546\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/task_service.php:590\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/tests/task_deadlines1843_test.php:35\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/tests/task_deadlines1843_test.php:74\n/home/runner/work/_temp/pr48/fresh/core/lib/phpunit/classes/advanced_testcase.php:80",
+      "independent_initial_classification": "confirmed_fixture_or_contract",
+      "in_this_pr": false
+    },
+    {
+      "number": 34,
+      "identity": "local_kbacompany\\task_kanban1846_test::test_editor_and_columns_render_without_raw_html_or_missing_tasks",
+      "kind": "error",
+      "classification": "confirmed_fixture_or_contract",
+      "reason": "Kanban renderer fixture passes 'test-company', not a valid UUID/existing authorized company. New renderer path reaches strict company boundary; validation error occurs before HTML assertions.",
+      "source_evidence": [
+        "local/kbacompany/classes/local/company_context_service.php:36",
+        "local/kbacompany/classes/local/company_context_service.php:64",
+        "local/kbacompany/classes/local/access_role_service.php:127",
+        "local/kbacompany/classes/local/task_service.php:2412",
+        "local/kbacompany/classes/local/task_ui_service.php:950",
+        "local/kbacompany/tests/task_kanban1846_test.php:100",
+        "tests/task_kanban1846_test.php:100",
+        "tests/task_kanban1850_test.php:105",
+        "classes/local/company_context_service.php:34"
+      ],
+      "next_safe_step": "Use generated authorized company context and valid IDs, keep escaping/page-count/board assertions.",
+      "actual_failure": "local_kbacompany\\task_kanban1846_test::test_editor_and_columns_render_without_raw_html_or_missing_tasks\ninvalid_parameter_exception: Invalid parameter value detected (Invalid BMS Company UUID.)\n\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/company_context_service.php:36\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/company_context_service.php:64\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/access_role_service.php:127\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/task_service.php:2412\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/task_ui_service.php:950\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/tests/task_kanban1846_test.php:100\n/home/runner/work/_temp/pr48/fresh/core/lib/phpunit/classes/advanced_testcase.php:80",
+      "independent_initial_classification": "confirmed_fixture_or_contract",
+      "in_this_pr": false
+    },
+    {
+      "number": 35,
+      "identity": "local_kbacompany\\task_kanban1850_test::test_page_scoped_grouping_and_full_counts_in_board_html",
+      "kind": "error",
+      "classification": "confirmed_fixture_or_contract",
+      "reason": "Kanban renderer fixture passes 'test-company', not a valid UUID/existing authorized company. New renderer path reaches strict company boundary; validation error occurs before HTML assertions.",
+      "source_evidence": [
+        "local/kbacompany/classes/local/company_context_service.php:36",
+        "local/kbacompany/classes/local/company_context_service.php:64",
+        "local/kbacompany/classes/local/access_role_service.php:127",
+        "local/kbacompany/classes/local/task_service.php:2414",
+        "local/kbacompany/classes/local/task_ui_service.php:950",
+        "local/kbacompany/tests/task_kanban1850_test.php:105",
+        "tests/task_kanban1846_test.php:100",
+        "tests/task_kanban1850_test.php:105",
+        "classes/local/company_context_service.php:34"
+      ],
+      "next_safe_step": "Use generated authorized company context and valid IDs, keep escaping/page-count/board assertions.",
+      "actual_failure": "local_kbacompany\\task_kanban1850_test::test_page_scoped_grouping_and_full_counts_in_board_html\ninvalid_parameter_exception: Invalid parameter value detected (Invalid BMS Company UUID.)\n\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/company_context_service.php:36\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/company_context_service.php:64\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/access_role_service.php:127\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/task_service.php:2414\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/task_ui_service.php:950\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/tests/task_kanban1850_test.php:105\n/home/runner/work/_temp/pr48/fresh/core/lib/phpunit/classes/advanced_testcase.php:80",
+      "independent_initial_classification": "confirmed_fixture_or_contract",
+      "in_this_pr": false
+    },
+    {
+      "number": 36,
+      "identity": "local_kbacompany\\task_manager_workspace1853_test::test_non_manager_never_receives_manager_workspace",
+      "kind": "failure",
+      "classification": "needs_decision",
+      "reason": "Manager workspace data is guarded (model.can_manage=false returns restricted note), but toolbar hidden form retains display=manager. Failure is parameter retention, not demonstrated privileged data access. Decide UI contract: normalize display before toolbar, or permit non-actionable retained request state.",
+      "source_evidence": [
+        "local/kbacompany/tests/task_manager_workspace1853_test.php:58",
+        "tests/task_manager_workspace1853_test.php:58",
+        "classes/local/task_ui_service.php:814"
+      ],
+      "next_safe_step": "Do not weaken data/ACL assertions. Review route enforcement and choose consistent safe display normalization; test both URL/form and absence of manager data.",
+      "actual_failure": "local_kbacompany\\task_manager_workspace1853_test::test_non_manager_never_receives_manager_workspace\nFailed asserting that '<header class=\"bms24-task-header\">\\n\n  <div class=\"bms24-task-heading\"><h1>Tasks</h1></div>\\n\n  \\n\n  <div class=\"bms24-task-header-actions\"><a class=\"bms24-ui-btn bms24-ui-btn--primary\" href=\"https://www.example.com/moodle/loca\n[HTML excerpt omitted; original JUnit retained]\n</nav></div>\\n\n</section><p class=\"bms24-task-note\">The manager workspace is not available for your role.</p>' does not contain \"display=manager\".\n\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/tests/task_manager_workspace1853_test.php:58\n/home/runner/work/_temp/pr48/fresh/core/lib/phpunit/classes/advanced_testcase.php:80",
+      "independent_initial_classification": "needs_decision",
+      "in_this_pr": false
+    },
+    {
+      "number": 37,
+      "identity": "local_kbacompany\\task_roles_workspace1840_test::test_compact_workspace_escapes_search_and_has_progressive_get_fallback",
+      "kind": "failure",
+      "classification": "confirmed_fixture_or_contract",
+      "reason": "Test hardcodes Russian output while actual Moodle runner language is English. Rendering is localized; expected assertion is not language-independent.",
+      "source_evidence": [
+        "local/kbacompany/tests/task_roles_workspace1840_test.php:107",
+        "tests/battle_plan_word_export_service_test.php:113",
+        "tests/task_roles_workspace1840_test.php:107"
+      ],
+      "next_safe_step": "Use the owning get_string key or explicitly provision/select the intended language; retain escaping and semantic checks.",
+      "actual_failure": "local_kbacompany\\task_roles_workspace1840_test::test_compact_workspace_escapes_search_and_has_progressive_get_fallback\nFailed asserting that '<header class=\"bms24-task-header\">\\n\n  <div class=\"bms24-task-heading\"><h1>Tasks</h1></div>\\n\n  \\n\n  <div class=\"bms24-task-header-actions\"><a class=\"bms24-ui-btn bms24-ui-btn--primary\" href=\"https://www.exam\n[HTML excerpt omitted; original JUnit retained]\n  <div class=\"bms24-task-panel-body\"><p class=\"bms24-task-note\">Check the selected view and filters, or create a task. Learning and legacy tasks are available under Tools → Tasks from other sources.</p><div class=\"bms-task1858-empty-actions\"><a class=\"bms24-ui-btn bms24-ui-btn--primary\" href=\"https://www.example.com/moodle/local/kbacompany/tasks.php?uuid=company-test&amp;view=create\">Create task</a><a class=\"bms24-ui-btn bms24-ui-btn--secondary\" href=\"https://www.example.com/moodle/local/kbacompany/tasks.php?uuid=company-test&amp;scope=roles&amp;display=list\">Clear filters</a></div></div>\\n\n</section></div>' contains \"Все мои роли\".\n\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/tests/task_roles_workspace1840_test.php:107\n/home/runner/work/_temp/pr48/fresh/core/lib/phpunit/classes/advanced_testcase.php:80",
+      "independent_initial_classification": "confirmed_fixture_or_contract",
+      "in_this_pr": false
+    },
+    {
+      "number": 38,
+      "identity": "local_kbacompany\\task_service_test::test_workspace_and_tasks_page_agree_on_open_and_overdue_tasks",
+      "kind": "error",
+      "classification": "confirmed_fixture_or_contract",
+      "reason": "Task fixture default startdate2026-09-14 is combined with overridden due2026-01-01. Date validation correctly rejects deadline before start, before workspace history behavior is exercised.",
+      "source_evidence": [
+        "local/kbacompany/classes/local/task_service.php:68",
+        "local/kbacompany/classes/local/task_service.php:575",
+        "local/kbacompany/classes/local/task_service.php:590",
+        "local/kbacompany/tests/task_service_test.php:34",
+        "local/kbacompany/tests/task_service_test.php:187",
+        "tests/task_service_test.php:34",
+        "tests/task_service_test.php:187",
+        "tests/task_service_test.php:210",
+        "classes/local/task_service.php:575"
+      ],
+      "next_safe_step": "Generate internally valid overdue dates and matching/empty startdate; retain count consistency and completed-history pagination assertions.",
+      "actual_failure": "local_kbacompany\\task_service_test::test_workspace_and_tasks_page_agree_on_open_and_overdue_tasks\nmoodle_exception: Task deadline cannot be earlier than its start date.\n\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/task_service.php:68\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/task_service.php:575\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/task_service.php:590\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/tests/task_service_test.php:34\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/tests/task_service_test.php:187\n/home/runner/work/_temp/pr48/fresh/core/lib/phpunit/classes/advanced_testcase.php:80",
+      "independent_initial_classification": "confirmed_fixture_or_contract",
+      "in_this_pr": false
+    },
+    {
+      "number": 39,
+      "identity": "local_kbacompany\\task_service_test::test_workspace_open_tasks_remain_visible_after_completed_history",
+      "kind": "error",
+      "classification": "confirmed_fixture_or_contract",
+      "reason": "Task fixture default startdate2026-09-14 is combined with overridden due2026-01-01. Date validation correctly rejects deadline before start, before workspace history behavior is exercised.",
+      "source_evidence": [
+        "local/kbacompany/classes/local/task_service.php:68",
+        "local/kbacompany/classes/local/task_service.php:575",
+        "local/kbacompany/classes/local/task_service.php:590",
+        "local/kbacompany/tests/task_service_test.php:34",
+        "local/kbacompany/tests/task_service_test.php:210",
+        "tests/task_service_test.php:34",
+        "tests/task_service_test.php:187",
+        "tests/task_service_test.php:210",
+        "classes/local/task_service.php:575"
+      ],
+      "next_safe_step": "Generate internally valid overdue dates and matching/empty startdate; retain count consistency and completed-history pagination assertions.",
+      "actual_failure": "local_kbacompany\\task_service_test::test_workspace_open_tasks_remain_visible_after_completed_history\nmoodle_exception: Task deadline cannot be earlier than its start date.\n\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/task_service.php:68\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/task_service.php:575\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/task_service.php:590\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/tests/task_service_test.php:34\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/tests/task_service_test.php:210\n/home/runner/work/_temp/pr48/fresh/core/lib/phpunit/classes/advanced_testcase.php:80",
+      "independent_initial_classification": "confirmed_fixture_or_contract",
+      "in_this_pr": false
+    }
+  ]
+}

@@ -17,14 +17,15 @@ final class implementation_task_discussion {
 
     /** Managers with implementation access and the assigned employee may open the task. */
     public static function can_access(\stdClass $task, int $userid): bool {
+        if (access::is_revoked((int)$task->companyid, $userid)) { return false; }
         global $DB;
+        if ($userid <= 0 || !empty($task->deleted)) {
+            return false;
+        }
         if (access::can_manage_company_implementation((int)$task->companyid, $userid)) {
             return true;
         }
-        if ($DB->record_exists('local_kbacorp_impl_program', [
-            'baselineauditid' => (int)$task->auditid,
-            'curatorid' => $userid,
-        ])) {
+        if (self::is_curator($task, $userid)) {
             return true;
         }
         return (int)$task->ownerid === $userid && $DB->record_exists('local_kbacorp_member', [
@@ -81,9 +82,18 @@ final class implementation_task_discussion {
     }
 
     public static function is_curator(\stdClass $task, int $userid): bool {
+        if (access::is_revoked((int)$task->companyid, $userid)) { return false; }
         global $DB;
+        // All three identifiers must match: a shared audit ID alone is not
+        // evidence that the curator is assigned to this task's company.
+        if ($userid <= 0 || (int)$task->companyid <= 0 || (int)$task->auditid <= 0 ||
+                !empty($task->deleted)) {
+            return false;
+        }
         return $DB->record_exists('local_kbacorp_impl_program', [
-            'baselineauditid' => (int)$task->auditid, 'curatorid' => $userid,
+            'baselineauditid' => (int)$task->auditid,
+            'companyid' => (int)$task->companyid,
+            'curatorid' => $userid,
         ]);
     }
 
@@ -106,6 +116,7 @@ final class implementation_task_discussion {
     public static function get_curator_threads(int $userid, string $status = '', string $query = '',
             bool $allcurators = false): array {
         global $DB;
+        $revocationsql = access::not_revoked_sql('t.companyid', $userid);
         $params = [];
         $curatorsql = '';
         if (!$allcurators) {
@@ -130,13 +141,15 @@ final class implementation_task_discussion {
                          WHERE ck.taskid = t.id AND ck.isdone = 1) AS checklistdone
                   FROM {local_kbacorp_impl_program} p
                   JOIN {local_kbacorp_impl_task} t ON t.auditid = p.baselineauditid
+                        AND t.companyid = p.companyid
                   JOIN {local_kbacorp_impl_audit} a ON a.id = t.auditid
+                        AND a.companyid = t.companyid
                   JOIN {local_kbacorp_impl_item} i ON i.id = t.itemid
                   JOIN {local_kbacorp_company} co ON co.id = t.companyid
              LEFT JOIN {user} u ON u.id = t.ownerid
              LEFT JOIN {user} cu ON cu.id = p.curatorid
              LEFT JOIN {local_kbacorp_impl_read} r ON r.taskid = t.id AND r.userid = :readuserid
-                 WHERE p.curatorid > 0 AND t.deleted = 0 $curatorsql $statussql
+                 WHERE p.curatorid > 0 AND t.deleted = 0 AND ($revocationsql) $curatorsql $statussql
               ORDER BY t.timemodified DESC, t.id DESC";
         $params['readuserid'] = $userid;
         $threads = array_values($DB->get_records_sql($sql, $params));

@@ -1,0 +1,10 @@
+CHANGELOG.md
+CHANGED_PATHS_1.1.0-rc14.txt
+RELEASE_NOTES_1.1.0-rc14.md
+classes/local/function_transfer_service.php
+classes/local/position_ui_service.php
+lang/en/local_kbacompany.php
+lang/ru/local_kbacompany.php
+positions.php
+styles.css
+version.php

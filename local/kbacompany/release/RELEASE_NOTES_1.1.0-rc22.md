@@ -1,0 +1,1 @@
+RC22 build2026101349 — Client integration catalogue. Odoo presented as BMS ERP (internal provider key unchanged); Bitrix24 existing provider. amoCRM, Huntflow, hh.ru and Avito Jobs shown as planned, with no fake connectivity. UI/form mapping labels changed; no new connectors, no DB schema change. Live acceptance NOT RUN.

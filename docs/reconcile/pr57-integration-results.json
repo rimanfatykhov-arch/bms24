@@ -1,0 +1,1854 @@
+{
+  "date": "2026-11-09",
+  "pr": 57,
+  "status": "HOLD",
+  "source_sha": "80f454bf01a3a925ca302fb3e46cf64b4585386d",
+  "synthetic_merge_sha": "3cd6b06af8c9c723f4e47d6021674f8496f789d7",
+  "run_id": 42596006129,
+  "static_run_id": 42596006149,
+  "bms_version": 2026110903,
+  "corporate_version": 2026110901,
+  "php": "8.1.34",
+  "phpunit": "9.5.28",
+  "moodle_sha": "df1157bb845eabedd31989d6a1a6e18f638ff890",
+  "engines": {
+    "mariadb": {
+      "engine": "10.11.19-MariaDB-ubu2204",
+      "scenarios": {
+        "fresh": "PASS",
+        "from1645": "PASS",
+        "from1879": "PASS",
+        "from0890": "PASS",
+        "from0900": "PASS",
+        "from0901": "PASS",
+        "from0804": "PASS",
+        "frompr530902": "PASS",
+        "frompr560902": "PASS"
+      },
+      "schema_comparison": {
+        "from1645": "PASS",
+        "from1879": "PASS",
+        "from0890": "PASS",
+        "from0900": "PASS",
+        "from0901": "PASS",
+        "from0804": "PASS",
+        "frompr530902": "PASS",
+        "frompr560902": "PASS"
+      },
+      "phpunit": {
+        "init": "PASS",
+        "schema_parity_2026110890_test": "PASS",
+        "ordered_index_2026110900_test": "PASS",
+        "pr48_tenant_isolation_test": "PASS",
+        "privacy_provider_test": "PASS",
+        "kbacorporate_impl_task_provider_test": "PASS",
+        "communication_center_service_test": "PASS",
+        "communication_live_service_test": "PASS",
+        "communication_service_test": "PASS",
+        "task_rc30_acceptance1864_test": "PASS",
+        "task_rc30_cli_response1866_test": "PASS",
+        "task_rc30_report_comparison1867_test": "PASS",
+        "competency_review_queue_test": "PASS",
+        "employee_development_courses_test": "PASS",
+        "employee_competency_profile_service_test": "PASS",
+        "role_intelligence_service_test": "PASS",
+        "role_readiness_view_test": "PASS",
+        "company_core_test": "FAIL",
+        "design_service_test": "PASS",
+        "document_service_test": "FAIL",
+        "company_employee_sync_service_test": "FAIL",
+        "rc30_integrated_access_test": "PASS",
+        "local_kbacompany": "FAIL",
+        "local_kbacorporate": "PASS"
+      },
+      "suites": {
+        "communication_center_service_test-junit": {
+          "counts": {
+            "tests": 5,
+            "assertions": 26,
+            "errors": 0,
+            "failures": 0,
+            "skipped": 0
+          },
+          "failures": []
+        },
+        "communication_live_service_test-junit": {
+          "counts": {
+            "tests": 1,
+            "assertions": 4,
+            "errors": 0,
+            "failures": 0,
+            "skipped": 0
+          },
+          "failures": []
+        },
+        "communication_service_test-junit": {
+          "counts": {
+            "tests": 17,
+            "assertions": 55,
+            "errors": 0,
+            "failures": 0,
+            "skipped": 0
+          },
+          "failures": []
+        },
+        "company_core_test-junit": {
+          "counts": {
+            "tests": 16,
+            "assertions": 78,
+            "errors": 0,
+            "failures": 2,
+            "skipped": 0
+          },
+          "failures": [
+            {
+              "case": "local_kbacompany\\company_core_test::test_contract_declares_existing_source_without_duplication",
+              "type": "failure",
+              "message": "local_kbacompany\\company_core_test::test_contract_declares_existing_source_without_duplication\nFailed asserting that two strings are identical.\n--- Expected\n+++ Actual\n@@ @@\n-'0.6.0'\n+'0.6.7'\n"
+            },
+            {
+              "case": "local_kbacompany\\company_core_test::test_permission_contract_centralises_company_role_policies",
+              "type": "failure",
+              "message": "local_kbacompany\\company_core_test::test_permission_contract_centralises_company_role_policies\nFailed asserting that two strings are identical.\n--- Expected\n+++ Actual\n@@ @@\n-'0.5.1.3'\n+'0.7.0'\n"
+            }
+          ]
+        },
+        "company_employee_sync_service_test-junit": {
+          "counts": {
+            "tests": 11,
+            "assertions": 50,
+            "errors": 1,
+            "failures": 0,
+            "skipped": 0
+          },
+          "failures": [
+            {
+              "case": "local_kbacompany\\company_employee_sync_service_test::test_external_contact_replaces_email_like_phone_but_never_uses_email_as_phone",
+              "type": "error",
+              "message": "local_kbacompany\\company_employee_sync_service_test::test_external_contact_replaces_email_like_phone_but_never_uses_email_as_phone\ndml_write_exception: Error writing to database (Data too long for column 'phone1' at row 1\nINSERT INTO pht_user (email,phone1,institution,auth,firstname,lastname,firstnamephonetic,lastnamephonetic,middlename,alternatename,idnumber,mnethostid,username,confirmed,lastip,calendartype,maildisplay,mailformat,maildigest,autosubscribe,trackforums,lang,city,country,timecreated,timemodified) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)\n[array (\n  0 => 'invalidphone@example.test',\n  1 => 'badphone@example.test',\n  2 => '',\n  3 => 'manual',"
+            }
+          ]
+        },
+        "competency_review_queue_test-junit": {
+          "counts": {
+            "tests": 9,
+            "assertions": 99,
+            "errors": 0,
+            "failures": 0,
+            "skipped": 0
+          },
+          "failures": []
+        },
+        "design_service_test-junit": {
+          "counts": {
+            "tests": 3,
+            "assertions": 13,
+            "errors": 0,
+            "failures": 0,
+            "skipped": 0
+          },
+          "failures": []
+        },
+        "document_service_test-junit": {
+          "counts": {
+            "tests": 5,
+            "assertions": 1,
+            "errors": 4,
+            "failures": 1,
+            "skipped": 0
+          },
+          "failures": [
+            {
+              "case": "local_kbacompany\\document_service_test::test_lifecycle_master_list_acknowledgement_and_semantic_document",
+              "type": "error",
+              "message": "local_kbacompany\\document_service_test::test_lifecycle_master_list_acknowledgement_and_semantic_document\nmoodle_exception: The selected reviewer/user is not a member of this company.\n\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/document_service.php:62\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/document_service.php:423\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/document_service.php:415\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/document_service.php:1015\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/document_service.php:416"
+            },
+            {
+              "case": "local_kbacompany\\document_service_test::test_new_effective_revision_supersedes_old_without_rewriting_history",
+              "type": "error",
+              "message": "local_kbacompany\\document_service_test::test_new_effective_revision_supersedes_old_without_rewriting_history\nmoodle_exception: The selected reviewer/user is not a member of this company.\n\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/document_service.php:62\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/document_service.php:423\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/document_service.php:415\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/document_service.php:1015\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/document_service.php:416"
+            },
+            {
+              "case": "local_kbacompany\\document_service_test::test_form_record_is_bound_to_exact_effective_form_revision",
+              "type": "error",
+              "message": "local_kbacompany\\document_service_test::test_form_record_is_bound_to_exact_effective_form_revision\nmoodle_exception: The selected reviewer/user is not a member of this company.\n\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/document_service.php:62\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/document_service.php:423\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/document_service.php:415\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/document_service.php:1015\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/document_service.php:416"
+            },
+            {
+              "case": "local_kbacompany\\document_service_test::test_stp_controlled_document_snapshots_published_process_model",
+              "type": "error",
+              "message": "local_kbacompany\\document_service_test::test_stp_controlled_document_snapshots_published_process_model\nmoodle_exception: The process model cannot be published. Missing or invalid: supplier, customer.\n\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/process_model_service.php:1036\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/tests/document_service_test.php:170\n/home/runner/work/_temp/pr48/fresh/core/lib/phpunit/classes/advanced_testcase.php:80"
+            },
+            {
+              "case": "local_kbacompany\\document_service_test::test_cross_company_document_is_not_resolved",
+              "type": "failure",
+              "message": "local_kbacompany\\document_service_test::test_cross_company_document_is_not_resolved\nFailed asserting that two strings are identical.\n--- Expected\n+++ Actual\n@@ @@\n-'document_reference'\n+'document_notavailable'\n"
+            }
+          ]
+        },
+        "employee_competency_profile_service_test-junit": {
+          "counts": {
+            "tests": 1,
+            "assertions": 5,
+            "errors": 0,
+            "failures": 0,
+            "skipped": 0
+          },
+          "failures": []
+        },
+        "employee_development_courses_test-junit": {
+          "counts": {
+            "tests": 5,
+            "assertions": 65,
+            "errors": 0,
+            "failures": 0,
+            "skipped": 0
+          },
+          "failures": []
+        },
+        "kbacorporate_impl_task_provider_test-junit": {
+          "counts": {
+            "tests": 4,
+            "assertions": 23,
+            "errors": 0,
+            "failures": 0,
+            "skipped": 0
+          },
+          "failures": []
+        },
+        "local_kbacompany-junit": {
+          "counts": {
+            "tests": 598,
+            "assertions": 6981,
+            "errors": 20,
+            "failures": 19,
+            "skipped": 0
+          },
+          "failures": [
+            {
+              "case": "local_kbacompany\\battle_plan_indicator_service_test::test_historical_projection_uses_last_52_periods_relative_to_plan_week",
+              "type": "failure",
+              "message": "local_kbacompany\\battle_plan_indicator_service_test::test_historical_projection_uses_last_52_periods_relative_to_plan_week\nFailed asserting that two strings are not identical.\n\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/tests/battle_plan_indicator_service_test.php:104\n/home/runner/work/_temp/pr48/fresh/core/lib/phpunit/classes/advanced_testcase.php:80"
+            },
+            {
+              "case": "local_kbacompany\\battle_plan_management_overview_service_test::test_contract_is_schema_neutral_read_model",
+              "type": "failure",
+              "message": "local_kbacompany\\battle_plan_management_overview_service_test::test_contract_is_schema_neutral_read_model\nFailed asserting that two strings are identical.\n--- Expected\n+++ Actual\n@@ @@\n-'0.5.10'\n+'0.5.11'\n"
+            },
+            {
+              "case": "local_kbacompany\\battle_plan_service_test::test_battle_plan_references_one_canonical_task_and_closes_after_execution",
+              "type": "error",
+              "message": "local_kbacompany\\battle_plan_service_test::test_battle_plan_references_one_canonical_task_and_closes_after_execution\nmoodle_exception: The week cannot be closed: finish the open tasks or explicitly carry them into the next Battle Plan.\n\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/battle_plan_service.php:70\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/battle_plan_service.php:944\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/tests/battle_plan_service_test.php:122\n/home/runner/work/_temp/pr48/fresh/core/lib/phpunit/classes/advanced_testcase.php:80"
+            },
+            {
+              "case": "local_kbacompany\\battle_plan_service_test::test_active_plan_accepts_scoped_manual_task_but_closed_plan_rejects_it",
+              "type": "error",
+              "message": "local_kbacompany\\battle_plan_service_test::test_active_plan_accepts_scoped_manual_task_but_closed_plan_rejects_it\nmoodle_exception: An empty Battle Plan cannot be submitted.\n\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/battle_plan_service.php:70\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/battle_plan_service.php:898\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/tests/battle_plan_service_test.php:294\n/home/runner/work/_temp/pr48/fresh/core/lib/phpunit/classes/advanced_testcase.php:80"
+            },
+            {
+              "case": "local_kbacompany\\battle_plan_word_export_service_test::test_ooxml_contains_real_word_document_and_cyrillic_text",
+              "type": "error",
+              "message": "local_kbacompany\\battle_plan_word_export_service_test::test_ooxml_contains_real_word_document_and_cyrillic_text\nUndefined array key \"observer\"\n\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/battle_plan_word_export_service.php:383\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/tests/battle_plan_word_export_service_test.php:24\n/home/runner/work/_temp/pr48/fresh/core/lib/phpunit/classes/basic_testcase.php:64"
+            },
+            {
+              "case": "local_kbacompany\\battle_plan_word_export_service_test::test_model_projects_previous_partial_week_and_current_target",
+              "type": "failure",
+              "message": "local_kbacompany\\battle_plan_word_export_service_test::test_model_projects_previous_partial_week_and_current_target\nFailed asserting that '42000.00 (Actual for 1 of 7 days)' contains \"Факт за 1 из 7 дней\".\n\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/tests/battle_plan_word_export_service_test.php:113\n/home/runner/work/_temp/pr48/fresh/core/lib/phpunit/classes/basic_testcase.php:64"
+            },
+            {
+              "case": "local_kbacompany\\bms_navigation_test::test_only_allowlisted_context_is_propagated",
+              "type": "failure",
+              "message": "local_kbacompany\\bms_navigation_test::test_only_allowlisted_context_is_propagated\nFailed asserting that true is identical to false.\n\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/tests/bms_navigation_test.php:36\n/home/runner/work/_temp/pr48/fresh/core/lib/phpunit/classes/advanced_testcase.php:80"
+            },
+            {
+              "case": "local_kbacompany\\bms_page_shell_service_test::test_contract_versions_are_aligned",
+              "type": "failure",
+              "message": "local_kbacompany\\bms_page_shell_service_test::test_contract_versions_are_aligned\nFailed asserting that two strings are identical.\n--- Expected\n+++ Actual\n@@ @@\n-'0.4.9'\n+'0.6.0'\n"
+            },
+            {
+              "case": "local_kbacompany\\bms_page_shell_service_test::test_business_architecture_semantics_follow_bms_methodology",
+              "type": "failure",
+              "message": "local_kbacompany\\bms_page_shell_service_test::test_business_architecture_semantics_follow_bms_methodology\nFailed asserting that two arrays are identical.\n--- Expected\n+++ Actual\n@@ @@\n     1 => 'functions'\n     2 => 'flows'\n     3 => 'products'"
+            },
+            {
+              "case": "local_kbacompany\\company_core_test::test_contract_declares_existing_source_without_duplication",
+              "type": "failure",
+              "message": "local_kbacompany\\company_core_test::test_contract_declares_existing_source_without_duplication\nFailed asserting that two strings are identical.\n--- Expected\n+++ Actual\n@@ @@\n-'0.6.0'\n+'0.6.7'\n"
+            },
+            {
+              "case": "local_kbacompany\\company_core_test::test_permission_contract_centralises_company_role_policies",
+              "type": "failure",
+              "message": "local_kbacompany\\company_core_test::test_permission_contract_centralises_company_role_policies\nFailed asserting that two strings are identical.\n--- Expected\n+++ Actual\n@@ @@\n-'0.5.1.3'\n+'0.7.0'\n"
+            },
+            {
+              "case": "local_kbacompany\\company_employee_sync_service_test::test_external_contact_replaces_email_like_phone_but_never_uses_email_as_phone",
+              "type": "error",
+              "message": "local_kbacompany\\company_employee_sync_service_test::test_external_contact_replaces_email_like_phone_but_never_uses_email_as_phone\ndml_write_exception: Error writing to database (Data too long for column 'phone1' at row 1\nINSERT INTO pht_user (email,phone1,institution,auth,firstname,lastname,firstnamephonetic,lastnamephonetic,middlename,alternatename,idnumber,mnethostid,username,confirmed,lastip,calendartype,maildisplay,mailformat,maildigest,autosubscribe,trackforums,lang,city,country,timecreated,timemodified) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)\n[array (\n  0 => 'invalidphone@example.test',\n  1 => 'badphone@example.test',\n  2 => '',\n  3 => 'manual',"
+            },
+            {
+              "case": "local_kbacompany\\deviation_service_test::test_accepted_task_does_not_close_deviation",
+              "type": "error",
+              "message": "local_kbacompany\\deviation_service_test::test_accepted_task_does_not_close_deviation\nmoodle_exception: Invalid period: YYYY-MM-DD, Monday for weekly and first day for monthly.\n\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/product_service.php:215\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/deviation_service.php:89\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/deviation_service.php:167\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/deviation_service.php:467\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/tests/deviation_service_test.php:54"
+            },
+            {
+              "case": "local_kbacompany\\deviation_service_test::test_recheck_and_explicit_closure_do_not_create_statistics",
+              "type": "error",
+              "message": "local_kbacompany\\deviation_service_test::test_recheck_and_explicit_closure_do_not_create_statistics\nmoodle_exception: Invalid period: YYYY-MM-DD, Monday for weekly and first day for monthly.\n\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/product_service.php:215\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/deviation_service.php:89\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/deviation_service.php:167\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/deviation_service.php:467\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/tests/deviation_service_test.php:54"
+            },
+            {
+              "case": "local_kbacompany\\deviation_service_test::test_lowered_norm_cannot_be_used_as_improvement",
+              "type": "error",
+              "message": "local_kbacompany\\deviation_service_test::test_lowered_norm_cannot_be_used_as_improvement\nmoodle_exception: Invalid period: YYYY-MM-DD, Monday for weekly and first day for monthly.\n\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/product_service.php:215\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/deviation_service.php:89\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/deviation_service.php:167\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/deviation_service.php:467\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/tests/deviation_service_test.php:54"
+            },
+            {
+              "case": "local_kbacompany\\deviation_service_test::test_regular_user_cannot_read_deviations",
+              "type": "error",
+              "message": "local_kbacompany\\deviation_service_test::test_regular_user_cannot_read_deviations\nmoodle_exception: Invalid period: YYYY-MM-DD, Monday for weekly and first day for monthly.\n\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/product_service.php:215\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/deviation_service.php:89\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/deviation_service.php:167\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/deviation_service.php:467\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/tests/deviation_service_test.php:54"
+            },
+            {
+              "case": "local_kbacompany\\document_service_test::test_lifecycle_master_list_acknowledgement_and_semantic_document",
+              "type": "error",
+              "message": "local_kbacompany\\document_service_test::test_lifecycle_master_list_acknowledgement_and_semantic_document\nmoodle_exception: The selected reviewer/user is not a member of this company.\n\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/document_service.php:62\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/document_service.php:423\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/document_service.php:415\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/document_service.php:1015\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/document_service.php:416"
+            },
+            {
+              "case": "local_kbacompany\\document_service_test::test_new_effective_revision_supersedes_old_without_rewriting_history",
+              "type": "error",
+              "message": "local_kbacompany\\document_service_test::test_new_effective_revision_supersedes_old_without_rewriting_history\nmoodle_exception: The selected reviewer/user is not a member of this company.\n\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/document_service.php:62\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/document_service.php:423\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/document_service.php:415\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/document_service.php:1015\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/document_service.php:416"
+            },
+            {
+              "case": "local_kbacompany\\document_service_test::test_form_record_is_bound_to_exact_effective_form_revision",
+              "type": "error",
+              "message": "local_kbacompany\\document_service_test::test_form_record_is_bound_to_exact_effective_form_revision\nmoodle_exception: The selected reviewer/user is not a member of this company.\n\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/document_service.php:62\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/document_service.php:423\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/document_service.php:415\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/document_service.php:1015\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/document_service.php:416"
+            },
+            {
+              "case": "local_kbacompany\\document_service_test::test_stp_controlled_document_snapshots_published_process_model",
+              "type": "error",
+              "message": "local_kbacompany\\document_service_test::test_stp_controlled_document_snapshots_published_process_model\nmoodle_exception: The process model cannot be published. Missing or invalid: supplier, customer.\n\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/process_model_service.php:1036\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/tests/document_service_test.php:170\n/home/runner/work/_temp/pr48/fresh/core/lib/phpunit/classes/advanced_testcase.php:80"
+            },
+            {
+              "case": "local_kbacompany\\document_service_test::test_cross_company_document_is_not_resolved",
+              "type": "failure",
+              "message": "local_kbacompany\\document_service_test::test_cross_company_document_is_not_resolved\nFailed asserting that two strings are identical.\n--- Expected\n+++ Actual\n@@ @@\n-'document_reference'\n+'document_notavailable'\n"
+            },
+            {
+              "case": "local_kbacompany\\financial_statement_service_test::test_bdr_and_bdds_calculations_match_bms_finance_rules",
+              "type": "failure",
+              "message": "local_kbacompany\\financial_statement_service_test::test_bdr_and_bdds_calculations_match_bms_finance_rules\nFailed asserting that 500.0 matches expected 450.0.\n\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/tests/financial_statement_service_test.php:32\n/home/runner/work/_temp/pr48/fresh/core/lib/phpunit/classes/advanced_testcase.php:80"
+            },
+            {
+              "case": "local_kbacompany\\indicator_registry_service_test::test_contract_keeps_one_canonical_indicator_registry",
+              "type": "failure",
+              "message": "local_kbacompany\\indicator_registry_service_test::test_contract_keeps_one_canonical_indicator_registry\nFailed asserting that two strings are identical.\n--- Expected\n+++ Actual\n@@ @@\n-'0.5.2'\n+'0.5.5.2'\n"
+            },
+            {
+              "case": "local_kbacompany\\integration_event_service_test::test_event_outbox_lifecycle_is_independent_from_legacy_command_status",
+              "type": "failure",
+              "message": "local_kbacompany\\integration_event_service_test::test_event_outbox_lifecycle_is_independent_from_legacy_command_status\nFailed asserting that 2 is identical to 1.\n\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/tests/integration_event_service_test.php:78\n/home/runner/work/_temp/pr48/fresh/core/lib/phpunit/classes/advanced_testcase.php:80"
+            },
+            {
+              "case": "local_kbacompany\\market_model_service_test::test_contract",
+              "type": "failure",
+              "message": "local_kbacompany\\market_model_service_test::test_contract\nFailed asserting that two strings are identical.\n--- Expected\n+++ Actual\n@@ @@\n-'0.3.5'\n+'0.4.11'\n"
+            },
+            {
+              "case": "local_kbacompany\\ofs_service_test::test_ofs_projects_company_unit_function_products_and_internal_customer",
+              "type": "failure",
+              "message": "local_kbacompany\\ofs_service_test::test_ofs_projects_company_unit_function_products_and_internal_customer\nFailed asserting that true is false.\n\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/tests/ofs_service_test.php:73\n/home/runner/work/_temp/pr48/fresh/core/lib/phpunit/classes/advanced_testcase.php:80"
+            },
+            {
+              "case": "local_kbacompany\\process_model_service_test::test_complete_sipoc_bpmn_model_publishes_and_activity_becomes_semantic",
+              "type": "failure",
+              "message": "local_kbacompany\\process_model_service_test::test_complete_sipoc_bpmn_model_publishes_and_activity_becomes_semantic\nFailed asserting that two strings are identical.\n--- Expected\n+++ Actual\n@@ @@\n-'0.3.1'\n+'0.4.4'\n"
+            },
+            {
+              "case": "local_kbacompany\\process_service_test::test_process_hierarchy_publish_and_cross_functional_links",
+              "type": "failure",
+              "message": "local_kbacompany\\process_service_test::test_process_hierarchy_publish_and_cross_functional_links\nFailed asserting that two strings are identical.\n--- Expected\n+++ Actual\n@@ @@\n-'0.3.0'\n+'0.4.0'\n"
+            },
+            {
+              "case": "local_kbacompany\\project_execution_service_test::test_management_planning_does_not_link_to_retired_editor",
+              "type": "failure",
+              "message": "local_kbacompany\\project_execution_service_test::test_management_planning_does_not_link_to_retired_editor\nFailed asserting that two arrays are identical.\n--- Expected\n+++ Actual\n@@ @@\n Array &0 (\n-    0 => 'week'\n-    1 => 'battleplan'"
+            },
+            {
+              "case": "local_kbacompany\\semantic_service_test::test_effective_document_is_a_writable_semantic_endpoint",
+              "type": "error",
+              "message": "local_kbacompany\\semantic_service_test::test_effective_document_is_a_writable_semantic_endpoint\nmoodle_exception: The selected reviewer/user is not a member of this company.\n\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/document_service.php:62\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/document_service.php:423\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/document_service.php:415\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/document_service.php:1015\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/document_service.php:416"
+            },
+            {
+              "case": "local_kbacompany\\task_batch_actions1842_test::test_batch_start_accept_and_stale_revisions",
+              "type": "error",
+              "message": "local_kbacompany\\task_batch_actions1842_test::test_batch_start_accept_and_stale_revisions\nmoodle_exception: Employee is not available in this company.\n\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/task_service.php:68\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/task_service.php:197\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/task_service.php:550\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/task_service.php:590\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/tests/task_batch_actions1842_test.php:38"
+            },
+            {
+              "case": "local_kbacompany\\task_batch_actions1842_test::test_generated_tasks_cannot_be_bulk_reassigned_and_cross_company_task_is_not_updated",
+              "type": "error",
+              "message": "local_kbacompany\\task_batch_actions1842_test::test_generated_tasks_cannot_be_bulk_reassigned_and_cross_company_task_is_not_updated\nmoodle_exception: Employee is not available in this company.\n\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/task_service.php:68\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/task_service.php:197\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/task_service.php:546\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/task_service.php:590\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/tests/task_batch_actions1842_test.php:38"
+            },
+            {
+              "case": "local_kbacompany\\task_deadlines1843_test::test_bucket_filter_and_global_counts_are_separate_and_acl_scoped",
+              "type": "error",
+              "message": "local_kbacompany\\task_deadlines1843_test::test_bucket_filter_and_global_counts_are_separate_and_acl_scoped\nmoodle_exception: Employee is not available in this company.\n\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/task_service.php:68\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/task_service.php:197\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/task_service.php:546\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/task_service.php:590\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/tests/task_deadlines1843_test.php:35"
+            },
+            {
+              "case": "local_kbacompany\\task_kanban1846_test::test_editor_and_columns_render_without_raw_html_or_missing_tasks",
+              "type": "error",
+              "message": "local_kbacompany\\task_kanban1846_test::test_editor_and_columns_render_without_raw_html_or_missing_tasks\ninvalid_parameter_exception: Invalid parameter value detected (Invalid BMS Company UUID.)\n\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/company_context_service.php:36\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/company_context_service.php:64\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/access_role_service.php:127\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/task_service.php:2412\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/task_ui_service.php:950"
+            },
+            {
+              "case": "local_kbacompany\\task_kanban1850_test::test_page_scoped_grouping_and_full_counts_in_board_html",
+              "type": "error",
+              "message": "local_kbacompany\\task_kanban1850_test::test_page_scoped_grouping_and_full_counts_in_board_html\ninvalid_parameter_exception: Invalid parameter value detected (Invalid BMS Company UUID.)\n\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/company_context_service.php:36\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/company_context_service.php:64\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/access_role_service.php:127\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/task_service.php:2414\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/task_ui_service.php:950"
+            },
+            {
+              "case": "local_kbacompany\\task_manager_workspace1853_test::test_non_manager_never_receives_manager_workspace",
+              "type": "failure",
+              "message": "local_kbacompany\\task_manager_workspace1853_test::test_non_manager_never_receives_manager_workspace\nFailed asserting that '<header class=\"bms24-task-header\">\\n\n  <div class=\"bms24-task-heading\"><h1>Tasks</h1></div>\\n\n  \\n\n  <div class=\"bms24-task-header-actions\"><a class=\"bms24-ui-btn bms24-ui-btn--primary\" href=\"https://www.example.com/moodle/local/kbacompany/tasks.php?uuid=test-company&amp;view=create\">Create task</a><details class=\"bms24-task-menu\"><summary class=\"bms24-ui-btn\">Tools</summary><div class=\"bms24-task-menu-items\"><a href=\"https://www.example.com/moodle/local/kbacompany/tasks.php?uuid=test-company&amp;view=sources\">Tasks from other sources</a><a href=\"https://www.example.com/moodle/local/kbacompany/recurring_task_library.php?uuid=test-company\">Recurring task library</a><a href=\"https://www.example.com/moodle/local/kbacompany/battle_plan.php?uuid=test-company\">Battle Plan</a><a href=\"https://www.example.com/moodle/local/kbacompany/communication_center.php?uuid=test-company\">Communication Center</a></div></details></div>\\n\n</header><section class=\"bms24-task-toolbar\" aria-label=\"Tasks\">\\n\n  \\n\n  <div class=\"bms24-task-toolbar-actions\"><nav class=\"bms24-task-tabs\" aria-label=\"Tasks\">\\n"
+            },
+            {
+              "case": "local_kbacompany\\task_roles_workspace1840_test::test_compact_workspace_escapes_search_and_has_progressive_get_fallback",
+              "type": "failure",
+              "message": "local_kbacompany\\task_roles_workspace1840_test::test_compact_workspace_escapes_search_and_has_progressive_get_fallback\nFailed asserting that '<header class=\"bms24-task-header\">\\n\n  <div class=\"bms24-task-heading\"><h1>Tasks</h1></div>\\n\n  \\n\n  <div class=\"bms24-task-header-actions\"><a class=\"bms24-ui-btn bms24-ui-btn--primary\" href=\"https://www.example.com/moodle/local/kbacompany/tasks.php?uuid=company-test&amp;view=create\">Create task</a><details class=\"bms24-task-menu\"><summary class=\"bms24-ui-btn\">Tools</summary><div class=\"bms24-task-menu-items\"><a href=\"https://www.example.com/moodle/local/kbacompany/tasks.php?uuid=company-test&amp;view=sources\">Tasks from other sources</a><a href=\"https://www.example.com/moodle/local/kbacompany/recurring_task_library.php?uuid=company-test\">Recurring task library</a><a href=\"https://www.example.com/moodle/local/kbacompany/battle_plan.php?uuid=company-test\">Battle Plan</a><a href=\"https://www.example.com/moodle/local/kbacompany/communication_center.php?uuid=company-test\">Communication Center</a></div></details></div>\\n\n</header><section class=\"bms24-task-toolbar\" aria-label=\"Tasks\">\\n\n  \\n\n  <div class=\"bms24-task-toolbar-actions\"><nav class=\"bms24-task-tabs\" aria-label=\"Tasks\">\\n"
+            },
+            {
+              "case": "local_kbacompany\\task_service_test::test_workspace_and_tasks_page_agree_on_open_and_overdue_tasks",
+              "type": "error",
+              "message": "local_kbacompany\\task_service_test::test_workspace_and_tasks_page_agree_on_open_and_overdue_tasks\nmoodle_exception: Task deadline cannot be earlier than its start date.\n\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/task_service.php:68\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/task_service.php:575\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/task_service.php:590\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/tests/task_service_test.php:34\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/tests/task_service_test.php:187"
+            },
+            {
+              "case": "local_kbacompany\\task_service_test::test_workspace_open_tasks_remain_visible_after_completed_history",
+              "type": "error",
+              "message": "local_kbacompany\\task_service_test::test_workspace_open_tasks_remain_visible_after_completed_history\nmoodle_exception: Task deadline cannot be earlier than its start date.\n\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/task_service.php:68\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/task_service.php:575\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/task_service.php:590\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/tests/task_service_test.php:34\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/tests/task_service_test.php:210"
+            }
+          ]
+        },
+        "local_kbacorporate-junit": {
+          "counts": {
+            "tests": 150,
+            "assertions": 962,
+            "errors": 0,
+            "failures": 0,
+            "skipped": 0
+          },
+          "failures": []
+        },
+        "ordered_index_2026110900_test-junit": {
+          "counts": {
+            "tests": 9,
+            "assertions": 103,
+            "errors": 0,
+            "failures": 0,
+            "skipped": 0
+          },
+          "failures": []
+        },
+        "pr48_tenant_isolation_test-junit": {
+          "counts": {
+            "tests": 2,
+            "assertions": 66,
+            "errors": 0,
+            "failures": 0,
+            "skipped": 0
+          },
+          "failures": []
+        },
+        "privacy_provider_test-junit": {
+          "counts": {
+            "tests": 6,
+            "assertions": 37,
+            "errors": 0,
+            "failures": 0,
+            "skipped": 0
+          },
+          "failures": []
+        },
+        "rc30_integrated_access_test-junit": {
+          "counts": {
+            "tests": 4,
+            "assertions": 19,
+            "errors": 0,
+            "failures": 0,
+            "skipped": 0
+          },
+          "failures": []
+        },
+        "role_intelligence_service_test-junit": {
+          "counts": {
+            "tests": 4,
+            "assertions": 16,
+            "errors": 0,
+            "failures": 0,
+            "skipped": 0
+          },
+          "failures": []
+        },
+        "role_readiness_view_test-junit": {
+          "counts": {
+            "tests": 3,
+            "assertions": 9,
+            "errors": 0,
+            "failures": 0,
+            "skipped": 0
+          },
+          "failures": []
+        },
+        "schema_parity_2026110890_test-junit": {
+          "counts": {
+            "tests": 29,
+            "assertions": 3721,
+            "errors": 0,
+            "failures": 0,
+            "skipped": 0
+          },
+          "failures": []
+        },
+        "task_rc30_acceptance1864_test-junit": {
+          "counts": {
+            "tests": 12,
+            "assertions": 118,
+            "errors": 0,
+            "failures": 0,
+            "skipped": 0
+          },
+          "failures": []
+        },
+        "task_rc30_cli_response1866_test-junit": {
+          "counts": {
+            "tests": 4,
+            "assertions": 48,
+            "errors": 0,
+            "failures": 0,
+            "skipped": 0
+          },
+          "failures": []
+        },
+        "task_rc30_report_comparison1867_test-junit": {
+          "counts": {
+            "tests": 15,
+            "assertions": 32,
+            "errors": 0,
+            "failures": 0,
+            "skipped": 0
+          },
+          "failures": []
+        }
+      },
+      "artifact_id": 13664063310,
+      "zip_sha256": "d6969429e33a3029c7e93000f9a6cb03f75809d403aa447e87c6f97d7706f3ed",
+      "parent_comparison": {
+        "engine": "mariadb",
+        "overall_report": "FAIL",
+        "junit": {
+          "communication_center_service_test": {
+            "counts": {
+              "tests": 5,
+              "assertions": 26,
+              "errors": 0,
+              "failures": 0,
+              "skipped": 0
+            },
+            "count_mismatches": {},
+            "report_status_matches": true
+          },
+          "communication_live_service_test": {
+            "counts": {
+              "tests": 1,
+              "assertions": 4,
+              "errors": 0,
+              "failures": 0,
+              "skipped": 0
+            },
+            "count_mismatches": {},
+            "report_status_matches": true
+          },
+          "communication_service_test": {
+            "counts": {
+              "tests": 17,
+              "assertions": 55,
+              "errors": 0,
+              "failures": 0,
+              "skipped": 0
+            },
+            "count_mismatches": {},
+            "report_status_matches": true
+          },
+          "company_core_test": {
+            "counts": {
+              "tests": 16,
+              "assertions": 78,
+              "errors": 0,
+              "failures": 2,
+              "skipped": 0
+            },
+            "count_mismatches": {},
+            "report_status_matches": true
+          },
+          "company_employee_sync_service_test": {
+            "counts": {
+              "tests": 11,
+              "assertions": 50,
+              "errors": 1,
+              "failures": 0,
+              "skipped": 0
+            },
+            "count_mismatches": {},
+            "report_status_matches": true
+          },
+          "competency_review_queue_test": {
+            "counts": {
+              "tests": 9,
+              "assertions": 99,
+              "errors": 0,
+              "failures": 0,
+              "skipped": 0
+            },
+            "count_mismatches": {},
+            "report_status_matches": true
+          },
+          "design_service_test": {
+            "counts": {
+              "tests": 3,
+              "assertions": 13,
+              "errors": 0,
+              "failures": 0,
+              "skipped": 0
+            },
+            "count_mismatches": {},
+            "report_status_matches": true
+          },
+          "document_service_test": {
+            "counts": {
+              "tests": 5,
+              "assertions": 1,
+              "errors": 4,
+              "failures": 1,
+              "skipped": 0
+            },
+            "count_mismatches": {},
+            "report_status_matches": true
+          },
+          "employee_competency_profile_service_test": {
+            "counts": {
+              "tests": 1,
+              "assertions": 5,
+              "errors": 0,
+              "failures": 0,
+              "skipped": 0
+            },
+            "count_mismatches": {},
+            "report_status_matches": true
+          },
+          "employee_development_courses_test": {
+            "counts": {
+              "tests": 5,
+              "assertions": 65,
+              "errors": 0,
+              "failures": 0,
+              "skipped": 0
+            },
+            "count_mismatches": {},
+            "report_status_matches": true
+          },
+          "kbacorporate_impl_task_provider_test": {
+            "counts": {
+              "tests": 4,
+              "assertions": 23,
+              "errors": 0,
+              "failures": 0,
+              "skipped": 0
+            },
+            "count_mismatches": {},
+            "report_status_matches": true
+          },
+          "local_kbacompany": {
+            "counts": {
+              "tests": 598,
+              "assertions": 6981,
+              "errors": 20,
+              "failures": 19,
+              "skipped": 0
+            },
+            "count_mismatches": {},
+            "report_status_matches": true
+          },
+          "local_kbacorporate": {
+            "counts": {
+              "tests": 150,
+              "assertions": 962,
+              "errors": 0,
+              "failures": 0,
+              "skipped": 0
+            },
+            "count_mismatches": {},
+            "report_status_matches": true
+          },
+          "ordered_index_2026110900_test": {
+            "counts": {
+              "tests": 9,
+              "assertions": 103,
+              "errors": 0,
+              "failures": 0,
+              "skipped": 0
+            },
+            "count_mismatches": {},
+            "report_status_matches": true
+          },
+          "pr48_tenant_isolation_test": {
+            "counts": {
+              "tests": 2,
+              "assertions": 66,
+              "errors": 0,
+              "failures": 0,
+              "skipped": 0
+            },
+            "count_mismatches": {},
+            "report_status_matches": true
+          },
+          "privacy_provider_test": {
+            "counts": {
+              "tests": 6,
+              "assertions": 37,
+              "errors": 0,
+              "failures": 0,
+              "skipped": 0
+            },
+            "count_mismatches": {},
+            "report_status_matches": true
+          },
+          "rc30_integrated_access_test": {
+            "counts": {
+              "tests": 4,
+              "assertions": 19,
+              "errors": 0,
+              "failures": 0,
+              "skipped": 0
+            },
+            "count_mismatches": {},
+            "report_status_matches": true
+          },
+          "role_intelligence_service_test": {
+            "counts": {
+              "tests": 4,
+              "assertions": 16,
+              "errors": 0,
+              "failures": 0,
+              "skipped": 0
+            },
+            "count_mismatches": {},
+            "report_status_matches": true
+          },
+          "role_readiness_view_test": {
+            "counts": {
+              "tests": 3,
+              "assertions": 9,
+              "errors": 0,
+              "failures": 0,
+              "skipped": 0
+            },
+            "count_mismatches": {},
+            "report_status_matches": true
+          },
+          "schema_parity_2026110890_test": {
+            "counts": {
+              "tests": 29,
+              "assertions": 3721,
+              "errors": 0,
+              "failures": 0,
+              "skipped": 0
+            },
+            "count_mismatches": {},
+            "report_status_matches": true
+          },
+          "task_rc30_acceptance1864_test": {
+            "counts": {
+              "tests": 12,
+              "assertions": 118,
+              "errors": 0,
+              "failures": 0,
+              "skipped": 0
+            },
+            "count_mismatches": {},
+            "report_status_matches": true
+          },
+          "task_rc30_cli_response1866_test": {
+            "counts": {
+              "tests": 4,
+              "assertions": 48,
+              "errors": 0,
+              "failures": 0,
+              "skipped": 0
+            },
+            "count_mismatches": {},
+            "report_status_matches": true
+          },
+          "task_rc30_report_comparison1867_test": {
+            "counts": {
+              "tests": 15,
+              "assertions": 32,
+              "errors": 0,
+              "failures": 0,
+              "skipped": 0
+            },
+            "count_mismatches": {},
+            "report_status_matches": true
+          }
+        },
+        "parent_comparisons": {
+          "PR53": {
+            "counts": {
+              "tests": 587,
+              "assertions": 6813,
+              "errors": 37,
+              "failures": 29,
+              "skipped": 0
+            },
+            "new_failing_identities_vs_parent": [],
+            "resolved_identities": [
+              "local_kbacompany\\communication_center_service_test::test_mentions_tab_projects_only_explicit_mentions",
+              "local_kbacompany\\communication_center_service_test::test_unread_tab_projects_threads_without_opening_them",
+              "local_kbacompany\\communication_service_test::test_author_can_withdraw_but_history_and_file_access_are_protected",
+              "local_kbacompany\\communication_service_test::test_author_edit_audits_previous_text_and_updates_projection",
+              "local_kbacompany\\communication_service_test::test_authorised_viewer_joins_single_canonical_object_history",
+              "local_kbacompany\\communication_service_test::test_decision_trace_blocks_withdrawal_without_text_comparison_error",
+              "local_kbacompany\\communication_service_test::test_decision_trace_in_another_company_does_not_block_withdrawal",
+              "local_kbacompany\\communication_service_test::test_direct_thread_message_unread_and_read_state",
+              "local_kbacompany\\communication_service_test::test_direct_thread_requires_exactly_one_other_participant",
+              "local_kbacompany\\communication_service_test::test_edit_rejects_wrong_thread_identifier",
+              "local_kbacompany\\communication_service_test::test_linked_task_message_cannot_be_withdrawn",
+              "local_kbacompany\\communication_service_test::test_manager_role_does_not_grant_private_thread_content",
+              "local_kbacompany\\communication_service_test::test_mentions_only_allow_active_participants",
+              "local_kbacompany\\communication_service_test::test_message_can_create_traceable_canonical_task",
+              "local_kbacompany\\communication_service_test::test_non_author_and_stale_revision_cannot_change_message",
+              "local_kbacompany\\communication_service_test::test_object_thread_rejects_unresolved_context_without_leaking_existence",
+              "local_kbacompany\\communication_service_test::test_withdrawn_message_cannot_be_edited_again",
+              "local_kbacompany\\kbacorporate_impl_task_provider_test::test_projection_never_trusts_external_source_url_or_editability",
+              "local_kbacompany\\privacy_provider_test::test_assignment_context_is_returned_for_user",
+              "local_kbacompany\\privacy_provider_test::test_bmc_item_and_comment_actor_data_are_anonymised",
+              "local_kbacompany\\privacy_provider_test::test_budgeting_actor_ids_are_anonymised_without_deleting_budget_data",
+              "local_kbacompany\\privacy_provider_test::test_communication_user_data_is_anonymised_without_deleting_other_participants_thread",
+              "local_kbacompany\\privacy_provider_test::test_resource_gate_actor_and_evidence_are_anonymised_without_deleting_gate",
+              "local_kbacompany\\privacy_provider_test::test_statistic_author_can_be_anonymised_without_losing_value",
+              "local_kbacompany\\task_rc30_cli_response1866_test::test_error_classification_does_not_leak_exception_messages",
+              "local_kbacompany\\task_rc30_report_comparison1867_test::test_regressed_error_count_blocks_comparison"
+            ],
+            "missing_test_identities": {
+              "local_kbacompany\\communication_center_service_test::test_employee_inbox_combines_unread_communication_and_due_task": 1
+            }
+          },
+          "PR56": {
+            "counts": {
+              "tests": 563,
+              "assertions": 5496,
+              "errors": 23,
+              "failures": 20,
+              "skipped": 0
+            },
+            "new_failing_identities_vs_parent": [],
+            "resolved_identities": [
+              "employee_competency_profile_service_test::test_contract_keeps_profile_as_evidence_comparison_not_assessment_engine",
+              "local_kbacompany\\company_core_test::test_staffing_plan_and_placement_are_separate",
+              "local_kbacompany\\company_core_test::test_staffing_plan_approval_carries_forward_compatible_assignments",
+              "local_kbacompany\\workflow_service_test::test_design_visual_editor_versions_nodes_and_rejects_cycles"
+            ],
+            "missing_test_identities": {}
+          }
+        },
+        "missing_junit_for_executed_suites": [],
+        "novel_failures_vs_both_parents": [],
+        "failures_not_common_to_both_parents": [],
+        "missing_parent_tests": {
+          "local_kbacompany\\communication_center_service_test::test_employee_inbox_combines_unread_communication_and_due_task": 1
+        },
+        "new_test_identities": {
+          "local_kbacompany\\rc30_integrated_access_test::test_membership_revocation_is_rechecked_without_new_session with data set \"inactive\"": 1,
+          "local_kbacompany\\rc30_integrated_access_test::test_membership_revocation_is_rechecked_without_new_session with data set \"removed\"": 1,
+          "local_kbacompany\\rc30_integrated_access_test::test_target_and_membership_identifiers_cannot_expand_employee_access": 1,
+          "local_kbacompany\\rc30_integrated_access_test::test_foreign_document_and_wrong_revision_preserve_document_data": 1
+        },
+        "scenarios": {
+          "fresh": "PASS",
+          "from1645": "PASS",
+          "from1879": "PASS",
+          "from0890": "PASS",
+          "from0900": "PASS",
+          "from0901": "PASS",
+          "from0804": "PASS",
+          "frompr530902": "PASS",
+          "frompr560902": "PASS"
+        },
+        "nonpassing_scenario_steps": {},
+        "schema_comparison": {
+          "from1645": "PASS",
+          "from1879": "PASS",
+          "from0890": "PASS",
+          "from0900": "PASS",
+          "from0901": "PASS",
+          "from0804": "PASS",
+          "frompr530902": "PASS",
+          "frompr560902": "PASS"
+        },
+        "not_covered": [
+          "browser/UI",
+          "production/staging deployment",
+          "full sibling-plugin distribution",
+          "backup/restore"
+        ],
+        "explicit_identity_mapping": {
+          "legacy_pr53": "local_kbacompany\\communication_center_service_test::test_employee_inbox_combines_unread_communication_and_due_task",
+          "replacement_pr56_preserved_in_pr57": [
+            "future deadline",
+            "past deadline"
+          ],
+          "both_dataset_cases": "PASS",
+          "reason": "Existing PR56 expansion from fixed date to future/past data provider; raw missing identity retained above."
+        }
+      }
+    },
+    "percona": {
+      "engine": "8.0.46-37",
+      "scenarios": {
+        "fresh": "PASS",
+        "from1645": "PASS",
+        "from1879": "PASS",
+        "from0890": "PASS",
+        "from0900": "PASS",
+        "from0901": "PASS",
+        "from0804": "PASS",
+        "frompr530902": "PASS",
+        "frompr560902": "PASS"
+      },
+      "schema_comparison": {
+        "from1645": "PASS",
+        "from1879": "PASS",
+        "from0890": "PASS",
+        "from0900": "PASS",
+        "from0901": "PASS",
+        "from0804": "PASS",
+        "frompr530902": "PASS",
+        "frompr560902": "PASS"
+      },
+      "phpunit": {
+        "init": "PASS",
+        "schema_parity_2026110890_test": "PASS",
+        "ordered_index_2026110900_test": "PASS",
+        "pr48_tenant_isolation_test": "PASS",
+        "privacy_provider_test": "PASS",
+        "kbacorporate_impl_task_provider_test": "PASS",
+        "communication_center_service_test": "PASS",
+        "communication_live_service_test": "PASS",
+        "communication_service_test": "PASS",
+        "task_rc30_acceptance1864_test": "PASS",
+        "task_rc30_cli_response1866_test": "PASS",
+        "task_rc30_report_comparison1867_test": "PASS",
+        "competency_review_queue_test": "PASS",
+        "employee_development_courses_test": "PASS",
+        "employee_competency_profile_service_test": "PASS",
+        "role_intelligence_service_test": "PASS",
+        "role_readiness_view_test": "PASS",
+        "company_core_test": "FAIL",
+        "design_service_test": "PASS",
+        "document_service_test": "FAIL",
+        "company_employee_sync_service_test": "FAIL",
+        "rc30_integrated_access_test": "PASS",
+        "local_kbacompany": "FAIL",
+        "local_kbacorporate": "PASS"
+      },
+      "suites": {
+        "communication_center_service_test-junit": {
+          "counts": {
+            "tests": 5,
+            "assertions": 26,
+            "errors": 0,
+            "failures": 0,
+            "skipped": 0
+          },
+          "failures": []
+        },
+        "communication_live_service_test-junit": {
+          "counts": {
+            "tests": 1,
+            "assertions": 4,
+            "errors": 0,
+            "failures": 0,
+            "skipped": 0
+          },
+          "failures": []
+        },
+        "communication_service_test-junit": {
+          "counts": {
+            "tests": 17,
+            "assertions": 55,
+            "errors": 0,
+            "failures": 0,
+            "skipped": 0
+          },
+          "failures": []
+        },
+        "company_core_test-junit": {
+          "counts": {
+            "tests": 16,
+            "assertions": 78,
+            "errors": 0,
+            "failures": 2,
+            "skipped": 0
+          },
+          "failures": [
+            {
+              "case": "local_kbacompany\\company_core_test::test_contract_declares_existing_source_without_duplication",
+              "type": "failure",
+              "message": "local_kbacompany\\company_core_test::test_contract_declares_existing_source_without_duplication\nFailed asserting that two strings are identical.\n--- Expected\n+++ Actual\n@@ @@\n-'0.6.0'\n+'0.6.7'\n"
+            },
+            {
+              "case": "local_kbacompany\\company_core_test::test_permission_contract_centralises_company_role_policies",
+              "type": "failure",
+              "message": "local_kbacompany\\company_core_test::test_permission_contract_centralises_company_role_policies\nFailed asserting that two strings are identical.\n--- Expected\n+++ Actual\n@@ @@\n-'0.5.1.3'\n+'0.7.0'\n"
+            }
+          ]
+        },
+        "company_employee_sync_service_test-junit": {
+          "counts": {
+            "tests": 11,
+            "assertions": 50,
+            "errors": 1,
+            "failures": 0,
+            "skipped": 0
+          },
+          "failures": [
+            {
+              "case": "local_kbacompany\\company_employee_sync_service_test::test_external_contact_replaces_email_like_phone_but_never_uses_email_as_phone",
+              "type": "error",
+              "message": "local_kbacompany\\company_employee_sync_service_test::test_external_contact_replaces_email_like_phone_but_never_uses_email_as_phone\ndml_write_exception: Error writing to database (Data too long for column 'phone1' at row 1\nINSERT INTO pht_user (email,phone1,institution,auth,firstname,lastname,firstnamephonetic,lastnamephonetic,middlename,alternatename,idnumber,mnethostid,username,confirmed,lastip,calendartype,maildisplay,mailformat,maildigest,autosubscribe,trackforums,lang,city,country,timecreated,timemodified) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)\n[array (\n  0 => 'invalidphone@example.test',\n  1 => 'badphone@example.test',\n  2 => '',\n  3 => 'manual',"
+            }
+          ]
+        },
+        "competency_review_queue_test-junit": {
+          "counts": {
+            "tests": 9,
+            "assertions": 99,
+            "errors": 0,
+            "failures": 0,
+            "skipped": 0
+          },
+          "failures": []
+        },
+        "design_service_test-junit": {
+          "counts": {
+            "tests": 3,
+            "assertions": 13,
+            "errors": 0,
+            "failures": 0,
+            "skipped": 0
+          },
+          "failures": []
+        },
+        "document_service_test-junit": {
+          "counts": {
+            "tests": 5,
+            "assertions": 1,
+            "errors": 4,
+            "failures": 1,
+            "skipped": 0
+          },
+          "failures": [
+            {
+              "case": "local_kbacompany\\document_service_test::test_lifecycle_master_list_acknowledgement_and_semantic_document",
+              "type": "error",
+              "message": "local_kbacompany\\document_service_test::test_lifecycle_master_list_acknowledgement_and_semantic_document\nmoodle_exception: The selected reviewer/user is not a member of this company.\n\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/document_service.php:62\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/document_service.php:423\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/document_service.php:415\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/document_service.php:1015\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/document_service.php:416"
+            },
+            {
+              "case": "local_kbacompany\\document_service_test::test_new_effective_revision_supersedes_old_without_rewriting_history",
+              "type": "error",
+              "message": "local_kbacompany\\document_service_test::test_new_effective_revision_supersedes_old_without_rewriting_history\nmoodle_exception: The selected reviewer/user is not a member of this company.\n\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/document_service.php:62\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/document_service.php:423\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/document_service.php:415\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/document_service.php:1015\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/document_service.php:416"
+            },
+            {
+              "case": "local_kbacompany\\document_service_test::test_form_record_is_bound_to_exact_effective_form_revision",
+              "type": "error",
+              "message": "local_kbacompany\\document_service_test::test_form_record_is_bound_to_exact_effective_form_revision\nmoodle_exception: The selected reviewer/user is not a member of this company.\n\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/document_service.php:62\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/document_service.php:423\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/document_service.php:415\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/document_service.php:1015\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/document_service.php:416"
+            },
+            {
+              "case": "local_kbacompany\\document_service_test::test_stp_controlled_document_snapshots_published_process_model",
+              "type": "error",
+              "message": "local_kbacompany\\document_service_test::test_stp_controlled_document_snapshots_published_process_model\nmoodle_exception: The process model cannot be published. Missing or invalid: supplier, customer.\n\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/process_model_service.php:1036\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/tests/document_service_test.php:170\n/home/runner/work/_temp/pr48/fresh/core/lib/phpunit/classes/advanced_testcase.php:80"
+            },
+            {
+              "case": "local_kbacompany\\document_service_test::test_cross_company_document_is_not_resolved",
+              "type": "failure",
+              "message": "local_kbacompany\\document_service_test::test_cross_company_document_is_not_resolved\nFailed asserting that two strings are identical.\n--- Expected\n+++ Actual\n@@ @@\n-'document_reference'\n+'document_notavailable'\n"
+            }
+          ]
+        },
+        "employee_competency_profile_service_test-junit": {
+          "counts": {
+            "tests": 1,
+            "assertions": 5,
+            "errors": 0,
+            "failures": 0,
+            "skipped": 0
+          },
+          "failures": []
+        },
+        "employee_development_courses_test-junit": {
+          "counts": {
+            "tests": 5,
+            "assertions": 65,
+            "errors": 0,
+            "failures": 0,
+            "skipped": 0
+          },
+          "failures": []
+        },
+        "kbacorporate_impl_task_provider_test-junit": {
+          "counts": {
+            "tests": 4,
+            "assertions": 23,
+            "errors": 0,
+            "failures": 0,
+            "skipped": 0
+          },
+          "failures": []
+        },
+        "local_kbacompany-junit": {
+          "counts": {
+            "tests": 598,
+            "assertions": 6981,
+            "errors": 20,
+            "failures": 19,
+            "skipped": 0
+          },
+          "failures": [
+            {
+              "case": "local_kbacompany\\battle_plan_indicator_service_test::test_historical_projection_uses_last_52_periods_relative_to_plan_week",
+              "type": "failure",
+              "message": "local_kbacompany\\battle_plan_indicator_service_test::test_historical_projection_uses_last_52_periods_relative_to_plan_week\nFailed asserting that two strings are not identical.\n\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/tests/battle_plan_indicator_service_test.php:104\n/home/runner/work/_temp/pr48/fresh/core/lib/phpunit/classes/advanced_testcase.php:80"
+            },
+            {
+              "case": "local_kbacompany\\battle_plan_management_overview_service_test::test_contract_is_schema_neutral_read_model",
+              "type": "failure",
+              "message": "local_kbacompany\\battle_plan_management_overview_service_test::test_contract_is_schema_neutral_read_model\nFailed asserting that two strings are identical.\n--- Expected\n+++ Actual\n@@ @@\n-'0.5.10'\n+'0.5.11'\n"
+            },
+            {
+              "case": "local_kbacompany\\battle_plan_service_test::test_battle_plan_references_one_canonical_task_and_closes_after_execution",
+              "type": "error",
+              "message": "local_kbacompany\\battle_plan_service_test::test_battle_plan_references_one_canonical_task_and_closes_after_execution\nmoodle_exception: The week cannot be closed: finish the open tasks or explicitly carry them into the next Battle Plan.\n\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/battle_plan_service.php:70\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/battle_plan_service.php:944\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/tests/battle_plan_service_test.php:122\n/home/runner/work/_temp/pr48/fresh/core/lib/phpunit/classes/advanced_testcase.php:80"
+            },
+            {
+              "case": "local_kbacompany\\battle_plan_service_test::test_active_plan_accepts_scoped_manual_task_but_closed_plan_rejects_it",
+              "type": "error",
+              "message": "local_kbacompany\\battle_plan_service_test::test_active_plan_accepts_scoped_manual_task_but_closed_plan_rejects_it\nmoodle_exception: An empty Battle Plan cannot be submitted.\n\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/battle_plan_service.php:70\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/battle_plan_service.php:898\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/tests/battle_plan_service_test.php:294\n/home/runner/work/_temp/pr48/fresh/core/lib/phpunit/classes/advanced_testcase.php:80"
+            },
+            {
+              "case": "local_kbacompany\\battle_plan_word_export_service_test::test_ooxml_contains_real_word_document_and_cyrillic_text",
+              "type": "error",
+              "message": "local_kbacompany\\battle_plan_word_export_service_test::test_ooxml_contains_real_word_document_and_cyrillic_text\nUndefined array key \"observer\"\n\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/battle_plan_word_export_service.php:383\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/tests/battle_plan_word_export_service_test.php:24\n/home/runner/work/_temp/pr48/fresh/core/lib/phpunit/classes/basic_testcase.php:64"
+            },
+            {
+              "case": "local_kbacompany\\battle_plan_word_export_service_test::test_model_projects_previous_partial_week_and_current_target",
+              "type": "failure",
+              "message": "local_kbacompany\\battle_plan_word_export_service_test::test_model_projects_previous_partial_week_and_current_target\nFailed asserting that '42000.00 (Actual for 1 of 7 days)' contains \"Факт за 1 из 7 дней\".\n\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/tests/battle_plan_word_export_service_test.php:113\n/home/runner/work/_temp/pr48/fresh/core/lib/phpunit/classes/basic_testcase.php:64"
+            },
+            {
+              "case": "local_kbacompany\\bms_navigation_test::test_only_allowlisted_context_is_propagated",
+              "type": "failure",
+              "message": "local_kbacompany\\bms_navigation_test::test_only_allowlisted_context_is_propagated\nFailed asserting that true is identical to false.\n\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/tests/bms_navigation_test.php:36\n/home/runner/work/_temp/pr48/fresh/core/lib/phpunit/classes/advanced_testcase.php:80"
+            },
+            {
+              "case": "local_kbacompany\\bms_page_shell_service_test::test_contract_versions_are_aligned",
+              "type": "failure",
+              "message": "local_kbacompany\\bms_page_shell_service_test::test_contract_versions_are_aligned\nFailed asserting that two strings are identical.\n--- Expected\n+++ Actual\n@@ @@\n-'0.4.9'\n+'0.6.0'\n"
+            },
+            {
+              "case": "local_kbacompany\\bms_page_shell_service_test::test_business_architecture_semantics_follow_bms_methodology",
+              "type": "failure",
+              "message": "local_kbacompany\\bms_page_shell_service_test::test_business_architecture_semantics_follow_bms_methodology\nFailed asserting that two arrays are identical.\n--- Expected\n+++ Actual\n@@ @@\n     1 => 'functions'\n     2 => 'flows'\n     3 => 'products'"
+            },
+            {
+              "case": "local_kbacompany\\company_core_test::test_contract_declares_existing_source_without_duplication",
+              "type": "failure",
+              "message": "local_kbacompany\\company_core_test::test_contract_declares_existing_source_without_duplication\nFailed asserting that two strings are identical.\n--- Expected\n+++ Actual\n@@ @@\n-'0.6.0'\n+'0.6.7'\n"
+            },
+            {
+              "case": "local_kbacompany\\company_core_test::test_permission_contract_centralises_company_role_policies",
+              "type": "failure",
+              "message": "local_kbacompany\\company_core_test::test_permission_contract_centralises_company_role_policies\nFailed asserting that two strings are identical.\n--- Expected\n+++ Actual\n@@ @@\n-'0.5.1.3'\n+'0.7.0'\n"
+            },
+            {
+              "case": "local_kbacompany\\company_employee_sync_service_test::test_external_contact_replaces_email_like_phone_but_never_uses_email_as_phone",
+              "type": "error",
+              "message": "local_kbacompany\\company_employee_sync_service_test::test_external_contact_replaces_email_like_phone_but_never_uses_email_as_phone\ndml_write_exception: Error writing to database (Data too long for column 'phone1' at row 1\nINSERT INTO pht_user (email,phone1,institution,auth,firstname,lastname,firstnamephonetic,lastnamephonetic,middlename,alternatename,idnumber,mnethostid,username,confirmed,lastip,calendartype,maildisplay,mailformat,maildigest,autosubscribe,trackforums,lang,city,country,timecreated,timemodified) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)\n[array (\n  0 => 'invalidphone@example.test',\n  1 => 'badphone@example.test',\n  2 => '',\n  3 => 'manual',"
+            },
+            {
+              "case": "local_kbacompany\\deviation_service_test::test_accepted_task_does_not_close_deviation",
+              "type": "error",
+              "message": "local_kbacompany\\deviation_service_test::test_accepted_task_does_not_close_deviation\nmoodle_exception: Invalid period: YYYY-MM-DD, Monday for weekly and first day for monthly.\n\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/product_service.php:215\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/deviation_service.php:89\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/deviation_service.php:167\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/deviation_service.php:467\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/tests/deviation_service_test.php:54"
+            },
+            {
+              "case": "local_kbacompany\\deviation_service_test::test_recheck_and_explicit_closure_do_not_create_statistics",
+              "type": "error",
+              "message": "local_kbacompany\\deviation_service_test::test_recheck_and_explicit_closure_do_not_create_statistics\nmoodle_exception: Invalid period: YYYY-MM-DD, Monday for weekly and first day for monthly.\n\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/product_service.php:215\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/deviation_service.php:89\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/deviation_service.php:167\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/deviation_service.php:467\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/tests/deviation_service_test.php:54"
+            },
+            {
+              "case": "local_kbacompany\\deviation_service_test::test_lowered_norm_cannot_be_used_as_improvement",
+              "type": "error",
+              "message": "local_kbacompany\\deviation_service_test::test_lowered_norm_cannot_be_used_as_improvement\nmoodle_exception: Invalid period: YYYY-MM-DD, Monday for weekly and first day for monthly.\n\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/product_service.php:215\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/deviation_service.php:89\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/deviation_service.php:167\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/deviation_service.php:467\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/tests/deviation_service_test.php:54"
+            },
+            {
+              "case": "local_kbacompany\\deviation_service_test::test_regular_user_cannot_read_deviations",
+              "type": "error",
+              "message": "local_kbacompany\\deviation_service_test::test_regular_user_cannot_read_deviations\nmoodle_exception: Invalid period: YYYY-MM-DD, Monday for weekly and first day for monthly.\n\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/product_service.php:215\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/deviation_service.php:89\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/deviation_service.php:167\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/deviation_service.php:467\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/tests/deviation_service_test.php:54"
+            },
+            {
+              "case": "local_kbacompany\\document_service_test::test_lifecycle_master_list_acknowledgement_and_semantic_document",
+              "type": "error",
+              "message": "local_kbacompany\\document_service_test::test_lifecycle_master_list_acknowledgement_and_semantic_document\nmoodle_exception: The selected reviewer/user is not a member of this company.\n\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/document_service.php:62\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/document_service.php:423\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/document_service.php:415\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/document_service.php:1015\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/document_service.php:416"
+            },
+            {
+              "case": "local_kbacompany\\document_service_test::test_new_effective_revision_supersedes_old_without_rewriting_history",
+              "type": "error",
+              "message": "local_kbacompany\\document_service_test::test_new_effective_revision_supersedes_old_without_rewriting_history\nmoodle_exception: The selected reviewer/user is not a member of this company.\n\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/document_service.php:62\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/document_service.php:423\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/document_service.php:415\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/document_service.php:1015\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/document_service.php:416"
+            },
+            {
+              "case": "local_kbacompany\\document_service_test::test_form_record_is_bound_to_exact_effective_form_revision",
+              "type": "error",
+              "message": "local_kbacompany\\document_service_test::test_form_record_is_bound_to_exact_effective_form_revision\nmoodle_exception: The selected reviewer/user is not a member of this company.\n\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/document_service.php:62\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/document_service.php:423\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/document_service.php:415\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/document_service.php:1015\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/document_service.php:416"
+            },
+            {
+              "case": "local_kbacompany\\document_service_test::test_stp_controlled_document_snapshots_published_process_model",
+              "type": "error",
+              "message": "local_kbacompany\\document_service_test::test_stp_controlled_document_snapshots_published_process_model\nmoodle_exception: The process model cannot be published. Missing or invalid: supplier, customer.\n\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/process_model_service.php:1036\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/tests/document_service_test.php:170\n/home/runner/work/_temp/pr48/fresh/core/lib/phpunit/classes/advanced_testcase.php:80"
+            },
+            {
+              "case": "local_kbacompany\\document_service_test::test_cross_company_document_is_not_resolved",
+              "type": "failure",
+              "message": "local_kbacompany\\document_service_test::test_cross_company_document_is_not_resolved\nFailed asserting that two strings are identical.\n--- Expected\n+++ Actual\n@@ @@\n-'document_reference'\n+'document_notavailable'\n"
+            },
+            {
+              "case": "local_kbacompany\\financial_statement_service_test::test_bdr_and_bdds_calculations_match_bms_finance_rules",
+              "type": "failure",
+              "message": "local_kbacompany\\financial_statement_service_test::test_bdr_and_bdds_calculations_match_bms_finance_rules\nFailed asserting that 500.0 matches expected 450.0.\n\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/tests/financial_statement_service_test.php:32\n/home/runner/work/_temp/pr48/fresh/core/lib/phpunit/classes/advanced_testcase.php:80"
+            },
+            {
+              "case": "local_kbacompany\\indicator_registry_service_test::test_contract_keeps_one_canonical_indicator_registry",
+              "type": "failure",
+              "message": "local_kbacompany\\indicator_registry_service_test::test_contract_keeps_one_canonical_indicator_registry\nFailed asserting that two strings are identical.\n--- Expected\n+++ Actual\n@@ @@\n-'0.5.2'\n+'0.5.5.2'\n"
+            },
+            {
+              "case": "local_kbacompany\\integration_event_service_test::test_event_outbox_lifecycle_is_independent_from_legacy_command_status",
+              "type": "failure",
+              "message": "local_kbacompany\\integration_event_service_test::test_event_outbox_lifecycle_is_independent_from_legacy_command_status\nFailed asserting that 2 is identical to 1.\n\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/tests/integration_event_service_test.php:78\n/home/runner/work/_temp/pr48/fresh/core/lib/phpunit/classes/advanced_testcase.php:80"
+            },
+            {
+              "case": "local_kbacompany\\market_model_service_test::test_contract",
+              "type": "failure",
+              "message": "local_kbacompany\\market_model_service_test::test_contract\nFailed asserting that two strings are identical.\n--- Expected\n+++ Actual\n@@ @@\n-'0.3.5'\n+'0.4.11'\n"
+            },
+            {
+              "case": "local_kbacompany\\ofs_service_test::test_ofs_projects_company_unit_function_products_and_internal_customer",
+              "type": "failure",
+              "message": "local_kbacompany\\ofs_service_test::test_ofs_projects_company_unit_function_products_and_internal_customer\nFailed asserting that true is false.\n\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/tests/ofs_service_test.php:73\n/home/runner/work/_temp/pr48/fresh/core/lib/phpunit/classes/advanced_testcase.php:80"
+            },
+            {
+              "case": "local_kbacompany\\process_model_service_test::test_complete_sipoc_bpmn_model_publishes_and_activity_becomes_semantic",
+              "type": "failure",
+              "message": "local_kbacompany\\process_model_service_test::test_complete_sipoc_bpmn_model_publishes_and_activity_becomes_semantic\nFailed asserting that two strings are identical.\n--- Expected\n+++ Actual\n@@ @@\n-'0.3.1'\n+'0.4.4'\n"
+            },
+            {
+              "case": "local_kbacompany\\process_service_test::test_process_hierarchy_publish_and_cross_functional_links",
+              "type": "failure",
+              "message": "local_kbacompany\\process_service_test::test_process_hierarchy_publish_and_cross_functional_links\nFailed asserting that two strings are identical.\n--- Expected\n+++ Actual\n@@ @@\n-'0.3.0'\n+'0.4.0'\n"
+            },
+            {
+              "case": "local_kbacompany\\project_execution_service_test::test_management_planning_does_not_link_to_retired_editor",
+              "type": "failure",
+              "message": "local_kbacompany\\project_execution_service_test::test_management_planning_does_not_link_to_retired_editor\nFailed asserting that two arrays are identical.\n--- Expected\n+++ Actual\n@@ @@\n Array &0 (\n-    0 => 'week'\n-    1 => 'battleplan'"
+            },
+            {
+              "case": "local_kbacompany\\semantic_service_test::test_effective_document_is_a_writable_semantic_endpoint",
+              "type": "error",
+              "message": "local_kbacompany\\semantic_service_test::test_effective_document_is_a_writable_semantic_endpoint\nmoodle_exception: The selected reviewer/user is not a member of this company.\n\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/document_service.php:62\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/document_service.php:423\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/document_service.php:415\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/document_service.php:1015\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/document_service.php:416"
+            },
+            {
+              "case": "local_kbacompany\\task_batch_actions1842_test::test_batch_start_accept_and_stale_revisions",
+              "type": "error",
+              "message": "local_kbacompany\\task_batch_actions1842_test::test_batch_start_accept_and_stale_revisions\nmoodle_exception: Employee is not available in this company.\n\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/task_service.php:68\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/task_service.php:197\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/task_service.php:550\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/task_service.php:590\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/tests/task_batch_actions1842_test.php:38"
+            },
+            {
+              "case": "local_kbacompany\\task_batch_actions1842_test::test_generated_tasks_cannot_be_bulk_reassigned_and_cross_company_task_is_not_updated",
+              "type": "error",
+              "message": "local_kbacompany\\task_batch_actions1842_test::test_generated_tasks_cannot_be_bulk_reassigned_and_cross_company_task_is_not_updated\nmoodle_exception: Employee is not available in this company.\n\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/task_service.php:68\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/task_service.php:197\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/task_service.php:546\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/task_service.php:590\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/tests/task_batch_actions1842_test.php:38"
+            },
+            {
+              "case": "local_kbacompany\\task_deadlines1843_test::test_bucket_filter_and_global_counts_are_separate_and_acl_scoped",
+              "type": "error",
+              "message": "local_kbacompany\\task_deadlines1843_test::test_bucket_filter_and_global_counts_are_separate_and_acl_scoped\nmoodle_exception: Employee is not available in this company.\n\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/task_service.php:68\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/task_service.php:197\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/task_service.php:546\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/task_service.php:590\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/tests/task_deadlines1843_test.php:35"
+            },
+            {
+              "case": "local_kbacompany\\task_kanban1846_test::test_editor_and_columns_render_without_raw_html_or_missing_tasks",
+              "type": "error",
+              "message": "local_kbacompany\\task_kanban1846_test::test_editor_and_columns_render_without_raw_html_or_missing_tasks\ninvalid_parameter_exception: Invalid parameter value detected (Invalid BMS Company UUID.)\n\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/company_context_service.php:36\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/company_context_service.php:64\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/access_role_service.php:127\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/task_service.php:2412\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/task_ui_service.php:950"
+            },
+            {
+              "case": "local_kbacompany\\task_kanban1850_test::test_page_scoped_grouping_and_full_counts_in_board_html",
+              "type": "error",
+              "message": "local_kbacompany\\task_kanban1850_test::test_page_scoped_grouping_and_full_counts_in_board_html\ninvalid_parameter_exception: Invalid parameter value detected (Invalid BMS Company UUID.)\n\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/company_context_service.php:36\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/company_context_service.php:64\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/access_role_service.php:127\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/task_service.php:2414\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/task_ui_service.php:950"
+            },
+            {
+              "case": "local_kbacompany\\task_manager_workspace1853_test::test_non_manager_never_receives_manager_workspace",
+              "type": "failure",
+              "message": "local_kbacompany\\task_manager_workspace1853_test::test_non_manager_never_receives_manager_workspace\nFailed asserting that '<header class=\"bms24-task-header\">\\n\n  <div class=\"bms24-task-heading\"><h1>Tasks</h1></div>\\n\n  \\n\n  <div class=\"bms24-task-header-actions\"><a class=\"bms24-ui-btn bms24-ui-btn--primary\" href=\"https://www.example.com/moodle/local/kbacompany/tasks.php?uuid=test-company&amp;view=create\">Create task</a><details class=\"bms24-task-menu\"><summary class=\"bms24-ui-btn\">Tools</summary><div class=\"bms24-task-menu-items\"><a href=\"https://www.example.com/moodle/local/kbacompany/tasks.php?uuid=test-company&amp;view=sources\">Tasks from other sources</a><a href=\"https://www.example.com/moodle/local/kbacompany/recurring_task_library.php?uuid=test-company\">Recurring task library</a><a href=\"https://www.example.com/moodle/local/kbacompany/battle_plan.php?uuid=test-company\">Battle Plan</a><a href=\"https://www.example.com/moodle/local/kbacompany/communication_center.php?uuid=test-company\">Communication Center</a></div></details></div>\\n\n</header><section class=\"bms24-task-toolbar\" aria-label=\"Tasks\">\\n\n  \\n\n  <div class=\"bms24-task-toolbar-actions\"><nav class=\"bms24-task-tabs\" aria-label=\"Tasks\">\\n"
+            },
+            {
+              "case": "local_kbacompany\\task_roles_workspace1840_test::test_compact_workspace_escapes_search_and_has_progressive_get_fallback",
+              "type": "failure",
+              "message": "local_kbacompany\\task_roles_workspace1840_test::test_compact_workspace_escapes_search_and_has_progressive_get_fallback\nFailed asserting that '<header class=\"bms24-task-header\">\\n\n  <div class=\"bms24-task-heading\"><h1>Tasks</h1></div>\\n\n  \\n\n  <div class=\"bms24-task-header-actions\"><a class=\"bms24-ui-btn bms24-ui-btn--primary\" href=\"https://www.example.com/moodle/local/kbacompany/tasks.php?uuid=company-test&amp;view=create\">Create task</a><details class=\"bms24-task-menu\"><summary class=\"bms24-ui-btn\">Tools</summary><div class=\"bms24-task-menu-items\"><a href=\"https://www.example.com/moodle/local/kbacompany/tasks.php?uuid=company-test&amp;view=sources\">Tasks from other sources</a><a href=\"https://www.example.com/moodle/local/kbacompany/recurring_task_library.php?uuid=company-test\">Recurring task library</a><a href=\"https://www.example.com/moodle/local/kbacompany/battle_plan.php?uuid=company-test\">Battle Plan</a><a href=\"https://www.example.com/moodle/local/kbacompany/communication_center.php?uuid=company-test\">Communication Center</a></div></details></div>\\n\n</header><section class=\"bms24-task-toolbar\" aria-label=\"Tasks\">\\n\n  \\n\n  <div class=\"bms24-task-toolbar-actions\"><nav class=\"bms24-task-tabs\" aria-label=\"Tasks\">\\n"
+            },
+            {
+              "case": "local_kbacompany\\task_service_test::test_workspace_and_tasks_page_agree_on_open_and_overdue_tasks",
+              "type": "error",
+              "message": "local_kbacompany\\task_service_test::test_workspace_and_tasks_page_agree_on_open_and_overdue_tasks\nmoodle_exception: Task deadline cannot be earlier than its start date.\n\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/task_service.php:68\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/task_service.php:575\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/task_service.php:590\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/tests/task_service_test.php:34\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/tests/task_service_test.php:187"
+            },
+            {
+              "case": "local_kbacompany\\task_service_test::test_workspace_open_tasks_remain_visible_after_completed_history",
+              "type": "error",
+              "message": "local_kbacompany\\task_service_test::test_workspace_open_tasks_remain_visible_after_completed_history\nmoodle_exception: Task deadline cannot be earlier than its start date.\n\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/task_service.php:68\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/task_service.php:575\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/classes/local/task_service.php:590\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/tests/task_service_test.php:34\n/home/runner/work/_temp/pr48/fresh/core/local/kbacompany/tests/task_service_test.php:210"
+            }
+          ]
+        },
+        "local_kbacorporate-junit": {
+          "counts": {
+            "tests": 150,
+            "assertions": 962,
+            "errors": 0,
+            "failures": 0,
+            "skipped": 0
+          },
+          "failures": []
+        },
+        "ordered_index_2026110900_test-junit": {
+          "counts": {
+            "tests": 9,
+            "assertions": 103,
+            "errors": 0,
+            "failures": 0,
+            "skipped": 0
+          },
+          "failures": []
+        },
+        "pr48_tenant_isolation_test-junit": {
+          "counts": {
+            "tests": 2,
+            "assertions": 66,
+            "errors": 0,
+            "failures": 0,
+            "skipped": 0
+          },
+          "failures": []
+        },
+        "privacy_provider_test-junit": {
+          "counts": {
+            "tests": 6,
+            "assertions": 37,
+            "errors": 0,
+            "failures": 0,
+            "skipped": 0
+          },
+          "failures": []
+        },
+        "rc30_integrated_access_test-junit": {
+          "counts": {
+            "tests": 4,
+            "assertions": 19,
+            "errors": 0,
+            "failures": 0,
+            "skipped": 0
+          },
+          "failures": []
+        },
+        "role_intelligence_service_test-junit": {
+          "counts": {
+            "tests": 4,
+            "assertions": 16,
+            "errors": 0,
+            "failures": 0,
+            "skipped": 0
+          },
+          "failures": []
+        },
+        "role_readiness_view_test-junit": {
+          "counts": {
+            "tests": 3,
+            "assertions": 9,
+            "errors": 0,
+            "failures": 0,
+            "skipped": 0
+          },
+          "failures": []
+        },
+        "schema_parity_2026110890_test-junit": {
+          "counts": {
+            "tests": 29,
+            "assertions": 3721,
+            "errors": 0,
+            "failures": 0,
+            "skipped": 0
+          },
+          "failures": []
+        },
+        "task_rc30_acceptance1864_test-junit": {
+          "counts": {
+            "tests": 12,
+            "assertions": 118,
+            "errors": 0,
+            "failures": 0,
+            "skipped": 0
+          },
+          "failures": []
+        },
+        "task_rc30_cli_response1866_test-junit": {
+          "counts": {
+            "tests": 4,
+            "assertions": 48,
+            "errors": 0,
+            "failures": 0,
+            "skipped": 0
+          },
+          "failures": []
+        },
+        "task_rc30_report_comparison1867_test-junit": {
+          "counts": {
+            "tests": 15,
+            "assertions": 32,
+            "errors": 0,
+            "failures": 0,
+            "skipped": 0
+          },
+          "failures": []
+        }
+      },
+      "artifact_id": 13665290460,
+      "zip_sha256": "b2e319c47086743a3ff93b8e38695a68528ca5c9aea62f07805ec07e0f04699c",
+      "parent_comparison": {
+        "engine": "percona",
+        "overall_report": "FAIL",
+        "junit": {
+          "communication_center_service_test": {
+            "counts": {
+              "tests": 5,
+              "assertions": 26,
+              "errors": 0,
+              "failures": 0,
+              "skipped": 0
+            },
+            "count_mismatches": {},
+            "report_status_matches": true
+          },
+          "communication_live_service_test": {
+            "counts": {
+              "tests": 1,
+              "assertions": 4,
+              "errors": 0,
+              "failures": 0,
+              "skipped": 0
+            },
+            "count_mismatches": {},
+            "report_status_matches": true
+          },
+          "communication_service_test": {
+            "counts": {
+              "tests": 17,
+              "assertions": 55,
+              "errors": 0,
+              "failures": 0,
+              "skipped": 0
+            },
+            "count_mismatches": {},
+            "report_status_matches": true
+          },
+          "company_core_test": {
+            "counts": {
+              "tests": 16,
+              "assertions": 78,
+              "errors": 0,
+              "failures": 2,
+              "skipped": 0
+            },
+            "count_mismatches": {},
+            "report_status_matches": true
+          },
+          "company_employee_sync_service_test": {
+            "counts": {
+              "tests": 11,
+              "assertions": 50,
+              "errors": 1,
+              "failures": 0,
+              "skipped": 0
+            },
+            "count_mismatches": {},
+            "report_status_matches": true
+          },
+          "competency_review_queue_test": {
+            "counts": {
+              "tests": 9,
+              "assertions": 99,
+              "errors": 0,
+              "failures": 0,
+              "skipped": 0
+            },
+            "count_mismatches": {},
+            "report_status_matches": true
+          },
+          "design_service_test": {
+            "counts": {
+              "tests": 3,
+              "assertions": 13,
+              "errors": 0,
+              "failures": 0,
+              "skipped": 0
+            },
+            "count_mismatches": {},
+            "report_status_matches": true
+          },
+          "document_service_test": {
+            "counts": {
+              "tests": 5,
+              "assertions": 1,
+              "errors": 4,
+              "failures": 1,
+              "skipped": 0
+            },
+            "count_mismatches": {},
+            "report_status_matches": true
+          },
+          "employee_competency_profile_service_test": {
+            "counts": {
+              "tests": 1,
+              "assertions": 5,
+              "errors": 0,
+              "failures": 0,
+              "skipped": 0
+            },
+            "count_mismatches": {},
+            "report_status_matches": true
+          },
+          "employee_development_courses_test": {
+            "counts": {
+              "tests": 5,
+              "assertions": 65,
+              "errors": 0,
+              "failures": 0,
+              "skipped": 0
+            },
+            "count_mismatches": {},
+            "report_status_matches": true
+          },
+          "kbacorporate_impl_task_provider_test": {
+            "counts": {
+              "tests": 4,
+              "assertions": 23,
+              "errors": 0,
+              "failures": 0,
+              "skipped": 0
+            },
+            "count_mismatches": {},
+            "report_status_matches": true
+          },
+          "local_kbacompany": {
+            "counts": {
+              "tests": 598,
+              "assertions": 6981,
+              "errors": 20,
+              "failures": 19,
+              "skipped": 0
+            },
+            "count_mismatches": {},
+            "report_status_matches": true
+          },
+          "local_kbacorporate": {
+            "counts": {
+              "tests": 150,
+              "assertions": 962,
+              "errors": 0,
+              "failures": 0,
+              "skipped": 0
+            },
+            "count_mismatches": {},
+            "report_status_matches": true
+          },
+          "ordered_index_2026110900_test": {
+            "counts": {
+              "tests": 9,
+              "assertions": 103,
+              "errors": 0,
+              "failures": 0,
+              "skipped": 0
+            },
+            "count_mismatches": {},
+            "report_status_matches": true
+          },
+          "pr48_tenant_isolation_test": {
+            "counts": {
+              "tests": 2,
+              "assertions": 66,
+              "errors": 0,
+              "failures": 0,
+              "skipped": 0
+            },
+            "count_mismatches": {},
+            "report_status_matches": true
+          },
+          "privacy_provider_test": {
+            "counts": {
+              "tests": 6,
+              "assertions": 37,
+              "errors": 0,
+              "failures": 0,
+              "skipped": 0
+            },
+            "count_mismatches": {},
+            "report_status_matches": true
+          },
+          "rc30_integrated_access_test": {
+            "counts": {
+              "tests": 4,
+              "assertions": 19,
+              "errors": 0,
+              "failures": 0,
+              "skipped": 0
+            },
+            "count_mismatches": {},
+            "report_status_matches": true
+          },
+          "role_intelligence_service_test": {
+            "counts": {
+              "tests": 4,
+              "assertions": 16,
+              "errors": 0,
+              "failures": 0,
+              "skipped": 0
+            },
+            "count_mismatches": {},
+            "report_status_matches": true
+          },
+          "role_readiness_view_test": {
+            "counts": {
+              "tests": 3,
+              "assertions": 9,
+              "errors": 0,
+              "failures": 0,
+              "skipped": 0
+            },
+            "count_mismatches": {},
+            "report_status_matches": true
+          },
+          "schema_parity_2026110890_test": {
+            "counts": {
+              "tests": 29,
+              "assertions": 3721,
+              "errors": 0,
+              "failures": 0,
+              "skipped": 0
+            },
+            "count_mismatches": {},
+            "report_status_matches": true
+          },
+          "task_rc30_acceptance1864_test": {
+            "counts": {
+              "tests": 12,
+              "assertions": 118,
+              "errors": 0,
+              "failures": 0,
+              "skipped": 0
+            },
+            "count_mismatches": {},
+            "report_status_matches": true
+          },
+          "task_rc30_cli_response1866_test": {
+            "counts": {
+              "tests": 4,
+              "assertions": 48,
+              "errors": 0,
+              "failures": 0,
+              "skipped": 0
+            },
+            "count_mismatches": {},
+            "report_status_matches": true
+          },
+          "task_rc30_report_comparison1867_test": {
+            "counts": {
+              "tests": 15,
+              "assertions": 32,
+              "errors": 0,
+              "failures": 0,
+              "skipped": 0
+            },
+            "count_mismatches": {},
+            "report_status_matches": true
+          }
+        },
+        "parent_comparisons": {
+          "PR53": {
+            "counts": {
+              "tests": 587,
+              "assertions": 6813,
+              "errors": 37,
+              "failures": 29,
+              "skipped": 0
+            },
+            "new_failing_identities_vs_parent": [],
+            "resolved_identities": [
+              "local_kbacompany\\communication_center_service_test::test_mentions_tab_projects_only_explicit_mentions",
+              "local_kbacompany\\communication_center_service_test::test_unread_tab_projects_threads_without_opening_them",
+              "local_kbacompany\\communication_service_test::test_author_can_withdraw_but_history_and_file_access_are_protected",
+              "local_kbacompany\\communication_service_test::test_author_edit_audits_previous_text_and_updates_projection",
+              "local_kbacompany\\communication_service_test::test_authorised_viewer_joins_single_canonical_object_history",
+              "local_kbacompany\\communication_service_test::test_decision_trace_blocks_withdrawal_without_text_comparison_error",
+              "local_kbacompany\\communication_service_test::test_decision_trace_in_another_company_does_not_block_withdrawal",
+              "local_kbacompany\\communication_service_test::test_direct_thread_message_unread_and_read_state",
+              "local_kbacompany\\communication_service_test::test_direct_thread_requires_exactly_one_other_participant",
+              "local_kbacompany\\communication_service_test::test_edit_rejects_wrong_thread_identifier",
+              "local_kbacompany\\communication_service_test::test_linked_task_message_cannot_be_withdrawn",
+              "local_kbacompany\\communication_service_test::test_manager_role_does_not_grant_private_thread_content",
+              "local_kbacompany\\communication_service_test::test_mentions_only_allow_active_participants",
+              "local_kbacompany\\communication_service_test::test_message_can_create_traceable_canonical_task",
+              "local_kbacompany\\communication_service_test::test_non_author_and_stale_revision_cannot_change_message",
+              "local_kbacompany\\communication_service_test::test_object_thread_rejects_unresolved_context_without_leaking_existence",
+              "local_kbacompany\\communication_service_test::test_withdrawn_message_cannot_be_edited_again",
+              "local_kbacompany\\kbacorporate_impl_task_provider_test::test_projection_never_trusts_external_source_url_or_editability",
+              "local_kbacompany\\privacy_provider_test::test_assignment_context_is_returned_for_user",
+              "local_kbacompany\\privacy_provider_test::test_bmc_item_and_comment_actor_data_are_anonymised",
+              "local_kbacompany\\privacy_provider_test::test_budgeting_actor_ids_are_anonymised_without_deleting_budget_data",
+              "local_kbacompany\\privacy_provider_test::test_communication_user_data_is_anonymised_without_deleting_other_participants_thread",
+              "local_kbacompany\\privacy_provider_test::test_resource_gate_actor_and_evidence_are_anonymised_without_deleting_gate",
+              "local_kbacompany\\privacy_provider_test::test_statistic_author_can_be_anonymised_without_losing_value",
+              "local_kbacompany\\task_rc30_cli_response1866_test::test_error_classification_does_not_leak_exception_messages",
+              "local_kbacompany\\task_rc30_report_comparison1867_test::test_regressed_error_count_blocks_comparison"
+            ],
+            "missing_test_identities": {
+              "local_kbacompany\\communication_center_service_test::test_employee_inbox_combines_unread_communication_and_due_task": 1
+            }
+          },
+          "PR56": {
+            "counts": {
+              "tests": 563,
+              "assertions": 5496,
+              "errors": 23,
+              "failures": 20,
+              "skipped": 0
+            },
+            "new_failing_identities_vs_parent": [],
+            "resolved_identities": [
+              "employee_competency_profile_service_test::test_contract_keeps_profile_as_evidence_comparison_not_assessment_engine",
+              "local_kbacompany\\company_core_test::test_staffing_plan_and_placement_are_separate",
+              "local_kbacompany\\company_core_test::test_staffing_plan_approval_carries_forward_compatible_assignments",
+              "local_kbacompany\\workflow_service_test::test_design_visual_editor_versions_nodes_and_rejects_cycles"
+            ],
+            "missing_test_identities": {}
+          }
+        },
+        "missing_junit_for_executed_suites": [],
+        "novel_failures_vs_both_parents": [],
+        "failures_not_common_to_both_parents": [],
+        "missing_parent_tests": {
+          "local_kbacompany\\communication_center_service_test::test_employee_inbox_combines_unread_communication_and_due_task": 1
+        },
+        "new_test_identities": {
+          "local_kbacompany\\rc30_integrated_access_test::test_membership_revocation_is_rechecked_without_new_session with data set \"inactive\"": 1,
+          "local_kbacompany\\rc30_integrated_access_test::test_membership_revocation_is_rechecked_without_new_session with data set \"removed\"": 1,
+          "local_kbacompany\\rc30_integrated_access_test::test_target_and_membership_identifiers_cannot_expand_employee_access": 1,
+          "local_kbacompany\\rc30_integrated_access_test::test_foreign_document_and_wrong_revision_preserve_document_data": 1
+        },
+        "scenarios": {
+          "fresh": "PASS",
+          "from1645": "PASS",
+          "from1879": "PASS",
+          "from0890": "PASS",
+          "from0900": "PASS",
+          "from0901": "PASS",
+          "from0804": "PASS",
+          "frompr530902": "PASS",
+          "frompr560902": "PASS"
+        },
+        "nonpassing_scenario_steps": {},
+        "schema_comparison": {
+          "from1645": "PASS",
+          "from1879": "PASS",
+          "from0890": "PASS",
+          "from0900": "PASS",
+          "from0901": "PASS",
+          "from0804": "PASS",
+          "frompr530902": "PASS",
+          "frompr560902": "PASS"
+        },
+        "not_covered": [
+          "browser/UI",
+          "production/staging deployment",
+          "full sibling-plugin distribution",
+          "backup/restore"
+        ],
+        "explicit_identity_mapping": {
+          "legacy_pr53": "local_kbacompany\\communication_center_service_test::test_employee_inbox_combines_unread_communication_and_due_task",
+          "replacement_pr56_preserved_in_pr57": [
+            "future deadline",
+            "past deadline"
+          ],
+          "both_dataset_cases": "PASS",
+          "reason": "Existing PR56 expansion from fixed date to future/past data provider; raw missing identity retained above."
+        }
+      }
+    }
+  },
+  "ci_install_artifact": {
+    "artifact_id": 13664345203,
+    "zip_sha256": "94633e6dd09a9af508a2715cf0911c910dd0e8c82771d1308a4eced369d2b86d",
+    "files": 1786,
+    "manifest_verified": true,
+    "source_verification": {
+      "source_sha": "80f454bf01a3a925ca302fb3e46cf64b4585386d",
+      "files_verified": 1786,
+      "byte_mismatches": [
+        "kbacompany/CHANGED_FILES_1.1.0-beta1.txt",
+        "kbacompany/CHANGED_PATHS_1.1.0-alpha6.txt",
+        "kbacompany/CHANGED_PATHS_1.1.0-beta2.txt",
+        "kbacompany/CHANGED_PATHS_1.1.0-rc1.txt",
+        "kbacompany/CHANGED_PATHS_1.1.0-rc13.txt",
+        "kbacompany/CHANGED_PATHS_1.1.0-rc14.txt",
+        "kbacompany/CHANGED_PATHS_1.1.0-rc15.txt",
+        "kbacompany/CHANGED_PATHS_1.1.0-rc16.txt",
+        "kbacompany/CHANGED_PATHS_1.1.0-rc9.txt",
+        "kbacompany/qa_source/run_checks.sh",
+        "kbacompany/release/CHANGED_FILES_1.1.0-beta1.txt",
+        "kbacompany/release/CHANGED_PATHS_1.1.0-alpha6.txt",
+        "kbacompany/release/CHANGED_PATHS_1.1.0-beta2.txt",
+        "kbacompany/release/CHANGED_PATHS_1.1.0-rc1.txt",
+        "kbacompany/release/CHANGED_PATHS_1.1.0-rc13.txt",
+        "kbacompany/release/CHANGED_PATHS_1.1.0-rc14.txt",
+        "kbacompany/release/CHANGED_PATHS_1.1.0-rc15.txt",
+        "kbacompany/release/CHANGED_PATHS_1.1.0-rc16.txt",
+        "kbacompany/release/CHANGED_PATHS_1.1.0-rc9.txt"
+      ],
+      "newline_only": [
+        "kbacompany/CHANGED_FILES_1.1.0-beta1.txt",
+        "kbacompany/CHANGED_PATHS_1.1.0-alpha6.txt",
+        "kbacompany/CHANGED_PATHS_1.1.0-beta2.txt",
+        "kbacompany/CHANGED_PATHS_1.1.0-rc1.txt",
+        "kbacompany/CHANGED_PATHS_1.1.0-rc13.txt",
+        "kbacompany/CHANGED_PATHS_1.1.0-rc14.txt",
+        "kbacompany/CHANGED_PATHS_1.1.0-rc15.txt",
+        "kbacompany/CHANGED_PATHS_1.1.0-rc16.txt",
+        "kbacompany/CHANGED_PATHS_1.1.0-rc9.txt",
+        "kbacompany/qa_source/run_checks.sh",
+        "kbacompany/release/CHANGED_FILES_1.1.0-beta1.txt",
+        "kbacompany/release/CHANGED_PATHS_1.1.0-alpha6.txt",
+        "kbacompany/release/CHANGED_PATHS_1.1.0-beta2.txt",
+        "kbacompany/release/CHANGED_PATHS_1.1.0-rc1.txt",
+        "kbacompany/release/CHANGED_PATHS_1.1.0-rc13.txt",
+        "kbacompany/release/CHANGED_PATHS_1.1.0-rc14.txt",
+        "kbacompany/release/CHANGED_PATHS_1.1.0-rc15.txt",
+        "kbacompany/release/CHANGED_PATHS_1.1.0-rc16.txt",
+        "kbacompany/release/CHANGED_PATHS_1.1.0-rc9.txt"
+      ],
+      "substantive_mismatches": [],
+      "excluded_development_files": 58,
+      "unexpected_excluded": []
+    },
+    "scope": "kbacompany only, not complete Moodle or an accepted/deployed release"
+  }
+}

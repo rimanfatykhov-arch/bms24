@@ -1,0 +1,12 @@
+{
+    "component": "local_kbacompany",
+    "release": "1.1.0-rc29",
+    "build": 2026101819,
+    "summary": "Curator result verification across stages and Battle Plans",
+    "code_status": "Code ready",
+    "live_acceptance": "NOT RUN — Moodle E2E required",
+    "release_notes": "RELEASE_NOTES_RC29_IMPL_CURATOR_RESULTS_2026101819.md",
+    "register": "RELEASE_REGISTER_LOCAL.md",
+    "generated_at": "2026-10-25T21:05:35+00:00",
+    "guard": "Packaging must fail when cli/release_docs_checkpoint.php --check exits non-zero."
+}

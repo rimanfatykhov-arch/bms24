@@ -1,0 +1,12 @@
+{
+    "component": "local_kbacompany",
+    "release": "1.1.0-rc29",
+    "build": 2026101778,
+    "summary": "RC30 preparation: enforce upgrade checkpoint sequence and savepoint regression checks",
+    "code_status": "Code ready",
+    "live_acceptance": "NOT RUN",
+    "release_notes": "RELEASE_NOTES_RC29_UPGRADE_SEQUENCE_GATE_2026101778.md",
+    "register": "RELEASE_REGISTER_LOCAL.md",
+    "generated_at": "2026-10-23T10:30:36+00:00",
+    "guard": "Packaging must fail when cli/release_docs_checkpoint.php --check exits non-zero."
+}

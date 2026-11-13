@@ -165,7 +165,7 @@ class deviation_service {
                 $actual = self::text($data, 'actual');
                 $observed = self::text($data, 'observedon');
                 self::observation_date($observed, $basis['data']['periodstart'], $basis['stat']['periodtype']);
-                if ($observed > userdate($now, '%Y-%m-%d')) { self::fail('futuredate'); }
+                if ($observed > business_date_service::day($now)) { self::fail('futuredate'); }
                 $evaluation = self::evaluate($actual, $basis['data'], $basis['stat']['direction']);
                 $evidence = self::text($data, 'evidence');
             }
@@ -309,7 +309,7 @@ class deviation_service {
                 !in_array($f['entrytype'],['','manual','quantitative'],true) || !in_array($f['scope'],['all','my','pending','overdue'],true)) { self::fail('invalid'); }
         if ($f['scope']==='my' && $access['can_manage']) { $where.=' AND d.createdby=:mine';$params['mine']=$actor; }
         if ($f['scope']==='pending') { $where.=" AND d.status='reported'"; }
-        if ($f['scope']==='overdue') { $where.=" AND d.duedate<>'' AND d.duedate<:today AND d.status NOT IN ('closed','cancelled','rejected')";$params['today']=userdate(time(),'%Y-%m-%d'); }
+        if ($f['scope']==='overdue') { $where.=" AND d.duedate<>'' AND d.duedate<:today AND d.status NOT IN ('closed','cancelled','rejected')";$params['today']=business_date_service::day(time()); }
         foreach (['status','entrytype'] as $key) { if ($f[$key]!=='') { $where.=" AND d.$key=:$key";$params[$key]=$f[$key]; } }
         if ($f['q']!=='') { $where.=' AND ('.$DB->sql_like('d.title',':qt',false).' OR '.$DB->sql_like('d.code',':qc',false).')';$params['qt']='%'.$DB->sql_like_escape($f['q']).'%';$params['qc']=$params['qt']; }
         $total=$DB->count_records_sql("SELECT COUNT(d.id) FROM {local_kbacompany_deviation} d WHERE $where",$params);
@@ -365,7 +365,7 @@ class deviation_service {
             'create'=>['approval','norm','actual','observedon','evidence']];
         foreach($required[$action]??[] as $key){if(trim((string)($data[$key]??''))===''){$errors[$key]=get_string('dvu_required','local_kbacompany');}}
         foreach(['title'=>255,'location'=>255,'description'=>4000,'requirement'=>4000,'evidence'=>4000,'criterion'=>4000,'reason'=>4000,'cause'=>4000,'documentref'=>80,'ownerpositionuuid'=>36] as $key=>$max){if(\core_text::strlen((string)($data[$key]??''))>$max){$errors[$key]=get_string('dvu_toolong','local_kbacompany',$max);}}
-        foreach(['observedon','duedate'] as $key){$value=(string)($data[$key]??'');if($value===''){continue;}$date=\DateTimeImmutable::createFromFormat('!Y-m-d',$value,new \DateTimeZone('UTC'));if(!$date||$date->format('Y-m-d')!==$value){$errors[$key]=get_string('dvu_date_error','local_kbacompany');}else if($key==='observedon'&&$value>userdate(time(),'%Y-%m-%d')){$errors[$key]=get_string('dv_futuredate','local_kbacompany');}}
+        foreach(['observedon','duedate'] as $key){$value=(string)($data[$key]??'');if($value===''){continue;}$date=\DateTimeImmutable::createFromFormat('!Y-m-d',$value,new \DateTimeZone('UTC'));if(!$date||$date->format('Y-m-d')!==$value){$errors[$key]=get_string('dvu_date_error','local_kbacompany');}else if($key==='observedon'&&$value>business_date_service::day(time())){$errors[$key]=get_string('dv_futuredate','local_kbacompany');}}
         if(in_array($action,['report','editreport'],true) && !isset($errors['documentref'])){
             $ref=trim((string)($data['documentref']??''));$unchanged=false;
             if($action==='editreport' && !empty($data['object'])){
@@ -544,7 +544,7 @@ class deviation_service {
         if($date<$row->observedon||($last&&$date<$last->observedon)){self::fail('chronology');}
         foreach($tasks as $t){$task=self::row(isset($t['engine'])&&$t['engine']==='bms'?'local_kbacompany_task':'local_kbacompany_wfwork',$company,$t['uuid']);
             $accepted=isset($t['engine'])&&$t['engine']==='bms'?(int)$task->completedat:(int)$task->timemodified;
-            if($accepted<=0||$date<userdate($accepted,'%Y-%m-%d')){self::fail('chronology');}}
+            if($accepted<=0||$date<business_date_service::day($accepted)){self::fail('chronology');}}
     }
     private static function change_task_link(string $company,int $actor,string $uuid,string $taskuuid,string $action,string $reason,string $engine): void {
         global $DB;

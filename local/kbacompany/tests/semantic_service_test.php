@@ -126,7 +126,14 @@ final class semantic_service_test extends \advanced_testcase {
     }
 
     public function test_effective_document_is_a_writable_semantic_endpoint(): void {
+        global $DB;
         $f = $this->fixture('Semantic document company');
+        // Site administration is not itself canonical document-review membership.
+        $DB->insert_record('local_kbacompany_member', (object)[
+            'uuid' => '44444444-4444-4444-8444-444444444444',
+            'companyuuid' => $f['company'], 'userid' => $f['actor'],
+            'membertype' => 'employee', 'isemployee' => 1, 'active' => 1,
+        ]);
         $doc = document_service::create_manual($f['company'], $f['actor'], [
             'code' => 'DP-SEM', 'title' => 'Semantic controlled document',
             'doctype' => 'procedure', 'doclevel' => 2, 'content' => 'Controlled',

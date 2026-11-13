@@ -1,0 +1,397 @@
+{
+  "production_capture_utc": "2026-11-09T20:55:42+00:00",
+  "raw_metadata_sha256": "a507ff28108d4987e4198df108f4407df5b7d896e1983b3f89db03ebd9d6dbf4",
+  "candidate_source_sha": "acff5299f895badb3f5efbfc84b676ef8f7ef9fd",
+  "candidate_schema_artifact_id": 13706233666,
+  "bms_tables": 142,
+  "missing_columns": [
+    {
+      "table": "local_kbacompany_adminitem",
+      "column": "duetime",
+      "expected": {
+        "meta_type": "C",
+        "max_length": "5",
+        "scale": null,
+        "not_null": true,
+        "default_value": "",
+        "auto_increment": false
+      }
+    },
+    {
+      "table": "local_kbacompany_adminitem",
+      "column": "starttime",
+      "expected": {
+        "meta_type": "C",
+        "max_length": "5",
+        "scale": null,
+        "not_null": true,
+        "default_value": "",
+        "auto_increment": false
+      }
+    },
+    {
+      "table": "local_kbacompany_deviation",
+      "column": "executionstatus",
+      "expected": {
+        "meta_type": "C",
+        "max_length": "16",
+        "scale": null,
+        "not_null": true,
+        "default_value": "pending",
+        "auto_increment": false
+      }
+    }
+  ],
+  "decimal_type_differences": [
+    {
+      "table": "local_kbacompany_finbudfact",
+      "column": "actualamount",
+      "actual_type": "decimal(18,0)",
+      "expected_type": "decimal(18,2)",
+      "actual_metadata": {
+        "TABLE_NAME": "mdl_local_kbacompany_finbudfact",
+        "COLUMN_NAME": "actualamount",
+        "ORDINAL_POSITION": "7",
+        "COLUMN_TYPE": "decimal(18,0)",
+        "IS_NULLABLE": "NO",
+        "default_is_null": "0",
+        "default_sha256": "5feceb66ffc86f38d952786c6d696c79c2dbc239dd4e91b46729d73a27fb57e9",
+        "EXTRA": "",
+        "CHARACTER_SET_NAME": null,
+        "COLLATION_NAME": null
+      },
+      "expected": {
+        "meta_type": "N",
+        "max_length": "18",
+        "scale": "2",
+        "not_null": true,
+        "default_value": "0.00",
+        "auto_increment": false
+      },
+      "reachable_repair_from_1878": false
+    },
+    {
+      "table": "local_kbacompany_finbudline",
+      "column": "limitamount",
+      "actual_type": "decimal(18,0)",
+      "expected_type": "decimal(18,2)",
+      "actual_metadata": {
+        "TABLE_NAME": "mdl_local_kbacompany_finbudline",
+        "COLUMN_NAME": "limitamount",
+        "ORDINAL_POSITION": "11",
+        "COLUMN_TYPE": "decimal(18,0)",
+        "IS_NULLABLE": "NO",
+        "default_is_null": "0",
+        "default_sha256": "5feceb66ffc86f38d952786c6d696c79c2dbc239dd4e91b46729d73a27fb57e9",
+        "EXTRA": "",
+        "CHARACTER_SET_NAME": null,
+        "COLLATION_NAME": null
+      },
+      "expected": {
+        "meta_type": "N",
+        "max_length": "18",
+        "scale": "2",
+        "not_null": true,
+        "default_value": "0.00",
+        "auto_increment": false
+      },
+      "reachable_repair_from_1878": false
+    },
+    {
+      "table": "local_kbacompany_finbudline",
+      "column": "planamount",
+      "actual_type": "decimal(18,0)",
+      "expected_type": "decimal(18,2)",
+      "actual_metadata": {
+        "TABLE_NAME": "mdl_local_kbacompany_finbudline",
+        "COLUMN_NAME": "planamount",
+        "ORDINAL_POSITION": "10",
+        "COLUMN_TYPE": "decimal(18,0)",
+        "IS_NULLABLE": "NO",
+        "default_is_null": "0",
+        "default_sha256": "5feceb66ffc86f38d952786c6d696c79c2dbc239dd4e91b46729d73a27fb57e9",
+        "EXTRA": "",
+        "CHARACTER_SET_NAME": null,
+        "COLLATION_NAME": null
+      },
+      "expected": {
+        "meta_type": "N",
+        "max_length": "18",
+        "scale": "2",
+        "not_null": true,
+        "default_value": "0.00",
+        "auto_increment": false
+      },
+      "reachable_repair_from_1878": false
+    },
+    {
+      "table": "local_kbacompany_finline",
+      "column": "amount",
+      "actual_type": "decimal(18,0)",
+      "expected_type": "decimal(18,2)",
+      "actual_metadata": {
+        "TABLE_NAME": "mdl_local_kbacompany_finline",
+        "COLUMN_NAME": "amount",
+        "ORDINAL_POSITION": "7",
+        "COLUMN_TYPE": "decimal(18,0)",
+        "IS_NULLABLE": "NO",
+        "default_is_null": "0",
+        "default_sha256": "5feceb66ffc86f38d952786c6d696c79c2dbc239dd4e91b46729d73a27fb57e9",
+        "EXTRA": "",
+        "CHARACTER_SET_NAME": null,
+        "COLLATION_NAME": null
+      },
+      "expected": {
+        "meta_type": "N",
+        "max_length": "18",
+        "scale": "2",
+        "not_null": true,
+        "default_value": "0.00",
+        "auto_increment": false
+      },
+      "reachable_repair_from_1878": false
+    },
+    {
+      "table": "local_kbacompany_statbind",
+      "column": "weight",
+      "actual_type": "decimal(8,0)",
+      "expected_type": "decimal(8,3)",
+      "actual_metadata": {
+        "TABLE_NAME": "mdl_local_kbacompany_statbind",
+        "COLUMN_NAME": "weight",
+        "ORDINAL_POSITION": "12",
+        "COLUMN_TYPE": "decimal(8,0)",
+        "IS_NULLABLE": "NO",
+        "default_is_null": "0",
+        "default_sha256": "6b86b273ff34fce19d6b804eff5a3f5747ada4eaa22f1d49c01e52ddb7875b4b",
+        "EXTRA": "",
+        "CHARACTER_SET_NAME": null,
+        "COLLATION_NAME": null
+      },
+      "expected": {
+        "meta_type": "N",
+        "max_length": "8",
+        "scale": "3",
+        "not_null": true,
+        "default_value": "1.000",
+        "auto_increment": false
+      },
+      "reachable_repair_from_1878": false
+    },
+    {
+      "table": "local_kbacompany_statnorm",
+      "column": "maxval",
+      "actual_type": "decimal(18,0)",
+      "expected_type": "decimal(18,6)",
+      "actual_metadata": {
+        "TABLE_NAME": "mdl_local_kbacompany_statnorm",
+        "COLUMN_NAME": "maxval",
+        "ORDINAL_POSITION": "11",
+        "COLUMN_TYPE": "decimal(18,0)",
+        "IS_NULLABLE": "YES",
+        "default_is_null": "1",
+        "default_sha256": null,
+        "EXTRA": "",
+        "CHARACTER_SET_NAME": null,
+        "COLLATION_NAME": null
+      },
+      "expected": {
+        "meta_type": "N",
+        "max_length": "18",
+        "scale": "6",
+        "not_null": false,
+        "default_value": null,
+        "auto_increment": false
+      },
+      "reachable_repair_from_1878": false
+    },
+    {
+      "table": "local_kbacompany_statnorm",
+      "column": "minval",
+      "actual_type": "decimal(18,0)",
+      "expected_type": "decimal(18,6)",
+      "actual_metadata": {
+        "TABLE_NAME": "mdl_local_kbacompany_statnorm",
+        "COLUMN_NAME": "minval",
+        "ORDINAL_POSITION": "10",
+        "COLUMN_TYPE": "decimal(18,0)",
+        "IS_NULLABLE": "YES",
+        "default_is_null": "1",
+        "default_sha256": null,
+        "EXTRA": "",
+        "CHARACTER_SET_NAME": null,
+        "COLLATION_NAME": null
+      },
+      "expected": {
+        "meta_type": "N",
+        "max_length": "18",
+        "scale": "6",
+        "not_null": false,
+        "default_value": null,
+        "auto_increment": false
+      },
+      "reachable_repair_from_1878": false
+    },
+    {
+      "table": "local_kbacompany_statnorm",
+      "column": "targetvalue",
+      "actual_type": "decimal(18,0)",
+      "expected_type": "decimal(18,6)",
+      "actual_metadata": {
+        "TABLE_NAME": "mdl_local_kbacompany_statnorm",
+        "COLUMN_NAME": "targetvalue",
+        "ORDINAL_POSITION": "9",
+        "COLUMN_TYPE": "decimal(18,0)",
+        "IS_NULLABLE": "YES",
+        "default_is_null": "1",
+        "default_sha256": null,
+        "EXTRA": "",
+        "CHARACTER_SET_NAME": null,
+        "COLLATION_NAME": null
+      },
+      "expected": {
+        "meta_type": "N",
+        "max_length": "18",
+        "scale": "6",
+        "not_null": false,
+        "default_value": null,
+        "auto_increment": false
+      },
+      "reachable_repair_from_1878": false
+    },
+    {
+      "table": "local_kbacompany_statpolicy",
+      "column": "affluencegrowth",
+      "actual_type": "decimal(8,0)",
+      "expected_type": "decimal(8,3)",
+      "actual_metadata": {
+        "TABLE_NAME": "mdl_local_kbacompany_statpolicy",
+        "COLUMN_NAME": "affluencegrowth",
+        "ORDINAL_POSITION": "10",
+        "COLUMN_TYPE": "decimal(8,0)",
+        "IS_NULLABLE": "YES",
+        "default_is_null": "1",
+        "default_sha256": null,
+        "EXTRA": "",
+        "CHARACTER_SET_NAME": null,
+        "COLLATION_NAME": null
+      },
+      "expected": {
+        "meta_type": "N",
+        "max_length": "8",
+        "scale": "3",
+        "not_null": false,
+        "default_value": null,
+        "auto_increment": false
+      },
+      "reachable_repair_from_1878": false
+    },
+    {
+      "table": "local_kbacompany_statpolicy",
+      "column": "dangerdecline",
+      "actual_type": "decimal(8,0)",
+      "expected_type": "decimal(8,3)",
+      "actual_metadata": {
+        "TABLE_NAME": "mdl_local_kbacompany_statpolicy",
+        "COLUMN_NAME": "dangerdecline",
+        "ORDINAL_POSITION": "8",
+        "COLUMN_TYPE": "decimal(8,0)",
+        "IS_NULLABLE": "YES",
+        "default_is_null": "1",
+        "default_sha256": null,
+        "EXTRA": "",
+        "CHARACTER_SET_NAME": null,
+        "COLLATION_NAME": null
+      },
+      "expected": {
+        "meta_type": "N",
+        "max_length": "8",
+        "scale": "3",
+        "not_null": false,
+        "default_value": null,
+        "auto_increment": false
+      },
+      "reachable_repair_from_1878": false
+    },
+    {
+      "table": "local_kbacompany_statpolicy",
+      "column": "powerlevel",
+      "actual_type": "decimal(8,0)",
+      "expected_type": "decimal(8,3)",
+      "actual_metadata": {
+        "TABLE_NAME": "mdl_local_kbacompany_statpolicy",
+        "COLUMN_NAME": "powerlevel",
+        "ORDINAL_POSITION": "11",
+        "COLUMN_TYPE": "decimal(8,0)",
+        "IS_NULLABLE": "YES",
+        "default_is_null": "1",
+        "default_sha256": null,
+        "EXTRA": "",
+        "CHARACTER_SET_NAME": null,
+        "COLLATION_NAME": null
+      },
+      "expected": {
+        "meta_type": "N",
+        "max_length": "8",
+        "scale": "3",
+        "not_null": false,
+        "default_value": null,
+        "auto_increment": false
+      },
+      "reachable_repair_from_1878": false
+    }
+  ],
+  "known_missing_index": {
+    "table": "local_kbacompany_task",
+    "columns": [
+      "companyuuid",
+      "status",
+      "duedate"
+    ],
+    "unique": false,
+    "reachable_repair": 2026110900
+  },
+  "limits": "No business values queried; no data loss/range safety inferred; display widths normalized; metadata comparison does not execute upgrade.",
+  "corporate_default_differences": [
+    {
+      "table": "local_kbacorp_devplan",
+      "column": "status",
+      "production_default": "active",
+      "ci_default": "draft",
+      "actual_metadata": {
+        "TABLE_NAME": "mdl_local_kbacorp_devplan",
+        "COLUMN_NAME": "status",
+        "ORDINAL_POSITION": "7",
+        "COLUMN_TYPE": "varchar(20)",
+        "IS_NULLABLE": "NO",
+        "default_is_null": "0",
+        "default_sha256": "96879611650f80a81392a52e0db9b0237669087c4518e1c130e541a505e0eeef",
+        "EXTRA": "",
+        "CHARACTER_SET_NAME": "utf8mb4",
+        "COLLATION_NAME": "utf8mb4_unicode_ci"
+      },
+      "classification": "compatibility difference; not automatically a defect; do not alter production defaults"
+    },
+    {
+      "table": "local_kbacorp_member",
+      "column": "isemployee",
+      "production_default": "0",
+      "ci_default": "1",
+      "actual_metadata": {
+        "TABLE_NAME": "mdl_local_kbacorp_member",
+        "COLUMN_NAME": "isemployee",
+        "ORDINAL_POSITION": "5",
+        "COLUMN_TYPE": "tinyint(1)",
+        "IS_NULLABLE": "NO",
+        "default_is_null": "0",
+        "default_sha256": "5feceb66ffc86f38d952786c6d696c79c2dbc239dd4e91b46729d73a27fb57e9",
+        "EXTRA": "",
+        "CHARACTER_SET_NAME": null,
+        "COLLATION_NAME": null
+      },
+      "classification": "compatibility difference; not automatically a defect; do not alter production defaults"
+    }
+  ],
+  "corporate_table_count": 41,
+  "review_notes": "Architecture review normalized types/nullability/autoincrement and nonprimary ordered/unique definitions; CI lacks index prefix-length/visibility/type, so not full physical index attestation."
+}

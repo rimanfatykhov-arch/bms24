@@ -1,0 +1,7 @@
+{
+  "build": 2026101828,
+  "topic": "message correction and soft withdrawal",
+  "new_table": "local_kbacompany_commrev",
+  "status": "staging_only",
+  "live_acceptance": "NOT RUN"
+}

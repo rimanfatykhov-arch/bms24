@@ -1,0 +1,10 @@
+{
+  "component": "local_kbacompany",
+  "build": 2026101832,
+  "release": "1.1.0-rc29",
+  "feature": "Subtasks 2.0 — progress and parent completion gate",
+  "db_schema_changed": false,
+  "acl_changed": false,
+  "live_acceptance": "NOT RUN",
+  "notes": "Visible direct-child metrics with privacy limited state; server-side gate over all direct children."
+}

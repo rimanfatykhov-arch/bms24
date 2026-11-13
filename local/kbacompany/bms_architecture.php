@@ -13,6 +13,8 @@ $focus = optional_param('focus', '', PARAM_ALPHANUMEXT);
 
 $PAGE->set_context($context);
 $PAGE->requires->css(new moodle_url('/local/kbacompany/styles.css'));
+// Autonomous shell renderer: register shared navigation on this route as well.
+$PAGE->requires->js_call_amd('local_kbacompany/bms_shell_navigation', 'init');
 $PAGE->set_url(new moodle_url('/local/kbacompany/bms_architecture.php', [
     'uuid' => $uuid,
     'stage' => $stage,
@@ -290,7 +292,7 @@ $shell = [
     'sidebar' => [
         'arialabel' => get_string('bmsworkspace_sidebar_label', 'local_kbacompany'),
         'brandmarkhtml' => html_writer::link($workspaceurl, html_writer::span('BMS24', 'bms-sidebar-brandmark-text'), ['class' => 'bms-brand-home-link', 'aria-label' => 'BMS24 — ' . get_string('bmsworkspace_nav', 'local_kbacompany')]),
-        'brandlabel' => format_string($company['name']),
+        'brandlabel' => trim(preg_replace('/^BMS24\s*[—-]\s*/u', '', get_string('pluginname', 'local_kbacompany'))),
         'togglelabel' => get_string('bmsworkspace_collapse', 'local_kbacompany'),
         'groups' => $model['navigation_groups'],
         'utilityitems' => [[
@@ -327,7 +329,7 @@ $shell = [
         'meta' => ['items' => []],
         'actions' => ['items' => []],
     ],
-    'contenthtml' => $contenthtml,
+    'contenthtml' => \local_kbacompany\local\bms_workspace_ux_service::architecture_nav($uuid, 'architecturecenter') . $contenthtml,
 ];
 
 echo $OUTPUT->header();

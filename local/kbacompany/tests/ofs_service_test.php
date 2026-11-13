@@ -70,7 +70,9 @@ final class ofs_service_test extends \advanced_testcase {
         $products = array_column($context['products'], null, 'uuid');
         $this->assertSame($metric, $products[$unitproduct]['metrics'][0]['uuid']);
         $this->assertSame($customernode, $products[$unitproduct]['customers'][0]['orgunit_uuid']);
-        $this->assertFalse($context['processes_available']);
+        // Module availability is not a claim that this company already has process records.
+        $this->assertTrue(class_exists(\local_kbacompany\local\process_service::class));
+        $this->assertTrue($context['processes_available']);
     }
 
     public function test_unlink_internal_customer_retains_semantic_history(): void {

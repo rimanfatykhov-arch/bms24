@@ -196,7 +196,7 @@ foreach (task_service::PRIORITIES as $priority) { $priorityoptions[$priority] = 
 
 $datetime_value = static function(int $timestamp): string {
     if ($timestamp <= 0) { return ''; }
-    return userdate($timestamp, '%Y-%m-%dT%H:%M');
+    return \local_kbacompany\local\business_date_service::datetime_local($timestamp);
 };
 
 $bmsshell = \local_kbacompany\local\bms_page_shell_service::begin($uuid, (int)$USER->id, 'communications',

@@ -72,7 +72,7 @@ if($method!=='POST'&&in_array($view,['edit','action'],true)&&empty($model['actio
 $options=[];
 if(in_array($view,['create','edit','action'],true)){
     if($method!=='POST'){
-        $values=['observedon'=>userdate(time(),'%Y-%m-%d')];
+        $values=['observedon'=>\local_kbacompany\local\business_date_service::day(time())];
         if($view==='edit'){$values=(array)$model['selected'];$ref=json_decode((string)$model['selected']->basisref,true);$values['documentref']=$ref?$ref['uuid'].'|'.$ref['revision']:'';}
         if($operation==='analyze'){$values['cause']=$model['selected']->cause;}
         $r=$model['selected']??null;$proof=forms::issue($company,$actor,$object,$r->revision??0,'deviation_'.$operation,$r?(string)$r->revision:'','deviations');

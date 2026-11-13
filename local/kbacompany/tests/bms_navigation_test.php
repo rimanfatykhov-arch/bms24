@@ -33,7 +33,7 @@ class bms_navigation_test extends \advanced_testcase {
         foreach ($model['items'] as $item) {
             parse_str(parse_url($item['url'], PHP_URL_QUERY), $params);
             $this->assertSame('company-b', $params['uuid']);
-            $this->assertSame(in_array($item['key'], ['week', 'battleplan'], true), isset($params['week']));
+            $this->assertSame(in_array($item['key'], ['coordweek', 'week', 'battleplan'], true), isset($params['week']));
         }
         $model = bms_workspace_ux_service::management_nav_model('company-b', 'week', true, '2026-02-30');
         foreach ($model['items'] as $item) {

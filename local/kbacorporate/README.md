@@ -1,6 +1,14 @@
 # KBA Corporate Dashboard
 
-Current prepared release: **0.40.2 — SuiteCRM-style Task Record Actions** (`2026092111`) for Moodle 4.0+.
+Current prepared release: **0.40.3 — Read-only BMS Implementation Task API** (`2026102512`) for Moodle 4.0+.
+
+## v0.40.3 Read-only BMS Implementation Task API
+
+- Extends the stable PHP bridge to API 1.22 with scoped, bounded, read-only implementation task projections.
+- Keeps comments, evidence, histories, status transitions and attachments inside Corporate.
+- Only paid programs with visible statuses are published; tasks are scoped by company, owner and permissions.
+- Does not install a BMS24 provider or expose any unauthenticated HTTP endpoint.
+
 
 ## v0.40.2 SuiteCRM-style Task Record Actions
 

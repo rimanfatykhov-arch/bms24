@@ -1,5 +1,16 @@
 # BMS24 Release & QA Standard — Codex
 
+## Publication acceptance (Issue63)
+
+Every increment follows development → testing → approved publication → post-deploy
+smoke/monitoring. A Draft PR, static PASS or synthetic migration alone is not a
+completed release. Pin release SHA, artifact SHA256/manifest and actual dependencies.
+Require full engine matrix, exact production-baseline migration, preservation,
+negative ACL/tenant checks, browser acceptance and a demonstrated backup restore
+and rollback. Missing/failed mandatory evidence means HOLD. CI cannot authorize
+deployment. Publication needs a separate owner decision for the exact candidate,
+target and window. RC30 details: [current runbook](deploy/RC30_RELEASE69_RUNBOOK.md).
+
 ## Requirements for a real release
 
 - Identify **baseline** by Git commit and plugin `version.php`; record changed file list.

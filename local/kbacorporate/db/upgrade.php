@@ -2713,5 +2713,54 @@ function xmldb_local_kbacorporate_upgrade($oldversion) {
         upgrade_plugin_savepoint(true, 2026092111, 'local', 'kbacorporate');
     }
 
+    // v0.40.3: read-only integration API; no schema changes.
+    if ($oldversion < 2026102512) {
+        upgrade_plugin_savepoint(true, 2026102512, 'local', 'kbacorporate');
+    }
+
+    // Corporate 0.40.4: read-only BMS24 navigation link, no XMLDB change.
+    if ($oldversion < 2026102513) {
+        upgrade_plugin_savepoint(true, 2026102513, 'local', 'kbacorporate');
+    }
+
+    // Corporate 0.40.5: read-only program bridge projection; no XMLDB change.
+    if ($oldversion < 2026102514) {
+        upgrade_plugin_savepoint(true, 2026102514, 'local', 'kbacorporate');
+    }
+
+    // 0.40.6 — section read API 1.24; no database schema changes.
+    if ($oldversion < 2026102515) {
+        upgrade_plugin_savepoint(true, 2026102515, 'local', 'kbacorporate');
+    }
+
+    // 0.40.7: read-only task/section projection API 1.25; no schema changes.
+    if ($oldversion < 2026102516) {
+        upgrade_plugin_savepoint(true, 2026102516, 'local', 'kbacorporate');
+    }
+
+    // 0.40.8: read-only evidence decision API 1.26, no XMLDB change.
+    if ($oldversion < 2026102517) {
+        upgrade_plugin_savepoint(true, 2026102517, 'local', 'kbacorporate');
+    }
+
+    // 0.40.9: register a new least-privilege curator capability via db/access.php.
+    // Do not create/assign a role here: Moodle registers plugin capabilities after upgrade().
+    if ($oldversion < 2026102518) {
+        upgrade_plugin_savepoint(true, 2026102518, 'local', 'kbacorporate');
+    }
+
+    if ($oldversion < 2026102610) {
+        upgrade_plugin_savepoint(true, 2026102610, 'local', 'kbacorporate');
+    }
+
+    // Isolated ERP compatibility patch; no schema, roles or business-data migration.
+    if ($oldversion < 2026110901) {
+        upgrade_plugin_savepoint(true, 2026110901, 'local', 'kbacorporate');
+    }
+
+    if ($oldversion < 2026111100) {
+        upgrade_plugin_savepoint(true, 2026111100, 'local', 'kbacorporate');
+    }
+
     return true;
 }

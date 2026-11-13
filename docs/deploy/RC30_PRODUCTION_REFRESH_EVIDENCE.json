@@ -1,0 +1,1650 @@
+{
+  "captured_utc": "2026-11-09T20:55:42+00:00",
+  "method": "Existing trusted WinSCP saved session; ephemeral PHP via stdin; no Moodle bootstrap; START TRANSACTION READ ONLY; no server files written; no backup/restore",
+  "raw_metadata_sha256": "a507ff28108d4987e4198df108f4407df5b7d896e1983b3f89db03ebd9d6dbf4",
+  "raw_metadata_local_path": "outputs/rc30-production-readiness/production-refresh-20261109.json",
+  "raw_bytes": 6490420,
+  "reader_sha256": "9ad509524cf1d680fd50bb9cd14b60c4f6a8bf9f21b35bc7f71353d702cdd3d9",
+  "code": {
+    "moodle": {
+      "version": "2022112822.00",
+      "release": "4.1.22 (Build: 20251208)",
+      "version_file_sha256": "d267c899d8e692b5a71ee4f3f88e8afab5b913e21fb1398b2fd05cce68184cf7"
+    },
+    "local_kbacompany": {
+      "version": "2026101878",
+      "release": "1.1.0-rc29",
+      "version_file_sha256": "01008b765846248a253bd614751942dafffd332834da751546a7b379514fec02"
+    },
+    "local_kbacorporate": {
+      "version": "2026102613",
+      "release": "0.40.13 — integration acceptance and performance diagnostics",
+      "version_file_sha256": "d2510b7503f2d257f5e5027f665fe523c93b361b0738b861ba315a18e4cfb3c6"
+    }
+  },
+  "installed_plugin_versions": {
+    "local_kbacompany": "2026101878",
+    "local_kbacorporate": "2026102613"
+  },
+  "installed_core_version": "2022112822",
+  "source_file_sha256": {
+    "local/kbacompany/db/install.xml": "4a1daaae31c2114561e086de1d228d1d93d9a1104c248a4195941118ff939d6b",
+    "local/kbacompany/db/upgrade.php": "2a65e9a0545512d590228e8f0fef958f50e737a5cc3e9666c21f7e9d632871cd",
+    "local/kbacorporate/classes/local/bridge.php": "49729607e7cc076d3a9657a95bb36c84d0a64523c51d05c7355f72f224d2c461"
+  },
+  "php_cli": "8.1.34",
+  "server": {
+    "version": "8.0.46-37",
+    "engine": "Percona Server (GPL), Release 37, Revision 39e2b60e",
+    "collation": "utf8mb4_unicode_ci"
+  },
+  "database_parameters": {
+    "sql_mode": "",
+    "charset": "utf8mb4",
+    "max_allowed_packet": "536870912",
+    "innodb_buffer_pool_size": "1073741824"
+  },
+  "configuration_flags": {
+    "maintenance_enabled": "0",
+    "theme": "kba"
+  },
+  "cli_maintenance_marker_exists": false,
+  "php_extensions": {
+    "mysqli": true,
+    "curl": true,
+    "dom": true,
+    "fileinfo": true,
+    "gd": true,
+    "intl": true,
+    "mbstring": true,
+    "openssl": true,
+    "simplexml": true,
+    "soap": true,
+    "sodium": true,
+    "xml": true,
+    "xmlreader": true,
+    "zip": true,
+    "zlib": true,
+    "Zend OPcache": true
+  },
+  "php_ini": {
+    "memory_limit": "1024M",
+    "max_execution_time": "0",
+    "max_input_vars": "100000",
+    "post_max_size": "1024M",
+    "upload_max_filesize": "1024M",
+    "opcache.enable": "1",
+    "opcache.enable_cli": "0"
+  },
+  "storage_host_not_quota": {
+    "code": {
+      "free_bytes": 2439897825280,
+      "total_bytes": 3697941176320
+    },
+    "moodledata": {
+      "free_bytes": 2439897825280,
+      "total_bytes": 3697941176320
+    }
+  },
+  "host_memory_not_account_limit": {
+    "MemTotal": 131356352,
+    "MemAvailable": 97454572
+  },
+  "all_installed_plugin_versions": {
+    "antivirus_clamav": "2022112800",
+    "assignfeedback_comments": "2022112800",
+    "assignfeedback_editpdf": "2022112801",
+    "assignfeedback_file": "2022112800",
+    "assignfeedback_kbaai": "2026081401",
+    "assignfeedback_offline": "2022112800",
+    "assignment_offline": "2022112800",
+    "assignment_online": "2022112800",
+    "assignment_upload": "2022112800",
+    "assignment_uploadsingle": "2022112800",
+    "assignsubmission_comments": "2022112800",
+    "assignsubmission_file": "2022112800",
+    "assignsubmission_onlinetext": "2022112800",
+    "atto_accessibilitychecker": "2022112800",
+    "atto_accessibilityhelper": "2022112800",
+    "atto_align": "2022112800",
+    "atto_backcolor": "2022112800",
+    "atto_bold": "2022112800",
+    "atto_charmap": "2022112800",
+    "atto_clear": "2022112800",
+    "atto_collapse": "2022112800",
+    "atto_emojipicker": "2022112800",
+    "atto_emoticon": "2022112800",
+    "atto_equation": "2022112800",
+    "atto_fontcolor": "2022112800",
+    "atto_h5p": "2022112800",
+    "atto_html": "2022112800",
+    "atto_image": "2022112800",
+    "atto_indent": "2022112800",
+    "atto_italic": "2022112800",
+    "atto_link": "2022112800",
+    "atto_managefiles": "2022112800",
+    "atto_media": "2022112800",
+    "atto_noautolink": "2022112800",
+    "atto_orderedlist": "2022112800",
+    "atto_recordrtc": "2022112800",
+    "atto_rtl": "2022112800",
+    "atto_strike": "2022112800",
+    "atto_subscript": "2022112800",
+    "atto_superscript": "2022112800",
+    "atto_table": "2022112800",
+    "atto_title": "2022112800",
+    "atto_underline": "2022112800",
+    "atto_undo": "2022112800",
+    "atto_unorderedlist": "2022112800",
+    "auth_cas": "2022112800",
+    "auth_db": "2022112800",
+    "auth_email": "2022112800",
+    "auth_ldap": "2022112800",
+    "auth_lti": "2022112801",
+    "auth_manual": "2022112800",
+    "auth_mnet": "2022112800",
+    "auth_nologin": "2022112800",
+    "auth_none": "2022112800",
+    "auth_oauth2": "2022112800",
+    "auth_shibboleth": "2022112800",
+    "auth_webservice": "2022112800",
+    "availability_completion": "2022112800",
+    "availability_date": "2022112800",
+    "availability_grade": "2022112800",
+    "availability_group": "2022112800",
+    "availability_grouping": "2022112800",
+    "availability_profile": "2022112800",
+    "block_accessreview": "2022112800",
+    "block_activity_modules": "2022112800",
+    "block_activity_results": "2022112800",
+    "block_admin_bookmarks": "2022112800",
+    "block_badges": "2022112800",
+    "block_blog_menu": "2022112800",
+    "block_blog_recent": "2022112800",
+    "block_blog_tags": "2022112800",
+    "block_calendar_month": "2022112800",
+    "block_calendar_upcoming": "2022112800",
+    "block_comments": "2022112800",
+    "block_completion_progress": "2025101300",
+    "block_completionstatus": "2022112800",
+    "block_course_list": "2022112800",
+    "block_course_summary": "2022112800",
+    "block_feedback": "2022112800",
+    "block_globalsearch": "2022112800",
+    "block_glossary_random": "2022112800",
+    "block_html": "2022112800",
+    "block_login": "2022112800",
+    "block_lp": "2022112800",
+    "block_mentees": "2022112800",
+    "block_mnet_hosts": "2022112800",
+    "block_myoverview": "2022112800",
+    "block_myprofile": "2022112800",
+    "block_navigation": "2022112800",
+    "block_news_items": "2022112800",
+    "block_online_users": "2022112800",
+    "block_private_files": "2022112800",
+    "block_recent_activity": "2022112800",
+    "block_recentlyaccessedcourses": "2022112800",
+    "block_recentlyaccesseditems": "2022112800",
+    "block_rss_client": "2022112800",
+    "block_search_forums": "2022112800",
+    "block_section_links": "2022112800",
+    "block_selfcompletion": "2022112800",
+    "block_settings": "2022112800",
+    "block_site_main_menu": "2022112800",
+    "block_social_activities": "2022112800",
+    "block_starredcourses": "2022112800",
+    "block_tag_flickr": "2022112800",
+    "block_tag_youtube": "2022112800",
+    "block_tags": "2022112800",
+    "block_timeline": "2022112800",
+    "booktool_exportimscp": "2022112800",
+    "booktool_importhtml": "2022112800",
+    "booktool_print": "2022112800",
+    "cachelock_file": "2022112800",
+    "cachestore_apcu": "2022112800",
+    "cachestore_file": "2022112800",
+    "cachestore_memcached": "2022112800",
+    "cachestore_mongodb": "2022112801",
+    "cachestore_redis": "2022112800",
+    "cachestore_session": "2022112800",
+    "cachestore_static": "2022112800",
+    "calendartype_gregorian": "2022112800",
+    "contenttype_h5p": "2022112800",
+    "customcertelement_bgimage": "2022112800",
+    "customcertelement_border": "2022112800",
+    "customcertelement_categoryname": "2022112800",
+    "customcertelement_code": "2022112800",
+    "customcertelement_coursefield": "2022112800",
+    "customcertelement_coursename": "2022112800",
+    "customcertelement_date": "2022112801",
+    "customcertelement_daterange": "2022112800",
+    "customcertelement_digitalsignature": "2022112800",
+    "customcertelement_expiry": "2024072201",
+    "customcertelement_grade": "2022112800",
+    "customcertelement_gradeitemname": "2022112800",
+    "customcertelement_image": "2022112800",
+    "customcertelement_qrcode": "2022112800",
+    "customcertelement_studentname": "2022112800",
+    "customcertelement_teachername": "2022112800",
+    "customcertelement_text": "2022112800",
+    "customcertelement_userfield": "2022112800",
+    "customcertelement_userpicture": "2022112800",
+    "customfield_checkbox": "2022112800",
+    "customfield_date": "2022112800",
+    "customfield_select": "2022112800",
+    "customfield_text": "2022112800",
+    "customfield_textarea": "2022112800",
+    "datafield_checkbox": "2022112800",
+    "datafield_date": "2022112800",
+    "datafield_file": "2022112800",
+    "datafield_latlong": "2022112800",
+    "datafield_menu": "2022112800",
+    "datafield_multimenu": "2022112800",
+    "datafield_number": "2022112800",
+    "datafield_picture": "2022112800",
+    "datafield_radiobutton": "2022112800",
+    "datafield_text": "2022112800",
+    "datafield_textarea": "2022112800",
+    "datafield_url": "2022112800",
+    "dataformat_csv": "2022112800",
+    "dataformat_excel": "2022112800",
+    "dataformat_html": "2022112800",
+    "dataformat_json": "2022112800",
+    "dataformat_ods": "2022112800",
+    "dataformat_pdf": "2022112800",
+    "datapreset_imagegallery": "2022112800",
+    "datapreset_journal": "2022112800",
+    "datapreset_proposals": "2022112800",
+    "datapreset_resources": "2022112800",
+    "editor_atto": "2022112800",
+    "editor_textarea": "2022112800",
+    "editor_tiny": "2022112800",
+    "editor_tinymce": "2022112800",
+    "enrol_category": "2022112800",
+    "enrol_cohort": "2022112800",
+    "enrol_database": "2022112800",
+    "enrol_fee": "2022112800",
+    "enrol_flatfile": "2022112800",
+    "enrol_guest": "2022112800",
+    "enrol_imsenterprise": "2022112800",
+    "enrol_ldap": "2022112800",
+    "enrol_lti": "2022112800",
+    "enrol_manual": "2022112800",
+    "enrol_meta": "2022112800",
+    "enrol_mnet": "2022112800",
+    "enrol_paypal": "2022112800",
+    "enrol_self": "2022112800",
+    "fileconverter_googledrive": "2022112800",
+    "fileconverter_unoconv": "2022112800",
+    "filter_activitynames": "2022112800",
+    "filter_algebra": "2022112800",
+    "filter_data": "2022112800",
+    "filter_displayh5p": "2022112800",
+    "filter_emailprotect": "2022112800",
+    "filter_emoticon": "2022112800",
+    "filter_glossary": "2022112800",
+    "filter_mathjaxloader": "2022112800",
+    "filter_mediaplugin": "2022112800",
+    "filter_multilang": "2022112800",
+    "filter_tex": "2022112800",
+    "filter_tidy": "2022112800",
+    "filter_urltolink": "2022112800",
+    "format_singleactivity": "2022112800",
+    "format_social": "2022112800",
+    "format_topics": "2022112801",
+    "format_weeks": "2022112801",
+    "forumreport_summary": "2022112800",
+    "gradeexport_ods": "2022112800",
+    "gradeexport_txt": "2022112800",
+    "gradeexport_xls": "2022112800",
+    "gradeexport_xml": "2022112800",
+    "gradeimport_csv": "2022112800",
+    "gradeimport_direct": "2022112800",
+    "gradeimport_xml": "2022112800",
+    "gradereport_grader": "2022112800",
+    "gradereport_history": "2022112800",
+    "gradereport_outcomes": "2022112800",
+    "gradereport_overview": "2022112800",
+    "gradereport_singleview": "2022112800",
+    "gradereport_summary": "2022112800",
+    "gradereport_user": "2022112800",
+    "gradingform_guide": "2022112800",
+    "gradingform_rubric": "2022112800",
+    "h5plib_v124": "2022112800",
+    "local_bitrixsync": "2026083634",
+    "local_kbaadmin": "2026081100",
+    "local_kbaai": "2026101516",
+    "local_kbacompany": "2026101878",
+    "local_kbacorporate": "2026102613",
+    "local_kbagamification": "2026081708",
+    "logstore_database": "2022112800",
+    "logstore_legacy": "2022112800",
+    "logstore_standard": "2022112800",
+    "ltiservice_basicoutcomes": "2022112800",
+    "ltiservice_gradebookservices": "2022112800",
+    "ltiservice_memberships": "2022112800",
+    "ltiservice_profile": "2022112800",
+    "ltiservice_toolproxy": "2022112800",
+    "ltiservice_toolsettings": "2022112800",
+    "media_html5audio": "2022112800",
+    "media_html5video": "2022112800",
+    "media_videojs": "2022112800",
+    "media_vimeo": "2022112800",
+    "media_youtube": "2022112800",
+    "message_airnotifier": "2022112800",
+    "message_email": "2022112800",
+    "message_popup": "2022112800",
+    "mlbackend_php": "2022112800",
+    "mlbackend_python": "2022112800",
+    "mnetservice_enrol": "2022112800",
+    "mod_assign": "2022112801",
+    "mod_assignment": "2022112800",
+    "mod_bigbluebuttonbn": "2022112800",
+    "mod_book": "2022112800",
+    "mod_chat": "2022112800",
+    "mod_choice": "2022112800",
+    "mod_customcert": "2022112820",
+    "mod_data": "2022112801",
+    "mod_feedback": "2022112800",
+    "mod_folder": "2022112800",
+    "mod_forum": "2022112801",
+    "mod_glossary": "2022112800",
+    "mod_h5pactivity": "2022112801",
+    "mod_imscp": "2022112800",
+    "mod_kbaelement": "2026102603",
+    "mod_label": "2022112801",
+    "mod_lesson": "2022112800",
+    "mod_lti": "2022112800",
+    "mod_page": "2022112800",
+    "mod_quiz": "2022112800",
+    "mod_resource": "2022112800",
+    "mod_scheduler": "2023052300",
+    "mod_scorm": "2022112800",
+    "mod_survey": "2022112800",
+    "mod_url": "2022112800",
+    "mod_wiki": "2022112800",
+    "mod_workshop": "2022112800",
+    "paygw_paypal": "2022112800",
+    "portfolio_download": "2022112800",
+    "portfolio_flickr": "2022112800",
+    "portfolio_googledocs": "2022112800",
+    "portfolio_mahara": "2022112800",
+    "profilefield_checkbox": "2022112800",
+    "profilefield_datetime": "2022112800",
+    "profilefield_menu": "2022112800",
+    "profilefield_social": "2022112800",
+    "profilefield_text": "2022112800",
+    "profilefield_textarea": "2022112800",
+    "qbank_bulkmove": "2022112800",
+    "qbank_columnsortorder": "2022112800",
+    "qbank_comment": "2022112800",
+    "qbank_customfields": "2022112800",
+    "qbank_deletequestion": "2022112800",
+    "qbank_editquestion": "2022112800",
+    "qbank_exportquestions": "2022112800",
+    "qbank_exporttoxml": "2022112800",
+    "qbank_history": "2022112800",
+    "qbank_importquestions": "2022112800",
+    "qbank_managecategories": "2022112800",
+    "qbank_previewquestion": "2022112800",
+    "qbank_statistics": "2022112800",
+    "qbank_tagquestion": "2022112800",
+    "qbank_usage": "2022112800",
+    "qbank_viewcreator": "2022112800",
+    "qbank_viewquestionname": "2022112800",
+    "qbank_viewquestiontext": "2022112800",
+    "qbank_viewquestiontype": "2022112800",
+    "qbehaviour_adaptive": "2022112800",
+    "qbehaviour_adaptivenopenalty": "2022112800",
+    "qbehaviour_deferredcbm": "2022112800",
+    "qbehaviour_deferredfeedback": "2022112800",
+    "qbehaviour_immediatecbm": "2022112800",
+    "qbehaviour_immediatefeedback": "2022112800",
+    "qbehaviour_informationitem": "2022112800",
+    "qbehaviour_interactive": "2022112800",
+    "qbehaviour_interactivecountback": "2022112800",
+    "qbehaviour_manualgraded": "2022112800",
+    "qbehaviour_missing": "2022112800",
+    "qformat_aiken": "2022112800",
+    "qformat_blackboard_six": "2022112800",
+    "qformat_gift": "2022112800",
+    "qformat_missingword": "2022112800",
+    "qformat_multianswer": "2022112800",
+    "qformat_xhtml": "2022112800",
+    "qformat_xml": "2022112800",
+    "qtype_calculated": "2022112800",
+    "qtype_calculatedmulti": "2022112800",
+    "qtype_calculatedsimple": "2022112800",
+    "qtype_ddimageortext": "2022112800",
+    "qtype_ddmarker": "2022112800",
+    "qtype_ddwtos": "2022112800",
+    "qtype_description": "2022112800",
+    "qtype_essay": "2022112800",
+    "qtype_gapselect": "2022112800",
+    "qtype_match": "2022112800",
+    "qtype_missingtype": "2022112800",
+    "qtype_multianswer": "2022112800",
+    "qtype_multichoice": "2022112800",
+    "qtype_numerical": "2022112800",
+    "qtype_random": "2022112800",
+    "qtype_randomsamatch": "2022112800",
+    "qtype_shortanswer": "2022112800",
+    "qtype_truefalse": "2022112800",
+    "quiz_grading": "2022112800",
+    "quiz_overview": "2022112800",
+    "quiz_responses": "2022112800",
+    "quiz_statistics": "2022112804",
+    "quizaccess_delaybetweenattempts": "2022112800",
+    "quizaccess_ipaddress": "2022112800",
+    "quizaccess_numattempts": "2022112800",
+    "quizaccess_offlineattempts": "2022112800",
+    "quizaccess_openclosedate": "2022112800",
+    "quizaccess_password": "2022112800",
+    "quizaccess_seb": "2022112800",
+    "quizaccess_securewindow": "2022112800",
+    "quizaccess_timelimit": "2022112800",
+    "report_allbackups": "2022031501",
+    "report_backups": "2022112800",
+    "report_competency": "2022112800",
+    "report_completion": "2022112800",
+    "report_configlog": "2022112800",
+    "report_courseoverview": "2022112800",
+    "report_eventlist": "2022112800",
+    "report_infectedfiles": "2022112800",
+    "report_insights": "2022112800",
+    "report_log": "2022112800",
+    "report_loglive": "2022112800",
+    "report_outline": "2022112800",
+    "report_participation": "2022112800",
+    "report_performance": "2022112800",
+    "report_progress": "2022112800",
+    "report_questioninstances": "2022112800",
+    "report_security": "2022112800",
+    "report_stats": "2022112800",
+    "report_status": "2022112800",
+    "report_usersessions": "2022112800",
+    "repository_areafiles": "2022112800",
+    "repository_contentbank": "2022112800",
+    "repository_coursefiles": "2022112800",
+    "repository_dropbox": "2022112800",
+    "repository_equella": "2022112800",
+    "repository_filesystem": "2022112800",
+    "repository_flickr": "2022112800",
+    "repository_flickr_public": "2022112800",
+    "repository_googledocs": "2022112800",
+    "repository_local": "2022112800",
+    "repository_merlot": "2022112800",
+    "repository_nextcloud": "2022112800",
+    "repository_onedrive": "2022112800",
+    "repository_recent": "2022112800",
+    "repository_s3": "2022112800",
+    "repository_upload": "2022112800",
+    "repository_url": "2022112800",
+    "repository_user": "2022112800",
+    "repository_webdav": "2022112800",
+    "repository_wikimedia": "2022112800",
+    "repository_youtube": "2022112800",
+    "scormreport_basic": "2022112800",
+    "scormreport_graphs": "2022112800",
+    "scormreport_interactions": "2022112800",
+    "scormreport_objectives": "2022112800",
+    "search_simpledb": "2022112800",
+    "search_solr": "2022112800",
+    "theme_boost": "2022112800",
+    "theme_classic": "2022112800",
+    "theme_kba": "2026092213",
+    "tiny_accessibilitychecker": "2022112800",
+    "tiny_autosave": "2022112800",
+    "tiny_equation": "2022112800",
+    "tiny_h5p": "2022112800",
+    "tiny_link": "2022112800",
+    "tiny_media": "2022112800",
+    "tiny_recordrtc": "2022112800",
+    "tinymce_ctrlhelp": "2022112800",
+    "tinymce_managefiles": "2022112800",
+    "tinymce_moodleemoticon": "2022112800",
+    "tinymce_moodleimage": "2022112800",
+    "tinymce_moodlemedia": "2022112800",
+    "tinymce_moodlenolink": "2022112800",
+    "tinymce_pdw": "2022112800",
+    "tinymce_spellchecker": "2022112800",
+    "tinymce_wrap": "2022112800",
+    "tool_admin_presets": "2022112800",
+    "tool_analytics": "2022112800",
+    "tool_availabilityconditions": "2022112800",
+    "tool_behat": "2022112802",
+    "tool_bmslpimport": "2026081603",
+    "tool_bmsprovisioner": "2026082703",
+    "tool_brickfield": "2022112800",
+    "tool_capability": "2022112800",
+    "tool_cohortroles": "2022112801",
+    "tool_componentlibrary": "2022112800",
+    "tool_customlang": "2022112800",
+    "tool_dataprivacy": "2022112800",
+    "tool_dbtransfer": "2022112800",
+    "tool_filetypes": "2022112800",
+    "tool_generator": "2022112800",
+    "tool_httpsreplace": "2022112800",
+    "tool_innodb": "2022112800",
+    "tool_installaddon": "2022112800",
+    "tool_langimport": "2022112800",
+    "tool_licensemanager": "2022112800",
+    "tool_log": "2022112800",
+    "tool_lp": "2022112801",
+    "tool_lpimportcsv": "2022112800",
+    "tool_lpmigrate": "2022112800",
+    "tool_messageinbound": "2022112800",
+    "tool_mobile": "2022112801",
+    "tool_monitor": "2022112800",
+    "tool_moodlenet": "2022112800",
+    "tool_multilangupgrade": "2022112800",
+    "tool_oauth2": "2022112800",
+    "tool_phpunit": "2022112800",
+    "tool_policy": "2022112800",
+    "tool_profiling": "2022112800",
+    "tool_recyclebin": "2022112800",
+    "tool_replace": "2022112800",
+    "tool_spamcleaner": "2022112800",
+    "tool_task": "2022112800",
+    "tool_templatelibrary": "2022112800",
+    "tool_unsuproles": "2022112800",
+    "tool_uploadcourse": "2022112800",
+    "tool_uploaduser": "2022112800",
+    "tool_usertours": "2022112800",
+    "tool_xmldb": "2022112800",
+    "webservice_rest": "2022112800",
+    "webservice_soap": "2022112800",
+    "workshopallocation_manual": "2022112800",
+    "workshopallocation_random": "2022112800",
+    "workshopallocation_scheduled": "2022112800",
+    "workshopeval_best": "2022112800",
+    "workshopform_accumulative": "2022112800",
+    "workshopform_comments": "2022112800",
+    "workshopform_numerrors": "2022112800",
+    "workshopform_rubric": "2022112800"
+  },
+  "plugin_code_versions_partial": {
+    "local/bitrixsync/version.php": {
+      "version": "2026083634",
+      "sha256": "b19f052b4c0c3fdb2b4f9774abebbaf80de15299557507ed39fcd64fad8773dc"
+    },
+    "local/kbaadmin/version.php": {
+      "version": "2026081100",
+      "sha256": "47dbec97766aefb52adeee588aaa3b09ead3cd551ac27c3472a20c85848edefd"
+    },
+    "local/kbaai/version.php": {
+      "version": "2026101516",
+      "sha256": "584649a31cc517288b9eba8107c393480ae7bceab28f17d250f48c4c8110e6b3"
+    },
+    "local/kbacompany/version.php": {
+      "version": "2026101878",
+      "sha256": "01008b765846248a253bd614751942dafffd332834da751546a7b379514fec02"
+    },
+    "local/kbacorporate/version.php": {
+      "version": "2026102613",
+      "sha256": "d2510b7503f2d257f5e5027f665fe523c93b361b0738b861ba315a18e4cfb3c6"
+    },
+    "local/kbagamification/version.php": {
+      "version": "2026081708",
+      "sha256": "38d1a15431bbeb64cf4dc39e0640ee771d5b9b85daf81e636f5500b8ad953960"
+    },
+    "theme/boost/version.php": {
+      "version": "2022112800",
+      "sha256": "7c2dac722cf159e8f1da8396fbd96f89a0f5bcb86d9c256c46a34dc1cf44b519"
+    },
+    "theme/classic/version.php": {
+      "version": "2022112800",
+      "sha256": "0ce8a5330ff8c89c59f887af10adb34217da7c4238999fb3293178206dfd459c"
+    },
+    "theme/kba/version.php": {
+      "version": "2026092213",
+      "sha256": "8cac0c67d19a2f5226bfcbe10b293ffa142f3ba2e42136ba050a1419690213a1"
+    },
+    "mod/assign/version.php": {
+      "version": "2022112801",
+      "sha256": "6ba774e4ef793d8436d6fd43b795a9878d93bf7639c52cd28b2bfce140885915"
+    },
+    "mod/assignment/version.php": {
+      "version": "2022112800",
+      "sha256": "51f56abac39798b9a31898e0223bcf46f6c733b9ded5592bbaadb13a2a6737a8"
+    },
+    "mod/bigbluebuttonbn/version.php": {
+      "version": "2022112800",
+      "sha256": "9b4ab8b133e7e12178a2085ec1bca14c395a780dfeb8d3a2edbfa37cd475da63"
+    },
+    "mod/book/version.php": {
+      "version": "2022112800",
+      "sha256": "1c8bf39a38ae0bb512fca6c90034b6d74c75c6ca39d407e5419c812dbf73f2cc"
+    },
+    "mod/chat/version.php": {
+      "version": "2022112800",
+      "sha256": "8432f65eee4d158688ddfe9c2331dad6df3f03d7b300c9fd000979dbc27d3c62"
+    },
+    "mod/choice/version.php": {
+      "version": "2022112800",
+      "sha256": "a0b1210a2c55bc81aa7fda8817b114ee4aaa64de53ee75aede751c2f8afbcdcc"
+    },
+    "mod/customcert/version.php": {
+      "version": "2022112820",
+      "sha256": "795c1e8372262d684aa2f07d75bda3a2974b1cff95adede35b4c4dd2631b2e43"
+    },
+    "mod/data/version.php": {
+      "version": "2022112801",
+      "sha256": "89870aac019f16c73a01845fb42fda17be10e014865bd4cc649f652e6e4cffdd"
+    },
+    "mod/feedback/version.php": {
+      "version": "2022112800",
+      "sha256": "c4a1640b52b5d81aac0eb9dfec8fbb404c88923689f321d5e1f2dacf2f03659f"
+    },
+    "mod/folder/version.php": {
+      "version": "2022112800",
+      "sha256": "ee7fe4937734ccd0a1da200d1d2f7d66350e25ec584ac2bd8bf774b5f3afb873"
+    },
+    "mod/forum/version.php": {
+      "version": "2022112801",
+      "sha256": "f1aa8272a26d5fcec2ac4b870245488327b74f0d045ac36b94af13dc92e29b65"
+    },
+    "mod/glossary/version.php": {
+      "version": "2022112800",
+      "sha256": "72eda87f4b46d606aeba5d4dc2421f84954a9f6eb349b855bff5f34b4021af02"
+    },
+    "mod/h5pactivity/version.php": {
+      "version": "2022112801",
+      "sha256": "ed54e2b2ed33d89daaa621bc9eb2916729d544797e364bed8824c1dc10c443a6"
+    },
+    "mod/imscp/version.php": {
+      "version": "2022112800",
+      "sha256": "cb1d0d92fc452be7da6b387d40585c89a229ebbffcb1660b2d315c266e3ae170"
+    },
+    "mod/kbaelement/version.php": {
+      "version": "2026102603",
+      "sha256": "5c17a4b758ddb5948e0a1da0d27bc5c7259fc2eca1f74c4c5b20df3e30b0e490"
+    },
+    "mod/label/version.php": {
+      "version": "2022112801",
+      "sha256": "3b222b23759c53e45e57efce5fe77a5e8ef2855825160be3468f8dab17714b23"
+    },
+    "mod/lesson/version.php": {
+      "version": "2022112800",
+      "sha256": "e29ee036a459e7910079f3f746af244625f17d93c6f00f8fdadb22af31122e5e"
+    },
+    "mod/lti/version.php": {
+      "version": "2022112800",
+      "sha256": "83c2d886876e3101bc2d1eb0c102186ba4ab1fc6aa812d4d41a66751f1dd310e"
+    },
+    "mod/page/version.php": {
+      "version": "2022112800",
+      "sha256": "75b3f36c42bb45860d6508e30b0c07d9fc36a5cdc334ab8aee61377b12f46540"
+    },
+    "mod/quiz/version.php": {
+      "version": "2022112800",
+      "sha256": "0d30e72f2b71c34b1ca132f81b955a905774960f0fefcc90a6b7ef7f273c846b"
+    },
+    "mod/resource/version.php": {
+      "version": "2022112800",
+      "sha256": "b8296e824e71011e00351662ac152803b3e138d52e6023160e93d55a63bbadba"
+    },
+    "mod/scheduler/version.php": {
+      "version": "2023052300",
+      "sha256": "b536471db3a0201e4854c1c765a71bc07de2b9c7e08ec844b0d96e8d84efc9f7"
+    },
+    "mod/scorm/version.php": {
+      "version": "2022112800",
+      "sha256": "da0cbfb7822ddab3c2d42ef561eff425bfd63392a33cde1643dfb20e4e5eaba5"
+    },
+    "mod/survey/version.php": {
+      "version": "2022112800",
+      "sha256": "7dfc7552d350631600b5cda2751d8a8a2df13650a6a5757f30ce244b302a5ed5"
+    },
+    "mod/url/version.php": {
+      "version": "2022112800",
+      "sha256": "42532032f54046b484143e97867cac0f0114727a1a9f34fe449539d0ecfe4c17"
+    },
+    "mod/wiki/version.php": {
+      "version": "2022112800",
+      "sha256": "00036056cc636f61b0f262662147b6331e3ce50e5dc6b0da9adb3e6f20c9d6d1"
+    },
+    "mod/workshop/version.php": {
+      "version": "2022112800",
+      "sha256": "968e025d0e78c7916094deb30bf4b9d2029e736a75bd238502850699ebb336bb"
+    },
+    "blocks/accessreview/version.php": {
+      "version": "2022112800",
+      "sha256": "3affd38a21466cf69a794e05dc5c820100140509d4d0e1fbaf172f2f9d040648"
+    },
+    "blocks/activity_modules/version.php": {
+      "version": "2022112800",
+      "sha256": "fb71753ce188bf1fd8e8c19bcc10e1d1fbb97eabb5821e9b4ef1562c6731bd9e"
+    },
+    "blocks/activity_results/version.php": {
+      "version": "2022112800",
+      "sha256": "c836548a761c5fd7a6f12133e6f4a97ceb6c61c8e11e6c860dd15212893b27c1"
+    },
+    "blocks/admin_bookmarks/version.php": {
+      "version": "2022112800",
+      "sha256": "b2901640f0774a9dccc2a687cc06a3d559668e59f426ef1197ccf0aec87a9627"
+    },
+    "blocks/badges/version.php": {
+      "version": "2022112800",
+      "sha256": "818b4663fb9bf3c17666f9fe299bc792beabc724e854d111a2ada9c64a3d3a3c"
+    },
+    "blocks/blog_menu/version.php": {
+      "version": "2022112800",
+      "sha256": "96332e10f10eb752a56b9647c1d51940f9797e409dd4722bfc449453efe570dd"
+    },
+    "blocks/blog_recent/version.php": {
+      "version": "2022112800",
+      "sha256": "3ae157ef2f36b72d509b14cb88d2c32f0aa8fe2d850b88bfff2a64538d74e54b"
+    },
+    "blocks/blog_tags/version.php": {
+      "version": "2022112800",
+      "sha256": "6ee217ec27898b7100e83eadc3ebf6c9fbf2eeef708f6fdf05dea501b2fceaf6"
+    },
+    "blocks/calendar_month/version.php": {
+      "version": "2022112800",
+      "sha256": "1550b9c211ecc9558532cae8d3d429c7de12ea8b7d63158191c9f374ac5e47b6"
+    },
+    "blocks/calendar_upcoming/version.php": {
+      "version": "2022112800",
+      "sha256": "fa0138d8b6788292ba35ebe3c71b5eff96d375258c96f38490b2d0f962dcec6e"
+    },
+    "blocks/comments/version.php": {
+      "version": "2022112800",
+      "sha256": "c09490ccd771c325096b17e0e52f9424c17414518b823e34e5a9bc73e5546f7d"
+    },
+    "blocks/completion_progress/version.php": {
+      "version": "2025101300",
+      "sha256": "f8bbc079449ce46026d0de27578db65f919a67d2cf2f2ca63072556501e8e927"
+    },
+    "blocks/completionstatus/version.php": {
+      "version": "2022112800",
+      "sha256": "2bfeceea8f900327cb1551b37595131d546259434a51a551db9a5161a9184535"
+    },
+    "blocks/course_list/version.php": {
+      "version": "2022112800",
+      "sha256": "ee79fd010a48d5bf49fb170bad748a742cabf38e8a3ca2113674f1742888a279"
+    },
+    "blocks/course_summary/version.php": {
+      "version": "2022112800",
+      "sha256": "6a60b0a89f5bd5d8db45d1598aa65227c38bd422946dabbd0d9684fa0b79ed72"
+    },
+    "blocks/feedback/version.php": {
+      "version": "2022112800",
+      "sha256": "c9aafa8a11b999bcf58524d58c2a5f5828d4b37cedb32eab7cfa6eb5b588e862"
+    },
+    "blocks/globalsearch/version.php": {
+      "version": "2022112800",
+      "sha256": "7cc5c42b1dc71a1c687be5a90dc1132e70b0a373f3bb49b70bd4661a93912324"
+    },
+    "blocks/glossary_random/version.php": {
+      "version": "2022112800",
+      "sha256": "639f5db29b34dad0bcfba6191f92482693a52fb16dd58f8eeb896a9eb15e8353"
+    },
+    "blocks/html/version.php": {
+      "version": "2022112800",
+      "sha256": "54ad05e998de75e3e50b062c82b8e05bda0e5a711bf8c037e6fefda51c183f80"
+    },
+    "blocks/login/version.php": {
+      "version": "2022112800",
+      "sha256": "100004166652d964ddbcd05f4a99393369d3702d8c34082755d24cd38301d408"
+    },
+    "blocks/lp/version.php": {
+      "version": "2022112800",
+      "sha256": "682de7ebf32ee30d999c266d37c04808291d4b916f4d24d74ca46ba52427c451"
+    },
+    "blocks/mentees/version.php": {
+      "version": "2022112800",
+      "sha256": "bf4124c9eb223de5425ade0813d64759b18ff73a149ff41bc4380782d6477cd4"
+    },
+    "blocks/mnet_hosts/version.php": {
+      "version": "2022112800",
+      "sha256": "a948d8501753acf4ebf97b417252951b6b00c209f1de5a1667da0854f63f30e7"
+    },
+    "blocks/myoverview/version.php": {
+      "version": "2022112800",
+      "sha256": "c7fc4053b77ed4f129a0869a1577c721aa5edd8d1523719ae4bf1f59ecb54549"
+    },
+    "blocks/myprofile/version.php": {
+      "version": "2022112800",
+      "sha256": "4ef5649a6ce1540e1c0423cf48c9fd9de4fba4001f4b0236678557350340d8b0"
+    },
+    "blocks/navigation/version.php": {
+      "version": "2022112800",
+      "sha256": "3d78f4b30adc4613ed077af26d6f2503c51ca20f530163636d2946d69ae6dc33"
+    },
+    "blocks/news_items/version.php": {
+      "version": "2022112800",
+      "sha256": "d15bfde333831960a7b8e66b54659b5665a1d7940c1509e049fc6911b3dd62a2"
+    },
+    "blocks/online_users/version.php": {
+      "version": "2022112800",
+      "sha256": "8e4f0095bada458d3d5bee5ca13e803e0e4ad772d1f0aabfe91ddaab6b809cba"
+    },
+    "blocks/private_files/version.php": {
+      "version": "2022112800",
+      "sha256": "de485bd7913dae48ee497a634c738d15f9f15e297808334b526514fd9d471bee"
+    },
+    "blocks/recent_activity/version.php": {
+      "version": "2022112800",
+      "sha256": "fd4c1bd085d4d1cfed3cd77fba074cd20b90c8e54c44e68d8b774a7c224e05ec"
+    },
+    "blocks/recentlyaccessedcourses/version.php": {
+      "version": "2022112800",
+      "sha256": "319cc77e33ed3a562b739b4e8d2f747df62bf759d429baae342670aa610e03b3"
+    },
+    "blocks/recentlyaccesseditems/version.php": {
+      "version": "2022112800",
+      "sha256": "71fa33eb50fa80cd517a5fbb4f122429400b35abe883bb85c7a3e741a12091b9"
+    },
+    "blocks/rss_client/version.php": {
+      "version": "2022112800",
+      "sha256": "2583cdf78234982ba9566be10a7e096e383b88817e18c3e23da344411d875bf3"
+    },
+    "blocks/search_forums/version.php": {
+      "version": "2022112800",
+      "sha256": "bf90e5fbb0dcfde105445304cf4e3d54811a3aa8fb03466e65a713386b5c36e2"
+    },
+    "blocks/section_links/version.php": {
+      "version": "2022112800",
+      "sha256": "7cb3129a926e6a2f21d74f77f75bdd7e008989c00be4a3922a1e3efe0dbd4851"
+    },
+    "blocks/selfcompletion/version.php": {
+      "version": "2022112800",
+      "sha256": "3d86b153aa5ce786893746f8989b0de624c9298e7b44f958cc1723b349776c80"
+    },
+    "blocks/settings/version.php": {
+      "version": "2022112800",
+      "sha256": "985c82a04220453d1cff23a724e5c380231edd87c6cd1e586f9de9a967e204fc"
+    },
+    "blocks/site_main_menu/version.php": {
+      "version": "2022112800",
+      "sha256": "affeec52c3c3106cbf67704ba68e20cfb6a66f44d61d61aa33589f32c7afb8c9"
+    },
+    "blocks/social_activities/version.php": {
+      "version": "2022112800",
+      "sha256": "8cdf3590b79805a0b6837d6e5deab7fb4637101222d0c20fb7f7dd8e5d050248"
+    },
+    "blocks/starredcourses/version.php": {
+      "version": "2022112800",
+      "sha256": "5c4f3b7053a26e16602c1b6aebb68b61016af0f06d7e2fb07c81012b6c9c1c0e"
+    },
+    "blocks/tag_flickr/version.php": {
+      "version": "2022112800",
+      "sha256": "053dddc9f8dee20ae0a6a33cdfee7a24e8cd1faeb213d183d157b3b28188abce"
+    },
+    "blocks/tag_youtube/version.php": {
+      "version": "2022112800",
+      "sha256": "d36a3bcdcbe6c5c6c026a07917c0f30ba9a3615370c976722fc81092ca694d62"
+    },
+    "blocks/tags/version.php": {
+      "version": "2022112800",
+      "sha256": "797d31a739ca57a79538ae3d300d62839be5e10ae3ef4630bc2f159411d89f59"
+    },
+    "blocks/timeline/version.php": {
+      "version": "2022112800",
+      "sha256": "dc614b814cdfd9e6510ece20180b811b7d448538ee0360d26483e2e974f8f4ae"
+    },
+    "enrol/category/version.php": {
+      "version": "2022112800",
+      "sha256": "0083bd897cc78b7bcc87de94748a4faf97d12a385e8aa89e491bdb30d3f80ae3"
+    },
+    "enrol/cohort/version.php": {
+      "version": "2022112800",
+      "sha256": "65f1448011a673ec826066f08c086c1fe25b0e62da9216f448fa60aea2e2ab9e"
+    },
+    "enrol/database/version.php": {
+      "version": "2022112800",
+      "sha256": "03fdc872934130ce6e1093f9cbef3697bd37e9dd7ae48d18181cb4fe71bd0daa"
+    },
+    "enrol/fee/version.php": {
+      "version": "2022112800",
+      "sha256": "a1285f5a0c4b4835c76302ccb5e7192b865d2be3ef2f4b2f7dacb8068c5d61c9"
+    },
+    "enrol/flatfile/version.php": {
+      "version": "2022112800",
+      "sha256": "2720acfaf609b1bd8d014c82e45292d6ba945c5b740338a38fb9b234c69a4624"
+    },
+    "enrol/guest/version.php": {
+      "version": "2022112800",
+      "sha256": "d7b4757bbb03d22fb41c2908c7926d414881a32bfe439d3ac972ab1f60348440"
+    },
+    "enrol/imsenterprise/version.php": {
+      "version": "2022112800",
+      "sha256": "2938fd44884e28541d91cb5db3973f5061a9f5dc35bcff474b4c4b29a86d035e"
+    },
+    "enrol/ldap/version.php": {
+      "version": "2022112800",
+      "sha256": "70aa894b229839bddddce3cd21a2fe8ad515be87a5813abaad86b0ca08540cdd"
+    },
+    "enrol/lti/version.php": {
+      "version": "2022112800",
+      "sha256": "709c1562b80a7a6b333a4350ac603a9069befdb0367110d7bb2515603401691e"
+    },
+    "enrol/manual/version.php": {
+      "version": "2022112800",
+      "sha256": "6af5dfcffadde8684c76cf22cd979f78862de3d6b41e56d96990c5f55a42ee06"
+    },
+    "enrol/meta/version.php": {
+      "version": "2022112800",
+      "sha256": "ec06c776191c0da136b75d00c3eef3cad549bc2783cebcb5f696fe1926c83aeb"
+    },
+    "enrol/mnet/version.php": {
+      "version": "2022112800",
+      "sha256": "e4337fbe26b463552e971bd2ef053ba987b8c97fae1797ed39bbd680914d5271"
+    },
+    "enrol/paypal/version.php": {
+      "version": "2022112800",
+      "sha256": "29f471557ad75bbc358225d9402c611402c2462db74eace7df84743639f157cb"
+    },
+    "enrol/self/version.php": {
+      "version": "2022112800",
+      "sha256": "5fdd96fe33855bc930b3712c6615ee268463296098bacd65c7dabe13a214acd0"
+    },
+    "auth/cas/version.php": {
+      "version": "2022112800",
+      "sha256": "8542a5e11077d34178b8290c10aa713e0337bd91358af2ea298162c2f2f9ddf2"
+    },
+    "auth/db/version.php": {
+      "version": "2022112800",
+      "sha256": "37f5781c2812deddd4561c713d1c662d262d18bd8c5c76db630d7d5c9d86734a"
+    },
+    "auth/email/version.php": {
+      "version": "2022112800",
+      "sha256": "80316b77af198cb6fc8a81f5a8d1bdbe97509c471ea04122447f07c2dce922d8"
+    },
+    "auth/ldap/version.php": {
+      "version": "2022112800",
+      "sha256": "5102bf976bdd4913506401ae1bbc3437b140b9cc3455b983ef1ad1fccef67f23"
+    },
+    "auth/lti/version.php": {
+      "version": "2022112801",
+      "sha256": "42e984dfb23ee419c59e982850af432eb35ca426a1552bdfcf40847c9e3e50d5"
+    },
+    "auth/manual/version.php": {
+      "version": "2022112800",
+      "sha256": "6c12d550cd34ee1c55dc77648b9512ebb538a5fb772dce7889eae3dbeaffc510"
+    },
+    "auth/mnet/version.php": {
+      "version": "2022112800",
+      "sha256": "d807398eacc989241fe8c3f018bbc9eef17970dd8157f589bf152764d91367ca"
+    },
+    "auth/nologin/version.php": {
+      "version": "2022112800",
+      "sha256": "728ce9f8631c61e03ee53bf2dc2be6dcad6fb7a9f16389dd8abbc2790d56df15"
+    },
+    "auth/none/version.php": {
+      "version": "2022112800",
+      "sha256": "7c57f4f4b2a75b82f7f7ba8ba2c9a6c7bea43b1b5904ca4ba919bbc397982aaa"
+    },
+    "auth/oauth2/version.php": {
+      "version": "2022112800",
+      "sha256": "87534f454492bc147ce9bf10e6ac1fdfc52524c7fbad04d0c1a9189c7568d099"
+    },
+    "auth/shibboleth/version.php": {
+      "version": "2022112800",
+      "sha256": "1c0520bc99ca35e56aed5450bfe2ba8888a3d8c88b7f5870499a1b92828ad9f5"
+    },
+    "auth/webservice/version.php": {
+      "version": "2022112800",
+      "sha256": "6cb285fc94c91d9b28411f74116a9bbab8af431c4f175bc3dbca5c00e47d37e1"
+    },
+    "filter/activitynames/version.php": {
+      "version": "2022112800",
+      "sha256": "d0f3f070764c1343cefc958d775631ba19683f48d01497e35189687ad397a6e1"
+    },
+    "filter/algebra/version.php": {
+      "version": "2022112800",
+      "sha256": "97b0d1ec6f1221745ad1115d0f6c73b3ee9e823579533aa81e89735f0173f4e1"
+    },
+    "filter/data/version.php": {
+      "version": "2022112800",
+      "sha256": "0a486ea8eca3881b0d679c0eb73a12e80ec9cc9c53d831b44a2003627e65a9ef"
+    },
+    "filter/displayh5p/version.php": {
+      "version": "2022112800",
+      "sha256": "00afdffdcf5f103219815ab1006466093ab0460f12a9f45f9b4155addebfeefa"
+    },
+    "filter/emailprotect/version.php": {
+      "version": "2022112800",
+      "sha256": "2d9a3da99f8d92e38d8f6bbe1a9834bfa5b1acb9b1d93afb33b5d80ad0b250d4"
+    },
+    "filter/emoticon/version.php": {
+      "version": "2022112800",
+      "sha256": "2a0be941777b39b15bef72c5a932757b544fa01ed5f62d5e8adc05c0044854e6"
+    },
+    "filter/glossary/version.php": {
+      "version": "2022112800",
+      "sha256": "4b382b25c8990a6f8bfe762c16aa65d7861f86e009fc32542afcbd10edc27d5d"
+    },
+    "filter/mathjaxloader/version.php": {
+      "version": "2022112800",
+      "sha256": "769a34b8271707ee96b466dca12d5eb72d1658a745604aca66af2cab04dda2cb"
+    },
+    "filter/mediaplugin/version.php": {
+      "version": "2022112800",
+      "sha256": "3432659a56b7fe7abd2ba7164cf842f9ec7d81182b849fd996db1c5857526f40"
+    },
+    "filter/multilang/version.php": {
+      "version": "2022112800",
+      "sha256": "1b879d824e52be1b2b1be98abcf5635ad976e054bd2ccaa63effd4c5c232e62e"
+    },
+    "filter/tex/version.php": {
+      "version": "2022112800",
+      "sha256": "d864667a64e81440231905dbd26f32cbf7e32be357caa80c037e9fd31826f07f"
+    },
+    "filter/tidy/version.php": {
+      "version": "2022112800",
+      "sha256": "9a1b51563fdca31242811f216f8725ab7db0276e4730410dc554012702b82f43"
+    },
+    "filter/urltolink/version.php": {
+      "version": "2022112800",
+      "sha256": "b731116de9456763cd763d696550ab94fb39303992a3802e79c654d992411ae6"
+    },
+    "report/allbackups/version.php": {
+      "version": "2022031501",
+      "sha256": "61033694c1ae6ada5b7731a9fb7290af0b1d6b1b68326cb4abb96019c9596101"
+    },
+    "report/backups/version.php": {
+      "version": "2022112800",
+      "sha256": "cac810d46ddf490316a90b67c73f2b98cfe6770989e08d7c6cf850448f5b03c2"
+    },
+    "report/competency/version.php": {
+      "version": "2022112800",
+      "sha256": "007f3597e8f32c0ba6a96fb8348c3c7631bf358199790efae5c176b8be0acbc3"
+    },
+    "report/completion/version.php": {
+      "version": "2022112800",
+      "sha256": "b3a40ee384c176c6817b70fe2a23dcdbcbd34ba7fdb861778b1018571126d506"
+    },
+    "report/configlog/version.php": {
+      "version": "2022112800",
+      "sha256": "62ca9d7d8226a237d9fe6e6bdcde8d2c2e80c9844447a76379c67c144768c694"
+    },
+    "report/courseoverview/version.php": {
+      "version": "2022112800",
+      "sha256": "9eac2a671b553c0b254852890f6ef2db24ba4f112321a51f2b0f4fa00713814a"
+    },
+    "report/eventlist/version.php": {
+      "version": "2022112800",
+      "sha256": "340173bf0a13a995cb9dcfc2415dd500fdb400673f183948d5f7ac2f5813f18c"
+    },
+    "report/infectedfiles/version.php": {
+      "version": "2022112800",
+      "sha256": "50aceeff07c46cfdd6ecf6bff49d65703df0edc38b8feb69e6ef3826fb5d2a1f"
+    },
+    "report/insights/version.php": {
+      "version": "2022112800",
+      "sha256": "d636b01d25f5b20b2dd4b9b92c2241e4e15139e8acbdfeaf31f683c483aa76a9"
+    },
+    "report/log/version.php": {
+      "version": "2022112800",
+      "sha256": "f1bf93d4acd9a547928eda753d7ab7ec60817b83bc9b4d62bf865936fc09b4d8"
+    },
+    "report/loglive/version.php": {
+      "version": "2022112800",
+      "sha256": "ec31cbff4701e771727befeac72eb9be12d8abe02fb9d0d6debd52312c36755b"
+    },
+    "report/outline/version.php": {
+      "version": "2022112800",
+      "sha256": "50dfeba04960afea1984f27c0b9ae9d15f9d1727bda7104547a0bb8932e9fa76"
+    },
+    "report/participation/version.php": {
+      "version": "2022112800",
+      "sha256": "83ba0af7f74a6382008942dc20817aa846d594a4c5bafb91b6a9b2d246132850"
+    },
+    "report/performance/version.php": {
+      "version": "2022112800",
+      "sha256": "72be93fb5b5302ee034fb8cf0e9242057ae37033400d77691c032c9cb8b8da1c"
+    },
+    "report/progress/version.php": {
+      "version": "2022112800",
+      "sha256": "e843beea27b26fbb0638f3f28f801c6e161d41eb5c3528912919ac7e647bbbce"
+    },
+    "report/questioninstances/version.php": {
+      "version": "2022112800",
+      "sha256": "a9000ce5f78e410fbc72bc557a7c3b519b90867dfbd1096154df95181d9ed6d0"
+    },
+    "report/security/version.php": {
+      "version": "2022112800",
+      "sha256": "b14ec97ce21027ead29997cfa077ca9319316786ad2fad21761c97092f352320"
+    },
+    "report/stats/version.php": {
+      "version": "2022112800",
+      "sha256": "c425696bf87eb1165f91d76621f669176fab207223104bfd7634140a09fd6331"
+    },
+    "report/status/version.php": {
+      "version": "2022112800",
+      "sha256": "5f0662f7323e6cb7ffb4b52461478e8b7dcd4f8db77ea622f6ef9c7f3072318f"
+    },
+    "report/usersessions/version.php": {
+      "version": "2022112800",
+      "sha256": "5ebbc4016ce2f49d960caf79bbeba9e76391763626a1778809ee2e032027231b"
+    },
+    "repository/areafiles/version.php": {
+      "version": "2022112800",
+      "sha256": "4c6bc97d968a794563c96108156751fc879bed8e2152d33f3b019caeb2bb3592"
+    },
+    "repository/contentbank/version.php": {
+      "version": "2022112800",
+      "sha256": "20f55cd3c3c31c3807b1bc6b0caed0272a9dfd8ab7660f212be8352db2848754"
+    },
+    "repository/coursefiles/version.php": {
+      "version": "2022112800",
+      "sha256": "4a247376475e00bab347e4e135041278249dff539710dc4a2f4ef2d3ffad6e61"
+    },
+    "repository/dropbox/version.php": {
+      "version": "2022112800",
+      "sha256": "c12611b9391061228a287f9ba09afa46adda71e8f70cd1bd7a4b287ed9c70b91"
+    },
+    "repository/equella/version.php": {
+      "version": "2022112800",
+      "sha256": "5eb93a956c302606c6ea76508137e3c13de3bd6ddc7d2e521f1d72ea6d428199"
+    },
+    "repository/filesystem/version.php": {
+      "version": "2022112800",
+      "sha256": "34c9a9c8da4af355558de1b4e9d232a742e85aad028928b80698fa9fce49ed1f"
+    },
+    "repository/flickr/version.php": {
+      "version": "2022112800",
+      "sha256": "d225e0f24156745b53bc04cfe618dd803094aeef1065bb09ba66c52b220af2be"
+    },
+    "repository/flickr_public/version.php": {
+      "version": "2022112800",
+      "sha256": "32e1a271e8c9044b26aac67ec150873fdca48378c87791fb71d112446189176d"
+    },
+    "repository/googledocs/version.php": {
+      "version": "2022112800",
+      "sha256": "d0173da00eead97c27415ea35a8df5775307990b3ed37b12cd55e7112569c89a"
+    },
+    "repository/local/version.php": {
+      "version": "2022112800",
+      "sha256": "18f60548bc343665962dcd03451efdaf8a62f8365ef45c82a8df90542ee0ef05"
+    },
+    "repository/merlot/version.php": {
+      "version": "2022112800",
+      "sha256": "02321eb41071d2194f8355d34bcdb5d9fbcdbaad848085f48bad87d5f5e4a954"
+    },
+    "repository/nextcloud/version.php": {
+      "version": "2022112800",
+      "sha256": "59333cae5b712c19cfc918fbd51b35310e2c01ff8bada2750d1ac9e572e19c18"
+    },
+    "repository/onedrive/version.php": {
+      "version": "2022112800",
+      "sha256": "87e7d39af40b64c1004aca76cdbd22dcc1fedd2ad06b92f4d4017464633ce9cf"
+    },
+    "repository/recent/version.php": {
+      "version": "2022112800",
+      "sha256": "cb2276f48ad89f0dcca96d87b8de67e2eeb90642b8663f2d1d259f8ded356b96"
+    },
+    "repository/s3/version.php": {
+      "version": "2022112800",
+      "sha256": "5ab8a512ad0c09d145af9d3e2a711fa9519afbc4a1e4b41b1d33f9da39fd01b9"
+    },
+    "repository/upload/version.php": {
+      "version": "2022112800",
+      "sha256": "d819c094647db1d74b4fae3b4e99dcc46a5b398394b0e8064b94c667a64540c3"
+    },
+    "repository/url/version.php": {
+      "version": "2022112800",
+      "sha256": "f7d6ed824a8c32b2a6bdcdce37c60b54bb0a316237ad095e245b2ed6287a4943"
+    },
+    "repository/user/version.php": {
+      "version": "2022112800",
+      "sha256": "6120ac80bef5ea24e237f2c3f56ddbbb5645800df53eaf4fda179d2e0999ab26"
+    },
+    "repository/webdav/version.php": {
+      "version": "2022112800",
+      "sha256": "f2c507044d5ed050837217f19da4839ceb99e0889d1c9461e04ff1acd5eac6f4"
+    },
+    "repository/wikimedia/version.php": {
+      "version": "2022112800",
+      "sha256": "e2a2eb5c329c1cd3a7ad111e0acfc373a753e79025eef805875e428aef2423bf"
+    },
+    "repository/youtube/version.php": {
+      "version": "2022112800",
+      "sha256": "b4e5c5dfa5ac92fc356b7502695c9b2b9cf50d37db0154192e9e43cbfa9bdfbd"
+    },
+    "admin/tool/admin_presets/version.php": {
+      "version": "2022112800",
+      "sha256": "d0abfeacbe7ce2598b088bf462cd7d9a1e1c0563b6898d156407f8335120aa0c"
+    },
+    "admin/tool/analytics/version.php": {
+      "version": "2022112800",
+      "sha256": "d2359b917d4a309a51addf1d4b21dc8d4755660e8993686cfa9864dbf37acb41"
+    },
+    "admin/tool/availabilityconditions/version.php": {
+      "version": "2022112800",
+      "sha256": "2b7d39ea801a01c81e8e58a99e189e84c3ef653cc41342376e6202a7f71fb730"
+    },
+    "admin/tool/behat/version.php": {
+      "version": "2022112802",
+      "sha256": "cb2e9ca465165a19c33b08de3ac5961f3155b555b79cf06bb477013d613c4411"
+    },
+    "admin/tool/bmslpimport/version.php": {
+      "version": "2026081603",
+      "sha256": "d2326cdfe0fdcb01d8105977634bcbc440e7c873c63070456a4681889759b90e"
+    },
+    "admin/tool/bmsprovisioner/version.php": {
+      "version": "2026082703",
+      "sha256": "a7917e536ba0844cdceb7de832d0b1612b430ec68f7c1abed7eaadb71ed2b8d5"
+    },
+    "admin/tool/brickfield/version.php": {
+      "version": "2022112800",
+      "sha256": "9293375324e862f406e095d4fa3c31a90f47376d386b4fb846c45fef721c20e3"
+    },
+    "admin/tool/capability/version.php": {
+      "version": "2022112800",
+      "sha256": "101d30a21e0d30842d7126d95ce2d61369467e63097bcc876012cf6cf2bde82c"
+    },
+    "admin/tool/cohortroles/version.php": {
+      "version": "2022112801",
+      "sha256": "600a3000dc885c4d4c39bcc886537b864d6f7f3dd87101e30eaffd01b46eac41"
+    },
+    "admin/tool/componentlibrary/version.php": {
+      "version": "2022112800",
+      "sha256": "689a6cd2bae37d6b4ec159aefdb19158dbfa81942b96834a8073e3660ca64b93"
+    },
+    "admin/tool/customlang/version.php": {
+      "version": "2022112800",
+      "sha256": "374ad8916249ac38a72518906ba5b65e833f4fd08c8f8c0bf0d446c12e810e51"
+    },
+    "admin/tool/dataprivacy/version.php": {
+      "version": "2022112800",
+      "sha256": "a2e84a8b58e2d7f9bca84ae277147da493e9753e71935cac8764c5015b7bb5ac"
+    },
+    "admin/tool/dbtransfer/version.php": {
+      "version": "2022112800",
+      "sha256": "79c995ed97bc68a1181bda14ad331bb1308fa9e526e1802c5c1d9e25c3e8a600"
+    },
+    "admin/tool/filetypes/version.php": {
+      "version": "2022112800",
+      "sha256": "f9a7a5dc2b88857f547c0c8c1fabbfcb04de0ff4787d0e688618b7460ddc6986"
+    },
+    "admin/tool/generator/version.php": {
+      "version": "2022112800",
+      "sha256": "8331709dff038bfd03ed70e15e407bf0e7037df3f8dab80148fd01048936eb1f"
+    },
+    "admin/tool/httpsreplace/version.php": {
+      "version": "2022112800",
+      "sha256": "71d9798637a19d688e5599960adfb7f969d1aa590d02cb9ab058ce66b70602a0"
+    },
+    "admin/tool/innodb/version.php": {
+      "version": "2022112800",
+      "sha256": "5a224ba4ff1450c578c5809898e942fd8fbf732d4a57d978a87ff2be7c969651"
+    },
+    "admin/tool/installaddon/version.php": {
+      "version": "2022112800",
+      "sha256": "9a215c59aa6172ea0776147ce0bc17e2a3ee045cbfdfea633af10e2ab9f42bd5"
+    },
+    "admin/tool/langimport/version.php": {
+      "version": "2022112800",
+      "sha256": "fba174e0c5280a765f4d5833bd287e1ae4be5cd2ab04ae39420bd3915efa1b0c"
+    },
+    "admin/tool/licensemanager/version.php": {
+      "version": "2022112800",
+      "sha256": "10862ff933293ab9c77bf347771b591a1dbd21454fbeab7ab9d1d81b0aa60131"
+    },
+    "admin/tool/log/version.php": {
+      "version": "2022112800",
+      "sha256": "82395ceba496a24ca5ab6d004fb31efaa259275d778226c1e6d2a065fa00a4df"
+    },
+    "admin/tool/lp/version.php": {
+      "version": "2022112801",
+      "sha256": "11da4b6331ae5689685b157798e60d3c04a3cd11d090764a10f13e72d39b93bc"
+    },
+    "admin/tool/lpimportcsv/version.php": {
+      "version": "2022112800",
+      "sha256": "ede3e22c694215124f84a6dec63b7cbff066148a187a63df9c4e9d2ae3541b82"
+    },
+    "admin/tool/lpmigrate/version.php": {
+      "version": "2022112800",
+      "sha256": "93a39d0a53e27723684c9e5f4a6fdb13902b56786cb5233b7b587f40c65c37ec"
+    },
+    "admin/tool/messageinbound/version.php": {
+      "version": "2022112800",
+      "sha256": "6874e0e4e8a12eadf92bbb78aed409a9759cd7d061a47aa766a1db26412dbdc2"
+    },
+    "admin/tool/mobile/version.php": {
+      "version": "2022112801",
+      "sha256": "65db096de88c6720061f67a5fef2de8c4c37dc29cdd4e3b44b22b023d72e97a8"
+    },
+    "admin/tool/monitor/version.php": {
+      "version": "2022112800",
+      "sha256": "098a90dafc342bf60d88e02749a5eab868c520f4fe52572be2d860f0f42d24cd"
+    },
+    "admin/tool/moodlenet/version.php": {
+      "version": "2022112800",
+      "sha256": "d5550cf3a8e9ad12fca19317ad8a570d4488ee3e6a853d1df05ac5c599d7b31c"
+    },
+    "admin/tool/multilangupgrade/version.php": {
+      "version": "2022112800",
+      "sha256": "7f6f2d9ba335e6aede1e82b54db94410793974c1cd3c5117ad9ce1e2d499bb75"
+    },
+    "admin/tool/oauth2/version.php": {
+      "version": "2022112800",
+      "sha256": "759544963b55228838d0ac57e6946144f59692aa2a379eaac415a76d57e71f29"
+    },
+    "admin/tool/phpunit/version.php": {
+      "version": "2022112800",
+      "sha256": "a2eedc918b3f6852c43b42b8b05c3d17bbba52fc0f8e40311c947be90c360b15"
+    },
+    "admin/tool/policy/version.php": {
+      "version": "2022112800",
+      "sha256": "9a430e3726d87841fd6450c30a65e676d5f8926e2e979d32f879a91dc8f94ef9"
+    },
+    "admin/tool/profiling/version.php": {
+      "version": "2022112800",
+      "sha256": "437df2a835e5bdc00d9fe2ecb462cfeb65ccca2c994af4f5d585fda53af649d6"
+    },
+    "admin/tool/recyclebin/version.php": {
+      "version": "2022112800",
+      "sha256": "9d1cb7855720aa8ca9ed8514c99095d9ae43fbffd6b6bb76275c69219a4ec6e3"
+    },
+    "admin/tool/replace/version.php": {
+      "version": "2022112800",
+      "sha256": "dfb3a2aa96fa7e521d685511dbda3e5cecec631d21bc4ae550ec60d8a66be8d1"
+    },
+    "admin/tool/spamcleaner/version.php": {
+      "version": "2022112800",
+      "sha256": "43e13137bd99cff4b860246b2297a5d978bdd6ec40753497c854426044089b5a"
+    },
+    "admin/tool/task/version.php": {
+      "version": "2022112800",
+      "sha256": "d1c09a4c4b99e4e95ffd77400cb2095a5e575c9727c264101c574e099b623f1c"
+    },
+    "admin/tool/templatelibrary/version.php": {
+      "version": "2022112800",
+      "sha256": "d0c710a99e04fe6f700af0efcc9e095f186ba010ee22d497ca6c2965ce571be9"
+    },
+    "admin/tool/unsuproles/version.php": {
+      "version": "2022112800",
+      "sha256": "e71244c64312a228585cb7b17c933e430f329152c4fb61c0dd77a13c7e2ba598"
+    },
+    "admin/tool/uploadcourse/version.php": {
+      "version": "2022112800",
+      "sha256": "181f043edd6df86136f1b3cbc7e64d2c297af8a50fcbc8220d350b8d3922c2dd"
+    },
+    "admin/tool/uploaduser/version.php": {
+      "version": "2022112800",
+      "sha256": "7f798912ecd6c3c0070d9a8dd6a8faa435518459772a4f63739bb5dc2758dca7"
+    },
+    "admin/tool/usertours/version.php": {
+      "version": "2022112800",
+      "sha256": "d0abdb5f3f118e7ba7ebe05e60a18502e6c6957f91c61600f548421c8153a937"
+    },
+    "admin/tool/xmldb/version.php": {
+      "version": "2022112800",
+      "sha256": "670054fff02c610ba101e097846b35536536bc9d741a9e0779d7537e33e533ef"
+    }
+  },
+  "corporate_api_fingerprint": {
+    "classes/local/bridge.php": {
+      "sha256": "49729607e7cc076d3a9657a95bb36c84d0a64523c51d05c7355f72f224d2c461",
+      "public_methods": [
+        "contract",
+        "list_implementation_task_projections",
+        "get_implementation_task_projection",
+        "list_implementation_program_projections",
+        "get_implementation_program_projection",
+        "get_implementation_program_sections",
+        "get_implementation_program_task_sections",
+        "get_implementation_program_result_statuses",
+        "get_erp_exchange_contract",
+        "get_erp_exchange_status",
+        "push_erp_entity",
+        "sync_erp_employee",
+        "sync_erp_department",
+        "sync_erp_department_membership",
+        "sync_erp_business_role",
+        "sync_erp_learning_catalog_assignment",
+        "sync_erp_economic_value",
+        "get_erp_company_snapshot",
+        "get_module_info",
+        "get_kba_connect_pairing_contract",
+        "get_health_status",
+        "get_bitrix_role_schema",
+        "status",
+        "get_company_by_bitrix_id",
+        "sync_company",
+        "merge_employee_roles",
+        "get_business_role_catalog",
+        "assign_business_role",
+        "get_employee_target_profile",
+        "sync_employee",
+        "sync_member",
+        "remove_employee",
+        "assign_course",
+        "sync_course_license",
+        "get_license",
+        "assign_license_user",
+        "release_license_user",
+        "get_license_snapshot",
+        "sync_training_assignment",
+        "sync_company_courses",
+        "unassign_course",
+        "get_company_snapshot",
+        "get_training_time_snapshot",
+        "get_webinar_analytics_snapshot",
+        "get_management_report_snapshot",
+        "get_certificate_registry_snapshot",
+        "list_company_snapshots",
+        "get_company_structure_snapshot",
+        "get_attention_snapshot"
+      ],
+      "api_release": "1.26"
+    },
+    "classes/local/implementation_task_projection.php": {
+      "sha256": "ce7132b7567b5db6ddd46ca4d0fa8464ec6bf1cc21beaa89a3c1a76829f4075c",
+      "public_methods": [
+        "list_tasks",
+        "get_task"
+      ],
+      "api_release": null
+    },
+    "classes/local/implementation_task_discussion.php": {
+      "sha256": "d788ba96adfa47e6e8fb2d87124ce69a92778bd2272e8ac8a808b88dc30aa2de",
+      "public_methods": [
+        "get_task",
+        "can_access",
+        "require_access",
+        "get_comments",
+        "add_comment",
+        "is_curator",
+        "mark_read",
+        "get_curator_threads",
+        "enrich_visible_threads",
+        "get_curator_overview",
+        "get_curator_page"
+      ],
+      "api_release": null
+    },
+    "classes/local/implementation_board_query.php": {
+      "sha256": "c2c17fe5614b510a64e2404ab0dfdf0fb0de814d1b5a5df7ddea9d902e70f84c",
+      "public_methods": [
+        "page",
+        "facets",
+        "summary",
+        "column"
+      ],
+      "api_release": null
+    },
+    "classes/local/implementation_acceptance_metrics.php": {
+      "sha256": "0b8952c1162dadc72806045eec7f4c8f94abb838bf6c9870023392efec2fa4d3",
+      "public_methods": [
+        "median",
+        "percentile",
+        "aggregate"
+      ],
+      "api_release": null
+    },
+    "implementation_board.php": {
+      "sha256": "eb098678547cb7b56fe3d49efa2e1410156ec7b3e9c23b2e90ff6ffa95b0b826",
+      "public_methods": [],
+      "api_release": null
+    },
+    "implementation_curator.php": {
+      "sha256": "dc94c75af61aeb7126cf1f1caab826ff96a881e0659f4aaefa5d756ff4c35b4c",
+      "public_methods": [],
+      "api_release": null
+    },
+    "db/install.xml": {
+      "sha256": "7f9e0afa21b3319e38e0171b27ea791f35bfd5f797f1697ca58a0ea54b22a252",
+      "public_methods": [],
+      "api_release": null
+    },
+    "db/upgrade.php": {
+      "sha256": "c1668acbdc0d106a133002ca71e745a1c376b4f9e80a50ea7cad85fa5b071948",
+      "public_methods": [],
+      "api_release": null
+    }
+  },
+  "schema_counts": {
+    "tables": 704,
+    "columns": 7528,
+    "index_metadata_rows": 3672,
+    "distinct_indexes": 2519,
+    "bms_tables": 142
+  },
+  "scheduler": {
+    "total": 127,
+    "enabled": 120,
+    "pending_adhoc": 0,
+    "positive_faildelay_count": 0,
+    "latest_last_runtime_utc": "2026-11-09T20:55:02+00:00",
+    "enabled_next_runtime_over_day_old": [
+      {
+        "component": "assignfeedback_kbaai",
+        "classname": "\\assignfeedback_kbaai\\task\\recover_stale",
+        "disabled": "0",
+        "lastruntime": "1789032602",
+        "nextruntime": "1789033500",
+        "faildelay": "0"
+      },
+      {
+        "component": "auth_mnet",
+        "classname": "\\auth_mnet\\task\\cron_task",
+        "disabled": "0",
+        "lastruntime": "0",
+        "nextruntime": "1785874800",
+        "faildelay": "0"
+      },
+      {
+        "component": "block_rss_client",
+        "classname": "\\block_rss_client\\task\\refreshfeeds",
+        "disabled": "0",
+        "lastruntime": "0",
+        "nextruntime": "1785874800",
+        "faildelay": "0"
+      },
+      {
+        "component": "enrol_category",
+        "classname": "\\enrol_category\\task\\enrol_category_sync",
+        "disabled": "0",
+        "lastruntime": "0",
+        "nextruntime": "1785874620",
+        "faildelay": "0"
+      },
+      {
+        "component": "enrol_flatfile",
+        "classname": "\\enrol_flatfile\\task\\flatfile_sync_task",
+        "disabled": "0",
+        "lastruntime": "0",
+        "nextruntime": "1785878100",
+        "faildelay": "0"
+      },
+      {
+        "component": "enrol_imsenterprise",
+        "classname": "\\enrol_imsenterprise\\task\\cron_task",
+        "disabled": "0",
+        "lastruntime": "0",
+        "nextruntime": "1785877800",
+        "faildelay": "0"
+      },
+      {
+        "component": "enrol_lti",
+        "classname": "\\enrol_lti\\local\\ltiadvantage\\task\\sync_grades",
+        "disabled": "0",
+        "lastruntime": "0",
+        "nextruntime": "1785875400",
+        "faildelay": "0"
+      },
+      {
+        "component": "enrol_lti",
+        "classname": "\\enrol_lti\\local\\ltiadvantage\\task\\sync_members",
+        "disabled": "0",
+        "lastruntime": "0",
+        "nextruntime": "1785875400",
+        "faildelay": "0"
+      },
+      {
+        "component": "enrol_lti",
+        "classname": "\\enrol_lti\\task\\sync_grades",
+        "disabled": "0",
+        "lastruntime": "0",
+        "nextruntime": "1785875400",
+        "faildelay": "0"
+      },
+      {
+        "component": "enrol_lti",
+        "classname": "\\enrol_lti\\task\\sync_members",
+        "disabled": "0",
+        "lastruntime": "0",
+        "nextruntime": "1785875400",
+        "faildelay": "0"
+      },
+      {
+        "component": "enrol_meta",
+        "classname": "\\enrol_meta\\task\\enrol_meta_sync",
+        "disabled": "0",
+        "lastruntime": "0",
+        "nextruntime": "1785875820",
+        "faildelay": "0"
+      },
+      {
+        "component": "enrol_paypal",
+        "classname": "\\enrol_paypal\\task\\process_expirations",
+        "disabled": "0",
+        "lastruntime": "0",
+        "nextruntime": "1785876960",
+        "faildelay": "0"
+      },
+      {
+        "component": "logstore_legacy",
+        "classname": "\\logstore_legacy\\task\\cleanup_task",
+        "disabled": "0",
+        "lastruntime": "0",
+        "nextruntime": "1785895200",
+        "faildelay": "0"
+      },
+      {
+        "component": "repository_dropbox",
+        "classname": "\\repository_dropbox\\task\\cron_task",
+        "disabled": "0",
+        "lastruntime": "0",
+        "nextruntime": "1785874620",
+        "faildelay": "0"
+      },
+      {
+        "component": "repository_onedrive",
+        "classname": "\\repository_onedrive\\remove_temp_access_task",
+        "disabled": "0",
+        "lastruntime": "0",
+        "nextruntime": "1786031880",
+        "faildelay": "0"
+      }
+    ],
+    "health_verdict": "NOT VERIFIED: timestamps and faildelay do not establish full successful cron"
+  },
+  "not_verified": [
+    "PHP Web",
+    "account quotas/inodes",
+    "full Core/plugin source identity",
+    "Corporate2613 behavior/signatures compatibility",
+    "backup existence/integrity",
+    "restore",
+    "exact production upgrade",
+    "full HTTP/UI/tenant acceptance"
+  ],
+  "decision": "HOLD"
+}

@@ -1,0 +1,31 @@
+{
+  "build": 2026101835,
+  "scope": "Task bundles: library, capture, launch, archive and idempotency",
+  "source_build": 2026101834,
+  "component": "local_kbacompany",
+  "db_migrations": true,
+  "new_tables": [
+    "local_kbacompany_taskbundle",
+    "local_kbacompany_taskbrun"
+  ],
+  "changed_files": [
+    "classes/local/task_bundle_service.php",
+    "classes/local/task_ui_service.php",
+    "task_templates.php",
+    "db/install.xml",
+    "db/upgrade.php",
+    "lang/en/local_kbacompany.php",
+    "lang/ru/local_kbacompany.php",
+    "tests/task_bundle_service_test.php",
+    "version.php",
+    "release/CURRENT_RELEASE.json"
+  ],
+  "local_checks": [
+    "PHP 8.4 syntax lint",
+    "RU/EN key parity",
+    "XMLDB table name limit",
+    "upgrade checkpoint consistency",
+    "isolated date-shift tests"
+  ],
+  "server_acceptance": "PENDING"
+}

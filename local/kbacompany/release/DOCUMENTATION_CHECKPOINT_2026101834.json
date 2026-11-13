@@ -1,0 +1,25 @@
+{
+  "build": 2026101834,
+  "scope": "Subtasks in weekly Battle Plans",
+  "source_build": 2026101833,
+  "component": "local_kbacompany",
+  "db_migrations": false,
+  "changed_files": [
+    "classes/local/task_service.php",
+    "classes/local/task_ui_service.php",
+    "classes/local/battle_plan_service.php",
+    "tasks.php",
+    "styles.css",
+    "lang/en/local_kbacompany.php",
+    "lang/ru/local_kbacompany.php",
+    "tests/task_subtask_week_planning_test.php",
+    "version.php",
+    "release/CURRENT_RELEASE.json"
+  ],
+  "local_checks": [
+    "PHP syntax lint",
+    "RU/EN language key parity",
+    "static integration/access checks"
+  ],
+  "server_acceptance": "PENDING"
+}

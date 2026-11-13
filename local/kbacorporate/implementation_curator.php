@@ -140,11 +140,22 @@ foreach ($threads as $thread) {
     }
     $activitytime = $thread->lastcomment ? (int)$thread->lastcomment->timecreated : (int)$thread->timemodified;
     $badge = $thread->unreadcount ? html_writer::span((string)$thread->unreadcount, 'kbacorp-curator-unread') : '';
-    $body = html_writer::div(html_writer::tag('strong', $studentname) .
+    $body = html_writer::div(html_writer::tag('strong', s($studentname)) .
         html_writer::span(format_string($thread->companyname), 'kbacorp-curator-company'), 'kbacorp-curator-thread-head') .
         html_writer::div(html_writer::link($url, format_string($thread->title)),
             'kbacorp-curator-task-title') .
-        html_writer::div($preview, 'kbacorp-curator-preview');
+        html_writer::div(s($preview), 'kbacorp-curator-preview');
+    if ((string)$thread->status === 'review' && $thread->latestevidence &&
+            (string)$thread->latestevidence->status ===
+                \local_kbacorporate\local\implementation_evidence::STATUS_SUBMITTED &&
+            \local_kbacorporate\local\implementation_evidence::can_review($thread, (int)$USER->id)) {
+        $reviewurl = new moodle_url('/local/kbacorporate/implementation_evidence.php', [
+            'taskid' => (int)$thread->id,
+        ]);
+        $body .= html_writer::div(html_writer::link($reviewurl,
+            get_string('curatoropenreview', 'local_kbacorporate'),
+            ['class' => 'btn btn-outline-primary btn-sm']), 'kbacorp-curator-review-action');
+    }
     $meta = html_writer::div(userdate($activitytime,
         get_string('strftimedatetimekba', 'local_kbacorporate')) . $badge,
         'kbacorp-curator-thread-meta');

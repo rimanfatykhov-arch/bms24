@@ -1628,9 +1628,10 @@ $string['communicationcenter_apply'] = 'Apply';
 $string['taskprovider_bms'] = 'BMS24';
 $string['taskprovider_legacy'] = 'KBACorporate — legacy execution';
 $string['taskprovider_kbaelement'] = 'Learning';
+$string['taskprovider_kbacorporate_impl'] = 'BMS implementation (Curator)';
 $string['taskprovider_source'] = 'Source';
 $string['taskprovider_all'] = 'All sources';
-$string['taskprovider_sources'] = 'Learning task sources';
+$string['taskprovider_sources'] = 'Task sources';
 $string['taskprovider_bind'] = 'Connect source';
 $string['taskprovider_unbind'] = 'Disconnect';
 $string['taskprovider_error'] = 'A source is temporarily unavailable; other sources continue to work.';
@@ -4668,6 +4669,8 @@ $string['positioncompetency_removed'] = 'Competency requirement removed.';
 $string['positioncompetency_published'] = 'Competency profile published.';
 $string['positioncompetency_publish_empty'] = 'A profile cannot be published without at least one competency requirement.';
 $string['positioncompetency_boundary_note'] = 'A position target profile does not change an employee assessment. Course completion also does not automatically confirm competency attainment.';
+$string['positioncompetency_priority'] = 'Priority';
+$string['positioncompetency_competency'] = 'Competency';
 $string['positioncompetency_priority_low'] = 'Low';
 $string['positioncompetency_priority_normal'] = 'Normal';
 $string['positioncompetency_priority_high'] = 'High';
@@ -6046,7 +6049,7 @@ $string['tui_next_step'] = 'Next step';
 $string['tui_no_copies'] = 'Relations reuse existing tasks and Battle Plans. Adding a task to a plan does not copy it or automatically change its due date.';
 $string['tui_no_date'] = 'No due date';
 $string['tui_not_set'] = 'Not assigned';
-$string['tui_old_source_form'] = 'Source settings moved to Tasks → Tools → Learning task sources. This old form made no changes.';
+$string['tui_old_source_form'] = 'Source settings moved to Tasks → Tools → Task sources. This old form made no changes.';
 $string['tui_open_messages'] = 'Open conversations';
 $string['tui_page'] = 'Page {$a->page} of {$a->pages}';
 $string['tui_pages'] = 'List pages';
@@ -6063,7 +6066,7 @@ $string['tui_reviewer_help'] = 'The reviewer accepts the result. The assignee ma
 $string['tui_revision'] = 'Record revision';
 $string['tui_search'] = 'Search by title';
 $string['tui_size'] = 'Size';
-$string['tui_source_settings'] = 'Learning task sources';
+$string['tui_source_settings'] = 'Task sources';
 $string['tui_source_tasks'] = 'Tasks from other sources';
 $string['tui_sources_empty'] = 'No accessible records. Binding a learning source does not automatically create BMS tasks.';
 $string['tui_sources_help'] = 'Learning and legacy tasks open in their source system. This is a compatibility view, not a second task registry.';
@@ -6542,6 +6545,11 @@ $string['pdu_units_limited'] = 'The first 50 matches and the selected unit are s
 $string['pdu_units_help'] = 'Select the unit explicitly. Searching does not save the position or change the text you entered.';
 $string['pdu_units_empty'] = 'No units match this query. Change the search or prepare the unit in the organizational structure.';
 $string['pdu_open_units'] = 'Open structure';
+$string['pdu_firstunit'] = 'Draft the first department (new tab)';
+$string['pdu_refreshunits'] = 'After the approved structure is applied, return here and click Find to refresh the list. Your entries stay in this tab.';
+$string['design_firstunitcreate'] = 'Create a draft with one department';
+$string['design_firstunitbranch'] = 'Create the main branch when applying';
+$string['design_firstunitexists'] = 'An active organizational unit already exists. Refresh the unit list or create a regular design.';
 $string['pdu_unit_readonly'] = 'The unit was set at creation. This form does not transfer positions between units, protecting the meaning of linked staffing lines and assignments.';
 $string['pdu_purpose_help'] = 'Why does this position exist, and what work is it accountable for? Functions and their products are linked separately.';
 $string['pdu_manager_help'] = 'A marker of managerial work, not an access role. It does not grant management permissions to a user.';
@@ -7776,13 +7784,13 @@ $string['employee2_no_competency_profile'] = 'The competency profile is not avai
 $string['employee2_comp_total'] = 'Requirements';
 $string['employee2_comp_met'] = 'Met';
 $string['employee2_comp_gap'] = 'Gap';
-$string['employee2_comp_unknown'] = 'Not assessed';
+$string['employee2_comp_unknown'] = 'No BMS24 assessment';
 $string['employee2_competency'] = 'Competency';
 $string['employee2_target_level'] = 'Required level';
 $string['employee2_current_level'] = 'Current level';
 $string['employee2_comp_state_met'] = 'Met';
 $string['employee2_comp_state_gap'] = 'Gap';
-$string['employee2_comp_state_unknown'] = 'Not assessed';
+$string['employee2_comp_state_unknown'] = 'No BMS24 assessment';
 $string['employee2_no_competencies'] = 'No competency requirements are published for the current position.';
 $string['employee2_open_competencies'] = 'Open competency profile';
 $string['employee2_learning_boundary'] = 'Learning status is read from the active learning contour. Course completion alone does not confirm competency attainment.';
@@ -7832,6 +7840,10 @@ $string['bpu_open_calendar'] = 'Open calendar';
 $string['bpu_rollover_title'] = 'Next week and unfinished work';
 $string['bpu_rollover_target'] = 'The next Battle Plan is already prepared: {$a}.';
 $string['bpu_open_next_plan'] = 'Open next plan';
+$string['bpu_next_plan_title'] = 'Next Battle Plan';
+$string['bpu_create_next_plan'] = 'Create next week plan';
+$string['bpu_next_plan_missing'] = 'No Battle Plan has been created for next week yet.';
+$string['bpu_next_plan_unavailable'] = 'The next plan can be prepared after the current period is active, or opened when it already exists.';
 $string['bpu_rollover_help'] = 'Selected tasks are not copied or rescheduled. The next Battle Plan receives a reference to the same canonical task and its history.';
 $string['bpu_rollover_selected'] = 'Carry selected work to next week';
 $string['bpu_rollover_none'] = 'There are no unfinished tasks to carry forward.';
@@ -7966,6 +7978,8 @@ $string['wcal_edit'] = 'Write and edit';
 $string['wcal_save_rights'] = 'Save permissions';
 $string['wcal_revoke'] = 'To revoke access, clear all three checkboxes and save.';
 $string['wcal_error'] = 'Access denied or invalid calendar information.';
+$string['wcal_owner_not_employee'] = 'The work calendar is available only for an employee linked to this company. Add or link the user under People → Employees.';
+$string['pmc_calendar_unavailable'] = 'The work calendar becomes available after your account is linked to an employee of this company.';
 
 // RC27 personal profile within BMS24.
 $string['bms_self_profile_edit'] = 'Edit personal details';
@@ -8210,6 +8224,10 @@ $string['bpu_metric_fact_comment'] = 'Comment / correction reason';
 $string['bpu_metric_fact_comment_help'] = 'A comment is optional for first entry. An existing observation requires a correction reason; revisions remain in history.';
 $string['bpu_metric_save_fact'] = 'Save actual';
 $string['bpu_metric_add_fact'] = 'Record actual';
+$string['bpu_metric_change_fact'] = 'Change actual';
+$string['bpu_metric_fact_recorded'] = 'Actual recorded';
+$string['bpu_metric_fact_form_title'] = 'Record actual';
+$string['bpu_metric_fact_form_period'] = 'Period: {$a->start} — {$a->end}. Unit: {$a->unit}';
 $string['bpu_metric_correct_fact'] = 'Correct';
 $string['bpu_metric_history'] = 'Daily observations';
 $string['bpu_metric_unassessed'] = 'Not assessed';
@@ -8500,3 +8518,1145 @@ $string['bms24_uikit_status_done'] = 'Completed';
 $string['bms24_uikit_status_returned'] = 'Returned';
 $string['bms24_uikit_status_paused'] = 'Paused';
 $string['bms24_uikit_page'] = 'Page {$a}';
+
+$string['bpu_continuity_title'] = 'Continue from the previous week';
+$string['bpu_continuity_source'] = 'Source: {$a}';
+$string['bpu_continuity_inherited'] = 'Prefilled from the previous plan: {$a}.';
+$string['bpu_continuity_none'] = 'The previous plan settings are no longer available and were not prefilled.';
+$string['bpu_continuity_notcopied'] = 'Not copied: tasks, metric facts, weekly goal and outcome, review history.';
+$string['bpu_continuity_review'] = 'Review the settings and save a new draft.';
+
+$string['bpu_week_compare_title'] = 'Comparison with the previous week';
+$string['bpu_week_compare_previous'] = 'Previous week';
+$string['bpu_week_compare_current'] = 'Current week';
+$string['bpu_week_compare_open'] = 'Open tasks';
+$string['bpu_week_compare_open_plan'] = 'Open Battle Plan';
+$string['bpu_week_compare_help'] = 'The comparison uses the same canonical tasks and indicators from each Battle Plan. It helps show changes in workload and metric condition between adjacent weeks, but does not imply causality.';
+$string['bpu_week_insights_title'] = 'What changed from the previous week';
+$string['bpu_week_insight_open_better'] = 'Open tasks decreased by {$a}.';
+$string['bpu_week_insight_open_worse'] = 'Open tasks increased by {$a}.';
+$string['bpu_week_insight_open_same'] = 'The number of open tasks did not change.';
+$string['bpu_week_insight_metric_better'] = 'Risk or critical metrics decreased by {$a}.';
+$string['bpu_week_insight_metric_worse'] = 'Risk or critical metrics increased by {$a}.';
+$string['bpu_week_insight_metric_same'] = 'The number of risk or critical metrics did not change.';
+$string['bpu_week_insight_nodata_better'] = 'Metrics without data decreased by {$a}.';
+$string['bpu_week_insight_nodata_worse'] = 'Metrics without data increased by {$a}.';
+$string['bpu_week_insight_nodata_same'] = 'The number of metrics without data did not change.';
+$string['bpu_week_attention_title'] = 'What needs attention now';
+$string['bpu_week_attention_summary'] = 'Open tasks: {$a->open}; risk: {$a->risk}; critical: {$a->critical}; no data: {$a->nodata}.';
+
+$string['bpu_next_actions_title'] = 'Next management actions';
+$string['bpu_next_actions_open_tasks'] = 'Open tasks: {$a}.';
+$string['bpu_next_actions_open_tasks_link'] = 'Review tasks';
+$string['bpu_next_actions_attention_metrics'] = 'Risk or critical metrics: {$a}.';
+$string['bpu_next_actions_nodata_metrics'] = 'Metrics without data: {$a}.';
+$string['bpu_next_actions_metrics_link'] = 'Open metrics';
+$string['bpu_next_actions_next_plan_exists'] = 'The next Battle Plan already exists.';
+$string['bpu_next_actions_next_plan_missing'] = 'The next Battle Plan has not been created yet.';
+$string['bpu_next_actions_clear'] = 'There are no critical signals requiring a separate action right now.';
+$string['bpu_next_actions_help'] = 'This list is assembled from canonical tasks, metric state and the next Battle Plan. It does not create a parallel decision entity or replace tasks or the management cycle.';
+$string['bpu_next_actions_create_task_prompt'] = 'Need to capture a separate management action?';
+$string['bpu_next_actions_create_task'] = 'Create management task';
+
+$string['tui_battle_plan_filter'] = 'Battle Plan';
+$string['tui_all_battle_plans'] = 'All Battle Plans';
+$string['tui_analytics_battle_plan_title'] = 'Battle Plan summary';
+$string['tui_open_battle_plan'] = 'Open Battle Plan';
+$string['tui_analytics_done_share'] = 'Completed of all tasks';
+$string['tui_analytics_overdue_share'] = 'Overdue of open tasks';
+$string['tui_analytics_review_queue'] = 'In review';
+
+
+$string['bpu_cycle_title'] = 'Productivity and effectiveness';
+$string['bpu_cycle_productivity'] = 'Task productivity';
+$string['bpu_cycle_productivity_detail'] = 'Completed tasks: {$a->done} of {$a->total}.';
+$string['bpu_cycle_effectiveness'] = 'Metric effectiveness';
+$string['bpu_cycle_effectiveness_detail'] = 'On target: {$a->ok} of {$a->evaluated} evaluated metrics.';
+$string['bpu_cycle_data_coverage'] = 'Metric data coverage';
+$string['bpu_cycle_data_coverage_detail'] = 'Evaluated: {$a->evaluated} of {$a->total} metrics.';
+$string['bpu_cycle_delta_up'] = 'Vs previous week: +{$a} pp.';
+$string['bpu_cycle_delta_down'] = 'Vs previous week: −{$a} pp.';
+$string['bpu_cycle_delta_same'] = 'Vs previous week: no change.';
+$string['bpu_cycle_method_note'] = 'Productivity is the share of completed tasks in the Battle Plan. Effectiveness is the share of metrics that are On target among metrics that already have an assessment. Metrics without data are shown separately through data coverage. These indicators are not averaged into a single employee rating.';
+$string['bpu_cycle_no_metric_data'] = 'There is not enough metric data to calculate effectiveness yet. Enter actual indicator values first.';
+$string['bpu_cycle_trend_title'] = 'Productivity and effectiveness trend';
+$string['bpu_cycle_trend_current'] = 'Current week';
+$string['bpu_cycle_trend_note'] = 'Trend across {$a->weeks} weeks using the same canonical Battle Plan tasks and metrics. Missing data is not treated as zero effectiveness.';
+$string['battleplan_team_performance_title'] = 'Team productivity and effectiveness';
+$string['battleplan_team_performance_intro'] = 'A view across accessible Battle Plans for the selected week. Productivity and effectiveness remain separate and are not combined into an employee score.';
+$string['battleplan_team_productivity_detail'] = 'Completed tasks: {$a->done} of {$a->total}.';
+$string['battleplan_team_effectiveness_detail'] = 'On target: {$a->ok} of {$a->evaluated} evaluated metrics.';
+$string['battleplan_team_coverage_detail'] = 'Evaluated: {$a->evaluated} of {$a->total} metrics.';
+$string['battleplan_team_performance_note'] = 'Summary percentages are weighted by the actual task and metric volume in the current view, not by averaging employee percentages. Missing data is not treated as zero effectiveness.';
+$string['battleplan_team_change'] = 'Vs previous week';
+$string['battleplan_team_change_productivity'] = 'Productivity';
+$string['battleplan_team_change_effectiveness'] = 'Effectiveness';
+$string['battleplan_team_change_coverage'] = 'Coverage';
+$string['battleplan_team_delta_up'] = '+{$a} pp';
+$string['battleplan_team_delta_down'] = '−{$a} pp';
+$string['battleplan_team_delta_same'] = '0 pp';
+
+$string['bpu_tool_weekcoord'] = 'Weekly coordination';
+$string['battleplan_weekcoord_title'] = 'Weekly management coordination';
+$string['battleplan_weekcoord_intro'] = 'A single manager agenda showing what needs a decision, where deviations exist, and where to act.';
+$string['battleplan_weekcoord_filter_title'] = 'Management week context';
+$string['battleplan_weekcoord_submitted'] = 'Pending approval';
+$string['battleplan_weekcoord_performance'] = 'Week result';
+$string['battleplan_weekcoord_performance_help'] = 'Task productivity, metric effectiveness and data coverage are shown separately, without a synthetic combined rating.';
+$string['battleplan_weekcoord_agenda'] = 'Requires management attention';
+$string['battleplan_weekcoord_agenda_help'] = 'Each item opens an existing Battle Plan, Task Center or indicator workflow. No separate decision registry is created.';
+$string['battleplan_weekcoord_empty'] = 'No items require attention for the selected week based on current data.';
+$string['battleplan_weekcoord_more'] = 'More items: {$a}. Open the relevant sections for the full list.';
+$string['battleplan_weekcoord_units'] = 'Units';
+$string['battleplan_weekcoord_units_help'] = 'Factual unit view: results, attention signals and existing management tasks.';
+$string['battleplan_weekcoord_no_signals'] = 'No current attention signals';
+$string['battleplan_weekcoord_method_note'] = 'This screen is a read-model: it creates no new status, rating or decision entity. All actions use existing canonical BMS24 objects.';
+$string['battleplan_weekcoord_decision_meta'] = 'Indicator decisions required: {$a}';
+$string['battleplan_weekcoord_overdue_meta'] = 'Overdue tasks: {$a}';
+$string['battleplan_weekcoord_critical_meta'] = 'Critical exceptions: {$a}';
+$string['battleplan_weekcoord_missing_meta'] = 'Weekly Battle Plan is missing';
+$string['battleplan_weekcoord_submitted_meta'] = 'Battle Plan submitted for approval';
+$string['battleplan_weekcoord_blocked_meta'] = 'Readiness blockers: {$a}';
+$string['battleplan_weekcoord_kind_decision'] = 'Decision';
+$string['battleplan_weekcoord_kind_overdue'] = 'Overdue';
+$string['battleplan_weekcoord_kind_critical'] = 'Critical KPI';
+$string['battleplan_weekcoord_kind_missing_plan'] = 'No plan';
+$string['battleplan_weekcoord_kind_submitted'] = 'Approval';
+$string['battleplan_weekcoord_kind_blocked'] = 'Blocker';
+$string['battleplan_weekcoord_management_tasks'] = 'Management tasks: {$a->open} open, {$a->done} done';
+
+$string['battleplan_weekcoord_action_open_plan'] = 'Open plan';
+$string['battleplan_weekcoord_action_open_metrics'] = 'Open KPI';
+$string['battleplan_weekcoord_action_open_tasks'] = 'Open tasks';
+$string['battleplan_weekcoord_action_create_task'] = 'Create task';
+$string['battleplan_weekcoord_action_create_plan'] = 'Create Battle Plan';
+$string['battleplan_weekcoord_action_review'] = 'Review plan';
+$string['battleplan_weekcoord_action_fix_plan'] = 'Fix plan';
+$string['battleplan_weekcoord_action_employee'] = 'Employee';
+$string['battleplan_weekcoord_actions_help'] = 'Actions open existing canonical BMS24 forms; weekly coordination never creates or changes data automatically.';
+
+$string['bmsquicknav_workspace_aria'] = 'Workspace quick navigation';
+$string['bmsquicknav_archops_aria'] = 'Operating architecture quick navigation';
+
+$string['battleplan_weekcoord_followup_title'] = 'Previous-week decision follow-up';
+$string['battleplan_weekcoord_followup_help'] = 'Review the current factual state of management tasks from the previous week {$a} and the week-over-week movement of results.';
+$string['battleplan_weekcoord_followup_total'] = 'Management tasks';
+$string['battleplan_weekcoord_followup_done'] = 'Completed';
+$string['battleplan_weekcoord_followup_open'] = 'Still open';
+$string['battleplan_weekcoord_followup_empty'] = 'No management tasks were found in accessible Battle Plans for the previous week.';
+$string['battleplan_weekcoord_followup_counts'] = '{$a->done} of {$a->total} completed; {$a->open} open';
+$string['battleplan_weekcoord_followup_prev_tasks'] = 'Previous-week tasks';
+$string['battleplan_weekcoord_followup_current_plan'] = 'Current plan';
+$string['battleplan_weekcoord_followup_open_items'] = 'Open tasks';
+$string['battleplan_weekcoord_followup_causality'] = 'Movement after management actions is a factual week-over-week observation and does not by itself prove causality.';
+
+$string['battleplan_weekcoord_history_title'] = '4–8 week management history';
+$string['battleplan_weekcoord_history_help'] = 'Factual {$a->weeks}-week movement for “{$a->scope}”. Values are recomputed from canonical Battle Plans, tasks and KPI read-models.';
+$string['battleplan_weekcoord_history_person'] = 'History: employee';
+$string['battleplan_weekcoord_history_all_people'] = 'Whole selected scope';
+$string['battleplan_weekcoord_history_depth'] = 'History depth';
+$string['battleplan_weekcoord_history_4weeks'] = '4 weeks';
+$string['battleplan_weekcoord_history_8weeks'] = '8 weeks';
+$string['battleplan_weekcoord_history_company_scope'] = 'Whole company';
+$string['battleplan_weekcoord_history_empty'] = 'No accessible history is available for the selected employee or scope in this period.';
+$string['battleplan_weekcoord_history_week_meta'] = 'Plans: {$a->plans} · management tasks: {$a->done} done, {$a->open} open';
+$string['battleplan_weekcoord_history_attention'] = 'attention signals: {$a}';
+$string['battleplan_weekcoord_history_note'] = 'History is not an employee ranking. Productivity, effectiveness and data coverage remain separate; management tasks use their current factual status.';
+
+$string['battleplan_weekcoord_patterns_title'] = 'Recurring management problems';
+$string['battleplan_weekcoord_patterns_help'] = 'Transparent factual rules over the selected history. These are review signals, not rankings, diagnoses, or automatic decisions.';
+$string['battleplan_weekcoord_patterns_empty'] = 'No recurring problems were detected by the configured factual rules in the selected period.';
+$string['battleplan_weekcoord_patterns_note'] = 'Every signal is produced only by the stated rule. It does not prove causality and does not rate an employee.';
+$string['battleplan_weekcoord_pattern_weeks'] = 'weeks: {$a}';
+$string['battleplan_weekcoord_pattern_kind_critical'] = 'Critical KPI';
+$string['battleplan_weekcoord_pattern_kind_execution'] = 'Execution';
+$string['battleplan_weekcoord_pattern_kind_followup'] = 'Decision follow-up';
+$string['battleplan_weekcoord_pattern_kind_data'] = 'Data quality';
+$string['battleplan_weekcoord_pattern_kind_decision'] = 'Decisions';
+$string['battleplan_weekcoord_pattern_critical_kpi_repeat'] = 'Critical KPI exceptions keep recurring';
+$string['battleplan_weekcoord_pattern_overdue_two_weeks'] = 'Overdue work repeats for two weeks';
+$string['battleplan_weekcoord_pattern_management_tasks_open_two_weeks'] = 'Management tasks remain open';
+$string['battleplan_weekcoord_pattern_coverage_below_80_repeat'] = 'Low data coverage keeps recurring';
+$string['battleplan_weekcoord_pattern_decisions_pending_two_weeks'] = 'Pending decisions remain unresolved';
+$string['battleplan_weekcoord_pattern_rule_critical_kpi_repeat'] = 'Rule: critical KPI exceptions are present in at least 3 of the latest 4 weeks.';
+$string['battleplan_weekcoord_pattern_rule_overdue_two_weeks'] = 'Rule: overdue tasks are present in both of the latest 2 weeks.';
+$string['battleplan_weekcoord_pattern_rule_management_tasks_open_two_weeks'] = 'Rule: open management tasks are present in both of the latest 2 weeks.';
+$string['battleplan_weekcoord_pattern_rule_coverage_below_80_repeat'] = 'Rule: data coverage is below 80% in at least 3 of the latest 4 weeks with available data.';
+$string['battleplan_weekcoord_pattern_rule_decisions_pending_two_weeks'] = 'Rule: indicators requiring a decision are present in both of the latest 2 weeks.';
+
+
+$string['battleplan_weekcoord_pattern_create_task'] = 'Create management task';
+$string['battleplan_weekcoord_pattern_select_person'] = 'Select an employee in the history filter to create a task from this signal.';
+$string['battleplan_weekcoord_pattern_task_title'] = 'Management task: {$a}';
+$string['battleplan_weekcoord_pattern_task_description'] = "Source: Weekly Management Coordination\nSignal: {\$a->signal}\n{\$a->rule}\nWeeks: {\$a->weeks}\nEmployee: {\$a->employee}\nPosition: {\$a->position}\n\nDefine the cause, management action, and expected result. The signal is a factual observation and does not by itself prove causality.";
+
+$string['battleplan_weekcoord_pattern_linked_task'] = 'Linked management task:';
+$string['battleplan_weekcoord_pattern_open_task'] = 'Open task';
+$string['battleplan_weekcoord_pattern_create_next_task'] = 'Create another task';
+$string['battleplan_weekcoord_pattern_feedback_note'] = 'Status is read live from the canonical Task Center.';
+$string['battleplan_weekcoord_pattern_result_title'] = 'Factual movement after task completion';
+$string['battleplan_weekcoord_pattern_result_completed'] = 'Task completed: {$a}';
+$string['battleplan_weekcoord_pattern_result_metric'] = 'Metric';
+$string['battleplan_weekcoord_pattern_result_before'] = 'Before / at action week · {$a}';
+$string['battleplan_weekcoord_pattern_result_after'] = 'Subsequent week · {$a}';
+$string['battleplan_weekcoord_pattern_result_delta'] = 'Change';
+$string['battleplan_weekcoord_pattern_result_pp'] = 'pp';
+$string['battleplan_weekcoord_pattern_result_insufficient_after'] = 'There is not enough subsequent data for comparison.';
+$string['battleplan_weekcoord_pattern_result_insufficient_before'] = 'There is not enough data before or at task completion for comparison.';
+$string['battleplan_weekcoord_pattern_result_causality'] = 'A change in indicators after a management action is a factual observation and does not by itself prove a causal relationship.';
+$string['bpu_change_context'] = 'Change employee or position';
+$string['battleplan_existing_opened'] = 'A Battle Plan already exists for this week. The existing plan has been opened.';
+
+$string['battleplan_weekcoord_unit_patterns_none'] = 'Recurring issues: no qualifying factual signals in the selected period.';
+
+$string['battleplan_weekcoord_ceo_title'] = 'Executive overview by unit';
+
+$string['battleplan_weekcoord_ceo_help'] = 'Current facts for accessible units and recurring signals across the selected 4/8 weeks. Open a unit for details.';
+
+$string['battleplan_weekcoord_ceo_units'] = 'Units in overview';
+
+$string['battleplan_weekcoord_ceo_units_patterns'] = 'Units with recurring signals';
+
+$string['battleplan_weekcoord_ceo_patterns'] = 'Recurring signals';
+
+$string['battleplan_weekcoord_ceo_open'] = 'Open management tasks';
+
+$string['battleplan_weekcoord_ceo_unit_row'] = 'Recurring: {$a->patterns}; open tasks: {$a->open}; overdue: {$a->overdue}';
+
+$string['battleplan_weekcoord_ceo_note'] = 'This overview reflects factual data in the accessible scope. Signals are not unit rankings and do not establish causality.';
+
+$string['battleplan_weekcoord_inaccessible_person'] = 'The requested employee is not accessible in the selected scope. Choose an employee from the list or reset the filter; the executive overview is hidden for this request.';
+
+$string['communicationcenter_conversations_title'] = 'Conversations';
+$string['communicationcenter_message_placeholder'] = 'Write a message...';
+$string['communicationcenter_workspace_hint'] = 'Choose a conversation on the left to read and reply. Use New conversation to start one.';
+
+$string['communicationcenter_mention_signal'] = 'Mentioned you';
+
+$string['communicationcenter_unread_mention_signal'] = 'Unread mention';
+$string['communicationcenter_search_messages'] = 'Search messages';
+$string['communicationcenter_clear_search'] = 'Clear search';
+$string['communicationcenter_search_count'] = 'Messages found: {$a}';
+$string['communicationcenter_search_empty'] = 'No messages match your search.';
+
+$string['communicationcenter_history_page'] = 'Page {$a->current} of {$a->total}';
+$string['communicationcenter_older_messages'] = 'Older';
+$string['communicationcenter_newer_messages'] = 'Newer';
+$string['communicationcenter_history_navigation'] = 'Conversation pages';
+
+$string['communicationcenter_message_options'] = 'Mentions and attachments';
+
+$string['communicationcenter_welcome_title'] = 'Choose a chat and start talking';
+$string['communicationcenter_welcome_help'] = 'Choose a conversation on the left to read messages and reply.';
+
+$string['bms24_brand_subtitle'] = 'Business Management System';
+
+$string['bpu_rollover_alert_title'] = 'Unfinished tasks to carry forward: {$a}';
+$string['bpu_rollover_alert_help'] = 'Select tasks below. The next plan will reference the same tasks; previous deadlines and history are preserved.';
+$string['bpu_rollover_alert_action'] = 'Review carry-forward tasks';
+
+$string['bms24_rollover_report_title'] = 'Previous-week unfinished task carryovers';
+$string['bms24_rollover_report_help'] = 'Shows prior-plan tasks still open now, not a frozen end-of-week snapshot; only visible canonical BMS Task Center tasks are counted.';
+$string['bms24_rollover_report_empty'] = 'No visible unfinished tasks from the previous week.';
+$string['bms24_rollover_report_open'] = 'Currently open';
+$string['bms24_rollover_report_carried'] = 'Carried forward';
+$string['bms24_rollover_report_pending'] = 'Not carried';
+
+$string['bpu_filter_status_quick'] = 'Quick battle plan status filter';
+
+$string['bms24_weekmanager_title'] = 'Manager action queue';
+$string['bms24_weekmanager_help'] = 'Submitted plans are for the selected week and active filters. Uncarried tasks are from the previous week in accessible plans, based on current task statuses.';
+$string['bms24_weekmanager_reviews'] = 'Plans awaiting review';
+$string['bms24_weekmanager_rollovers'] = 'Tasks not carried forward';
+$string['bms24_weekmanager_reason'] = 'Reason';
+$string['bms24_weekmanager_clear'] = 'No action items in the available data.';
+
+$string['bms24_rollover_snapshot_source'] = 'Count source';
+
+$string['bms24_rollover_snapshot_frozen'] = 'At closure';
+
+$string['bms24_rollover_snapshot_live'] = 'Current statuses (historical snapshot unavailable)';
+
+$string['bms24_repeatcarry_title'] = 'Repeated task carryovers';
+$string['bms24_repeatcarry_help'] = 'Verified carryovers of the same task at least twice during the last 8 weeks. Only accessible plans and tasks are included. Missing historical events are not inferred.';
+$string['bms24_repeatcarry_empty'] = 'No repeated verified carryovers in this period.';
+$string['bms24_repeatcarry_count'] = 'Carryovers';
+$string['bms24_repeatcarry_weeks'] = 'Source weeks';
+
+$string['bms24_discipline_title'] = 'Execution: close-time facts';
+$string['bms24_discipline_help'] = 'Last 8 weeks. Share completed when the plan was actually closed; not a deadline compliance metric. Cancelled tasks are excluded; unverifiable historical statuses are not inferred.';
+$string['bms24_discipline_empty'] = 'No closed plans with a reliable task snapshot.';
+$string['bms24_discipline_weeks'] = 'Plans with snapshot';
+$string['bms24_discipline_completed'] = 'Completed';
+$string['bms24_discipline_open'] = 'Unfinished';
+$string['bms24_discipline_carried'] = 'Carried over';
+$string['bms24_discipline_rate'] = 'Completion share';
+$string['bms24_discipline_legacy'] = 'Closed plans without a historical snapshot (excluded): {$a}.';
+
+$string['bms24_trend_title'] = 'Weekly execution trend';
+$string['bms24_trend_help'] = 'Last 8 weeks. Only verified snapshots captured at actual plan close are counted. Missing data is not zero; this is not deadline compliance.';
+$string['bms24_trend_week'] = 'Week';
+$string['bms24_trend_legacy_mark'] = 'without snapshot: {$a}';
+
+$string['bms24_personal_title'] = 'Employee execution insight';
+$string['bms24_personal_help'] = 'Select an employee to see eight weeks of verified close-time results and repeated confirmed carryovers. This is not an original-deadline compliance rate.';
+$string['bms24_personal_empty'] = 'No accessible closed plans with historical snapshots.';
+$string['bms24_personal_choose'] = 'Choose an employee';
+$string['bms24_personal_repeats'] = 'Employee repeated task carryovers';
+
+$string['bms24_employee_open_execution_insight'] = 'Battle plan execution analytics';
+$string['bms24_personal_open_employee'] = 'Open employee profile';
+
+$string['bms24_employee_execution_title'] = 'Execution discipline · 8 weeks';
+$string['bms24_employee_execution_done'] = 'Completed at close';
+$string['bms24_employee_execution_unfinished'] = 'Unfinished at close';
+$string['bms24_employee_execution_carried'] = 'Carried at close';
+$string['bms24_employee_execution_rate'] = 'Completion share';
+$string['bms24_employee_execution_coverage'] = 'Weeks with snapshots';
+$string['bms24_employee_execution_value'] = 'Value';
+$string['bms24_employee_execution_disclaimer'] = 'Only immutable close-time task snapshots are counted. This is not an on-time metric. Missing snapshots are not treated as zero performance.';
+$string['bms24_employee_execution_legacy'] = 'Weeks with legacy plans missing snapshots';
+
+$string['battleplan_weekcoord_steps_title'] = 'Weekly coordination workflow';
+$string['battleplan_weekcoord_step_review'] = '1. Review previous week';
+$string['battleplan_weekcoord_step_decide'] = '2. Make decisions';
+$string['battleplan_weekcoord_step_analyse'] = '3. Evaluate trend';
+$string['battleplan_weekcoord_step_followthrough'] = '4. Assign follow-ups';
+$string['battleplan_weekcoord_steps_help'] = 'Review outcomes, open agenda items and record decisions in existing Battle Plans and Tasks. This navigation does not create a separate decision log.';
+
+$string['battleplan_weekcoord_step_protocol'] = '3. Prepare meeting notes';
+$string['battleplan_weekcoord_protocol_title'] = 'Weekly coordination worksheet';
+$string['battleplan_weekcoord_protocol_help'] = 'A preview of outstanding tasks from the previous week (up to three per plan). Use this list to discuss issues and record final decisions in canonical task records.';
+$string['battleplan_weekcoord_protocol_empty'] = 'No outstanding tasks were found in the accessible scope.';
+$string['battleplan_weekcoord_protocol_employee'] = 'Employee';
+$string['battleplan_weekcoord_protocol_task'] = 'Original task';
+$string['battleplan_weekcoord_protocol_reason'] = 'Reason';
+$string['battleplan_weekcoord_protocol_decision'] = 'Decision';
+$string['battleplan_weekcoord_protocol_owner_due'] = 'Owner and due date';
+$string['battleplan_weekcoord_protocol_limit'] = 'Showing the first 30 tasks. Narrow the filters to see more.';
+$string['battleplan_weekcoord_protocol_warning'] = 'This worksheet is read-only and does not save decisions. Record owners, dates and comments in Task Center.';
+
+$string['battleplan_protocol_saved'] = 'Protocol saved. Previous revision remains in history.';
+$string['battleplan_protocol_revision'] = 'Revision';
+$string['battleplan_protocol_duedate'] = 'Decision due date';
+$string['battleplan_protocol_save'] = 'Save decision';
+$string['battleplan_protocol_explainer'] = 'Protocol decisions are stored separately from canonical tasks and never update task status or due date automatically.';
+$string['battleplan_protocol_conflict'] = 'Protocol changed since you opened this page. Reload and retry.';
+
+$string['battleplan_protocol_history'] = 'Revision history (latest 25)';
+$string['battleplan_protocol_owneruserid'] = 'Responsible';
+$string['battleplan_protocol_select_owner'] = 'Select an employee';
+$string['battleplan_protocol_no_owners'] = 'No assignable employees are available in the selected scope. Check the department filter.';
+
+$string['battleplan_decision_control_title'] = 'Management decision control';
+$string['battleplan_decision_control_explainer'] = 'Only saved decisions for accessible unfinished tasks are included. Overdue is calculated from the decision deadline; completion has not yet been confirmed.';
+$string['battleplan_decision_total'] = 'All decisions';
+$string['battleplan_decision_overdue'] = 'Deadline passed';
+$string['battleplan_decision_upcoming'] = 'Deadline upcoming';
+$string['battleplan_decision_undated'] = 'No deadline';
+$string['battleplan_decision_empty'] = 'No saved decisions yet';
+$string['battleplan_decision_task'] = 'Task';
+$string['battleplan_decision_deadline_status'] = 'Deadline state';
+$string['battleplan_protocol_responsible'] = 'Responsible';
+
+$string['battleplan_execution_status'] = 'Execution status';
+$string['battleplan_execution_pending'] = 'Pending';
+$string['battleplan_execution_inprogress'] = 'In progress';
+$string['battleplan_execution_completed'] = 'Completed';
+$string['battleplan_execution_cancelled'] = 'Cancelled';
+$string['battleplan_execution_confirm'] = 'Save status';
+
+$string['battleplan_notify_assigned'] = 'Decision assigned';
+$string['battleplan_notify_soon'] = 'Decision due tomorrow';
+$string['battleplan_notify_overdue'] = 'Decision deadline passed';
+$string['battleplan_notify_context'] = 'Weekly management coordination';
+$string['battleplan_notify_task'] = 'Coordination decision reminders';
+
+$string['battleplan_protocol_task_unavailable'] = 'Task unavailable';
+$string['battleplan_protocol_review_decision'] = 'Review decision';
+$string['battleplan_protocol_task_status'] = 'Task status';
+$string['battleplan_protocol_review_action'] = 'Action';
+$string['battleplan_protocol_task_status_help'] = 'Task status is read from Task Center. Decision completion requires separate confirmation; closing the task never automatically closes the decision.';
+
+$string['battleplan_dashboard_open'] = 'Open';
+$string['battleplan_dashboard_by_owner'] = 'By responsible person';
+$string['battleplan_dashboard_explainer'] = 'Metrics use the latest saved revisions of decisions visible in this coordination. Overdue includes only pending or in-progress decisions past the due date. Decision completion is separately confirmed from task completion.';
+
+$string['battleplan_registry_title'] = 'Management decision registry';
+$string['battleplan_registry_help'] = 'Company-wide registry of saved decisions across weeks. Latest revision only; revision history remains in weekly protocol.';
+$string['battleplan_registry_status'] = 'Status';
+$string['battleplan_registry_owner_placeholder'] = 'Responsible Moodle user ID';
+$string['battleplan_registry_from'] = 'Week from';
+$string['battleplan_registry_to'] = 'Week to';
+$string['battleplan_registry_overdue'] = 'Only overdue open decisions';
+$string['battleplan_registry_count'] = 'Decisions found: {$a}';
+$string['battleplan_registry_open'] = 'Open protocol';
+$string['battleplan_registry_empty'] = 'No decisions match these filters';
+$string['battleplan_registry_action'] = 'Action';
+
+$string['battleplan_registry_decision'] = 'Decision';
+$string['battleplan_registry_all_owners'] = 'All responsible people';
+
+$string['battleplan_focus_title'] = 'Decision from registry';
+$string['battleplan_focus_task'] = 'Open original task';
+$string['battleplan_focus_not_found'] = 'The decision is not available in this week’s protocols.';
+
+$string['battleplan_bulk_title'] = 'Bulk status change';
+$string['battleplan_bulk_select'] = 'Select decision';
+$string['battleplan_bulk_apply'] = 'Apply to selected';
+$string['battleplan_bulk_confirm'] = 'Change the status of selected decisions?';
+$string['battleplan_bulk_help'] = 'Up to 20 decisions. Inaccessible or changed records are skipped. Each update is saved to its revision history.';
+$string['battleplan_bulk_result'] = 'Updated: {$a->updated}. Skipped: {$a->skipped}.';
+
+$string['battleplan_bulk_preview'] = 'Preview changes';
+$string['battleplan_bulk_preview_help'] = 'Review the selected decisions. Access and current revision will be checked again on confirmation.';
+$string['battleplan_bulk_current'] = 'Current';
+$string['battleplan_bulk_new'] = 'New';
+$string['battleplan_bulk_confirm_apply'] = 'Confirm changes';
+$string['battleplan_bulk_assign_title'] = 'Bulk owner and deadline';
+$string['battleplan_bulk_assign_owner'] = 'Change responsible person';
+$string['battleplan_bulk_assign_date'] = 'Change deadline';
+$string['battleplan_bulk_assign_help'] = 'Choose 1 to 20 decisions. Only the selected field changes; Task Center tasks are untouched.';
+
+$string['battleplan_bulk_unified_title'] = 'Bulk decision actions';
+$string['battleplan_bulk_operation'] = 'Action';
+$string['battleplan_bulk_select_page'] = 'Select all on this page (maximum 20)';
+$string['battleplan_bulk_unified_help'] = 'Select decisions once, then choose an action. Changes are applied only after preview and confirmation.';
+
+$string['battleplan_bulkaudit_title'] = 'Bulk operation log';
+$string['battleplan_bulkaudit_empty'] = 'No bulk operations yet.';
+$string['battleplan_bulkaudit_when'] = 'When';
+$string['battleplan_bulkaudit_actor'] = 'Performed by';
+$string['battleplan_bulkaudit_operation'] = 'Action';
+$string['battleplan_bulkaudit_selected'] = 'Selected';
+$string['battleplan_bulkaudit_updated'] = 'Updated';
+$string['battleplan_bulkaudit_skipped'] = 'Skipped';
+$string['battleplan_bulkaudit_operation_status'] = 'Change status';
+$string['battleplan_bulkaudit_operation_owner'] = 'Assign owner';
+$string['battleplan_bulkaudit_operation_duedate'] = 'Change due date';
+
+$string['battleplan_bulkaudit_details'] = 'Details';
+$string['battleplan_bulkaudit_outcome_updated'] = 'Updated';
+$string['battleplan_bulkaudit_outcome_skipped'] = 'Skipped';
+$string['battleplan_bulkaudit_reason_unavailable'] = 'Record is unavailable, outdated, or cannot be changed';
+$string['battleplan_bulkaudit_reason_validation'] = 'Validation or save failed';
+$string['battleplan_bulkaudit_legacy'] = 'Details were not recorded';
+
+$string['battleplan_bulkaudit_allactors'] = 'All actors';
+$string['battleplan_bulkaudit_result'] = 'Operation result';
+$string['battleplan_bulkaudit_result_success'] = 'All updated';
+$string['battleplan_bulkaudit_result_partial'] = 'Partially completed';
+$string['battleplan_bulkaudit_result_skipped'] = 'All skipped';
+$string['battleplan_bulkaudit_auditfrom'] = 'Date from';
+$string['battleplan_bulkaudit_auditto'] = 'Date to';
+
+$string['battleplan_bulkaudit_reset'] = 'Reset audit filters';
+$string['battleplan_bulkaudit_found'] = 'Operations found: {$a}';
+
+$string['bpu_review_decision_guide'] = 'Approval activates the plan. Requesting changes returns it to draft and records reviewer feedback in history.';
+$string['bpu_review_targets_hint'] = 'Select tasks requiring correction. If none are selected, the feedback applies to the entire plan.';
+$string['bpu_review_comment_required'] = 'When requesting changes, provide a clear reason and expected outcome. A comment is optional for approval.';
+$string['bpu_review_invalid_decision'] = 'Choose a valid review decision.';
+
+$string['bpu_correction_check_title'] = 'Review correction checklist';
+$string['bpu_correction_check_help'] = 'Check corrections before resubmitting. Editing a task does not automatically resolve a reviewer remark; the reviewer makes the final decision.';
+$string['bpu_correction_check_pending'] = 'requires review';
+$string['bpu_correction_check_whole'] = 'This remark applies to the whole plan. Check tasks and settings before resubmitting.';
+
+$string['bpu_fix_title'] = 'Correction acknowledgements';
+$string['bpu_fix_pending'] = 'Awaiting correction';
+$string['bpu_fix_claimed'] = 'Corrected, awaiting review';
+$string['bpu_fix_accepted'] = 'Accepted by reviewer';
+$string['bpu_fix_note'] = 'Correction or review note';
+$string['bpu_fix_claim_action'] = 'Mark corrected for review';
+$string['bpu_fix_accept_action'] = 'Accept correction';
+$string['bpu_fix_rework_action'] = 'Request further changes';
+
+$string['bpu_fix_summary'] = 'Correction summary';
+$string['bpu_fix_count_pending'] = 'Awaiting correction: {$a}';
+$string['bpu_fix_count_claimed'] = 'Awaiting review: {$a}';
+$string['bpu_fix_count_accepted'] = 'Accepted: {$a}';
+$string['bpu_fix_all_accepted'] = 'All corrections for current review comments were accepted.';
+$string['bpu_fix_not_all_accepted'] = 'Some comments still need correction or review.';
+$string['bpu_fix_advisory'] = 'This summary is informational. Existing review rules determine whether the plan may be resubmitted.';
+
+$string['bpu_resubmit_warning'] = 'Reviewer comments not yet accepted: {$a}. Resubmission does not mean corrections have been approved.';
+$string['bpu_resubmit_acknowledge'] = 'I have reviewed the outstanding comments and confirm resubmission for review.';
+
+$string['bpu_reviewer_correction_title'] = 'Corrections from the latest returned review';
+$string['bpu_reviewer_correction_state'] = 'Correction status';
+
+$string['bpu_approval_check_title'] = 'Battle Plan approval readiness';
+$string['bpu_approval_check_column'] = 'Check';
+$string['bpu_approval_check_result'] = 'Result';
+$string['bpu_approval_check_reviewer'] = 'Reviewer (lifecycle requirement)';
+$string['bpu_approval_check_tasks'] = 'Plan tasks (lifecycle requirement)';
+$string['bpu_approval_check_product'] = 'Expected task products (review advisory)';
+$string['bpu_approval_check_assignee'] = 'Task assignees (review advisory)';
+$string['bpu_approval_check_due'] = 'Task due dates (review advisory)';
+$string['bpu_approval_check_metrics'] = 'Position indicators and facts (review advisory)';
+$string['bpu_approval_check_ok'] = 'Assigned and available';
+$string['bpu_approval_check_missing'] = 'Missing or unavailable';
+$string['bpu_approval_check_taskcount'] = 'Tasks in plan: {$a}';
+$string['bpu_approval_check_missingcount'] = 'Not set: {$a}';
+$string['bpu_approval_check_metricstatus'] = 'Indicators: {$a->total}; without fact: {$a->missing}';
+$string['bpu_approval_check_blocked'] = 'Existing lifecycle requirements are not met. Check the plan before deciding.';
+$string['bpu_approval_check_ready'] = 'Existing lifecycle requirements are met. The reviewer may decide after checking task content.';
+$string['bpu_approval_check_advisory'] = 'Missing products, assignees, due dates, indicator facts and unaccepted corrections are advisories, not new approval blockers. See latest correction notes below.';
+
+$string['bpu_approval_queue_title'] = 'Awaiting reviewer approval';
+$string['bpu_approval_queue_help'] = 'Plans available for your approval in the selected week. Task, metric and correction counts are advisory; approval remains in each plan.';
+$string['bpu_approval_queue_empty'] = 'No plans need your approval for this week.';
+$string['bpu_approval_queue_tasks'] = 'Tasks';
+$string['bpu_approval_queue_metrics'] = 'Indicators';
+$string['bpu_approval_queue_corrections'] = 'Corrections';
+$string['bpu_approval_queue_assessment'] = 'Review';
+$string['bpu_approval_queue_task_count'] = 'Visible BMS tasks: {$a}';
+$string['bpu_approval_queue_metric_count'] = 'With facts: {$a->evaluated} of {$a->total}';
+$string['bpu_approval_queue_fix_count'] = 'Accepted: {$a->accepted} of {$a->total}';
+$string['bpu_approval_queue_no_corrections'] = 'No corrections from latest return';
+$string['bpu_approval_queue_ready'] = 'No summary advisories';
+$string['bpu_approval_queue_check'] = 'Review content';
+$string['bpu_approval_queue_prev'] = 'Previous';
+$string['bpu_approval_queue_next'] = 'Next';
+$string['bpu_approval_queue_paging'] = 'Page {$a->page} of {$a->pages}';
+$string['bpu_approval_filter_all'] = 'All';
+$string['bpu_approval_filter_ready'] = 'No summary advisories';
+$string['bpu_approval_filter_review'] = 'Needs review';
+$string['bpu_approval_filter_empty'] = 'No plans match this filter. Choose another option.';
+$string['bpu_approval_units_title'] = 'Approval queue by department';
+$string['bpu_approval_units_help'] = 'All accessible submitted plans for the selected week. Readiness is advisory only. Open a department to filter the queue.';
+$string['bpu_approval_no_unit'] = 'Unassigned department';
+
+// RC29 build2026101794: reviewer queue preview and safe return navigation.
+$string['bpu_approval_preview_title'] = 'Quick preview';
+$string['bpu_approval_preview_tasks'] = 'Tasks in plan: {$a}';
+$string['bpu_approval_preview_metrics'] = 'Metrics missing facts: {$a}';
+$string['bpu_approval_preview_corrections'] = 'Unaccepted corrections: {$a}';
+$string['bpu_approval_preview_last_note'] = 'Latest reviewer feedback:';
+$string['bpu_approval_preview_open_tasks'] = 'Open tasks';
+$string['bpu_approval_preview_open_metrics'] = 'Open metrics';
+$string['bpu_approval_back_queue'] = '← Back to review queue';
+$string['bpu_weekly_outcomes_title'] = 'Weekly Battle Plan approval outcomes';
+$string['bpu_weekly_outcomes_help'] = 'Only accessible plans for the selected PLAN week are counted. The outcome is based on current status and the latest recorded review decision; it is not a count of actions performed during that calendar week. Resubmitted plans count as waiting.';
+$string['bpu_weekly_outcome_all'] = 'Total plans';
+$string['bpu_weekly_outcome_approved'] = 'Approved';
+$string['bpu_weekly_outcome_returned'] = 'Returned for corrections';
+$string['bpu_weekly_outcome_waiting'] = 'Awaiting decision';
+$string['bpu_weekly_outcome_other'] = 'No recorded decision';
+$string['bpu_weekly_outcomes_units'] = 'By department';
+$string['bpu_weekly_outcomes_reviewers'] = 'By assigned reviewer';
+$string['bpu_weekly_outcome_no_reviewer'] = 'Reviewer not assigned';
+$string['bpu_weekly_outcomes_empty'] = 'No accessible Battle Plans for the selected week.';
+
+$string['bpu_timing_title'] = 'Battle Plan approval turnaround';
+$string['bpu_timing_help'] = 'For the selected plan week. Pending time is since the latest submission, approval duration is from submission to approval. The 48-hour threshold is informational, not an SLA or overdue rule. Returned reviews reset the submission timestamp, so older wait times cannot be reconstructed. Self-approvals are excluded from the average.';
+$string['bpu_timing_waiting'] = 'Awaiting decision';
+$string['bpu_timing_waiting_long'] = 'Awaiting 48 hours or longer';
+$string['bpu_timing_waiting_unknown'] = 'Missing submission time';
+$string['bpu_timing_approved_known'] = 'Approved with reliable times';
+$string['bpu_timing_average'] = 'Mean approval duration';
+$string['bpu_timing_group'] = 'Unit / reviewer';
+$string['bpu_timing_sent'] = 'Submitted for approval';
+$string['bpu_timing_elapsed'] = 'Elapsed time';
+$string['bpu_timing_waiting_plans'] = 'Plans awaiting decision';
+$string['bpu_timing_recent'] = 'Recently approved';
+$string['bpu_timing_actual_approver'] = 'Approved by';
+$string['bpu_timing_approved_at'] = 'Approved on';
+$string['bpu_timing_more'] = 'More records: {$a}. Use the Battle Plan list to find them.';
+$string['bpu_timing_no_data'] = 'No plans with reliable submission or approval timestamps.';
+$string['bpu_timing_excluded'] = 'Excluded from mean: {$a->unknown} plan(s) without reliable timestamps and {$a->self} self-approved plan(s).';
+$string['bpu_timing_less_minute'] = 'under 1 min';
+$string['bpu_timing_minutes'] = 'min';
+$string['bpu_timing_hours'] = 'h';
+
+$string['bpu_reviewlog_title'] = 'Approval cycle event log';
+$string['bpu_reviewlog_no_history'] = 'Submission and decision events are recorded from this release onward. Earlier cycles cannot be reconstructed reliably.';
+$string['bpu_reviewlog_help'] = 'Elapsed time is measured between submission and decision for each completed cycle. Self-approvals are excluded. This is an event history, not an approval SLA.';
+$string['bpu_reviewlog_summary'] = 'Recorded cycles: {$a->cycles}. Decisions with measurable elapsed times: {$a->timed}.';
+$string['bpu_reviewlog_number'] = 'Cycle';
+$string['bpu_reviewlog_event'] = 'Event';
+$string['bpu_reviewlog_when'] = 'Date and time';
+$string['bpu_reviewlog_actor'] = 'Actor';
+$string['bpu_reviewlog_duration'] = 'Time waiting';
+$string['bpu_reviewlog_submitted'] = 'Submitted for approval';
+$string['bpu_reviewlog_approved'] = 'Approved';
+$string['bpu_reviewlog_returned'] = 'Returned for changes';
+$string['bpu_reviewlog_selfapproved'] = 'Self-approved';
+
+$string['bpu_reviewlog_average'] = 'Average decision time';
+
+$string['bpu_cycleanalytics_title'] = 'Approval cycles: analytics';
+$string['bpu_cycleanalytics_help'] = 'For the selected Battle Plan week. Only events recorded since review-cycle logging was introduced are counted; earlier cycles cannot be reconstructed. Duration is from submission to decision, not an SLA. Reviewer groups reflect the assigned plan reviewer.';
+$string['bpu_cycleanalytics_tracked'] = 'Plans with recorded events';
+$string['bpu_cycleanalytics_recorded_submissions'] = 'Recorded submissions';
+$string['bpu_cycleanalytics_recorded_returns'] = 'Recorded returns';
+$string['bpu_cycleanalytics_repeated_submissions'] = 'Plans with 2+ submissions';
+$string['bpu_cycleanalytics_repeated_returns'] = 'Plans with 2+ returns';
+$string['bpu_cycleanalytics_measured_decisions'] = 'Decisions with measured duration';
+$string['bpu_cycleanalytics_average'] = 'Average decision time';
+$string['bpu_cycleanalytics_coverage'] = 'Event coverage: {$a->tracked} of {$a->all} plans. No recorded events: {$a->untracked}. Missing history does not imply no approvals.';
+$string['bpu_cycleanalytics_assigned_reviewers'] = 'By assigned reviewer';
+$string['bpu_cycleanalytics_employees'] = 'By employee';
+$string['bpu_cycleanalytics_repeated_title'] = 'Plans with repeated cycles';
+$string['bpu_cycleanalytics_group_limit'] = 'Other groups: {$a}. Refine filters to see more.';
+
+// build2026101799 — stage-based review time (recorded events only).
+$string['bpu_stagedelay_title'] = 'Where review time is spent';
+$string['bpu_stagedelay_help'] = 'Recorded stages for the selected plan week. Manager wait: submission to decision; employee rework: return to resubmission. Averages include only completed stages backed by timestamps. Open stages appear separately. Time spent is not proof of a violation or fault; no review SLA has been defined. Reviewer groups use the assigned reviewer.';
+$string['bpu_stagedelay_manager_cycles'] = 'Completed manager decision waits';
+$string['bpu_stagedelay_employee_cycles'] = 'Completed employee reworks';
+$string['bpu_stagedelay_manager_open'] = 'Currently awaiting reviewer';
+$string['bpu_stagedelay_employee_open'] = 'Currently being reworked';
+$string['bpu_stagedelay_manager_average'] = 'Average manager decision wait';
+$string['bpu_stagedelay_employee_average'] = 'Average employee rework';
+$string['bpu_stagedelay_coverage'] = 'Coverage: {$a->recorded} of {$a->plans} plans have event logs; {$a->evidenced} have at least one measurable stage; {$a->missing} have no log. Incomplete or inconsistent histories: {$a->partial} plans; ignored identical duplicates: {$a->duplicate}. Self approvals without manager stage: {$a->self}. Missing historic events are never inferred.';
+$string['bpu_stagedelay_plans'] = 'Battle Plan details';
+$string['bpu_stagedelay_filter_all'] = 'All accessible plans';
+$string['bpu_stagedelay_filter_current'] = 'Current open stages only';
+$string['bpu_stagedelay_empty'] = 'No plans match this filter.';
+$string['bpu_stagedelay_status'] = 'Plan status';
+$string['bpu_stagedelay_current'] = 'Current stage';
+$string['bpu_stagedelay_manager'] = 'Awaiting reviewer decision';
+$string['bpu_stagedelay_employee'] = 'Employee rework';
+$string['bpu_stagedelay_history'] = 'Review history';
+$string['bpu_stagedelay_unknown'] = 'Unknown status';
+
+$string['leader_dashboard_scope'] = 'Scope: plans and protocol decisions use the selected week; tasks and exceptions show current state, not a historical week-end snapshot.';
+$string['leader_dashboard_kpi_approval'] = 'Plans awaiting approval';
+$string['leader_dashboard_kpi_tasks'] = 'Overdue tasks (current)';
+$string['leader_dashboard_kpi_protocol'] = 'Overdue coordination decisions';
+$string['leader_dashboard_protocol_restricted'] = 'Protocol decisions are unavailable without organizational management capability. A dash does not mean zero decisions.';
+$string['leader_dashboard_queue_title'] = 'Manager attention queue';
+$string['leader_dashboard_queue_help'] = 'Signals from authorized sources. Group ordering does not imply blame, SLA or performance rating.';
+$string['leader_dashboard_queue_clear'] = 'No visible signals in the available sources.';
+$string['leader_dashboard_col_source'] = 'Source';
+$string['leader_dashboard_source_exception'] = 'Indicators';
+$string['leader_dashboard_source_plan'] = 'Battle Plan';
+$string['leader_dashboard_source_protocol'] = 'Coordination';
+$string['leader_dashboard_source_task'] = 'Task';
+$string['leader_dashboard_reason_decision'] = 'Management decision needed';
+$string['leader_dashboard_reason_critical'] = 'Critical exception';
+$string['leader_dashboard_reason_review'] = 'Awaiting review';
+$string['leader_dashboard_reason_protocol'] = 'Decision deadline passed; completion not confirmed';
+$string['leader_dashboard_reason_task'] = 'Task deadline passed';
+$string['leader_dashboard_more'] = 'Only the first part of the queue is shown. Complete lists and filters are available in the linked sections.';
+$string['bpu_nav_context'] = 'Battle Plan navigation';
+$string['bpu_nav_edit'] = 'Edit settings';
+$string['bpu_nav_fill'] = 'Add tasks';
+$string['bpu_nav_mode_action'] = 'Confirm an action. Return to a plan tab to cancel without changes.';
+$string['bpu_nav_mode_metrics'] = 'Additional metric settings';
+
+// RC29/1803 personal start tool.
+$string['bmsmain_change'] = 'Change main tool';
+$string['bmsmain_page_title'] = 'Personalise BMS24';
+$string['bmsmain_page_intro'] = 'Choose the tool to start your day. All other permitted sections remain available.';
+$string['bmsmain_invalid'] = 'This tool is not available for your company or role.';
+$string['bmsmain_saved'] = 'Your workspace preferences were saved.';
+$string['bmsmain_sidebar_main'] = 'My main tool';
+$string['bmsmain_sidebar_favorites'] = 'Favorites';
+$string['bmsmain_favorites_title'] = 'Quick links';
+$string['bmsmain_favorites_hint'] = 'Pick up to five sections. Your permissions still apply.';
+$string['bmsmain_save_button'] = 'Set as main tool and save';
+$string['bmsmain_cancel'] = 'Cancel';
+$string['bmsmain_desc_workspace'] = 'My work, events and key signals';
+$string['bmsmain_desc_battleplan'] = 'Weekly plans, tasks and approvals';
+$string['bmsmain_desc_tasks'] = 'Assignments, due dates and execution';
+$string['bmsmain_desc_management'] = 'KPIs, exceptions and management decisions';
+$string['bmsmain_desc_communications'] = 'Messages and teamwork';
+$string['bmsmain_desc_architecturecenter'] = 'Organisation structure, roles and processes';
+$string['bmsmain_desc_people'] = 'Employees, skills and development';
+$string['bmsmain_plan_title'] = 'My Battle Plan';
+$string['bmsmain_plan_week'] = 'Week beginning {$a}';
+$string['bmsmain_plan_empty'] = 'There is no Battle Plan for the current week yet.';
+$string['bmsmain_plan_open'] = 'Open my plan';
+$string['bmsmain_plan_to_list'] = 'Open Battle Plans';
+$string['bmsmain_personal_eyebrow'] = 'MY WORK';
+$string['bmsmain_actions_title'] = 'Quick actions';
+$string['bmsmain_later'] = 'Choose later';
+$string['bmswidgets_title'] = 'Customize workspace';
+$string['bmswidgets_intro'] = 'Choose visible cards and arrange their order for your account in this company. Use arrow buttons or position numbers, then save.';
+$string['bmswidgets_position'] = 'Position';
+$string['bmswidgets_up'] = 'Move card up';
+$string['bmswidgets_down'] = 'Move card down';
+$string['bmswidgets_save'] = 'Save layout';
+$string['bmswidgets_reset'] = 'Restore default layout';
+$string['bmswidgets_saved'] = 'Workspace widget preferences saved.';
+$string['bmswidgets_invalid'] = 'Invalid workspace card layout.';
+$string['bmswidgets_empty'] = 'Keep at least one card visible.';
+$string['bmswidgets_name_today'] = 'Today';
+$string['bmswidgets_name_plan'] = 'My Battle Plan';
+$string['bmswidgets_name_actions'] = 'Quick actions';
+$string['bmswidgets_name_overview'] = 'Important right now';
+$string['bmswidgets_name_attention'] = 'Needs attention';
+$string['bmswidgets_name_tasks'] = 'My tasks';
+$string['bmswidgets_name_management'] = 'Management week';
+$string['bmswidgets_name_architecture'] = 'Business architecture';
+$string['bmswidgets_name_company'] = 'About the company';
+
+$string['bmsworkspace_focus_title'] = 'My workspace';
+$string['bmsworkspace_focus_description'] = 'Your tasks, weekly Battle Plan and items that need your attention.';
+
+// RC29/1809 personal action queue.
+$string['bmsaction_title'] = 'Requires my action';
+$string['bmsaction_subtitle'] = 'Your tasks, reviews and management decisions';
+$string['bmsaction_empty'] = 'No required actions right now';
+$string['bmsaction_empty_details'] = 'Your tasks, assigned reviews and authorised management decisions are checked. Other notifications stay in their own areas.';
+$string['bmsaction_open_overdue'] = 'Overdue — open task';
+$string['bmsaction_open_today'] = 'Due today — open task';
+$string['bmsaction_fix_task'] = 'Revise task';
+$string['bmsaction_review_task'] = 'Review completed task';
+$string['bmsaction_review_plan'] = 'Review Battle Plan';
+$string['bmsaction_fix_plan'] = 'Revise Battle Plan';
+$string['bmsaction_decide_indicator'] = 'Management decision required';
+$string['bmsaction_battle_plan'] = 'Battle Plan';
+
+// RC29/1810 role-aware workspace views.
+$string['bmsfocus_switch_label'] = 'Workspace views';
+$string['bmsfocus_tab_all'] = 'All widgets';
+$string['bmsfocus_tab_personal'] = 'My work';
+$string['bmsfocus_tab_management'] = 'Manager view';
+$string['bmsfocus_tab_owner'] = 'Owner view';
+$string['bmsfocus_desc_all'] = 'All widgets available to you. Personal and company indicators are shown in their own sections.';
+$string['bmsfocus_desc_personal'] = 'Personal tasks, Battle Plan and actions assigned to you. Company management exceptions are not loaded.';
+$string['bmsfocus_desc_management'] = 'Approvals, KPI decisions and management week for this company. Switch to My work for personal tasks.';
+$string['bmsfocus_desc_owner'] = 'Owner-authorized tools: management decisions, architecture and company context. Private data is opened in its protected module.';
+$string['bmsfocus_open_management'] = 'Open management overview';
+$string['bmsfocus_open_owner'] = 'Open owner workspace';
+$string['bmsfocus_empty'] = 'No visible widgets in this view. Check your workspace settings.';
+
+// RC29/1815 Corporate implementation task -> Battle Plan link.
+$string['bmsimpl_attach_title'] = 'Add to Battle Plan';
+$string['bmsimpl_attach_intro'] = 'Select a draft Battle Plan for this implementation task. Original task and discussion remain with Corporate.';
+$string['bmsimpl_attach_company'] = 'Company';
+$string['bmsimpl_attach_choose_company'] = 'Choose company';
+$string['bmsimpl_attach_no_draft'] = 'You have no editable draft Battle Plan for this task. Create one and try again.';
+$string['bmsimpl_attach_create_plan'] = 'Create Battle Plan';
+$string['bmsimpl_attach_plan'] = 'Battle Plan and week';
+$string['bmsimpl_attach_select'] = 'Select a Battle Plan';
+$string['bmsimpl_attach_submit'] = 'Add to Battle Plan';
+$string['bmsimpl_attach_back'] = 'Return to implementation task';
+$string['bmsimpl_attach_success'] = 'Task linked to Battle Plan without copying.';
+$string['bmsimpl_attach_unavailable'] = 'The task is not available for linking. Check the provider binding, company, assignee and task status.';
+
+$string['implproj_title'] = 'BMS implementation projects';
+$string['implproj_intro'] = 'Link a paid Corporate implementation program to an existing published BMS Administrative Scale project. No tasks are copied or modified.';
+$string['implproj_projects'] = 'Open BMS24 projects';
+$string['implproj_empty'] = 'No eligible implementation programs for this company.';
+$string['implproj_status_active'] = 'Active';
+$string['implproj_status_paused'] = 'Paused';
+$string['implproj_status_completed'] = 'Completed';
+$string['implproj_tasks'] = 'Tasks: {$a->total} · completed: {$a->done} · overdue: {$a->overdue}';
+$string['implproj_linked'] = 'Linked project';
+$string['implproj_stale'] = 'Linked project is no longer published or available. Unlink before selecting another.';
+$string['implproj_unlink'] = 'Unlink';
+$string['implproj_select'] = 'BMS24 project';
+$string['implproj_link'] = 'Link project';
+$string['implproj_no_projects'] = 'No published projects. First publish a project in the Administrative Scale.';
+$string['implproj_previous'] = 'Previous page';
+$string['implproj_next'] = 'Next page';
+$string['implproj_saved'] = 'Link updated';
+$string['implproj_permission'] = 'You are not allowed to manage project links.';
+$string['implproj_unavailable'] = 'Corporate program API 1.23 is unavailable. Update Corporate to 0.40.5.';
+$string['implproj_source'] = 'Corporate source is not connected or company identities do not match.';
+$string['implproj_program'] = 'Corporate program is unavailable.';
+$string['implproj_project'] = 'BMS24 project is not published or available.';
+$string['implproj_conflict'] = 'This program or project is already linked. Unlink it before changing the mapping.';
+
+$string['implstage_title'] = 'BMS implementation stages';
+$string['implstage_disclaimer'] = 'Sections come from the confirmed Corporate baseline audit. Task completion and accepted evidence are distinct and do not change BMS project state or establish adoption maturity.';
+$string['implstage_open'] = 'View implementation stages';
+$string['implstage_back'] = 'Back to implementation projects';
+$string['implstage_no_baseline'] = 'No confirmed baseline audit is available for this program. Section progress cannot be calculated.';
+$string['implstage_empty'] = 'There are no sections in this confirmed audit.';
+$string['implstage_total'] = 'Sections: {$a->stages} · tasks: {$a->tasks} · completed: {$a->completed} · overdue: {$a->overdue} · accepted evidence: {$a->evidence}';
+$string['implstage_metrics'] = 'Tasks: {$a->tasks} · completed: {$a->done} · in review: {$a->review} · overdue: {$a->overdue} · accepted evidence: {$a->accepted}';
+$string['implstage_criteria'] = 'Audit criteria: {$a->total} · gaps: {$a->gaps} · covered by tasks: {$a->covered}';
+$string['implstage_source'] = 'Detailed progress in Corporate';
+$string['implstage_unavailable'] = 'Corporate sections API 1.24 is unavailable. Upgrade Corporate to 0.40.6.';
+$string['implstage_status_unassessed'] = 'Not sufficiently assessed';
+$string['implstage_status_achieved'] = 'Audit targets reached';
+$string['implstage_status_risk'] = 'Overdue tasks exist';
+$string['implstage_status_noactions'] = 'No tasks for gaps';
+$string['implstage_status_partial'] = 'Not all gaps covered by tasks';
+$string['implstage_status_complete'] = 'Tasks for gaps completed';
+$string['implstage_status_review'] = 'Tasks under review';
+$string['implstage_status_inprogress'] = 'In progress';
+
+$string['implweek_nav'] = 'Implementation week selection';
+$string['implweek_previous'] = 'Previous week';
+$string['implweek_next'] = 'Next week';
+$string['implweek_current'] = 'Current week';
+$string['implweek_period'] = 'Week {$a->start} — {$a->end}';
+$string['implweek_scope'] = 'Shows Corporate task references in Battle Plans for the selected week only. Tasks in review or completed are counted separately; tasks may be planned in another week.';
+$string['implweek_summary'] = 'Included this week: {$a->planned} · Not included this week: {$a->unplanned} · Under curator review: {$a->review} · Completed: {$a->completed}';
+$string['implweek_restricted'] = 'No access to company-wide Battle Plans. Weekly planning is restricted, not zero.';
+$string['implweek_upgrade_corporate'] = 'Corporate 0.40.7 (API 1.25) is needed for weekly planning insights.';
+$string['implweek_shared_baseline'] = 'Multiple programs share this audit baseline; tasks cannot be attributed unambiguously.';
+$string['implweek_limit_exceeded'] = 'Task projection exceeded the safe maximum. Partial counts are not displayed.';
+$string['implweek_unconfirmed_baseline'] = 'Confirmed baseline audit is required for task mapping.';
+$string['implweek_incomplete'] = 'Corporate returned an incomplete task projection. Weekly counts are not calculated.';
+$string['implweek_inreview'] = 'Under curator review';
+$string['implweek_inplan'] = 'In Battle Plan';
+$string['implweek_openplan'] = 'Open plan';
+$string['implweek_notplanned'] = 'Not included this week';
+$string['implweek_more'] = 'Showing only the first 12 active tasks of this stage.';
+// Integration 1819: curator evidence result overview.
+$string['implresult_heading'] = 'Results and curator verification';
+$string['implresult_scope'] = 'Only tasks with a latest accepted evidence package count as curator-accepted. Completed tasks without such evidence remain distinct. Results show the current state, independent of the selected week.';
+$string['implresult_summary'] = 'Awaiting review: {$a->review} · Returned: {$a->returned} · Accepted: {$a->accepted} · Completed without evidence: {$a->legacy} · Needs reconciliation: {$a->inconsistent}';
+$string['implresult_details'] = 'Show task verification statuses';
+$string['implresult_version'] = 'Evidence version {$a}';
+$string['implresult_more'] = 'Showing the first 12 tasks of this section. See Corporate for all tasks, details and discussion.';
+$string['implresult_upgrade_corporate'] = 'Curator decision insights require Corporate 0.40.8 (API 1.26).';
+$string['implresult_unconfirmed_baseline'] = 'A confirmed baseline audit is required to evaluate implementation results.';
+$string['implresult_shared_baseline'] = 'The source tasks cannot be unambiguously attributed to a program sharing the same baseline.';
+$string['implresult_limit_exceeded'] = 'Corporate task limit exceeded. Partial results are not shown.';
+$string['implresult_evidence_unavailable'] = 'Corporate evidence storage is unavailable; missing data is not treated as a negative result.';
+$string['implresult_changed'] = 'Task and result snapshots changed while loading. Refresh the page.';
+$string['implresult_incomplete'] = 'Implementation results are incomplete or unavailable.';
+$string['implresult_state_not_started'] = 'Not started';
+$string['implresult_state_in_work'] = 'In progress';
+$string['implresult_state_awaiting_review'] = 'Evidence sent to curator';
+$string['implresult_state_review_without_evidence'] = 'Under review without evidence package';
+$string['implresult_state_returned'] = 'Returned for revision by curator';
+$string['implresult_state_accepted'] = 'Result accepted by curator';
+$string['implresult_state_completed_unverified'] = 'Completed without accepted evidence';
+$string['implresult_state_cancelled'] = 'Cancelled';
+$string['implresult_state_inconsistent'] = 'Check task/evidence state in Corporate';
+
+// RC29/build2026101820: implementation control dashboard and assigned curator.
+$string['impldash_title'] = 'BMS implementation control';
+$string['impldash_open'] = 'Implementation control dashboard';
+$string['impldash_intro'] = 'Linked program and project: selected-week planning, current results and curator decisions. Corporate data is not duplicated.';
+$string['impldash_stages'] = 'Detailed stages and tasks';
+$string['impldash_curator'] = 'Assigned program curator';
+$string['impldash_curator_missing'] = 'No curator assigned';
+$string['impldash_curator_unavailable'] = 'Assigned user is unavailable';
+$string['impldash_curator_config'] = 'Assign or change curator in Corporate';
+$string['impldash_curator_workspace'] = 'Corporate curator workspace';
+$string['impldash_stages_count'] = 'Implementation sections';
+$string['impldash_tasks_count'] = 'Implementation tasks';
+$string['impldash_overdue_count'] = 'Overdue tasks';
+$string['impldash_planned_count'] = 'In this week’s Battle Plans';
+$string['impldash_unplanned_count'] = 'Not in this week’s plans';
+$string['impldash_waiting_count'] = 'Awaiting curator review';
+$string['impldash_returned_count'] = 'Returned for revision';
+$string['impldash_accepted_count'] = 'Accepted by curator';
+$string['impldash_unverified_count'] = 'Completed without accepted evidence';
+$string['impldash_week_unavailable'] = 'The weekly planning figures cannot be reliably calculated (permissions, baseline or completeness). A dash does not mean zero.';
+$string['impldash_result_unavailable'] = 'Curator decision figures are incomplete or unavailable. Do not draw conclusions from missing figures.';
+$string['impldash_scope'] = 'Planning refers only to the selected week. Curator decisions reflect current status, not necessarily that week. Task completion is not BMS maturity.';
+$string['impldash_attention'] = 'Results requiring attention';
+$string['impldash_attention_unknown'] = 'A reliable action list is unavailable without complete Corporate data.';
+$string['impldash_attention_empty'] = 'No review results requiring attention among verified accessible tasks.';
+$string['impldash_task'] = 'Task';
+$string['impldash_section'] = 'Implementation section';
+$string['impldash_state'] = 'Result status';
+$string['impldash_more'] = 'First 12 tasks shown. Full evidence and comments remain in Corporate.';
+$string['impldash_bysection'] = 'Progress by section';
+$string['impldash_curator_portfolio'] = 'Corporate curator portfolio';
+
+// Communication Center 3.0 date separators (build 2026101823).
+$string['bmscomm3_today'] = 'Today';
+$string['bmscomm3_yesterday'] = 'Yesterday';
+$string['bmscomm3_senderror'] = 'Message not sent. Check your connection or try again.';
+$string['bmscomm3_closecontext'] = 'Close context';
+
+$string['bmscomm4_newmessages'] = 'New messages — scroll down';
+$string['bmscomm4_refresh'] = 'Refresh conversation';
+$string['bmscomm4_livepaused'] = 'Live updates paused';
+
+$string['communication_editmessage'] = 'Edit';
+$string['communication_withdrawmessage'] = 'Delete';
+$string['communication_edited'] = 'Edited';
+$string['communication_saveedit'] = 'Save changes';
+$string['communication_confirmdelete'] = 'I confirm removing this message from the conversation.';
+$string['communication_deletenotice'] = 'The message will be hidden. A restricted audit record is retained.';
+$string['communication_conflict'] = 'Message changed. Refresh and retry.';
+$string['communication_linkedmessage'] = 'A message used in a task or decision cannot be changed.';
+
+// Task checklist 2.0 (build2026101830).
+$string['bmscheck_progress'] = 'Completed: {$a->done} of {$a->total}';
+$string['bmscheck_edit'] = 'Edit';
+$string['bmscheck_save'] = 'Save changes';
+$string['bmscheck_delete'] = 'Delete item';
+$string['bmscheck_confirmdelete'] = 'I confirm deletion of this item';
+$string['bmscheck_moveup'] = 'Move up';
+$string['bmscheck_movedown'] = 'Move down';
+$string['bmscheck_mark'] = 'Mark complete';
+$string['bmscheck_unmark'] = 'Mark incomplete';
+
+// build1831: Canonical subtask hierarchy UI.
+$string['bms_subtask_create'] = 'Create subtask';
+$string['bms_subtask_link'] = 'Link existing task';
+$string['bms_subtask_intro'] = 'Each subtask is an independent task with its own owner, deadline and expected result.';
+$string['bms_subtask_empty'] = 'No subtasks yet.';
+$string['bms_subtask_heading'] = 'Subtasks ({$a})';
+$string['bms_subtask_search'] = 'Find an existing task';
+$string['bms_subtask_no_candidates'] = 'No eligible tasks found. You can link only an accessible active task without a parent or another management context.';
+$string['bms_subtask_choose'] = 'Choose task';
+$string['bms_subtask_link_hint'] = 'This task remains in the canonical BMS24 task list and all existing Battle Plans. Only the parent link changes.';
+$string['bms_subtask_parent'] = 'Parent task';
+$string['bms_subtask_parent_hint'] = 'The new task will be created as a subtask with its own assignee, deadline and expected result.';
+$string['taskcenter_subtask_invalid'] = 'Unable to identify the subtask. Refresh the list and try again.';
+$string['taskcenter_action_subtask_link'] = 'Linked subtask to parent';
+$string['taskcenter_action_subtask_added'] = 'Added subtask';
+
+// 2026101832: Task child execution and parent completion rules.
+$string['bms_subtask_progress_title'] = 'Subtask progress';
+$string['bms_subtask_progress'] = '{$a->done} of {$a->total} completed · {$a->percent}%';
+$string['bms_subtask_review_count'] = 'Under review: {$a}';
+$string['bms_subtask_overdue_count'] = 'Overdue: {$a}';
+$string['bms_subtask_cancelled_count'] = 'Cancelled: {$a}';
+$string['bms_subtask_overdue_label'] = 'Overdue';
+$string['bms_subtask_partial_visibility'] = 'Some subtasks are not visible to you. An overall completion percentage cannot be shown.';
+$string['bms_subtask_completion_warning'] = 'The parent task cannot be submitted or accepted while any subtasks remain unfinished.';
+$string['taskcenter_subtasksunfinished'] = 'Complete or cancel all active subtasks before submitting the parent task for review.';
+
+// build2026101834 — weekly planning of canonical subtasks.
+$string['bms_subtask_week_heading'] = 'Subtasks in weekly Battle Plans';
+$string['bms_subtask_week_previous'] = '← Previous';
+$string['bms_subtask_week_next'] = 'Next →';
+$string['bms_subtask_week_planned'] = 'In accessible plans';
+$string['bms_subtask_week_unplanned'] = 'Not added to a plan';
+$string['bms_subtask_week_not_visible'] = 'Not found in accessible plans';
+$string['bms_subtask_week_done'] = 'Completed';
+$string['bms_subtask_week_partial'] = 'Some subtasks are not visible to you. Figures do not represent the complete hierarchy.';
+$string['bms_subtask_week_scope'] = 'Only plans you can access are counted. A task absent from those plans might be scheduled in another user’s plan.';
+$string['bms_subtask_week_workload'] = 'Assignee workload for these subtasks';
+$string['bms_subtask_week_person'] = '{$a->tasks} tasks · {$a->minutes} planned minutes';
+$string['bms_subtask_week_more_people'] = 'Only the first 12 assignees by task count are displayed.';
+$string['bms_subtask_week_open_plan'] = 'Open Battle Plan';
+
+$string['bms_bundle_title'] = 'Task and subtask templates';
+$string['bms_bundle_intro'] = 'A template captures the task, direct subtasks and checklists. Results, discussions, files and statuses are not copied. Company managers administer the library.';
+$string['bms_bundle_saved'] = 'Template saved';
+$string['bms_bundle_launched'] = 'Task bundle created';
+$string['bms_bundle_archived'] = 'Template archived';
+$string['bms_bundle_capture'] = 'Save as template';
+$string['bms_bundle_name'] = 'Template name';
+$string['bms_bundle_save'] = 'Save template';
+$string['bms_bundle_launch_hint'] = 'Choose an assignee, reviewer and start date. Dates shift relative to the original task; checklist items start unchecked.';
+$string['bms_bundle_children_short'] = 'subtasks';
+$string['bms_bundle_assignee'] = 'Primary assignee';
+$string['bms_bundle_reviewer'] = 'Result reviewer';
+$string['bms_bundle_start'] = 'Schedule anchor date';
+$string['bms_bundle_keep'] = 'Keep original subtask assignees (if still in the company)';
+$string['bms_bundle_launch'] = 'Create tasks from template';
+$string['bms_bundle_library'] = 'Template library';
+$string['bms_bundle_empty'] = 'No active templates. Open a task and choose “Save as template”.';
+$string['bms_bundle_archive'] = 'Archive';
+$string['bms_bundle_next'] = 'Next page';
+$string['bms_bundle_prev'] = 'Previous page';
+$string['bms_bundle_limit'] = 'Template too large: maximum 20 subtasks and 50 checklist items per task.';
+$string['bms_bundle_nested'] = 'The task contains nested subtasks beyond one level. Flatten them before capturing the template in this release.';
+$string['bms_bundle_date_range'] = 'Date falls outside the template range (-730 to +1095 days).';
+$string['bms_bundle_invalid'] = 'Invalid template or repeated request with inconsistent data.';
+
+$string['bms_bundle_archive_confirm'] = 'Confirm template archiving. Already created tasks will not change.';
+
+$string['bms_bundle_checks_short'] = 'checklist items';
+
+// BMS24 build2026101836: Task Execution Analytics 1.0.
+$string['bms_exec_narrowed'] = 'Assignee or project drill-down applied';
+$string['bms_exec_scope'] = 'Figures reflect the active filters and only tasks you can access. Managers can select All company tasks for a full picture.';
+$string['bms_exec_returned'] = 'Returned for revision';
+$string['bms_exec_soon'] = 'Due within 7 days';
+$string['bms_exec_undated'] = 'Without due date';
+$string['bms_exec_subtaskoverdue'] = 'Overdue subtasks';
+$string['bms_exec_done_progress'] = 'Completed share (excluding cancelled tasks)';
+$string['bms_exec_people'] = 'Execution by assignee';
+$string['bms_exec_people_note'] = 'Up to 15 assigned users ranked by overdue and active task counts. Figures use the original assignee, not temporary coverage. Select a name to filter the task list.';
+$string['bms_exec_projects'] = 'Execution by project';
+$string['bms_exec_project'] = 'Project';
+$string['bms_exec_projects_note'] = 'Only tasks directly referencing an Administrative Scale project are included; children without their own project context are not inferred. Up to 10 projects.';
+$string['bms_exec_empty'] = 'No tasks in the current selection.';
+$string['bms_exec_project_empty'] = 'No directly project-linked tasks in this selection.';
+$string['bms_exec_risks'] = 'Tasks needing attention';
+$string['bms_exec_risks_empty'] = 'No overdue or returned tasks.';
+$string['bms_exec_subtask'] = 'Subtask';
+$string['bms_exec_limits'] = 'Read-only report. Aggregates cover the complete visible selection; assignee, project and risk tables are limited to 15, 10 and 12 rows.';
+
+// build2026101837 — live existing-task search for subtask linking.
+$string['bms_subtask_search_placeholder'] = 'Start typing the task title';
+$string['bms_subtask_search_help'] = 'Enter at least 2 characters to show matching tasks.';
+$string['bms_subtask_search_loading'] = 'Searching tasks…';
+$string['bms_subtask_search_empty'] = 'No eligible tasks found. Try a different title.';
+$string['bms_subtask_search_error'] = 'Could not load tasks. Try again or use Find.';
+$string['bms_subtask_search_more'] = 'First 20 tasks shown. Refine your search to see more.';
+$string['bms_subtask_search_selected'] = 'Selected task: ';
+$string['bms_subtask_search_due'] = 'Due: ';
+
+// RC29 build2026101840: task role union and compact workspace.
+$string['taskcenter_scope_roles'] = 'All my roles';
+$string['taskcenter_role_assignee'] = 'Assignee';
+$string['taskcenter_role_creator'] = 'Created by me';
+$string['taskcenter_role_reviewer'] = 'Reviewer';
+$string['taskcenter_role_observer'] = 'Observer';
+$string['taskcenter_role_plan'] = 'Battle Plan participant';
+$string['bms_task1840_more_filters'] = 'More filters';
+$string['bms_task1840_search'] = 'Search tasks by title';
+$string['bms_task1840_search_button'] = 'Search';
+$string['bms_task1840_quick'] = 'Quick filters';
+$string['bms_task1840_clear_signal'] = 'Clear filter';
+$string['bms_task1840_role_help'] = 'Tasks where you are the assignee, creator, reviewer, or observer.';
+
+/* build2026101841: Task List 4.0. */
+$string['bms_task1841_configure'] = 'Configure table';
+$string['bms_task1841_columns'] = 'Visible columns';
+$string['bms_task1841_default_sort'] = 'Default sort';
+$string['bms_task1841_direction'] = 'Direction';
+$string['bms_task1841_asc'] = 'Ascending';
+$string['bms_task1841_desc'] = 'Descending';
+$string['bms_task1841_save'] = 'Save preferences';
+$string['bms_task1841_saved'] = 'Table preferences saved';
+$string['bms_task1841_sort_by'] = 'Sort by: {$a}';
+$string['bms_task1841_updated'] = 'Last updated';
+$string['bms_task1841_created'] = 'Created';
+
+// BMS24 Task Actions 2.0, build2026101842.
+$string['bms_task1842_select'] = 'Select task';
+$string['bms_task1842_select_all'] = 'Select all on this page';
+$string['bms_task1842_start'] = 'Start';
+$string['bms_task1842_accept'] = 'Accept result';
+$string['bms_task1842_due'] = 'Change deadline';
+$string['bms_task1842_assign'] = 'Change assignee';
+$string['bms_task1842_choose_employee'] = 'Choose employee';
+$string['bms_task1842_confirm'] = 'I confirm the batch action for selected tasks';
+$string['bms_task1842_apply'] = 'Apply to selected';
+$string['bms_task1842_result'] = 'Processed: {$a->total}. Updated: {$a->updated}. Skipped: {$a->skipped} (permissions, task state, revision conflict or Battle Plan restriction).';
+$string['bms_task1842_invalid_selection'] = 'Select 1 to 25 tasks. Refresh the list if the records changed.';
+$string['bms_task1842_plan_locked'] = 'Cannot bulk-reassign a task linked to a Battle Plan or position responsibility.';
+$string['bms_task1842_submit'] = 'Submit result';
+$string['bms_task1842_return'] = 'Return for rework';
+
+// build2026101843: read-only deadline workspace.
+$string['bms_task1843_title'] = 'Deadlines';
+$string['bms_task1843_all'] = 'All deadlines';
+$string['bms_task1843_overdue'] = 'Overdue';
+$string['bms_task1843_today'] = 'Today';
+$string['bms_task1843_week'] = 'Next 7 days';
+$string['bms_task1843_later'] = 'Later';
+$string['bms_task1843_undated'] = 'No deadline';
+$string['bms_task1843_closed'] = 'Completed and cancelled';
+$string['bms_task1843_help'] = 'Deadlines use your Moodle calendar timezone. Filter counts cover all matching tasks; the sections below show the current page. Closed tasks are never overdue.';
+
+// build2026101846 — configurable Kanban board presentation.
+$string['bms_task1846_configure'] = 'Configure Kanban';
+$string['bms_task1846_columns'] = 'Board columns';
+$string['bms_task1846_visible'] = 'Show column';
+$string['bms_task1846_position'] = 'Column order';
+$string['bms_task1846_mapping'] = 'Task status → column';
+$string['bms_task1846_help'] = 'Only the board layout changes. Drag-and-drop and workflow transitions will be added separately. If a column is hidden, statuses mapped to it move to the first visible column. The board shows the current page of tasks.';
+$string['bms_task1846_save'] = 'Save settings';
+$string['bms_task1846_saved'] = 'Kanban settings saved.';
+$string['bms_task1846_reset'] = 'Restore default board';
+
+$string['bms_task1847_reset_columns'] = 'Restore default columns';
+
+$string['bms_task1848_scroll_left'] = 'Scroll left';
+$string['bms_task1848_scroll_right'] = 'Scroll right';
+
+$string['bms_task1850_group'] = 'Group cards';
+$string['bms_task1850_group_none'] = 'No grouping';
+$string['bms_task1850_group_assignee'] = 'By assignee';
+$string['bms_task1850_group_project'] = 'By project';
+$string['bms_task1850_wip'] = 'Work limit';
+$string['bms_task1850_wip_hint'] = '0 means unlimited. Counts cover all accessible filtered tasks; an excess is highlighted but does not block transitions.';
+$string['bms_task1850_drag_hint'] = 'Drag a task to a column to open its existing confirmation form. Status is not changed automatically.';
+$string['bms_task1850_unassigned'] = 'Unassigned';
+$string['bms_task1850_no_project'] = 'No project';
+$string['bms_task1850_project'] = 'Project';
+$string['bms_task1850_empty'] = 'No tasks on this page';
+
+$string['bms_task1850_move'] = 'Move';
+
+$string['bms_task1852_recent'] = 'Recent activity';
+$string['bms_task1852_no_activity'] = 'No activity yet';
+$string['bms_task1852_full_history'] = 'Full history';
+$string['bms_task1852_signal_overdue'] = 'Overdue';
+$string['bms_task1852_signal_review'] = 'Awaiting review';
+$string['bms_task1852_signal_returned'] = 'Returned';
+$string['bms_task1852_signal_priority'] = 'High priority';
+$string['bms_task1853_manager'] = 'Manager';
+$string['bms_task1853_title'] = 'Company execution control';
+$string['bms_task1853_intro'] = 'Key deviations, reviews, and staff workload. Metrics reflect accessible company tasks and active filters.';
+$string['bms_task1853_progress'] = 'Completed tasks excluding cancelled';
+$string['bms_task1853_team'] = 'Assignee workload';
+$string['bms_task1853_team_limit'] = 'Up to 15 assignees ranked by overdue and active tasks. Select a metric to open matching tasks.';
+$string['bms_task1853_limits'] = 'Only managers with existing permissions can access this read-only dashboard. Totals cover the full filtered set; risks are limited to 12 tasks and projects to 10.';
+$string['bms_task1853_restricted'] = 'The manager workspace is not available for your role.';
+
+$string['taskcenter_scope_department'] = 'Department';
+
+$string['bms_task1858_clear_filters'] = 'Clear filters';
+
+$string['readiness_title'] = 'Position design readiness';
+$string['readiness_intro'] = 'Readiness shows whether an active position has a purpose, published functions and a published Role DNA profile.';
+$string['readiness_status'] = 'Readiness';
+$string['readiness_gap'] = 'Missing element';
+$string['readiness_apply'] = 'Apply filters';
+$string['readiness_matches'] = 'Matching positions';
+$string['readiness_functions'] = 'Published functions';
+$string['readiness_profiles'] = 'Published Role DNA profiles';
+$string['readiness_basic_links_present'] = 'Basic elements present';
+$string['readiness_needs_description'] = 'Description incomplete';
+$string['readiness_purpose_missing'] = 'Purpose missing';
+$string['readiness_published_functions_missing'] = 'No published functions';
+$string['readiness_published_role_dna_missing'] = 'No published Role DNA';
+
+$string['companycatalog_title'] = 'Company competency catalogs';
+
+$string['companycatalog_back'] = '← People';
+
+$string['companycatalog_intro'] = 'Linked catalogs are available for this company’s position profiles. Connecting again preserves a single binding.';
+
+$string['companycatalog_saved'] = 'Catalog connected to the company.';
+
+$string['companycatalog_empty'] = 'No competency catalogs are connected to this company yet.';
+
+$string['companycatalog_select'] = 'Competency catalog';
+
+$string['companycatalog_bind'] = 'Connect catalog';
+
+$string['companycatalog_admin'] = 'Contact the site administrator to connect a catalog.';
+
+$string['companycatalog_nosystem'] = 'First create a catalog in Moodle administration under Competencies.';
+
+$string['employee2_moodle_rating'] = 'Competency confirmation in Moodle';
+$string['employee2_confirmation_unassessed'] = 'Not assessed';
+$string['employee2_confirmation_review'] = 'Awaiting or undergoing review';
+$string['employee2_confirmation_proficient'] = 'Competency confirmed';
+$string['employee2_confirmation_notproficient'] = 'Competency not confirmed';
+$string['employee2_assignment_grade'] = 'Assignment grade in Moodle';
+$string['employee2_assignment_unavailable'] = 'Not available';
+$string['employee2_assignment_ungraded'] = 'Not graded yet';
+$string['employee2_moodle_rating_note'] = 'The rating uses the Moodle scale. BMS24 uses its own assessments to calculate the current level and readiness.';
+
+$string['employee2_development_courses'] = 'Development courses';
+
+$string['employee2_course_progress'] = 'Course activity progress — {$a}%';
+
+$string['employee2_course_progress_unavailable'] = 'Course activity progress is unavailable';
+
+$string['reviewqueue_title'] = 'To review';
+$string['reviewqueue_competency'] = 'Competency';
+$string['reviewqueue_intro'] = 'Competency review requests available through your Moodle permissions. This queue may include employees from different companies. Submitted work and competency assessment open separately.';
+$string['reviewqueue_empty'] = 'No review requests are available.';
+$string['reviewqueue_open_work'] = 'Open related work';
+$string['reviewqueue_related_work_hint'] = 'Work related to learning evidence. It may predate this request: Moodle does not link the request to a specific submission. Check the evidence before assessing the competency.';
+$string['reviewqueue_review'] = 'Review competency';
+$string['reviewqueue_work_unavailable'] = 'A direct work link is unavailable. Open the competency review and its evidence.';
+$string['reviewqueue_waiting'] = 'Waiting for review';
+$string['reviewqueue_in_review'] = 'Under your review';
+$string['reviewqueue_route_help'] = 'Open the work and save its grade in Moodle. This queue stays in this tab: refresh results, then review the competency separately. An assignment grade does not automatically confirm a competency.';
+$string['reviewqueue_refresh'] = 'Refresh results';
+$string['reviewqueue_open_work_tab'] = 'Open work — new tab';
+$string['reviewqueue_review_tab'] = 'Review competency — new tab';
+$string['reviewqueue_grade_not_published'] = 'No published grade available';
+$string['employee2_open_assignment_feedback'] = 'Open the assignment link above to read the teacher feedback.';
+
+$string['privacy:metadata:companyrevocation'] = 'Company access revocation history. After erasure, only the active company/user denial is retained while the account can log in, so erasure cannot restore access.';
+
+$string['kbacompany:manageorganization'] = 'Manage company organisation';

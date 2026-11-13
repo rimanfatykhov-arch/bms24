@@ -1,0 +1,12 @@
+{
+    "component": "local_kbacompany",
+    "release": "1.1.0-rc29",
+    "build": 2026101796,
+    "summary": "RC29 build1796 approval turnaround read-only dashboard, ACL-aware, no schema changes",
+    "code_status": "Code ready",
+    "live_acceptance": "NOT RUN",
+    "release_notes": "RELEASE_NOTES_RC29_REVIEW_TURNAROUND_2026101796.md",
+    "register": "RELEASE_REGISTER_LOCAL.md",
+    "generated_at": "2026-10-23T21:32:54+00:00",
+    "guard": "Packaging must fail when cli/release_docs_checkpoint.php --check exits non-zero."
+}

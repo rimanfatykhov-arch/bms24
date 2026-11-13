@@ -231,7 +231,7 @@ class staffing_service {
             'branchuuid' => (string)$source->branchuuid,
             'name' => get_string('staffplanversiondefault', 'local_kbacompany', userdate(time(), '%d.%m.%Y')),
             'currency' => (string)$source->currency,
-            'effectivefrom' => userdate(time(), '%Y-%m-%d'),
+            'effectivefrom' => business_date_service::day(time()),
             'copycurrent' => 1,
         ]);
     }
@@ -466,11 +466,7 @@ class staffing_service {
         $currentplan = $plans ? reset($plans) : null;
         $plan = $planuuid === '' ? $currentplan : $DB->get_record('local_kbacompany_staffplan',
             ['companyuuid' => $companyuuid, 'uuid' => $planuuid, 'status' => 'approved'], '*', MUST_EXIST);
-        $organization = organization_service::organization_context($companyuuid, $userid);
-        $employees = [];
-        foreach ($organization['employees'] as $employee) {
-            $employees[(int)$employee['user_id']] = $employee;
-        }
+        $employees = self::placement_employees($companyuuid, $userid);
         $positions = $DB->get_records('local_kbacompany_position', ['companyuuid' => $companyuuid]);
         $positionmap = [];
         foreach ($positions as $position) { $positionmap[(string)$position->uuid] = $position; }
@@ -659,9 +655,8 @@ class staffing_service {
             throw new \moodle_exception('staffingassignmenteditcurrentonly', 'local_kbacompany');
         }
         $employeeid = (int)($data['employeeid'] ?? 0);
-        $organization = organization_service::organization_context($companyuuid, $userid);
-        $eligible = array_map('intval', array_column($organization['employees'], 'user_id'));
-        if (!in_array($employeeid, $eligible, true)) {
+        $eligible = self::placement_employees($companyuuid, $userid);
+        if (!isset($eligible[$employeeid])) {
             throw new \moodle_exception('employeenotavailable', 'local_kbacompany');
         }
         $assignmenttype = trim((string)($data['assignmenttype'] ?? 'primary'));
@@ -1137,6 +1132,28 @@ class staffing_service {
     private static function line_values(\stdClass $line): array {
         return ['fte' => (float)$line->plannedfte, 'salary_min' => (float)$line->salarymin,
             'salary_max' => (float)$line->salarymax, 'budget' => (float)$line->budgetamount];
+    }
+
+    private static function placement_employees(string $companyuuid, int $userid): array {
+        $directory = employee_service::employees_context($companyuuid, $userid);
+        $organization = organization_service::organization_context($companyuuid, $userid);
+        $existing = array_column($organization['employees'], null, 'user_id');
+        $employees = [];
+        foreach ($directory['employees'] as $employee) {
+            if (!$employee['active'] || !in_array('employee', $employee['roles'], true)) {
+                continue;
+            }
+            $id = (int)$employee['user_id'];
+            $employees[$id] = $existing[$id] ?? [
+                'user_id' => $id,
+                'full_name' => $employee['full_name'],
+                'position' => $employee['position']['name'] ?? null,
+                'position_key' => $employee['position']['uuid'] ?? null,
+                'org_assignments' => [],
+                'company_roles' => $employee['roles'],
+            ];
+        }
+        return $employees;
     }
 
     private static function parse_effective_date(string $value, int $fallback = 0): int {

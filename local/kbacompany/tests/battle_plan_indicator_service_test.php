@@ -89,6 +89,13 @@ final class battle_plan_indicator_service_test extends \advanced_testcase {
     public function test_historical_projection_uses_last_52_periods_relative_to_plan_week(): void {
         global $DB;
         $f=$this->fixture();
+        $before=battle_plan_indicator_service::projection($f['company'],$f['admin'],$f['positionuuid'],'2026-09-14',$f['plan']);
+        $this->assertSame('insufficient', $before[0]['trend']['movement']);
+        // The classifier requires three real observations, not two plus future data.
+        $DB->insert_record('local_kbacompany_statval', (object)[
+            'companyuuid'=>$f['company'],'statuuid'=>$f['statuuid'],'periodstart'=>'2026-08-24','kind'=>'fact',
+            'amount'=>70,'revision'=>1,'reason'=>'third historical point','writerid'=>$f['admin'],'timecreated'=>time(),
+        ]);
         $date=new \DateTimeImmutable('2026-09-21', new \DateTimeZone('UTC'));
         for ($i=0; $i<60; $i++) {
             $DB->insert_record('local_kbacompany_statval', (object)[

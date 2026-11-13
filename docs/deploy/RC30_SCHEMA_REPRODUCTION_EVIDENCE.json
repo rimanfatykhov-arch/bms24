@@ -1,0 +1,154 @@
+{
+  "source_sha": "696213c01ed7e30a768c1c2dcd2abae7608e072d",
+  "tested_merge_sha": "11ccb31fa85014263d2d2485bb005cc271754204",
+  "base_sha": "511d8f4c765abd4f0901595e74d2124154e2b8d4",
+  "reproduction_run": 42751792049,
+  "static_run": 42751792249,
+  "release_status": "HOLD",
+  "databases": {
+    "mariadb": {
+      "artifact_id": 13733178816,
+      "environment": {
+        "php": "8.1.34",
+        "database": "10.11.19-MariaDB-ubu2204",
+        "vendor": "mariadb.org binary distribution",
+        "fixture_sha256": "be4b64f4cb1c0641ec6e0bf218395e387008501370260b242053904824efc160",
+        "github_sha": "11ccb31fa85014263d2d2485bb005cc271754204",
+        "scope": "Synthetic metadata-derived reproduction only; no deployed environment contacted"
+      },
+      "reproduction": {
+        "reproduction": "PASS",
+        "schema_parity": "FAIL",
+        "release_acceptance": "HOLD",
+        "individual_results": {
+          "reproduced.local_kbacompany_adminitem.starttime": "PASS: missing field remains",
+          "reproduced.local_kbacompany_adminitem.duetime": "PASS: missing field remains",
+          "reproduced.local_kbacompany_finbudfact.actualamount": "PASS: scale zero remains",
+          "reproduced.local_kbacompany_finbudline.limitamount": "PASS: scale zero remains",
+          "reproduced.local_kbacompany_finbudline.planamount": "PASS: scale zero remains",
+          "reproduced.local_kbacompany_finline.amount": "PASS: scale zero remains",
+          "reproduced.local_kbacompany_statbind.weight": "PASS: scale zero remains",
+          "reproduced.local_kbacompany_statnorm.maxval": "PASS: scale zero remains",
+          "reproduced.local_kbacompany_statnorm.minval": "PASS: scale zero remains",
+          "reproduced.local_kbacompany_statnorm.targetvalue": "PASS: scale zero remains",
+          "reproduced.local_kbacompany_statpolicy.affluencegrowth": "PASS: scale zero remains",
+          "reproduced.local_kbacompany_statpolicy.dangerdecline": "PASS: scale zero remains",
+          "reproduced.local_kbacompany_statpolicy.powerlevel": "PASS: scale zero remains"
+        },
+        "preserved_rows": 198,
+        "positive_controls": {
+          "deviation_field": "PASS",
+          "ordered_index": "PASS"
+        },
+        "not_covered": [
+          "real1878/Corporate2613 stack",
+          "production data",
+          "ACL",
+          "full PHPUnit",
+          "remediation"
+        ]
+      },
+      "schema_tables": 183,
+      "repeat_schema_and_results": "PASS",
+      "rows_per_synthetic_company": {
+        "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa": 99,
+        "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb": 99
+      },
+      "evidence_sha256": {
+        "copy-core.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "copy-kbacompany.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "copy-kbacorporate.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "current-schema.json": "47b6df2305a0670280f6b51452ad1ec1fd488e7490c0b24d95f894a7054fec9c",
+        "environment.json": "88f4d3892b65859dc35571cdf04d0f555e75a3a7091392847bb91b15760c7507",
+        "first-reproduction.json": "760b8749145fdc63212fdc43abbd15d5e328950e7179c73381abeb620cb5e359",
+        "first-schema.json": "47b6df2305a0670280f6b51452ad1ec1fd488e7490c0b24d95f894a7054fec9c",
+        "first-upgrade.log": "9107ef81b62d7445756960309de71a811a2e64a92bffc6287a1d55a120ee27b9",
+        "first-verify.log": "7289b267478cb23a1c30dc39a9d519937c1f53ea8af296f9b950259297be818e",
+        "fresh-schema.json": "020066a4cf77119c68c1aec0a07a6d7f4642d8969a83bbd5e6edcbec23233ec7",
+        "install.log": "7cb72ac5cafdd155020978e60b675bb34c32d36c8d9b4602e5c1ed9b3639b7ab",
+        "legacy-indexes.json": "e7b0093cc0f059dd78c312c543cc0ae79b5af96e270dcd9afd9ddb30a3c3b116",
+        "repeat-reproduction.json": "760b8749145fdc63212fdc43abbd15d5e328950e7179c73381abeb620cb5e359",
+        "repeat-schema.json": "47b6df2305a0670280f6b51452ad1ec1fd488e7490c0b24d95f894a7054fec9c",
+        "repeat-upgrade.log": "d39c61c88100c8a7544d5052883a74ed343cf2c3650d9ee8a672368a32492ecf",
+        "repeat-verify.log": "7289b267478cb23a1c30dc39a9d519937c1f53ea8af296f9b950259297be818e",
+        "reproduction.json": "760b8749145fdc63212fdc43abbd15d5e328950e7179c73381abeb620cb5e359",
+        "row-ids.json": "5110679a41ab27b3a06d772912ec669d97487c82c36fb2b23aa4bb236080fb84",
+        "seed.log": "73bd5a019cf0711e06208f7fe60607c327f0ee644e9f4dba8ad4ea68c3c4bddc",
+        "synthetic-rows.json": "cd7f7ec3c04cddacbbd4e7e4ad8b2cb9fcdd161b55f09f374b96187a74ec266d"
+      },
+      "downloaded_archive_sha256": "c61aa9bd01915e10ead205a6b2c656a854a5ead8a6f0e20b9ea17dff96dabbf6"
+    },
+    "percona": {
+      "artifact_id": 13733283596,
+      "environment": {
+        "php": "8.1.34",
+        "database": "8.0.46-37",
+        "vendor": "Percona Server (GPL), Release 37, Revision 39e2b60e",
+        "fixture_sha256": "be4b64f4cb1c0641ec6e0bf218395e387008501370260b242053904824efc160",
+        "github_sha": "11ccb31fa85014263d2d2485bb005cc271754204",
+        "scope": "Synthetic metadata-derived reproduction only; no deployed environment contacted"
+      },
+      "reproduction": {
+        "reproduction": "PASS",
+        "schema_parity": "FAIL",
+        "release_acceptance": "HOLD",
+        "individual_results": {
+          "reproduced.local_kbacompany_adminitem.starttime": "PASS: missing field remains",
+          "reproduced.local_kbacompany_adminitem.duetime": "PASS: missing field remains",
+          "reproduced.local_kbacompany_finbudfact.actualamount": "PASS: scale zero remains",
+          "reproduced.local_kbacompany_finbudline.limitamount": "PASS: scale zero remains",
+          "reproduced.local_kbacompany_finbudline.planamount": "PASS: scale zero remains",
+          "reproduced.local_kbacompany_finline.amount": "PASS: scale zero remains",
+          "reproduced.local_kbacompany_statbind.weight": "PASS: scale zero remains",
+          "reproduced.local_kbacompany_statnorm.maxval": "PASS: scale zero remains",
+          "reproduced.local_kbacompany_statnorm.minval": "PASS: scale zero remains",
+          "reproduced.local_kbacompany_statnorm.targetvalue": "PASS: scale zero remains",
+          "reproduced.local_kbacompany_statpolicy.affluencegrowth": "PASS: scale zero remains",
+          "reproduced.local_kbacompany_statpolicy.dangerdecline": "PASS: scale zero remains",
+          "reproduced.local_kbacompany_statpolicy.powerlevel": "PASS: scale zero remains"
+        },
+        "preserved_rows": 198,
+        "positive_controls": {
+          "deviation_field": "PASS",
+          "ordered_index": "PASS"
+        },
+        "not_covered": [
+          "real1878/Corporate2613 stack",
+          "production data",
+          "ACL",
+          "full PHPUnit",
+          "remediation"
+        ]
+      },
+      "schema_tables": 183,
+      "repeat_schema_and_results": "PASS",
+      "rows_per_synthetic_company": {
+        "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa": 99,
+        "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb": 99
+      },
+      "evidence_sha256": {
+        "copy-core.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "copy-kbacompany.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "copy-kbacorporate.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "current-schema.json": "86cff29e7b7d478e86ed88a6858a694e9ba116cf819357eb17c0ec9ece5d4153",
+        "environment.json": "235d7bf9b8d852e57cfcdd570482392349f47c87f6c07a13cd66cbb2f0e740ff",
+        "first-reproduction.json": "760b8749145fdc63212fdc43abbd15d5e328950e7179c73381abeb620cb5e359",
+        "first-schema.json": "86cff29e7b7d478e86ed88a6858a694e9ba116cf819357eb17c0ec9ece5d4153",
+        "first-upgrade.log": "457ffce2a279f1daad597c236dfe02d857eb8fba7b4dd76f231a4c9d83a4fd25",
+        "first-verify.log": "7289b267478cb23a1c30dc39a9d519937c1f53ea8af296f9b950259297be818e",
+        "fresh-schema.json": "ed3cc322083d9d106d9dbe7e47aef6018e0cc5bb9358421614810e0680fee09c",
+        "install.log": "066911f629bdbb6c99cb3369b47026ec9ee83c8c40c61b30e8feab7d433d84a2",
+        "legacy-indexes.json": "e7b0093cc0f059dd78c312c543cc0ae79b5af96e270dcd9afd9ddb30a3c3b116",
+        "repeat-reproduction.json": "760b8749145fdc63212fdc43abbd15d5e328950e7179c73381abeb620cb5e359",
+        "repeat-schema.json": "86cff29e7b7d478e86ed88a6858a694e9ba116cf819357eb17c0ec9ece5d4153",
+        "repeat-upgrade.log": "d39c61c88100c8a7544d5052883a74ed343cf2c3650d9ee8a672368a32492ecf",
+        "repeat-verify.log": "7289b267478cb23a1c30dc39a9d519937c1f53ea8af296f9b950259297be818e",
+        "reproduction.json": "760b8749145fdc63212fdc43abbd15d5e328950e7179c73381abeb620cb5e359",
+        "row-ids.json": "5110679a41ab27b3a06d772912ec669d97487c82c36fb2b23aa4bb236080fb84",
+        "seed.log": "73bd5a019cf0711e06208f7fe60607c327f0ee644e9f4dba8ad4ea68c3c4bddc",
+        "synthetic-rows.json": "8a4f89db10a9f10e270b6e4be816d37f5bee048c9642c6c38e28a2da51891c70"
+      },
+      "downloaded_archive_sha256": "cee9c9321fa5f1dd70e84f8b4545bbaa98fde06937fae547b61c22b5e8290a20"
+    }
+  }
+}

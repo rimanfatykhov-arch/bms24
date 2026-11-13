@@ -82,7 +82,7 @@ final class process_model_service_test extends \advanced_testcase {
         $built = $this->build_valid_model($f);
         $ctx = process_model_service::context($f['company'], $f['actor'], $f['process']);
         $this->assertSame([], $ctx['publication_issues']);
-        $this->assertSame('0.3.1', process_model_service::contract()['version']);
+        $this->assertSame('0.4.4', process_model_service::contract()['version']);
         process_model_service::publish($f['company'], $f['actor'], $f['process'],
             $ctx['model']['id'], $ctx['model']['change_version']);
         $ctx = process_model_service::context($f['company'], $f['actor'], $f['process']);
@@ -96,7 +96,12 @@ final class process_model_service_test extends \advanced_testcase {
         $semantic = semantic_service::contract();
         $this->assertSame('0.3.3', $semantic['version']);
         $this->assertSame('current', $semantic['objects']['activity']['availability']);
-        $this->assertSame(3, $DB->count_records('local_kbacompany_procelem', ['modelid' => $built['modelid']]) - 1 + 1);
+        // Fixture stores one SIPOC input plus three BPMN nodes; flows have their own table.
+        $this->assertSame(4, $DB->count_records('local_kbacompany_procelem', ['modelid' => $built['modelid']]));
+        foreach (['input', 'start', 'task', 'end'] as $type) {
+            $this->assertSame(1, $DB->count_records('local_kbacompany_procelem',
+                ['modelid' => $built['modelid'], 'elementtype' => $type]));
+        }
     }
 
     public function test_published_model_is_immutable_and_new_draft_clones_stable_activity_uuid(): void {

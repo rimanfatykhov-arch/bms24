@@ -32,12 +32,13 @@ final class implementation_section_progress {
             }
         }
 
+        $revocationsql = access::not_revoked_sql('c.id', $userid);
         $curated = $DB->get_records_sql(
             "SELECT DISTINCT c.*
                FROM {local_kbacorp_company} c
                JOIN {local_kbacorp_impl_program} p ON p.companyid = c.id
               WHERE p.curatorid = :curatorid
-                AND c.active = 1
+                AND c.active = 1 AND ($revocationsql)
            ORDER BY c.name ASC",
             ['curatorid' => $userid]
         );
@@ -53,6 +54,7 @@ final class implementation_section_progress {
 
     /** Whether a user may open section progress for the company. */
     public static function can_view_company(int $companyid, int $userid, bool $canmanage): bool {
+        if (access::is_revoked($companyid, $userid)) { return false; }
         global $DB;
 
         if ($canmanage && access::has_full_company_access($companyid, $userid)) {
@@ -75,6 +77,7 @@ final class implementation_section_progress {
                FROM {local_kbacorp_impl_audit} a
                JOIN {local_kbacorp_bms_tool} t ON t.id = a.toolid
           LEFT JOIN {local_kbacorp_impl_program} p ON p.baselineauditid = a.id
+                        AND p.companyid = a.companyid
               WHERE a.companyid = :companyid
                 AND a.status = :status
            ORDER BY a.auditdate DESC, a.id DESC",

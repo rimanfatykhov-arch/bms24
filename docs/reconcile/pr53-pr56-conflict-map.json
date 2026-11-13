@@ -1,0 +1,910 @@
+{
+  "prepared_before_integration": true,
+  "base_sha": "5c59057cb7af3fd545cd661bb7c2b3daa5ae7cd9",
+  "pr53_sha": "28a60d010d8c59fd301a2bf1b2df628e38fb79dc",
+  "pr56_sha": "1ced6b88e5933bb8d63aa1806411ac4d8a6a5443",
+  "counts": {
+    "pr53": 59,
+    "pr56": 54,
+    "overlap": 14,
+    "only_pr53": 45,
+    "only_pr56": 40
+  },
+  "rows": [
+    {
+      "path": ".github/workflows/bms24-ci.yml",
+      "changed_in_pr53": true,
+      "changed_in_pr56": true,
+      "pr50_sha256_lf": "e714ff3d2080d52b171ab7a2dfb80b9c333c37c6c7eba489330824244d4bcef7",
+      "pr53_sha256_lf": "ba8e54dde4c47ab5f1bbccacff2bc35af72f4da6850f1fdd05743667d39248b0",
+      "pr56_sha256_lf": "2fdd68bd5fc949b84b8f322d460d6c47b4cca16d36d137b908f7c7b910d356d2",
+      "resolution": "manual-union"
+    },
+    {
+      "path": ".github/workflows/pr48-moodle-acceptance.yml",
+      "changed_in_pr53": true,
+      "changed_in_pr56": true,
+      "pr50_sha256_lf": "cca7f7b1446620bfbd6b186fb4cf6619e3acf2a84c77271cb5805d610188aa52",
+      "pr53_sha256_lf": "b8bbc8938c1a19a551c5b2842c7b1750f7c9118d472355dafc6bd786b9abe601",
+      "pr56_sha256_lf": "97e656820d597d5a4f3de9d914a70f7b14848fedaaaa393e76cdb53039a1ec93",
+      "resolution": "manual-union"
+    },
+    {
+      "path": "AGENTS.md",
+      "changed_in_pr53": false,
+      "changed_in_pr56": true,
+      "pr50_sha256_lf": "5f90460ea0fa69537df5d165e116546ff6911c35566b935da1fcf484fefa9c92",
+      "pr53_sha256_lf": "5f90460ea0fa69537df5d165e116546ff6911c35566b935da1fcf484fefa9c92",
+      "pr56_sha256_lf": "46a3e72ab4a72ed6eda1b7a2413feaa3ea51fdd8f6203265d193ce044a38c9b3",
+      "resolution": "preserve-pr56"
+    },
+    {
+      "path": "docs/00_MASTER_CONTEXT.md",
+      "changed_in_pr53": false,
+      "changed_in_pr56": true,
+      "pr50_sha256_lf": "872980eb7a38263d71bdef714193b2aaa95b4a6fd4b3bb8eb7d3bf3835780e77",
+      "pr53_sha256_lf": "872980eb7a38263d71bdef714193b2aaa95b4a6fd4b3bb8eb7d3bf3835780e77",
+      "pr56_sha256_lf": "5fb5e0bca24f111ba62753eb6b0f17e21a430087819319c01ed7d75b687d3d28",
+      "resolution": "preserve-pr56"
+    },
+    {
+      "path": "docs/reconcile/COMMUNICATION_CORPORATE_RUNTIME_FIXES.md",
+      "changed_in_pr53": false,
+      "changed_in_pr56": true,
+      "pr50_sha256_lf": null,
+      "pr53_sha256_lf": null,
+      "pr56_sha256_lf": "f94eef7623cc17ebca7e189551650e504b0fff2e0dee677fe7927dedf286a58d",
+      "resolution": "preserve-pr56"
+    },
+    {
+      "path": "docs/reconcile/INTEGRATION_0804_SCHEMA.md",
+      "changed_in_pr53": true,
+      "changed_in_pr56": false,
+      "pr50_sha256_lf": null,
+      "pr53_sha256_lf": "4dae205fc259851916d0754069f8236f8d22d9bfd186d7d379f7c3b94b078774",
+      "pr56_sha256_lf": null,
+      "resolution": "select-pr53"
+    },
+    {
+      "path": "docs/reconcile/ISSUE44_REAUDIT_RC30_DIAGNOSTICS.md",
+      "changed_in_pr53": false,
+      "changed_in_pr56": true,
+      "pr50_sha256_lf": null,
+      "pr53_sha256_lf": null,
+      "pr56_sha256_lf": "a6cd4636225a96833decfccfb6703ab659e6c10621e6fd1be694fdb728825b08",
+      "resolution": "preserve-pr56"
+    },
+    {
+      "path": "docs/reconcile/PR52_RUNTIME_ACCEPTANCE.md",
+      "changed_in_pr53": false,
+      "changed_in_pr56": true,
+      "pr50_sha256_lf": null,
+      "pr53_sha256_lf": null,
+      "pr56_sha256_lf": "79b19a04efd754e1ab91cfa6232fdbb469f5bbd13b8f536516d0f5fa78c02a4a",
+      "resolution": "preserve-pr56"
+    },
+    {
+      "path": "docs/reconcile/PR53_INTEGRATION_ACCEPTANCE.md",
+      "changed_in_pr53": true,
+      "changed_in_pr56": false,
+      "pr50_sha256_lf": null,
+      "pr53_sha256_lf": "7ac618f8a7470f6ea0a9448f178461890e9764d5a465b8795d7b37188bb9713f",
+      "pr56_sha256_lf": null,
+      "resolution": "select-pr53"
+    },
+    {
+      "path": "docs/reconcile/PR56_RC30_ACCEPTANCE.md",
+      "changed_in_pr53": false,
+      "changed_in_pr56": true,
+      "pr50_sha256_lf": null,
+      "pr53_sha256_lf": null,
+      "pr56_sha256_lf": "f13132b98f487e6c9b92030ba8adfb9afcf6aec0ffa64e1f246fffa77a3eea63",
+      "resolution": "preserve-pr56"
+    },
+    {
+      "path": "docs/reconcile/corporate-api126-source.json",
+      "changed_in_pr53": false,
+      "changed_in_pr56": true,
+      "pr50_sha256_lf": "86ad17d8486f9e2544a65c9cfd8a31fa8308e9f76ead887c99d3c9590409e0a1",
+      "pr53_sha256_lf": "86ad17d8486f9e2544a65c9cfd8a31fa8308e9f76ead887c99d3c9590409e0a1",
+      "pr56_sha256_lf": "7785b340e7d8374a28cc0c7981f200ffdd89ecae9076880ece3a29eac5e72ee2",
+      "resolution": "preserve-pr56"
+    },
+    {
+      "path": "docs/reconcile/functional0804-integration.json",
+      "changed_in_pr53": true,
+      "changed_in_pr56": false,
+      "pr50_sha256_lf": null,
+      "pr53_sha256_lf": "df63f1a8d3102aa30c070d7115826f8540201019a6eb929a1d575d28a2e6811a",
+      "pr56_sha256_lf": null,
+      "resolution": "select-pr53"
+    },
+    {
+      "path": "docs/reconcile/issue44-reaudit-github-snapshot.json",
+      "changed_in_pr53": false,
+      "changed_in_pr56": true,
+      "pr50_sha256_lf": null,
+      "pr53_sha256_lf": null,
+      "pr56_sha256_lf": "6936c6fbbb4e0821eb8e5bc2b05c43ee717a5c3f279ba33e3b8cf5661c202d6b",
+      "resolution": "preserve-pr56"
+    },
+    {
+      "path": "docs/reconcile/pr52-runtime-results.json",
+      "changed_in_pr53": false,
+      "changed_in_pr56": true,
+      "pr50_sha256_lf": null,
+      "pr53_sha256_lf": null,
+      "pr56_sha256_lf": "c3d2873d86d8945811b42c3bac07b8afc1c164bec38b59fe7a280f939382b427",
+      "resolution": "preserve-pr56"
+    },
+    {
+      "path": "docs/reconcile/pr56-rc30-results.json",
+      "changed_in_pr53": false,
+      "changed_in_pr56": true,
+      "pr50_sha256_lf": null,
+      "pr53_sha256_lf": null,
+      "pr56_sha256_lf": "242aef0b2c8e5a333fa8efac7fe4f913bff6c0772526fc5a0b0744637d6dcda5",
+      "resolution": "preserve-pr56"
+    },
+    {
+      "path": "local/kbacompany/classes/local/communication_service.php",
+      "changed_in_pr53": false,
+      "changed_in_pr56": true,
+      "pr50_sha256_lf": "63ed28061f7bcab78ecf6e34000d64f02c6da70bf3507acb271b0ac0d8cb0ef7",
+      "pr53_sha256_lf": "63ed28061f7bcab78ecf6e34000d64f02c6da70bf3507acb271b0ac0d8cb0ef7",
+      "pr56_sha256_lf": "2060bdb259fde21e1729dfba6e841ec8fff7f2c343eec1482427357708c69976",
+      "resolution": "preserve-pr56"
+    },
+    {
+      "path": "local/kbacompany/classes/local/competency_review_queue_service.php",
+      "changed_in_pr53": true,
+      "changed_in_pr56": false,
+      "pr50_sha256_lf": null,
+      "pr53_sha256_lf": "2928e45b4239e0e6459756aaf68a954978443f98df04f212ccc133827f139187",
+      "pr56_sha256_lf": null,
+      "resolution": "select-pr53"
+    },
+    {
+      "path": "local/kbacompany/classes/local/design_service.php",
+      "changed_in_pr53": true,
+      "changed_in_pr56": false,
+      "pr50_sha256_lf": "c91f45d185421bdb3e584965a6a5cfbfc32d7f6081a612e751933e1b4cfab5d2",
+      "pr53_sha256_lf": "ee0979d5a7b646ff224a725c97fbdf7dd70f5bc28d93199aee2002cc0d018e31",
+      "pr56_sha256_lf": "c91f45d185421bdb3e584965a6a5cfbfc32d7f6081a612e751933e1b4cfab5d2",
+      "resolution": "select-pr53"
+    },
+    {
+      "path": "local/kbacompany/classes/local/employee_service.php",
+      "changed_in_pr53": true,
+      "changed_in_pr56": false,
+      "pr50_sha256_lf": "52928c6c3c563c56dd2964ab0cf145878c403d5d74ea929a2c5cc340a2bbd984",
+      "pr53_sha256_lf": "e3b2c8d64fcd8e016a2f800ee24779057c71873c72e1f3d1d1da31d918f605af",
+      "pr56_sha256_lf": "52928c6c3c563c56dd2964ab0cf145878c403d5d74ea929a2c5cc340a2bbd984",
+      "resolution": "select-pr53"
+    },
+    {
+      "path": "local/kbacompany/classes/local/employee_ui_service.php",
+      "changed_in_pr53": true,
+      "changed_in_pr56": false,
+      "pr50_sha256_lf": "f4a22c04bef958765268a9afc5fe763084d51c3b8a239d1cd19f8c957600a778",
+      "pr53_sha256_lf": "765dc74542375b023f58544a5eb32c1758f0c52d0cefb10df9caa10117e57ac6",
+      "pr56_sha256_lf": "f4a22c04bef958765268a9afc5fe763084d51c3b8a239d1cd19f8c957600a778",
+      "resolution": "select-pr53"
+    },
+    {
+      "path": "local/kbacompany/classes/local/employee_workspace_service.php",
+      "changed_in_pr53": true,
+      "changed_in_pr56": false,
+      "pr50_sha256_lf": "596ff2a7136e4126e221d1cc880ea4a9ef066e0ac131c30c0bb681b1296c83fa",
+      "pr53_sha256_lf": "d26c760e94126f2c40506bc0e45875b77026443b61bab84b4400db53cc0e579b",
+      "pr56_sha256_lf": "596ff2a7136e4126e221d1cc880ea4a9ef066e0ac131c30c0bb681b1296c83fa",
+      "resolution": "select-pr53"
+    },
+    {
+      "path": "local/kbacompany/classes/local/position_ui_service.php",
+      "changed_in_pr53": true,
+      "changed_in_pr56": false,
+      "pr50_sha256_lf": "3d6972ac83d82aa0b8375d8bca370e82273d462426036682d54d03a8025f8216",
+      "pr53_sha256_lf": "771d2f15e7d2e6227429e97caedfa2e2a3e7dc2b09b108127112eedc0cf352fd",
+      "pr56_sha256_lf": "3d6972ac83d82aa0b8375d8bca370e82273d462426036682d54d03a8025f8216",
+      "resolution": "select-pr53"
+    },
+    {
+      "path": "local/kbacompany/classes/local/role_intelligence_service.php",
+      "changed_in_pr53": true,
+      "changed_in_pr56": false,
+      "pr50_sha256_lf": null,
+      "pr53_sha256_lf": "43a966e0e62aa2383f08e189ed901e4e93e38126df11041feb0336ba55f5e8de",
+      "pr56_sha256_lf": null,
+      "resolution": "select-pr53"
+    },
+    {
+      "path": "local/kbacompany/classes/local/role_readiness_view.php",
+      "changed_in_pr53": true,
+      "changed_in_pr56": false,
+      "pr50_sha256_lf": null,
+      "pr53_sha256_lf": "8a76250762d9811da99489e93b1703a13600148905d064de1a0564352d7bec7a",
+      "pr56_sha256_lf": null,
+      "resolution": "select-pr53"
+    },
+    {
+      "path": "local/kbacompany/classes/local/staffing_service.php",
+      "changed_in_pr53": true,
+      "changed_in_pr56": false,
+      "pr50_sha256_lf": "6c22cc92763f912335161da093f3c04c054a0dca168e4c1b94fd45ed2b1fc1f2",
+      "pr53_sha256_lf": "ec2514a4e5e87b210d18227ca91a9b66a635cc172939d30c4ae6c01083089eb2",
+      "pr56_sha256_lf": "6c22cc92763f912335161da093f3c04c054a0dca168e4c1b94fd45ed2b1fc1f2",
+      "resolution": "select-pr53"
+    },
+    {
+      "path": "local/kbacompany/classes/local/task_rc30_acceptance_service.php",
+      "changed_in_pr53": true,
+      "changed_in_pr56": true,
+      "pr50_sha256_lf": "265a440985f91c4e2ba0cf7acf6a9ccded7a14004777cb11b1e060152c0a9258",
+      "pr53_sha256_lf": "c2794391342adb5cf43cbc48afba28c95329d337b10b78aa1416a46f9f0c9cac",
+      "pr56_sha256_lf": "c2794391342adb5cf43cbc48afba28c95329d337b10b78aa1416a46f9f0c9cac",
+      "resolution": "manual-union"
+    },
+    {
+      "path": "local/kbacompany/classes/local/task_rc30_cli_response_service.php",
+      "changed_in_pr53": false,
+      "changed_in_pr56": true,
+      "pr50_sha256_lf": "dde644b5c90bc0edddda94c9f4f1f9e09da03e6635dbd1eeee5b95f80e03fe87",
+      "pr53_sha256_lf": "dde644b5c90bc0edddda94c9f4f1f9e09da03e6635dbd1eeee5b95f80e03fe87",
+      "pr56_sha256_lf": "7611214fbb18ef79ccc87b002f1c46ffdb25e4e4d5d795912c7ced808310859c",
+      "resolution": "preserve-pr56"
+    },
+    {
+      "path": "local/kbacompany/cli/test_rc30_cli_1866.py",
+      "changed_in_pr53": false,
+      "changed_in_pr56": true,
+      "pr50_sha256_lf": "470c972c59b1cea8ca90cb4d5e67de3754793d2eca972660818a258fa72a32e4",
+      "pr53_sha256_lf": "470c972c59b1cea8ca90cb4d5e67de3754793d2eca972660818a258fa72a32e4",
+      "pr56_sha256_lf": "17ad74481affa9cd7e4cd5a3d97ae539fd288bfaf586cfb1f9a93a4343e1de98",
+      "resolution": "preserve-pr56"
+    },
+    {
+      "path": "local/kbacompany/cli/test_schema_parity_2026110890.php",
+      "changed_in_pr53": true,
+      "changed_in_pr56": true,
+      "pr50_sha256_lf": "18b27d13d3b166bcc9fa1f695abd38be53768ef42235752597bb2f4764341d87",
+      "pr53_sha256_lf": "47b372ede12ebd7dde71abb7e350a712b7ba6787d4591a06ab71899b6212fb42",
+      "pr56_sha256_lf": "af9d884b05e566d7a4b9fa35d074a85e274068ae8fff0d609c86a051e38ab4fa",
+      "resolution": "manual-union"
+    },
+    {
+      "path": "local/kbacompany/competency_catalogs.php",
+      "changed_in_pr53": true,
+      "changed_in_pr56": false,
+      "pr50_sha256_lf": null,
+      "pr53_sha256_lf": "d9f33ab0e5151f8789ea36ca2807b62ddcc80a68607a4be9a9859776c07e733d",
+      "pr56_sha256_lf": null,
+      "resolution": "select-pr53"
+    },
+    {
+      "path": "local/kbacompany/competency_review_queue.php",
+      "changed_in_pr53": true,
+      "changed_in_pr56": false,
+      "pr50_sha256_lf": null,
+      "pr53_sha256_lf": "bfa894e7d818a82726985ca6fdf09986246f7c56cdadef4f85d078590c7e5825",
+      "pr56_sha256_lf": null,
+      "resolution": "select-pr53"
+    },
+    {
+      "path": "local/kbacompany/db/upgrade.php",
+      "changed_in_pr53": true,
+      "changed_in_pr56": true,
+      "pr50_sha256_lf": "2d45135645fe410bf337d8401af4ab2bee40362c976b8765788a5fcefbe564a6",
+      "pr53_sha256_lf": "d67dfc3fe3098d9bba9d24493cb900daa92a7abf34216f0280934601cc1b8a74",
+      "pr56_sha256_lf": "50de784aa166bef8e11ff2498f53ff31fa9b139b17a76fb2106e254c3c276376",
+      "resolution": "manual-union"
+    },
+    {
+      "path": "local/kbacompany/designs.php",
+      "changed_in_pr53": true,
+      "changed_in_pr56": false,
+      "pr50_sha256_lf": "22410b923ee7a2decc24738d69fd4094c9ace5336cfc191ba8bce108af5c666b",
+      "pr53_sha256_lf": "19205b05861d71bacaebcf0ca990029b67132b7e695895c43827e5e444771e16",
+      "pr56_sha256_lf": "22410b923ee7a2decc24738d69fd4094c9ace5336cfc191ba8bce108af5c666b",
+      "resolution": "select-pr53"
+    },
+    {
+      "path": "local/kbacompany/lang/en/local_kbacompany.php",
+      "changed_in_pr53": true,
+      "changed_in_pr56": false,
+      "pr50_sha256_lf": "12a10f4a802fe5d38421205af639532e39b2280dd5acf006a3cf5f092cb06dd7",
+      "pr53_sha256_lf": "8e9ea3070b3a02e4dc76caab8bec883aded16913f455953e143766dcb74b6665",
+      "pr56_sha256_lf": "12a10f4a802fe5d38421205af639532e39b2280dd5acf006a3cf5f092cb06dd7",
+      "resolution": "select-pr53"
+    },
+    {
+      "path": "local/kbacompany/lang/ru/local_kbacompany.php",
+      "changed_in_pr53": true,
+      "changed_in_pr56": false,
+      "pr50_sha256_lf": "488f568c63a39ef1ce215194e030c10977a8e83a9ce1687e835d46cd4f9241bf",
+      "pr53_sha256_lf": "cffc89d5a5b53e191d85c8e5a6d3a81c40a17abf1e79c4601e39c9cc3c8ad699",
+      "pr56_sha256_lf": "488f568c63a39ef1ce215194e030c10977a8e83a9ce1687e835d46cd4f9241bf",
+      "resolution": "select-pr53"
+    },
+    {
+      "path": "local/kbacompany/lib.php",
+      "changed_in_pr53": true,
+      "changed_in_pr56": false,
+      "pr50_sha256_lf": "d131c448c3d1c0fa874eeee00c39d0e2d9604986994eb633100e665a60675045",
+      "pr53_sha256_lf": "84c668fcafcb6382fde1fba5d01a63b31e0c6d38f1805b88e1876d5e365c8a74",
+      "pr56_sha256_lf": "d131c448c3d1c0fa874eeee00c39d0e2d9604986994eb633100e665a60675045",
+      "resolution": "select-pr53"
+    },
+    {
+      "path": "local/kbacompany/people.php",
+      "changed_in_pr53": true,
+      "changed_in_pr56": false,
+      "pr50_sha256_lf": "1c577854a0cdb738091cbd7d9a5f3ab1cc7f847ebdcdc75cb75b8e022b760c7f",
+      "pr53_sha256_lf": "d304c2a80d9168659f7323110dc8bc1ba028e7e2b56ddaa71c1ff00f59de78b3",
+      "pr56_sha256_lf": "1c577854a0cdb738091cbd7d9a5f3ab1cc7f847ebdcdc75cb75b8e022b760c7f",
+      "resolution": "select-pr53"
+    },
+    {
+      "path": "local/kbacompany/position_competencies.php",
+      "changed_in_pr53": true,
+      "changed_in_pr56": false,
+      "pr50_sha256_lf": "5f9b822ce59827b95082391cfc56a9da1ff65a6041a4d9be8f6831624580b689",
+      "pr53_sha256_lf": "bbf07cbce85f9f5c7072c894dcb0e7feebce2cc8066a61b7cc905fab7b1d442d",
+      "pr56_sha256_lf": "5f9b822ce59827b95082391cfc56a9da1ff65a6041a4d9be8f6831624580b689",
+      "resolution": "select-pr53"
+    },
+    {
+      "path": "local/kbacompany/positions.php",
+      "changed_in_pr53": true,
+      "changed_in_pr56": false,
+      "pr50_sha256_lf": "f01488c688f8a0e783051dc67bc6e78155fc71416e9a1afa2e92af043de95213",
+      "pr53_sha256_lf": "15eff316137c43842c6b0d5fa0c2b9bd22749c1d7bdc8274f5a9718ebb43520b",
+      "pr56_sha256_lf": "f01488c688f8a0e783051dc67bc6e78155fc71416e9a1afa2e92af043de95213",
+      "resolution": "select-pr53"
+    },
+    {
+      "path": "local/kbacompany/release/RELEASE_NOTES_RC29_build2026110301.md",
+      "changed_in_pr53": true,
+      "changed_in_pr56": false,
+      "pr50_sha256_lf": null,
+      "pr53_sha256_lf": "1a7718fb48cad3e2490c87861ace1e7ffe9bcf50cc9e72424028ff8f21bd991b",
+      "pr56_sha256_lf": null,
+      "resolution": "select-pr53"
+    },
+    {
+      "path": "local/kbacompany/release/RELEASE_NOTES_RC29_build2026110401.md",
+      "changed_in_pr53": true,
+      "changed_in_pr56": false,
+      "pr50_sha256_lf": null,
+      "pr53_sha256_lf": "9a8f46aec36930e7c711fbddd46dd3520eeac37270cc893eae563a48122f20e5",
+      "pr56_sha256_lf": null,
+      "resolution": "select-pr53"
+    },
+    {
+      "path": "local/kbacompany/release/RELEASE_NOTES_RC29_build2026110402.md",
+      "changed_in_pr53": true,
+      "changed_in_pr56": false,
+      "pr50_sha256_lf": null,
+      "pr53_sha256_lf": "841c1867d8943a56633de7beda8eee93bf0193295e3a822c2fbdcc2b3aa76927",
+      "pr56_sha256_lf": null,
+      "resolution": "select-pr53"
+    },
+    {
+      "path": "local/kbacompany/release/RELEASE_NOTES_RC29_build2026110403.md",
+      "changed_in_pr53": true,
+      "changed_in_pr56": false,
+      "pr50_sha256_lf": null,
+      "pr53_sha256_lf": "1aed693dc67d988880b71a9c168cff16d87b618d98c576218f13bce9109c8754",
+      "pr56_sha256_lf": null,
+      "resolution": "select-pr53"
+    },
+    {
+      "path": "local/kbacompany/release/RELEASE_NOTES_RC29_build2026110501.md",
+      "changed_in_pr53": true,
+      "changed_in_pr56": false,
+      "pr50_sha256_lf": null,
+      "pr53_sha256_lf": "a2ca55df59ef801534bb342e95d7a6b1a42367844f8fc01b263b0f371d147d85",
+      "pr56_sha256_lf": null,
+      "resolution": "select-pr53"
+    },
+    {
+      "path": "local/kbacompany/release/RELEASE_NOTES_RC29_build2026110502.md",
+      "changed_in_pr53": true,
+      "changed_in_pr56": false,
+      "pr50_sha256_lf": null,
+      "pr53_sha256_lf": "f57d570a8119a66892038029bb6510c331b8ed78fd232c14dc7bfc9a0fd3f225",
+      "pr56_sha256_lf": null,
+      "resolution": "select-pr53"
+    },
+    {
+      "path": "local/kbacompany/release/RELEASE_NOTES_RC29_build2026110503.md",
+      "changed_in_pr53": true,
+      "changed_in_pr56": false,
+      "pr50_sha256_lf": null,
+      "pr53_sha256_lf": "fb6bfd86236f7e6d905b0eb666696750cc2ade2a4cd0b07dc0a92305004b4305",
+      "pr56_sha256_lf": null,
+      "resolution": "select-pr53"
+    },
+    {
+      "path": "local/kbacompany/release/RELEASE_NOTES_RC29_build2026110504.md",
+      "changed_in_pr53": true,
+      "changed_in_pr56": false,
+      "pr50_sha256_lf": null,
+      "pr53_sha256_lf": "e569630abc1778e8e2f5a970b0caff11be2f6113702d2a72bf52b1d75c4cef4c",
+      "pr56_sha256_lf": null,
+      "resolution": "select-pr53"
+    },
+    {
+      "path": "local/kbacompany/release/RELEASE_NOTES_RC29_build2026110601.md",
+      "changed_in_pr53": true,
+      "changed_in_pr56": false,
+      "pr50_sha256_lf": null,
+      "pr53_sha256_lf": "dbf6c07ebc6cff1c4f1e1338bdb146f1cd9b9f9cf7a74e4b83cafe55f03d63ec",
+      "pr56_sha256_lf": null,
+      "resolution": "select-pr53"
+    },
+    {
+      "path": "local/kbacompany/release/RELEASE_NOTES_RC29_build2026110801.md",
+      "changed_in_pr53": true,
+      "changed_in_pr56": false,
+      "pr50_sha256_lf": null,
+      "pr53_sha256_lf": "ec575d9e9a0e34f8ff81ef82357ac6fdc55eaee03229c67e7dede51bdad9064a",
+      "pr56_sha256_lf": null,
+      "resolution": "select-pr53"
+    },
+    {
+      "path": "local/kbacompany/release/RELEASE_NOTES_RC29_build2026110802.md",
+      "changed_in_pr53": true,
+      "changed_in_pr56": false,
+      "pr50_sha256_lf": null,
+      "pr53_sha256_lf": "a83fa05daf6e7b3d886b4ce56924c5ec47b025c1a21e542cb4f954a3d0069a5c",
+      "pr56_sha256_lf": null,
+      "resolution": "select-pr53"
+    },
+    {
+      "path": "local/kbacompany/release/RELEASE_NOTES_RC29_build2026110803.md",
+      "changed_in_pr53": true,
+      "changed_in_pr56": false,
+      "pr50_sha256_lf": null,
+      "pr53_sha256_lf": "e79c20d9f2694dc18c105ab8d7dde39158351329369bcc3e23c48b01e2cfd0f0",
+      "pr56_sha256_lf": null,
+      "resolution": "select-pr53"
+    },
+    {
+      "path": "local/kbacompany/release/RELEASE_NOTES_RC29_build2026110804.md",
+      "changed_in_pr53": true,
+      "changed_in_pr56": false,
+      "pr50_sha256_lf": null,
+      "pr53_sha256_lf": "888f808c9382f2e18af4af389e962093c121c6a41751d386f4e4844082f3eb5f",
+      "pr56_sha256_lf": null,
+      "resolution": "select-pr53"
+    },
+    {
+      "path": "local/kbacompany/release/RELEASE_NOTES_RC29_build2026110901.md",
+      "changed_in_pr53": false,
+      "changed_in_pr56": true,
+      "pr50_sha256_lf": null,
+      "pr53_sha256_lf": null,
+      "pr56_sha256_lf": "1e870c2787bf569129f8f06a8455d449db585e0e29318165e05bbc387d29df66",
+      "resolution": "preserve-pr56"
+    },
+    {
+      "path": "local/kbacompany/release/RELEASE_NOTES_RC29_build2026110902.md",
+      "changed_in_pr53": true,
+      "changed_in_pr56": true,
+      "pr50_sha256_lf": null,
+      "pr53_sha256_lf": "34a5ea9e71805e592ec0816383466f28e558996d4d57ec17362a5ca3aa833686",
+      "pr56_sha256_lf": "490306a099c874c5cf0a828e83f2b49af810eb345a779d4eda469f37989f80c7",
+      "resolution": "manual-union"
+    },
+    {
+      "path": "local/kbacompany/release/REVIEW_QUEUE_LOCAL_CANDIDATE.md",
+      "changed_in_pr53": true,
+      "changed_in_pr56": false,
+      "pr50_sha256_lf": null,
+      "pr53_sha256_lf": "f827b61259dbc1a61d0131c5ea4eedd6645040fd3e5898028ce9e19c2eaf0326",
+      "pr56_sha256_lf": null,
+      "resolution": "select-pr53"
+    },
+    {
+      "path": "local/kbacompany/role_readiness.php",
+      "changed_in_pr53": true,
+      "changed_in_pr56": false,
+      "pr50_sha256_lf": null,
+      "pr53_sha256_lf": "25ecf6cbac9f847d4119e25ab308c105398623889d7d4cdd816c91459f636df1",
+      "pr56_sha256_lf": null,
+      "resolution": "select-pr53"
+    },
+    {
+      "path": "local/kbacompany/styles.css",
+      "changed_in_pr53": true,
+      "changed_in_pr56": false,
+      "pr50_sha256_lf": "58e22f10efdb4c939b4c1671b1e5b1d4ec098a97ac80df406fff10123e7fa0ea",
+      "pr53_sha256_lf": "b2bbcccfabffe710c42733b8cee98bf0906d226e0467703b10ca27e8b2cd7080",
+      "pr56_sha256_lf": "58e22f10efdb4c939b4c1671b1e5b1d4ec098a97ac80df406fff10123e7fa0ea",
+      "resolution": "select-pr53"
+    },
+    {
+      "path": "local/kbacompany/templates/bms24_role_readiness.mustache",
+      "changed_in_pr53": true,
+      "changed_in_pr56": false,
+      "pr50_sha256_lf": null,
+      "pr53_sha256_lf": "ac40379da88e2bc18f1a12d3a812c5804fe16b92e0598500f3c765178d676c59",
+      "pr56_sha256_lf": null,
+      "resolution": "select-pr53"
+    },
+    {
+      "path": "local/kbacompany/tests/communication_center_service_test.php",
+      "changed_in_pr53": false,
+      "changed_in_pr56": true,
+      "pr50_sha256_lf": "65b83d3409f2750120bc3e7910ef14789d9400326870e2e9a4509f02cb3ee57d",
+      "pr53_sha256_lf": "65b83d3409f2750120bc3e7910ef14789d9400326870e2e9a4509f02cb3ee57d",
+      "pr56_sha256_lf": "9d1cc106e8cbe4a32e8c01e0a882c48bd236e2a27ac1001ce18b353bd6f5426a",
+      "resolution": "preserve-pr56"
+    },
+    {
+      "path": "local/kbacompany/tests/communication_service_test.php",
+      "changed_in_pr53": false,
+      "changed_in_pr56": true,
+      "pr50_sha256_lf": "e7a4483d0029595e76814c8f99096c5981f48e3b98f0d7fa75151b7940e61337",
+      "pr53_sha256_lf": "e7a4483d0029595e76814c8f99096c5981f48e3b98f0d7fa75151b7940e61337",
+      "pr56_sha256_lf": "ff4bf775652483a5fa01b6c908b9703eb8af0cc8c7e2178f58a846165f8478b1",
+      "resolution": "preserve-pr56"
+    },
+    {
+      "path": "local/kbacompany/tests/company_core_test.php",
+      "changed_in_pr53": true,
+      "changed_in_pr56": false,
+      "pr50_sha256_lf": "994fd9313e534a61167682398bec970fb2e2087c23d6ff1709b5cd164033d922",
+      "pr53_sha256_lf": "5334e4c92b63d1d9bb60dc91816eef6cc25baa46f7f00bb6b6f1fec467f3831f",
+      "pr56_sha256_lf": "994fd9313e534a61167682398bec970fb2e2087c23d6ff1709b5cd164033d922",
+      "resolution": "select-pr53"
+    },
+    {
+      "path": "local/kbacompany/tests/competency_review_queue_test.php",
+      "changed_in_pr53": true,
+      "changed_in_pr56": false,
+      "pr50_sha256_lf": null,
+      "pr53_sha256_lf": "6e37708374ce0ea221c86dde78b11c84aa8dcbb4525bbf12e133cf2bbd2aa57a",
+      "pr56_sha256_lf": null,
+      "resolution": "select-pr53"
+    },
+    {
+      "path": "local/kbacompany/tests/design_service_test.php",
+      "changed_in_pr53": true,
+      "changed_in_pr56": false,
+      "pr50_sha256_lf": "e8bb917436e1fc8d544d61b90c2dc54b17dbdb78cb7d575ec5e748432b95aa4a",
+      "pr53_sha256_lf": "45af47bae0a3e5ee89e167aa5fb8647dd03a3824c978b84345bee3cc760c38c8",
+      "pr56_sha256_lf": "e8bb917436e1fc8d544d61b90c2dc54b17dbdb78cb7d575ec5e748432b95aa4a",
+      "resolution": "select-pr53"
+    },
+    {
+      "path": "local/kbacompany/tests/employee_competency_profile_service_test.php",
+      "changed_in_pr53": true,
+      "changed_in_pr56": false,
+      "pr50_sha256_lf": "747c43e632e317112bdc6fd01c70ebd3f60bcce09804a27136c33d1e8c4b5d7f",
+      "pr53_sha256_lf": "fbf8c5c4b7704bebf7bbb453502f0df4bbc9259679b04a54cde6c38a6685d16c",
+      "pr56_sha256_lf": "747c43e632e317112bdc6fd01c70ebd3f60bcce09804a27136c33d1e8c4b5d7f",
+      "resolution": "select-pr53"
+    },
+    {
+      "path": "local/kbacompany/tests/employee_development_courses_test.php",
+      "changed_in_pr53": true,
+      "changed_in_pr56": false,
+      "pr50_sha256_lf": null,
+      "pr53_sha256_lf": "c51614de167a8f3e555c608a8ce49591c19e8550f41a04b72366478db6c06646",
+      "pr56_sha256_lf": null,
+      "resolution": "select-pr53"
+    },
+    {
+      "path": "local/kbacompany/tests/kbacorporate_impl_task_provider_test.php",
+      "changed_in_pr53": false,
+      "changed_in_pr56": true,
+      "pr50_sha256_lf": "292f5ec10632b4d0f172a8884d5b3f6f25f94e742c62918266989c04bb536ae8",
+      "pr53_sha256_lf": "292f5ec10632b4d0f172a8884d5b3f6f25f94e742c62918266989c04bb536ae8",
+      "pr56_sha256_lf": "0000b715728e50ce1c18a43e914afb9b3f415c266533d836070e08e074abe92a",
+      "resolution": "preserve-pr56"
+    },
+    {
+      "path": "local/kbacompany/tests/ordered_index_2026110900_test.php",
+      "changed_in_pr53": true,
+      "changed_in_pr56": true,
+      "pr50_sha256_lf": "de1f22f3569ab1f5d84c7a05b7f4aa3a826032db6c393a3251a02315a5b53a2f",
+      "pr53_sha256_lf": "627795606668e373fedbca19daafeba713f61301b58ac5e2fa37037ac875813d",
+      "pr56_sha256_lf": "f42984af1e1dfd0c2b3246823d455ce1ad05480dc19c0b3750df969c0f00e7b8",
+      "resolution": "manual-union"
+    },
+    {
+      "path": "local/kbacompany/tests/privacy_provider_test.php",
+      "changed_in_pr53": false,
+      "changed_in_pr56": true,
+      "pr50_sha256_lf": "368720c5e1bac2056f8235d25aabb572fa20e1bd0ef405f19ee3e6e8d981e8ea",
+      "pr53_sha256_lf": "368720c5e1bac2056f8235d25aabb572fa20e1bd0ef405f19ee3e6e8d981e8ea",
+      "pr56_sha256_lf": "b5382fd114b39f35176dc05db44d4e26ca6a9f1f0541eb4e0240af1f203bbb7a",
+      "resolution": "preserve-pr56"
+    },
+    {
+      "path": "local/kbacompany/tests/role_intelligence_service_test.php",
+      "changed_in_pr53": true,
+      "changed_in_pr56": false,
+      "pr50_sha256_lf": null,
+      "pr53_sha256_lf": "5849ebf078948d7997192935a4e1a2b21e4fcc3927c6e3de1645d294dbcb1c2c",
+      "pr56_sha256_lf": null,
+      "resolution": "select-pr53"
+    },
+    {
+      "path": "local/kbacompany/tests/role_readiness_view_test.php",
+      "changed_in_pr53": true,
+      "changed_in_pr56": false,
+      "pr50_sha256_lf": null,
+      "pr53_sha256_lf": "6d4ff1665add65de14166b09af25e05b67f9d52c9ada60a332c39128c797fdc1",
+      "pr56_sha256_lf": null,
+      "resolution": "select-pr53"
+    },
+    {
+      "path": "local/kbacompany/tests/schema_parity_2026110890_test.php",
+      "changed_in_pr53": true,
+      "changed_in_pr56": true,
+      "pr50_sha256_lf": "10d81db4883108a694da7e2c46b6ce9fce3bab6374eb2bf5365a87a5e7ef2d70",
+      "pr53_sha256_lf": "88323bed4851159fda1e3ed63f1537fe4fbbbd93978762f73f24e306d2b79ca3",
+      "pr56_sha256_lf": "053b666bc80dfe42b99e9acc911feb53dfc9e86d60acd59b2b985977465124db",
+      "resolution": "manual-union"
+    },
+    {
+      "path": "local/kbacompany/tests/task_rc30_acceptance1864_test.php",
+      "changed_in_pr53": false,
+      "changed_in_pr56": true,
+      "pr50_sha256_lf": "34232e3192b3411cfa0ec6c791eceac927be5f52f7f416080092717fb798eb5d",
+      "pr53_sha256_lf": "34232e3192b3411cfa0ec6c791eceac927be5f52f7f416080092717fb798eb5d",
+      "pr56_sha256_lf": "d43f6a6f9c92b8a9ffc7dc85f4306e5d90499e081cfc915cfe7b8af5ac26d2f9",
+      "resolution": "preserve-pr56"
+    },
+    {
+      "path": "local/kbacompany/tests/task_rc30_cli_response1866_test.php",
+      "changed_in_pr53": false,
+      "changed_in_pr56": true,
+      "pr50_sha256_lf": "f304a04d7f0c175256de75d89ea4ab1ae4db3cadad25fcc7042dc549a48ca8ea",
+      "pr53_sha256_lf": "f304a04d7f0c175256de75d89ea4ab1ae4db3cadad25fcc7042dc549a48ca8ea",
+      "pr56_sha256_lf": "134b7d8f8ec8b4871b060af8ccd22d6d4a07f675a4dd4b073e0f8fd86ec86761",
+      "resolution": "preserve-pr56"
+    },
+    {
+      "path": "local/kbacompany/tests/task_rc30_report_comparison1867_test.php",
+      "changed_in_pr53": false,
+      "changed_in_pr56": true,
+      "pr50_sha256_lf": "4346da57113b978a42add38fd5c4f9ea36df83121b2ea3d2346070d4ee10fcfe",
+      "pr53_sha256_lf": "4346da57113b978a42add38fd5c4f9ea36df83121b2ea3d2346070d4ee10fcfe",
+      "pr56_sha256_lf": "72ad3ce4e0d94f24ec633b07e7780d26a8947c9963af855c5c644c54bb4df139",
+      "resolution": "preserve-pr56"
+    },
+    {
+      "path": "local/kbacompany/version.php",
+      "changed_in_pr53": true,
+      "changed_in_pr56": true,
+      "pr50_sha256_lf": "a64d6473049470f4b0f2f9a23473920c51651a6c36f28217054deb4c4760e86f",
+      "pr53_sha256_lf": "72945b72ad50549df2b848b61da44e3fe9885fbd9385dfe1f759dd2ada5c48a3",
+      "pr56_sha256_lf": "72945b72ad50549df2b848b61da44e3fe9885fbd9385dfe1f759dd2ada5c48a3",
+      "resolution": "manual-union"
+    },
+    {
+      "path": "local/kbacorporate/classes/local/bridge.php",
+      "changed_in_pr53": false,
+      "changed_in_pr56": true,
+      "pr50_sha256_lf": "49729607e7cc076d3a9657a95bb36c84d0a64523c51d05c7355f72f224d2c461",
+      "pr53_sha256_lf": "49729607e7cc076d3a9657a95bb36c84d0a64523c51d05c7355f72f224d2c461",
+      "pr56_sha256_lf": "b3a0f043e3f01a8da254009accd8f40e04fc048d7cefcd9b94531ec9748491f9",
+      "resolution": "preserve-pr56"
+    },
+    {
+      "path": "local/kbacorporate/classes/local/development_plans.php",
+      "changed_in_pr53": false,
+      "changed_in_pr56": true,
+      "pr50_sha256_lf": "1b43f7a7505afb2aa1a6c4f70f5bf35d18daaf0daa48080e3029eea0c5c81f4c",
+      "pr53_sha256_lf": "1b43f7a7505afb2aa1a6c4f70f5bf35d18daaf0daa48080e3029eea0c5c81f4c",
+      "pr56_sha256_lf": "b8033ac752d04d7ca9eb490612f67332e5f31768ec1e1b331a4cf570973ee5f4",
+      "resolution": "preserve-pr56"
+    },
+    {
+      "path": "local/kbacorporate/classes/local/erp_audit.php",
+      "changed_in_pr53": false,
+      "changed_in_pr56": true,
+      "pr50_sha256_lf": "4896bbadebebf45c8e67d33b2e60de18b3f25068c84613720451bcc55a9cae53",
+      "pr53_sha256_lf": "4896bbadebebf45c8e67d33b2e60de18b3f25068c84613720451bcc55a9cae53",
+      "pr56_sha256_lf": "cb987060a37bf0d00cf24350fbdaa6ce61ab50c89f49cadd7793a7c560bfb03b",
+      "resolution": "preserve-pr56"
+    },
+    {
+      "path": "local/kbacorporate/classes/local/erp_exchange.php",
+      "changed_in_pr53": false,
+      "changed_in_pr56": true,
+      "pr50_sha256_lf": "5e99e2422699fd4134d185a53b49a3d020ca43ad14451b8f81497ae0b40b211d",
+      "pr53_sha256_lf": "5e99e2422699fd4134d185a53b49a3d020ca43ad14451b8f81497ae0b40b211d",
+      "pr56_sha256_lf": "c92a4af7ccedfa20f60c7455b284216e0801f168a228e495035757eb3a3857f5",
+      "resolution": "preserve-pr56"
+    },
+    {
+      "path": "local/kbacorporate/classes/local/external_mapping.php",
+      "changed_in_pr53": false,
+      "changed_in_pr56": true,
+      "pr50_sha256_lf": "69dfa1bee5d5476568ebc2f856e9e15cad31fa3a3f1f03f6dd05b6ff645d35cd",
+      "pr53_sha256_lf": "69dfa1bee5d5476568ebc2f856e9e15cad31fa3a3f1f03f6dd05b6ff645d35cd",
+      "pr56_sha256_lf": "ccfe252a6036c1040f26203dcf9b110fc5023415f9e52afeb35565cecd37f844",
+      "resolution": "preserve-pr56"
+    },
+    {
+      "path": "local/kbacorporate/classes/local/implementation_audits.php",
+      "changed_in_pr53": false,
+      "changed_in_pr56": true,
+      "pr50_sha256_lf": "91c347b80e479be916363f1f14f568ed522e82956e4729081b0d11cf17da5642",
+      "pr53_sha256_lf": "91c347b80e479be916363f1f14f568ed522e82956e4729081b0d11cf17da5642",
+      "pr56_sha256_lf": "4bfb7dd9793104dc57017736a1a9299b257f04f4b7477ec4ad24a65ad3189cad",
+      "resolution": "preserve-pr56"
+    },
+    {
+      "path": "local/kbacorporate/db/upgrade.php",
+      "changed_in_pr53": false,
+      "changed_in_pr56": true,
+      "pr50_sha256_lf": "c1668acbdc0d106a133002ca71e745a1c376b4f9e80a50ea7cad85fa5b071948",
+      "pr53_sha256_lf": "c1668acbdc0d106a133002ca71e745a1c376b4f9e80a50ea7cad85fa5b071948",
+      "pr56_sha256_lf": "b9ffdd9a05661ce616db90d7c0049c304a765b20e2004f75b9526336a53ae5d4",
+      "resolution": "preserve-pr56"
+    },
+    {
+      "path": "local/kbacorporate/tests/course_recommendations_test.php",
+      "changed_in_pr53": false,
+      "changed_in_pr56": true,
+      "pr50_sha256_lf": "a7e6e27939b419286903c55fde783c84ec3e11cabc067fd3dcf48a53461b9602",
+      "pr53_sha256_lf": "a7e6e27939b419286903c55fde783c84ec3e11cabc067fd3dcf48a53461b9602",
+      "pr56_sha256_lf": "60438a9ad4d6f679163c3d22865c7a1f9dff75bcdd849147bf90986954c8accf",
+      "resolution": "preserve-pr56"
+    },
+    {
+      "path": "local/kbacorporate/tests/development_plans_test.php",
+      "changed_in_pr53": false,
+      "changed_in_pr56": true,
+      "pr50_sha256_lf": "eabb49ee17de77899acdbc2f0bba962ad095f24271cc3c9f4254de397ac88d36",
+      "pr53_sha256_lf": "eabb49ee17de77899acdbc2f0bba962ad095f24271cc3c9f4254de397ac88d36",
+      "pr56_sha256_lf": "67244765b26d6490fdf648407e09badd0d49ac39850ecb0ceca34e82b1ec42e7",
+      "resolution": "preserve-pr56"
+    },
+    {
+      "path": "local/kbacorporate/tests/erp_exchange_test.php",
+      "changed_in_pr53": false,
+      "changed_in_pr56": true,
+      "pr50_sha256_lf": "63b7daeceaaf2bdfdf777bf87f93c0b915e074822db12f2c9cc240616876bcc6",
+      "pr53_sha256_lf": "63b7daeceaaf2bdfdf777bf87f93c0b915e074822db12f2c9cc240616876bcc6",
+      "pr56_sha256_lf": "569057a26f010c5bf3a4c657478da4bc3d7d748f1f1effe5a2fb2cb1ddd639dc",
+      "resolution": "preserve-pr56"
+    },
+    {
+      "path": "local/kbacorporate/tests/implementation_actions_test.php",
+      "changed_in_pr53": false,
+      "changed_in_pr56": true,
+      "pr50_sha256_lf": "4560b77654d0233616e092494ac342d9d98c7fb06ff0c2bbd6ebf4ffd48b588c",
+      "pr53_sha256_lf": "4560b77654d0233616e092494ac342d9d98c7fb06ff0c2bbd6ebf4ffd48b588c",
+      "pr56_sha256_lf": "2cdaa54d32830a6c57ee4cce47be901f64e37f5c7622844c9bacb245f9cb18cf",
+      "resolution": "preserve-pr56"
+    },
+    {
+      "path": "local/kbacorporate/tests/implementation_audits_test.php",
+      "changed_in_pr53": false,
+      "changed_in_pr56": true,
+      "pr50_sha256_lf": "c3b2831ada39df6ef8303b92d46d17f38a6940bc8de139cde7d3b1a8597bcbe5",
+      "pr53_sha256_lf": "c3b2831ada39df6ef8303b92d46d17f38a6940bc8de139cde7d3b1a8597bcbe5",
+      "pr56_sha256_lf": "6dfc0b3473919ec6de995207f3a32df7c09985a93af693e7513792046927039e",
+      "resolution": "preserve-pr56"
+    },
+    {
+      "path": "local/kbacorporate/tests/implementation_evidence_test.php",
+      "changed_in_pr53": false,
+      "changed_in_pr56": true,
+      "pr50_sha256_lf": "6b768ae2af0561d602a17d15d648936f1687486632140070d9220615aafe5365",
+      "pr53_sha256_lf": "6b768ae2af0561d602a17d15d648936f1687486632140070d9220615aafe5365",
+      "pr56_sha256_lf": "978505f830a27cbfe5cd090587da3f4177c0d95a3fd1eed1028ccb43dd7fb8cf",
+      "resolution": "preserve-pr56"
+    },
+    {
+      "path": "local/kbacorporate/tests/implementation_kanban_test.php",
+      "changed_in_pr53": false,
+      "changed_in_pr56": true,
+      "pr50_sha256_lf": "b328d764bcbd9835117f2850c19473503e47d1afd29ef800cd08b99ad77d563f",
+      "pr53_sha256_lf": "b328d764bcbd9835117f2850c19473503e47d1afd29ef800cd08b99ad77d563f",
+      "pr56_sha256_lf": "a93a380aa37905f2fc4863f43b20d88ad964e2e5ae358f82ce39b12f959e10a1",
+      "resolution": "preserve-pr56"
+    },
+    {
+      "path": "local/kbacorporate/tests/implementation_task_bridge_test.php",
+      "changed_in_pr53": false,
+      "changed_in_pr56": true,
+      "pr50_sha256_lf": "3a25066b6c0c62daad3d1e64a77e255c9b34eb4e7d8c263acfce379f5b7d5d52",
+      "pr53_sha256_lf": "3a25066b6c0c62daad3d1e64a77e255c9b34eb4e7d8c263acfce379f5b7d5d52",
+      "pr56_sha256_lf": "40f552eb66c49f22b7a570770f8b3436d03b069d17c31ca00f47fb167787c23c",
+      "resolution": "preserve-pr56"
+    },
+    {
+      "path": "local/kbacorporate/tests/individual_development_plan_test.php",
+      "changed_in_pr53": false,
+      "changed_in_pr56": true,
+      "pr50_sha256_lf": "e53f38722c1159baac5a3000128fad599a392af9fbf8dd5b9d22e792511d2b8f",
+      "pr53_sha256_lf": "e53f38722c1159baac5a3000128fad599a392af9fbf8dd5b9d22e792511d2b8f",
+      "pr56_sha256_lf": "1cbd42dfb724ae2ab56e4814d64df97c06a2421c4f5d4153d60cd4633ce098cd",
+      "resolution": "preserve-pr56"
+    },
+    {
+      "path": "local/kbacorporate/tests/privacy_provider_test.php",
+      "changed_in_pr53": false,
+      "changed_in_pr56": true,
+      "pr50_sha256_lf": "20c2fbf17f10bca154fb2762055ee054ab4a2e136a4260d7634ad5fd7d43911a",
+      "pr53_sha256_lf": "20c2fbf17f10bca154fb2762055ee054ab4a2e136a4260d7634ad5fd7d43911a",
+      "pr56_sha256_lf": "9f7f69f1a3c3f84648f5ff94adc1135db235ced6f7e341227d334978f68cbb43",
+      "resolution": "preserve-pr56"
+    },
+    {
+      "path": "local/kbacorporate/version.php",
+      "changed_in_pr53": false,
+      "changed_in_pr56": true,
+      "pr50_sha256_lf": "a611d48d236476781340ae9efd90def34ba31ab1139e7ede47efea0f39d9e4c2",
+      "pr53_sha256_lf": "a611d48d236476781340ae9efd90def34ba31ab1139e7ede47efea0f39d9e4c2",
+      "pr56_sha256_lf": "f5cbe8695b94c34f73ad5fb3994d5853cdd0ccb30f1d796d019678a7e1f7fe60",
+      "resolution": "preserve-pr56"
+    },
+    {
+      "path": "tools/check_corporate_api126.py",
+      "changed_in_pr53": false,
+      "changed_in_pr56": true,
+      "pr50_sha256_lf": "b86aec437960c4a7be3f734865e2c4d121697ce0d549c4d55d450fadde40a9ca",
+      "pr53_sha256_lf": "b86aec437960c4a7be3f734865e2c4d121697ce0d549c4d55d450fadde40a9ca",
+      "pr56_sha256_lf": "921589bfe6c2dda3abc46b4c366010dd7ec7024f3429864a85b2ca95590ee5df",
+      "resolution": "preserve-pr56"
+    },
+    {
+      "path": "tools/check_reconcile_1879.py",
+      "changed_in_pr53": true,
+      "changed_in_pr56": true,
+      "pr50_sha256_lf": "9be06c79b973ff286f9f972f5e74fc0249dd1e3ec50b68372747cde41b2e8825",
+      "pr53_sha256_lf": "00744ab65add91ded2b0f164668e8e8e070744d83a98552f9a228b531d56b3d6",
+      "pr56_sha256_lf": "00744ab65add91ded2b0f164668e8e8e070744d83a98552f9a228b531d56b3d6",
+      "resolution": "manual-union"
+    },
+    {
+      "path": "tools/check_workflow_policy.py",
+      "changed_in_pr53": true,
+      "changed_in_pr56": true,
+      "pr50_sha256_lf": "5de559889f3f2b712b3db713521da452c81771fda6b26a4314412f7a5a53cc88",
+      "pr53_sha256_lf": "7dff1e33b2e8f7f30d2e4dc86ff5997c0762c4b6a9341315e8638417ab102c14",
+      "pr56_sha256_lf": "7dff1e33b2e8f7f30d2e4dc86ff5997c0762c4b6a9341315e8638417ab102c14",
+      "resolution": "manual-union"
+    },
+    {
+      "path": "tools/dev_ai_gate.py",
+      "changed_in_pr53": true,
+      "changed_in_pr56": true,
+      "pr50_sha256_lf": "13c5082ae3437b2cf2f6bcdbdb86074300cbf4d7b4ae40436a518a75854d3c3e",
+      "pr53_sha256_lf": "d28fed434e23c6400f7936668472aa5a5c799d7421ea07ea442e2dde689ecd1d",
+      "pr56_sha256_lf": "d28fed434e23c6400f7936668472aa5a5c799d7421ea07ea442e2dde689ecd1d",
+      "resolution": "manual-union"
+    },
+    {
+      "path": "tools/test_workflow_policy_1878.py",
+      "changed_in_pr53": true,
+      "changed_in_pr56": true,
+      "pr50_sha256_lf": "923bd45fbcb84440bb9eab0f0504deaaa028b805d963d746afac2ba441d5350b",
+      "pr53_sha256_lf": "00e7097e61ad85d6d9e1a69d910d605ff102d6ca04ba5771ff1d4b4d69e68835",
+      "pr56_sha256_lf": "00e7097e61ad85d6d9e1a69d910d605ff102d6ca04ba5771ff1d4b4d69e68835",
+      "resolution": "manual-union"
+    },
+    {
+      "path": "tools/tests/moodle_acceptance.php",
+      "changed_in_pr53": true,
+      "changed_in_pr56": true,
+      "pr50_sha256_lf": "4b25b16d7beef4b5f48bc24fc6f7bcd1be92193df209381cf52af02cfb52b6c7",
+      "pr53_sha256_lf": "20d526d2a8183ff19c2b7a63fca4381ef0f37b80d6d9327ebe0d5d75f0b3dfe6",
+      "pr56_sha256_lf": "bc4b3d573f8e20451688c542461af278d997a288999a5d4358ce9f91dfe318ee",
+      "resolution": "manual-union"
+    }
+  ],
+  "unchanged_schema_hashes": {
+    "local/kbacompany/db/install.xml": "4a1daaae31c2114561e086de1d228d1d93d9a1104c248a4195941118ff939d6b",
+    "local/kbacompany/db/upgradelib.php": "5ccf2fc5bf80a90d25342cb9051a2b296877e90555ce59f2662acc9174a21b43"
+  }
+}

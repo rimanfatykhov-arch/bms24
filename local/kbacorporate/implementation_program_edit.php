@@ -26,22 +26,11 @@ $contactphone = optional_param('contactphone', (string)$program->contactphone, P
 $customercomment = optional_param('customercomment', (string)$program->customercomment, PARAM_TEXT);
 $customerresponse = optional_param('customerresponse', (string)$program->customerresponse, PARAM_TEXT);
 $bitrixdealid = optional_param('bitrixdealid', (string)$program->bitrixdealid, PARAM_TEXT);
-$curatorusers = get_users_by_capability($context, 'local/kbacorporate:manageimplementationprograms',
-    'u.id, u.firstname, u.lastname, u.firstnamephonetic, u.lastnamephonetic, u.middlename, u.alternatename, u.email',
-    'u.lastname ASC, u.firstname ASC');
-$curatorusers = $curatorusers ?: [];
-if (!isset($curatorusers[(int)$USER->id])) {
-    $curatorusers[(int)$USER->id] = $USER;
-}
+$curatorusers = \local_kbacorporate\local\implementation_curator_role::candidates(
+    (int)$program->curatorid);
 $curatoroptions = [0 => get_string('notassigned', 'local_kbacorporate')];
 foreach ($curatorusers as $curatoruser) {
     $curatoroptions[(int)$curatoruser->id] = fullname($curatoruser) . ' — ' . $curatoruser->email;
-}
-if ($program->curatorid && !isset($curatoroptions[(int)$program->curatorid])) {
-    $savedcurator = $DB->get_record('user', ['id' => (int)$program->curatorid]);
-    if ($savedcurator) {
-        $curatoroptions[(int)$savedcurator->id] = fullname($savedcurator) . ' — ' . $savedcurator->email;
-    }
 }
 if (optional_param('save', 0, PARAM_BOOL)) {
     require_sesskey();
@@ -49,7 +38,9 @@ if (optional_param('save', 0, PARAM_BOOL)) {
     if (!\local_kbacorporate\local\implementation_packages::get_by_code($package) ||
             !in_array($commercialstatus, ['requested', 'awaitingpayment', 'paid', 'cancelled'], true) ||
             !in_array($status, ['draft', 'active', 'paused', 'completed', 'cancelled'], true) ||
-            !isset($curatoroptions[$curatorid])) {
+            !isset($curatoroptions[$curatorid]) ||
+            ($curatorid > 0 && !\local_kbacorporate\local\implementation_curator_role::is_eligible(
+                $curatorid, (int)$program->curatorid))) {
         throw new invalid_parameter_exception('Invalid program state');
     }
     $program->package = $package; $program->commercialstatus = $commercialstatus;
@@ -81,6 +72,13 @@ $PAGE->set_title(get_string('editimplementationprogram', 'local_kbacorporate'));
 echo $OUTPUT->header(); echo local_kbacorporate_implementation_navigation($companyid, 'clients');
 echo local_kbacorporate_company_context_banner($company);
 echo $OUTPUT->heading(get_string('editimplementationprogram', 'local_kbacorporate'));
+if (has_capability('moodle/role:manage', $context)) {
+    echo html_writer::div(html_writer::link(
+        new moodle_url('/local/kbacorporate/implementation_curator_role_setup.php'),
+        get_string('curatorrolesetup', 'local_kbacorporate')),
+        'mb-3');
+}
+
 $action = new moodle_url('/local/kbacorporate/implementation_program_edit.php');
 echo html_writer::start_tag('form', ['method' => 'post', 'action' => $action]);
 foreach (['companyid' => $companyid, 'auditid' => $auditid, 'sesskey' => sesskey(), 'save' => 1] as $name => $value) {

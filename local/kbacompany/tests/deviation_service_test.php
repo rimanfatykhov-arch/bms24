@@ -5,6 +5,7 @@ defined('MOODLE_INTERNAL') || die();
 
 use local_kbacompany\local\deviation_service as deviations;
 use local_kbacompany\local\identity_registry;
+use local_kbacompany\local\business_date_service;
 use local_kbacorporate\local\repository;
 
 /** Stored approved-bundle fixtures isolate deviation logic from the upstream approval tests. */
@@ -31,7 +32,9 @@ final class deviation_service_test extends \advanced_testcase {
         $this->setAdminUser();
         $actor = (int)$USER->id;
         $company = identity_registry::company_uuid(repository::save_company((object)['name' => 'Deviations', 'active' => 1]));
-        $date = userdate(time(), '%Y-%m-%d');
+        // One instant for acceptance and observation; display userdate() removes day zeroes.
+        $now = time();
+        $date = business_date_service::day($now);
         $period = substr($date, 0, 7) . '-01';
         $function = '10000000-0000-4000-8000-000000000001';
         $norm = '10000000-0000-4000-8000-000000000002';
@@ -43,13 +46,13 @@ final class deviation_service_test extends \advanced_testcase {
             'references' => ['stat' => ['uuid' => 'S1', 'name' => 'Count', 'unit' => 'count', 'periodtype' => 'monthly', 'direction' => 'up']]];
         $DB->insert_record('local_kbacompany_wfapprove', (object)['companyuuid' => $company,
             'uuid' => $approval, 'objectuuid' => $function, 'revision' => 1, 'fingerprint' => hash('sha256', json_encode($snapshot)),
-            'snapshot' => json_encode($snapshot), 'approvedby' => $actor, 'timecreated' => time(), 'revoked' => 0]);
+            'snapshot' => json_encode($snapshot), 'approvedby' => $actor, 'timecreated' => $now, 'revoked' => 0]);
         $DB->insert_record('local_kbacompany_wfwork', (object)['companyuuid' => $company, 'uuid' => $task,
             'kind' => 'task', 'parentuuid' => '', 'functionuuid' => $function, 'approvaluuid' => $approval,
             'normuuid' => $norm, 'assignmentuuid' => '', 'userid' => 0, 'reviewerid' => 0,
             'name' => 'Previously accepted correction', 'description' => 'Correction', 'acceptance' => 'Reviewed',
             'deadline' => $date, 'status' => 'accepted', 'revision' => 5, 'attempt' => 1,
-            'timecreated' => time(), 'timemodified' => time()]);
+            'timecreated' => $now, 'timemodified' => $now]);
         $id = deviations::command($company, $actor, 'create', ['approval' => $approval, 'norm' => $norm,
             'actual' => '5', 'observedon' => $date, 'evidence' => 'Source observation']);
         deviations::command($company, $actor, 'analyze', ['object' => $id, 'revision' => 1, 'cause' => 'Reasoned hypothesis']);
@@ -104,5 +107,56 @@ final class deviation_service_test extends \advanced_testcase {
         $this->setUser($user);
         $this->expectException(\moodle_exception::class);
         deviations::context($f['company'], (int)$user->id);
+    }
+
+    public function test_machine_observation_dates_preserve_single_digit_days(): void {
+        $this->resetAfterTest();
+        $this->setAdminUser();
+        foreach (['2026-11-01', '2026-11-09'] as $expected) {
+            $instant = new \DateTimeImmutable($expected . ' 12:00:00', \core_date::get_user_timezone_object());
+            $date = business_date_service::day($instant->getTimestamp());
+            $this->assertSame($expected, $date);
+            deviations::observation_date($date, '2026-11-01', 'monthly');
+        }
+        $this->assertDebuggingNotCalled();
+    }
+
+    public static function invalid_period_cases(): array {
+        return ['unpadded observation' => ['2026-11-9', '2026-11-01'],
+            'invalid calendar date' => ['2026-02-30', '2026-02-01'],
+            'monthly start must be first' => ['2026-11-09', '2026-11-02']];
+    }
+
+    /** @dataProvider invalid_period_cases */
+    public function test_invalid_observation_period_is_still_rejected(string $date, string $start): void {
+        try {
+            deviations::observation_date($date, $start, 'monthly');
+            $this->fail('Invalid machine dates and period starts must be rejected.');
+        } catch (\moodle_exception $error) {
+            $this->assertSame('productinvalidperiod', $error->errorcode);
+        }
+    }
+
+    public function test_recheck_before_task_acceptance_preserves_deviation_and_check_history(): void {
+        global $DB;
+        $f = $this->fixture();
+        // Observation is within its norm, but precedes the corrective task acceptance.
+        $accepted = (new \DateTimeImmutable($f['date'] . ' 12:00:00',
+            \core_date::get_user_timezone_object()))->modify('+1 day')->getTimestamp();
+        $DB->set_field('local_kbacompany_wfwork', 'timemodified', $accepted,
+            ['companyuuid' => $f['company'], 'uuid' => $f['task']]);
+        $scope = ['companyuuid' => $f['company'], 'uuid' => $f['id']];
+        $before = $DB->get_record('local_kbacompany_deviation', $scope, '*', MUST_EXIST);
+        try {
+            deviations::command($f['company'], $f['actor'], 'check', ['object' => $f['id'], 'revision' => 3,
+                'approval' => $f['approval'], 'norm' => $f['norm'], 'actual' => '10',
+                'observedon' => $f['date'], 'evidence' => 'Too early to prove the correction']);
+            $this->fail('Observation before task acceptance must be rejected.');
+        } catch (\moodle_exception $error) {
+            $this->assertSame('dv_chronology', $error->errorcode);
+        }
+        $this->assertEquals($before, $DB->get_record('local_kbacompany_deviation', $scope, '*', MUST_EXIST));
+        $this->assertSame(0, $DB->count_records('local_kbacompany_devcheck',
+            ['companyuuid' => $f['company'], 'deviationuuid' => $f['id']]));
     }
 }

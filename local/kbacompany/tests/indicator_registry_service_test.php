@@ -11,8 +11,10 @@ use local_kbacompany\local\product_service;
 final class indicator_registry_service_test extends \advanced_testcase {
     public function test_contract_keeps_one_canonical_indicator_registry(): void {
         $contract = indicator_registry_service::contract();
-        $this->assertSame('0.5.2', $contract['version']);
+        $this->assertSame('0.5.5.2', $contract['version']);
         $this->assertSame('local_kbacompany_stat', $contract['canonical_indicator']);
+        $this->assertSame('local_kbacompany_statval', $contract['history']);
+        $this->assertContains('observations_remain_append_only', $contract['rules']);
         $this->assertSame(['strategy', 'organization'], $contract['tree_projections']);
         $this->assertContains('one_indicator_many_bindings', $contract['rules']);
         $this->assertContains('battle_plan_does_not_own_indicator_definitions', $contract['rules']);

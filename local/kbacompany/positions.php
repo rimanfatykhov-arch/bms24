@@ -3,6 +3,7 @@ require_once(__DIR__ . '/../../config.php');
 require_once(__DIR__ . '/lib.php');
 
 use local_kbacompany\local\company_context_service;
+use local_kbacompany\local\permission_service;
 use local_kbacompany\local\position_service as service;
 use local_kbacompany\local\position_ui_service as ui;
 use local_kbacompany\local\document_request_service as requests;
@@ -215,6 +216,10 @@ if (in_array($view, ['delete', 'restore'], true)) {
     $model = service::directory_browse($uuid, $actor, $filters, $page);
     $units = service::directory_units($uuid, $actor, '', $model['filters']['node'], false);
     $content = ui::listing($uuid, $model, $units);
+    if (permission_service::can_manage_people($uuid, $actor)) {
+        $content .= html_writer::div(html_writer::link(ui::url($uuid, [], 'role_readiness'),
+            ui::tr('readiness_title')), 'bms-pdu-actions');
+    }
 }
 $PAGE->set_context($context);
 $PAGE->set_url(ui::url($uuid, ['view' => $view] + ($positionuuid !== '' ? ['position' => $positionuuid, 'tab' => $tab] : [])));

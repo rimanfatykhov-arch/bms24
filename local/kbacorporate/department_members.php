@@ -6,6 +6,7 @@ require_capability('local/kbacorporate:managedepartments', $context);
 $departmentid = required_param('departmentid', PARAM_INT);
 $delete = optional_param('delete', 0, PARAM_INT);
 $department = \local_kbacorporate\local\departments::get_department($departmentid);
+\local_kbacorporate\local\access::require_not_revoked((int)$department->companyid, (int)$USER->id);
 $company = $DB->get_record('local_kbacorp_company', ['id' => $department->companyid], '*', MUST_EXIST);
 if ($delete && confirm_sesskey()) {
     \local_kbacorporate\local\repository::delete_department_member($delete, $departmentid);

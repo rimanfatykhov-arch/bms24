@@ -66,7 +66,7 @@ if (!$data['requirements']) {
 } else {
     $table = new html_table();
     $table->head = [get_string('idnumber'), get_string('name'), get_string('positioncompetency_target_level', 'local_kbacompany'),
-        get_string('priority'), get_string('positioncompetency_required', 'local_kbacompany'), get_string('actions')];
+        get_string('positioncompetency_priority', 'local_kbacompany'), get_string('positioncompetency_required', 'local_kbacompany'), get_string('actions')];
     foreach ($data['requirements'] as $req) {
         $actions = '';
         if ($data['can_manage'] && $profile && $profile['status'] === 'draft') {
@@ -95,11 +95,11 @@ if ($data['can_manage']) {
         foreach (['uuid' => $uuid, 'position' => $positionuuid, 'action' => 'save', 'sesskey' => sesskey()] as $key => $value) {
             echo html_writer::empty_tag('input', ['type' => 'hidden', 'name' => $key, 'value' => $value]);
         }
-        echo html_writer::label(get_string('competency', 'core_competency'), 'competencyid');
+        echo html_writer::label(get_string('positioncompetency_competency', 'local_kbacompany'), 'competencyid');
         echo html_writer::select($options, 'competencyid', '', false, ['id' => 'competencyid', 'required' => 'required']);
         echo html_writer::label(get_string('positioncompetency_target_level', 'local_kbacompany'), 'targetlevel');
         echo html_writer::empty_tag('input', ['type' => 'number', 'name' => 'targetlevel', 'id' => 'targetlevel', 'min' => 0, 'max' => 100, 'value' => 0]);
-        echo html_writer::label(get_string('priority'), 'priority');
+        echo html_writer::label(get_string('positioncompetency_priority', 'local_kbacompany'), 'priority');
         echo html_writer::select([
             'low' => get_string('positioncompetency_priority_low', 'local_kbacompany'),
             'normal' => get_string('positioncompetency_priority_normal', 'local_kbacompany'),

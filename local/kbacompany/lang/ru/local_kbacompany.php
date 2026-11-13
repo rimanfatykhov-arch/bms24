@@ -1628,9 +1628,10 @@ $string['communicationcenter_apply'] = 'Применить';
 $string['taskprovider_bms'] = 'BMS24';
 $string['taskprovider_legacy'] = 'Предыдущий корпоративный контур';
 $string['taskprovider_kbaelement'] = 'Обучение';
+$string['taskprovider_kbacorporate_impl'] = 'Внедрение BMS (Куратор)';
 $string['taskprovider_source'] = 'Источник';
 $string['taskprovider_all'] = 'Все источники';
-$string['taskprovider_sources'] = 'Источники учебных задач';
+$string['taskprovider_sources'] = 'Источники задач';
 $string['taskprovider_bind'] = 'Подключить источник';
 $string['taskprovider_unbind'] = 'Отключить';
 $string['taskprovider_error'] = 'Источник временно недоступен; остальные источники продолжают работать.';
@@ -4668,6 +4669,8 @@ $string['positioncompetency_removed'] = 'Требование к компете�
 $string['positioncompetency_published'] = 'Профиль компетенций опубликован.';
 $string['positioncompetency_publish_empty'] = 'Нельзя опубликовать профиль без хотя бы одного требования к компетенции.';
 $string['positioncompetency_boundary_note'] = 'Целевой профиль должности не изменяет оценку сотрудника. Завершение курса также не подтверждает достижение компетенции автоматически.';
+$string['positioncompetency_priority'] = 'Приоритет';
+$string['positioncompetency_competency'] = 'Компетенция';
 $string['positioncompetency_priority_low'] = 'Низкий';
 $string['positioncompetency_priority_normal'] = 'Обычный';
 $string['positioncompetency_priority_high'] = 'Высокий';
@@ -6046,7 +6049,7 @@ $string['tui_next_step'] = 'Следующий шаг';
 $string['tui_no_copies'] = 'Связи используют существующие задачи и Боевые планы. Добавление в план не создаёт копию задачи и не меняет её срок автоматически.';
 $string['tui_no_date'] = 'Без срока';
 $string['tui_not_set'] = 'Не назначено';
-$string['tui_old_source_form'] = 'Настройки источников перенесены: Задачи → Инструменты → Источники учебных задач. Старая форма ничего не изменила.';
+$string['tui_old_source_form'] = 'Настройки источников перенесены: Задачи → Инструменты → Источники задач. Старая форма ничего не изменила.';
 $string['tui_open_messages'] = 'Открыть переписку';
 $string['tui_page'] = 'Страница {$a->page} из {$a->pages}';
 $string['tui_pages'] = 'Страницы списка';
@@ -6063,7 +6066,7 @@ $string['tui_reviewer_help'] = 'Проверяющий принимает рез
 $string['tui_revision'] = 'Редакция записи';
 $string['tui_search'] = 'Поиск по названию';
 $string['tui_size'] = 'Размер';
-$string['tui_source_settings'] = 'Источники учебных задач';
+$string['tui_source_settings'] = 'Источники задач';
 $string['tui_source_tasks'] = 'Задачи из других источников';
 $string['tui_sources_empty'] = 'Доступных записей нет. Подключение учебного источника не создаёт задачи BMS автоматически.';
 $string['tui_sources_help'] = 'Учебные и прежние задачи открываются в своей системе-источнике. Это совместимое представление, не второй реестр задач.';
@@ -6542,6 +6545,11 @@ $string['pdu_units_limited'] = 'Показаны первые 50 совпаде�
 $string['pdu_units_help'] = 'Подразделение выбирается явно. Поиск не сохраняет должность и не меняет введённый текст.';
 $string['pdu_units_empty'] = 'Подразделений по этому запросу нет. Измените поиск или подготовьте подразделение в структуре.';
 $string['pdu_open_units'] = 'Открыть структуру';
+$string['pdu_firstunit'] = 'Подготовить первое подразделение (в новой вкладке)';
+$string['pdu_refreshunits'] = 'После применения согласованной структуры вернитесь сюда и нажмите «Найти». Введённые поля останутся в этой вкладке.';
+$string['design_firstunitcreate'] = 'Создать проект с одним подразделением';
+$string['design_firstunitbranch'] = 'Создать основной филиал при применении';
+$string['design_firstunitexists'] = 'В компании уже есть действующее подразделение. Обновите список или создайте обычный проект структуры.';
 $string['pdu_unit_readonly'] = 'Подразделение задано при создании. Перевод в другое подразделение не выполняется этой формой, чтобы не изменить смысл связанных штатных строк и назначений.';
 $string['pdu_purpose_help'] = 'Зачем существует эта должность и за какую работу она отвечает? Функции и их продукты связываются отдельно.';
 $string['pdu_manager_help'] = 'Признак руководящей работы, а не роль доступа. Он не выдаёт управленческие права пользователю.';
@@ -7776,13 +7784,13 @@ $string['employee2_no_competency_profile'] = 'Профиль компетенц�
 $string['employee2_comp_total'] = 'Требований';
 $string['employee2_comp_met'] = 'Соответствует';
 $string['employee2_comp_gap'] = 'Есть разрыв';
-$string['employee2_comp_unknown'] = 'Нет оценки';
+$string['employee2_comp_unknown'] = 'Нет оценки BMS24';
 $string['employee2_competency'] = 'Компетенция';
 $string['employee2_target_level'] = 'Требуемый уровень';
 $string['employee2_current_level'] = 'Текущий уровень';
 $string['employee2_comp_state_met'] = 'Соответствует';
 $string['employee2_comp_state_gap'] = 'Разрыв';
-$string['employee2_comp_state_unknown'] = 'Нет оценки';
+$string['employee2_comp_state_unknown'] = 'Нет оценки BMS24';
 $string['employee2_no_competencies'] = 'Для текущей должности требования к компетенциям не опубликованы.';
 $string['employee2_open_competencies'] = 'Открыть профиль компетенций';
 $string['employee2_learning_boundary'] = 'Статус обучения читается из действующего контура обучения. Завершение курса само по себе не подтверждает достижение компетенции.';
@@ -7832,6 +7840,10 @@ $string['bpu_open_calendar'] = 'Открыть календарь';
 $string['bpu_rollover_title'] = 'Следующая неделя и незавершённая работа';
 $string['bpu_rollover_target'] = 'Следующий Боевой план уже подготовлен: {$a}.';
 $string['bpu_open_next_plan'] = 'Открыть следующий план';
+$string['bpu_next_plan_title'] = 'Следующий Боевой план';
+$string['bpu_create_next_plan'] = 'Создать план на следующую неделю';
+$string['bpu_next_plan_missing'] = 'На следующую неделю Боевой план ещё не создан.';
+$string['bpu_next_plan_unavailable'] = 'Следующий план можно подготовить после активации текущего периода или открыть его, когда он уже существует.';
 $string['bpu_rollover_help'] = 'Выбранные задачи не копируются и не получают новый срок. В следующем Боевом плане появляется ссылка на тот же канонический объект задачи с его историей.';
 $string['bpu_rollover_selected'] = 'Перенести выбранное в следующую неделю';
 $string['bpu_rollover_none'] = 'Незавершённых задач для переноса нет.';
@@ -7966,6 +7978,8 @@ $string['wcal_edit'] = 'Запись и изменение';
 $string['wcal_save_rights'] = 'Сохранить права';
 $string['wcal_revoke'] = 'Для отзыва доступа снимите все три флажка и сохраните.';
 $string['wcal_error'] = 'Нет доступа или неверные данные календаря.';
+$string['wcal_owner_not_employee'] = 'Рабочий календарь доступен только для сотрудника, связанного с этой компанией. Добавьте или свяжите пользователя в разделе «Люди → Сотрудники».';
+$string['pmc_calendar_unavailable'] = 'Рабочий календарь станет доступен после того, как ваша учётная запись будет связана с сотрудником этой компании.';
 
 // RC27 personal profile within BMS24.
 $string['bms_self_profile_edit'] = 'Редактировать личные данные';
@@ -8210,6 +8224,10 @@ $string['bpu_metric_fact_comment'] = 'Комментарий / причина к
 $string['bpu_metric_fact_comment_help'] = 'При первой записи комментарий необязателен. При изменении уже внесённого значения укажите причину. История сохраняется.';
 $string['bpu_metric_save_fact'] = 'Сохранить факт';
 $string['bpu_metric_add_fact'] = 'Внести факт';
+$string['bpu_metric_change_fact'] = 'Изменить факт';
+$string['bpu_metric_fact_recorded'] = 'Факт внесён';
+$string['bpu_metric_fact_form_title'] = 'Внесение факта';
+$string['bpu_metric_fact_form_period'] = 'Период: {$a->start} — {$a->end}. Единица: {$a->unit}';
 $string['bpu_metric_correct_fact'] = 'Исправить';
 $string['bpu_metric_history'] = 'Факты за неделю';
 $string['bpu_metric_unassessed'] = 'Без оценки';
@@ -8502,3 +8520,1145 @@ $string['bms24_uikit_status_done'] = 'Выполнена';
 $string['bms24_uikit_status_returned'] = 'Возвращена';
 $string['bms24_uikit_status_paused'] = 'Приостановлена';
 $string['bms24_uikit_page'] = 'Страница {$a}';
+
+$string['bpu_continuity_title'] = 'Продолжение предыдущей недели';
+$string['bpu_continuity_source'] = 'Источник: {$a}';
+$string['bpu_continuity_inherited'] = 'Подставлено из предыдущего плана: {$a}.';
+$string['bpu_continuity_none'] = 'Настройки предыдущего плана больше недоступны и не были подставлены.';
+$string['bpu_continuity_notcopied'] = 'Не копируются: задачи, факты метрик, цель и итог недели, история согласования.';
+$string['bpu_continuity_review'] = 'Проверьте настройки и сохраните новый черновик.';
+
+$string['bpu_week_compare_title'] = 'Сравнение с предыдущей неделей';
+$string['bpu_week_compare_previous'] = 'Предыдущая неделя';
+$string['bpu_week_compare_current'] = 'Текущая неделя';
+$string['bpu_week_compare_open'] = 'Открытые задачи';
+$string['bpu_week_compare_open_plan'] = 'Открыть Боевой план';
+$string['bpu_week_compare_help'] = 'Сравнение использует те же канонические задачи и показатели каждого Боевого плана. Оно помогает увидеть изменение нагрузки и состояния метрик между соседними неделями, но не доказывает причинно-следственную связь.';
+$string['bpu_week_insights_title'] = 'Что изменилось относительно предыдущей недели';
+$string['bpu_week_insight_open_better'] = 'Открытых задач стало меньше на {$a}.';
+$string['bpu_week_insight_open_worse'] = 'Открытых задач стало больше на {$a}.';
+$string['bpu_week_insight_open_same'] = 'Количество открытых задач не изменилось.';
+$string['bpu_week_insight_metric_better'] = 'Метрик в зоне риска или критичном состоянии стало меньше на {$a}.';
+$string['bpu_week_insight_metric_worse'] = 'Метрик в зоне риска или критичном состоянии стало больше на {$a}.';
+$string['bpu_week_insight_metric_same'] = 'Количество метрик в зоне риска или критичном состоянии не изменилось.';
+$string['bpu_week_insight_nodata_better'] = 'Метрик без данных стало меньше на {$a}.';
+$string['bpu_week_insight_nodata_worse'] = 'Метрик без данных стало больше на {$a}.';
+$string['bpu_week_insight_nodata_same'] = 'Количество метрик без данных не изменилось.';
+$string['bpu_week_attention_title'] = 'Что требует внимания сейчас';
+$string['bpu_week_attention_summary'] = 'Открытых задач: {$a->open}; риск: {$a->risk}; критично: {$a->critical}; без данных: {$a->nodata}.';
+
+$string['bpu_next_actions_title'] = 'Следующие управленческие действия';
+$string['bpu_next_actions_open_tasks'] = 'Открытых задач: {$a}.';
+$string['bpu_next_actions_open_tasks_link'] = 'Разобрать задачи';
+$string['bpu_next_actions_attention_metrics'] = 'Метрик в зоне риска или критичном состоянии: {$a}.';
+$string['bpu_next_actions_nodata_metrics'] = 'Метрик без данных: {$a}.';
+$string['bpu_next_actions_metrics_link'] = 'Открыть метрики';
+$string['bpu_next_actions_next_plan_exists'] = 'Следующий Боевой план уже создан.';
+$string['bpu_next_actions_next_plan_missing'] = 'Следующий Боевой план ещё не создан.';
+$string['bpu_next_actions_clear'] = 'Критичных сигналов для отдельного действия сейчас нет.';
+$string['bpu_next_actions_help'] = 'Список собирается из канонических задач, состояния метрик и следующего Боевого плана. Он не создаёт отдельную сущность решений и не заменяет задачи или управленческий цикл.';
+$string['bpu_next_actions_create_task_prompt'] = 'Нужно зафиксировать отдельное управленческое действие?';
+$string['bpu_next_actions_create_task'] = 'Создать управленческую задачу';
+
+$string['tui_battle_plan_filter'] = 'Боевой план';
+$string['tui_all_battle_plans'] = 'Все Боевые планы';
+$string['tui_analytics_battle_plan_title'] = 'Сводка Боевого плана';
+$string['tui_open_battle_plan'] = 'Открыть Боевой план';
+$string['tui_analytics_done_share'] = 'Выполнено от всех задач';
+$string['tui_analytics_overdue_share'] = 'Просрочено от открытых';
+$string['tui_analytics_review_queue'] = 'На проверке';
+
+
+$string['bpu_cycle_title'] = 'Производительность и эффективность';
+$string['bpu_cycle_productivity'] = 'Производительность по задачам';
+$string['bpu_cycle_productivity_detail'] = 'Завершено задач: {$a->done} из {$a->total}.';
+$string['bpu_cycle_effectiveness'] = 'Эффективность по метрикам';
+$string['bpu_cycle_effectiveness_detail'] = 'В норме: {$a->ok} из {$a->evaluated} метрик с оценкой.';
+$string['bpu_cycle_data_coverage'] = 'Покрытие данных по метрикам';
+$string['bpu_cycle_data_coverage_detail'] = 'Есть оценка: {$a->evaluated} из {$a->total} метрик.';
+$string['bpu_cycle_delta_up'] = 'К предыдущей неделе: +{$a} п.п.';
+$string['bpu_cycle_delta_down'] = 'К предыдущей неделе: −{$a} п.п.';
+$string['bpu_cycle_delta_same'] = 'К предыдущей неделе: без изменений.';
+$string['bpu_cycle_method_note'] = 'Производительность = доля завершённых задач от задач Боевого плана. Эффективность = доля метрик «В норме» среди метрик, по которым уже есть оценка. Метрики без данных показываются отдельно через покрытие данных. Эти показатели не усредняются в единый рейтинг сотрудника.';
+$string['bpu_cycle_no_metric_data'] = 'По метрикам пока нет данных для расчёта эффективности. Сначала внесите факт по показателям.';
+$string['bpu_cycle_trend_title'] = 'Динамика производительности и эффективности';
+$string['bpu_cycle_trend_current'] = 'Текущая неделя';
+$string['bpu_cycle_trend_note'] = 'Показана динамика за {$a->weeks} недель по тем же каноническим задачам и метрикам Боевого плана. Отсутствие данных не приравнивается к нулевой эффективности.';
+$string['battleplan_team_performance_title'] = 'Производительность и эффективность команды';
+$string['battleplan_team_performance_intro'] = 'Срез по доступным Боевым планам выбранной недели. Производительность и эффективность показаны отдельно и не объединяются в рейтинг сотрудника.';
+$string['battleplan_team_productivity_detail'] = 'Завершено задач: {$a->done} из {$a->total}.';
+$string['battleplan_team_effectiveness_detail'] = 'В норме: {$a->ok} из {$a->evaluated} метрик с оценкой.';
+$string['battleplan_team_coverage_detail'] = 'Есть оценка: {$a->evaluated} из {$a->total} метрик.';
+$string['battleplan_team_performance_note'] = 'Сводные проценты рассчитаны по фактическому объёму задач и метрик в текущем срезе, а не как среднее процентов сотрудников. Отсутствие данных не считается нулевой эффективностью.';
+$string['battleplan_team_change'] = 'К прошлой неделе';
+$string['battleplan_team_change_productivity'] = 'Производительность';
+$string['battleplan_team_change_effectiveness'] = 'Эффективность';
+$string['battleplan_team_change_coverage'] = 'Покрытие';
+$string['battleplan_team_delta_up'] = '+{$a} п.п.';
+$string['battleplan_team_delta_down'] = '−{$a} п.п.';
+$string['battleplan_team_delta_same'] = '0 п.п.';
+
+$string['bpu_tool_weekcoord'] = 'Координация недели';
+$string['battleplan_weekcoord_title'] = 'Управленческая координация недели';
+$string['battleplan_weekcoord_intro'] = 'Единая повестка руководителя: что требует решения, где есть отклонения и куда перейти для действия.';
+$string['battleplan_weekcoord_filter_title'] = 'Контекст управленческой недели';
+$string['battleplan_weekcoord_submitted'] = 'На согласовании';
+$string['battleplan_weekcoord_performance'] = 'Результат недели';
+$string['battleplan_weekcoord_performance_help'] = 'Производительность задач, эффективность метрик и полнота данных показаны отдельно — без искусственного общего рейтинга.';
+$string['battleplan_weekcoord_agenda'] = 'Требует управленческого внимания';
+$string['battleplan_weekcoord_agenda_help'] = 'Каждый пункт ведёт в существующий Боевой план, Task Center или контур показателей. Отдельный журнал решений не создаётся.';
+$string['battleplan_weekcoord_empty'] = 'На выбранную неделю нет пунктов, требующих внимания по текущим данным.';
+$string['battleplan_weekcoord_more'] = 'Ещё пунктов: {$a}. Откройте профильные разделы для полного списка.';
+$string['battleplan_weekcoord_units'] = 'Подразделения';
+$string['battleplan_weekcoord_units_help'] = 'Фактическая картина подразделений: результаты, сигналы внимания и уже созданные управленческие задачи.';
+$string['battleplan_weekcoord_no_signals'] = 'Нет текущих сигналов внимания';
+$string['battleplan_weekcoord_method_note'] = 'Экран является read-model: он не создаёт новый статус, рейтинг или сущность решения. Все действия выполняются в существующих канонических объектах BMS24.';
+$string['battleplan_weekcoord_decision_meta'] = 'Требуется решений по показателям: {$a}';
+$string['battleplan_weekcoord_overdue_meta'] = 'Просроченных задач: {$a}';
+$string['battleplan_weekcoord_critical_meta'] = 'Критических отклонений: {$a}';
+$string['battleplan_weekcoord_missing_meta'] = 'Боевой план на неделю отсутствует';
+$string['battleplan_weekcoord_submitted_meta'] = 'Боевой план отправлен на согласование';
+$string['battleplan_weekcoord_blocked_meta'] = 'Блокеров готовности: {$a}';
+$string['battleplan_weekcoord_kind_decision'] = 'Решение';
+$string['battleplan_weekcoord_kind_overdue'] = 'Просрочка';
+$string['battleplan_weekcoord_kind_critical'] = 'Критический KPI';
+$string['battleplan_weekcoord_kind_missing_plan'] = 'Нет плана';
+$string['battleplan_weekcoord_kind_submitted'] = 'Согласование';
+$string['battleplan_weekcoord_kind_blocked'] = 'Блокер';
+$string['battleplan_weekcoord_management_tasks'] = 'Управленческие задачи: открыто {$a->open}, выполнено {$a->done}';
+
+$string['battleplan_weekcoord_action_open_plan'] = 'Открыть план';
+$string['battleplan_weekcoord_action_open_metrics'] = 'Открыть KPI';
+$string['battleplan_weekcoord_action_open_tasks'] = 'Открыть задачи';
+$string['battleplan_weekcoord_action_create_task'] = 'Создать задачу';
+$string['battleplan_weekcoord_action_create_plan'] = 'Создать Боевой план';
+$string['battleplan_weekcoord_action_review'] = 'Рассмотреть план';
+$string['battleplan_weekcoord_action_fix_plan'] = 'Исправить план';
+$string['battleplan_weekcoord_action_employee'] = 'Сотрудник';
+$string['battleplan_weekcoord_actions_help'] = 'Действия открывают существующие канонические формы BMS24; сама координация ничего не создаёт и не меняет автоматически.';
+
+$string['bmsquicknav_workspace_aria'] = 'Быстрая навигация по рабочему пространству';
+$string['bmsquicknav_archops_aria'] = 'Быстрая навигация по операционной архитектуре';
+
+$string['battleplan_weekcoord_followup_title'] = 'Контроль решений прошлой недели';
+$string['battleplan_weekcoord_followup_help'] = 'Проверяем фактическое состояние управленческих задач из предыдущей недели {$a} и изменение результатов на текущей неделе.';
+$string['battleplan_weekcoord_followup_total'] = 'Управленческих задач';
+$string['battleplan_weekcoord_followup_done'] = 'Выполнено';
+$string['battleplan_weekcoord_followup_open'] = 'Осталось открыто';
+$string['battleplan_weekcoord_followup_empty'] = 'В доступных Боевых планах предыдущей недели управленческие задачи не найдены.';
+$string['battleplan_weekcoord_followup_counts'] = 'Выполнено {$a->done} из {$a->total}; открыто {$a->open}';
+$string['battleplan_weekcoord_followup_prev_tasks'] = 'Задачи прошлой недели';
+$string['battleplan_weekcoord_followup_current_plan'] = 'Текущий план';
+$string['battleplan_weekcoord_followup_open_items'] = 'Открытые задачи';
+$string['battleplan_weekcoord_followup_causality'] = 'Изменение показателей после управленческих действий является фактическим наблюдением по неделям и само по себе не доказывает причинно-следственную связь.';
+
+$string['battleplan_weekcoord_history_title'] = 'История управления за 4–8 недель';
+$string['battleplan_weekcoord_history_help'] = 'Фактическая динамика за {$a->weeks} недель для контура «{$a->scope}». Показатели пересчитываются из канонических Боевых планов, задач и KPI.';
+$string['battleplan_weekcoord_history_person'] = 'История: сотрудник';
+$string['battleplan_weekcoord_history_all_people'] = 'Весь выбранный контур';
+$string['battleplan_weekcoord_history_depth'] = 'Глубина истории';
+$string['battleplan_weekcoord_history_4weeks'] = '4 недели';
+$string['battleplan_weekcoord_history_8weeks'] = '8 недель';
+$string['battleplan_weekcoord_history_company_scope'] = 'Вся компания';
+$string['battleplan_weekcoord_history_empty'] = 'Для выбранного сотрудника или контура нет доступных данных за этот период.';
+$string['battleplan_weekcoord_history_week_meta'] = 'Планов: {$a->plans} · управленческие задачи: выполнено {$a->done}, открыто {$a->open}';
+$string['battleplan_weekcoord_history_attention'] = 'сигналов внимания: {$a}';
+$string['battleplan_weekcoord_history_note'] = 'История не является рейтингом сотрудников. Производительность, эффективность и полнота данных показаны отдельно; управленческие задачи считаются по их текущему фактическому статусу.';
+
+$string['battleplan_weekcoord_patterns_title'] = 'Повторяющиеся управленческие проблемы';
+$string['battleplan_weekcoord_patterns_help'] = 'Прозрачные фактические правила по выбранной истории. Это сигналы для разбора, а не рейтинг, диагноз или автоматическое решение.';
+$string['battleplan_weekcoord_patterns_empty'] = 'За выбранный период повторяющихся проблем по установленным правилам не обнаружено.';
+$string['battleplan_weekcoord_patterns_note'] = 'Каждый сигнал формируется только по указанному правилу. Он не доказывает причину проблемы и не оценивает сотрудника.';
+$string['battleplan_weekcoord_pattern_weeks'] = 'недели: {$a}';
+$string['battleplan_weekcoord_pattern_kind_critical'] = 'Критичный KPI';
+$string['battleplan_weekcoord_pattern_kind_execution'] = 'Исполнение';
+$string['battleplan_weekcoord_pattern_kind_followup'] = 'Контроль решений';
+$string['battleplan_weekcoord_pattern_kind_data'] = 'Качество данных';
+$string['battleplan_weekcoord_pattern_kind_decision'] = 'Решения';
+$string['battleplan_weekcoord_pattern_critical_kpi_repeat'] = 'Критичные KPI повторяются';
+$string['battleplan_weekcoord_pattern_overdue_two_weeks'] = 'Просрочки повторяются две недели';
+$string['battleplan_weekcoord_pattern_management_tasks_open_two_weeks'] = 'Управленческие задачи остаются открытыми';
+$string['battleplan_weekcoord_pattern_coverage_below_80_repeat'] = 'Недостаточная полнота данных повторяется';
+$string['battleplan_weekcoord_pattern_decisions_pending_two_weeks'] = 'Решения остаются незакрытыми';
+$string['battleplan_weekcoord_pattern_rule_critical_kpi_repeat'] = 'Правило: критичные исключения KPI есть минимум в 3 из последних 4 недель.';
+$string['battleplan_weekcoord_pattern_rule_overdue_two_weeks'] = 'Правило: просроченные задачи есть в обеих последних двух неделях.';
+$string['battleplan_weekcoord_pattern_rule_management_tasks_open_two_weeks'] = 'Правило: открытые управленческие задачи есть в обеих последних двух неделях.';
+$string['battleplan_weekcoord_pattern_rule_coverage_below_80_repeat'] = 'Правило: полнота данных ниже 80% минимум в 3 из последних 4 недель с доступными данными.';
+$string['battleplan_weekcoord_pattern_rule_decisions_pending_two_weeks'] = 'Правило: показатели, требующие решения, есть в обеих последних двух неделях.';
+
+
+$string['battleplan_weekcoord_pattern_create_task'] = 'Создать управленческую задачу';
+$string['battleplan_weekcoord_pattern_select_person'] = 'Выберите сотрудника в фильтре истории, чтобы создать задачу по этому сигналу.';
+$string['battleplan_weekcoord_pattern_task_title'] = 'Управленческая задача: {$a}';
+$string['battleplan_weekcoord_pattern_task_description'] = "Источник: Управленческая координация недели\nСигнал: {\$a->signal}\n{\$a->rule}\nНедели: {\$a->weeks}\nСотрудник: {\$a->employee}\nДолжность: {\$a->position}\n\nОпределите причину, управленческое действие и ожидаемый результат. Сигнал является фактическим наблюдением и сам по себе не доказывает причинность.";
+
+$string['battleplan_weekcoord_pattern_linked_task'] = 'Связанная управленческая задача:';
+$string['battleplan_weekcoord_pattern_open_task'] = 'Открыть задачу';
+$string['battleplan_weekcoord_pattern_create_next_task'] = 'Создать новую задачу';
+$string['battleplan_weekcoord_pattern_feedback_note'] = 'Статус берётся в реальном времени из канонического Task Center.';
+$string['battleplan_weekcoord_pattern_result_title'] = 'Фактическое изменение после завершения задачи';
+$string['battleplan_weekcoord_pattern_result_completed'] = 'Задача выполнена: {$a}';
+$string['battleplan_weekcoord_pattern_result_metric'] = 'Показатель';
+$string['battleplan_weekcoord_pattern_result_before'] = 'До / на момент действия · {$a}';
+$string['battleplan_weekcoord_pattern_result_after'] = 'Последующая неделя · {$a}';
+$string['battleplan_weekcoord_pattern_result_delta'] = 'Изменение';
+$string['battleplan_weekcoord_pattern_result_pp'] = 'п.п.';
+$string['battleplan_weekcoord_pattern_result_insufficient_after'] = 'Недостаточно последующих данных для сравнения.';
+$string['battleplan_weekcoord_pattern_result_insufficient_before'] = 'Недостаточно данных до или на момент выполнения задачи для сравнения.';
+$string['battleplan_weekcoord_pattern_result_causality'] = 'Изменение показателей после управленческого действия является фактическим наблюдением и само по себе не доказывает причинно-следственную связь.';
+$string['bpu_change_context'] = 'Изменить сотрудника или должность';
+$string['battleplan_existing_opened'] = 'Боевой план на эту неделю уже существует. Открыт существующий план.';
+
+$string['battleplan_weekcoord_unit_patterns_none'] = 'Повторяющиеся проблемы: недостаточно подтверждённых сигналов за выбранный период.';
+
+$string['battleplan_weekcoord_ceo_title'] = 'Сводка руководителя по подразделениям';
+
+$string['battleplan_weekcoord_ceo_help'] = 'Факты из доступных подразделений за выбранную неделю и повторяющиеся сигналы за выбранные 4/8 недель. Нажмите на подразделение для детализации.';
+
+$string['battleplan_weekcoord_ceo_units'] = 'Подразделений в сводке';
+
+$string['battleplan_weekcoord_ceo_units_patterns'] = 'Подразделений с повторениями';
+
+$string['battleplan_weekcoord_ceo_patterns'] = 'Повторяющихся сигналов';
+
+$string['battleplan_weekcoord_ceo_open'] = 'Открытых управленческих задач';
+
+$string['battleplan_weekcoord_ceo_unit_row'] = 'Повторений: {$a->patterns}; открытых задач: {$a->open}; просроченных: {$a->overdue}';
+
+$string['battleplan_weekcoord_ceo_note'] = 'Сводка отражает фактические данные в пределах доступного контура. Сигналы не являются рейтингом подразделений и не доказывают причинно-следственные связи.';
+
+$string['battleplan_weekcoord_inaccessible_person'] = 'Запрошенный сотрудник недоступен в выбранном контуре. Выберите сотрудника из списка или сбросьте фильтр; сводка руководителя для этого запроса не показывается.';
+
+$string['communicationcenter_conversations_title'] = 'Переписки';
+$string['communicationcenter_message_placeholder'] = 'Напишите сообщение...';
+$string['communicationcenter_workspace_hint'] = 'Выберите переписку слева, чтобы читать и отвечать. Создать новую можно кнопкой «Новая переписка».';
+
+$string['communicationcenter_mention_signal'] = 'Вас упомянули';
+
+$string['communicationcenter_unread_mention_signal'] = 'Непрочитанное упоминание';
+$string['communicationcenter_search_messages'] = 'Поиск по сообщениям';
+$string['communicationcenter_clear_search'] = 'Сбросить поиск';
+$string['communicationcenter_search_count'] = 'Сообщений найдено: {$a}';
+$string['communicationcenter_search_empty'] = 'Сообщений по запросу не найдено.';
+
+$string['communicationcenter_history_page'] = 'Страница {$a->current} из {$a->total}';
+$string['communicationcenter_older_messages'] = 'Ранее';
+$string['communicationcenter_newer_messages'] = 'Позднее';
+$string['communicationcenter_history_navigation'] = 'Страницы переписки';
+
+$string['communicationcenter_message_options'] = 'Упоминания и вложения';
+
+$string['communicationcenter_welcome_title'] = 'Выберите чат и начните общение';
+$string['communicationcenter_welcome_help'] = 'Выберите переписку слева, чтобы читать сообщения и отвечать.';
+
+$string['bms24_brand_subtitle'] = 'Система управления бизнесом';
+
+$string['bpu_rollover_alert_title'] = 'Незавершённых задач для переноса: {$a}';
+$string['bpu_rollover_alert_help'] = 'Выберите задачи в разделе ниже. В новом плане будут ссылки на те же задачи; прошлые сроки и история сохраняются.';
+$string['bpu_rollover_alert_action'] = 'Перейти к переносу задач';
+
+$string['bms24_rollover_report_title'] = 'Переносы незавершённых задач за прошлую неделю';
+$string['bms24_rollover_report_help'] = 'Показаны задачи предыдущего плана, которые остаются незавершёнными сейчас. Это не исторический снимок на конец недели; учитываются только доступные задачи BMS Task Center.';
+$string['bms24_rollover_report_empty'] = 'Нет доступных незавершённых задач предыдущей недели.';
+$string['bms24_rollover_report_open'] = 'Открыто сейчас';
+$string['bms24_rollover_report_carried'] = 'Перенесено';
+$string['bms24_rollover_report_pending'] = 'Без переноса';
+
+$string['bpu_filter_status_quick'] = 'Быстрый фильтр статусов боевых планов';
+
+$string['bms24_weekmanager_title'] = 'Требует внимания руководителя';
+$string['bms24_weekmanager_help'] = 'Планы на согласовании — за выбранную неделю с учётом фильтров. Незавершённые задачи без переноса — за предыдущую неделю по доступным планам; их статус проверяется сейчас.';
+$string['bms24_weekmanager_reviews'] = 'Планы на согласовании';
+$string['bms24_weekmanager_rollovers'] = 'Задачи без переноса';
+$string['bms24_weekmanager_reason'] = 'Основание';
+$string['bms24_weekmanager_clear'] = 'По доступным данным вопросов для разбора нет.';
+
+$string['bms24_rollover_snapshot_source'] = 'Источник показателей';
+
+$string['bms24_rollover_snapshot_frozen'] = 'На момент закрытия';
+
+$string['bms24_rollover_snapshot_live'] = 'Текущие статусы (исторические данные отсутствуют)';
+
+$string['bms24_repeatcarry_title'] = 'Повторные переносы задач';
+$string['bms24_repeatcarry_help'] = 'Показаны подтверждённые переносы одной задачи два и более раз за последние 8 недель. Учитываются только доступные вам планы и задачи. Старые события без подтверждённой связи не восстанавливаются.';
+$string['bms24_repeatcarry_empty'] = 'Повторных переносов за выбранный период не обнаружено.';
+$string['bms24_repeatcarry_count'] = 'Переносов';
+$string['bms24_repeatcarry_weeks'] = 'Недели переноса';
+
+$string['bms24_discipline_title'] = 'Исполнительская дисциплина: факты закрытия';
+$string['bms24_discipline_help'] = 'Последние 8 недель. Доля завершённых задач на момент фактического закрытия плана; это не показатель соблюдения первоначального срока. Отменённые задачи исключены, неподтверждённые исторические статусы не рассчитываются.';
+$string['bms24_discipline_empty'] = 'Нет закрытых планов с достоверным снимком задач.';
+$string['bms24_discipline_weeks'] = 'Планов со снимком';
+$string['bms24_discipline_completed'] = 'Завершено';
+$string['bms24_discipline_open'] = 'Не завершено';
+$string['bms24_discipline_carried'] = 'Перенесено';
+$string['bms24_discipline_rate'] = 'Доля завершения';
+$string['bms24_discipline_legacy'] = 'Закрытых планов без исторического снимка (исключены из расчёта): {$a}.';
+
+$string['bms24_trend_title'] = 'Динамика исполнительской дисциплины по неделям';
+$string['bms24_trend_help'] = 'Последние 8 недель. Учитываются только достоверные снимки на момент фактического закрытия. Отсутствующие данные не считаются нулём; это не выполнение в срок.';
+$string['bms24_trend_week'] = 'Неделя';
+$string['bms24_trend_legacy_mark'] = 'без снимка: {$a}';
+
+$string['bms24_personal_title'] = 'Персональная аналитика сотрудника';
+$string['bms24_personal_help'] = 'Выберите сотрудника для просмотра результатов восьми недель по достоверным снимкам закрытия и подтверждённых повторных переносов. Это не показатель соблюдения первоначальных сроков.';
+$string['bms24_personal_empty'] = 'Нет доступных закрытых планов с историческими снимками.';
+$string['bms24_personal_choose'] = 'Выберите сотрудника';
+$string['bms24_personal_repeats'] = 'Повторные переносы задач сотрудника';
+
+$string['bms24_employee_open_execution_insight'] = 'Аналитика исполнения боевых планов';
+$string['bms24_personal_open_employee'] = 'Открыть карточку сотрудника';
+
+$string['bms24_employee_execution_title'] = 'Исполнительская дисциплина · 8 недель';
+$string['bms24_employee_execution_done'] = 'Завершено при закрытии';
+$string['bms24_employee_execution_unfinished'] = 'Не завершено при закрытии';
+$string['bms24_employee_execution_carried'] = 'Перенесено при закрытии';
+$string['bms24_employee_execution_rate'] = 'Доля завершения';
+$string['bms24_employee_execution_coverage'] = 'Недель со снимками';
+$string['bms24_employee_execution_value'] = 'Значение';
+$string['bms24_employee_execution_disclaimer'] = 'Учитываются только сохранённые состояния задач при закрытии планов. Это не показатель выполнения в срок. Недели без снимков не приравниваются к нулевому результату.';
+$string['bms24_employee_execution_legacy'] = 'Недель со старыми планами без снимка';
+
+$string['battleplan_weekcoord_steps_title'] = 'Порядок еженедельной координации';
+$string['battleplan_weekcoord_step_review'] = '1. Проверить прошлую неделю';
+$string['battleplan_weekcoord_step_decide'] = '2. Принять решения';
+$string['battleplan_weekcoord_step_analyse'] = '3. Оценить динамику';
+$string['battleplan_weekcoord_step_followthrough'] = '4. Назначить действия';
+$string['battleplan_weekcoord_steps_help'] = 'Последовательно проверьте итоги, откройте пункты повестки и зафиксируйте решения в существующих Боевых планах и задачах. Этот блок не создаёт параллельный журнал.';
+
+$string['battleplan_weekcoord_step_protocol'] = '3. Подготовить протокол';
+$string['battleplan_weekcoord_protocol_title'] = 'Лист еженедельной координации';
+$string['battleplan_weekcoord_protocol_help'] = 'Выборка незавершённых задач прошлой недели (до трёх из каждого плана). Используйте таблицу как основу обсуждения, а окончательные решения фиксируйте в карточках задач.';
+$string['battleplan_weekcoord_protocol_empty'] = 'В доступной выборке нет незавершённых задач для обсуждения.';
+$string['battleplan_weekcoord_protocol_employee'] = 'Сотрудник';
+$string['battleplan_weekcoord_protocol_task'] = 'Исходная задача';
+$string['battleplan_weekcoord_protocol_reason'] = 'Причина';
+$string['battleplan_weekcoord_protocol_decision'] = 'Решение';
+$string['battleplan_weekcoord_protocol_owner_due'] = 'Ответственный и срок';
+$string['battleplan_weekcoord_protocol_limit'] = 'Показаны первые 30 задач. Уточните отбор по подразделению или сотруднику.';
+$string['battleplan_weekcoord_protocol_warning'] = 'Этот лист предназначен для подготовки встречи и не сохраняет решения. Изменяйте задачу в Task Center, чтобы зафиксировать ответственного, сроки и комментарии.';
+
+$string['battleplan_protocol_saved'] = 'Протокол сохранён. Предыдущая версия сохранена в истории.';
+$string['battleplan_protocol_revision'] = 'Редакция';
+$string['battleplan_protocol_duedate'] = 'Срок решения';
+$string['battleplan_protocol_save'] = 'Сохранить решение';
+$string['battleplan_protocol_explainer'] = 'Решения сохраняются отдельно от задачи и не меняют её статус или срок автоматически. Для изменения задачи откройте её карточку.';
+$string['battleplan_protocol_conflict'] = 'Протокол изменился после открытия страницы. Обновите страницу и повторите ввод.';
+
+$string['battleplan_protocol_history'] = 'История редакций (последние 25)';
+$string['battleplan_protocol_owneruserid'] = 'Ответственный';
+$string['battleplan_protocol_select_owner'] = 'Выберите сотрудника';
+$string['battleplan_protocol_no_owners'] = 'В выбранном подразделении нет доступных сотрудников для назначения. Проверьте фильтр подразделения.';
+
+$string['battleplan_decision_control_title'] = 'Контроль управленческих решений';
+$string['battleplan_decision_control_explainer'] = 'Отображаются только сохранённые решения по доступным незавершённым задачам. Просрочка определяется по дате решения; подтверждение исполнения пока не учитывается.';
+$string['battleplan_decision_total'] = 'Всего решений';
+$string['battleplan_decision_overdue'] = 'Срок истёк';
+$string['battleplan_decision_upcoming'] = 'Срок впереди';
+$string['battleplan_decision_undated'] = 'Без срока';
+$string['battleplan_decision_empty'] = 'Сохранённых решений пока нет';
+$string['battleplan_decision_task'] = 'Задача';
+$string['battleplan_decision_deadline_status'] = 'Состояние срока';
+$string['battleplan_protocol_responsible'] = 'Ответственный';
+
+$string['battleplan_execution_status'] = 'Статус исполнения';
+$string['battleplan_execution_pending'] = 'Ожидает';
+$string['battleplan_execution_inprogress'] = 'В работе';
+$string['battleplan_execution_completed'] = 'Выполнено';
+$string['battleplan_execution_cancelled'] = 'Отменено';
+$string['battleplan_execution_confirm'] = 'Сохранить статус';
+
+$string['battleplan_notify_assigned'] = 'Назначено решение';
+$string['battleplan_notify_soon'] = 'Срок решения завтра';
+$string['battleplan_notify_overdue'] = 'Срок решения истёк';
+$string['battleplan_notify_context'] = 'Управленческая координация недели';
+$string['battleplan_notify_task'] = 'Уведомления по решениям координации';
+
+$string['battleplan_protocol_task_unavailable'] = 'Задача недоступна';
+$string['battleplan_protocol_review_decision'] = 'Проверить решение';
+$string['battleplan_protocol_task_status'] = 'Статус задачи';
+$string['battleplan_protocol_review_action'] = 'Действие';
+$string['battleplan_protocol_task_status_help'] = 'Статус задачи получен из Task Center. Решение подтверждается отдельно: выполнение задачи не изменяет статус решения автоматически.';
+
+$string['battleplan_dashboard_open'] = 'Открыто';
+$string['battleplan_dashboard_by_owner'] = 'Контроль по ответственным';
+$string['battleplan_dashboard_explainer'] = 'Показатели рассчитаны по последним сохранённым редакциям решений доступной координации. Просрочка учитывается только для решений «Ожидает» и «В работе» с истекшим сроком. Завершение решения подтверждается отдельно от завершения задачи.';
+
+$string['battleplan_registry_title'] = 'Реестр управленческих решений';
+$string['battleplan_registry_help'] = 'Общий реестр сохранённых решений компании по всем неделям. Показана последняя редакция каждого решения; история доступна в недельном протоколе.';
+$string['battleplan_registry_status'] = 'Статус';
+$string['battleplan_registry_owner_placeholder'] = 'ID ответственного';
+$string['battleplan_registry_from'] = 'От даты недели';
+$string['battleplan_registry_to'] = 'До даты недели';
+$string['battleplan_registry_overdue'] = 'Только просроченные открытые';
+$string['battleplan_registry_count'] = 'Найдено решений: {$a}';
+$string['battleplan_registry_open'] = 'Открыть протокол';
+$string['battleplan_registry_empty'] = 'Нет решений по выбранным фильтрам';
+$string['battleplan_registry_action'] = 'Действие';
+
+$string['battleplan_registry_decision'] = 'Решение';
+$string['battleplan_registry_all_owners'] = 'Все ответственные';
+
+$string['battleplan_focus_title'] = 'Решение из реестра';
+$string['battleplan_focus_task'] = 'Открыть исходную задачу';
+$string['battleplan_focus_not_found'] = 'Решение не найдено в доступных протоколах этой недели.';
+
+$string['battleplan_bulk_title'] = 'Групповое изменение статуса';
+$string['battleplan_bulk_select'] = 'Выбрать решение';
+$string['battleplan_bulk_apply'] = 'Применить к выбранным';
+$string['battleplan_bulk_confirm'] = 'Подтвердить изменение статуса выбранных решений?';
+$string['battleplan_bulk_help'] = 'Не более 20 решений за раз. Недоступные и изменённые записи пропускаются. Изменения фиксируются в истории каждого протокола.';
+$string['battleplan_bulk_result'] = 'Обновлено: {$a->updated}. Пропущено: {$a->skipped}.';
+
+$string['battleplan_bulk_preview'] = 'Предпросмотр изменений';
+$string['battleplan_bulk_preview_help'] = 'Проверьте выбранные решения. При подтверждении доступ и актуальность каждой записи будут проверены повторно.';
+$string['battleplan_bulk_current'] = 'Сейчас';
+$string['battleplan_bulk_new'] = 'После изменения';
+$string['battleplan_bulk_confirm_apply'] = 'Подтвердить изменения';
+$string['battleplan_bulk_assign_title'] = 'Групповое назначение и срок';
+$string['battleplan_bulk_assign_owner'] = 'Изменить ответственного';
+$string['battleplan_bulk_assign_date'] = 'Изменить срок';
+$string['battleplan_bulk_assign_help'] = 'Выберите от 1 до 20 решений. Изменяется только выбранное поле; задачи Task Center не затрагиваются.';
+
+$string['battleplan_bulk_unified_title'] = 'Групповые действия с решениями';
+$string['battleplan_bulk_operation'] = 'Действие';
+$string['battleplan_bulk_select_page'] = 'Выбрать все решения на странице (не более 20)';
+$string['battleplan_bulk_unified_help'] = 'Выберите решения один раз, затем операцию. Изменения применяются только после предпросмотра и подтверждения.';
+
+$string['battleplan_bulkaudit_title'] = 'Журнал групповых операций';
+$string['battleplan_bulkaudit_empty'] = 'Групповых операций пока нет.';
+$string['battleplan_bulkaudit_when'] = 'Когда';
+$string['battleplan_bulkaudit_actor'] = 'Кто выполнил';
+$string['battleplan_bulkaudit_operation'] = 'Действие';
+$string['battleplan_bulkaudit_selected'] = 'Выбрано';
+$string['battleplan_bulkaudit_updated'] = 'Обновлено';
+$string['battleplan_bulkaudit_skipped'] = 'Пропущено';
+$string['battleplan_bulkaudit_operation_status'] = 'Изменение статуса';
+$string['battleplan_bulkaudit_operation_owner'] = 'Назначение ответственного';
+$string['battleplan_bulkaudit_operation_duedate'] = 'Изменение срока';
+
+$string['battleplan_bulkaudit_details'] = 'Детали';
+$string['battleplan_bulkaudit_outcome_updated'] = 'Обновлено';
+$string['battleplan_bulkaudit_outcome_skipped'] = 'Пропущено';
+$string['battleplan_bulkaudit_reason_unavailable'] = 'Запись недоступна, устарела или не допускает изменение';
+$string['battleplan_bulkaudit_reason_validation'] = 'Не удалось выполнить проверку или сохранение';
+$string['battleplan_bulkaudit_legacy'] = 'Детализация не записывалась';
+
+$string['battleplan_bulkaudit_allactors'] = 'Все авторы';
+$string['battleplan_bulkaudit_result'] = 'Результат операции';
+$string['battleplan_bulkaudit_result_success'] = 'Все обновлены';
+$string['battleplan_bulkaudit_result_partial'] = 'Частично выполнена';
+$string['battleplan_bulkaudit_result_skipped'] = 'Все пропущены';
+$string['battleplan_bulkaudit_auditfrom'] = 'Дата с';
+$string['battleplan_bulkaudit_auditto'] = 'Дата по';
+
+$string['battleplan_bulkaudit_reset'] = 'Сбросить фильтры журнала';
+$string['battleplan_bulkaudit_found'] = 'Найдено операций: {$a}';
+
+$string['bpu_review_decision_guide'] = 'Утверждение переводит план в работу. Возврат на доработку возвращает его в черновик и сохраняет комментарий руководителя в истории.';
+$string['bpu_review_targets_hint'] = 'Отметьте конкретные задачи, требующие исправления. Если ничего не отмечено, замечание относится ко всему плану.';
+$string['bpu_review_comment_required'] = 'При возврате на доработку обязательно укажите конкретную причину и ожидаемый результат. При утверждении комментарий необязателен.';
+$string['bpu_review_invalid_decision'] = 'Выберите допустимое решение по согласованию.';
+
+$string['bpu_correction_check_title'] = 'Контроль устранения замечаний';
+$string['bpu_correction_check_help'] = 'Проверьте исправления перед повторной отправкой. Изменение задачи не означает автоматического снятия замечания: окончательное решение принимает проверяющий.';
+$string['bpu_correction_check_pending'] = 'требует проверки';
+$string['bpu_correction_check_whole'] = 'Замечание относится ко всему плану. Проверьте задачи и настройки перед повторной отправкой.';
+
+$string['bpu_fix_title'] = 'Контроль исправлений';
+$string['bpu_fix_pending'] = 'Ожидает исправления';
+$string['bpu_fix_claimed'] = 'Исправлено, ожидает проверки';
+$string['bpu_fix_accepted'] = 'Принято руководителем';
+$string['bpu_fix_note'] = 'Пояснение к исправлению или решению';
+$string['bpu_fix_claim_action'] = 'Исправлено — отправить на проверку';
+$string['bpu_fix_accept_action'] = 'Принять исправление';
+$string['bpu_fix_rework_action'] = 'Вернуть на доработку';
+
+$string['bpu_fix_summary'] = 'Сводка замечаний';
+$string['bpu_fix_count_pending'] = 'Ожидают исправления: {$a}';
+$string['bpu_fix_count_claimed'] = 'На проверке: {$a}';
+$string['bpu_fix_count_accepted'] = 'Приняты: {$a}';
+$string['bpu_fix_all_accepted'] = 'Все исправления по текущим замечаниям приняты руководителем.';
+$string['bpu_fix_not_all_accepted'] = 'Есть замечания, требующие исправления или проверки.';
+$string['bpu_fix_advisory'] = 'Эта сводка информационная. Возможность повторной отправки определяют действующие правила согласования.';
+
+$string['bpu_resubmit_warning'] = 'В плане остались замечания без подтверждения руководителя: {$a}. Повторная отправка не означает, что исправления приняты.';
+$string['bpu_resubmit_acknowledge'] = 'Я ознакомился с незакрытыми замечаниями и подтверждаю повторную отправку плана на согласование.';
+
+$string['bpu_reviewer_correction_title'] = 'Состояние исправлений после последнего возврата';
+$string['bpu_reviewer_correction_state'] = 'Состояние';
+
+$string['bpu_approval_check_title'] = 'Готовность Боевого плана к утверждению';
+$string['bpu_approval_check_column'] = 'Проверка';
+$string['bpu_approval_check_result'] = 'Результат';
+$string['bpu_approval_check_reviewer'] = 'Проверяющий (условие перехода)';
+$string['bpu_approval_check_tasks'] = 'Задачи плана (условие перехода)';
+$string['bpu_approval_check_product'] = 'Ожидаемые продукты задач (для проверки)';
+$string['bpu_approval_check_assignee'] = 'Исполнители задач (для проверки)';
+$string['bpu_approval_check_due'] = 'Сроки задач (для проверки)';
+$string['bpu_approval_check_metrics'] = 'Показатели должности и факты (для проверки)';
+$string['bpu_approval_check_ok'] = 'Назначен и доступен';
+$string['bpu_approval_check_missing'] = 'Отсутствует или недоступен';
+$string['bpu_approval_check_taskcount'] = 'Задач в плане: {$a}';
+$string['bpu_approval_check_missingcount'] = 'Не заполнено: {$a}';
+$string['bpu_approval_check_metricstatus'] = 'Показателей: {$a->total}; без факта: {$a->missing}';
+$string['bpu_approval_check_blocked'] = 'Существующие условия перехода не выполнены. Проверьте план перед решением.';
+$string['bpu_approval_check_ready'] = 'Существующие условия перехода выполнены. Руководитель может принять решение после проверки содержания.';
+$string['bpu_approval_check_advisory'] = 'Недостающие продукты, исполнители, сроки, факты метрик и непринятые замечания показаны для управленческой проверки. Они не создают новых запретов на утверждение. Смотрите замечания последнего возврата ниже.';
+
+$string['bpu_approval_queue_title'] = 'Ожидают согласования руководителя';
+$string['bpu_approval_queue_help'] = 'Планы выбранной недели, доступные вам для согласования. Сведения о задачах, показателях и замечаниях носят информационный характер; утверждение выполняется в карточке плана.';
+$string['bpu_approval_queue_empty'] = 'На выбранную неделю нет планов, ожидающих вашего решения.';
+$string['bpu_approval_queue_tasks'] = 'Задачи';
+$string['bpu_approval_queue_metrics'] = 'Показатели';
+$string['bpu_approval_queue_corrections'] = 'Замечания';
+$string['bpu_approval_queue_assessment'] = 'Проверка';
+$string['bpu_approval_queue_task_count'] = 'Доступных задач BMS: {$a}';
+$string['bpu_approval_queue_metric_count'] = 'С фактом: {$a->evaluated} из {$a->total}';
+$string['bpu_approval_queue_fix_count'] = 'Принято: {$a->accepted} из {$a->total}';
+$string['bpu_approval_queue_no_corrections'] = 'Нет замечаний последнего возврата';
+$string['bpu_approval_queue_ready'] = 'Без замечаний по сводке';
+$string['bpu_approval_queue_check'] = 'Проверить содержание';
+$string['bpu_approval_queue_prev'] = 'Назад';
+$string['bpu_approval_queue_next'] = 'Далее';
+$string['bpu_approval_queue_paging'] = 'Страница {$a->page} из {$a->pages}';
+$string['bpu_approval_filter_all'] = 'Все';
+$string['bpu_approval_filter_ready'] = 'Без замечаний по сводке';
+$string['bpu_approval_filter_review'] = 'Требуют проверки';
+$string['bpu_approval_filter_empty'] = 'По выбранному фильтру нет планов. Выберите другой фильтр.';
+$string['bpu_approval_units_title'] = 'Планы на согласовании по подразделениям';
+$string['bpu_approval_units_help'] = 'Сводка по всем доступным планам выбранной недели. Показатель готовности информационный. Нажмите на подразделение для просмотра его планов.';
+$string['bpu_approval_no_unit'] = 'Подразделение не определено';
+
+// RC29 build2026101794: reviewer queue preview and safe return navigation.
+$string['bpu_approval_preview_title'] = 'Быстрый просмотр';
+$string['bpu_approval_preview_tasks'] = 'Задач в плане: {$a}';
+$string['bpu_approval_preview_metrics'] = 'Показателей без факта: {$a}';
+$string['bpu_approval_preview_corrections'] = 'Непринятых замечаний: {$a}';
+$string['bpu_approval_preview_last_note'] = 'Последнее замечание руководителя:';
+$string['bpu_approval_preview_open_tasks'] = 'Посмотреть задачи';
+$string['bpu_approval_preview_open_metrics'] = 'Посмотреть метрики';
+$string['bpu_approval_back_queue'] = '← Вернуться к очереди согласования';
+$string['bpu_weekly_outcomes_title'] = 'Итоги согласования Боевых планов за неделю';
+$string['bpu_weekly_outcomes_help'] = 'Показаны планы выбранной недели, доступные вам по правам. Результат определяется текущим состоянием плана и последним решением из истории; это не статистика действий, совершённых именно в календарные дни недели. Повторно отправленный план считается ожидающим решения.';
+$string['bpu_weekly_outcome_all'] = 'Всего планов';
+$string['bpu_weekly_outcome_approved'] = 'Утверждены';
+$string['bpu_weekly_outcome_returned'] = 'На доработке';
+$string['bpu_weekly_outcome_waiting'] = 'Ожидают решения';
+$string['bpu_weekly_outcome_other'] = 'Без подтверждённого решения';
+$string['bpu_weekly_outcomes_units'] = 'По подразделениям';
+$string['bpu_weekly_outcomes_reviewers'] = 'По назначенным проверяющим';
+$string['bpu_weekly_outcome_no_reviewer'] = 'Проверяющий не указан';
+$string['bpu_weekly_outcomes_empty'] = 'За выбранную неделю доступных Боевых планов нет.';
+
+$string['bpu_timing_title'] = 'Время согласования Боевых планов';
+$string['bpu_timing_help'] = 'Данные по выбранной неделе плана. Ожидание считается от последней отправки до текущего момента; длительность согласования — от отправки до утверждения. Порог 48 часов — только сигнал для внимания, не установленный норматив или просрочка. После возврата на доработку старое время отправки не сохраняется. Самостоятельное утверждение исключено из среднего.';
+$string['bpu_timing_waiting'] = 'Ожидают решения';
+$string['bpu_timing_waiting_long'] = 'Ожидают 48 часов и более';
+$string['bpu_timing_waiting_unknown'] = 'Без даты отправки';
+$string['bpu_timing_approved_known'] = 'Утверждены (с известным временем)';
+$string['bpu_timing_average'] = 'Среднее время утверждения';
+$string['bpu_timing_group'] = 'Подразделение / проверяющий';
+$string['bpu_timing_sent'] = 'Отправлен на согласование';
+$string['bpu_timing_elapsed'] = 'Прошло времени';
+$string['bpu_timing_waiting_plans'] = 'Планы, ожидающие решения';
+$string['bpu_timing_recent'] = 'Последние утверждения';
+$string['bpu_timing_actual_approver'] = 'Утвердил';
+$string['bpu_timing_approved_at'] = 'Дата утверждения';
+$string['bpu_timing_more'] = 'Ещё записей: {$a}. Для просмотра используйте список Боевых планов.';
+$string['bpu_timing_no_data'] = 'Нет планов с достоверными данными о времени ожидания или утверждения.';
+$string['bpu_timing_excluded'] = 'Не входят в среднее: {$a->unknown} план(ов) без надёжных меток времени и {$a->self} план(ов), утверждённых самостоятельно.';
+$string['bpu_timing_less_minute'] = 'менее 1 мин';
+$string['bpu_timing_minutes'] = 'мин';
+$string['bpu_timing_hours'] = 'ч';
+
+$string['bpu_reviewlog_title'] = 'Журнал циклов согласования';
+$string['bpu_reviewlog_no_history'] = 'Отдельные события отправки и решений начали записываться с этой версии. Старые циклы задним числом не восстанавливаются.';
+$string['bpu_reviewlog_help'] = 'Длительность каждого завершённого цикла считается от отправки до решения. Самостоятельное утверждение не включается в среднее. Это история действий, а не норматив согласования.';
+$string['bpu_reviewlog_summary'] = 'Записано циклов: {$a->cycles}. Решений с измеренной длительностью: {$a->timed}.';
+$string['bpu_reviewlog_number'] = 'Цикл';
+$string['bpu_reviewlog_event'] = 'Событие';
+$string['bpu_reviewlog_when'] = 'Дата и время';
+$string['bpu_reviewlog_actor'] = 'Участник';
+$string['bpu_reviewlog_duration'] = 'Время ожидания';
+$string['bpu_reviewlog_submitted'] = 'Отправлен на согласование';
+$string['bpu_reviewlog_approved'] = 'Утверждён';
+$string['bpu_reviewlog_returned'] = 'Возвращён на доработку';
+$string['bpu_reviewlog_selfapproved'] = 'Самостоятельно утверждён';
+
+$string['bpu_reviewlog_average'] = 'Среднее время решения';
+
+$string['bpu_cycleanalytics_title'] = 'Циклы согласования: аналитика';
+$string['bpu_cycleanalytics_help'] = 'По Боевым планам выбранной недели. Учитываются только события, записанные с момента внедрения журнала; данные более ранних циклов не восстанавливаются. Длительность — от отправки до решения, а не норматив. Разделы по проверяющим сгруппированы по назначенному проверяющему плана.';
+$string['bpu_cycleanalytics_tracked'] = 'Планы с историей событий';
+$string['bpu_cycleanalytics_recorded_submissions'] = 'Зафиксировано отправок';
+$string['bpu_cycleanalytics_recorded_returns'] = 'Зафиксировано возвратов';
+$string['bpu_cycleanalytics_repeated_submissions'] = 'Планы с 2+ отправками';
+$string['bpu_cycleanalytics_repeated_returns'] = 'Планы с 2+ возвратами';
+$string['bpu_cycleanalytics_measured_decisions'] = 'Решения с измеренной длительностью';
+$string['bpu_cycleanalytics_average'] = 'Среднее время до решения';
+$string['bpu_cycleanalytics_coverage'] = 'Покрытие журнала: {$a->tracked} из {$a->all} планов. Без записанных событий: {$a->untracked}. Отсутствие истории не означает отсутствие согласования.';
+$string['bpu_cycleanalytics_assigned_reviewers'] = 'По назначенным проверяющим';
+$string['bpu_cycleanalytics_employees'] = 'По сотрудникам';
+$string['bpu_cycleanalytics_repeated_title'] = 'Планы с повторными циклами';
+$string['bpu_cycleanalytics_group_limit'] = 'Ещё групп: {$a}. Уточните фильтры для просмотра.';
+
+// build2026101799 — stage-based review time (recorded events only).
+$string['bpu_stagedelay_title'] = 'Где задерживается согласование';
+$string['bpu_stagedelay_help'] = 'Фактические этапы по журналу событий за выбранную неделю плана. Ожидание руководителя: отправка → решение; доработка сотрудником: возврат → повторная отправка. Среднее рассчитано только по завершённым этапам с достоверными метками времени. Текущие ожидания показаны отдельно и не входят в среднее. Длительность не означает нарушение или вину: норматив согласования не задан. Проверяющий в группировке — назначенный на план.';
+$string['bpu_stagedelay_manager_cycles'] = 'Завершено ожиданий решения руководителя';
+$string['bpu_stagedelay_employee_cycles'] = 'Завершено доработок сотрудником';
+$string['bpu_stagedelay_manager_open'] = 'Сейчас ожидают руководителя';
+$string['bpu_stagedelay_employee_open'] = 'Сейчас на доработке';
+$string['bpu_stagedelay_manager_average'] = 'Среднее ожидание решения';
+$string['bpu_stagedelay_employee_average'] = 'Средняя доработка';
+$string['bpu_stagedelay_coverage'] = 'Покрытие: журнал есть у {$a->recorded} из {$a->plans} планов; хотя бы один измеримый этап — у {$a->evidenced}; без журнала — {$a->missing}. Неполная или несогласованная история — {$a->partial} планов; повторные идентичные записи исключены: {$a->duplicate}. Самостоятельных утверждений без этапа руководителя: {$a->self}. Отсутствующие прежние события не восстанавливаются.';
+$string['bpu_stagedelay_plans'] = 'Детализация по Боевым планам';
+$string['bpu_stagedelay_filter_all'] = 'Все доступные планы';
+$string['bpu_stagedelay_filter_current'] = 'Только текущие ожидания';
+$string['bpu_stagedelay_empty'] = 'Нет планов по выбранному условию.';
+$string['bpu_stagedelay_status'] = 'Состояние плана';
+$string['bpu_stagedelay_current'] = 'Текущий этап';
+$string['bpu_stagedelay_manager'] = 'Ожидает решения руководителя';
+$string['bpu_stagedelay_employee'] = 'Доработка сотрудником';
+$string['bpu_stagedelay_history'] = 'История согласования';
+$string['bpu_stagedelay_unknown'] = 'Неизвестный статус';
+
+$string['leader_dashboard_scope'] = 'Срез: планы и протоколы — за выбранную неделю; задачи и отклонения — по текущему состоянию. Счётчики не являются историческим снимком на конец недели.';
+$string['leader_dashboard_kpi_approval'] = 'Планы на согласовании';
+$string['leader_dashboard_kpi_tasks'] = 'Просроченные задачи (сейчас)';
+$string['leader_dashboard_kpi_protocol'] = 'Просроченные решения координации';
+$string['leader_dashboard_protocol_restricted'] = 'Решения протокола недоступны: для просмотра нужен отдельный доступ к организационному управлению. Прочерк не означает отсутствие решений.';
+$string['leader_dashboard_queue_title'] = 'Требуют внимания руководителя';
+$string['leader_dashboard_queue_help'] = 'Единая очередь сигналов из доступных источников. Порядок групп помогает навигации, но не устанавливает виновных, SLA или оценку эффективности.';
+$string['leader_dashboard_queue_clear'] = 'Сейчас в доступных источниках нет отображаемых сигналов.';
+$string['leader_dashboard_col_source'] = 'Источник';
+$string['leader_dashboard_source_exception'] = 'Показатели';
+$string['leader_dashboard_source_plan'] = 'Боевой план';
+$string['leader_dashboard_source_protocol'] = 'Координация';
+$string['leader_dashboard_source_task'] = 'Задача';
+$string['leader_dashboard_reason_decision'] = 'Нужно управленческое решение';
+$string['leader_dashboard_reason_critical'] = 'Критическое отклонение';
+$string['leader_dashboard_reason_review'] = 'Ожидает согласования';
+$string['leader_dashboard_reason_protocol'] = 'Срок решения истёк; исполнение не подтверждено';
+$string['leader_dashboard_reason_task'] = 'Срок задачи истёк';
+$string['leader_dashboard_more'] = 'Показана только первая часть очереди. Полные списки и фильтры доступны в соответствующих разделах.';
+$string['bpu_nav_context'] = 'Навигация по Боевому плану';
+$string['bpu_nav_edit'] = 'Изменить параметры';
+$string['bpu_nav_fill'] = 'Добавить задачи';
+$string['bpu_nav_mode_action'] = 'Подтверждение действия. Вернитесь на вкладку плана, чтобы отменить без изменений.';
+$string['bpu_nav_mode_metrics'] = 'Дополнительные настройки показателей';
+
+// RC29/1803 personal start tool.
+$string['bmsmain_change'] = 'Сменить главный инструмент';
+$string['bmsmain_page_title'] = 'Настройте BMS24 под себя';
+$string['bmsmain_page_intro'] = 'Выберите инструмент, с которого начнётся ваш рабочий день. Остальные разделы останутся доступными.';
+$string['bmsmain_invalid'] = 'Выбранный инструмент недоступен для вашей компании или роли.';
+$string['bmsmain_saved'] = 'Ваши настройки рабочего пространства сохранены.';
+$string['bmsmain_sidebar_main'] = 'Мой главный инструмент';
+$string['bmsmain_sidebar_favorites'] = 'Избранное';
+$string['bmsmain_favorites_title'] = 'Быстрые переходы';
+$string['bmsmain_favorites_hint'] = 'Выберите до пяти часто используемых разделов. Доступ определяется вашими правами.';
+$string['bmsmain_save_button'] = 'Сделать главным и сохранить';
+$string['bmsmain_cancel'] = 'Отмена';
+$string['bmsmain_desc_workspace'] = 'Мои дела, события и важные сигналы';
+$string['bmsmain_desc_battleplan'] = 'Планы недели, задачи и согласования';
+$string['bmsmain_desc_tasks'] = 'Поручения, сроки и исполнение';
+$string['bmsmain_desc_management'] = 'KPI, отклонения и управленческие решения';
+$string['bmsmain_desc_communications'] = 'Сообщения и командная работа';
+$string['bmsmain_desc_architecturecenter'] = 'Структура компании, роли и процессы';
+$string['bmsmain_desc_people'] = 'Сотрудники, компетенции и развитие';
+$string['bmsmain_plan_title'] = 'Мой Боевой план';
+$string['bmsmain_plan_week'] = 'Неделя с {$a}';
+$string['bmsmain_plan_empty'] = 'На эту неделю пока нет созданного Боевого плана.';
+$string['bmsmain_plan_open'] = 'Открыть мой план';
+$string['bmsmain_plan_to_list'] = 'Открыть Боевые планы';
+$string['bmsmain_personal_eyebrow'] = 'МОЯ РАБОТА';
+$string['bmsmain_actions_title'] = 'Быстрые действия';
+$string['bmsmain_later'] = 'Выбрать позже';
+$string['bmswidgets_title'] = 'Настроить рабочее пространство';
+$string['bmswidgets_intro'] = 'Показывайте только нужные блоки и изменяйте их порядок. Настройки действуют только для вас в выбранной компании. Используйте стрелки или номера позиций, затем сохраните.';
+$string['bmswidgets_position'] = 'Позиция';
+$string['bmswidgets_up'] = 'Поднять блок';
+$string['bmswidgets_down'] = 'Опустить блок';
+$string['bmswidgets_save'] = 'Сохранить расположение';
+$string['bmswidgets_reset'] = 'Вернуть расположение по умолчанию';
+$string['bmswidgets_saved'] = 'Настройки виджетов сохранены.';
+$string['bmswidgets_invalid'] = 'Некорректный список блоков рабочего пространства.';
+$string['bmswidgets_empty'] = 'Оставьте видимым хотя бы один блок.';
+$string['bmswidgets_name_today'] = 'Сегодня';
+$string['bmswidgets_name_plan'] = 'Мой Боевой план';
+$string['bmswidgets_name_actions'] = 'Быстрые действия';
+$string['bmswidgets_name_overview'] = 'Что важно сейчас';
+$string['bmswidgets_name_attention'] = 'Требует внимания';
+$string['bmswidgets_name_tasks'] = 'Мои задачи';
+$string['bmswidgets_name_management'] = 'Управленческая неделя';
+$string['bmswidgets_name_architecture'] = 'Бизнес-архитектура';
+$string['bmswidgets_name_company'] = 'О компании';
+
+$string['bmsworkspace_focus_title'] = 'Моё рабочее пространство';
+$string['bmsworkspace_focus_description'] = 'Ваши задачи, Боевой план и действия, требующие внимания.';
+
+// RC29/1809 personal action queue.
+$string['bmsaction_title'] = 'Требует моего действия';
+$string['bmsaction_subtitle'] = 'Задачи, согласования и решения, которые ожидают именно вас';
+$string['bmsaction_empty'] = 'Сейчас нет обязательных действий';
+$string['bmsaction_empty_details'] = 'Проверяются ваши задачи, согласования и доступные управленческие решения. Другие уведомления остаются в своих разделах.';
+$string['bmsaction_open_overdue'] = 'Просрочено — открыть задачу';
+$string['bmsaction_open_today'] = 'Срок сегодня — открыть задачу';
+$string['bmsaction_fix_task'] = 'Доработать задачу';
+$string['bmsaction_review_task'] = 'Принять работу по задаче';
+$string['bmsaction_review_plan'] = 'Согласовать Боевой план';
+$string['bmsaction_fix_plan'] = 'Доработать Боевой план';
+$string['bmsaction_decide_indicator'] = 'Требуется управленческое решение';
+$string['bmsaction_battle_plan'] = 'Боевой план';
+
+// RC29/1810 role-aware workspace views.
+$string['bmsfocus_switch_label'] = 'Представление рабочего пространства';
+$string['bmsfocus_tab_all'] = 'Все блоки';
+$string['bmsfocus_tab_personal'] = 'Моя работа';
+$string['bmsfocus_tab_management'] = 'Руководителю';
+$string['bmsfocus_tab_owner'] = 'Собственнику';
+$string['bmsfocus_desc_all'] = 'Все доступные вам виджеты. Личные и корпоративные показатели показаны в своих разделах.';
+$string['bmsfocus_desc_personal'] = 'Только личные задачи, Боевой план и действия, требующие вашего исполнения. Управленческие отклонения компании скрыты.';
+$string['bmsfocus_desc_management'] = 'Согласования, решения по KPI и управленческая неделя компании. Личные поручения смотрите во вкладке «Моя работа».';
+$string['bmsfocus_desc_owner'] = 'Доступные собственнику инструменты: управленческие решения, архитектура и контекст компании. Конфиденциальные сведения открываются только в защищённом разделе.';
+$string['bmsfocus_open_management'] = 'Открыть обзор управления';
+$string['bmsfocus_open_owner'] = 'Открыть контур собственника';
+$string['bmsfocus_empty'] = 'В этом представлении нет видимых блоков. Проверьте настройки рабочего пространства.';
+
+// RC29/1815 Corporate implementation task -> Battle Plan link.
+$string['bmsimpl_attach_title'] = 'В Боевой план';
+$string['bmsimpl_attach_intro'] = 'Выберите черновик Боевого плана для задачи внедрения. Исходная задача и обсуждения останутся в кабинете куратора.';
+$string['bmsimpl_attach_company'] = 'Компания';
+$string['bmsimpl_attach_choose_company'] = 'Выбрать компанию';
+$string['bmsimpl_attach_no_draft'] = 'У вас нет доступного черновика Боевого плана для этой задачи. Создайте план и затем повторите добавление.';
+$string['bmsimpl_attach_create_plan'] = 'Создать Боевой план';
+$string['bmsimpl_attach_plan'] = 'Боевой план и неделя';
+$string['bmsimpl_attach_select'] = 'Выберите Боевой план';
+$string['bmsimpl_attach_submit'] = 'Добавить в Боевой план';
+$string['bmsimpl_attach_back'] = 'Вернуться к задаче внедрения';
+$string['bmsimpl_attach_success'] = 'Задача добавлена в Боевой план без копирования.';
+$string['bmsimpl_attach_unavailable'] = 'Задача недоступна для добавления. Проверьте подключение источника, вашу компанию, исполнителя и статус задачи.';
+
+$string['implproj_title'] = 'Проекты внедрения BMS';
+$string['implproj_intro'] = 'Свяжите оплаченную программу внедрения Corporate с уже опубликованным проектом Административной шкалы BMS24. Связь не создаёт задач и не меняет статусы.';
+$string['implproj_projects'] = 'Открыть проекты BMS24';
+$string['implproj_empty'] = 'Нет доступных программ внедрения для этой компании.';
+$string['implproj_status_active'] = 'Активна';
+$string['implproj_status_paused'] = 'Приостановлена';
+$string['implproj_status_completed'] = 'Завершена';
+$string['implproj_tasks'] = 'Задачи: {$a->total} · выполнено: {$a->done} · просрочено: {$a->overdue}';
+$string['implproj_linked'] = 'Связанный проект';
+$string['implproj_stale'] = 'Связанный проект больше не опубликован или недоступен. Удалите связь, чтобы выбрать другой.';
+$string['implproj_unlink'] = 'Убрать связь';
+$string['implproj_select'] = 'Проект BMS24';
+$string['implproj_link'] = 'Связать с проектом';
+$string['implproj_no_projects'] = 'Нет опубликованных проектов. Сначала создайте и опубликуйте проект в Административной шкале.';
+$string['implproj_previous'] = 'Предыдущая страница';
+$string['implproj_next'] = 'Следующая страница';
+$string['implproj_saved'] = 'Связь обновлена';
+$string['implproj_permission'] = 'Недостаточно прав для управления связями проектов.';
+$string['implproj_unavailable'] = 'API программ Corporate 1.23 недоступен. Обновите Corporate до 0.40.5.';
+$string['implproj_source'] = 'Источник Corporate не подключён или идентификаторы компаний не совпадают.';
+$string['implproj_program'] = 'Программа Corporate недоступна.';
+$string['implproj_project'] = 'Проект BMS24 не опубликован или недоступен.';
+$string['implproj_conflict'] = 'Эта программа или проект уже связаны с другим объектом. Сначала удалите прежнюю связь.';
+
+$string['implstage_title'] = 'Этапы внедрения BMS';
+$string['implstage_disclaimer'] = 'Разделы программы взяты из подтверждённого аудита Corporate. Выполнение задач и принятые материалы показываются отдельно; это не оценка фактической зрелости системы управления и не меняет статус проекта BMS24.';
+$string['implstage_open'] = 'Посмотреть этапы внедрения';
+$string['implstage_back'] = 'К проектам внедрения';
+$string['implstage_no_baseline'] = 'Для этой программы нет подтверждённого базового аудита. Прогресс разделов пока нельзя рассчитать.';
+$string['implstage_empty'] = 'В подтверждённом аудите нет разделов для отображения.';
+$string['implstage_total'] = 'Разделов: {$a->stages} · задач: {$a->tasks} · выполнено: {$a->completed} · просрочено: {$a->overdue} · принято подтверждений: {$a->evidence}';
+$string['implstage_metrics'] = 'Задачи: {$a->tasks} · выполнено: {$a->done} · на проверке: {$a->review} · просрочено: {$a->overdue} · принято подтверждений: {$a->accepted}';
+$string['implstage_criteria'] = 'Критерии аудита: {$a->total} · отклонений: {$a->gaps} · покрыто задачами: {$a->covered}';
+$string['implstage_source'] = 'Подробный прогресс в Corporate';
+$string['implstage_unavailable'] = 'API этапов Corporate 1.24 недоступен. Обновите Corporate до 0.40.6.';
+$string['implstage_status_unassessed'] = 'Нет достаточной оценки';
+$string['implstage_status_achieved'] = 'Целевые значения достигнуты по аудиту';
+$string['implstage_status_risk'] = 'Есть просроченные задачи';
+$string['implstage_status_noactions'] = 'Нет задач по отклонениям';
+$string['implstage_status_partial'] = 'Не все отклонения обеспечены задачами';
+$string['implstage_status_complete'] = 'Задачи по отклонениям выполнены';
+$string['implstage_status_review'] = 'Есть задачи на проверке';
+$string['implstage_status_inprogress'] = 'В работе';
+
+$string['implweek_nav'] = 'Выбор недели внедрения';
+$string['implweek_previous'] = 'Предыдущая неделя';
+$string['implweek_next'] = 'Следующая неделя';
+$string['implweek_current'] = 'Текущая неделя';
+$string['implweek_period'] = 'Неделя {$a->start} — {$a->end}';
+$string['implweek_scope'] = 'Показано включение задач Corporate в Боевые планы только выбранной недели. Задачи на проверке и завершённые учитываются отдельно; за другую неделю они могут быть запланированы.';
+$string['implweek_summary'] = 'В Боевом плане недели: {$a->planned} · Не включено в план недели: {$a->unplanned} · На проверке у куратора: {$a->review} · Завершено: {$a->completed}';
+$string['implweek_restricted'] = 'Нет доступа к общекорпоративным Боевым планам. Сводка планирования не отображается; это не нулевые показатели.';
+$string['implweek_upgrade_corporate'] = 'Для недельной сводки нужен Corporate 0.40.7 (API 1.25).';
+$string['implweek_shared_baseline'] = 'У нескольких программ одна база аудита. Однозначно отнести задачи к этой программе нельзя.';
+$string['implweek_limit_exceeded'] = 'Превышен безопасный предел чтения задач. Полная недельная сводка недоступна, частичные цифры не показаны.';
+$string['implweek_unconfirmed_baseline'] = 'Нет подтверждённого базового аудита для недельного сопоставления.';
+$string['implweek_incomplete'] = 'Не удалось получить полную картину задач из Corporate. Сводка не рассчитывается.';
+$string['implweek_inreview'] = 'На проверке куратора';
+$string['implweek_inplan'] = 'В Боевом плане';
+$string['implweek_openplan'] = 'Открыть план';
+$string['implweek_notplanned'] = 'Не включено в план этой недели';
+$string['implweek_more'] = 'Показаны первые 12 активных задач этапа.';
+// Integration 1819: curator evidence result overview.
+$string['implresult_heading'] = 'Результаты и проверка куратора';
+$string['implresult_scope'] = 'Подтверждённым считается только результат с принятым последним пакетом подтверждения. Завершение задачи без такого пакета показывается отдельно. Решения отображаются в текущем состоянии, независимо от выбранной недели.';
+$string['implresult_summary'] = 'Ожидают проверки: {$a->review} · Возвращены на доработку: {$a->returned} · Приняты куратором: {$a->accepted} · Завершены без подтверждения: {$a->legacy} · Требуют сверки: {$a->inconsistent}';
+$string['implresult_details'] = 'Показать задачи и статусы подтверждений';
+$string['implresult_version'] = 'Подтверждение, версия {$a}';
+$string['implresult_more'] = 'Показаны первые 12 задач этапа. Полный результат и обсуждения — в Corporate.';
+$string['implresult_upgrade_corporate'] = 'Для сведений о решениях куратора установите Corporate 0.40.8 (API 1.26).';
+$string['implresult_unconfirmed_baseline'] = 'Без подтверждённого аудита достоверный результат программы не рассчитывается.';
+$string['implresult_shared_baseline'] = 'Нельзя однозначно привязать задачи к программе: общий базовый аудит.';
+$string['implresult_limit_exceeded'] = 'Превышен лимит задач Corporate; частичные результаты не отображаются.';
+$string['implresult_evidence_unavailable'] = 'Хранилище подтверждений Corporate недоступно; нельзя считать отсутствующие данные отрицательным результатом.';
+$string['implresult_changed'] = 'Источники задач и результатов изменились во время чтения. Обновите страницу.';
+$string['implresult_incomplete'] = 'Сведения о результате внедрения неполные или недоступные.';
+$string['implresult_state_not_started'] = 'Ещё не начато';
+$string['implresult_state_in_work'] = 'В работе';
+$string['implresult_state_awaiting_review'] = 'Подтверждение отправлено куратору';
+$string['implresult_state_review_without_evidence'] = 'На проверке без пакета подтверждений';
+$string['implresult_state_returned'] = 'Куратор вернул на доработку';
+$string['implresult_state_accepted'] = 'Результат принят куратором';
+$string['implresult_state_completed_unverified'] = 'Завершено без принятого подтверждения';
+$string['implresult_state_cancelled'] = 'Отменено';
+$string['implresult_state_inconsistent'] = 'Статус требует проверки в Corporate';
+
+// RC29/build2026101820: implementation control dashboard and assigned curator.
+$string['impldash_title'] = 'Контроль внедрения BMS';
+$string['impldash_open'] = 'Панель контроля внедрения';
+$string['impldash_intro'] = 'Сводка по связанной программе и проекту: планирование выбранной недели, текущие результаты и решения куратора. Данные не копируются из Corporate.';
+$string['impldash_stages'] = 'Подробные этапы и задачи';
+$string['impldash_curator'] = 'Куратор программы';
+$string['impldash_curator_missing'] = 'Куратор не назначен';
+$string['impldash_curator_unavailable'] = 'Назначенный пользователь недоступен';
+$string['impldash_curator_config'] = 'Назначить или изменить куратора в Corporate';
+$string['impldash_curator_workspace'] = 'Кабинет куратора Corporate';
+$string['impldash_stages_count'] = 'Разделов внедрения';
+$string['impldash_tasks_count'] = 'Задач внедрения';
+$string['impldash_overdue_count'] = 'Просрочено задач';
+$string['impldash_planned_count'] = 'В Боевом плане недели';
+$string['impldash_unplanned_count'] = 'Не включено в план недели';
+$string['impldash_waiting_count'] = 'Ожидают проверки куратора';
+$string['impldash_returned_count'] = 'Возвращены на доработку';
+$string['impldash_accepted_count'] = 'Приняты куратором';
+$string['impldash_unverified_count'] = 'Завершены без подтверждения';
+$string['impldash_week_unavailable'] = 'Недельное планирование не может быть достоверно рассчитано (нет доступа, подтверждённого аудита или полной выборки). Прочерк не означает ноль.';
+$string['impldash_result_unavailable'] = 'Сводка решений куратора неполна или недоступна. Не делайте выводов по отсутствующим цифрам.';
+$string['impldash_scope'] = 'Планирование относится только к выбранной неделе. Решения куратора — текущее состояние, а не результат именно этой недели. Завершение задач не равно зрелости BMS.';
+$string['impldash_attention'] = 'Требует внимания по результатам проверки';
+$string['impldash_attention_unknown'] = 'Без полных данных Corporate нельзя достоверно составить список действий.';
+$string['impldash_attention_empty'] = 'Нет результатов, требующих внимания, среди доступных проверенных задач.';
+$string['impldash_task'] = 'Задача';
+$string['impldash_section'] = 'Раздел внедрения';
+$string['impldash_state'] = 'Состояние результата';
+$string['impldash_more'] = 'Показаны первые 12 задач. Все результаты, комментарии и файлы доступны в Corporate.';
+$string['impldash_bysection'] = 'Прогресс по разделам';
+$string['impldash_curator_portfolio'] = 'Панель куратора Corporate';
+
+// Communication Center 3.0 date separators (build 2026101823).
+$string['bmscomm3_today'] = 'Сегодня';
+$string['bmscomm3_yesterday'] = 'Вчера';
+$string['bmscomm3_senderror'] = 'Сообщение не отправлено. Проверьте соединение и повторите попытку.';
+$string['bmscomm3_closecontext'] = 'Закрыть контекст';
+
+$string['bmscomm4_newmessages'] = 'Есть новые сообщения — перейти вниз';
+$string['bmscomm4_refresh'] = 'Обновить переписку';
+$string['bmscomm4_livepaused'] = 'Автообновление приостановлено';
+
+$string['communication_editmessage'] = 'Редактировать';
+$string['communication_withdrawmessage'] = 'Удалить';
+$string['communication_edited'] = 'Изменено';
+$string['communication_saveedit'] = 'Сохранить изменения';
+$string['communication_confirmdelete'] = 'Подтверждаю удаление сообщения из переписки.';
+$string['communication_deletenotice'] = 'Сообщение будет скрыто. Служебная история изменений сохраняется.';
+$string['communication_conflict'] = 'Сообщение изменилось. Обновите страницу и повторите действие.';
+$string['communication_linkedmessage'] = 'Сообщение, связанное с задачей или решением, нельзя изменить.';
+
+// Task checklist 2.0 (build2026101830).
+$string['bmscheck_progress'] = 'Выполнено: {$a->done} из {$a->total}';
+$string['bmscheck_edit'] = 'Изменить';
+$string['bmscheck_save'] = 'Сохранить изменения';
+$string['bmscheck_delete'] = 'Удалить пункт';
+$string['bmscheck_confirmdelete'] = 'Подтверждаю удаление этого пункта';
+$string['bmscheck_moveup'] = 'Выше';
+$string['bmscheck_movedown'] = 'Ниже';
+$string['bmscheck_mark'] = 'Отметить выполненным';
+$string['bmscheck_unmark'] = 'Снять отметку';
+
+// build1831: Canonical subtask hierarchy UI.
+$string['bms_subtask_create'] = 'Создать подзадачу';
+$string['bms_subtask_link'] = 'Связать существующую';
+$string['bms_subtask_intro'] = 'Каждая подзадача — самостоятельная задача с исполнителем, сроком и результатом.';
+$string['bms_subtask_empty'] = 'Подзадач пока нет.';
+$string['bms_subtask_heading'] = 'Подзадачи ({$a})';
+$string['bms_subtask_search'] = 'Найти существующую задачу';
+$string['bms_subtask_no_candidates'] = 'Подходящих задач не найдено. Можно связать только доступную вам активную задачу без родителя и без другого управленческого контекста.';
+$string['bms_subtask_choose'] = 'Выберите задачу';
+$string['bms_subtask_link_hint'] = 'Задача останется в едином списке BMS24 и в текущих Боевых планах. Изменится только связь с родителем.';
+$string['bms_subtask_parent'] = 'Родительская задача';
+$string['bms_subtask_parent_hint'] = 'Новая задача будет создана как подзадача указанной задачи. У неё будут собственный исполнитель, срок и ожидаемый результат.';
+$string['taskcenter_subtask_invalid'] = 'Не удалось определить подзадачу. Обновите список и повторите выбор.';
+$string['taskcenter_action_subtask_link'] = 'Связана подзадача с родителем';
+$string['taskcenter_action_subtask_added'] = 'Добавлена подзадача';
+
+// 2026101832: Task child execution and parent completion rules.
+$string['bms_subtask_progress_title'] = 'Выполнение подзадач';
+$string['bms_subtask_progress'] = 'Выполнено {$a->done} из {$a->total} · {$a->percent}%';
+$string['bms_subtask_review_count'] = 'На проверке: {$a}';
+$string['bms_subtask_overdue_count'] = 'Просрочено: {$a}';
+$string['bms_subtask_cancelled_count'] = 'Отменено: {$a}';
+$string['bms_subtask_overdue_label'] = 'Просрочена';
+$string['bms_subtask_partial_visibility'] = 'Часть подзадач недоступна для просмотра. Общий процент выполнения не отображается.';
+$string['bms_subtask_completion_warning'] = 'Нельзя передать или принять результат родительской задачи, пока остаются незавершённые подзадачи.';
+$string['taskcenter_subtasksunfinished'] = 'Сначала завершите или отмените все активные подзадачи, затем передайте результат родительской задачи на проверку.';
+
+// build2026101834 — weekly planning of canonical subtasks.
+$string['bms_subtask_week_heading'] = 'Подзадачи в Боевом плане: неделя';
+$string['bms_subtask_week_previous'] = '← Предыдущая';
+$string['bms_subtask_week_next'] = 'Следующая →';
+$string['bms_subtask_week_planned'] = 'В доступных БП';
+$string['bms_subtask_week_unplanned'] = 'Не включены в БП';
+$string['bms_subtask_week_not_visible'] = 'Нет в доступных БП';
+$string['bms_subtask_week_done'] = 'Завершены';
+$string['bms_subtask_week_partial'] = 'Часть подзадач недоступна. Показатели не отражают всю иерархию.';
+$string['bms_subtask_week_scope'] = 'Учитываются только доступные вам Боевые планы. Отсутствие задачи в них не означает, что она не запланирована у другого пользователя.';
+$string['bms_subtask_week_workload'] = 'Нагрузка исполнителей по подзадачам этого родителя';
+$string['bms_subtask_week_person'] = '{$a->tasks} задач · {$a->minutes} плановых минут';
+$string['bms_subtask_week_more_people'] = 'Показаны первые 12 исполнителей по числу задач.';
+$string['bms_subtask_week_open_plan'] = 'Открыть Боевой план';
+
+$string['bms_bundle_title'] = 'Шаблоны задач и подзадач';
+$string['bms_bundle_intro'] = 'Шаблон сохраняет задачу, прямые подзадачи и чек-листы. Оценки, обсуждения, файлы и статусы не копируются. Управление библиотекой доступно руководителю компании.';
+$string['bms_bundle_saved'] = 'Шаблон сохранён';
+$string['bms_bundle_launched'] = 'Комплект задач создан';
+$string['bms_bundle_archived'] = 'Шаблон архивирован';
+$string['bms_bundle_capture'] = 'Сохранить как шаблон';
+$string['bms_bundle_name'] = 'Название шаблона';
+$string['bms_bundle_save'] = 'Сохранить шаблон';
+$string['bms_bundle_launch_hint'] = 'Выберите исполнителя, проверяющего и дату начала. Сроки пересчитаются относительно исходной задачи; контрольные пункты создаются невыполненными.';
+$string['bms_bundle_children_short'] = 'подзадач';
+$string['bms_bundle_assignee'] = 'Основной исполнитель';
+$string['bms_bundle_reviewer'] = 'Проверяющий результат';
+$string['bms_bundle_start'] = 'Дата отсчёта сроков';
+$string['bms_bundle_keep'] = 'Сохранить исходных исполнителей подзадач (если работают в компании)';
+$string['bms_bundle_launch'] = 'Создать задачи по шаблону';
+$string['bms_bundle_library'] = 'Библиотека шаблонов';
+$string['bms_bundle_empty'] = 'Активных шаблонов пока нет. Откройте задачу и выберите «Сохранить как шаблон».';
+$string['bms_bundle_archive'] = 'Архивировать';
+$string['bms_bundle_next'] = 'Следующая страница';
+$string['bms_bundle_prev'] = 'Предыдущая страница';
+$string['bms_bundle_limit'] = 'Шаблон слишком большой: не более 20 подзадач и 50 пунктов чек-листа на задачу.';
+$string['bms_bundle_nested'] = 'В задаче есть подзадачи второго уровня. Для этого релиза сначала перенесите их в первый уровень.';
+$string['bms_bundle_date_range'] = 'Дата выходит за допустимый диапазон шаблона (-730…+1095 дней).';
+$string['bms_bundle_invalid'] = 'Некорректный шаблон или повторный запрос с другим содержимым.';
+
+$string['bms_bundle_archive_confirm'] = 'Подтверждаю архивирование шаблона. Уже созданные задачи не изменятся.';
+
+$string['bms_bundle_checks_short'] = 'пунктов чек-листа';
+
+// BMS24 build2026101836: Task Execution Analytics 1.0.
+$string['bms_exec_narrowed'] = 'Применён фильтр по исполнителю или проекту';
+$string['bms_exec_scope'] = 'Показатели учитывают текущие фильтры и только доступные вам задачи. Для обзора компании выберите «Все задачи компании».';
+$string['bms_exec_returned'] = 'Возвращены на доработку';
+$string['bms_exec_soon'] = 'Срок в ближайшие 7 дней';
+$string['bms_exec_undated'] = 'Без крайнего срока';
+$string['bms_exec_subtaskoverdue'] = 'Просроченные подзадачи';
+$string['bms_exec_done_progress'] = 'Доля выполненных задач (без отменённых)';
+$string['bms_exec_people'] = 'Исполнение по сотрудникам';
+$string['bms_exec_people_note'] = 'Показаны не более 15 назначенных исполнителей с наибольшим числом просрочек и незавершённых задач. Учитывается назначенный исполнитель, не временный замещающий. Нажмите имя для фильтра списка.';
+$string['bms_exec_projects'] = 'Исполнение по проектам';
+$string['bms_exec_project'] = 'Проект';
+$string['bms_exec_projects_note'] = 'Учитываются только задачи с прямой ссылкой на проект Административной шкалы; дочерние задачи без собственного контекста сюда не включены. Не более 10 проектов.';
+$string['bms_exec_empty'] = 'Нет задач в текущей выборке.';
+$string['bms_exec_project_empty'] = 'В выборке нет задач с прямой привязкой к проекту.';
+$string['bms_exec_risks'] = 'Задачи, требующие внимания';
+$string['bms_exec_risks_empty'] = 'Нет просроченных или возвращённых задач.';
+$string['bms_exec_subtask'] = 'Подзадача';
+$string['bms_exec_limits'] = 'Отчёт доступен только для просмотра. Сводные числа рассчитаны по всей доступной выборке; таблицы сотрудников, проектов и проблем ограничены первыми 15, 10 и 12 строками.';
+
+// build2026101837 — live existing-task search for subtask linking.
+$string['bms_subtask_search_placeholder'] = 'Начните вводить название задачи';
+$string['bms_subtask_search_help'] = 'Введите минимум 2 символа — подходящие задачи появятся в списке.';
+$string['bms_subtask_search_loading'] = 'Ищем задачи…';
+$string['bms_subtask_search_empty'] = 'Подходящих задач не найдено. Попробуйте другое название.';
+$string['bms_subtask_search_error'] = 'Не удалось загрузить задачи. Повторите попытку или нажмите «Найти».';
+$string['bms_subtask_search_more'] = 'Показаны первые 20 задач. Уточните название для более точного поиска.';
+$string['bms_subtask_search_selected'] = 'Выбрана задача: ';
+$string['bms_subtask_search_due'] = 'Срок: ';
+
+// RC29 build2026101840: task role union and compact workspace.
+$string['taskcenter_scope_roles'] = 'Все мои роли';
+$string['taskcenter_role_assignee'] = 'Исполняю';
+$string['taskcenter_role_creator'] = 'Поставил';
+$string['taskcenter_role_reviewer'] = 'Принимаю';
+$string['taskcenter_role_observer'] = 'Наблюдаю';
+$string['taskcenter_role_plan'] = 'Участник Боевого плана';
+$string['bms_task1840_more_filters'] = 'Дополнительные фильтры';
+$string['bms_task1840_search'] = 'Поиск задач по названию';
+$string['bms_task1840_search_button'] = 'Найти';
+$string['bms_task1840_quick'] = 'Быстрый отбор';
+$string['bms_task1840_clear_signal'] = 'Снять отбор';
+$string['bms_task1840_role_help'] = 'Задачи, в которых вы участвуете как исполнитель, постановщик, принимающий или наблюдатель.';
+
+/* build2026101841: Task List 4.0. */
+$string['bms_task1841_configure'] = 'Настроить таблицу';
+$string['bms_task1841_columns'] = 'Отображаемые колонки';
+$string['bms_task1841_default_sort'] = 'Сортировка по умолчанию';
+$string['bms_task1841_direction'] = 'Направление';
+$string['bms_task1841_asc'] = 'По возрастанию';
+$string['bms_task1841_desc'] = 'По убыванию';
+$string['bms_task1841_save'] = 'Сохранить настройки';
+$string['bms_task1841_saved'] = 'Настройки таблицы сохранены';
+$string['bms_task1841_sort_by'] = 'Сортировать: {$a}';
+$string['bms_task1841_updated'] = 'Активность';
+$string['bms_task1841_created'] = 'Создана';
+
+// BMS24 Task Actions 2.0, build2026101842.
+$string['bms_task1842_select'] = 'Выбрать задачу';
+$string['bms_task1842_select_all'] = 'Выбрать все на странице';
+$string['bms_task1842_start'] = 'Начать';
+$string['bms_task1842_accept'] = 'Принять результат';
+$string['bms_task1842_due'] = 'Изменить срок';
+$string['bms_task1842_assign'] = 'Сменить исполнителя';
+$string['bms_task1842_choose_employee'] = 'Выберите сотрудника';
+$string['bms_task1842_confirm'] = 'Подтверждаю массовое действие для выбранных задач';
+$string['bms_task1842_apply'] = 'Применить к выбранным';
+$string['bms_task1842_result'] = 'Обработано: {$a->total}. Изменено: {$a->updated}. Пропущено: {$a->skipped} (права, состояние задачи, конфликт версии или ограничения Боевым планом).';
+$string['bms_task1842_invalid_selection'] = 'Выберите от 1 до 25 задач. Обновите список, если данные изменились.';
+$string['bms_task1842_plan_locked'] = 'Нельзя массово переназначить задачу, связанную с Боевым планом или должностной обязанностью.';
+$string['bms_task1842_submit'] = 'Сдать результат';
+$string['bms_task1842_return'] = 'Вернуть на доработку';
+
+// build2026101843: read-only deadline workspace.
+$string['bms_task1843_title'] = 'Сроки';
+$string['bms_task1843_all'] = 'Все сроки';
+$string['bms_task1843_overdue'] = 'Просрочено';
+$string['bms_task1843_today'] = 'Сегодня';
+$string['bms_task1843_week'] = 'Ближайшие 7 дней';
+$string['bms_task1843_later'] = 'Позднее';
+$string['bms_task1843_undated'] = 'Без срока';
+$string['bms_task1843_closed'] = 'Завершённые и отменённые';
+$string['bms_task1843_help'] = 'Группировка по календарным датам вашего часового пояса. Количество в фильтрах — по всей выборке; ниже показана текущая страница. Завершённые задачи не считаются просроченными.';
+
+// build2026101846 — configurable Kanban board presentation.
+$string['bms_task1846_configure'] = 'Настроить Канбан';
+$string['bms_task1846_columns'] = 'Колонки доски';
+$string['bms_task1846_visible'] = 'Показывать';
+$string['bms_task1846_position'] = 'Порядок колонки';
+$string['bms_task1846_mapping'] = 'Статус задачи → колонка';
+$string['bms_task1846_help'] = 'Настраивается только отображение задач. Перетаскивание карточек и изменение статуса будут добавлены отдельно. Если колонка скрыта, привязанные к ней статусы автоматически попадут в первую видимую колонку. На доске показана текущая страница задач.';
+$string['bms_task1846_save'] = 'Сохранить настройки';
+$string['bms_task1846_saved'] = 'Настройки Канбана сохранены.';
+$string['bms_task1846_reset'] = 'Восстановить стандартную доску';
+
+$string['bms_task1847_reset_columns'] = 'Восстановить стандартные столбцы';
+
+$string['bms_task1848_scroll_left'] = 'Прокрутить влево';
+$string['bms_task1848_scroll_right'] = 'Прокрутить вправо';
+
+$string['bms_task1850_group'] = 'Группировать карточки';
+$string['bms_task1850_group_none'] = 'Без группировки';
+$string['bms_task1850_group_assignee'] = 'По исполнителю';
+$string['bms_task1850_group_project'] = 'По проекту';
+$string['bms_task1850_wip'] = 'Предел задач';
+$string['bms_task1850_wip_hint'] = '0 — без ограничения. Счётчик по всем доступным задачам с текущими фильтрами; превышение выделяется, но не запрещает переход.';
+$string['bms_task1850_drag_hint'] = 'Перетащите задачу на колонку, чтобы перейти к штатной форме подтверждения. Изменение статуса не происходит автоматически.';
+$string['bms_task1850_unassigned'] = 'Без исполнителя';
+$string['bms_task1850_no_project'] = 'Без проекта';
+$string['bms_task1850_project'] = 'Проект';
+$string['bms_task1850_empty'] = 'Нет задач на этой странице';
+
+$string['bms_task1850_move'] = 'Переместить';
+
+$string['bms_task1852_recent'] = 'Последние действия';
+$string['bms_task1852_no_activity'] = 'Событий пока нет';
+$string['bms_task1852_full_history'] = 'Вся история';
+$string['bms_task1852_signal_overdue'] = 'Просрочено';
+$string['bms_task1852_signal_review'] = 'На приёмке';
+$string['bms_task1852_signal_returned'] = 'Возвращено';
+$string['bms_task1852_signal_priority'] = 'Высокий приоритет';
+$string['bms_task1853_manager'] = 'Руководителю';
+$string['bms_task1853_title'] = 'Контроль исполнения компании';
+$string['bms_task1853_intro'] = 'Ключевые отклонения, приёмка и загрузка сотрудников. Показатели учитывают доступные задачи компании и выбранные фильтры.';
+$string['bms_task1853_progress'] = 'Доля завершённых задач (без отменённых)';
+$string['bms_task1853_team'] = 'Контроль по исполнителям';
+$string['bms_task1853_team_limit'] = 'Показаны не более 15 исполнителей; сначала сотрудники с просроченными и активными задачами. Нажмите показатель, чтобы открыть отобранные задачи.';
+$string['bms_task1853_limits'] = 'Отчёт только для руководителей с соответствующими правами. Общие показатели рассчитаны по полной отфильтрованной выборке; список рисков ограничен 12 задачами, проектов — 10.';
+$string['bms_task1853_restricted'] = 'Рабочее пространство руководителя недоступно для вашей роли.';
+
+$string['taskcenter_scope_department'] = 'Подразделение';
+
+$string['bms_task1858_clear_filters'] = 'Сбросить фильтры';
+
+$string['readiness_title'] = 'Готовность описания должностей';
+$string['readiness_intro'] = 'Готовность показывает, есть ли у активной должности цель, опубликованные функции и опубликованный профиль Role DNA.';
+$string['readiness_status'] = 'Готовность';
+$string['readiness_gap'] = 'Чего не хватает';
+$string['readiness_apply'] = 'Применить фильтры';
+$string['readiness_matches'] = 'Найдено должностей';
+$string['readiness_functions'] = 'Опубликованные функции';
+$string['readiness_profiles'] = 'Опубликованные профили Role DNA';
+$string['readiness_basic_links_present'] = 'Базовые элементы есть';
+$string['readiness_needs_description'] = 'Описание неполное';
+$string['readiness_purpose_missing'] = 'Нет цели';
+$string['readiness_published_functions_missing'] = 'Нет опубликованных функций';
+$string['readiness_published_role_dna_missing'] = 'Нет опубликованного Role DNA';
+
+$string['companycatalog_title'] = 'Каталоги компетенций компании';
+
+$string['companycatalog_back'] = '← Люди';
+
+$string['companycatalog_intro'] = 'Подключённые каталоги доступны при составлении профилей должностей этой компании. Повторное подключение сохраняет одну привязку.';
+
+$string['companycatalog_saved'] = 'Каталог подключён к компании.';
+
+$string['companycatalog_empty'] = 'К компании пока не подключены каталоги компетенций.';
+
+$string['companycatalog_select'] = 'Каталог компетенций';
+
+$string['companycatalog_bind'] = 'Подключить каталог';
+
+$string['companycatalog_admin'] = 'Для подключения каталога обратитесь к администратору сайта.';
+
+$string['companycatalog_nosystem'] = 'Сначала создайте каталог в администрировании Moodle, в разделе «Компетенции».';
+
+$string['employee2_moodle_rating'] = 'Подтверждение компетенции в Moodle';
+$string['employee2_confirmation_unassessed'] = 'Ещё не оценена';
+$string['employee2_confirmation_review'] = 'Ожидает проверки или проверяется';
+$string['employee2_confirmation_proficient'] = 'Компетенция подтверждена';
+$string['employee2_confirmation_notproficient'] = 'Компетенция не подтверждена';
+$string['employee2_assignment_grade'] = 'Оценка задания в Moodle';
+$string['employee2_assignment_unavailable'] = 'Недоступна';
+$string['employee2_assignment_ungraded'] = 'Ещё не выставлена';
+$string['employee2_moodle_rating_note'] = 'Оценка Moodle показана по шкале Moodle. Текущий уровень и готовность в BMS24 рассчитываются по оценкам BMS24.';
+
+$string['employee2_development_courses'] = 'Курсы для развития';
+
+$string['employee2_course_progress'] = 'Выполнение элементов курса — {$a}%';
+
+$string['employee2_course_progress_unavailable'] = 'Выполнение элементов курса не отслеживается';
+
+$string['reviewqueue_title'] = 'На проверку';
+$string['reviewqueue_competency'] = 'Компетенция';
+$string['reviewqueue_intro'] = 'Запросы на проверку компетенций, доступные вам по правам Moodle. Очередь может включать сотрудников разных компаний. Работа и подтверждение компетенции открываются отдельно.';
+$string['reviewqueue_empty'] = 'Доступных запросов на проверку нет.';
+$string['reviewqueue_open_work'] = 'Открыть связанную работу';
+$string['reviewqueue_related_work_hint'] = 'Работа связана с учебным свидетельством. Она может быть сдана раньше этого запроса: Moodle не связывает запрос с конкретной сдачей. Перед оценкой компетенции проверьте доказательства.';
+$string['reviewqueue_review'] = 'Проверить компетенцию';
+$string['reviewqueue_work_unavailable'] = 'Прямой переход к работе недоступен. Откройте проверку компетенции и её доказательства.';
+$string['reviewqueue_waiting'] = 'Ожидает проверки';
+$string['reviewqueue_in_review'] = 'У вас на проверке';
+$string['reviewqueue_route_help'] = 'Откройте работу и сохраните оценку в Moodle. Очередь останется в этой вкладке: обновите результаты, затем отдельно проверьте компетенцию. Оценка задания не подтверждает компетенцию автоматически.';
+$string['reviewqueue_refresh'] = 'Обновить результаты';
+$string['reviewqueue_open_work_tab'] = 'Открыть работу — новая вкладка';
+$string['reviewqueue_review_tab'] = 'Проверить компетенцию — новая вкладка';
+$string['reviewqueue_grade_not_published'] = 'Нет доступной опубликованной оценки';
+$string['employee2_open_assignment_feedback'] = 'Откройте задание по ссылке выше, чтобы прочитать отзыв преподавателя.';
+
+$string['privacy:metadata:companyrevocation'] = 'История отзыва доступа к компании. После удаления персональных данных сохраняется только действующий запрет company/user, пока учётная запись допускает вход: удаление данных не восстанавливает доступ.';
+
+$string['kbacompany:manageorganization'] = 'Управлять организационной структурой компании';

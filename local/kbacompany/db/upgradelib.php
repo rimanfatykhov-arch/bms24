@@ -15,6 +15,139 @@
 defined('MOODLE_INTERNAL') || die();
 
 /**
+ * Add the three fresh/upgrade parity fields missed by historical upgrade paths.
+ *
+ * Validate existing definitions before any DDL; never convert an incompatible
+ * column or overwrite existing values. Re-read metadata after DDL so an incomplete
+ * attempt cannot be followed by the caller's savepoint. Partial DDL is retryable.
+ */
+function local_kbacompany_upgrade_schema_parity_2026110890(): void {
+    global $DB;
+
+    $dbman = $DB->get_manager();
+    $definitions = [
+        ['local_kbacompany_task', 'starttime', '5', '', 'startdate'],
+        ['local_kbacompany_task', 'duetime', '5', '', 'duedate'],
+        ['local_kbacompany_deviation', 'executionstatus', '16', 'pending', 'duedate'],
+    ];
+    $validate = static function(string $table, string $name, string $length,
+            string $default, array $columns): void {
+        $column = $columns[$name];
+        if ($column->meta_type !== 'C' || (int)$column->max_length !== (int)$length ||
+                !$column->not_null || $column->default_value === null ||
+                (string)$column->default_value !== $default) {
+            throw new upgrade_exception('local_kbacompany', 2026110890,
+                'Schema parity repair stopped: incompatible ' . $table . '.' . $name .
+                '. Inspect its type, length, nullability and default; no automatic conversion is allowed.');
+        }
+    };
+
+    // Check every existing target definition before adding even the first field.
+    $pending = [];
+    foreach ($definitions as [$tablename, $name, $length, $default, $previous]) {
+        $table = new xmldb_table($tablename);
+        if (!$dbman->table_exists($table)) {
+            throw new ddl_table_missing_exception($tablename);
+        }
+        $columns = $DB->get_columns($tablename, false);
+        if (isset($columns[$name])) {
+            $validate($tablename, $name, $length, $default, $columns);
+        } else {
+            // XMLDB represents an empty CHAR default as null. The MySQL/MariaDB
+            // generator produces SQL DEFAULT ''; passing '' emits a developer warning.
+            $xmldbdefault = $default === '' ? null : $default;
+            $pending[] = [$table, new xmldb_field($name, XMLDB_TYPE_CHAR, $length,
+                null, XMLDB_NOTNULL, null, $xmldbdefault, $previous)];
+        }
+    }
+    foreach ($pending as [$table, $field]) {
+        if (!$dbman->field_exists($table, $field)) {
+            $dbman->add_field($table, $field);
+        }
+    }
+    foreach ($definitions as [$tablename, $name, $length, $default]) {
+        $columns = $DB->get_columns($tablename, false);
+        if (!isset($columns[$name])) {
+            throw new ddl_field_missing_exception($name, $tablename);
+        }
+        $validate($tablename, $name, $length, $default, $columns);
+    }
+}
+
+/**
+ * Add the ordered status/due index without treating the reversed due_ix as equal.
+ *
+ * Moodle 4.1 index_exists/add_index compare sets, not order or uniqueness. Keep
+ * both indexes: create only the missing ordered non-unique index through the
+ * public driver generator and DDL execution API. No index is renamed or dropped.
+ * This repair targets the accepted MySQL-family test profiles (Percona/MariaDB).
+ */
+function local_kbacompany_upgrade_ordered_task_index_2026110900(): void {
+    global $DB;
+
+    $tablename = 'local_kbacompany_task';
+    $fields = ['companyuuid', 'status', 'duedate'];
+    $table = new xmldb_table($tablename);
+    $dbman = $DB->get_manager();
+    if (!$dbman->table_exists($table)) {
+        throw new ddl_table_missing_exception($tablename);
+    }
+    $columns = $DB->get_columns($tablename, false);
+    foreach ($fields as $field) {
+        if (!isset($columns[$field])) {
+            throw new ddl_field_missing_exception($field, $tablename);
+        }
+    }
+    // Explicit physical name prevents generator auto-suffixing from concealing a
+    // pre-existing conflicting definition. It is not used to locate other indexes.
+    $physicalname = $DB->get_prefix() . 'bms_task_status_due_0900_ix';
+    if (!preg_match('/^[a-zA-Z][a-zA-Z0-9_]*$/D', $physicalname) || strlen($physicalname) > 63) {
+        throw new upgrade_exception('local_kbacompany', 2026110900, 'Unsafe ordered-index identifier');
+    }
+    $matches = static function(array $index) use ($fields): bool {
+        return array_key_exists('unique', $index) && $index['unique'] === false &&
+            isset($index['columns']) && array_values($index['columns']) === $fields;
+    };
+    $before = $DB->get_indexes($tablename, false);
+    foreach ($before as $name => $index) {
+        if (strcasecmp($name, $physicalname) === 0 && !$matches($index)) {
+            throw new upgrade_exception('local_kbacompany', 2026110900,
+                'Ordered-index repair stopped: conflicting index name ' . $physicalname);
+        }
+    }
+    foreach ($before as $index) {
+        if ($matches($index)) { return; }
+    }
+    if ($DB->get_dbfamily() !== 'mysql') {
+        throw new upgrade_exception('local_kbacompany', 2026110900,
+            'Ordered-index repair requires a separately verified DDL path for this database family');
+    }
+    $generator = $dbman->generator;
+    $sql = $generator->getAddIndexSQL($table, new xmldb_index('status_due_ix', XMLDB_INDEX_NOTUNIQUE, $fields));
+    // Preserve the driver's table/column quoting. Replace only its index name;
+    // reject unexpected output rather than executing a guessed DDL statement.
+    if (count($sql) !== 1 || !preg_match('/\ACREATE INDEX (?:`[^`]+`|[a-zA-Z0-9_]+) ON /D', $sql[0])) {
+        throw new upgrade_exception('local_kbacompany', 2026110900, 'Unexpected ordered-index DDL generation');
+    }
+    $sql[0] = preg_replace('/\ACREATE INDEX (?:`[^`]+`|[a-zA-Z0-9_]+) ON /D',
+        'CREATE INDEX ' . $generator->getEncQuoted($physicalname) . ' ON ', $sql[0], 1);
+    $DB->change_database_structure($sql, [$tablename]);
+
+    $after = $DB->get_indexes($tablename, false);
+    if (!isset($after[$physicalname]) || !$matches($after[$physicalname])) {
+        throw new upgrade_exception('local_kbacompany', 2026110900,
+            'Ordered-index repair incomplete: expected exact non-unique column order');
+    }
+    foreach ($before as $name => $index) {
+        if (!isset($after[$name]) || array_values($after[$name]['columns']) !== array_values($index['columns']) ||
+                (bool)$after[$name]['unique'] !== (bool)$index['unique']) {
+            throw new upgrade_exception('local_kbacompany', 2026110900,
+                'Ordered-index repair stopped: a pre-existing index changed: ' . $name);
+        }
+    }
+}
+
+/**
  * Make the six legacy quantitative fields nullable without losing the norm index.
  *
  * Moodle checks index dependencies even for change_field_notnull(). Only the

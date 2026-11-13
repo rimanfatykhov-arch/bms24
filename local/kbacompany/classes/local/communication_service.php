@@ -10,13 +10,13 @@ defined('MOODLE_INTERNAL') || die();
  * notifications and future decisions remain separate business objects.
  */
 class communication_service {
-    public const CONTRACT_VERSION = '0.5.0';
+    public const CONTRACT_VERSION = '0.6.0';
     public const THREAD_TYPES = ['direct', 'group', 'object'];
     public const THREAD_STATUSES = ['active', 'archived'];
     public const CONTEXT_KINDS = ['company', 'task', 'project', 'process', 'document', 'goal', 'statistic',
         'kbaelement', 'improvement', 'meeting'];
     public const NOTIFICATION_KINDS = ['thread_invite', 'message', 'mention', 'task_created',
-        'calendar_day', 'calendar_meeting_hour', 'calendar_task_due', 'calendar_checkpoint_tomorrow'];
+        'calendar_day', 'calendar_meeting_hour', 'calendar_task_due', 'calendar_checkpoint_tomorrow', 'bp_decision'];
     public const ATTACHMENT_KINDS = ['document', 'moodlefile', 'url', 'external'];
 
     public static function contract(): array {
@@ -37,7 +37,7 @@ class communication_service {
                 'manager_role_does_not_implicitly_deanonymise_or_read_private_threads',
                 'object_discussion_keeps_explicit_context_reference',
                 'message_can_create_traceable_task_without_becoming_the_task',
-                'messages_are_append_only_in_core_release',
+                'message_original_versions_are_audited_for_author_edits_and_withdrawals',
                 'read_state_is_per_participant',
                 'mentions_are_explicit_and_participant_scoped',
                 'attachment_core_stores_references_and_protected_moodle_files',
@@ -72,7 +72,8 @@ class communication_service {
         // Company owners/managers may not be represented as active staffing rows yet; current actor is always a valid participant.
         if (!isset($employees[$actor])) {
             global $DB;
-            if ($user = $DB->get_record('user', ['id' => $actor], 'id,firstname,lastname')) {
+            $namefields = 'id,' . implode(',', \core_user\fields::get_name_fields());
+            if ($user = $DB->get_record('user', ['id' => $actor], $namefields)) {
                 $employees[$actor] = fullname($user);
             }
         }
@@ -406,6 +407,83 @@ class communication_service {
         return $uuid;
     }
 
+    /**
+     * Author-only, audited correction or withdrawal of an active message.
+     * Original content remains in a restricted revision log, never in the thread UI.
+     * Tasks/decisions derived from a message stay immutable to preserve traceability.
+     */
+    public static function change_message(string $companyuuid, int $actor, string $threaduuid,
+            string $messageuuid, string $operation, string $newbody, string $expectedhash): void {
+        global $DB;
+        company_context_service::context($companyuuid, $actor);
+        if (!in_array($operation, ['edit', 'withdraw'], true) ||
+                !preg_match('/^[a-f0-9]{64}$/D', $expectedhash)) {
+            self::fail('invalid');
+        }
+        self::require_participant($companyuuid, $threaduuid, $actor);
+        $thread = self::thread($companyuuid, $threaduuid);
+        self::require_thread_context($companyuuid, $actor, $thread);
+        if ($thread->status !== 'active') { self::fail('state'); }
+        $newbody = trim($newbody);
+        if ($operation === 'edit' && ($newbody === '' || \core_text::strlen($newbody) > 20000)) {
+            self::fail('invalid');
+        }
+        // Serialize concurrent edits using the same named lock as other communication writes.
+        $factory = \core\lock\lock_config::get_lock_factory('local_kbacompany');
+        $lock = $factory->get_lock('commmsg:' . $companyuuid . ':' . $messageuuid, 10);
+        if (!$lock) { self::fail('lock'); }
+        try {
+            $tx = $DB->start_delegated_transaction();
+            $message = self::message($companyuuid, $messageuuid);
+            if ($message->threaduuid !== $threaduuid || (int)$message->authorid !== $actor) {
+                self::fail('permission');
+            }
+            if ($message->status !== 'active') { self::fail('state'); }
+            $currenthash = hash('sha256', (string)$message->body . "\n" . (string)$message->status);
+            if (!hash_equals($currenthash, $expectedhash)) { self::fail('conflict'); }
+            if ($message->taskuuid !== '') { self::fail('linkedmessage'); }
+            // rationale is an XMLDB TEXT column. The record_exists() conditions API
+            // cannot compare TEXT values directly; use Moodle's cross-DB cast.
+            // Preserve both company isolation and the immutable decision trace.
+            $linkeddecision = $DB->record_exists_sql('SELECT 1
+                    FROM {local_kbacompany_decision}
+                    WHERE companyuuid = :decisioncompany
+                      AND ' . $DB->sql_compare_text('rationale', 255) . ' = :decisiontrace', [
+                'decisioncompany' => $companyuuid,
+                'decisiontrace' => 'communication:' . $messageuuid,
+            ]);
+            if ($linkeddecision) { self::fail('linkedmessage'); }
+            if ($operation === 'edit' && $newbody === (string)$message->body) {
+                $tx->allow_commit();
+                return;
+            }
+            $DB->insert_record('local_kbacompany_commrev', (object)[
+                'companyuuid' => $companyuuid, 'messageuuid' => $messageuuid,
+                'actorid' => $actor, 'action' => $operation,
+                'oldbody' => (string)$message->body, 'timecreated' => time(),
+            ]);
+            if ($operation === 'edit') {
+                $message->body = $newbody;
+            } else {
+                $message->status = 'withdrawn';
+                $message->body = ''; // Only restricted revision audit retains the original.
+                // Mentions of withdrawn content must not remain actionable.
+                $DB->delete_records('local_kbacompany_commmention', [
+                    'companyuuid' => $companyuuid, 'messageuuid' => $messageuuid]);
+                $notifcriteria = ['companyuuid' => $companyuuid, 'messageuuid' => $messageuuid, 'isread' => 0];
+                $DB->set_field('local_kbacompany_commnotif', 'timeread', time(), $notifcriteria);
+                $DB->set_field('local_kbacompany_commnotif', 'isread', 1, $notifcriteria);
+            }
+            $DB->update_record('local_kbacompany_commmsg', $message);
+            // A deterministic monotonic change token even for edits in the same second.
+            $thread->timemodified = max(time(), (int)$thread->timemodified + 1);
+            $DB->update_record('local_kbacompany_commthread', $thread);
+            $tx->allow_commit();
+        } finally {
+            $lock->release();
+        }
+    }
+
     public static function mark_read(string $companyuuid, int $actor, string $threaduuid): void {
         global $DB;
         company_context_service::context($companyuuid, $actor);
@@ -457,7 +535,7 @@ class communication_service {
             if (self::participant($companyuuid, (string)$message->threaduuid, $actor) === null) { return false; }
             $thread = self::thread($companyuuid, (string)$message->threaduuid);
             self::require_thread_context($companyuuid, $actor, $thread);
-            return true;
+            return $message->status === 'active';
         } catch (\moodle_exception $e) {
             return false;
         }
@@ -521,9 +599,17 @@ class communication_service {
         ], 'uuid,status,threaduuid');
         if (!$meeting || in_array((string)$meeting->status, ['closed', 'cancelled'], true)) { self::fail('state'); }
         $trace = 'communication:' . $messageuuid;
-        $existing = $DB->get_record('local_kbacompany_decision', [
-            'companyuuid' => $companyuuid, 'meetinguuid' => (string)$meeting->uuid, 'rationale' => $trace,
-        ], 'uuid');
+        // rationale is TEXT; equality through get_record() would throw a Moodle
+        // DML exception on MySQL/MariaDB (same fix as the withdrawal guard).
+        $existing = $DB->get_record_sql('SELECT uuid
+                FROM {local_kbacompany_decision}
+                WHERE companyuuid = :decisioncompany
+                  AND meetinguuid = :decisionmeeting
+                  AND ' . $DB->sql_compare_text('rationale', 255) . ' = :decisiontrace', [
+            'decisioncompany' => $companyuuid,
+            'decisionmeeting' => (string)$meeting->uuid,
+            'decisiontrace' => $trace,
+        ], IGNORE_MULTIPLE);
         if ($existing) { return (string)$existing->uuid; }
         $title = trim(preg_replace('/\s+/u', ' ', (string)$message->body));
         $title = \core_text::substr($title, 0, 120);
@@ -601,7 +687,8 @@ class communication_service {
     }
 
     /** Participant-scoped communication context. Managers do not receive private threads unless they participate. */
-    public static function context(string $companyuuid, int $actor, string $selectedthread = '', string $scope = 'inbox'): array {
+    public static function context(string $companyuuid, int $actor, string $selectedthread = '', string $scope = 'inbox',
+            ?array $history = null): array {
         global $DB;
         $company = company_context_service::context($companyuuid, $actor);
         $employees = self::employees($companyuuid, $actor);
@@ -640,22 +727,59 @@ class communication_service {
         }
         usort($threads, static function(array $a, array $b): int { return ($b['last_message_at'] <=> $a['last_message_at']) ?: ($b['time_created'] <=> $a['time_created']); });
 
-        $selected = null; $messages = [];
+        $selected = null; $messages = []; $historymeta = null;
         if ($selectedthread !== '') {
             self::require_participant($companyuuid, $selectedthread, $actor);
             $thread = self::thread($companyuuid, $selectedthread);
             $descriptor = self::require_thread_context($companyuuid, $actor, $thread);
             $selected = self::thread_dto($thread, $actor, $employees);
             $selected['context'] = $descriptor;
-            foreach ($DB->get_records('local_kbacompany_commmsg', [
-                'companyuuid' => $companyuuid, 'threaduuid' => $selectedthread,
-            ], 'id ASC') as $message) {
+            // Optional bounded history projection for Communication Center only; legacy clients unchanged.
+            $historymeta = null;
+            if ($history !== null) {
+                $needle = trim(\core_text::substr((string)($history['search'] ?? ''), 0, 200));
+                $requestedpage = max(0, min(100000, (int)($history['page'] ?? 0)));
+                $perpage = 30;
+                $where = "companyuuid = :hc AND threaduuid = :ht";
+                $params = ['hc' => $companyuuid, 'ht' => $selectedthread];
+                if ($needle !== '') {
+                    $where .= " AND status = :hs AND " . $DB->sql_like('body', ':hq', false);
+                    $params['hs'] = 'active';
+                    $params['hq'] = '%' . $DB->sql_like_escape($needle) . '%';
+                }
+                $total = (int)$DB->count_records_sql(
+                    "SELECT COUNT(id) FROM {local_kbacompany_commmsg} WHERE $where", $params);
+                $pages = max(1, (int)ceil($total / $perpage));
+                $page = min($requestedpage, $pages - 1);
+                // Page 0 = most recent messages. Reverse only the bounded page for chronological display.
+                $records = $DB->get_records_sql("SELECT * FROM {local_kbacompany_commmsg} WHERE $where ORDER BY id DESC",
+                    $params, $page * $perpage, $perpage);
+                $records = array_reverse(array_values($records));
+                $historymeta = ['total' => $total, 'page' => $page, 'pages' => $pages, 'perpage' => $perpage];
+            } else {
+                $records = $DB->get_records('local_kbacompany_commmsg', [
+                    'companyuuid' => $companyuuid, 'threaduuid' => $selectedthread,
+                ], 'id ASC');
+            }
+            $editeduuids = [];
+            $recorduuids = array_map(static function($row): string { return (string)$row->uuid; },
+                array_values($records));
+            if ($recorduuids) {
+                list($insql, $inparams) = $DB->get_in_or_equal($recorduuids, SQL_PARAMS_NAMED, 'msgrev');
+                foreach ($DB->get_fieldset_sql('SELECT DISTINCT messageuuid
+                    FROM {local_kbacompany_commrev}
+                    WHERE companyuuid = :revcompany AND action = :revaction AND messageuuid ' . $insql,
+                    ['revcompany' => $companyuuid, 'revaction' => 'edit'] + $inparams) as $editeduuid) {
+                    $editeduuids[(string)$editeduuid] = true;
+                }
+            }
+            foreach ($records as $message) {
                 $mentions = array_map(static function($m) { return (int)$m->userid; }, array_values($DB->get_records(
                     'local_kbacompany_commmention', ['companyuuid' => $companyuuid, 'messageuuid' => $message->uuid])));
                 $attachments = [];
-                foreach ($DB->get_records('local_kbacompany_commattach', [
+                foreach ($message->status === 'active' ? $DB->get_records('local_kbacompany_commattach', [
                     'companyuuid' => $companyuuid, 'messageuuid' => $message->uuid,
-                ], 'id ASC') as $attachment) {
+                ], 'id ASC') : [] as $attachment) {
                     $attachmentdto = ['uuid' => (string)$attachment->uuid, 'kind' => (string)$attachment->refkind,
                         'value' => (string)$attachment->refvalue, 'label' => (string)$attachment->label, 'url' => ''];
                     if ((string)$attachment->refkind === 'moodlefile') {
@@ -673,6 +797,7 @@ class communication_service {
                     'reply_to_uuid' => (string)$message->replytouuid, 'task_uuid' => (string)$message->taskuuid,
                     'status' => (string)$message->status, 'mentions' => $mentions, 'attachments' => $attachments,
                     'time_created' => (int)$message->timecreated,
+                    'edited' => isset($editeduuids[(string)$message->uuid]),
                 ];
             }
             self::mark_read($companyuuid, $actor, $selectedthread);
@@ -727,7 +852,7 @@ class communication_service {
                 ['mc'=>$companyuuid,'mt'=>$visiblethreaduuid,'mu'=>$actor]);
         }
         return ['company' => $company, 'scope' => $scope, 'threads' => $threads, 'selected' => $selected,
-            'messages' => $messages, 'notifications' => $notifications, 'counts' => $counts, 'employees' => $employees,
+            'messages' => $messages, 'history' => $historymeta, 'notifications' => $notifications, 'counts' => $counts, 'employees' => $employees,
             'can_manage' => permission_service::can_manage_communications($companyuuid, $actor)];
     }
 }

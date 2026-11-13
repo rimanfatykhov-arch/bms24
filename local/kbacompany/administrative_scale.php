@@ -460,6 +460,10 @@ echo html_writer::link(new moodle_url('/local/kbacompany/strategy.php', ['uuid' 
     get_string('adminscale_openstrategy', 'local_kbacompany'), ['class' => 'btn btn-outline-primary mr-2']);
 echo html_writer::link(new moodle_url('/local/kbacompany/battle_plan.php', ['uuid' => $uuid]),
     get_string('adminscale_openbattleplan', 'local_kbacompany'), ['class' => 'btn btn-outline-secondary']);
+if ($data['can_manage']) {
+    echo html_writer::link(new moodle_url('/local/kbacompany/implementation_projects.php', ['uuid' => $uuid]),
+        get_string('implproj_title', 'local_kbacompany'), ['class' => 'bms24-ui-btn ml-2']);
+}
 echo html_writer::end_tag('div');
 echo html_writer::end_tag('div');
 

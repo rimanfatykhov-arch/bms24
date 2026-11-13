@@ -29,10 +29,11 @@ final class task_provider_service_test extends \advanced_testcase {
 
     public function test_contract_declares_provider_ownership_boundary(): void {
         $contract = task_provider_service::contract();
-        $this->assertSame('0.4.2.2', $contract['version']);
-        $this->assertSame(['bms', 'legacy', 'kbaelement'], $contract['providers']);
+        $this->assertSame('0.4.7', $contract['version']);
+        $this->assertSame(['bms', 'legacy', 'kbaelement', 'kbacorporate_impl'], $contract['providers']);
         $this->assertContains('task_center_aggregates_without_stealing_source_ownership', $contract['rules']);
         $this->assertContains('external_tasks_may_be_referenced_by_battle_plan_without_copying', $contract['rules']);
+        $this->assertContains('corporate_implementation_tasks_are_read_only_via_bridge_1_22', $contract['rules']);
         $this->assertMatchesRegularExpression('/^[a-f0-9]{64}$/', $contract['schema_hash']);
     }
 

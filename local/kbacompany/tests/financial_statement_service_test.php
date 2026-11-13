@@ -29,7 +29,10 @@ class financial_statement_service_test extends \advanced_testcase {
         $this->assertEquals(700.0, $bdr['values']['CM'][1]);
         $this->assertEquals(70.0, $bdr['values']['CMR'][1]);
         $this->assertEquals(500.0, $bdr['values']['OP'][1]);
-        $this->assertEquals(450.0, $bdr['summary']['netprofit']);
+        //1000-300-200+50-20-30=500; include other income, expense and tax.
+        $this->assertEquals(530.0, $bdr['values']['PBT'][1]);
+        $this->assertEquals(500.0, $bdr['values']['NP'][1]);
+        $this->assertEquals(500.0, $bdr['summary']['netprofit']);
 
         $bdds = financial_statement_service::calculate('bdds', [
             'OPENING' => [1 => 100],

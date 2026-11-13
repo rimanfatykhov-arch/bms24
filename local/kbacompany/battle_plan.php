@@ -32,15 +32,51 @@ if ($templatekey!=='' && $method!=='POST') { $view='fill'; }
 $targetuser=optional_param($method==='POST'?'userid':'user',0,PARAM_INT);
 $positionuuid=optional_param($method==='POST'?'positionuuid':'position','',PARAM_RAW_TRIMMED);
 $week=optional_param('week','',PARAM_RAW_TRIMMED);
+$contextualcreate=optional_param('contextual',0,PARAM_BOOL);
+$fromplan=optional_param('fromplan','',PARAM_RAW_TRIMMED);
 $action=optional_param($method==='POST'?'action':'op','',PARAM_ALPHA);
 $itemuuid=optional_param($method==='POST'?'itemuuid':'item','',PARAM_RAW_TRIMMED);
 $tasksearch=optional_param('taskq','',PARAM_TEXT);
+// Return-to-queue context only: typed filters, fixed internal path, current company UUID.
+$fromqueue = optional_param('fromqueue', 0, PARAM_BOOL);
+$queuefields = [];
+$queueurl = null;
+if ($fromqueue && $planuuid !== '') {
+    $queueweek = optional_param('qweek', '', PARAM_TEXT);
+    if (!preg_match('/^\d{4}-\d{2}-\d{2}$/D', $queueweek)) {
+        $queueweek = '';
+    }
+    $queueattention = optional_param('qattention', 'all', PARAM_ALPHAEXT);
+    if ($queueattention !== 'all' && !in_array($queueattention,
+            \local_kbacompany\local\battle_plan_management_overview_service::ATTENTION_FILTERS, true)) {
+        $queueattention = 'all';
+    }
+    $queuefilter = optional_param('qfilter', 'all', PARAM_ALPHA);
+    if (!in_array($queuefilter, ['all', 'ready', 'review'], true)) { $queuefilter = 'all'; }
+    $queuefields = [
+        'fromqueue'=>1, 'qweek'=>$queueweek,
+        'qorgnode'=>optional_param('qorgnode', '', PARAM_ALPHANUMEXT),
+        'qreviewer'=>max(0, optional_param('qreviewer', 0, PARAM_INT)),
+        'qattention'=>$queueattention,
+        'qfilter'=>$queuefilter, 'qpage'=>min(10000, max(0, optional_param('qpage', 0, PARAM_INT))),
+        'qteamsignal'=>optional_param('qteamsignal', 'all', PARAM_ALPHA),
+        'qemployeeinsight'=>max(0, optional_param('qemployeeinsight', 0, PARAM_INT)),
+    ];
+    $backparams = [
+        'uuid'=>$uuid, 'week'=>$queuefields['qweek'], 'orgnode'=>$queuefields['qorgnode'],
+        'reviewer'=>$queuefields['qreviewer'], 'attention'=>$queuefields['qattention'],
+        'approvalfilter'=>$queuefields['qfilter'], 'approvalpage'=>$queuefields['qpage'],
+        'teamsignal'=>$queuefields['qteamsignal'], 'employeeinsight'=>$queuefields['qemployeeinsight'],
+    ];
+    $queueurl = new moodle_url('/local/kbacompany/battle_plan_overview.php', $backparams);
+    $queueurl->set_anchor('bms24-approval-queue');
+}
 $section=optional_param('section','',PARAM_ALPHA);
 if ($section!=='' && !in_array($section, task_service::STREAMS, true)) { throw new moodle_exception('invalidparameter'); }
 $fillflow=optional_param('flow','new',PARAM_ALPHA);
 if ($method!=='POST' && optional_param('action','',PARAM_ALPHA)!=='') { throw new moodle_exception('battleplan_post','local_kbacompany'); }
 $commands=['createplan','savesettings','observer','designrefs','addtask','addprovider','editaddprovider','addadmin','addwork','addtemplate','manual','editmanual','remove',
-    'syncrecurring','applyplantemplate','indicatorfact','indicatorplan','indicatoraction','indicatorlinktask','metricfact','metricstate','reviewplan','saveweek','rolloveropen','submit','selfapprove','close'];
+    'syncrecurring','applyplantemplate','indicatorfact','indicatorplan','indicatoraction','indicatorlinktask','metricfact','metricstate','reviewplan','correctionaction','saveweek','rolloveropen','submit','selfapprove','close'];
 $metricactions=['indicatorfact','indicatorplan','indicatoraction','indicatorlinktask','metricfact','metricstate'];
 $fillactions=['syncrecurring','addtask','addprovider','addadmin','addwork','addtemplate','manual','applyplantemplate'];
 $values=[]; $errors=[]; $error=''; $data=null;
@@ -49,14 +85,15 @@ if ($method==='POST') {
     if (!in_array($action,$commands,true)) { throw new moodle_exception('invalidparameter'); }
     $view=$action==='createplan'?'create':(in_array($action,['savesettings','observer','designrefs','editaddprovider','editmanual'],true)?'edit':
         (in_array($action,$fillactions,true)?'fill':(in_array($action,$metricactions,true)?'metrics':
-        (in_array($action,['reviewplan','saveweek','rolloveropen'],true)?'detail':'action'))));
-    if ($action==='reviewplan') { $tab='review'; }
+        (in_array($action,['reviewplan','correctionaction','saveweek','rolloveropen'],true)?'detail':'action'))));
+    if (in_array($action,['reviewplan','correctionaction'],true)) { $tab='review'; }
     foreach (['periodstart','ownerposition','plantemplateuuid','normuuid','expected','title','product','description','stream','priority','startdate','starttime','duedate','duetime',
-            'taskref','sourceuuid','reviewcomment','decision','factdate','amount','reason','comment','condition','taskuuid','binduuid','statuuid','weekgoal','weekoutcome'] as $field) {
+            'taskref','sourceuuid','fromplan','reviewcomment','decision','factdate','amount','reason','comment','condition','taskuuid','binduuid','statuuid','weekgoal','weekoutcome','correctionactiontype','correctionnote','correctiontarget'] as $field) {
         $values[$field]=optional_param($field,'',PARAM_RAW);
     }
     foreach (['reviewerid','observerid','planminutes'] as $field) { $values[$field]=optional_param($field,0,PARAM_INT); }
     $values['confirmed']=optional_param('confirmed',false,PARAM_BOOL);
+    $values['correctionsack']=optional_param('correctionsack',false,PARAM_BOOL);
     $values['dayplan']=optional_param_array('dayplan',[],PARAM_RAW_TRIMMED);
     $values['reviewitems']=optional_param_array('reviewitems',[],PARAM_RAW_TRIMMED);
     $values['rolloveritems']=optional_param_array('rolloveritems',[],PARAM_RAW_TRIMMED);
@@ -87,6 +124,8 @@ if ($method==='POST') {
             !preg_match('/^[a-f0-9]{64}$/D', $values['expected'])) {
         $errors['_form']=ui::tr('battleplan_staleform');
     }
+    if ($action==='correctionaction' && !preg_match('/^[a-f0-9]{64}$/D', $values['expected'])) { $errors['_form']=ui::tr('battleplan_staleform'); }
+    if ($action==='reviewplan' && !in_array($values['decision'], ['approve','changes'], true)) { $errors['decision']=ui::tr('bpu_review_invalid_decision'); }
     if ($action==='reviewplan' && $values['decision']==='changes' && trim($values['reviewcomment'])==='') { $errors['reviewcomment']=ui::tr('battleplan_reviewcomment'); }
 }
 if ($view==='list' && $planuuid!=='') { $view='detail'; }
@@ -120,7 +159,49 @@ if ($view==='action') {
 }
 if ($view==='create') {
     $createcontext=battle_plan_service::form_context($uuid,$actor,$targetuser,$positionuuid);
+    // Keep the chosen week during the employee/position context GET roundtrip.
+    if ($method!=='POST' && $week!=='') {
+        try {
+            $values['periodstart']=battle_plan_service::week_start($week);
+        } catch (moodle_exception $e) {
+            throw new moodle_exception('invalidparameter');
+        }
+    }
+    $contextweek=$method==='POST' ? (string)($values['periodstart']??'') : $week;
+    $createcontext['contextual_create']=$contextualcreate && $targetuser>0 && $positionuuid!=='' && $contextweek!=='';
+    if (!empty($createcontext['contextual_create'])) {
+        $contextweek=battle_plan_service::week_start($contextweek);
+        $week=$contextweek;
+        $existing=battle_plan_service::existing_plan_for_context($uuid,$actor,$targetuser,$positionuuid,$contextweek);
+        if ($existing!=='') {
+            redirect(ui::url($uuid,['plan'=>$existing]),ui::tr('battleplan_existing_opened'));
+        }
+    }
+    $continuityweek=$method==='POST' ? (string)($values['periodstart']??'') : $week;
+    if ($fromplan!=='' && $targetuser>0 && $positionuuid!=='' && $continuityweek!=='') {
+        $continuity=battle_plan_service::next_plan_creation_defaults($uuid,$actor,$fromplan,$targetuser,$positionuuid,$continuityweek);
+        if (!empty($continuity['reviewerid']) && !isset($createcontext['employees'][(int)$continuity['reviewerid']])) {
+            $continuity['reviewerid']=0;
+        }
+        if (!empty($continuity['observerid']) && !isset($createcontext['employees'][(int)$continuity['observerid']])) {
+            $continuity['observerid']=0;
+        }
+        $createcontext['continuity']=$continuity;
+        if ($method==='GET') {
+            foreach (['reviewerid','observerid','plantemplateuuid','normuuid'] as $key) {
+                if (array_key_exists($key,$continuity) && (!array_key_exists($key,$values) || $values[$key]==='')) {
+                    $values[$key]=$continuity[$key];
+                }
+            }
+        }
+    }
     if ($method==='POST' && $createcontext['position_uuid']==='') { $errors['positionuuid']=ui::tr('battleplan_positionerror'); }
+}
+if ($method==='POST' && !$errors && in_array($action,['submit','selfapprove'],true) && $data) {
+    $fix=battle_plan_service::outstanding_review_corrections($data);
+    if ($fix['outstanding']>0 && !$values['correctionsack']) {
+        $errors['_form']=ui::tr('bpu_resubmit_acknowledge');
+    }
 }
 if ($method==='POST' && !$errors) {
     try {
@@ -251,6 +332,11 @@ if ($method==='POST' && !$errors) {
             $planuuid = required_param('plan', PARAM_RAW_TRIMMED);
             battle_plan_service::rollover_open_tasks($uuid, (int)$USER->id, $planuuid,
                 required_param('expected', PARAM_RAW_TRIMMED), optional_param_array('rolloveritems', [], PARAM_RAW_TRIMMED));
+        } else if ($action === 'correctionaction') {
+            battle_plan_service::correction_action($uuid, (int)$USER->id, $planuuid,
+                required_param('correctiontarget', PARAM_RAW_TRIMMED),
+                required_param('correctionactiontype', PARAM_ALPHA),
+                optional_param('correctionnote', '', PARAM_TEXT), required_param('expected', PARAM_RAW_TRIMMED));
         } else if ($action === 'reviewplan') {
             $planuuid = required_param('plan', PARAM_RAW_TRIMMED);
             $items = optional_param_array('reviewitems', [], PARAM_RAW_TRIMMED);
@@ -265,9 +351,10 @@ if ($method==='POST' && !$errors) {
         if (in_array($action,['savesettings','editaddprovider','editmanual'],true)) { $destination['view']='edit'; }
         if (in_array($action,$fillactions,true) || $action==='remove') { $destination['tab']='tasks'; }
         if (in_array($action,$metricactions,true)) { $destination['tab']='indicators'; }
-        if ($action==='reviewplan') { $destination['tab']='review'; }
+        if (in_array($action,['reviewplan','correctionaction'],true)) { $destination['tab']='review'; }
         if (in_array($action,['saveweek','rolloveropen'],true)) { $destination['tab']='overview'; }
-        $redirecturl=ui::url($uuid,$destination);
+        $redirecturl=($action === 'reviewplan' && $queueurl !== null) ? $queueurl :
+            ui::url($uuid,$destination);
         if ($action==='manual' && in_array((string)$values['stream'], task_service::STREAMS, true)) {
             $redirecturl->set_anchor('stream-'.$values['stream']);
         }
@@ -287,11 +374,29 @@ $shell=bms_page_shell_service::begin($uuid,$actor,'battleplan',ui::tr('battlepla
 echo html_writer::start_div('bms-bpu');
 if ($error!=='') { echo html_writer::div(s($error),'alert alert-danger',['role'=>'alert']); }
 if ($errors) { echo html_writer::div(s($errors['_form']??ui::tr('bpu_fix_errors')),'alert alert-danger',['role'=>'alert']); }
+// One contextual navigation for every authorised plan screen, including failed POST forms.
+if ($data && in_array($view, ['detail','edit','fill','action','metrics'], true)) {
+    echo ui::record_navigation($uuid, $data, $view, $tab, $queuefields, $queueurl);
+}
 if ($view==='list') {
     $filters=['scope'=>$scope,'q'=>optional_param('q','',PARAM_TEXT),'status'=>optional_param('status','',PARAM_ALPHA),
         'week'=>$week,'user'=>$targetuser];
     try { $listing=battle_plan_service::listing($uuid,$actor,$filters,optional_param('page',0,PARAM_INT)); }
     catch (moodle_exception $e) { throw $e; }
+    // Reuse the existing schema-neutral management read models instead of inventing a second dashboard store.
+    // Company-wide readiness/coverage remain visible only to the canonical Battle Plan manager capability.
+    if (!empty($listing['can_manage'])) {
+        $dashboardweek = $filters['week'] !== '' ? $filters['week'] : gmdate('Y-m-d');
+        $listing['manager_dashboard'] = [
+            'week' => battle_plan_service::week_start($dashboardweek),
+            'overview' => \local_kbacompany\local\battle_plan_management_overview_service::context(
+                $uuid, $actor, $dashboardweek, '', 0, 'all'),
+            'coverage' => \local_kbacompany\local\battle_plan_coverage_service::context(
+                $uuid, $actor, $dashboardweek, '', 'all'),
+            'readiness' => \local_kbacompany\local\battle_plan_week_readiness_service::context(
+                $uuid, $actor, $dashboardweek, '', 'all'),
+        ];
+    }
     echo ui::listing($uuid,$listing,$filters);
 } else if ($view==='create') {
     echo ui::create_form($uuid,$createcontext,$values+['periodstart'=>$week!==''?$week:gmdate('Y-m-d')],$errors);
@@ -304,10 +409,12 @@ if ($view==='list') {
     echo ui::action($uuid,$data,$action,$itemuuid,$values);
 } else {
     if ($view==='metrics') { $tab='indicators'; }
-    echo ui::record_header($uuid,$data,$tab);
+    echo ui::record_header($uuid,$data,$tab,$queuefields);
     if ($tab==='overview') { echo ui::overview($uuid,$data); }
     else if ($tab==='tasks') { echo ui::tasks($uuid,$data); }
-    else if ($tab==='review') { echo ui::review($uuid,$data,$values,$errors); }
+    else if ($tab==='review') {
+        echo ui::review($uuid,$data,$values,$errors,$queuefields);
+    }
     else if ($tab==='history') { echo ui::history($data); }
     else if ($tab==='indicators') {
         $plan=$data['selected']; $metricsedit=$view==='metrics';
@@ -318,12 +425,13 @@ if ($view==='list') {
         }
 
         $canwritefact = !empty($data['selected_can_edit']) && $plan['status'] !== 'closed';
-        // Legacy quota overrides and manager actions retain the specialist mode.
-        if ($plan['status'] !== 'closed' && ($data['selected_can_edit'] ||
-                ($plan['reviewer_id'] === $actor && $plan['norm_uuid'] !== ''))) {
+        // Canonical metric actions now live directly inside each metric card.
+        // Keep specialist mode reachable only for a genuinely pinned legacy quota set.
+        if ($plan['norm_uuid'] !== '' && $plan['status'] !== 'closed' &&
+                ($data['selected_can_edit'] || $plan['reviewer_id'] === $actor)) {
             echo html_writer::div(ui::link(ui::url($uuid,['plan'=>$planuuid,
                 'view'=>$metricsedit?'detail':'metrics','tab'=>'indicators']),
-                ui::tr($metricsedit?'bpu_back_indicators':'bpu_metric_advanced_actions')),
+                $metricsedit ? ui::tr('bpu_back_indicators') : get_string('battleplan_legacy_quota_section', 'local_kbacompany')),
                 'bms-bpu-metric-settings');
         }
         // Do not expose legacy edit widgets outside the specialist mode.

@@ -43,7 +43,7 @@ $options = null;
 if ($templatecode !== '' && !isset(cycles::templates()[$templatecode])) { throw new moodle_exception('mcycle_invalid_template','local_kbacompany'); }
 if ($view === 'create' && $templatecode !== '') {
     // Suggestions are visible editable dates, never a constraint imposed by a template's nominal days.
-    $today = new DateTimeImmutable(userdate(time(), '%Y-%m-%d'), new DateTimeZone('UTC'));
+    $today = new DateTimeImmutable(\local_kbacompany\local\business_date_service::day(time()), new DateTimeZone('UTC'));
     $start = $today; $end = $today;
     if ($templatecode === 'week') { $start = $today->modify('monday this week'); $end = $start->modify('+6 days'); }
     else if ($templatecode === 'month') { $start = $today->modify('first day of this month'); $end = $start->modify('last day of this month'); }

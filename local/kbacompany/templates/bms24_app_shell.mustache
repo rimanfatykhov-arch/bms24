@@ -20,8 +20,10 @@
       {{#header}}<section class="bms24-pageintro">
         {{#eyebrow}}<p class="bms24-eyebrow">{{eyebrow}}</p>{{/eyebrow}}
         <h1>{{title}}</h1>{{#description}}<p>{{description}}</p>{{/description}}
-        {{#meta.items}}<span class="bms24-metalabel">{{label}}: <strong>{{value}}</strong></span>{{/meta.items}}
-        {{#actions.items}}<a href="{{url}}" class="bms24-button bms24-button-secondary">{{label}}</a>{{/actions.items}}
+        <div class="bms24-pageintrobar">
+          <div class="bms24-pagemeta">{{#meta.items}}<span class="bms24-metalabel"><span>{{label}}:</span> <strong>{{value}}</strong></span>{{/meta.items}}</div>
+          <div class="bms24-pageactions">{{#actions.items}}<a href="{{url}}" class="bms24-button bms24-button-secondary">{{label}}</a>{{/actions.items}}</div>
+        </div>
       </section>{{/header}}
       <div class="bms24-content">{{{contenthtml}}}</div>
     </main>

@@ -52,7 +52,7 @@ final class project_execution_service_test extends \advanced_testcase {
 
     public function test_management_planning_does_not_link_to_retired_editor(): void {
         $model = bms_workspace_ux_service::management_nav_model('company-a', 'cycles', true);
-        $this->assertSame(['week', 'battleplan', 'cycles'], array_column($model['items'], 'key'));
+        $this->assertSame(['coordweek', 'decisionsregistry', 'week', 'battleplan', 'cycles'], array_column($model['items'], 'key'));
         foreach ($model['items'] as $item) {
             $this->assertStringNotContainsString('administrative_cycle.php', $item['url']);
         }

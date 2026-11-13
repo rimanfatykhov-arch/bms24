@@ -1,0 +1,25 @@
+{
+  "observed_on": "2026-11-08",
+  "authorization": "Explicit owner instruction to configure stage41 to RUWEB SSH route; application/database changes prohibited",
+  "status": "ACTIVE",
+  "client_alias": "ruweb-inventory",
+  "client_config": "/root/.ssh/bms24_ruweb_inventory.conf",
+  "key_fingerprint": "SHA256:zw3ra7dFM3VvXxxeMp7UQJNIqmrMrFVi7UBfPKU9gZo",
+  "host_key_fingerprint": "SHA256:mX1LbxI9c+9SSVaJbdSOvI2roTuhXqUCUXhzTgntwhA",
+  "restrictions": [
+    "restrict",
+    "from stage41 IP only",
+    "forced command accepts inventory only",
+    "fixed PHP/script/root",
+    "stdin closed",
+    "strict host verification"
+  ],
+  "checks": {
+    "inventory": "PASS",
+    "arbitrary_id_command": "DENIED exit2"
+  },
+  "inventory_script_sha256": "58d163856eabe246f9b5b3a189e5eaaa73121b9bcb66f5ca1ac2b0353966d5c6",
+  "wrapper_sha256": "0eabae5e26b9ee36c4c740301156b390b1659937965330c45b20f00046dabfc6",
+  "private_key_exported": false,
+  "application_or_database_mutation": false
+}

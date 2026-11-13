@@ -1,0 +1,9 @@
+CHANGELOG.md
+CHANGED_PATHS_1.1.0-rc9.txt
+RELEASE_NOTES_1.1.0-rc9.md
+classes/local/staffing_service.php
+lang/en/local_kbacompany.php
+lang/ru/local_kbacompany.php
+staffing_plan.php
+styles.css
+version.php

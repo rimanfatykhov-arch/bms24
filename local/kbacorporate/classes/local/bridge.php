@@ -15,7 +15,7 @@ class bridge {
     public const API_VERSION = 1;
 
     /** Human-readable public API release. */
-    public const API_RELEASE = '1.21';
+    public const API_RELEASE = '1.26';
 
     /** Component name exposed to integrations. */
     public const COMPONENT = 'local_kbacorporate';
@@ -33,6 +33,20 @@ class bridge {
             'backwards_compatible' => true,
             'methods' => [
                 'contract' => ['type' => 'read', 'since' => '1.0'],
+                'list_implementation_task_projections' => ['type' => 'read', 'since' => '1.22',
+                    'company_scope' => 'explicit', 'read_only' => true, 'max_limit' => 100],
+                'get_implementation_task_projection' => ['type' => 'read', 'since' => '1.22',
+                    'company_scope' => 'explicit', 'read_only' => true],
+                'list_implementation_program_projections' => ['type' => 'read', 'since' => '1.23',
+                    'company_scope' => 'explicit', 'read_only' => true, 'max_limit' => 100],
+                'get_implementation_program_projection' => ['type' => 'read', 'since' => '1.23',
+                    'company_scope' => 'explicit', 'read_only' => true],
+                'get_implementation_program_sections' => ['type' => 'read', 'since' => '1.24',
+                    'company_scope' => 'explicit', 'read_only' => true],
+                'get_implementation_program_task_sections' => ['type' => 'read', 'since' => '1.25',
+                    'company_scope' => 'explicit', 'read_only' => true, 'max_tasks' => 5000],
+                'get_implementation_program_result_statuses' => ['type' => 'read', 'since' => '1.26',
+                    'company_scope' => 'explicit', 'read_only' => true, 'max_tasks' => 5000],
                 'status' => ['type' => 'read', 'since' => '1.0'],
                 'get_company_by_bitrix_id' => ['type' => 'read', 'since' => '1.0'],
                 'sync_company' => ['type' => 'write', 'since' => '1.0'],
@@ -82,6 +96,54 @@ class bridge {
                 'get_erp_company_snapshot' => ['type' => 'read', 'since' => '1.16', 'pagination' => 'userid_cursor'],
             ],
         ];
+    }
+
+    /**
+     * Versioned read-only implementation tasks for an already-authorized integration.
+     * The caller MUST additionally validate its own BMS UUID/company/user permissions.
+     *
+     * @return array[] Sanitized task projections.
+     */
+    public static function list_implementation_task_projections(int $corporatecompanyid, int $actorid,
+            int $targetuserid, string $scope = 'mine', int $limit = 50, int $offset = 0): array {
+        return implementation_task_projection::list_tasks($corporatecompanyid, $actorid,
+            $targetuserid, $scope, $limit, $offset);
+    }
+
+    /** Return one task from the same explicit Corporate company, or null. */
+    public static function get_implementation_task_projection(int $corporatecompanyid, int $actorid,
+            int $taskid): ?array {
+        return implementation_task_projection::get_task($corporatecompanyid, $actorid, $taskid);
+    }
+
+    /** Published program snapshot; Corporate verifies manager's company access. */
+    public static function list_implementation_program_projections(int $corporatecompanyid, int $actorid,
+            int $limit = 50, int $offset = 0): array {
+        return implementation_program_projection::list_programs($corporatecompanyid, $actorid, $limit, $offset);
+    }
+
+    /** One paid program, or null when missing/not visible in the authorised company. */
+    public static function get_implementation_program_projection(int $corporatecompanyid, int $actorid,
+            int $programid): ?array {
+        return implementation_program_projection::get_program($corporatecompanyid, $actorid, $programid);
+    }
+
+    /** Sanitized section summaries from one authorized paid program's confirmed audit. */
+    public static function get_implementation_program_sections(int $corporatecompanyid, int $actorid,
+            int $programid): ?array {
+        return implementation_program_sections_projection::get($corporatecompanyid, $actorid, $programid);
+    }
+
+    /** Strict, read-only task-to-section mapping after Corporate company and program authorization. */
+    public static function get_implementation_program_task_sections(int $corporatecompanyid, int $actorid,
+            int $programid): ?array {
+        return implementation_program_task_sections_projection::get($corporatecompanyid, $actorid, $programid);
+    }
+
+    /** Latest evidence decision only, without evidence body, attachments or comments. */
+    public static function get_implementation_program_result_statuses(int $corporatecompanyid, int $actorid,
+            int $programid): ?array {
+        return implementation_program_result_projection::get($corporatecompanyid, $actorid, $programid);
     }
 
     /** Return the provider-neutral ERP exchange contract. */
@@ -457,15 +519,8 @@ class bridge {
         $result['incoming_roles'] = $incoming;
         $result['ignored_roles'] = $ignored;
 
-        debugging(
-            '[CORPORATE_ROLE_MERGE] userid=' . $userid .
-            ' companyid=' . $companyid .
-            ' incoming_roles=' . implode(',', $incoming) .
-            ' existing_roles=' . implode(',', $result['existing_roles'] ?? []) .
-            ' final_roles=' . implode(',', $result['roles'] ?? []) .
-            ' status=' . ($result['status'] ?? 'unknown'),
-            DEBUG_DEVELOPER
-        );
+        // A successful/no-op merge is a normal result, not a developer error.
+        // Return the structured role outcome; ERP calls retain their privacy-safe audit.
 
         return $result;
     }

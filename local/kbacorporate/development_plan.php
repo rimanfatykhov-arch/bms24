@@ -16,6 +16,7 @@ function local_kbacorporate_development_date(string $name): int {
 $context = context_system::instance();
 $planid = required_param('id', PARAM_INT);
 $plan = \local_kbacorporate\local\development_plans::get_plan($planid);
+\local_kbacorporate\local\access::require_not_revoked((int)$plan->companyid, (int)$USER->id);
 $isself = (int)$plan->userid === (int)$USER->id;
 $canmanage = has_capability('local/kbacorporate:managedevelopmentplans', $context) &&
     \local_kbacorporate\local\access::can_view_employee((int)$plan->companyid, $USER->id, (int)$plan->userid);

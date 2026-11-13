@@ -1,45 +1,74 @@
-name: BMS24 CI
-
+name: BMS24 Dev AI checks
 on:
-  push:
-    branches:
-      - main
-      - "feature/**"
-      - "reconcile/**"
-      - "release/**"
   pull_request:
-    branches:
-      - main
-  workflow_dispatch:
-
+  push:
+    branches: [main]
 permissions:
   contents: read
-
 concurrency:
   group: bms24-ci-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
-
 jobs:
-  static-qa:
-    name: Static QA (PHP 7.4)
+  php74-syntax:
+    name: Retained PHP 7.4 syntax compatibility
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
         with:
-          fetch-depth: 0
-
+          persist-credentials: false
       - uses: shivammathur/setup-php@v2
         with:
-          php-version: "7.4"
-          coverage: none
+          php-version: '7.4'
           tools: none
-
+          coverage: none
+      - name: PHP 7.4 syntax only
+        run: find local/kbacompany -name '*.php' -type f -print0 | xargs -0 -n1 -P8 php -l > /tmp/bms-php74-lint.txt
+      - name: Workspace filter regression on PHP 7.4
+        run: php local/kbacompany/cli/test_reconcile_workspace_focus.php
+  checks:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          fetch-depth: 0
       - uses: actions/setup-python@v5
         with:
-          python-version: "3.13"
-
-      - name: Reject forbidden repository files
+          python-version: '3.11'
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.1'
+          tools: none
+          coverage: none
+      - name: CI workflow policy (PR artifact before merge)
+        run: |
+          python tools/check_workflow_policy.py
+          python tools/test_workflow_policy_1878.py
+          python tools/test_rc30_release_gate.py
+          python tools/test_corporate2613_builder.py
+          python tools/test_adr0005_schema_policy.py
+      - name: Agent policy and packaging tests
+        run: |
+          python tools/dev_ai_gate.py
+          python tools/test_dev_ai_tools.py
+          python tools/test_dev_ai_cycle.py
+          python tools/test_ci_artifact.py
+          python tools/test_github_import_1877.py
+          python tools/test_github_import_1879.py
+          python tools/dev_ai_cycle.py validate --task dev_ai/templates/task.example.json
+      - name: Moodle static checks
+        run: |
+          python tools/check_reconcile_1879.py
+          python tools/check_pr53_pr56_integration.py
+          python scripts/qa_local.py
+          python local/kbacompany/cli/check_upgrade_sequence.py
+          python local/kbacompany/cli/check_xmldb_schema_names.py
+          python local/kbacompany/cli/check_php81_compat.py
+          python local/kbacompany/cli/check_rc29_regression_gate.py
+          python local/kbacompany/cli/test_rc30_offline_1871.py
+      - name: Retained main file and whitespace checks
         shell: bash
         run: |
           set -euo pipefail
@@ -48,50 +77,54 @@ jobs:
             echo "$forbidden"
             exit 1
           fi
-
-      - name: Run static QA
-        run: python scripts/qa_local.py
-
-      - name: Check changed-line whitespace
-        shell: bash
+          git diff --check 740fce16db15bb3551071cc11fe584c680fd738d HEAD
+      - name: Corporate API 1.26 source and dependency regression
         run: |
-          set -euo pipefail
-          if [ "${{ github.event_name }}" = "pull_request" ]; then
-            git diff --check "${{ github.event.pull_request.base.sha }}...HEAD"
-          elif git rev-parse HEAD^ >/dev/null 2>&1; then
-            git diff --check HEAD^ HEAD
-          else
-            git diff --check
-          fi
-
-  build-release:
-    name: Build release package
-    needs: static-qa
-    if: github.event_name != 'pull_request'
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - uses: shivammathur/setup-php@v2
-        with:
-          php-version: "7.4"
-          coverage: none
-          tools: none
-
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.13"
-
-      - name: Build release kit
-        run: python scripts/build_release.py --skip-preflight
-
-      - name: Upload release artifact
+          python tools/test_corporate_api126.py
+          php tools/test_corporate_task_query_scope.php
+          php local/kbacorporate/cli/implementation_program_sections_projection_contract.php
+          php local/kbacorporate/cli/implementation_program_task_sections_projection_contract.php
+          php local/kbacorporate/cli/implementation_program_result_projection_contract.php
+          php local/kbacorporate/tests/curator_scope_contract_1822.php
+          find local/kbacorporate -name '*.php' -type f -print0 | xargs -0 -n1 -P8 php -l > /tmp/corporate-php-lint.txt
+      - name: RC30 candidate version and runtime gate regressions
+        run: |
+          php local/kbacompany/cli/test_rc30_version_1879.php
+          python local/kbacompany/cli/test_rc30_cli_1866.py
+          php local/kbacompany/cli/test_schema_parity_2026110890.php
+          php -l tools/inventory_moodle_readonly.php
+          bash -n tools/ruweb_inventory_forced_command.sh
+          php local/kbacompany/cli/test_rc30_runtime_1865.php
+          php local/kbacompany/cli/test_reconcile_workspace_focus.php
+      - name: Workspace Battle Plan date hotfix regression
+        run: python tools/test_battleplan_date_1875.py
+      - name: Machine-date ISO regression (week, dates, calendar)
+        run: python tools/test_business_dates_1876.py
+      - name: PHP 8.1 syntax
+        run: find local/kbacompany -name '*.php' -type f -print0 | xargs -0 -n1 -P8 php -l > /tmp/bms-php-lint.txt
+      - name: JavaScript syntax
+        run: find local/kbacompany -name '*.js' -type f -print0 | xargs -0 -n1 node --check
+      - name: Shell syntax (Timeweb host inspection)
+        run: bash -n infra/timeweb/staging-preflight.sh
+      - name: Build and verify deterministic candidate
+        run: |
+          mkdir -p artifacts
+          python tools/build_install.py --output artifacts/INSTALL_local_kbacompany_1.1.0-rc29_build2026111100.zip --manifest artifacts/MANIFEST_build2026111100.json
+          python tools/build_install.py --output artifacts/repeat.zip
+          cmp artifacts/INSTALL_local_kbacompany_1.1.0-rc29_build2026111100.zip artifacts/repeat.zip
+          python tools/verify_install.py --zip artifacts/INSTALL_local_kbacompany_1.1.0-rc29_build2026111100.zip --manifest artifacts/MANIFEST_build2026111100.json --expected-version 2026111100
+          sha256sum artifacts/INSTALL_local_kbacompany_1.1.0-rc29_build2026111100.zip > artifacts/SHA256SUMS.txt
+          rm artifacts/repeat.zip
+      # Reviewed PRs must get an installable candidate BEFORE merge.
+      # Artifacts are UNAPPROVED; no deploy job or credentials in CI.
+      - name: Upload candidate artifact (PR and main)
+        if: github.event_name == 'pull_request' || (github.event_name == 'push' && github.ref == 'refs/heads/main')
         uses: actions/upload-artifact@v4
         with:
-          name: bms24-release-${{ github.ref_name }}-${{ github.sha }}
-          path: release/**
+          name: bms24-candidate-${{ github.event.pull_request.number || github.sha }}-build2026111100
+          path: |
+            artifacts/INSTALL_local_kbacompany_1.1.0-rc29_build2026111100.zip
+            artifacts/MANIFEST_build2026111100.json
+            artifacts/SHA256SUMS.txt
           if-no-files-found: error
           retention-days: 14

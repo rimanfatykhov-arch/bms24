@@ -1,0 +1,10 @@
+CHANGELOG.md
+CHANGED_PATHS_1.1.0-rc15.txt
+RELEASE_NOTES_1.1.0-rc15.md
+version.php
+employee_view.php
+classes/local/employee_ui_service.php
+classes/local/employee_workspace_service.php
+lang/ru/local_kbacompany.php
+lang/en/local_kbacompany.php
+styles.css

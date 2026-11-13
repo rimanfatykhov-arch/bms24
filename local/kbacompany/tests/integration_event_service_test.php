@@ -69,13 +69,17 @@ final class integration_event_service_test extends \advanced_testcase {
         $event = $DB->get_record('local_kbacompany_eventout', ['id' => $event->id], '*', MUST_EXIST);
         $command = $DB->get_record('local_kbacompany_syncout', ['commanduuid' => $commanduuid], '*', MUST_EXIST);
         $this->assertSame('error', $event->status);
+        $this->assertSame(1, (int)$event->attempts);
         $this->assertSame('pending', $command->status);
 
         integration_event_service::retry_event((string)$event->eventuuid);
+        $this->assertSame(1, (int)$DB->get_field('local_kbacompany_eventout', 'attempts', ['id'=>$event->id]));
         integration_event_service::complete_event((string)$event->eventuuid);
         $event = $DB->get_record('local_kbacompany_eventout', ['id' => $event->id], '*', MUST_EXIST);
         $this->assertSame('done', $event->status);
-        $this->assertSame(1, (int)$event->attempts);
+        $this->assertSame(2, (int)$event->attempts);
+        integration_event_service::complete_event((string)$event->eventuuid);
+        $this->assertSame(2, (int)$DB->get_field('local_kbacompany_eventout', 'attempts', ['id'=>$event->id]));
     }
 
     public function test_direct_publish_rejects_provider_specific_payload_fields(): void {

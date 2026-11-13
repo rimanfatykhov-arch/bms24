@@ -84,52 +84,85 @@ class bms_ui_service {
         return $version >= self::KBA_THEME_MIN_VERSION;
     }
 
-    /** Build the daily-work model for BMS Workspace. */
-    public static function workspace_model(string $companyuuid, int $userid): array {
+    /**
+     * Build the daily-work model for BMS Workspace.
+     * The optional visible-card list avoids hydrating hidden cards; null preserves
+     * the historical full model used by other callers.
+     */
+    public static function workspace_model(string $companyuuid, int $userid, ?array $visiblewidgets = null,
+            bool $includeattentionmanagement = true): array {
         $company = company_context_service::context($companyuuid, $userid);
-        $organization = organization_service::organization_context($companyuuid, $userid);
-        $processes = process_service::context($companyuuid, $userid);
-        $work = communication_center_service::context($companyuuid, $userid, 'inbox', 'my', 'all');
-        // The canonical BMS task list must agree with Tasks.php. The aggregated task
-        // provider intentionally isolates provider failures and may otherwise show an
-        // empty dashboard even while Tasks.php can read the records. Read the same
-        // company/user-scoped list and its SQL counts for the homepage.
-        // Keep full open/overdue counters and a separately paged open-task list.
-        // Completed tasks must not hide open tasks on a populated workspace.
-        $canonicalcounts = task_service::list_page($companyuuid, $userid, ['scope' => 'my'], 0, 1);
-        $canonical = task_service::list_page($companyuuid, $userid, ['scope' => 'my', 'openonly' => true], 0, 25);
+        $load = bms_workspace_load_policy::requirements($visiblewidgets, $includeattentionmanagement);
+        $organization = $load['organization']
+            ? organization_service::organization_context($companyuuid, $userid)
+            : ['summary' => ['employees' => 0, 'org_units' => 0, 'positions' => 0]];
+        $processes = $load['processes']
+            ? process_service::context($companyuuid, $userid)
+            : ['summary' => ['total' => 0]];
+        $work = $load['work']
+            ? communication_center_service::context($companyuuid, $userid, 'inbox', 'my', 'all')
+            : null;
+        if ($load['work']) {
+            // The canonical BMS task list must agree with Tasks.php. The aggregated task
+            // provider intentionally isolates provider failures and may otherwise show an
+            // empty dashboard even while Tasks.php can read the records. Read the same
+            // company/user-scoped list and its SQL counts for the homepage.
+            // Keep full open/overdue counters and a separately paged open-task list.
+            // Completed tasks must not hide open tasks on a populated workspace.
+            $canonicalcounts = task_service::list_page($companyuuid, $userid, ['scope' => 'my'], 0, 1);
+            $canonical = task_service::list_page($companyuuid, $userid, ['scope' => 'my', 'openonly' => true], 0, 25);
+            $tasks = $work['task_center'];
+            $alltasks = [];
+            foreach ($canonical['tasks'] as $task) {
+                if (in_array($task['status'], ['done', 'cancelled'], true)) { continue; }
+                $task['provider'] = 'bms';
+                $task['provider_label'] = get_string('taskprovider_bms', 'local_kbacompany');
+                $task['source_url'] = (new \moodle_url('/local/kbacompany/tasks.php', [
+                    'uuid' => $companyuuid, 'task' => $task['uuid'],
+                ]))->out(false);
+                $alltasks[] = $task;
+            }
+            $externalopen = 0;
+            $externaloverdue = 0;
+            foreach ($tasks['tasks'] as $task) {
+                if (($task['provider'] ?? '') === 'bms' ||
+                        in_array($task['status'], ['done', 'cancelled'], true)) { continue; }
+                $alltasks[] = $task;
+                $externalopen++;
+                if (!empty($task['is_overdue'])) { $externaloverdue++; }
+            }
+            $tasks['tasks'] = $alltasks;
+            $tasks['counts']['total'] = (int)$canonicalcounts['counts']['open'] + $externalopen;
+            $tasks['counts']['overdue'] = (int)$canonicalcounts['counts']['overdue'] + $externaloverdue;
+            $work['task_center'] = $tasks;
+            $work['counts']['tasks'] = $tasks['counts']['total'];
+            $work['counts']['overdue'] = $tasks['counts']['overdue'];
+        } else {
+            // Counters are needed for navigation even when all work cards are hidden;
+            // shell projection intentionally does not fetch messages or task bodies.
+            $light = communication_center_service::shell_counters($companyuuid, $userid);
+            $work = [
+                'task_center' => ['tasks' => [], 'counts' => ['total' => (int)$light['tasks'],
+                    'overdue' => (int)$light['overdue']]],
+                'counts' => ['tasks' => (int)$light['tasks'], 'overdue' => (int)$light['overdue'],
+                    'unread_threads' => (int)$light['unread_threads'],
+                    'unread_notifications' => (int)$light['unread_notifications'],
+                    'develop' => (int)$light['learning']],
+            ];
+        }
+        // Both paths must expose the same bounded task-center shape to callers.
         $tasks = $work['task_center'];
-        $alltasks = [];
-        foreach ($canonical['tasks'] as $task) {
-            if (in_array($task['status'], ['done', 'cancelled'], true)) { continue; }
-            $task['provider'] = 'bms';
-            $task['provider_label'] = get_string('taskprovider_bms', 'local_kbacompany');
-            $task['source_url'] = (new \moodle_url('/local/kbacompany/tasks.php', [
-                'uuid' => $companyuuid, 'task' => $task['uuid'],
-            ]))->out(false);
-            $alltasks[] = $task;
-        }
-        $externalopen = 0;
-        $externaloverdue = 0;
-        foreach ($tasks['tasks'] as $task) {
-            if (($task['provider'] ?? '') === 'bms' ||
-                    in_array($task['status'], ['done', 'cancelled'], true)) { continue; }
-            $alltasks[] = $task;
-            $externalopen++;
-            if (!empty($task['is_overdue'])) { $externaloverdue++; }
-        }
-        $tasks['tasks'] = $alltasks;
-        $tasks['counts']['total'] = (int)$canonicalcounts['counts']['open'] + $externalopen;
-        $tasks['counts']['overdue'] = (int)$canonicalcounts['counts']['overdue'] + $externaloverdue;
-        $work['task_center'] = $tasks;
-        $work['counts']['tasks'] = $tasks['counts']['total'];
-        $work['counts']['overdue'] = $tasks['counts']['overdue'];
         $canmanagement = permission_service::can_manage_management($companyuuid, $userid);
         $canowner = permission_service::can_manage_owner_private($companyuuid, $userid);
 
         $counters = self::workspace_counters($work);
-        $counters['learning'] = learning_contour_service::workspace_learning_count(
-            $companyuuid, $userid, (int)$counters['learning']);
+        if (!$load['work']) {
+            $counters['control'] = (int)$light['control'];
+        }
+        if ($load['learning']) {
+            $counters['learning'] = learning_contour_service::workspace_learning_count(
+                $companyuuid, $userid, (int)$counters['learning']);
+        }
         $routes = self::routes($companyuuid, $counters, $canmanagement, $canowner, 'workspace', deviation_service::can_report($companyuuid, $userid), access_role_service::can($companyuuid, $userid, 'management_cycle', 'view'));
 
         $managementhome = [
@@ -141,7 +174,7 @@ class bms_ui_service {
                 'critical_exceptions' => 0, 'needs_decision' => 0, 'open_tasks' => 0, 'overdue_tasks' => 0],
                 'rows' => []],
         ];
-        if ($canmanagement) {
+        if ($canmanagement && $load['management']) {
             try {
                 $managementhome['exceptions'] = indicator_management_exception_service::context($companyuuid, $userid);
                 $managementhome['battleplans'] = battle_plan_management_overview_service::context($companyuuid, $userid);
@@ -151,8 +184,15 @@ class bms_ui_service {
             }
         }
 
+        // Availability remains capability-based when the manager card is hidden.
+        // We must not drop the user's widget preference just because it is not loaded.
+        if ($canmanagement && !$load['management']) {
+            $managementhome['available'] = true;
+        }
+
         return [
             'company' => $company,
+            'organization_loaded' => $load['organization'],
             'organization' => $organization,
             'process_context' => $processes,
             'task_context' => $tasks,

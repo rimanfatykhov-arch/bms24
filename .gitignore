@@ -35,8 +35,20 @@ vendor/
 
 # Node dependencies
 node_modules/
-release/
+/release/
 
 # Local Codex working prompts
 .codex/
+
+# Imported development tooling outputs; runtime inputs stay excluded above.
+__pycache__/
+*.pyc
+*.pyo
+*.bundle
+*.sqlite
+*.sql.gz
+artifacts/
+release-builds/
+.coverage
+.idea/
 
