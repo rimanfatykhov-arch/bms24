@@ -78,7 +78,7 @@ def main():
         files = [p for p in changed if p.startswith(PLUGIN + 'amd/')]
         if not files: return 'NOT RUN', 'no AMD module changed'
         bad = []
-        for p in {re.sub(r'amd/(src|build)/(.+?)(\.min)?\.js$', r'\2', p) for p in files}:
+        for p in {re.sub(r'(\.min)?\.js$', '', Path(f).name) for f in files}:
             src, build = PLUGIN + 'amd/src/%s.js' % p, PLUGIN + 'amd/build/%s.min.js' % p
             if blob(src) != blob(build): bad.append(p)
         return ('PASS' if not bad else 'FAIL', bad or 'src == build (repository convention)')

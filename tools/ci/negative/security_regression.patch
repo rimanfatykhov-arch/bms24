@@ -1,0 +1,25 @@
+diff --git a/local/kbacompany/classes/local/communication_service.php b/local/kbacompany/classes/local/communication_service.php
+index cfea9f3..0c77d41 100644
+--- a/local/kbacompany/classes/local/communication_service.php
++++ b/local/kbacompany/classes/local/communication_service.php
+@@ -391,7 +391,7 @@ class communication_service {
+             array $mentionids, string $replytouuid, bool $withfile): string {
+         global $DB;
+         company_context_service::context($companyuuid, $actor);
+-        self::require_participant($companyuuid, $threaduuid, $actor);
++        // NEGATIVE CONTROL (CI only): participant check removed on purpose.
+         $thread = self::thread($companyuuid, $threaduuid);
+         self::require_thread_context($companyuuid, $actor, $thread);
+         if ($thread->status !== 'active') { self::fail('state'); }
+diff --git a/local/kbacompany/lang/en/local_kbacompany.php b/local/kbacompany/lang/en/local_kbacompany.php
+index a0e721c..1d83740 100644
+--- a/local/kbacompany/lang/en/local_kbacompany.php
++++ b/local/kbacompany/lang/en/local_kbacompany.php
+@@ -7898,6 +7898,7 @@ $string['communication_upload'] = 'The discussion file could not be uploaded.';
+ $string['communication_filesize'] = 'The file exceeds the permitted upload size.';
+ $string['communication_body_or_file'] = 'Enter a message or attach a file.';
+ $string['communication_file_remove'] = 'Remove the selected file';
++$string['ci_negative_control_only_en'] = 'Present in EN only';
+ $string['communication_opencontext'] = 'Open object';
+ $string['communication_history'] = 'Communication history';
+ $string['communicationcenter_tab_unread'] = 'Unread';

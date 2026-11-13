@@ -33,7 +33,10 @@ jobs:
           # Changing the tier machinery itself replays the two completed RC31 releases as evidence.
           if any(p.startswith('tools/ci/') or p == '.github/workflows/ci-tiers.yml' for p in changed):
               targets += [{'name': 'replay-pr80-css', 'base': 'bfc4d2b9307b520e197fa91c7ec87faa204be527', 'head': 'd732306608e17cbca46c3b274f15e5955ef6cb53'},
-                          {'name': 'replay-pr81-attachments', 'base': 'c2d9b0c1f72d84b3efccf62c84d41cd7eda52343', 'head': '5f5f5dd8f11a24951c70c23f813af1186d3ce217'}]
+                          {'name': 'replay-pr81-attachments', 'base': 'c2d9b0c1f72d84b3efccf62c84d41cd7eda52343', 'head': '5f5f5dd8f11a24951c70c23f813af1186d3ce217'},
+                          # Negative control: a deliberate security regression + EN/RU drift applied only inside the runner.
+                          # The tiers must detect it (FAST lang parity FAIL; classifier FULL; STANDARD PHPUnit FAIL).
+                          {'name': 'negative-control', 'base': head, 'head': head, 'patch': 'tools/ci/negative/security_regression.patch', 'expect': 'fail'}]
           with open(os.environ['GITHUB_OUTPUT'], 'a') as out:
               out.write('targets=' + json.dumps(targets) + '\n')
           print(json.dumps(targets, indent=1))
@@ -53,17 +56,40 @@ jobs:
         with: {persist-credentials: false, fetch-depth: 0}
       - uses: shivammathur/setup-php@v2
         with: {php-version: '8.1', tools: none, coverage: none}
+      - name: Materialize target (negative control applies its patch locally, never pushed)
+        id: tgt
+        run: |
+          head='${{ matrix.target.head }}'
+          if [ -n "${{ matrix.target.patch }}" ]; then
+            git -c advice.detachedHead=false checkout -q "$head"
+            git apply "${{ matrix.target.patch }}"
+            git -c user.name=ci -c user.email=ci@example.invalid commit -qam "negative control (CI runner only)"
+            head=$(git rev-parse HEAD)
+          fi
+          echo "head=$head" >> "$GITHUB_OUTPUT"
       - name: Classify change
         id: classify
         run: |
-          python3 tools/ci/classify_change.py --base ${{ matrix.target.base }} --head ${{ matrix.target.head }} \
+          python3 tools/ci/classify_change.py --base ${{ matrix.target.base }} --head ${{ steps.tgt.outputs.head }} \
             --json $RUNNER_TEMP/classification.json --github-output $GITHUB_OUTPUT
       - name: Classifier unit tests
         if: matrix.target.name == 'this-pr'
         run: python3 tools/ci/test_classify_change.py
       - name: FAST checks (lint, JS, AMD, lang parity, CSS contract, package + source identity)
+        continue-on-error: ${{ matrix.target.expect == 'fail' }}
         run: |
-          python3 tools/ci/fast_checks.py --base ${{ matrix.target.base }} --head ${{ matrix.target.head }} --out-dir $RUNNER_TEMP/fast
+          python3 tools/ci/fast_checks.py --base ${{ matrix.target.base }} --head ${{ steps.tgt.outputs.head }} --out-dir $RUNNER_TEMP/fast
+      - name: Negative control must be detected by FAST
+        if: matrix.target.expect == 'fail'
+        run: |
+          python3 - <<'EOF'
+          import json, os, sys
+          f = json.load(open(os.environ['RUNNER_TEMP'] + '/fast/fast-report.json'))
+          c = json.load(open(os.environ['RUNNER_TEMP'] + '/classification.json'))
+          ok = f['status'] == 'FAIL' and f['checks']['lang_parity']['status'] == 'FAIL' and c['profile'] == 'FULL'
+          print('FAST status', f['status'], '| lang_parity', f['checks']['lang_parity']['status'], '| profile', c['profile'])
+          sys.exit(0 if ok else 'negative control NOT detected')
+          EOF
       - name: Report
         if: always()
         run: python3 tools/ci/tier_summary.py --classification $RUNNER_TEMP/classification.json --fast $RUNNER_TEMP/fast/fast-report.json --target ${{ matrix.target.name }} >> $GITHUB_STEP_SUMMARY
@@ -98,11 +124,23 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with: {persist-credentials: false, fetch-depth: 0, path: candidate}
+      - name: Materialize target (negative control applies its patch locally, never pushed)
+        id: tgt
+        working-directory: candidate
+        run: |
+          head='${{ matrix.target.head }}'
+          if [ -n "${{ matrix.target.patch }}" ]; then
+            git -c advice.detachedHead=false checkout -q "$head"
+            git apply "${{ matrix.target.patch }}"
+            git -c user.name=ci -c user.email=ci@example.invalid commit -qam "negative control (CI runner only)"
+            head=$(git rev-parse HEAD)
+          fi
+          echo "head=$head" >> "$GITHUB_OUTPUT"
       - name: Classify change
         id: classify
         working-directory: candidate
         run: |
-          python3 tools/ci/classify_change.py --base ${{ matrix.target.base }} --head ${{ matrix.target.head }} \
+          python3 tools/ci/classify_change.py --base ${{ matrix.target.base }} --head ${{ steps.tgt.outputs.head }} \
             --json $RUNNER_TEMP/classification.json --github-output $GITHUB_OUTPUT
       - name: Not required for FAST changes
         if: steps.classify.outputs.profile == 'FAST'
@@ -110,7 +148,7 @@ jobs:
       - name: Candidate source at target head
         if: steps.classify.outputs.profile != 'FAST'
         working-directory: candidate
-        run: git worktree add $RUNNER_TEMP/target ${{ matrix.target.head }}
+        run: git worktree add $RUNNER_TEMP/target ${{ steps.tgt.outputs.head }}
       - uses: actions/checkout@v4
         if: steps.classify.outputs.profile != 'FAST'
         with: {repository: moodle/moodle, ref: b27f0816159a7555a0b3ad9ff2f8f8ef701a29fa, persist-credentials: false, path: moodle-core}
@@ -139,6 +177,7 @@ jobs:
         run: sudo locale-gen en_AU.UTF-8
       - name: Focused PHPUnit + security gates (fresh PHPUnit site, MariaDB)
         if: steps.classify.outputs.profile != 'FAST'
+        continue-on-error: ${{ matrix.target.expect == 'fail' }}
         env:
           MOODLE_ROOT: ${{ github.workspace }}/moodle-core
           CANDIDATE_ROOT: ${{ runner.temp }}/target
@@ -149,6 +188,16 @@ jobs:
           DBUSER: root
           DBPASS: isolated-ci-only
         run: python3 candidate/tools/ci/standard_phpunit.py --tests "${{ steps.classify.outputs.tests }}" --report $RUNNER_TEMP/standard-report.json
+      - name: Negative control must be detected by STANDARD
+        if: matrix.target.expect == 'fail'
+        run: |
+          python3 - <<'EOF'
+          import json, os, sys
+          r = json.load(open(os.environ['RUNNER_TEMP'] + '/standard-report.json'))
+          failed = [k for k, v in r['phpunit'].items() if v == 'FAIL']
+          print('STANDARD status', r['status'], '| failed:', failed)
+          sys.exit(0 if r['status'] == 'FAIL' and 'communication_service_test' in failed else 'negative control NOT detected')
+          EOF
       - name: Report
         if: always()
         run: python3 candidate/tools/ci/tier_summary.py --classification $RUNNER_TEMP/classification.json --standard $RUNNER_TEMP/standard-report.json --target ${{ matrix.target.name }} >> $GITHUB_STEP_SUMMARY

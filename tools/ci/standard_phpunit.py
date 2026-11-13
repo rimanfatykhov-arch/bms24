@@ -9,6 +9,7 @@ DBPASS. Args: --tests "a_test b_test ..." --report out.json
 import argparse
 import json
 import os
+import re
 import secrets
 import shutil
 import subprocess
@@ -83,7 +84,13 @@ def main():
         t = time.time()
         code = run(['php', 'vendor/bin/phpunit', '--configuration', 'phpunit.xml', '--log-junit', str(logs / (test + '-junit.xml')),
                     str(path)], test + '.log')
-        report['phpunit'][test] = 'PASS' if code == 0 else 'FAIL'
+        text = (logs / (test + '.log')).read_text(errors='replace')
+        executed = re.search(r'^OK \((\d+) tests?, (\d+) assertions?\)', text, re.M)
+        # Exit 0 without executed tests and assertions is NOT a pass.
+        report['phpunit'][test] = 'PASS' if (code == 0 and executed and int(executed.group(1)) > 0
+                                             and int(executed.group(2)) > 0) else 'FAIL'
+        report.setdefault('counts', {})[test] = executed.group(0) if executed else (
+            re.findall(r'^(Tests: .*|FAILURES!|ERRORS!|No tests executed!)', text, re.M) or ['no summary'])[-1]
         report['timing_s']['test:' + test] = round(time.time() - t, 1)
         print('%s: %s' % (test, report['phpunit'][test]), flush=True)
     report['timing_s']['phpunit_tests_total'] = round(time.time() - t0, 1)
