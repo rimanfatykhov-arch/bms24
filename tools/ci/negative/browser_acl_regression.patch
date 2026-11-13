@@ -1,0 +1,15 @@
+diff --git a/local/kbacompany/lib.php b/local/kbacompany/lib.php
+index 0e77af4..847adba 100644
+--- a/local/kbacompany/lib.php
++++ b/local/kbacompany/lib.php
+@@ -126,8 +126,8 @@ function local_kbacompany_pluginfile($course, $cm, $context, $filearea, $args, $
+     try {
+         if ($filearea === 'communication_attachment') {
+             $message = $DB->get_record('local_kbacompany_commmsg', ['id' => $itemid], 'id,companyuuid,uuid');
+-            if (!$message || !\local_kbacompany\local\communication_service::can_view_message(
+-                    (string)$message->companyuuid, (int)$USER->id, (string)$message->uuid)) { return false; }
++            // NEGATIVE CONTROL (CI only): communication attachment authorization removed on purpose.
++            if (!$message) { return false; }
+         } else {
+             $task = $DB->get_record('local_kbacompany_task', ['id' => $itemid], 'id,companyuuid,uuid');
+             if (!$task || !\local_kbacompany\local\task_service::can_view_task(

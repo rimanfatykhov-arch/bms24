@@ -21,6 +21,8 @@ import urllib.request
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent / 'browser'
+sys.path.insert(0, str(HERE))
+import contract  # noqa: E402
 
 
 def env(name):
@@ -37,7 +39,7 @@ core = Path(env('MOODLE_ROOT')).resolve(); cand = Path(env('CANDIDATE_ROOT')).re
 evidence = root / 'evidence'; logs = root / 'logs'
 for d in (evidence, logs, root / 'data'):
     d.mkdir(parents=True, exist_ok=True)
-report = {'tier': 'BROWSER', 'timing_s': {}, 'checks': {}, 'scope': 'fresh Moodle 4.1.22 (MariaDB) + candidate plugins, '
+report = {'tier': 'BROWSER', 'dbtype': os.environ.get('DBTYPE', 'mariadb'), 'timing_s': {}, 'checks': {}, 'scope': 'fresh Moodle 4.1.22 (MariaDB) + candidate plugins, '
           'PHP built-in server, Chromium; synthetic companies/users/files only'}
 cienv = dict(os.environ, BMS_CI_BROWSER='1', EVIDENCE=str(evidence), MOODLE_ROOT=str(core))
 server = None
@@ -112,12 +114,12 @@ try:
     def install():
         for plugin in ('kbacompany', 'kbacorporate'):
             shutil.copytree(cand / 'local' / plugin, core / 'local' / plugin)
-        cfg = ("<?php\nunset($CFG);\nglobal $CFG;\n$CFG = new stdClass();\n$CFG->dbtype = 'mariadb';\n$CFG->dblibrary = 'native';\n"
+        cfg = ("<?php\nunset($CFG);\nglobal $CFG;\n$CFG = new stdClass();\n$CFG->dbtype = '%s';\n$CFG->dblibrary = 'native';\n"
                "$CFG->dbhost = '127.0.0.1';\n$CFG->dbname = 'bmsci_web';\n$CFG->dbuser = %r;\n$CFG->dbpass = %r;\n$CFG->prefix = 'mdl_';\n"
                "$CFG->dboptions = ['dbpersist' => false, 'dbport' => %d, 'dbsocket' => '', 'dbcollation' => 'utf8mb4_unicode_ci'];\n"
                "$CFG->wwwroot = 'http://127.0.0.1:8080';\n$CFG->dataroot = %r;\n$CFG->admin = 'admin';\n$CFG->directorypermissions = 02777;\n"
                "$CFG->noemailever = true;\n$CFG->passwordpolicy = 0;\n$CFG->debugdisplay = 0;\n$CFG->cronclionly = true;\n"
-               "require_once(__DIR__ . '/lib/setup.php');\n") % (env('DBUSER'), env('DBPASS'), int(env('DBPORT')), str(root / 'data'))
+               "require_once(__DIR__ . '/lib/setup.php');\n") % (os.environ.get('DBTYPE', 'mariadb'), env('DBUSER'), env('DBPASS'), int(env('DBPORT')), str(root / 'data'))
         (core / 'config.php').write_text(cfg.replace("'", "'"))
         subprocess.run(['mysql', '-h127.0.0.1', '-P' + env('DBPORT'), '-u' + env('DBUSER'), '-p' + env('DBPASS'), '-e',
                         'CREATE DATABASE bmsci_web CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci'], check=True)
@@ -134,67 +136,28 @@ try:
         raise RuntimeError('fixtures failed')
     timed('server_start', start_server)
 
-    # ---- Pilot 01: Task Center tabs keyboard focus / Enter / mouse / mobile
-    timed('task_tabs', lambda: browser('task_tabs.py', 'baseline'))
-    tt = load('pilot01-baseline.json') or {}
-    check('task_tabs_keyboard_focus', tt.get('status') == 'PASS', cases=[(c['id'].split('.')[-1], c['status']) for c in tt.get('cases', [])])
+    # ---- every verdict below comes from contract.py (fail closed; same result under python -O)
+    def record(results):
+        for name, r in results.items():
+            report['checks'][name] = r
+            print('%-52s %s %s' % (name, r['status'], r.get('reason', '')), flush=True)
 
-    # ---- Pilot 02: attachments in both UIs
+    timed('task_tabs', lambda: browser('task_tabs.py', 'ci'))
+    record(contract.evaluate(contract.task_tab_checks(load('pilot01-ci.json'))))
     timed('attachments', lambda: browser('attachments.py', 'verify'))
     timed('db_state', lambda: php_state('verify'))
-    a = (load('p02-browser-verify.json') or {}).get('steps', {}); st = load('p02-state-verify.json') or {'messages': []}
-    msgs = st['messages']
-    def files_of(prefix):
-        return [f['name'] for m in msgs if m['body'].startswith(prefix) for f in m['files']]
-    def dl(step, name):
-        d = a.get(step, {}).get('downloads', {}).get(name, {})
-        return d.get('http') == 200 and d.get('sha_ok') is True
-    check('compact_has_file_control', a.get('compact_controls', {}).get('file_inputs') == 1)
-    check('compact_text_and_file', a.get('compact_text_and_file', {}).get('rendered_file') is True and dl('compact_text_and_file', 'p02-compact.txt'))
-    check('compact_file_only', a.get('compact_file_only', {}).get('rendered_file') is True and dl('compact_file_only', 'p02-compact-only.txt'))
-    check('full_text_only', a.get('full_text_only', {}).get('rendered') is True)
-    check('full_text_and_file_with_filename_feedback', bool(a.get('full_text_and_file', {}).get('filename_feedback')) and dl('full_text_and_file', 'p02-text-and-file.txt'))
-    check('full_file_only', a.get('full_file_only', {}).get('rendered_file') is True and dl('full_file_only', 'p02-file-only.txt'))
-    check('server_file_only_multipart', a.get('server_file_only_direct', {}).get('http') in (302, 303))
-    check('double_submit_creates_one_message', sum(1 for m in msgs if m['body'] == 'RC31 P02 double verify') == 1)
-    csrf = a.get('csrf_invalid_sesskey', {})
-    # Only meaningful when the forged request was actually sent and the DB state was read afterwards.
-    check('csrf_invalid_sesskey_rejected', csrf.get('http') is not None and bool(msgs) and
-          not any(m['body'].startswith('RC31 P02 csrf') for m in msgs), http=csrf.get('http'))
-    check('no_orphan_files', 'orphan_files' in st and bool(msgs) and st.get('orphan_files') == 0)
-    check('attachments_execution', 'execution_error' not in (load('p02-browser-verify.json') or {'execution_error': 'missing'}),
-          error=(load('p02-browser-verify.json') or {}).get('execution_error'))
-
-    # ---- protected download ACL
-    def access(phase):
-        timed('access_' + phase, lambda: browser('access.py', phase)); return load('p02-access-%s.json' % phase) or {}
-    before = access('ea_before'); eb = access('eb'); anon = access('anon')
-    timed('revoke', lambda: php_state('revoke_ea')); revoked = access('ea_revoked')
-    timed('reopen', lambda: php_state('reopen_ea')); reopened = access('ea_reopened')
-    n = len(before.get('status', {}))
-    check('download_participant_allowed', n > 0 and before.get('served') == n, served=before.get('served'), files=n)
-    check('download_other_company_denied', eb.get('served') == 0 and all(v['http'] in (403, 404) for v in eb.get('status', {}).values()) and n > 0)
-    check('download_anonymous_denied', anon.get('served') == 0 and n > 0)
-    check('download_revoked_denied', revoked.get('served') == 0 and n > 0)
-    check('download_reopened_allowed', reopened.get('served') == n and n > 0)
-
-    # ---- size limit: server restarted with upload_max_filesize=64K
+    record(contract.evaluate(contract.attachments_checks(load('p02-browser-verify.json'), load('p02-state-verify.json'))))
+    timed('access_same_session', lambda: browser('access.py', 'all'))
+    record(contract.evaluate(contract.access_checks(load('p02-access.json'))))
     timed('server_restart_64k', lambda: start_server(['-d', 'upload_max_filesize=64K', '-d', 'post_max_size=8M']))
     timed('oversize', lambda: browser('attachments.py', 'oversize'))
     timed('db_state_oversize', lambda: php_state('oversize'))
-    o = (load('p02-browser-oversize.json') or {}).get('steps', {}); so = load('p02-state-oversize.json') or {'messages': []}
-    check('oversize_rejected_with_message', 'exceeds' in (o.get('compact_oversize', {}).get('error_text') or ''))
-    check('oversize_nothing_stored', 'compact_oversize' in o and 'orphan_files' in so and
-          not any('oversize' in m['body'] for m in so['messages']) and so.get('orphan_files') == 0)
+    record(contract.evaluate(contract.oversize_checks(load('p02-browser-oversize.json'), load('p02-state-oversize.json'))))
 except Exception as e:
     report['error'] = '%s: %s' % (type(e).__name__, str(e)[:300])
 finally:
     stop_server()
-expected = ['moodle_install', 'fixtures_companies_A_B', 'task_tabs_keyboard_focus', 'compact_has_file_control', 'compact_text_and_file',
-            'compact_file_only', 'full_text_only', 'full_text_and_file_with_filename_feedback', 'full_file_only', 'server_file_only_multipart',
-            'double_submit_creates_one_message', 'csrf_invalid_sesskey_rejected', 'no_orphan_files', 'attachments_execution',
-            'download_participant_allowed', 'download_other_company_denied', 'download_anonymous_denied', 'download_revoked_denied',
-            'download_reopened_allowed', 'oversize_rejected_with_message', 'oversize_nothing_stored']
+expected = ['moodle_install', 'fixtures_companies_A_B'] + list(contract.task_tab_checks({})) + list(contract.attachments_checks({}, {})) +     list(contract.access_checks({})) + list(contract.oversize_checks({}, {}))
 for k in expected:
     report['checks'].setdefault(k, {'status': 'NOT RUN'})
 report['status'] = 'PASS' if all(report['checks'][k]['status'] == 'PASS' for k in expected) else 'FAIL'

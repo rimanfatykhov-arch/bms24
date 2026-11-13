@@ -36,7 +36,12 @@ jobs:
                           {'name': 'replay-pr81-attachments', 'base': 'c2d9b0c1f72d84b3efccf62c84d41cd7eda52343', 'head': '5f5f5dd8f11a24951c70c23f813af1186d3ce217'},
                           # Negative control: a deliberate security regression + EN/RU drift applied only inside the runner.
                           # The tiers must detect it (FAST lang parity FAIL; classifier FULL; STANDARD PHPUnit FAIL).
-                          {'name': 'negative-control', 'base': head, 'head': head, 'patch': 'tools/ci/negative/security_regression.patch', 'expect': 'fail'}]
+                          {'name': 'negative-control', 'base': head, 'head': head, 'patch': 'tools/ci/negative/security_regression.patch',
+                           'expect': {'fast': 'fail', 'standard': 'fail', 'browser': 'na'}},
+                          # BROWSER negative control: pluginfile authorization for communication attachments removed in the runner.
+                          # BROWSER must FAIL on the denial checks; STANDARD has no pluginfile test for it (explicit NOT APPLICABLE).
+                          {'name': 'negative-browser-acl', 'base': head, 'head': head, 'patch': 'tools/ci/negative/browser_acl_regression.patch',
+                           'expect': {'fast': 'pass', 'standard': 'na', 'browser': 'fail'}}]
           with open(os.environ['GITHUB_OUTPUT'], 'a') as out:
               out.write('targets=' + json.dumps(targets) + '\n')
           print(json.dumps(targets, indent=1))
@@ -75,12 +80,17 @@ jobs:
       - name: Classifier unit tests
         if: matrix.target.name == 'this-pr'
         run: python3 tools/ci/test_classify_change.py
+      - name: BROWSER contract false-PASS tests (python and python -O)
+        if: matrix.target.name == 'this-pr'
+        run: |
+          python3 tools/ci/browser/test_contract.py
+          python3 -O tools/ci/browser/test_contract.py
       - name: FAST checks (lint, JS, AMD, lang parity, CSS contract, package + source identity)
-        continue-on-error: ${{ matrix.target.expect == 'fail' }}
+        continue-on-error: ${{ matrix.target.expect.fast == 'fail' }}
         run: |
           python3 tools/ci/fast_checks.py --base ${{ matrix.target.base }} --head ${{ steps.tgt.outputs.head }} --out-dir $RUNNER_TEMP/fast
       - name: Negative control must be detected by FAST
-        if: matrix.target.expect == 'fail'
+        if: matrix.target.expect.fast == 'fail'
         run: |
           python3 - <<'EOF'
           import json, os, sys
@@ -176,8 +186,8 @@ jobs:
         if: steps.classify.outputs.profile != 'FAST'
         run: sudo locale-gen en_AU.UTF-8
       - name: Focused PHPUnit + security gates (fresh PHPUnit site, MariaDB)
-        if: steps.classify.outputs.profile != 'FAST'
-        continue-on-error: ${{ matrix.target.expect == 'fail' }}
+        if: steps.classify.outputs.profile != 'FAST' && matrix.target.expect.standard != 'na'
+        continue-on-error: ${{ matrix.target.expect.standard == 'fail' }}
         env:
           MOODLE_ROOT: ${{ github.workspace }}/moodle-core
           CANDIDATE_ROOT: ${{ runner.temp }}/target
@@ -189,7 +199,7 @@ jobs:
           DBPASS: isolated-ci-only
         run: python3 candidate/tools/ci/standard_phpunit.py --tests "${{ steps.classify.outputs.tests }}" --report $RUNNER_TEMP/standard-report.json
       - name: Negative control must be detected by STANDARD
-        if: matrix.target.expect == 'fail'
+        if: matrix.target.expect.standard == 'fail'
         run: |
           python3 - <<'EOF'
           import json, os, sys
@@ -213,7 +223,7 @@ jobs:
           if-no-files-found: warn
 
   browser:
-    name: BROWSER / ${{ matrix.target.name }}
+    name: BROWSER / ${{ matrix.target.name }} / ${{ matrix.engine.name }}
     needs: plan
     runs-on: ubuntu-22.04
     timeout-minutes: 30
@@ -221,9 +231,12 @@ jobs:
       fail-fast: false
       matrix:
         target: ${{ fromJson(needs.plan.outputs.targets) }}
+        engine:
+          - {name: MariaDB 10.11.19, dbtype: mariadb, image: 'mariadb:10.11.19@sha256:d769e37960821dfdcf096954f6e7ac89f747e116c1bba98e48edd265dfc7deae'}
+          - {name: Percona 8.0.46-37, dbtype: mysqli, image: 'percona/percona-server:8.0.46-37@sha256:a4ba7d1afd325f40bc6d65b6455fb4f15388638dfa39e3b85f9755755fd9ec2d'}
     services:
       database:
-        image: mariadb:10.11.19@sha256:d769e37960821dfdcf096954f6e7ac89f747e116c1bba98e48edd265dfc7deae
+        image: ${{ matrix.engine.image }}
         env: {MYSQL_ROOT_PASSWORD: isolated-ci-only, MYSQL_ROOT_HOST: '%'}
         ports: ['3306:3306']
         options: >-
@@ -232,22 +245,34 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with: {persist-credentials: false, fetch-depth: 0, path: candidate}
+      - name: Materialize target (negative control applies its patch locally, never pushed)
+        id: tgt
+        working-directory: candidate
+        run: |
+          head='${{ matrix.target.head }}'
+          if [ -n "${{ matrix.target.patch }}" ]; then
+            git -c advice.detachedHead=false checkout -q "$head"
+            git apply "${{ matrix.target.patch }}"
+            git -c user.name=ci -c user.email=ci@example.invalid commit -qam "negative control (CI runner only)"
+            head=$(git rev-parse HEAD)
+          fi
+          echo "head=$head" >> "$GITHUB_OUTPUT"
       - name: Classify change
         id: classify
         working-directory: candidate
         run: |
-          python3 tools/ci/classify_change.py --base ${{ matrix.target.base }} --head ${{ matrix.target.head }} \
+          python3 tools/ci/classify_change.py --base ${{ matrix.target.base }} --head ${{ steps.tgt.outputs.head }} \
             --json $RUNNER_TEMP/classification.json --github-output $GITHUB_OUTPUT
       - name: Decide
         id: need
         run: |
           if [ "${{ steps.classify.outputs.profile }}" = "FAST" ]; then echo "run=false" >> $GITHUB_OUTPUT; echo "BROWSER NOT REQUIRED - profile FAST" >> $GITHUB_STEP_SUMMARY;
-          elif [ "${{ matrix.target.expect }}" = "fail" ]; then echo "run=false" >> $GITHUB_OUTPUT; echo "BROWSER not used for the negative control (covered by FAST/STANDARD)" >> $GITHUB_STEP_SUMMARY;
+          elif [ "${{ matrix.target.expect.browser }}" = "na" ]; then echo "run=false" >> $GITHUB_OUTPUT; echo "BROWSER NOT APPLICABLE by explicit target rule (negative control for FAST/STANDARD)" >> $GITHUB_STEP_SUMMARY;
           else echo "run=true" >> $GITHUB_OUTPUT; fi
       - name: Candidate source at target head
         if: steps.need.outputs.run == 'true'
         working-directory: candidate
-        run: git worktree add $RUNNER_TEMP/target ${{ matrix.target.head }}
+        run: git worktree add $RUNNER_TEMP/target ${{ steps.tgt.outputs.head }}
       - uses: actions/checkout@v4
         if: steps.need.outputs.run == 'true'
         with: {repository: moodle/moodle, ref: b27f0816159a7555a0b3ad9ff2f8f8ef701a29fa, persist-credentials: false, path: moodle-core}
@@ -275,7 +300,9 @@ jobs:
           python -m playwright install --with-deps chromium
       - name: HTTP + browser acceptance (fresh Moodle, PHP built-in server, synthetic companies A/B)
         if: steps.need.outputs.run == 'true'
+        continue-on-error: ${{ matrix.target.expect.browser == 'fail' }}
         env:
+          DBTYPE: ${{ matrix.engine.dbtype }}
           MOODLE_ROOT: ${{ github.workspace }}/moodle-core
           CANDIDATE_ROOT: ${{ runner.temp }}/target
           TEST_ROOT: ${{ runner.temp }}/browser
@@ -284,13 +311,25 @@ jobs:
           DBUSER: root
           DBPASS: isolated-ci-only
         run: python candidate/tools/ci/browser_acceptance.py
+      - name: Negative control must be detected by BROWSER
+        if: matrix.target.expect.browser == 'fail'
+        run: |
+          python - <<'PYEOF'
+          import json, os, sys
+          r = json.load(open(os.environ['RUNNER_TEMP'] + '/browser/browser-report.json'))
+          st = {k: v['status'] for k, v in r['checks'].items()}
+          need = ['download_other_company_denied', 'revoke_in_open_session_denied']
+          print('BROWSER status', r['status'], {k: st.get(k) for k in need + ['download_participant_allowed', 'moodle_install']})
+          ok = r['status'] == 'FAIL' and all(st.get(k) == 'FAIL' for k in need) and st.get('moodle_install') == 'PASS' and st.get('download_participant_allowed') == 'PASS'
+          sys.exit(0 if ok else 'BROWSER negative control NOT detected')
+          PYEOF
       - name: Report
         if: always() && steps.need.outputs.run == 'true'
         run: python3 candidate/tools/ci/tier_summary.py --classification $RUNNER_TEMP/classification.json --browser $RUNNER_TEMP/browser/browser-report.json --target ${{ matrix.target.name }} >> $GITHUB_STEP_SUMMARY
       - uses: actions/upload-artifact@v4
         if: always() && steps.need.outputs.run == 'true'
         with:
-          name: ci-tiers-browser-${{ matrix.target.name }}
+          name: ci-tiers-browser-${{ matrix.target.name }}-${{ matrix.engine.dbtype }}
           path: |
             ${{ runner.temp }}/browser/browser-report.json
             ${{ runner.temp }}/browser/logs/

@@ -5,9 +5,12 @@ import json, os, sys
 from pathlib import Path
 from urllib.parse import urlparse
 from playwright.sync_api import sync_playwright
-assert os.environ.get('BMS_CI_BROWSER') == '1'
+if os.environ.get('BMS_CI_BROWSER') != '1':
+    sys.exit('CI browser fixture only')
 os.umask(0o022); root = Path(os.environ['EVIDENCE']); base = 'http://127.0.0.1:8080'
-phase = sys.argv[1] if len(sys.argv) > 1 else 'baseline'; assert phase in ('baseline', 'candidate')
+phase = sys.argv[1] if len(sys.argv) > 1 else 'ci'
+if phase not in ('baseline', 'candidate', 'ci'):
+    sys.exit('unknown phase')
 f = json.loads((root / 'actors.private.json').read_text()); A = f['companies']['A']['uuid']; ma = f['actors']['MA']
 url = base + '/local/kbacompany/tasks.php?uuid=' + A
 MEASURE = """el => { const s = getComputedStyle(el); const r = el.getBoundingClientRect();
@@ -71,8 +74,8 @@ with sync_playwright() as pw:
         add('mouse_click_navigates_without_ring', p.url.endswith(first_href) or urlparse(p.url).query == urlparse(first_href).query, ring_after_click=fv)
         tabs.nth(1).hover(); hov = p.evaluate(MEASURE, tabs.nth(1).element_handle()); out['hover_style'] = {'background': hov['background'], 'color': hov['color']}
         dh = p.evaluate("() => [...document.querySelectorAll('.bms24-task-tab')].map(a => Math.round(a.getBoundingClientRect().height))"); out['desktop_tab_heights'] = dh
-        if phase == 'candidate':
-            bh = json.loads((root / 'pilot01-baseline.json').read_text()).get('desktop_tab_heights'); add('desktop_tab_height_unchanged', bh is not None and dh == bh, heights=sorted(set(dh)), baseline=sorted(set(bh or [])))
+        # Desktop/mouse layout must not get the touch-size tabs (RC31 Pilot 01 rule is coarse-pointer only).
+        add('desktop_tabs_not_enlarged', bool(dh) and max(dh) < 44, heights=sorted(set(dh)))
         add('desktop_no_browser_errors', not [e for e in errs if 'ERR_FAILED' not in e], errors=errs[:5], note='ERR_FAILED = external CDN blocked by clone isolation')
         ctx.close()
         mctx = b.new_context(viewport={'width': 390, 'height': 844}, is_mobile=True, has_touch=True)
@@ -86,7 +89,7 @@ with sync_playwright() as pw:
         mp.screenshot(path=str(root / ('pilot01-' + phase + '-focus-mobile.png')), clip={'x': 0, 'y': max(mbox['y'] - 12, 0), 'width': 390, 'height': min(mbox['height'] + 24, 400)})
         mh = mp.evaluate("() => [...document.querySelectorAll('.bms24-task-tab')].map(a => Math.round(a.getBoundingClientRect().height))"); out['mobile_tab_heights'] = mh
         out['mobile_pointer_coarse'] = mp.evaluate("() => matchMedia('(pointer:coarse)').matches")
-        if phase == 'candidate': add('mobile_tap_target_44', out['mobile_pointer_coarse'] and min(mh) >= 44, heights=sorted(set(mh)))
+        add('mobile_tap_target_44', out['mobile_pointer_coarse'] is True and bool(mh) and min(mh) >= 44, heights=sorted(set(mh)))
         add('mobile_no_browser_errors', not [e for e in merrs if 'ERR_FAILED' not in e], errors=merrs[:5], note='ERR_FAILED = external CDN blocked by clone isolation')
         mctx.close()
     except Exception as e:
