@@ -259,17 +259,20 @@ jobs:
           ini-values: max_input_vars=5000, memory_limit=1024M
           coverage: none
           tools: none
+      - uses: actions/setup-python@v5
+        if: steps.need.outputs.run == 'true'
+        with: {python-version: '3.12'}
       - name: Cache Playwright browsers
         if: steps.need.outputs.run == 'true'
         uses: actions/cache@v4
         with:
           path: ~/.cache/ms-playwright
-          key: playwright-1.48.2-chromium-ubuntu-22.04
+          key: playwright-1.49.1-chromium-ubuntu-22.04
       - name: Install Playwright (Chromium)
         if: steps.need.outputs.run == 'true'
         run: |
-          python3 -m pip install --quiet playwright==1.48.2
-          python3 -m playwright install --with-deps chromium
+          python -m pip install --quiet playwright==1.49.1
+          python -m playwright install --with-deps chromium
       - name: HTTP + browser acceptance (fresh Moodle, PHP built-in server, synthetic companies A/B)
         if: steps.need.outputs.run == 'true'
         env:
@@ -280,7 +283,7 @@ jobs:
           DBPORT: '3306'
           DBUSER: root
           DBPASS: isolated-ci-only
-        run: python3 candidate/tools/ci/browser_acceptance.py
+        run: python candidate/tools/ci/browser_acceptance.py
       - name: Report
         if: always() && steps.need.outputs.run == 'true'
         run: python3 candidate/tools/ci/tier_summary.py --classification $RUNNER_TEMP/classification.json --browser $RUNNER_TEMP/browser/browser-report.json --target ${{ matrix.target.name }} >> $GITHUB_STEP_SUMMARY
