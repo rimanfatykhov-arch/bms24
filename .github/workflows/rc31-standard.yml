@@ -1,0 +1,126 @@
+name: RC31 STANDARD shadow benchmark
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: rc31-standard-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  moodle:
+    name: STANDARD shadow / ${{ matrix.engine }}
+    runs-on: ubuntu-22.04
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - engine: MariaDB 10.11.19
+            dbtype: mariadb
+            image: mariadb:10.11.19@sha256:d769e37960821dfdcf096954f6e7ac89f747e116c1bba98e48edd265dfc7deae
+            artifact: mariadb
+          - engine: Percona 8.0.46-37
+            dbtype: mysqli
+            image: percona/percona-server:8.0.46-37@sha256:a4ba7d1afd325f40bc6d65b6455fb4f15388638dfa39e3b85f9755755fd9ec2d
+            artifact: percona
+    services:
+      database:
+        image: ${{ matrix.image }}
+        env:
+          MYSQL_ROOT_PASSWORD: isolated-ci-only
+          MYSQL_ROOT_HOST: '%'
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -uroot -pisolated-ci-only"
+          --health-interval=10s --health-timeout=5s --health-retries=20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+          path: candidate
+      - uses: actions/checkout@v4
+        with:
+          repository: moodle/moodle
+          ref: b27f0816159a7555a0b3ad9ff2f8f8ef701a29fa
+          persist-credentials: false
+          path: moodle-core
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.1'
+          extensions: mysqli, intl, zip, gd, soap, mbstring, curl, sodium
+          ini-values: max_input_vars=5000, memory_limit=1024M
+          coverage: none
+          tools: composer:2.8
+      - name: Locate Composer download cache
+        id: composer-cache
+        run: echo "path=$(composer config cache-files-dir)" >> "$GITHUB_OUTPUT"
+      - uses: actions/cache@v4
+        with:
+          path: ${{ steps.composer-cache.outputs.path }}
+          key: composer-${{ runner.os }}-php81-${{ hashFiles('candidate/tools/tests/moodle-4.1-composer.lock') }}
+      - name: Install Moodle test dependencies
+        working-directory: moodle-core
+        run: |
+          cp ../candidate/tools/tests/moodle-4.1-composer.lock composer.lock
+          composer install --no-interaction --prefer-dist --no-progress
+      - name: Provision Moodle PHPUnit locales
+        run: sudo locale-gen en_AU.UTF-8
+      - name: Conservative advisory classification
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha || '4e5c7f31797f7788bb317916f913094d64b5c26e' }}
+          HEAD_SHA: ${{ github.sha }}
+        working-directory: candidate
+        run: |
+          python3 tools/test_ci_profile.py
+          python3 tools/tests/test_standard_browser_contract.py
+          python3 -O tools/tests/test_standard_browser_contract.py
+          python3 tools/ci_profile.py --base "$BASE_SHA" --head "$HEAD_SHA"
+      - name: Install browser runtime
+        run: |
+          python3 -m pip install playwright==1.56.0
+          python3 -m playwright install --with-deps chromium
+      - name: Fresh install and focused security regression
+        env:
+          MOODLE_ROOT: ${{ github.workspace }}/moodle-core
+          CANDIDATE_ROOT: ${{ github.workspace }}/candidate
+          TEST_ROOT: ${{ runner.temp }}/pr48
+          MOODLE_ACCEPTANCE_PROFILE: standard
+          CORPORATE_PROFILE: repaired2613
+          DBTYPE: ${{ matrix.dbtype }}
+          DBHOST: 127.0.0.1
+          DBPORT: '3306'
+          DBUSER: root
+          DBPASS: isolated-ci-only
+        run: bash candidate/tools/tests/run_moodle_acceptance.sh
+      - name: Real browser and artifact identity
+        env:
+          TEST_ROOT: ${{ runner.temp }}/pr48
+          BMS_RECOVERY_FIXTURE: '1'
+          BMS_RECOVERY_BROWSER: '1'
+        run: |
+          set -euo pipefail
+          python3 candidate/tools/ci_timed.py --label browser-fixture --output "$TEST_ROOT/evidence/timings.jsonl" -- php candidate/tools/tests/standard_browser_fixture.php "$TEST_ROOT/fresh/core"
+          php -d upload_max_filesize=64K -d post_max_size=8M -S 127.0.0.1:8080 -t "$TEST_ROOT/fresh/core" > "$TEST_ROOT/http.private.log" 2>&1 &
+          webpid=$!
+          trap 'kill "$webpid" 2>/dev/null || true' EXIT
+          for i in $(seq 1 30); do
+            if curl --silent --fail http://127.0.0.1:8080/login/index.php > /dev/null; then break; fi
+            sleep 1
+          done
+          python3 candidate/tools/ci_timed.py --label browser --output "$TEST_ROOT/evidence/timings.jsonl" -- python3 candidate/tools/tests/standard_browser.py verify
+          python3 candidate/tools/ci_timed.py --label pack-tested --output "$TEST_ROOT/evidence/timings.jsonl" -- python3 candidate/tools/build_install.py --source "$TEST_ROOT/fresh/core/local/kbacompany" --output "$TEST_ROOT/evidence/tested.zip" --manifest "$TEST_ROOT/evidence/manifest.json"
+          python3 candidate/tools/ci_timed.py --label verify-artifact --output "$TEST_ROOT/evidence/timings.jsonl" -- python3 candidate/tools/verify_install.py --zip "$TEST_ROOT/evidence/tested.zip" --manifest "$TEST_ROOT/evidence/manifest.json"
+          python3 candidate/tools/ci_timed.py --label pack-source --output "$TEST_ROOT/evidence/timings.jsonl" -- python3 candidate/tools/build_install.py --output "$TEST_ROOT/source.zip"
+          cmp "$TEST_ROOT/source.zip" "$TEST_ROOT/evidence/tested.zip"
+      - name: Upload acceptance evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: rc31-standard-${{ matrix.artifact }}-${{ github.sha }}
+          path: ${{ runner.temp }}/pr48/evidence/
+          retention-days: 14
+          if-no-files-found: warn
