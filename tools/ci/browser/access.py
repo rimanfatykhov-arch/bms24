@@ -15,7 +15,7 @@ with sync_playwright() as pw:
     p = ctx.new_page(); p.set_default_timeout(30000)
     if who:
         a = f['actors'][who]
-        p.goto(base + '/login/index.php'); p.locator('[name=username]').fill(a['username']); p.locator('[name=password]').fill(a['password'])
+        p.goto(base + '/login/index.php'); p.locator('#username').fill(a['username']); p.locator('#password').fill(a['password'])
         p.locator('#loginbtn').click(); p.wait_for_load_state('networkidle')
     for u in urls:
         r = ctx.request.get(u, max_redirects=0)

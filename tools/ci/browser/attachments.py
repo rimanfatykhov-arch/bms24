@@ -24,7 +24,7 @@ with sync_playwright() as pw:
     p.on('request', lambda r: posts.append({'url': urlparse(r.url).path, 'ctype': (r.headers.get('content-type') or '').split(';')[0],
                                            'has_file': (r.post_data_buffer or b'').find(b'filename="p02-') >= 0 if r.method == 'POST' else None}) if r.method == 'POST' else None)
     p.on('pageerror', lambda e: errs.append('pageerror:' + type(e).__name__))
-    p.goto(base + '/login/index.php'); p.locator('[name=username]').fill(ma['username']); p.locator('[name=password]').fill(ma['password'])
+    p.goto(base + '/login/index.php'); p.locator('#username').fill(ma['username']); p.locator('#password').fill(ma['password'])
     p.locator('#loginbtn').click(); p.wait_for_load_state('networkidle')
     def download_all(scope, names):
         out = {}

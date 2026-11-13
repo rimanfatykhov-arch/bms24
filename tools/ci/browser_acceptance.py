@@ -145,9 +145,11 @@ try:
     check('full_file_only', a.get('full_file_only', {}).get('rendered_file') is True and dl('full_file_only', 'p02-file-only.txt'))
     check('server_file_only_multipart', a.get('server_file_only_direct', {}).get('http') in (302, 303))
     check('double_submit_creates_one_message', sum(1 for m in msgs if m['body'] == 'RC31 P02 double verify') == 1)
-    check('csrf_invalid_sesskey_rejected', not any(m['body'].startswith('RC31 P02 csrf') for m in msgs),
-          http=a.get('csrf_invalid_sesskey', {}).get('http'))
-    check('no_orphan_files', st.get('orphan_files') == 0)
+    csrf = a.get('csrf_invalid_sesskey', {})
+    # Only meaningful when the forged request was actually sent and the DB state was read afterwards.
+    check('csrf_invalid_sesskey_rejected', csrf.get('http') is not None and bool(msgs) and
+          not any(m['body'].startswith('RC31 P02 csrf') for m in msgs), http=csrf.get('http'))
+    check('no_orphan_files', 'orphan_files' in st and bool(msgs) and st.get('orphan_files') == 0)
     check('attachments_execution', 'execution_error' not in (load('p02-browser-verify.json') or {'execution_error': 'missing'}),
           error=(load('p02-browser-verify.json') or {}).get('execution_error'))
 
@@ -170,7 +172,8 @@ try:
     timed('db_state_oversize', lambda: php_state('oversize'))
     o = (load('p02-browser-oversize.json') or {}).get('steps', {}); so = load('p02-state-oversize.json') or {'messages': []}
     check('oversize_rejected_with_message', 'exceeds' in (o.get('compact_oversize', {}).get('error_text') or ''))
-    check('oversize_nothing_stored', not any('oversize' in m['body'] for m in so['messages']) and so.get('orphan_files') == 0)
+    check('oversize_nothing_stored', 'compact_oversize' in o and 'orphan_files' in so and
+          not any('oversize' in m['body'] for m in so['messages']) and so.get('orphan_files') == 0)
 except Exception as e:
     report['error'] = '%s: %s' % (type(e).__name__, str(e)[:300])
 finally:

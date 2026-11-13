@@ -31,7 +31,7 @@ def login(ctx):
     p = ctx.new_page(); p.set_default_timeout(30000); errs = []
     p.on('pageerror', lambda e: errs.append('pageerror:' + type(e).__name__))
     p.on('console', lambda m: errs.append('console:' + m.text[:120]) if m.type == 'error' else None)
-    p.goto(base + '/login/index.php'); p.locator('[name=username]').fill(ma['username']); p.locator('[name=password]').fill(ma['password'])
+    p.goto(base + '/login/index.php'); p.locator('#username').fill(ma['username']); p.locator('#password').fill(ma['password'])
     p.locator('#loginbtn').click(); p.wait_for_load_state('networkidle'); return p, errs
 def tab_to_tabs(p, limit=150):
     for n in range(1, limit + 1):
