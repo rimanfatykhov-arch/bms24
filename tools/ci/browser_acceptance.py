@@ -12,6 +12,8 @@ import json
 import os
 import secrets
 import shutil
+import signal
+import socket
 import subprocess
 import sys
 import time
@@ -69,7 +71,7 @@ def start_server(extra=()):
     stop_server()
     out = open(logs / 'php-server.log', 'a')
     server = subprocess.Popen(['php', *extra, '-S', '127.0.0.1:8080', '-t', str(core)], cwd=core, stdout=out, stderr=out,
-                              env=dict(cienv, PHP_CLI_SERVER_WORKERS='4'))
+                              env=dict(cienv, PHP_CLI_SERVER_WORKERS='4'), start_new_session=True)
     for _ in range(60):
         try:
             if urllib.request.urlopen('http://127.0.0.1:8080/login/index.php', timeout=5).status == 200:
@@ -81,11 +83,21 @@ def start_server(extra=()):
 
 def stop_server():
     global server
-    if server and server.poll() is None:
-        server.terminate()
+    if server:
+        # PHP_CLI_SERVER_WORKERS forks workers: stop the whole process group, then wait until the port is free.
+        try: os.killpg(server.pid, signal.SIGTERM)
+        except ProcessLookupError: pass
         try: server.wait(timeout=10)
-        except Exception: server.kill()
+        except Exception:
+            try: os.killpg(server.pid, signal.SIGKILL)
+            except ProcessLookupError: pass
     server = None
+    for _ in range(30):
+        with socket.socket() as sck:
+            if sck.connect_ex(('127.0.0.1', 8080)) != 0:
+                return
+        time.sleep(1)
+    raise RuntimeError('port 8080 still in use')
 
 
 def browser(script, phase):
