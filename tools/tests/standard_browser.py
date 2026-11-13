@@ -119,6 +119,18 @@ with sync_playwright() as pw:
         p.reload(wait_until='networkidle')
         assert marker not in p.content(), 'Forged message persisted'
         note('csrf', rejected=True, no_message=True)
+        oversized = b'x' * (100 * 1024)
+        rejected = p.request.post(base + '/local/kbacompany/communication_center.php', multipart={
+            'uuid': A, 'action': 'send', 'thread': thread, 'sesskey': key, 'tab': 'discussions',
+            'body': 'STANDARD_OVERSIZED_MESSAGE',
+            'attachment': {'name': 'too-large.txt', 'mimeType': 'text/plain', 'buffer': oversized}},
+            max_redirects=0)
+        assert rejected.status != 303, 'Oversized file accepted'
+        assert 'exceeds' in rejected.text().lower() or 'превышает' in rejected.text().lower()
+        p.reload(wait_until='networkidle')
+        assert 'STANDARD_OVERSIZED_MESSAGE' not in p.content(), 'Oversized message persisted'
+        assert 'too-large.txt' not in p.content(), 'Oversized attachment persisted'
+        note('oversize', rejected=True, no_message=True)
         obs['thread'] = thread
         # double submit: two fast clicks must create one message
         p.goto(base + '/local/kbacompany/communication_center.php?' + urlparse(p.url).query if 'communication_center.php' not in p.url else p.url, wait_until='networkidle')

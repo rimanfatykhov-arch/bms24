@@ -16,6 +16,8 @@ if ($CFG->wwwroot !== 'http://127.0.0.1:8080' || !preg_match('/^bmsci_[a-f0-9]{1
         (string)get_config('local_kbacorporate', 'version') !== '2026111100') {
     fwrite(STDERR, "Refused: clone identity/version mismatch.\n"); exit(2);
 }
+// Synthetic CI site only: deterministic upload limit for real HTTP error tests.
+set_config('maxbytes', 65536);
 $private = $scratch . '/actors.private.json';
 if (!is_dir(dirname($private)) || is_link(dirname($private)) || file_exists($private) || is_link($private)) {
     fwrite(STDERR, "Refused: evidence location unavailable or already initialized.\n"); exit(2);
