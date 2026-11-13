@@ -1,0 +1,213 @@
+name: BMS24 CI tiers
+# RC31 Pilot 03 (Issue #82). FAST and STANDARD run IN ADDITION to the existing required/FULL workflows
+# (BMS24 Dev AI checks, PR48 isolated Moodle acceptance, RC30 ADR-0004, RC30 Corporate2613). Nothing is disabled.
+# Unknown classification = FULL. FULL keeps the existing matrix; this workflow never replaces it.
+on:
+  pull_request:
+    branches: [main]
+permissions:
+  contents: read
+concurrency:
+  group: ci-tiers-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  plan:
+    name: Plan targets
+    runs-on: ubuntu-22.04
+    timeout-minutes: 5
+    outputs:
+      targets: ${{ steps.plan.outputs.targets }}
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false, fetch-depth: 0}
+      - id: plan
+        env:
+          BASE: ${{ github.event.pull_request.base.sha }}
+          HEAD: ${{ github.event.pull_request.head.sha }}
+        run: |
+          python3 - <<'EOF'
+          import json, os, subprocess
+          base, head = os.environ['BASE'], os.environ['HEAD']
+          targets = [{'name': 'this-pr', 'base': base, 'head': head}]
+          changed = subprocess.run(['git', 'diff', '--name-only', base, head], capture_output=True, text=True, check=True).stdout.split()
+          # Changing the tier machinery itself replays the two completed RC31 releases as evidence.
+          if any(p.startswith('tools/ci/') or p == '.github/workflows/ci-tiers.yml' for p in changed):
+              targets += [{'name': 'replay-pr80-css', 'base': 'bfc4d2b9307b520e197fa91c7ec87faa204be527', 'head': 'd732306608e17cbca46c3b274f15e5955ef6cb53'},
+                          {'name': 'replay-pr81-attachments', 'base': 'c2d9b0c1f72d84b3efccf62c84d41cd7eda52343', 'head': '5f5f5dd8f11a24951c70c23f813af1186d3ce217'},
+                          # Negative control: a deliberate security regression + EN/RU drift applied only inside the runner.
+                          # The tiers must detect it (FAST lang parity FAIL; classifier FULL; STANDARD PHPUnit FAIL).
+                          {'name': 'negative-control', 'base': head, 'head': head, 'patch': 'tools/ci/negative/security_regression.patch', 'expect': 'fail'}]
+          with open(os.environ['GITHUB_OUTPUT'], 'a') as out:
+              out.write('targets=' + json.dumps(targets) + '\n')
+          print(json.dumps(targets, indent=1))
+          EOF
+
+  fast:
+    name: FAST / ${{ matrix.target.name }}
+    needs: plan
+    runs-on: ubuntu-22.04
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        target: ${{ fromJson(needs.plan.outputs.targets) }}
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false, fetch-depth: 0}
+      - uses: shivammathur/setup-php@v2
+        with: {php-version: '8.1', tools: none, coverage: none}
+      - name: Materialize target (negative control applies its patch locally, never pushed)
+        id: tgt
+        run: |
+          head='${{ matrix.target.head }}'
+          if [ -n "${{ matrix.target.patch }}" ]; then
+            git -c advice.detachedHead=false checkout -q "$head"
+            git apply "${{ matrix.target.patch }}"
+            git -c user.name=ci -c user.email=ci@example.invalid commit -qam "negative control (CI runner only)"
+            head=$(git rev-parse HEAD)
+          fi
+          echo "head=$head" >> "$GITHUB_OUTPUT"
+      - name: Classify change
+        id: classify
+        run: |
+          python3 tools/ci/classify_change.py --base ${{ matrix.target.base }} --head ${{ steps.tgt.outputs.head }} \
+            --json $RUNNER_TEMP/classification.json --github-output $GITHUB_OUTPUT
+      - name: Classifier unit tests
+        if: matrix.target.name == 'this-pr'
+        run: python3 tools/ci/test_classify_change.py
+      - name: FAST checks (lint, JS, AMD, lang parity, CSS contract, package + source identity)
+        continue-on-error: ${{ matrix.target.expect == 'fail' }}
+        run: |
+          python3 tools/ci/fast_checks.py --base ${{ matrix.target.base }} --head ${{ steps.tgt.outputs.head }} --out-dir $RUNNER_TEMP/fast
+      - name: Negative control must be detected by FAST
+        if: matrix.target.expect == 'fail'
+        run: |
+          python3 - <<'EOF'
+          import json, os, sys
+          f = json.load(open(os.environ['RUNNER_TEMP'] + '/fast/fast-report.json'))
+          c = json.load(open(os.environ['RUNNER_TEMP'] + '/classification.json'))
+          ok = f['status'] == 'FAIL' and f['checks']['lang_parity']['status'] == 'FAIL' and c['profile'] == 'FULL'
+          print('FAST status', f['status'], '| lang_parity', f['checks']['lang_parity']['status'], '| profile', c['profile'])
+          sys.exit(0 if ok else 'negative control NOT detected')
+          EOF
+      - name: Report
+        if: always()
+        run: python3 tools/ci/tier_summary.py --classification $RUNNER_TEMP/classification.json --fast $RUNNER_TEMP/fast/fast-report.json --target ${{ matrix.target.name }} >> $GITHUB_STEP_SUMMARY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ci-tiers-fast-${{ matrix.target.name }}
+          path: |
+            ${{ runner.temp }}/classification.json
+            ${{ runner.temp }}/fast/fast-report.json
+            ${{ runner.temp }}/fast/local_kbacompany-candidate.manifest.json
+          retention-days: 14
+          if-no-files-found: warn
+
+  standard:
+    name: STANDARD / ${{ matrix.target.name }}
+    needs: plan
+    runs-on: ubuntu-22.04
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        target: ${{ fromJson(needs.plan.outputs.targets) }}
+    services:
+      database:
+        image: mariadb:10.11.19@sha256:d769e37960821dfdcf096954f6e7ac89f747e116c1bba98e48edd265dfc7deae
+        env: {MYSQL_ROOT_PASSWORD: isolated-ci-only, MYSQL_ROOT_HOST: '%'}
+        ports: ['3306:3306']
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -uroot -pisolated-ci-only"
+          --health-interval=5s --health-timeout=5s --health-retries=30
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false, fetch-depth: 0, path: candidate}
+      - name: Materialize target (negative control applies its patch locally, never pushed)
+        id: tgt
+        working-directory: candidate
+        run: |
+          head='${{ matrix.target.head }}'
+          if [ -n "${{ matrix.target.patch }}" ]; then
+            git -c advice.detachedHead=false checkout -q "$head"
+            git apply "${{ matrix.target.patch }}"
+            git -c user.name=ci -c user.email=ci@example.invalid commit -qam "negative control (CI runner only)"
+            head=$(git rev-parse HEAD)
+          fi
+          echo "head=$head" >> "$GITHUB_OUTPUT"
+      - name: Classify change
+        id: classify
+        working-directory: candidate
+        run: |
+          python3 tools/ci/classify_change.py --base ${{ matrix.target.base }} --head ${{ steps.tgt.outputs.head }} \
+            --json $RUNNER_TEMP/classification.json --github-output $GITHUB_OUTPUT
+      - name: Not required for FAST changes
+        if: steps.classify.outputs.profile == 'FAST'
+        run: echo "STANDARD NOT REQUIRED - classifier profile FAST" | tee -a $GITHUB_STEP_SUMMARY
+      - name: Candidate source at target head
+        if: steps.classify.outputs.profile != 'FAST'
+        working-directory: candidate
+        run: git worktree add $RUNNER_TEMP/target ${{ steps.tgt.outputs.head }}
+      - uses: actions/checkout@v4
+        if: steps.classify.outputs.profile != 'FAST'
+        with: {repository: moodle/moodle, ref: b27f0816159a7555a0b3ad9ff2f8f8ef701a29fa, persist-credentials: false, path: moodle-core}
+      - uses: shivammathur/setup-php@v2
+        if: steps.classify.outputs.profile != 'FAST'
+        with:
+          php-version: '8.1'
+          extensions: mysqli, intl, zip, gd, soap, mbstring, curl, sodium
+          ini-values: max_input_vars=5000, memory_limit=1024M
+          coverage: none
+          tools: composer:2.8
+      - name: Cache Moodle composer vendor
+        if: steps.classify.outputs.profile != 'FAST'
+        uses: actions/cache@v4
+        with:
+          path: moodle-core/vendor
+          key: moodle-4.1.22-vendor-${{ hashFiles('candidate/tools/tests/moodle-4.1-composer.lock') }}
+      - name: Install Moodle test dependencies
+        if: steps.classify.outputs.profile != 'FAST'
+        working-directory: moodle-core
+        run: |
+          cp ../candidate/tools/tests/moodle-4.1-composer.lock composer.lock
+          composer install --no-interaction --prefer-dist --no-progress
+      - name: Provision PHPUnit locale
+        if: steps.classify.outputs.profile != 'FAST'
+        run: sudo locale-gen en_AU.UTF-8
+      - name: Focused PHPUnit + security gates (fresh PHPUnit site, MariaDB)
+        if: steps.classify.outputs.profile != 'FAST'
+        continue-on-error: ${{ matrix.target.expect == 'fail' }}
+        env:
+          MOODLE_ROOT: ${{ github.workspace }}/moodle-core
+          CANDIDATE_ROOT: ${{ runner.temp }}/target
+          TEST_ROOT: ${{ runner.temp }}/standard
+          DBTYPE: mariadb
+          DBHOST: 127.0.0.1
+          DBPORT: '3306'
+          DBUSER: root
+          DBPASS: isolated-ci-only
+        run: python3 candidate/tools/ci/standard_phpunit.py --tests "${{ steps.classify.outputs.tests }}" --report $RUNNER_TEMP/standard-report.json
+      - name: Negative control must be detected by STANDARD
+        if: matrix.target.expect == 'fail'
+        run: |
+          python3 - <<'EOF'
+          import json, os, sys
+          r = json.load(open(os.environ['RUNNER_TEMP'] + '/standard-report.json'))
+          failed = [k for k, v in r['phpunit'].items() if v == 'FAIL']
+          print('STANDARD status', r['status'], '| failed:', failed)
+          sys.exit(0 if r['status'] == 'FAIL' and 'communication_service_test' in failed else 'negative control NOT detected')
+          EOF
+      - name: Report
+        if: always()
+        run: python3 candidate/tools/ci/tier_summary.py --classification $RUNNER_TEMP/classification.json --standard $RUNNER_TEMP/standard-report.json --target ${{ matrix.target.name }} >> $GITHUB_STEP_SUMMARY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ci-tiers-standard-${{ matrix.target.name }}
+          path: |
+            ${{ runner.temp }}/classification.json
+            ${{ runner.temp }}/standard-report.json
+            ${{ runner.temp }}/standard/logs/
+          retention-days: 14
+          if-no-files-found: warn
