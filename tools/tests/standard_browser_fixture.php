@@ -16,6 +16,19 @@ if ($CFG->wwwroot !== 'http://127.0.0.1:8080' || !preg_match('/^bmsci_[a-f0-9]{1
         (string)get_config('local_kbacorporate', 'version') !== '2026111100') {
     fwrite(STDERR, "Refused: clone identity/version mismatch.\n"); exit(2);
 }
+if (($argv[2] ?? '') === 'message-counts') {
+    $actors = json_decode(file_get_contents($scratch . '/actors.private.json'), true, 512, JSON_THROW_ON_ERROR);
+    if (($actors['status'] ?? '') !== 'READY') { exit(2); }
+    $counts = [];
+    foreach (['double'=>'RC31 P02 double verify', 'csrf'=>'STANDARD_FORGED_CSRF_MESSAGE',
+            'oversize'=>'STANDARD_OVERSIZED_MESSAGE'] as $key=>$body) {
+        $counts[$key] = (int)$DB->count_records_select('local_kbacompany_commmsg',
+            'companyuuid = ? AND ' . $DB->sql_compare_text('body') . ' = ?',
+            [$actors['companies']['A']['uuid'], $body]);
+    }
+    echo json_encode($counts, JSON_THROW_ON_ERROR);
+    exit(0);
+}
 // Synthetic CI site only: deterministic upload limit for real HTTP error tests.
 set_config('maxbytes', 65536);
 $private = $scratch . '/actors.private.json';

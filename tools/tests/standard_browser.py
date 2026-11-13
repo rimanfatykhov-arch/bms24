@@ -1,7 +1,7 @@
 """RC31 Pilot 02: attachments in task compact discussion and full Communication Center. Phase = repro | verify.
 Isolated clone, synthetic actors and synthetic files only. Records observations: UI controls, HTTP requests, rendered
 attachments, downloads (sha256), file-only behaviour, foreign company / revoked / outsider download denial is checked by PHP."""
-import json, os, sys, hashlib, re
+import json, os, sys, hashlib, re, subprocess
 from pathlib import Path
 from urllib.parse import urlparse, parse_qs
 from playwright.sync_api import sync_playwright
@@ -161,7 +161,10 @@ for step, filename in [('compact_text_and_file','p02-compact.txt'), ('compact_fi
     row = obs['steps'][step]
     assert row['rendered_file'], step
     assert row['downloads'][filename] == {'http':200, 'sha_ok':True}, (step, row)
-assert obs['steps']['double_submit']['occurrences'] == 1
+counts = json.loads(subprocess.check_output(['php', str(Path(__file__).with_name('standard_browser_fixture.php')),
+    str(scratch / 'fresh/core'), 'message-counts']))
+assert counts == {'double': 1, 'csrf': 0, 'oversize': 0}, counts
+(root / 'browser-message-counts.json').write_text(json.dumps(counts))
 assert obs['attachment_urls'] >= 4
 # Separate browser contexts prove foreign-company and anonymous download denial.
 urls = json.loads((root / 'p02-urls.json').read_text())
