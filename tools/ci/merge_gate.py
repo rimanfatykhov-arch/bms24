@@ -104,12 +104,14 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument('--artifacts', required=True); ap.add_argument('--report', required=True)
     ap.add_argument('--repo'); ap.add_argument('--sha'); ap.add_argument('--wait-full', type=int, default=3600)
+    ap.add_argument('--target', default='this-pr')
     a = ap.parse_args()
     d = Path(a.artifacts)
-    classification = load(d / 'ci-tiers-fast-this-pr' / 'classification.json')
-    fast = load(d / 'ci-tiers-fast-this-pr' / 'fast' / 'fast-report.json')
-    standard = load(d / 'ci-tiers-standard-this-pr' / 'standard-report.json')
-    browsers = {e: load(d / ('ci-tiers-browser-this-pr-' + e) / 'browser-report.json') for e in ENGINES}
+    t = a.target
+    classification = load(d / ('ci-tiers-fast-' + t) / 'classification.json')
+    fast = load(d / ('ci-tiers-fast-' + t) / 'fast' / 'fast-report.json')
+    standard = load(d / ('ci-tiers-standard-' + t) / 'standard-report.json')
+    browsers = {e: load(d / ('ci-tiers-browser-%s-%s' % (t, e)) / 'browser-report.json') for e in ENGINES}
     full = None
     if isinstance(classification, dict) and classification.get('profile') == 'FULL':
         full = full_status(a.repo, a.sha, os.environ['GITHUB_TOKEN'], a.wait_full)

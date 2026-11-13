@@ -363,7 +363,7 @@ jobs:
       - name: Collect this PR's tier reports
         uses: actions/download-artifact@v4
         with:
-          pattern: ci-tiers-*-this-pr*
+          pattern: ci-tiers-*
           path: ${{ runner.temp }}/gate
       - name: Gate verdict (waits for FULL workflows when the profile is FULL)
         env:
@@ -372,10 +372,22 @@ jobs:
           python3 tools/ci/merge_gate.py --artifacts $RUNNER_TEMP/gate --report $RUNNER_TEMP/merge-gate.json \
             --repo ${{ github.repository }} --sha ${{ github.event.pull_request.head.sha }} --wait-full 4200 | tee -a $GITHUB_STEP_SUMMARY
           exit ${PIPESTATUS[0]}
+      - name: Evidence only — gate decision replayed on completed releases (does not affect this verdict)
+        if: always()
+        continue-on-error: true
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          [ -d $RUNNER_TEMP/gate/ci-tiers-fast-replay-pr80-css ] || exit 0
+          python3 tools/ci/merge_gate.py --artifacts $RUNNER_TEMP/gate --report $RUNNER_TEMP/gate-pr80.json --target replay-pr80-css             --repo ${{ github.repository }} --sha d732306608e17cbca46c3b274f15e5955ef6cb53 --wait-full 0 | tee -a $GITHUB_STEP_SUMMARY || true
+          python3 tools/ci/merge_gate.py --artifacts $RUNNER_TEMP/gate --report $RUNNER_TEMP/gate-pr81.json --target replay-pr81-attachments             --repo ${{ github.repository }} --sha 5f5f5dd8f11a24951c70c23f813af1186d3ce217 --wait-full 0 | tee -a $GITHUB_STEP_SUMMARY || true
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: ci-tiers-merge-gate
-          path: ${{ runner.temp }}/merge-gate.json
+          path: |
+            ${{ runner.temp }}/merge-gate.json
+            ${{ runner.temp }}/gate-pr80.json
+            ${{ runner.temp }}/gate-pr81.json
           retention-days: 30
           if-no-files-found: warn
