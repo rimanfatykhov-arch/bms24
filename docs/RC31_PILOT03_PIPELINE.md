@@ -20,3 +20,23 @@ New runs: pending. No speedup or release readiness claim. Staging acceptance is 
 ## Release discipline and rollback
 
 PR → unchanged CI/FULL → isolated staging acceptance → exact artifact manifest/SHA → owner approval → production → smoke. FAST/STANDARD alone never authorizes deployment. Revert this CI-only commit to remove the shadow lane; no DB migration or product rollback is needed.
+
+## Profile design and explicit limits
+
+| Lane | Scope | Target (not a measured guarantee) |
+|---|---|---|
+| FAST | Literal translation / narrow presentation diff; static, lint, UI contract and isolated visual smoke still required | 1–3 minutes |
+| STANDARD | First implementation: fixed Issue79 shadow benchmark, fresh install +62 focused tests + known ACL negative control + real HTTP/browser on both engines | 5–10 minutes |
+| FULL | Existing fresh/historical upgrades, schema parity, complete BMS/Corporate suites, data preservation and security regressions | No reduced coverage |
+
+The classifier is advisory: it cannot skip checks or authorize release. No generic functional-module STANDARD allowlist is approved in this pilot. Issue79 itself classifies FULL (actual PR81 base c2d9b0c1f72d84b3efccf62c84d41cd7eda52343 to head5f5f5dd8f11a24951c70c23f813af1186d3ce217,15 files). The fixed STANDARD benchmark runs alongside FULL even for this sensitive diff.
+
+Optimizations: one fresh synthetic site and separate PHPUnit database per job, no historical origins in the additional feedback lane, two engines in parallel, Composer download-only cache keyed by pinned lock/PHP/OS. Existing FULL bootstrap and historical fixtures are unchanged. Mutable DB/site snapshots are deliberately not shared; a prebuilt immutable Moodle image is deferred because environment setup was small compared with migrations and it would add image maintenance/provenance scope.
+
+Browser assertions cover compact/full text+file and file-only sends, exact download SHA256, same-company access, foreign-company404, anonymous303, forged sesskey rejection, oversized file error with no stored message, and exactly one DB message after double-click. HTML text occurrence count is not a row count because edit forms repeat the body. Fixture probes count canonical company-scoped rows directly.
+
+Upload limit fixture uses PHP upload_max_filesize=64K/post_max_size=8M, matching the documented Pilot02 test. Existing production service calls get_max_upload_file_size() without site maxbytes; changing that business policy is out of scope. A site-maxbytes-only test was invalid for this historical contract and failed as expected; no product code was changed to make it pass.
+
+Logs contain stage labels, wall and child-process CPU (not database server CPU), engine and tested merge SHA. Browser/packaging have separate timings. JUnit must contain testcases with no errors/failures/skips in STANDARD. Actor credentials, config.php, moodledata and HTTP server logs stay outside the uploaded evidence directory. Compare final run URLs and exact test identities in the PR before acceptance; repository prose is not evidence of a completed run.
+
+Independent QA/security review remains required before merge. This Draft does not assert that review or staging acceptance has occurred. For subsequent small fixes: classify the actual diff, run shadow feedback and all existing FULL gates, examine exact-source artifact evidence, perform isolated staging acceptance, then request owner approval for the exact ZIP/SHA/host/window and rollback plan. Do not infer permission from a green STANDARD badge.

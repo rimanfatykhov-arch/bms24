@@ -12,6 +12,8 @@ def classify(path, status, patch):
         return 'FULL', 'structural or unknown change'
     sensitive = r'(?i)(sesskey|csrf|capabilit|permission|authoriz|companyuuid|tenant|pluginfile|attachment|upload|download|filearea|rbac|sql|finance|payment|token|\bapi\b)'
     changed = '\n'.join(x[1:] for x in patch.splitlines() if x[:1] in ('+', '-') and x[:3] not in ('+++', '---'))
+    if not changed.strip() or 'Binary files ' in patch or 'GIT binary patch' in patch:
+        return 'FULL', 'empty, binary or metadata-only diff'
     if re.search(sensitive, path + '\n' + changed):
         return 'FULL', 'security or integration semantics'
     if re.fullmatch(r'local/kbacompany/lang/(en|ru)/local_kbacompany.php', path):

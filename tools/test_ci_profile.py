@@ -12,6 +12,10 @@ class ProfileTest(unittest.TestCase):
         for text in ['+ .upload {color:red}', '+ /* sesskey */', '+ @import "x";', '+ .x {display:none}']:
             self.assertEqual('FULL', classify('local/kbacompany/bms_ui/base.css', 'M', text)[0])
 
+    def test_binary_and_mode_only_css_are_not_cosmetic(self):
+        for patch in ['Binary files a/x.css and b/x.css differ', 'old mode 100644\nnew mode 100755', '']:
+            self.assertEqual('FULL', classify('local/kbacompany/bms_ui/base.css', 'M', patch)[0])
+
     def test_php_translation_is_literal_only(self):
         path = 'local/kbacompany/lang/en/local_kbacompany.php'
         self.assertEqual('FAST', classify(path, 'M', "+$string['hello'] = 'Hello';")[0])

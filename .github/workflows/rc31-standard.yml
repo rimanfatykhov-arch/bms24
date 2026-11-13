@@ -102,7 +102,7 @@ jobs:
         run: |
           set -euo pipefail
           python3 candidate/tools/ci_timed.py --label browser-fixture --output "$TEST_ROOT/evidence/timings.jsonl" -- php candidate/tools/tests/standard_browser_fixture.php "$TEST_ROOT/fresh/core"
-          php -S 127.0.0.1:8080 -t "$TEST_ROOT/fresh/core" > "$TEST_ROOT/http.private.log" 2>&1 &
+          php -d upload_max_filesize=64K -d post_max_size=8M -S 127.0.0.1:8080 -t "$TEST_ROOT/fresh/core" > "$TEST_ROOT/http.private.log" 2>&1 &
           webpid=$!
           trap 'kill "$webpid" 2>/dev/null || true' EXIT
           for i in $(seq 1 30); do

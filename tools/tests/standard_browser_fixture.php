@@ -29,8 +29,6 @@ if (($argv[2] ?? '') === 'message-counts') {
     echo json_encode($counts, JSON_THROW_ON_ERROR);
     exit(0);
 }
-// Synthetic CI site only: deterministic upload limit for real HTTP error tests.
-set_config('maxbytes', 65536);
 $private = $scratch . '/actors.private.json';
 if (!is_dir(dirname($private)) || is_link(dirname($private)) || file_exists($private) || is_link($private)) {
     fwrite(STDERR, "Refused: evidence location unavailable or already initialized.\n"); exit(2);
