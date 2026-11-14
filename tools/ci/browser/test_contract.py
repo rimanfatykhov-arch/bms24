@@ -428,6 +428,8 @@ class ContractTest(unittest.TestCase):
         fails('message_edit_saved_synced_with_files', lambda o: o['cases'][1]['after_edit'].update(edited_marker=False))
         fails('message_edit_saved_synced_with_files', lambda o: o['cases'][2]['after_edit'].update(stored_files=0))
         fails('message_edit_saved_synced_with_files', lambda o: o['cases'][3]['communication_center'].update(original_text_count=1))
+        for count in (0, 2):
+            fails('message_edit_saved_synced_with_files', lambda o, count=count: o['cases'][0]['communication_center'].update(edited_text_count=count))
         fails('message_edit_saved_synced_with_files', lambda o: o['cases'][0]['after_edit'].update(download_ok=False))
         fails('message_edit_conflict_keeps_newer_and_draft', lambda o: o['cases'][0]['conflict'].update(body=o['cases'][0]['texts'][3]))
         fails('message_edit_conflict_keeps_newer_and_draft', lambda o: o['cases'][1]['conflict'].update(draft_kept=False))

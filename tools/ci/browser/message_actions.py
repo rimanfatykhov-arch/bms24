@@ -145,9 +145,11 @@ with sync_playwright() as pw:
             cc = ctx.new_page()
             cc.goto(local_url(base + '/local/kbacompany/communication_center.php?' + urlencode(
                 {'uuid': company, 'thread': case['after_edit']['thread_uuid']})), wait_until='networkidle')
-            # Rendered occurrences only (the author's closed edit form keeps the text in a hidden textarea).
-            case['communication_center'] = {'edited_text_count': cc.get_by_text(t1, exact=True).evaluate_all('els => els.filter(e => e.checkVisibility()).length'),
-                                            'original_text_count': cc.get_by_text(t0, exact=True).count()}
+            # Match the canonical message body, not a sidebar thread preview or the hidden edit textarea.
+            # Real production histories can legitimately show the same text in a preview and the selected feed.
+            canonical = cc.locator('#message-%s .bms-comm2-message-body' % message)
+            case['communication_center'] = {'edited_text_count': canonical.get_by_text(t1, exact=True).evaluate_all('els => els.filter(e => e.checkVisibility()).length'),
+                                            'original_text_count': cc.locator('#bms-comm2-history .bms-comm2-message-body').get_by_text(t0, exact=True).count()}
             cc.close()
             # 3. conflict between two tabs: the second save must fail and keep its draft; tab one's text stays
             page.reload(wait_until='networkidle')
