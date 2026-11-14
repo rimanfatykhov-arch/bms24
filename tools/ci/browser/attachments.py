@@ -14,6 +14,7 @@ from urllib.parse import urlparse, parse_qs
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from contract import CSRF_REFUSAL_MARKER, FILES, local_url  # noqa: E402
+from events import Recorder  # noqa: E402
 from playwright.sync_api import sync_playwright  # noqa: E402
 
 if os.environ.get('BMS_CI_BROWSER') != '1':
@@ -36,8 +37,8 @@ def note(k, **v):
 with sync_playwright() as pw:
     b = pw.chromium.launch(headless=True, args=['--disable-dev-shm-usage'])
     ctx = b.new_context(viewport={'width': 1440, 'height': 1000})
-    ctx.route('**/*', lambda r: r.continue_() if urlparse(r.request.url).netloc == '127.0.0.1:8080' else r.abort())
-    p = ctx.new_page(); p.set_default_timeout(30000); posts = []; errs = []
+    rec = Recorder().install(ctx); obs['browser_events'] = rec.events
+    p = ctx.new_page(); p.set_default_timeout(30000); posts = []
 
     def on_request(r):
         if r.method == 'POST':
@@ -45,11 +46,8 @@ with sync_playwright() as pw:
             posts.append({'path': urlparse(r.url).path, 'multipart': (r.headers.get('content-type') or '').startswith('multipart/form-data'),
                           'has_file': body.find(b'filename="p02-') >= 0})
     p.on('request', on_request)
-    # Browser errors are evidence (Codex review P1): uncaught page exceptions and console errors are recorded for every phase,
-    # including oversize and failed runs, and evaluated by contract.page_error_checks(). net::ERR_FAILED console lines are
-    # the external CDN requests aborted by the loopback route (same rule as task_tabs.py).
-    p.on('pageerror', lambda e: errs.append('pageerror:%s:%s' % (type(e).__name__, str(e)[:120])))
-    p.on('console', lambda m: errs.append('console:' + m.text[:160]) if m.type == 'error' else None)
+    # Browser errors are evidence: events.Recorder records route aborts, failed requests, page errors and console errors for
+    # every phase (also on failure); the verdict is contract.page_error_check() (narrow policy, no blanket exceptions).
 
     def goto(url):
         p.goto(local_url(url), wait_until='networkidle')
@@ -165,8 +163,6 @@ with sync_playwright() as pw:
         pass
     except Exception as e:
         obs['execution_error'] = '%s: %s' % (type(e).__name__, str(e)[:300])
-    finally:
-        obs['page_errors'] = list(errs)
     b.close()
 dest = root / ('p02-browser-' + phase + '.json')
 dest.write_text(json.dumps(obs, indent=1)); dest.chmod(0o644)

@@ -55,7 +55,16 @@ jobs:
                           {'name': 'negative-browser-page-error', 'base': head, 'head': head, 'patch': 'tools/ci/negative/browser_page_error_regression.patch',
                            'expect': {'fast': 'pass', 'standard': 'na', 'browser': 'fail'},
                            'browser_fail': ['attachments_no_browser_errors', 'oversize_no_browser_errors'],
-                           'browser_pass': ['moodle_install', 'download_participant_allowed', 'csrf_invalid_sesskey_rejected']}]
+                           'browser_fail_reason': 'pageerror',
+                           'browser_pass': ['moodle_install', 'download_participant_allowed', 'csrf_invalid_sesskey_rejected']},
+                          # BROWSER negative control (Codex review of #96, comment 6873684005): a LOCAL script on the test origin
+                          # whose response is cut short. The failed request itself must be the reported reason.
+                          {'name': 'negative-browser-failed-request', 'base': head, 'head': head, 'patch': 'tools/ci/negative/browser_failed_request_regression.patch',
+                           'expect': {'fast': 'pass', 'standard': 'na', 'browser': 'fail'},
+                           'browser_fail': ['attachments_no_browser_errors', 'oversize_no_browser_errors'],
+                           'browser_fail_reason': 'failed request %r' % 'http://127.0.0.1:8080/local/kbacompany/ci_negative_failed_request.php',
+                           'browser_pass': ['moodle_install', 'download_participant_allowed', 'csrf_invalid_sesskey_rejected', 'access_no_browser_errors',
+                                            'task_tab_desktop_no_browser_errors', 'task_tab_mobile_no_browser_errors']}]
           # Roles (merge_gate.py): 'this-pr' = the candidate (required); 'negative-*' = required when planned (their job succeeds
           # only if the planted defect is detected); 'replay-*' = information only, never part of the candidate verdict.
           with open(os.environ['GITHUB_OUTPUT'], 'a') as out:
@@ -357,8 +366,13 @@ jobs:
           r = json.load(open(os.environ['RUNNER_TEMP'] + '/browser/browser-report.json'))
           st = {k: v['status'] for k, v in r['checks'].items()}
           fail, ok_ = t.get('browser_fail') or [], t.get('browser_pass') or []
+          why = t.get('browser_fail_reason') or ''
           print('BROWSER status', r['status'], {k: st.get(k) for k in fail + ok_})
+          for k in fail:
+              print(' ', k, (r['checks'].get(k) or {}).get('reason', '')[:300])
           ok = bool(fail) and r['status'] == 'FAIL' and all(st.get(k) == 'FAIL' for k in fail) and all(st.get(k) == 'PASS' for k in ok_)
+          # the planted defect must be the reported cause, not some other failure
+          ok = ok and all(why in (r['checks'].get(k) or {}).get('reason', '') for k in fail)
           sys.exit(0 if ok else 'BROWSER negative control NOT detected')
           PYEOF
       - name: Report

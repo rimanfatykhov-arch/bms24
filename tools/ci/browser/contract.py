@@ -5,7 +5,10 @@ Pure functions, no browser/DB/network. `require()` raises RuntimeError (never `a
 Note: the loopback check below constrains what the test scripts request; it is NOT OS-level network isolation.
 """
 import hashlib
+import ipaddress
 from urllib.parse import urlparse, parse_qsl
+
+from events import ABORT_REASON
 
 ORIGIN_SCHEME, ORIGIN_NETLOC = 'http', '127.0.0.1:8080'
 # Synthetic attachment files (name -> bytes). Content is unique per file, so a SHA256 match proves the exact file.
@@ -161,6 +164,14 @@ def access_checks(acc):
         require(acc.get('ea_context_id_before') and acc.get('ea_context_id_before') == acc.get('ea_context_id_after'),
                 'EA phases did not reuse the same browser context')
 
+    def access_browser_events():
+        require(isinstance(acc, dict) and 'execution_error' not in acc, 'access scenario failed or missing')
+        ev = acc.get('browser_events')
+        require(isinstance(ev, dict) and set(ev) == {'EA', 'EB', 'anon'}, 'access browser events not recorded for EA/EB/anon')
+        for ctxname, events in sorted(ev.items()):
+            bad = browser_event_violations(events)
+            require(not bad, 'access %s: %d browser error(s): %r' % (ctxname, len(bad), bad[:3]))
+
     def history_preserved():
         h = (acc or {}).get('history') or {}
         names = ('before', 'after_revoke', 'after_reopen')
@@ -189,6 +200,7 @@ def access_checks(acc):
         'reopen_in_open_session_allowed': lambda: (session_reused(), require(acc.get('reopened_flag') is True, 'reopen not applied'),
                                                    allowed('ea_reopened')),
         'revocation_preserves_history': history_preserved,
+        'access_no_browser_errors': access_browser_events,
     }
 
 
@@ -201,19 +213,70 @@ def history_digest(rows):
     return h.hexdigest()
 
 
-def browser_errors(errors):
-    """Errors that count: everything except console lines for external requests aborted by the loopback route."""
-    return [e for e in errors if not (isinstance(e, str) and e.startswith('console:') and 'ERR_FAILED' in e)]
+# ---- Browser error policy (Codex review of PR #96, comment 6873684005) ----------------------------------------------------
+# The ONLY tolerated browser error: a request to a non-loopback URL that the test route itself aborted with the distinct code
+# net::ERR_BLOCKED_BY_CLIENT (events.Recorder.route), proven by a recorded route_abort event with the EXACT same URL. The
+# matching 'requestfailed' event and the Chromium console line 'Failed to load resource: net::ERR_BLOCKED_BY_CLIENT' (whose
+# console location is that URL) are then expected consequences. Everything else FAILs: any net::ERR_FAILED, any failed
+# request to a loopback host (127.0.0.0/8, ::1, localhost, 0.0.0.0) or to a URL without a matching abort record, pageerror,
+# any other console error, malformed or legacy (string) events, a missing event list.
+ALLOWED_ABORT_FAILURE = 'net::ERR_BLOCKED_BY_CLIENT'
+ALLOWED_ABORT_CONSOLE = 'Failed to load resource: net::ERR_BLOCKED_BY_CLIENT'
 
 
-def page_error_check(obs, label):
-    """The scenario must have recorded its browser error list (even when it failed) and the list must be empty."""
+def loopback_host(url):
+    host = (urlparse(url or '').hostname or '').strip('[]').lower()
+    if host in ('localhost', '0.0.0.0') or host.endswith('.localhost'):
+        return True
+    try:
+        return ipaddress.ip_address(host).is_loopback
+    except ValueError:
+        return False
+
+
+def browser_event_violations(events):
+    """Return the list of violations (empty = clean), failed requests first, then page errors, then the rest. Never raises."""
+    if not isinstance(events, list):
+        return ['browser event list not recorded']
+    bad, aborted = [], set()
+    req_bad, page_bad = [], []
+    for e in events:
+        if isinstance(e, dict) and e.get('source') == 'route_abort':
+            u = e.get('url')
+            if (isinstance(u, str) and urlparse(u).scheme in ('http', 'https') and urlparse(u).hostname and not loopback_host(u)
+                    and e.get('reason') == ABORT_REASON and isinstance(e.get('resource_type'), str) and e['resource_type']):
+                aborted.add(u)
+            else:
+                bad.append('route_abort malformed or for a loopback URL: %r' % (u,))
+    for e in events:
+        if not isinstance(e, dict):
+            bad.append('malformed event %r' % (e,))
+            continue
+        src, u = e.get('source'), e.get('url')
+        if src == 'route_abort':
+            continue
+        if src == 'requestfailed':
+            if e.get('failure') == ALLOWED_ABORT_FAILURE and u in aborted:
+                continue
+            req_bad.append('failed request %r (%r, %r)' % (u, e.get('failure'), e.get('resource_type')))
+        elif src == 'console':
+            if e.get('type') == 'error' and e.get('text') == ALLOWED_ABORT_CONSOLE and u in aborted:
+                continue
+            bad.append('console %s %r at %r' % (e.get('type'), e.get('text'), u))
+        elif src == 'pageerror':
+            page_bad.append('pageerror %s: %r' % (e.get('name'), e.get('message')))
+        else:
+            bad.append('unknown event source %r' % (src,))
+    return req_bad + page_bad + bad
+
+
+def page_error_check(obs, label, key='browser_events'):
+    """The scenario must have recorded its structured browser events (even when it failed) and they must be clean."""
     def check():
         require(isinstance(obs, dict) and 'execution_error' not in obs, 'scenario execution failed or missing')
-        errs = obs.get('page_errors')
-        require(isinstance(errs, list), '%s: browser error list not recorded' % label)
-        bad = browser_errors(errs)
-        require(not bad, '%s: browser errors %r' % (label, bad[:3]))
+        require(isinstance(obs.get(key), list), '%s: browser events not recorded' % label)
+        bad = browser_event_violations(obs[key])
+        require(not bad, '%s: %d browser error(s): %r' % (label, len(bad), bad[:3]))
     return check
 
 
@@ -257,9 +320,20 @@ def task_tab_checks(obs, phase='ci'):
         require(not bad, 'task tab run has non-PASS cases %r' % bad)
         require(set(got) == set(TASK_TAB_CASES), 'task tab cases differ from the required set: %r' % sorted(set(got) ^ set(TASK_TAB_CASES)))
 
+    def events_clean(viewport):
+        ev = obs.get('browser_events') if isinstance(obs, dict) else None
+        require(isinstance(ev, dict) and isinstance(ev.get(viewport), list), 'task tab %s browser events not recorded' % viewport)
+        bad = browser_event_violations(ev[viewport])
+        require(not bad, 'task tab %s: %d browser error(s): %r' % (viewport, len(bad), bad[:3]))
+
     out = {'task_tab_run_complete': run_complete}
     for k in TASK_TAB_CASES:
         out['task_tab_' + k] = (lambda k=k: (run_complete(), require(cases().get(k) == 'PASS', 'task tab case %s: %r' % (k, cases().get(k)))))
+    # The producer's own case status is not trusted for browser errors: the validator re-evaluates the recorded events.
+    out['task_tab_desktop_no_browser_errors'] = lambda: (run_complete(), require(cases().get('desktop_no_browser_errors') == 'PASS', 'desktop case'),
+                                                         events_clean('desktop'))
+    out['task_tab_mobile_no_browser_errors'] = lambda: (run_complete(), require(cases().get('mobile_no_browser_errors') == 'PASS', 'mobile case'),
+                                                        events_clean('mobile'))
     return out
 
 

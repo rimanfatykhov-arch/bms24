@@ -12,6 +12,11 @@ B = 'http://127.0.0.1:8080/pluginfile.php/1/local_kbacompany/communication_attac
 URLS = [B % (i, n) for i, n in enumerate(c.FILES, start=10)]
 
 
+# A genuine intentional abort as produced by events.Recorder (route abort + its two expected consequences).
+EXT = 'https://cdn.jsdelivr.net/npm/example@1.0.0/x.js'
+ABORTED = [{'source': 'route_abort', 'url': EXT, 'resource_type': 'script', 'reason': c.ABORT_REASON},
+           {'source': 'requestfailed', 'url': EXT, 'resource_type': 'script', 'failure': 'net::ERR_BLOCKED_BY_CLIENT'},
+           {'source': 'console', 'type': 'error', 'text': 'Failed to load resource: net::ERR_BLOCKED_BY_CLIENT', 'url': EXT}]
 DIRECT_LOC = 'http://127.0.0.1:8080/local/kbacompany/communication_center.php?uuid=A&tab=discussions&thread=T'
 
 
@@ -39,7 +44,7 @@ def attachments():
                                       'file_link_text': 'p02-direct-only.txt', 'downloads': ok_dl('p02-direct-only.txt')},
           'csrf_invalid_sesskey': {'http': 404, 'refusal_marker': True}, 'double_submit': {'center_posts': 1}}
     state = {'messages': [{'body': 'RC31 P02 double verify'}, {'body': 'x'}], 'orphan_files': 0}
-    return {'phase': 'verify', 'steps': st, 'page_errors': []}, state
+    return {'phase': 'verify', 'steps': st, 'browser_events': list(ABORTED)}, state
 
 
 def access():
@@ -52,18 +57,20 @@ def access():
         return out
     return {'expected_urls': URLS, 'logins': {'EA': 1, 'EB': 1}, 'ea_context_id_before': 7, 'ea_context_id_after': 7,
             'revoked_flag': True, 'reopened_flag': True, 'history': {'before': snapshot(), 'after_revoke': snapshot(), 'after_reopen': snapshot()},
-            'phases': {'ea_before': rows('ok'), 'eb': rows('deny'), 'anon': rows('login'), 'ea_revoked': rows('deny'), 'ea_reopened': rows('ok')}}
+            'phases': {'ea_before': rows('ok'), 'eb': rows('deny'), 'anon': rows('login'), 'ea_revoked': rows('deny'), 'ea_reopened': rows('ok')},
+            'browser_events': {'EA': list(ABORTED), 'EB': [], 'anon': []}}
 
 
 def oversize():
     return ({'steps': {'limits': {'form_maxbytes': 65536}, 'compact_oversize': {'request_sent': True, 'error_text': 'The file exceeds the permitted upload size.'},
                        'full_oversize_client': {'post_sent': False, 'file_validation': 'The file exceeds the permitted upload size.'},
-                       'full_oversize_server_direct': {'http': 200, 'error_in_page': True, 'sent_bytes': 102400}}, 'page_errors': []},
+                       'full_oversize_server_direct': {'http': 200, 'error_in_page': True, 'sent_bytes': 102400}}, 'browser_events': list(ABORTED)},
             {'messages': [{'body': 'x'}], 'orphan_files': 0})
 
 
 def tabs(status='PASS', drop=None):
-    return {'status': status, 'cases': [{'id': 'P01.ci.' + n, 'status': status} for n in c.TASK_TAB_CASES if n != drop]}
+    return {'status': status, 'cases': [{'id': 'P01.ci.' + n, 'status': status} for n in c.TASK_TAB_CASES if n != drop],
+            'browser_events': {'desktop': list(ABORTED), 'mobile': list(ABORTED)}}
 
 
 def failed(results):
@@ -133,7 +140,8 @@ class ContractTest(unittest.TestCase):
         a = access(); first = next(iter(a['phases']['eb'])); a['phases']['eb'][first] = {'http': 200, 'sha256': c.SHA[first.split('/')[-1]]}
         self.assertIn('download_other_company_denied', failed(c.evaluate(c.access_checks(a))))
         a = access(); a['expected_urls'] = []
-        self.assertEqual(len(c.access_checks(a)) - 1, len([k for k in failed(c.evaluate(c.access_checks(a))) if k != 'revocation_preserves_history']))
+        independent = ('revocation_preserves_history', 'access_no_browser_errors')  # do not depend on the URL set
+        self.assertEqual(len(c.access_checks(a)) - len(independent), len([k for k in failed(c.evaluate(c.access_checks(a))) if k not in independent]))
 
     def test_session_must_be_reused_and_revocation_applied(self):
         a = access(); a['logins']['EA'] = 3
@@ -209,27 +217,103 @@ class ContractTest(unittest.TestCase):
         self.assertIn('task_tab_desktop_no_browser_errors', c.task_tab_checks({}))
         self.assertIn('task_tab_mobile_no_browser_errors', c.task_tab_checks({}))
 
-    def test_attachment_and_oversize_page_errors_fail(self):
-        """Codex review P1 (Issue #82 comment 6872634357): page_errors were recorded but never evaluated."""
-        for errs in (['pageerror:TypeError:x'], ['console:Uncaught ReferenceError: M is not defined'], ['pageerror:Error:x', 'console:net::ERR_FAILED']):
-            with self.subTest(errs=errs):
-                o, s = attachments(); o['page_errors'] = errs
-                self.assertEqual(['attachments_no_browser_errors'], failed(c.evaluate(c.attachments_checks(o, s))))
-                o, s = oversize(); o['page_errors'] = errs
-                self.assertEqual(['oversize_no_browser_errors'], failed(c.evaluate(c.oversize_checks(o, s))))
-        for missing in (lambda o: o.pop('page_errors'), lambda o: o.__setitem__('page_errors', None), lambda o: o.__setitem__('page_errors', 'x')):
-            o, s = attachments(); missing(o)
+    # ---- Codex review of PR #96 (comment 6873684005): ERR_FAILED blanket exception, provenance of intentional aborts
+    def violations(self, extra, base=None):
+        return c.browser_event_violations(list(ABORTED if base is None else base) + list(extra))
+
+    def test_genuine_intentional_abort_is_the_only_tolerated_error(self):
+        self.assertEqual([], self.violations([]))
+        self.assertEqual([], c.browser_event_violations([]))
+        o, s = attachments(); self.assertEqual([], failed(c.evaluate(c.attachments_checks(o, s))))
+
+    def test_local_err_failed_fails(self):
+        for e in ({'source': 'console', 'type': 'error', 'text': 'net::ERR_FAILED http://127.0.0.1:8080/x.js', 'url': 'http://127.0.0.1:8080/x.js'},
+                  {'source': 'console', 'type': 'error', 'text': 'Failed to load resource: net::ERR_FAILED', 'url': 'http://127.0.0.1:8080/x.js'},
+                  {'source': 'requestfailed', 'url': 'http://127.0.0.1:8080/x.js', 'resource_type': 'script', 'failure': 'net::ERR_FAILED'},
+                  {'source': 'requestfailed', 'url': 'http://127.0.0.1:8080/x.js', 'resource_type': 'fetch', 'failure': 'net::ERR_ABORTED'},
+                  {'source': 'requestfailed', 'url': 'http://127.0.0.1:8080/x.js', 'resource_type': 'script', 'failure': 'net::ERR_BLOCKED_BY_CLIENT'},
+                  {'source': 'requestfailed', 'url': 'http://127.0.0.1:9/x.js', 'resource_type': 'script', 'failure': 'net::ERR_BLOCKED_BY_CLIENT'},
+                  {'source': 'requestfailed', 'url': 'http://localhost:8080/x.js', 'resource_type': 'script', 'failure': 'net::ERR_BLOCKED_BY_CLIENT'}):
+            with self.subTest(e=e):
+                self.assertTrue(self.violations([e]))
+        # even if a (forged) abort record exists for a loopback URL, it is refused and the failure stays a violation
+        for u in ('http://127.0.0.1:8080/x.js', 'http://127.0.0.1:9/x.js', 'http://[::1]:8080/x.js', 'http://localhost/x.js', 'http://0.0.0.0/x.js'):
+            with self.subTest(u=u):
+                forged = [{'source': 'route_abort', 'url': u, 'resource_type': 'script', 'reason': c.ABORT_REASON},
+                          {'source': 'requestfailed', 'url': u, 'resource_type': 'script', 'failure': 'net::ERR_BLOCKED_BY_CLIENT'}]
+                self.assertEqual(2, len(self.violations(forged, base=[])))
+
+    def test_unexpected_external_err_failed_fails(self):
+        for e in ({'source': 'requestfailed', 'url': 'https://evil.invalid/x.js', 'resource_type': 'script', 'failure': 'net::ERR_FAILED'},
+                  {'source': 'requestfailed', 'url': 'https://evil.invalid/x.js', 'resource_type': 'script', 'failure': 'net::ERR_BLOCKED_BY_CLIENT'},
+                  {'source': 'console', 'type': 'error', 'text': 'Failed to load resource: net::ERR_BLOCKED_BY_CLIENT', 'url': 'https://evil.invalid/x.js'},
+                  {'source': 'requestfailed', 'url': EXT, 'resource_type': 'script', 'failure': 'net::ERR_FAILED'},
+                  {'source': 'console', 'type': 'error', 'text': 'Failed to load resource: net::ERR_FAILED', 'url': EXT}):
+            with self.subTest(e=e):
+                self.assertTrue(self.violations([e]))
+
+    def test_similar_url_to_an_allowed_abort_fails(self):
+        for u in (EXT + '?x=1', EXT + '#f', EXT.replace('https:', 'http:'), EXT.replace('cdn.jsdelivr.net', 'cdn.jsdelivr.net.evil.invalid'),
+                  EXT + '/', EXT.upper(), 'https://cdn.jsdelivr.net/npm/example@1.0.0/y.js', ''):
+            with self.subTest(u=u):
+                self.assertTrue(self.violations([{'source': 'requestfailed', 'url': u, 'resource_type': 'script', 'failure': 'net::ERR_BLOCKED_BY_CLIENT'}]))
+                self.assertTrue(self.violations([{'source': 'console', 'type': 'error', 'text': 'Failed to load resource: net::ERR_BLOCKED_BY_CLIENT', 'url': u}]))
+
+    def test_missing_or_contradictory_abort_provenance_fails(self):
+        fail_only = [ABORTED[1], ABORTED[2]]  # consequences without the route abort record
+        self.assertEqual(2, len(c.browser_event_violations(fail_only)))
+        for bad_abort in (dict(ABORTED[0], reason='cdn'), dict(ABORTED[0], reason=None), dict(ABORTED[0], resource_type=''),
+                          dict(ABORTED[0], url=None), dict(ABORTED[0], url='ftp://cdn.jsdelivr.net/x.js'), {'source': 'route_abort'}):
+            with self.subTest(bad_abort=bad_abort):
+                self.assertTrue(c.browser_event_violations([bad_abort] + fail_only))
+        for evs in (None, 'x', {'a': 1}):
+            self.assertTrue(c.browser_event_violations(evs))
+        for legacy in ('console:Failed to load resource: net::ERR_FAILED', 'pageerror:TypeError', 1, None):
+            self.assertTrue(self.violations([legacy]))
+        self.assertTrue(self.violations([{'source': 'navigation', 'url': EXT}]))
+
+    def test_console_error_and_pageerror_fail(self):
+        for e in ({'source': 'pageerror', 'name': 'TypeError', 'message': 'x'},
+                  {'source': 'console', 'type': 'error', 'text': 'Uncaught ReferenceError: M is not defined', 'url': 'http://127.0.0.1:8080/lib/x.js'},
+                  {'source': 'console', 'type': 'error', 'text': 'Failed to load resource: the server responded with a status of 404 (Not Found)',
+                   'url': 'http://127.0.0.1:8080/x.js'}):
+            with self.subTest(e=e):
+                self.assertTrue(self.violations([e]))
+
+    def test_scenarios_evaluate_events_not_producer_status(self):
+        bad = {'source': 'requestfailed', 'url': 'http://127.0.0.1:8080/x.js', 'resource_type': 'script', 'failure': 'net::ERR_FAILED'}
+        o, s = attachments(); o['browser_events'] = o['browser_events'] + [bad]
+        self.assertEqual(['attachments_no_browser_errors'], failed(c.evaluate(c.attachments_checks(o, s))))
+        o, s = oversize(); o['browser_events'] = o['browser_events'] + [bad]
+        self.assertEqual(['oversize_no_browser_errors'], failed(c.evaluate(c.oversize_checks(o, s))))
+        a = access(); a['browser_events']['EB'] = [bad]
+        self.assertEqual(['access_no_browser_errors'], failed(c.evaluate(c.access_checks(a))))
+        for vp in ('desktop', 'mobile'):
+            t = tabs(); t['browser_events'][vp] = t['browser_events'][vp] + [bad]   # producer case still says PASS
+            self.assertEqual(['task_tab_%s_no_browser_errors' % vp], failed(c.evaluate(c.task_tab_checks(t))), vp)
+        for mutate in (lambda o: o.pop('browser_events'), lambda o: o.__setitem__('browser_events', None), lambda o: o.__setitem__('page_errors', [])):
+            o, s = attachments(); mutate(o)
+            if 'browser_events' in o and o['browser_events'] is not None:
+                continue
             self.assertIn('attachments_no_browser_errors', failed(c.evaluate(c.attachments_checks(o, s))))
-            o, s = oversize(); missing(o)
-            self.assertIn('oversize_no_browser_errors', failed(c.evaluate(c.oversize_checks(o, s))))
-        # external CDN requests aborted by the loopback route are not product errors (same rule as task tabs)
-        o, s = attachments(); o['page_errors'] = ['console:Failed to load resource: net::ERR_FAILED']
-        self.assertEqual([], failed(c.evaluate(c.attachments_checks(o, s))))
+        a = access(); del a['browser_events']['anon']
+        self.assertIn('access_no_browser_errors', failed(c.evaluate(c.access_checks(a))))
+        t = tabs(); del t['browser_events']['mobile']
+        self.assertIn('task_tab_mobile_no_browser_errors', failed(c.evaluate(c.task_tab_checks(t))))
+
+    def test_review_probe_and_never_raises(self):
+        # the exact probe of the review: legacy string list in the old key is not evidence of a clean page
+        self.assertIn('attachments_no_browser_errors', failed(c.evaluate({'k': c.page_error_check(
+            {'page_errors': ['console:net::ERR_FAILED http://127.0.0.1:8080/x.js']}, 'probe')} and
+            c.attachments_checks({'steps': attachments()[0]['steps'], 'page_errors': ['console:net::ERR_FAILED http://127.0.0.1:8080/x.js']}, attachments()[1]))))
+        self.assertEqual('FAIL', c.evaluate({'k': c.page_error_check({'page_errors': ['console:net::ERR_FAILED http://127.0.0.1:8080/x.js']}, 'probe')})['k']['status'])
+        for garbage in ([{'source': 'requestfailed', 'url': 5}], [{'source': 'route_abort', 'url': 5}], [{}], [[]]):
+            self.assertTrue(c.browser_event_violations(garbage))
 
     def test_required_check_names_complete(self):
         names = c.required_check_names()
         self.assertEqual(len(names), len(set(names)))
-        for k in ('attachments_no_browser_errors', 'oversize_no_browser_errors', 'task_tab_run_complete', 'task_tab_mobile_tap_target_44', 'csrf_invalid_sesskey_rejected', 'revocation_preserves_history',
+        for k in ('access_no_browser_errors', 'attachments_no_browser_errors', 'oversize_no_browser_errors', 'task_tab_run_complete', 'task_tab_mobile_tap_target_44', 'csrf_invalid_sesskey_rejected', 'revocation_preserves_history',
                   'download_other_company_denied', 'revoke_in_open_session_denied', 'oversize_nothing_stored', 'moodle_install'):
             self.assertIn(k, names)
 

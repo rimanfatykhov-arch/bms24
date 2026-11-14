@@ -62,16 +62,25 @@ NOT APPLICABLE only by the rules in the table. Small diff size never lowers the 
 - **Identity.** Every FAST/STANDARD/BROWSER artifact carries `identity.json` (`tools/ci/stamp_identity.py`): tier, target,
   head, base, profile, engine, run id/attempt, job and SHA256 of the report bytes. The gate compares it with the PR event
   head/base and this run id, the classification head/base with the event, and re-hashes the downloaded report.
-- **BROWSER completeness.** A BROWSER report must contain every name from `contract.required_check_names()` (40) with PASS,
-  carry the expected `dbtype` and overall PASS (40 checks since the Codex review); a report with an unrelated single PASS is incomplete.
+- **BROWSER completeness.** A BROWSER report must contain every name from `contract.required_check_names()` (41) with PASS,
+  carry the expected `dbtype` and overall PASS (41 checks since the Codex reviews); a report with an unrelated single PASS is incomplete.
 - **FULL selection.** Per FULL workflow *file* (`pr48-moodle-acceptance.yml`, `rc30-schema-repair.yml`,
   `rc30-corporate2613-repair.yml`, `bms24-ci.yml`) the newest `pull_request` run for the same head SHA, PR number and base SHA
   at event time is used; its latest attempt must be `success`. An older successful run never masks a newer failure,
   cancellation or unfinished run. The retained Corporate2613 workflow (historical expected FAIL) is not part of FULL.
-- **Browser errors (Codex review P1).** The attachment and oversize scenarios record uncaught page exceptions and console
-  errors for every phase, also on failure; `attachments_no_browser_errors` and `oversize_no_browser_errors` FAIL on any
-  error except `net::ERR_FAILED` console lines for external requests aborted by the loopback route (same rule as task tabs).
-  A missing error list is a FAIL. Runtime negative control: `negative-browser-page-error`. BROWSER now has 40 required checks.
+- **Browser errors (Codex reviews P1 and #96 comment 6873684005).** Every browser context uses `tools/ci/browser/events.py`:
+  the test route lets only `http://127.0.0.1:8080` through and aborts every other request with the distinct code
+  `blockedbyclient`, recording `{source: route_abort, url, resource_type, reason}`; every page records `requestfailed`
+  `{url, resource_type, failure}`, `pageerror` and console errors `{text, url}`. **Policy** (`contract.browser_event_violations`):
+  the only tolerated errors are the `requestfailed` (`net::ERR_BLOCKED_BY_CLIENT`) and console line
+  (`Failed to load resource: net::ERR_BLOCKED_BY_CLIENT`) of a URL with an exactly matching `route_abort` record that is
+  not a loopback host. Everything else FAILs: any `net::ERR_FAILED`, any failed request to 127.0.0.0/8, ::1, localhost or
+  0.0.0.0, a similar-but-different URL, missing/contradictory abort records, pageerror, any other console error, legacy or
+  malformed events, a missing event list. No blanket exceptions. Checks: `task_tab_desktop_no_browser_errors`,
+  `task_tab_mobile_no_browser_errors` (re-evaluated from events, producer status not trusted), `attachments_no_browser_errors`,
+  `oversize_no_browser_errors`, `access_no_browser_errors`. Runtime negative controls: `negative-browser-page-error`
+  (pageerror) and `negative-browser-failed-request` (a local script on 127.0.0.1:8080 whose response is cut short; the failed
+  request must be the reported cause). BROWSER has 41 required checks.
 - **Re-run provenance (Codex review P2).** Artifacts are named `...-a<run_attempt>`. For every required job the gate computes
   the attempt in which it actually executed (on *Re-run failed jobs* GitHub copies successful jobs into the new attempt with
   the original `started_at`; verified on runs 43561610462 and 43561610550). It reads only that attempt's artifact and requires
