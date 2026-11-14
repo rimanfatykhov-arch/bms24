@@ -1,0 +1,60 @@
+name: PR90 disposable Moodle rehearsal
+on:
+  pull_request:
+    branches: [main]
+    paths: ['tools/acceptance/pr90/**', '.github/workflows/pr90-disposable.yml']
+permissions:
+  contents: read
+jobs:
+  rehearsal:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 35
+    strategy:
+      fail-fast: false
+      matrix:
+        engine:
+          - {type: mariadb, image: 'mariadb:10.11.19@sha256:d769e37960821dfdcf096954f6e7ac89f747e116c1bba98e48edd265dfc7deae'}
+          - {type: mysqli, image: 'percona/percona-server:8.0.46-37@sha256:a4ba7d1afd325f40bc6d65b6455fb4f15388638dfa39e3b85f9755755fd9ec2d'}
+    services:
+      database:
+        image: ${{ matrix.engine.image }}
+        env: {MYSQL_ROOT_PASSWORD: isolated-ci-only, MYSQL_ROOT_HOST: '%'}
+        ports: ['3306:3306']
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -uroot -pisolated-ci-only"
+          --health-interval=5s --health-timeout=5s --health-retries=30
+    steps:
+      - uses: actions/checkout@v4
+        with: {path: candidate, fetch-depth: 0, persist-credentials: false}
+      - uses: actions/checkout@v4
+        with: {repository: moodle/moodle, ref: b27f0816159a7555a0b3ad9ff2f8f8ef701a29fa, path: moodle-core, persist-credentials: false}
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.1'
+          extensions: mysqli, intl, zip, gd, soap, mbstring, curl, sodium
+          ini-values: max_input_vars=5000, memory_limit=1024M
+          coverage: none
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - run: |
+          python -m pip install --quiet playwright==1.49.1
+          python -m playwright install --with-deps chromium
+      - name: Install package and rehearse complete synthetic restore
+        env:
+          MOODLE_ROOT: ${{ github.workspace }}/moodle-core
+          CANDIDATE_ROOT: ${{ github.workspace }}/candidate
+          TEST_ROOT: ${{ runner.temp }}/pr90
+          DBTYPE: ${{ matrix.engine.type }}
+          DBHOST: 127.0.0.1
+          DBPORT: '3306'
+          DBUSER: root
+          DBPASS: isolated-ci-only
+        run: python candidate/tools/acceptance/pr90/rehearsal.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pr90-rehearsal-${{ matrix.engine.type }}
+          path: |
+            ${{ runner.temp }}/pr90/public/
+          if-no-files-found: error
+          retention-days: 14

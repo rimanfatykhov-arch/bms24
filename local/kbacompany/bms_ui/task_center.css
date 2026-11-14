@@ -539,3 +539,16 @@
 @media(max-width:720px) {.bms24-app .bms24-task-center .bms24-task-column-options {grid-template-columns:repeat(2,minmax(0,1fr));}}
 /* RC31 Pilot 01: 44px tap target for Task Center tabs on touch screens; mouse/desktop layout unchanged. */
 @media (pointer:coarse) {.bms24-app nav.bms24-task-tabs a.bms24-task-tab[href] {min-height:44px;}}
+
+/* RC32 Agent3 (#83): the Actions/Tools dropdown overlays content instead of reflowing the page.
+   Before this rule the <details> menu expanded in flow and pushed every section below the
+   header/toolbar down by the menu height (measured 248px desktop / 300px mobile) and moved
+   the summary itself when the flex row re-wrapped. Desktop keeps an anchored dropdown
+   (right-aligned, matching the header/toolbar action clusters); small screens get a fixed
+   bottom sheet so the menu never shifts content and never clips the narrow viewport.
+   Presentation only: markup, actions, ACL and the legacy .bms-tui-menu are unchanged. */
+.bms24-app .bms24-task-menu[open] {z-index:30;}
+.bms24-app .bms24-task-menu-items {position:absolute;top:calc(100% + 6px);right:0;z-index:30;}
+@media (max-width:480px) {
+  .bms24-app .bms24-task-menu-items {position:fixed;top:auto;bottom:8px;left:8px;right:8px;min-width:0;max-height:60vh;overflow-y:auto;}
+}
