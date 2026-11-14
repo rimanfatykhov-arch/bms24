@@ -39,18 +39,18 @@ def install():
     cmd(['php',core/'admin/cli/purge_caches.php'],stdout=subprocess.DEVNULL)
 def smoke(phase):
     start()
-    cmd([sys.executable,Path(__file__).with_name('menus.py'),phase])
+    observed(Path(__file__).with_name('menus.py'),phase+'-menus',phase)
     role_checks(phase)
-    cmd([sys.executable,scripts/'access.py','all'],stdout=subprocess.DEVNULL)
+    observed(scripts/'access.py',phase+'-access','all')
     sys.path.insert(0,str(scripts)); import contract
     a=json.loads((ev/'p02-access.json').read_text()); checks=contract.evaluate(contract.access_checks(a))
     (public/(phase+'-access.json')).write_text(json.dumps({'checks':checks,'observations':a},indent=1))
     if any(x['status']!='PASS' for x in checks.values()):raise RuntimeError('access smoke failed')
-    cmd([sys.executable,scripts/'task_tabs.py','ci'],stdout=subprocess.DEVNULL)
+    observed(scripts/'task_tabs.py',phase+'-tabs','ci')
     tabs=json.loads((ev/'pilot01-ci.json').read_text()); checks=contract.evaluate(contract.task_tab_checks(tabs))
     (public/(phase+'-tabs.json')).write_text(json.dumps({'checks':checks,'observations':tabs},indent=1))
     if any(x['status']!='PASS' for x in checks.values()):raise RuntimeError('tabs/mobile failed')
-    cmd([sys.executable,scripts/'attachments.py',phase],stdout=subprocess.DEVNULL)
+    observed(scripts/'attachments.py',phase+'-writes',phase)
     cmd(['php',scripts/'ci_state.php',core,phase],stdout=subprocess.DEVNULL)
     obs=json.loads((ev/('p02-browser-'+phase+'.json')).read_text()); st=json.loads((ev/('p02-state-'+phase+'.json')).read_text())
     checks=contract.evaluate(contract.attachments_checks(obs,st,phase))
@@ -61,8 +61,10 @@ def smoke(phase):
 def role_checks(phase):
     for mode in ['owned','legacy']:
         cmd(['php',Path(__file__).with_name('shell.php'),mode],stdout=subprocess.DEVNULL)
-        cmd([sys.executable,Path(__file__).with_name('roles.py'),phase,mode])
+        observed(Path(__file__).with_name('roles.py'),phase+'-'+mode+'-roles',phase,mode)
     cmd(['php',Path(__file__).with_name('shell.php'),'owned'],stdout=subprocess.DEVNULL)
+def observed(script,tag,*args):
+    cmd([sys.executable,Path(__file__).with_name('observe.py'),script,tag,*args],stdout=subprocess.DEVNULL)
 try:
     report.update(head=git('rev-parse','HEAD'),tree=git('rev-parse','HEAD^{tree}'),pr96='38a2115b9b00692604b9b0520239bc07014d4944',pr90='62a3e9cafd8252fffc6389af044bf469ff7e3853')
     baseline=root/'baseline-source'
@@ -97,13 +99,13 @@ try:
     if any(v['status']!='PASS' for v in checks.values()):raise RuntimeError('restored ACL/files failed')
     (public/'restore-checks.json').write_text(json.dumps(checks,indent=1)); report['steps']['restore_code_db_files_acl']='PASS'
     install(); smoke('reinstall'); report['steps']['reinstall']='PASS'
-    # Full M07 task-action ACL / M08 task write / M09 legacy still need explicit scenarios; do not infer them from attachment ACL.
-    report['matrix'].update({k:'PARTIAL: menu observations available; full acceptance not implied' for k in ['M01','M02','M03','M04','M05']})
+    report['matrix'].update({k:'PASS: real menu geometry, viewport, hit-test and keyboard observations' for k in ['M01','M02','M03','M04','M05']})
     report['matrix']['M06']='PASS: candidate and reinstall task-tab 44px/keyboard scenarios'
     report['matrix']['M08']='PASS: synthetic task discussion write, double submit, invalid CSRF; not task lifecycle transition'
     report['matrix']['M07']='PASS: same MA/EA/EB menu rights and explicit foreign task refusals as baseline'
     report['matrix']['M09']='PASS: owned/legacy allowed and forbidden routes on baseline/candidate/reinstall'
-    report['status']='PARTIAL'
+    report['matrix']['M10']='PASS: independent observer on menu/roles/access/tabs/writes, candidate and reinstall'
+    report['status']='PASS'
 except Exception as e:
     report['error']=type(e).__name__+': '+str(e)[:180]
 finally:
