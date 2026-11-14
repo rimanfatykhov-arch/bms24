@@ -364,8 +364,9 @@
   min-width:0;
 }
 .bms24-app .bms24-task-center .bms-task3-layout .bms-task2-aside > .bms24-task-panel {
-  position:sticky;
-  top:76px;
+  /* Sibling sticky panels overlap the discussion composer when its history scrolls. */
+  position:relative;
+  top:auto;
   max-height:calc(100vh - 96px);
   display:flex;
   flex-direction:column;
