@@ -354,6 +354,9 @@ final class communication_service_test extends \advanced_testcase {
         $upload = ['name' => ['one.txt', 'two.txt'], 'type' => ['text/plain', 'text/plain'],
             'tmp_name' => ['/tmp/one', '/tmp/two'], 'error' => [UPLOAD_ERR_OK, UPLOAD_ERR_OK], 'size' => [3, 4]];
         $files = communication_service::normalise_uploads($upload);
+        $this->assertSame([], communication_service::normalise_uploads(['error' => UPLOAD_ERR_NO_FILE]));
+        $legacy = ['name' => 'legacy.txt', 'tmp_name' => '/tmp/legacy', 'error' => UPLOAD_ERR_OK, 'size' => 3];
+        $this->assertSame([$legacy], communication_service::normalise_uploads($legacy));
         $this->assertSame(['one.txt', 'two.txt'], array_column($files, 'name'));
         $this->assertSame([3, 4], array_column($files, 'size'));
         $missing = $upload; unset($missing['size'][1]);

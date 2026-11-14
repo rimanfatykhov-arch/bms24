@@ -67,7 +67,8 @@
                 if (busy) { return; }
                 var invalid = validate();
                 if (invalid) { showError(invalid); return; }
-                var target = new URL(form.action, window.location.href);
+                // The Moodle POST form has an input named "action", which shadows form.action.
+                var target = new URL(form.getAttribute('action'), window.location.href);
                 if (target.origin !== window.location.origin || target.pathname !== window.location.pathname) {
                     showError(message('send')); return;
                 }

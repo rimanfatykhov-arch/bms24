@@ -6,7 +6,8 @@ import uuid
 from pathlib import Path
 from urllib.parse import urlparse
 from playwright.sync_api import sync_playwright
-from contract import local_url, require, MULTI_CONTENT
+from contract import local_url, require, MULTI_CONTENT, multiattachment_event_violations
+from events import Recorder
 
 require(os.environ.get('BMS_CI_BROWSER') == '1' or os.environ.get('BMS_RECOVERY_BROWSER') == '1', 'Isolated fixture required')
 root = Path(os.environ['EVIDENCE'])
@@ -20,20 +21,11 @@ with sync_playwright() as pw:
     try:
         for width in (320, 1440):
             context = browser.new_context(viewport={'width': width, 'height': 900})
-            def safe_route(route):
-                try:
-                    local_url(route.request.url)
-                except RuntimeError:
-                    route.abort()
-                    return
-                route.continue_()
-            context.route('**/*', safe_route)
+            recorder = Recorder().install(context)
             page = context.new_page()
-            errors = []
-            injecting_failure = [False]
-            page.on('pageerror', lambda error: errors.append(str(error)))
-            page.on('response', lambda response: errors.append('HTTP ' + str(response.status))
-                    if response.status >= 500 and not injecting_failure[0] else None)
+            page.on('response', lambda response: recorder.events.append({'source': 'http_error',
+                    'url': response.url, 'method': response.request.method, 'status': response.status})
+                    if response.status >= 500 else None)
             page.goto(local_url(base + '/login/index.php'), wait_until='networkidle')
             page.locator('#username').fill(actor['username'])
             page.locator('#password').fill(actor['password'])
@@ -44,6 +36,8 @@ with sync_playwright() as pw:
             require(response.status == 200, 'Task HTTP error')
             form = page.locator('form[data-bms-discussion-composer]').first
             require(form.count() == 1, 'Composer missing')
+            require(form.locator('input[name=action][value=discussionpost]').count() == 1,
+                    'Named action control missing: form-property shadow regression not exercised')
             token = 'multi-' + uuid.uuid4().hex
             files = [{'name': token + '-' + str(n) + '.txt', 'mimeType': 'text/plain',
                       'buffer': MULTI_CONTENT[n]} for n in (1, 2, 3)]
@@ -60,11 +54,21 @@ with sync_playwright() as pw:
             require(field.evaluate('e => Array.from(e.files).map(f=>f.name)') == [files[0]['name'], files[2]['name']], 'Removal changed wrong file')
             # Negative controls: HTTP500 and redirect must not be reported as successful sends.
             controls = []
+            original_action = form.get_attribute('action')
+            redirect_requests = []
+            page.on('request', lambda request: redirect_requests.append(request.url)
+                    if '/__bms_negative_redirect_' in urlparse(request.url).path else None)
             for status in (500, 302):
-                injecting_failure[0] = True
+                # Unique URL ties tolerated errors only to this fulfilled test request, never to
+                # the whole phase or all requests sharing the production handler path.
+                injected_url = local_url(original_action + '&bmsnegative=' + token + '-' + str(status))
+                redirect_target = local_url(base + '/__bms_negative_redirect_' + token) if status == 302 else ''
+                form.evaluate('(f, url) => f.setAttribute("action", url)', injected_url)
                 def failure(route):
-                    if route.request.method == 'POST':
-                        route.fulfill(status=status, headers={'Location': base + '/login/index.php'} if status == 302 else {}, body='Not accepted')
+                    if route.request.method == 'POST' and route.request.url == injected_url:
+                        recorder.events.append({'source': 'test_injected_response', 'url': injected_url,
+                                                'method': 'POST', 'status': status, 'location': redirect_target})
+                        route.fulfill(status=status, headers={'Location': redirect_target} if status == 302 else {}, body='Not accepted')
                     else:
                         route.fallback()
                 page.route('**/local/kbacompany/tasks.php*', failure)
@@ -73,11 +77,14 @@ with sync_playwright() as pw:
                 require(form.locator('textarea').input_value() == text, 'Failure lost text')
                 require(field.evaluate('e => e.files.length') == 2, 'Failure lost files')
                 require(not form.locator('button[type=submit]').is_disabled(), 'Failure prevents explicit retry')
-                controls.append({'http': status, 'text_retained': form.locator('textarea').input_value() == text,
+                page.wait_for_load_state('networkidle')
+                controls.append({'http': status, 'url': injected_url, 'text_retained': form.locator('textarea').input_value() == text,
                                  'files_retained': field.evaluate('e => e.files.length'),
+                                 'location': redirect_target, 'redirect_requests': list(redirect_requests),
                                  'error_visible': form.locator('[data-bms-discussion-error]').is_visible()})
+                require(not redirect_requests, 'Automatic redirect was requested')
                 page.unroute('**/local/kbacompany/tasks.php*', failure)
-                injecting_failure[0] = False
+            form.evaluate('(f, url) => f.setAttribute("action", url)', original_action)
             posts = []
             replies = []
             def capture_reply(response):
@@ -113,13 +120,14 @@ with sync_playwright() as pw:
                 downloads.append({'name': file['name'], 'url': link.get_attribute('href'),
                                   'http': download.status, 'sha256': digest})
             require(page.get_by_role('link', name=files[1]['name'], exact=True).count() == 0, 'Removed attachment stored')
+            errors = multiattachment_event_violations(recorder.events, controls)
             require(not errors, 'Unexpected browser or server error: ' + repr(errors))
             result['cases'].append({'width': width, 'status': 'PASS', 'downloads': downloads,
                                    'negative_controls': controls, 'selected_first': selected_first,
                                    'selected_second': selected_second, 'post_count': len(posts),
                                    'message_count': page.get_by_text(text, exact=True).count(),
                                    'removed_file_count': page.get_by_role('link', name=files[1]['name'], exact=True).count(),
-                                   'browser_errors': errors})
+                                   'browser_errors': errors, 'browser_events': recorder.events})
             context.close()
         result['status'] = 'PASS'
     except Exception as error:
@@ -127,6 +135,8 @@ with sync_playwright() as pw:
         if 'page' in locals() and not page.is_closed():
             try:
                 result['diagnostic'] = {'composer_error': page.locator('[data-bms-discussion-error]').all_text_contents(),
+                                        'browser_events': recorder.events if 'recorder' in locals() else None,
+                                        'form_route': form.evaluate('(f) => ({actionAttribute:f.getAttribute("action"), actionPropertyType:typeof f.action, pathname:location.pathname, origin:location.origin})') if 'form' in locals() else None,
                                         'post_replies': replies if 'replies' in locals() else [],
                                         'post_count': len(posts) if 'posts' in locals() else 0}
                 page.screenshot(path=str(root / 'multiattachment-failure.png'), full_page=True)

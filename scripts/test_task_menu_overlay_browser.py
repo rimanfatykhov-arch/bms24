@@ -101,8 +101,33 @@ def run():
                         page.wait_for_function('(s) => document.querySelector(s).open', arg=MENU)
                         page.wait_for_timeout(50)
                         after = geometry(page)
-                        stable(before, after)
                         box = panel.bounding_box()
+                        diagnostics = panel.evaluate("""(e) => {
+                            function describe(node) {
+                                const s=getComputedStyle(node), r=node.getBoundingClientRect();
+                                return {tag:node.tagName,id:node.id,classes:node.className,
+                                    box:{x:r.x,y:r.y,width:r.width,height:r.height},
+                                    position:s.position,top:s.top,left:s.left,right:s.right,bottom:s.bottom,
+                                    width:s.width,minWidth:s.minWidth,maxWidth:s.maxWidth,maxHeight:s.maxHeight,
+                                    padding:s.padding,borderWidth:s.borderWidth,
+                                    margin:s.margin,boxSizing:s.boxSizing,transform:s.transform,
+                                    translate:s.translate,scale:s.scale,filter:s.filter,
+                                    backdropFilter:s.backdropFilter,contain:s.contain,
+                                    willChange:s.willChange,overflowX:s.overflowX,overflowY:s.overflowY,
+                                    inlineStyle:node.getAttribute('style')};
+                            }
+                            const chain=[];let parent=e.parentElement;
+                            while(parent){chain.push(describe(parent));parent=parent.parentElement;}
+                            return {panel:describe(e),ancestors:chain,viewport:{innerWidth:innerWidth,
+                                innerHeight:innerHeight,scrollX:scrollX,scrollY:scrollY,
+                                visual:window.visualViewport?{width:visualViewport.width,
+                                    height:visualViewport.height,offsetLeft:visualViewport.offsetLeft,
+                                    offsetTop:visualViewport.offsetTop,scale:visualViewport.scale}:null}};
+                        }""")
+                        report.setdefault('geometry_diagnostics', []).append({'width':width,'menu':name,
+                            'before':before,'after':after,'diagnostics':diagnostics})
+                        page.screenshot(path=str(evidence / ('menu-' + SHELL + '-' + name + '-' + str(width) + '.png')))
+                        stable(before, after)
                         require(box and box['x'] >= -1 and box['y'] >= -1
                             and box['x'] + box['width'] <= width + 1
                             and box['y'] + box['height'] <= 901, 'menu outside viewport')

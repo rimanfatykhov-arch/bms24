@@ -83,8 +83,15 @@ class ContractTest(unittest.TestCase):
             return {'status': 'PASS', 'cases': [
                 {'width': width, 'status': 'PASS', 'selected_first': 2, 'selected_second': 3,
                  'post_count': 1, 'message_count': 1, 'removed_file_count': 0, 'browser_errors': [],
-                 'negative_controls': [{'http': code, 'text_retained': True, 'files_retained': 2,
+                 'negative_controls': [{'http': code, 'url': 'http://127.0.0.1:8080/local/kbacompany/tasks.php?bmsnegative=multi-test-%d' % code,
+                                        'location': 'http://127.0.0.1:8080/__bms_negative_redirect_multi-test' if code == 302 else '',
+                                        'redirect_requests': [],
+                                        'text_retained': True, 'files_retained': 2,
                                         'error_visible': True} for code in (500, 302)],
+                 'browser_events': [{'source': 'test_injected_response', 'method': 'POST', 'status': code,
+                                     'location': 'http://127.0.0.1:8080/__bms_negative_redirect_multi-test' if code == 302 else '',
+                                     'url': 'http://127.0.0.1:8080/local/kbacompany/tasks.php?bmsnegative=multi-test-%d' % code}
+                                    for code in (500, 302)],
                  'downloads': [{'name': 'synthetic-%d.txt' % n, 'url': B % (n, 'synthetic-%d.txt' % n),
                                 'http': 200, 'sha256': c.hashlib.sha256(c.MULTI_CONTENT[n]).hexdigest()}
                                for n in (1, 3)]} for width in (320, 1440)]}
@@ -100,6 +107,35 @@ class ContractTest(unittest.TestCase):
             obs = good(); obs['cases'][0]['downloads'][0][key] = value
             self.assertTrue(failed(c.evaluate(c.multiattachment_checks(obs, 0))), key)
         self.assertIn('multiattachment_complete', c.required_check_names())
+
+    def test_multiattachment_errors_need_exact_injection_provenance(self):
+        urls = {code: 'http://127.0.0.1:8080/local/kbacompany/tasks.php?bmsnegative=multi-test-%d' % code for code in (500, 302)}
+        target = 'http://127.0.0.1:8080/__bms_negative_redirect_multi-test'
+        controls = [{'http': code, 'url': urls[code], 'location': target if code == 302 else '',
+                     'redirect_requests': []} for code in (500, 302)]
+        markers = [{'source': 'test_injected_response', 'method': 'POST', 'status': code, 'url': urls[code],
+                    'location': target if code == 302 else ''} for code in (500, 302)]
+        consequences = [
+            {'source': 'http_error', 'method': 'POST', 'status': 500, 'url': urls[500]},
+            {'source': 'console', 'type': 'error', 'text': 'Failed to load resource: the server responded with a status of 500 (Internal Server Error)', 'url': urls[500]},
+            {'source': 'requestfailed', 'failure': 'net::ERR_FAILED', 'resource_type': 'fetch', 'url': urls[302]},
+            {'source': 'console', 'type': 'error', 'text': 'Failed to load resource: net::ERR_FAILED', 'url': urls[302]}]
+        self.assertEqual([], c.multiattachment_event_violations(markers + consequences + ABORTED, controls))
+        target_console = dict(consequences[3], url=target)
+        self.assertEqual([], c.multiattachment_event_violations(markers + consequences[:3] + [target_console], controls))
+        self.assertTrue(c.multiattachment_event_violations(markers + consequences + [target_console], controls))
+        self.assertTrue(c.multiattachment_event_violations(markers + [dict(target_console, url='http://127.0.0.1:8080/login/index.php')], controls))
+        followed = copy.deepcopy(controls); followed[1]['redirect_requests'] = [target]
+        self.assertTrue(c.multiattachment_event_violations(markers + [target_console], followed))
+        # Missing provenance, excess consequences, unrelated requests and programming errors all fail.
+        for events in [consequences, markers + consequences + [consequences[2]], markers + [markers[0]],
+                       markers + [{'source': 'pageerror', 'message': 'broken'}],
+                       markers + [{'source': 'console', 'type': 'error', 'text': 'broken code', 'url': urls[500]}],
+                       markers + [dict(consequences[2], url='http://127.0.0.1:8080/local/kbacompany/tasks.php')],
+                       markers + [dict(consequences[2], resource_type='document')],
+                       markers + [dict(consequences[0], status=503)],
+                       markers + [dict(consequences[2], url=[])], None]:
+            self.assertTrue(c.multiattachment_event_violations(events, controls))
 
     def test_complete_valid_observations_pass(self):
         o, s = attachments(); self.assertEqual([], failed(c.evaluate(c.attachments_checks(o, s))))

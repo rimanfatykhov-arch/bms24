@@ -353,6 +353,79 @@ def task_tab_checks(obs, phase='ci'):
     return out
 
 
+def multiattachment_event_violations(events, controls):
+    """Apply the usual strict Recorder policy, with bounded provenance for two injected replies.
+
+    Only a unique bmsnegative URL actually fulfilled by the test can account for one
+    known Chromium consequence of each type. No time-window or handler-wide exclusion.
+    """
+    if not isinstance(events, list) or not isinstance(controls, list):
+        return ['multiattachment browser events or controls missing']
+    expected, markers, bad, locations, redirect_sources = {}, {}, [], {}, {}
+    for control in controls:
+        try:
+            url = local_url(control.get('url', ''))
+            parsed = urlparse(url)
+            token = dict(parse_qsl(parsed.query)).get('bmsnegative', '')
+            code = control.get('http')
+            require(parsed.path == '/local/kbacompany/tasks.php' and code in (500, 302)
+                    and token.startswith('multi-') and token.endswith('-' + str(code)) and url not in expected,
+                    'invalid injection URL')
+            expected[url] = code
+            require(control.get('redirect_requests') == [], 'redirect requests missing or automatic redirect followed')
+            location = control.get('location')
+            if code == 302:
+                require(location == 'http://127.0.0.1:8080/__bms_negative_redirect_' + token[:-4],
+                        'redirect target does not match unique injected request')
+                local_url(location)
+                redirect_sources[location] = url
+            else:
+                require(location == '', 'unexpected redirect in HTTP 500 control')
+            locations[url] = location
+        except Exception:
+            bad.append('missing or invalid negative-control URL')
+    for event in events:
+        if isinstance(event, dict) and event.get('source') == 'test_injected_response':
+            url = event.get('url')
+            if (not isinstance(url, str) or url not in expected or event.get('method') != 'POST'
+                    or event.get('status') != expected[url] or event.get('location') != locations.get(url)):
+                bad.append('unproven injected response')
+            else:
+                markers[url] = markers.get(url, 0) + 1
+    if set(markers) != set(expected) or any(count != 1 for count in markers.values()):
+        bad.append('each negative response must actually be injected once')
+    remaining, consumed = [], set()
+    for event in events:
+        if not isinstance(event, dict):
+            remaining.append(event); continue
+        src, url = event.get('source'), event.get('url')
+        if src == 'test_injected_response':
+            continue
+        if not isinstance(src, str) or not isinstance(url, str):
+            remaining.append(event); continue
+        # Chromium may locate the redirect:error console at Location rather than request URL.
+        # This alias is allowed only for console, only for the exact proven synthetic target.
+        provenance_url = redirect_sources.get(url, url) if src == 'console' else url
+        code = expected.get(provenance_url) if markers.get(provenance_url) == 1 else None
+        key = (src, provenance_url)
+        allowed = False
+        if code == 500 and src == 'http_error':
+            allowed = event.get('method') == 'POST' and event.get('status') == 500
+        elif code == 500 and src == 'console':
+            allowed = event.get('type') == 'error' and event.get('text') in (
+                'Failed to load resource: the server responded with a status of 500 (Internal Server Error)',
+                'Failed to load resource: the server responded with a status of 500 ()')
+        elif code == 302 and src == 'requestfailed':
+            allowed = event.get('resource_type') == 'fetch' and event.get('failure') == 'net::ERR_FAILED'
+        elif code == 302 and src == 'console':
+            allowed = event.get('type') == 'error' and event.get('text') == 'Failed to load resource: net::ERR_FAILED'
+        if allowed and key not in consumed:
+            consumed.add(key)
+        else:
+            remaining.append(event)
+    return bad + browser_event_violations(remaining)
+
+
 def multiattachment_checks(obs, exitcode=None):
     """Require real runs on both viewports; producer PASS alone is never sufficient."""
     def complete():
@@ -371,6 +444,8 @@ def multiattachment_checks(obs, exitcode=None):
             require(isinstance(controls, list) and [r.get('http') for r in controls] == [500, 302], 'negative controls missing')
             require(all(r.get('text_retained') is True and r.get('files_retained') == 2 and r.get('error_visible') is True
                         for r in controls), 'negative control lost draft or accepted failure')
+            violations = multiattachment_event_violations(row.get('browser_events'), controls)
+            require(not violations, 'multiattachment browser events: %r' % violations[:3])
             downloads = row.get('downloads')
             require(isinstance(downloads, list) and len(downloads) == 2, 'both attachment downloads required')
             for download, index in zip(downloads, (1, 3)):

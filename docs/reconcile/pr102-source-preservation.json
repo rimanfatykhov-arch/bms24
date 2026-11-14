@@ -1,0 +1,34 @@
+{
+  "scope": "exact intentional source updates; not runtime or release acceptance",
+  "base_sha": "01af6405bcb7db73f67cb45fee837ba97b8c6ed3",
+  "normalization": "CRLF to LF only",
+  "files": [
+    {
+      "path": "local/kbacompany/classes/local/communication_service.php",
+      "before_sha256_lf": "015aeedf79583a2f484b2695a644c85043cec3f7e180074eb6fa9326a0d8f826",
+      "after_sha256_lf": "8310d2087d70b6ef141af73cec3879ee021f5245e3d68b12cd147cc76b8a0a46"
+    },
+    {
+      "path": "local/kbacompany/lang/en/local_kbacompany.php",
+      "before_sha256_lf": "8ab7b992158461cf8f495e3e053544f306d0e1a9901630ec9cc9ba78ac50d377",
+      "after_sha256_lf": "0494fad97271909666a779281d1eb25944b8cc9bf55e1df5ff73f356922c8dc1"
+    },
+    {
+      "path": "local/kbacompany/lang/ru/local_kbacompany.php",
+      "before_sha256_lf": "740d13d4f93f39c538c218bf4877995f294697ed4c570f767a9ed8cbda9a095d",
+      "after_sha256_lf": "6dd439078e4a5afa7d409d162a09bf008795d7e5336ab72a80cc59b7de3bc274"
+    },
+    {
+      "path": "local/kbacompany/styles.css",
+      "before_sha256_lf": "90343cc003d3921c72d45f8414cfc79651007d2ff380d9afa771a67e964f532e",
+      "after_sha256_lf": "3e9747d5db4fc41131e324811c5cd9b70c1e886f864fbb4403a988f987613bdc"
+    },
+    {
+      "path": "local/kbacompany/tests/communication_service_test.php",
+      "before_sha256_lf": "992e1265a9f4832d7a6a6e223b06b57a0a0da0d4d353a8f4bd71411168d9eef8",
+      "after_sha256_lf": "d8d27f74f3caa377a01ac0dc6072e7cadb2368532c0bf077014fa35dcaef95bd"
+    }
+  ],
+  "source_basis_sha": "69b57199e27e3c1f34eff9e82e1112fe8135337d",
+  "reviewed_content": "Exact after hashes include the legacy no-file compatibility follow-up on source_basis_sha; release SHA is recorded by the release card."
+}

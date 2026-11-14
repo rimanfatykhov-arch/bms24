@@ -368,9 +368,12 @@ class communication_service {
     public static function normalise_uploads(?array $upload): array {
         if ($upload === null) { return []; }
         if (!is_array($upload['name'] ?? null)) {
+            if (!array_key_exists('error', $upload) || !is_scalar($upload['error'])) { self::fail('upload'); }
             foreach (['name', 'error', 'tmp_name', 'size', 'type'] as $field) {
-                if (!array_key_exists($field, $upload) || !is_scalar($upload[$field])) { self::fail('upload'); }
+                if (array_key_exists($field, $upload) && !is_scalar($upload[$field])) { self::fail('upload'); }
             }
+            // Keep the legacy explicit no-file sentinel and optional MIME type compatible;
+            // validated_upload remains authoritative for an actual file's required fields.
             return (int)$upload['error'] === UPLOAD_ERR_NO_FILE ? [] : [$upload];
         }
         $files = [];
