@@ -293,16 +293,31 @@ engine.watchdog(root,config,config['controller_pid'])
                 self.assertIsNone(process.poll());time.sleep(.05)
             self.assertIsNotNone(root,'controller never reached safe kill checkpoint')
             self.assertTrue((root/'maintenance.txt').exists())
-            os.kill(process.pid,signal.SIGKILL);process.wait(timeout=5)
-            until=time.monotonic()+10
-            while time.monotonic()<until and not (root/'done.json').exists():time.sleep(.05)
-            self.assertTrue((root/'watchdog.json').exists())
-            self.assertEqual(json.loads((root/'result.json').read_text())['status'],'FAIL')
-            self.assertEqual((root/'clone/code.txt').read_text(),'SYNTHETIC BASELINE CODE\n')
-            self.assertEqual((root/'cron.txt').read_text(),'SYNTHETIC CRON ENABLED\n')
-            self.assertFalse((root/'maintenance.txt').exists())
-            self.assertEqual(json.loads((root/'clone/business.json').read_text()),['baseline','new-business-record'])
-            self.assertEqual((root/'clone/file.txt').read_text(),'baseline file\nnew user file\n')
-            self.assertTrue((root/'backup.json').exists())
+            os.kill(process.pid,signal.SIGKILL)
+            # Deliberately DO NOT poll/wait: the child must remain an unreaped
+            # zombie while the detached watchdog restores the fixture.
+            procstat=Path('/proc/%d/stat'%process.pid)
+            try:
+                until=time.monotonic()+5
+                while time.monotonic()<until:
+                    if procstat.read_text().rsplit(')',1)[1].split()[0]=='Z':break
+                    time.sleep(.02)
+                self.assertEqual(procstat.read_text().rsplit(')',1)[1].split()[0],'Z')
+                until=time.monotonic()+10
+                while time.monotonic()<until and not (root/'done.json').exists():time.sleep(.05)
+                self.assertTrue((root/'watchdog.json').exists())
+                self.assertEqual(json.loads((root/'result.json').read_text())['status'],'FAIL')
+                self.assertEqual((root/'clone/code.txt').read_text(),'SYNTHETIC BASELINE CODE\n')
+                self.assertEqual((root/'cron.txt').read_text(),'SYNTHETIC CRON ENABLED\n')
+                self.assertFalse((root/'maintenance.txt').exists())
+                self.assertEqual(json.loads((root/'clone/business.json').read_text()),['baseline','new-business-record'])
+                self.assertEqual((root/'clone/file.txt').read_text(),'baseline file\nnew user file\n')
+                self.assertTrue((root/'backup.json').exists())
+                self.assertTrue((root/'done.json').exists())
+                self.assertEqual(json.loads((root/'watchdog.json').read_text())['status'],'RECOVERED')
+                self.assertEqual(procstat.read_text().rsplit(')',1)[1].split()[0],'Z')
+            finally:
+                # Reap only after recovery and data assertions, including on failure.
+                process.wait(timeout=5)
 
 if __name__=='__main__':unittest.main()
