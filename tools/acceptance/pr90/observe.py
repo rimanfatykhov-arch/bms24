@@ -2,12 +2,20 @@
 import ipaddress,json,os,runpy,sys
 from pathlib import Path
 from urllib.parse import urlparse
-from playwright.sync_api import BrowserContext,Browser,Route
+from playwright.sync_api import BrowserContext,Browser,Route,Page
 if os.environ.get('GITHUB_ACTIONS')!='true' or os.environ.get('BMS_CI_BROWSER')!='1':raise SystemExit('CI only')
 script=Path(sys.argv[1]).resolve();tag=sys.argv[2];args=sys.argv[3:]
 pages=[];original=BrowserContext.new_page
 expected_external={'https://cdn.jsdelivr.net/npm/mathjax@2.7.9/MathJax.js?delayStartupUntil=configured'}
 original_abort=Route.abort
+original_goto=Page.goto
+
+def goto(self,*args,**kwargs):
+    # Login submit must not cancel still-running Moodle initialization XHRs.
+    # Synchronize navigation instead of exempting local ERR_ABORTED events.
+    kwargs.setdefault('wait_until','networkidle')
+    return original_goto(self,*args,**kwargs)
+Page.goto=goto
 
 def abort(self,*args,**kwargs):
     # Observe the actual explicit abort invocation, not an inferred failure string.
