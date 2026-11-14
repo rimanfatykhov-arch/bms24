@@ -14,4 +14,3 @@
 *.jpg binary
 *.jpeg binary
 *.pdf binary
-/tools/backup/*.sh text eol=lf

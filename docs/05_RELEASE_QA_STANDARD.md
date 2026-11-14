@@ -1,5 +1,3 @@
-> Операционная точка входа: [единый стандарт backup/restore/release](deploy/BACKUP_RELEASE_STANDARD.md). Исторические версии и окна ниже не являются текущим разрешением.
-
 # BMS24 Release & QA Standard — Codex
 
 ## Publication acceptance (Issue63)
