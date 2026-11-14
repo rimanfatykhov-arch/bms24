@@ -29,6 +29,9 @@ with sync_playwright() as pw:
             p.goto(base+'/login/index.php');p.locator('#username').fill(a['username']);p.locator('#password').fill(a['password']);p.locator('#loginbtn').click();p.wait_for_load_state('networkidle')
             response=p.goto(url,wait_until='networkidle');require(response.status==200,'task HTTP status')
             for method in ['pointer','keyboard']:
+                # tasks.php:253 intentionally redirects a successful discussionpost to tab=discussion.
+                # Return to overview explicitly to test the compact composer again, not a different form.
+                response=p.goto(url,wait_until='networkidle');require(response.status==200,'compact overview HTTP status')
                 message='discussion-regression-'+phase+'-'+mode+'-'+str(width)+'-'+method
                 form=p.locator('form:has(input[name=action][value=discussionpost])').first
                 textarea=form.locator('textarea');button=form.locator('button[type=submit]')
@@ -51,7 +54,7 @@ with sync_playwright() as pw:
                 require(navigation.value.status<400,'write navigation failed')
                 p.wait_for_load_state('networkidle');p.reload(wait_until='networkidle')
                 require(p.get_by_text(message,exact=True).count()==1,'message not persisted exactly once after reload')
-                rows.append({'width':width,'method':method,'message':message,'geometry':geometry,'persisted_exactly_once':True})
+                rows.append({'width':width,'method':method,'message':message,'geometry':geometry,'persisted_exactly_once':True,'return_url':p.url})
             ctx.close()
         status='PASS'
     finally:
