@@ -145,7 +145,8 @@ with sync_playwright() as pw:
             cc = ctx.new_page()
             cc.goto(local_url(base + '/local/kbacompany/communication_center.php?' + urlencode(
                 {'uuid': company, 'thread': case['after_edit']['thread_uuid']})), wait_until='networkidle')
-            case['communication_center'] = {'edited_text_count': cc.get_by_text(t1, exact=True).count(),
+            # Rendered occurrences only (the author's closed edit form keeps the text in a hidden textarea).
+            case['communication_center'] = {'edited_text_count': cc.get_by_text(t1, exact=True).evaluate_all('els => els.filter(e => e.checkVisibility()).length'),
                                             'original_text_count': cc.get_by_text(t0, exact=True).count()}
             cc.close()
             # 3. conflict between two tabs: the second save must fail and keep its draft; tab one's text stays
