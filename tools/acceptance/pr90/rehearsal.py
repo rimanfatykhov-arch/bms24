@@ -39,6 +39,7 @@ def install():
     cmd(['php',core/'admin/cli/purge_caches.php'],stdout=subprocess.DEVNULL)
 def smoke(phase):
     start()
+    observed(Path(__file__).with_name('discussion_geometry.py'),phase+'-geometry',phase)
     observed(Path(__file__).with_name('menus.py'),phase+'-menus',phase)
     role_checks(phase)
     observed(scripts/'access.py',phase+'-access','all')
@@ -75,7 +76,9 @@ try:
     # Existing isolated fresh-install + A/B fixture harness, using baseline source and PR96 validators.
     cmd([sys.executable,cand/'tools/ci/browser_acceptance.py'],env=dict(env,CANDIDATE_ROOT=str(baseline)),stdout=open(root/'baseline.private.log','w'))
     report['steps']['baseline_browser']='PASS'
-    start();role_checks('baseline');stop()
+    start();role_checks('baseline')
+    observed(Path(__file__).with_name('discussion_geometry.py'),'baseline-geometry','baseline')
+    stop()
     start()
     try:write_checks('baseline_repeat');report['steps']['baseline_repeat_write']='PASS'
     except Exception as e:report['steps']['baseline_repeat_write']='FAIL: '+type(e).__name__
