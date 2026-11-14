@@ -35,3 +35,21 @@ Every job writes a summary with PASS/FAIL/NOT RUN and per-step timing, and uploa
 - Percona in STANDARD (FULL keeps it).
 - Cached pre-installed PHPUnit database (init still installs from scratch each run).
 - Required-check / branch-protection changes — owner decision (see Issue #82).
+
+## Merge gate (RC32, dependent on the BROWSER hardening PR)
+
+Job **`Merge gate`** in `BMS24 CI tiers` (`tools/ci/merge_gate.py`, tests `tools/ci/test_merge_gate.py`) always runs and gives one
+verdict for the PR head:
+
+| Profile | Required for merge | FULL |
+|---|---|---|
+| FAST (docs, lang, pix; CSS until PR #92 decides) | FAST PASS | observation only |
+| STANDARD (application code without FULL triggers) | FAST + STANDARD (every selected test PASS) + BROWSER on MariaDB **and** Percona when `local/` changed | observation only |
+| FULL (DB/upgrade/version, ACL/permissions/membership, File API/pluginfile/`$_FILES`, sesskey, raw SQL, external API, Corporate, CI/test infra, unknown path) | FAST + STANDARD + BROWSER + **all FULL workflows `success` on the same SHA** | **required** |
+
+Fail closed: invalid/missing classification, missing report, FAIL, NOT RUN, cancellation or unexpected skip blocks the merge.
+NOT APPLICABLE only by the rules in the table. Small diff size never lowers the profile.
+
+**Merge ≠ production.** A green gate allows merging to `main` only. Every production installation still requires: release
+artifact identity (Git SHA + ZIP SHA256 built in CI), staging/clone acceptance, backup + rehearsed rollback, release card and
+explicit owner approval of the exact build, server and window.
