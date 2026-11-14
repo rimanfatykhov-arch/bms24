@@ -27,6 +27,22 @@ def menu_report(mode='owned'):
         'loaded_css':[{'status':200,'sha256':'a'*64}] if mode=='owned' else []}
 
 class RehearsalPolicyTest(unittest.TestCase):
+    def test_discussion_panels_are_phase_bound_and_history_required(self):
+        source=SOURCE.parents[1]/'discussion_button.py'
+        tree=ast.parse(source.read_text())
+        nodes=[n for n in tree.body if isinstance(n,ast.FunctionDef) and n.name in ('require','validate_panels')]
+        ns={};exec(compile(ast.Module(body=nodes,type_ignores=[]),str(source),'exec'),ns)
+        validate=ns['validate_panels']
+        for phase in ('baseline','rollback','candidate','reinstall'):
+            for mode in ('owned','legacy'):
+                recent=int(phase in ('baseline','rollback') and mode=='owned')
+                good=[phase,mode,1,recent,True,200,True,1,2]
+                validate(*good)
+                for index,value in ((2,0),(2,2),(3,1-recent),(4,False),(5,500),(5,302),(6,False),(7,0),(8,0)):
+                    bad=good.copy();bad[index]=value
+                    with self.assertRaises(RuntimeError):validate(*bad)
+        with self.assertRaises(RuntimeError):validate('unknown','owned',1,0,True,200,True,1,2)
+
     def test_menu_report_requires_exact_matrix_and_evidence(self):
         node=next(n for n in TREE.body if isinstance(n,ast.FunctionDef) and n.name=='validate_menu_report')
         ns={};exec(compile(ast.Module(body=[node],type_ignores=[]),str(SOURCE),'exec'),ns)

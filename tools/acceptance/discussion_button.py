@@ -5,7 +5,7 @@ POST, force-click, submit JavaScript, remove history, or disable neighbouring pa
 """
 import json,os,sys
 from pathlib import Path
-from urllib.parse import urlparse
+from urllib.parse import urlparse,urljoin
 from playwright.sync_api import sync_playwright
 
 root=Path(os.environ['TEST_ROOT']).resolve(); runner=Path(os.environ['RUNNER_TEMP']).resolve()
@@ -19,6 +19,15 @@ rows=[];status='FAIL'
 def require(ok,message):
     if not ok:raise RuntimeError(message)
 
+def validate_panels(phase,mode,composer,recent,history_link,history_status,history_exact,history_heading,history_events):
+    require(phase in ('baseline','rollback','candidate','reinstall'),'unknown discussion acceptance phase')
+    require(mode in ('owned','legacy'),'unknown discussion shell')
+    require(composer==1,'discussion composer missing or duplicated')
+    expected_recent=1 if phase in ('baseline','rollback') and mode=='owned' else 0
+    require(recent==expected_recent,'recent activity presence violates phase policy')
+    require(history_link and history_status==200 and history_exact and history_heading==1 and history_events>0,
+        'history missing, redirected, failed or empty')
+
 with sync_playwright() as pw:
     b=pw.chromium.launch(headless=True)
     try:
@@ -28,6 +37,17 @@ with sync_playwright() as pw:
             p=ctx.new_page();p.set_default_timeout(10000);a=f['actors']['MA']
             p.goto(base+'/login/index.php');p.locator('#username').fill(a['username']);p.locator('#password').fill(a['password']);p.locator('#loginbtn').click();p.wait_for_load_state('networkidle')
             response=p.goto(url,wait_until='networkidle');require(response.status==200,'task HTTP status')
+            composer_count=p.locator('form:has(input[name=action][value=discussionpost])').count()
+            recent_count=p.get_by_role('heading',name='Recent activity',exact=True).count()+p.get_by_role('heading',name='Последние действия',exact=True).count()
+            history=p.locator('a[href*="tab=history"]').first
+            require(history.count()>0,'history link missing')
+            history_url=urljoin(url,history.get_attribute('href'))
+            require(urlparse(history_url).scheme=='http' and urlparse(history_url).netloc=='127.0.0.1:8080','unexpected history origin')
+            history_response=p.goto(history_url,wait_until='networkidle')
+            history_heading=p.get_by_role('heading',name='History',exact=True).count()+p.get_by_role('heading',name='История',exact=True).count()
+            history_events=p.locator('.bms-tui-message').count()
+            validate_panels(phase,mode,composer_count,recent_count,True,
+                history_response.status if history_response else None,p.url==history_url,history_heading,history_events)
             for method in ['pointer','keyboard']:
                 # tasks.php:253 intentionally redirects a successful discussionpost to tab=discussion.
                 # Return to overview explicitly to test the compact composer again, not a different form.
@@ -46,7 +66,6 @@ with sync_playwright() as pw:
                 else:button.scroll_into_view_if_needed()
                 geometry=button.evaluate('e=>{let r=e.getBoundingClientRect(),t=document.elementFromPoint(r.x+r.width/2,r.y+r.height/2),s=getComputedStyle(e);return {hit:e===t||e.contains(t),disabled:e.disabled,rect:r.toJSON(),focus:e===document.activeElement,outline:s.outlineStyle,outlineWidth:s.outlineWidth}}')
                 require(geometry['hit'] and not geometry['disabled'],'send button covered or disabled')
-                if mode=='owned':require(p.locator('.bms-task2-aside > .bms24-task-panel').count()>=2,'discussion or recent activity removed')
                 p.screenshot(path=str(root/'public'/('discussion-'+phase+'-'+mode+'-'+str(width)+'-'+method+'.png')))
                 with p.expect_navigation() as navigation:
                     if method=='pointer':button.click()
@@ -54,7 +73,7 @@ with sync_playwright() as pw:
                 require(navigation.value.status<400,'write navigation failed')
                 p.wait_for_load_state('networkidle');p.reload(wait_until='networkidle')
                 require(p.get_by_text(message,exact=True).count()==1,'message not persisted exactly once after reload')
-                rows.append({'width':width,'method':method,'message':message,'geometry':geometry,'persisted_exactly_once':True,'return_url':p.url})
+                rows.append({'width':width,'method':method,'message':message,'geometry':geometry,'persisted_exactly_once':True,'panel_policy':phase,'recent_count':recent_count,'history_status':history_response.status,'history_events':history_events,'return_url':p.url})
             ctx.close()
         status='PASS'
     finally:
