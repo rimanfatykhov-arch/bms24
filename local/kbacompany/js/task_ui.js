@@ -2,6 +2,57 @@
 (function() {
     'use strict';
     function init() {
+        // One overlay behaviour for task Actions and Tools in both shells.
+        document.querySelectorAll('.bms24-task-menu, .bms-tui-menu').forEach(function(menu) {
+            var trigger = menu.querySelector('summary');
+            var panel = menu.querySelector('.bms24-task-menu-items, .bms-tui-menu-items');
+            if (!trigger || !panel) { return; }
+            function close(restoreFocus) {
+                menu.open = false;
+                trigger.setAttribute('aria-expanded', 'false');
+                if (restoreFocus) { trigger.focus({preventScroll: true}); }
+            }
+            function place() {
+                if (!menu.open) { return; }
+                var width = document.documentElement.clientWidth;
+                var height = window.innerHeight;
+                var anchor = trigger.getBoundingClientRect();
+                var mobile = width <= 480;
+                panel.style.position = 'fixed';
+                panel.style.margin = '0';
+                panel.style.width = mobile ? (width - 16) + 'px' : Math.min(280, width - 16) + 'px';
+                panel.style.minWidth = '0';
+                panel.style.right = 'auto';
+                panel.style.bottom = 'auto';
+                panel.style.maxHeight = Math.max(44, height - 16) + 'px';
+                var box = panel.getBoundingClientRect();
+                panel.style.left = (mobile ? 8 : Math.max(8, Math.min(anchor.right - box.width, width - box.width - 8))) + 'px';
+                var top = mobile ? height - box.height - 8 : anchor.bottom + 6;
+                if (top + box.height > height - 8) { top = Math.max(8, anchor.top - box.height - 6); }
+                panel.style.top = Math.max(8, Math.min(top, height - box.height - 8)) + 'px';
+            }
+            trigger.setAttribute('aria-expanded', String(menu.open));
+            menu.addEventListener('toggle', function() {
+                trigger.setAttribute('aria-expanded', String(menu.open));
+                if (menu.open) {
+                    document.querySelectorAll('.bms24-task-menu[open], .bms-tui-menu[open]').forEach(function(other) {
+                        if (other !== menu) { other.open = false; }
+                    });
+                    place();
+                }
+            });
+            document.addEventListener('click', function(event) {
+                if (menu.open && !menu.contains(event.target)) { close(true); }
+            });
+            document.addEventListener('keydown', function(event) {
+                if (event.key === 'Escape' && menu.open) { event.preventDefault(); close(true); }
+            });
+            panel.addEventListener('click', function(event) {
+                if (event.target.closest('a, button')) { close(true); }
+            });
+            window.addEventListener('resize', place);
+            window.addEventListener('scroll', place, true);
+        });
         var root = document.querySelector('[data-task-create-url]');
         function oldCreate() {
             if (root && window.location.hash === '#task-create-modal') {

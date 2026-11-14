@@ -83,11 +83,23 @@ with sync_playwright() as pw:
             goto(base + TASKS + '?uuid=%s&task=%s&view=detail&tab=overview' % (A, task))
             form = p.locator('form:has(input[name=action][value=discussionpost])').first
             form.locator('textarea').fill('RC31 P02 oversize2 compact'); form.locator('input[type=file]').set_input_files(str(big)); posts.clear()
-            with p.expect_navigation(timeout=30000): form.evaluate('f => f.requestSubmit()')
-            p.wait_for_load_state('networkidle')
-            sent = [x for x in posted(TASKS) if x['multipart'] and x['has_file']]
-            alert = p.locator('.alert-danger, .invalid-feedback, [role=alert]')
-            note('compact_oversize', request_sent=bool(sent), error_text=alert.first.inner_text()[:200] if alert.count() else '')
+            # The retained-draft composer validates locally. Independently send the real oversized
+            # multipart request so a green browser warning cannot hide broken server enforcement.
+            form.locator('button[type=submit]').click()
+            form.locator('[data-bms-discussion-error]:visible').wait_for()
+            fields = {i.get_attribute('name'): i.get_attribute('value') or ''
+                      for i in form.locator('input[type=hidden][name]').all()}
+            fields.update({'message': 'RC31 P02 oversize2 compact', 'discussionajax': '1',
+                           'discussionfilecount': '1', 'discussionattachment[]': {
+                               'name': 'p02-oversize.txt', 'mimeType': 'text/plain', 'buffer': big.read_bytes()}})
+            r = ctx.request.post(local_url(base + TASKS), max_redirects=0, multipart=fields)
+            reply = r.json()
+            refused = (r.status == 400 and reply.get('contract') == 'bms_task_discussion_v1'
+                       and reply.get('requestkey') == fields['requestkey'] and reply.get('ok') is False)
+            note('compact_oversize', request_sent=refused, error_text=reply.get('error', '') if refused else '',
+                 http=r.status, sent_bytes=len(big.read_bytes()),
+                 draft_retained=form.locator('textarea').input_value() == 'RC31 P02 oversize2 compact',
+                 files_retained=form.locator('input[type=file]').evaluate('e => e.files.length') == 1)
             goto(thread_url())
             cf = p.locator('form[data-bms-comm-compose]')
             note('limits', form_maxbytes=int(cf.get_attribute('data-maxbytes') or 0))

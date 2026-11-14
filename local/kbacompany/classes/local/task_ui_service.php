@@ -1402,19 +1402,36 @@ class task_ui_service {
             self::note(userdate($msg['time_created'])) . $text .
             ($files !== '' ? \html_writer::div($files, 'bms-tui-message-files') : ''), ['class' => 'bms-tui-message']);
     }
-    /** Task discussion composer: text and/or one file (sent as one Communication Center message). */
+    /** One discussion message with independently removable selected attachments. */
     private static function discussion_fields(array $values): string {
         return self::control('message', ['label' => 'tui_message', 'type' => 'textarea', 'maxlength' => 12000], $values['message'] ?? '') .
-            \html_writer::div(self::control('discussionattachment', ['label' => 'communication_attachment', 'type' => 'file']) .
-                \html_writer::tag('button', s(self::tr('communication_file_remove')), ['type' => 'button',
-                    'class' => 'btn btn-sm btn-link bms-tui-file-clear', 'data-bms-file-clear' => 'tui_discussionattachment', 'hidden' => 'hidden']),
+            \html_writer::div(
+                \html_writer::tag('label', s(self::tr('communication_attachment')), ['for' => 'tui_discussionattachment']) .
+                \html_writer::empty_tag('input', ['type' => 'file', 'id' => 'tui_discussionattachment',
+                    'name' => 'discussionattachment[]', 'class' => 'form-control']) .
+                \html_writer::tag('ul', '', ['data-bms-attachment-list' => '1', 'aria-live' => 'polite',
+                    'class' => 'bms-tui-attachment-list']) .
+                \html_writer::div('', 'alert alert-danger', ['data-bms-discussion-error' => '1',
+                    'role' => 'alert', 'hidden' => 'hidden']),
                 'bms-tui-discussion-file');
     }
     public static function post_form(string $company, array $task, string $action, string $body, string $label, string $tab = 'overview', array $extra = []): string {
         $hidden=self::hidden(['uuid'=>$company,'task'=>$task['uuid'],'view'=>'detail','tab'=>$tab,'revision'=>$task['revision'],
             'action'=>$action,'sesskey'=>sesskey(),'requestkey'=>bin2hex(random_bytes(16))]+$extra);
-        return \html_writer::tag('form',$hidden.$body.\html_writer::tag('button',s($label),['type'=>'submit','class'=>'btn btn-outline-primary']),
-            ['method'=>'post','enctype'=>'multipart/form-data','action'=>self::url($company)->out(false),'class'=>'bms-tui-inline-form']);
+        $attrs = ['method'=>'post','enctype'=>'multipart/form-data','action'=>self::url($company)->out(false),
+            'class'=>'bms-tui-inline-form'];
+        if ($action === 'discussionpost') {
+            $attrs += ['data-bms-discussion-composer'=>'1',
+                'data-upload-maxbytes'=>get_max_upload_file_size(),
+                'data-upload-maxfiles'=>max(1, (int)ini_get('max_file_uploads')),
+                'data-upload-postmaxbytes'=>get_real_size(ini_get('post_max_size')),
+                'data-error-upload'=>self::tr('taskdiscussion_upload_error'),
+                'data-error-size'=>self::tr('taskdiscussion_size_error'),
+                'data-error-count'=>self::tr('taskdiscussion_count_error'),
+                'data-error-send'=>self::tr('taskdiscussion_send_error'),
+                'data-remove-file'=>self::tr('taskdiscussion_remove_file')];
+        }
+        return \html_writer::tag('form',$hidden.$body.\html_writer::tag('button',s($label),['type'=>'submit','class'=>'btn btn-outline-primary']), $attrs);
     }
     /** Unified checklist component for overview and checklist tab (no separate data ownership). */
     private static function checklist_panel(string $company, array $model, array $actions, string $tab = 'overview'): string {
@@ -1871,14 +1888,6 @@ class task_ui_service {
             }
             $aside = self::panel(self::tr('taskcenter_discussion'), $messages);
             if (self::owned()) {
-                $recent = '';
-                foreach (array_slice($model['history'] ?? [], 0, 3) as $entry) {
-                    $recent .= self::activity_html($entry);
-                }
-                if ($recent === '') { $recent = self::note(self::tr('bms_task1852_no_activity')); }
-                $recent .= self::link(self::url($company, ['task'=>$id,'tab'=>'history']),
-                    self::tr('bms_task1852_full_history'));
-                $aside .= self::panel(self::tr('bms_task1852_recent'), $recent);
                 $outcome .= self::attention_html($task);
             }
             if (self::owned()) {

@@ -149,6 +149,10 @@ try:
     record(contract.evaluate(contract.attachments_checks(load('p02-browser-verify.json'), load('p02-state-verify.json'))))
     timed('access_same_session', lambda: browser('access.py', 'all'))
     record(contract.evaluate(contract.access_checks(load('p02-access.json'))))
+    # Preserve evidence on failure, then fail closed on exit status AND exact observations.
+    # Run before the deliberate 64 KiB server limit, and after historical ACL snapshots.
+    multi_exit = timed('multiattachments', lambda: browser('multiattachments.py', 'verify'))
+    record(contract.evaluate(contract.multiattachment_checks(load('multiattachment-result.json'), multi_exit)))
     timed('server_restart_64k', lambda: start_server(['-d', 'upload_max_filesize=64K', '-d', 'post_max_size=8M']))
     timed('oversize', lambda: browser('attachments.py', 'oversize'))
     timed('db_state_oversize', lambda: php_state('oversize'))

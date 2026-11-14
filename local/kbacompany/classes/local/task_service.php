@@ -242,11 +242,35 @@ class task_service {
         }
     }
 
-    private static function sync_discussion(\stdClass $row): void {
+    /** Historical task roles are not invitations: enrol only current, authorised company participants. */
+    private static function discussion_participants(\stdClass $row, int $actor, bool $includeactor): array {
+        $companyuuid = (string)$row->companyuuid;
+        $employees = self::employees($companyuuid, $actor);
+        $candidates = [(int)$row->creatorid, (int)$row->assigneeid, (int)$row->reviewerid, (int)$row->observerid];
+        if ($includeactor) { $candidates[] = $actor; }
+        $allowed = [];
+        foreach (array_unique(array_filter($candidates)) as $userid) {
+            // Keep creator/assignee/history untouched when a former participant is no longer eligible.
+            if ($userid !== $actor && !isset($employees[$userid])) { continue; }
+            try {
+                communication_object_service::describe($companyuuid, $userid, 'task', (string)$row->uuid,
+                    (int)$row->revision);
+            } catch (\moodle_exception $e) {
+                if (!in_array($e->errorcode, ['companynotavailable', 'communication_contextunavailable'], true)) {
+                    throw $e;
+                }
+                continue;
+            }
+            $allowed[] = $userid;
+        }
+        return $allowed;
+    }
+
+    private static function sync_discussion(\stdClass $row, int $actor): void {
         global $DB;
         $thread = self::discussion_thread((string)$row->companyuuid, (string)$row->uuid);
         if (!$thread) { return; }
-        $allowed = array_values(array_unique(array_filter([(int)$row->creatorid, (int)$row->assigneeid, (int)$row->reviewerid, (int)$row->observerid])));
+        $allowed = self::discussion_participants($row, $actor, false);
         foreach ($allowed as $userid) {
             self::ensure_discussion_member((string)$row->companyuuid, (string)$thread->uuid, (int)$userid);
         }
@@ -264,33 +288,27 @@ class task_service {
         $DB->update_record('local_kbacompany_commthread', $thread);
     }
 
+    /** Caller holds the taskdiscussion lock through the encompassing transaction commit. */
     private static function ensure_discussion(string $companyuuid, int $actor, \stdClass $row): string {
         global $DB;
-        $lock = \core\lock\lock_config::get_lock_factory('local_kbacompany')
-            ->get_lock('taskdiscussion:' . $companyuuid . ':' . $row->uuid, 10);
-        if (!$lock) { self::fail('lock'); }
-        try {
-            $thread = self::discussion_thread($companyuuid, (string)$row->uuid);
-            if (!$thread) {
-                $participants = array_values(array_unique(array_filter([
-                    (int)$row->creatorid, (int)$row->assigneeid, (int)$row->reviewerid, (int)$row->observerid,
-                ])));
-                $participants = array_values(array_diff($participants, [$actor]));
-                $threaduuid = communication_service::create_thread($companyuuid, $actor, [
-                    'threadtype' => 'object',
-                    'title' => get_string('taskcenter_discussion_title', 'local_kbacompany', (string)$row->title),
-                    'contextkind' => 'task', 'contextuuid' => (string)$row->uuid,
-                    'contextrevision' => (int)$row->revision, 'participants' => $participants,
-                ]);
-                $thread = $DB->get_record('local_kbacompany_commthread', [
-                    'companyuuid' => $companyuuid, 'uuid' => $threaduuid,
-                ]);
-            }
-            foreach (array_unique([(int)$row->creatorid, (int)$row->assigneeid, (int)$row->reviewerid, (int)$row->observerid, $actor]) as $userid) {
-                self::ensure_discussion_member($companyuuid, (string)$thread->uuid, (int)$userid);
-            }
-            return (string)$thread->uuid;
-        } finally { $lock->release(); }
+        $thread = self::discussion_thread($companyuuid, (string)$row->uuid);
+        if (!$thread) {
+            $participants = self::discussion_participants($row, $actor, true);
+            $participants = array_values(array_diff($participants, [$actor]));
+            $threaduuid = communication_service::create_thread($companyuuid, $actor, [
+                'threadtype' => 'object',
+                'title' => get_string('taskcenter_discussion_title', 'local_kbacompany', (string)$row->title),
+                'contextkind' => 'task', 'contextuuid' => (string)$row->uuid,
+                'contextrevision' => (int)$row->revision, 'participants' => $participants,
+            ]);
+            $thread = $DB->get_record('local_kbacompany_commthread', [
+                'companyuuid' => $companyuuid, 'uuid' => $threaduuid,
+            ]);
+        }
+        foreach (self::discussion_participants($row, $actor, true) as $userid) {
+            self::ensure_discussion_member($companyuuid, (string)$thread->uuid, (int)$userid);
+        }
+        return (string)$thread->uuid;
     }
 
     /** Return the newest revision for a versioned source UUID, regardless of lifecycle state. */
@@ -1008,7 +1026,7 @@ class task_service {
             $row->dutypositionuuid = $newpositionuuid;
             $row->revision++; $row->timemodified = time();
             $DB->update_record('local_kbacompany_task', $row);
-            self::sync_discussion($row);
+            self::sync_discussion($row, $actor);
             self::log($companyuuid, $taskuuid, $actor, 'edit', $row->status, $row->status);
             if ($newpositionuuid !== $oldpositionuuid) {
                 self::log($companyuuid, $taskuuid, $actor, 'duty_classification',
@@ -1041,7 +1059,7 @@ class task_service {
             $row->observerid = $observerid;
             $row->revision++; $row->timemodified = time();
             $DB->update_record('local_kbacompany_task', $row);
-            self::sync_discussion($row);
+            self::sync_discussion($row, $actor);
             self::log($companyuuid, $taskuuid, $actor, 'observer_change', $row->status, $row->status,
                 ['oldobserverid' => $oldobserver, 'observerid' => $observerid]);
             $tx->allow_commit();
@@ -1223,15 +1241,30 @@ class task_service {
                 !self::can_post_discussion($row, $actor, $canmanage)) { self::fail('permission'); }
         if ((string)$row->status === 'deleted') { self::fail('state'); }
         $body = trim($body);
-        $hasfile = $upload !== null && (int)($upload['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_NO_FILE;
+        $uploads = communication_service::normalise_uploads($upload);
+        $hasfile = !empty($uploads);
         if (($body === '' && !$hasfile) || \core_text::strlen($body) > 12000) { self::fail('invalid'); }
-        $threaduuid = self::ensure_discussion($companyuuid, $actor, $row);
-        // Same canonical Communication Center message + protected Moodle File API attachment (stored together).
-        $messageuuid = communication_service::send_message_with_attachment($companyuuid, $actor, $threaduuid, $body,
-            $hasfile ? $upload : null);
-        self::log($companyuuid, $taskuuid, $actor, 'discussion_post', $row->status, $row->status,
-            ['threaduuid' => $threaduuid, 'messageuuid' => $messageuuid]);
-        return $messageuuid;
+        $lock = \core\lock\lock_config::get_lock_factory('local_kbacompany')
+            ->get_lock('taskdiscussion:' . $companyuuid . ':' . $taskuuid, 10);
+        if (!$lock) { self::fail('lock'); }
+        try {
+            // Thread creation owns its company lock and commits before the message transaction.
+            // A rejected upload may leave an empty discussion, but never a partial message/file set.
+            $threaduuid = self::ensure_discussion($companyuuid, $actor, $row);
+            $tx = $DB->start_delegated_transaction();
+            // One canonical message and all protected attachments commit together.
+            $messageuuid = communication_service::send_message_with_attachments(
+                $companyuuid, $actor, $threaduuid, $body, $uploads);
+            self::log($companyuuid, $taskuuid, $actor, 'discussion_post', $row->status, $row->status,
+                ['threaduuid' => $threaduuid, 'messageuuid' => $messageuuid]);
+            $tx->allow_commit();
+            return $messageuuid;
+        } catch (\Throwable $e) {
+            if (isset($tx)) { $tx->rollback($e); }
+            throw $e;
+        } finally {
+            $lock->release();
+        }
     }
 
     /** Public visibility check used by pluginfile and attachment UI. */

@@ -78,6 +78,29 @@ def failed(results):
 
 
 class ContractTest(unittest.TestCase):
+    def test_multiattachments_fail_closed_on_missing_failure_or_forged_observations(self):
+        def good():
+            return {'status': 'PASS', 'cases': [
+                {'width': width, 'status': 'PASS', 'selected_first': 2, 'selected_second': 3,
+                 'post_count': 1, 'message_count': 1, 'removed_file_count': 0, 'browser_errors': [],
+                 'negative_controls': [{'http': code, 'text_retained': True, 'files_retained': 2,
+                                        'error_visible': True} for code in (500, 302)],
+                 'downloads': [{'name': 'synthetic-%d.txt' % n, 'url': B % (n, 'synthetic-%d.txt' % n),
+                                'http': 200, 'sha256': c.hashlib.sha256(c.MULTI_CONTENT[n]).hexdigest()}
+                               for n in (1, 3)]} for width in (320, 1440)]}
+        self.assertFalse(failed(c.evaluate(c.multiattachment_checks(good(), 0))))
+        for obs, code in ((None, 0), ({}, 0), (good(), 1), (good(), None)):
+            self.assertTrue(failed(c.evaluate(c.multiattachment_checks(obs, code))))
+        for key, value in [('post_count', 2), ('message_count', 0), ('removed_file_count', 1),
+                           ('browser_errors', ['HTTP 500']), ('selected_second', 1),
+                           ('negative_controls', []), ('downloads', []), ('width', 1440)]:
+            obs = good(); obs['cases'][0][key] = value
+            self.assertTrue(failed(c.evaluate(c.multiattachment_checks(obs, 0))), key)
+        for key, value in [('http', 302), ('sha256', 'bad'), ('name', 'wrong.txt'), ('url', 'https://example.invalid/file')]:
+            obs = good(); obs['cases'][0]['downloads'][0][key] = value
+            self.assertTrue(failed(c.evaluate(c.multiattachment_checks(obs, 0))), key)
+        self.assertIn('multiattachment_complete', c.required_check_names())
+
     def test_complete_valid_observations_pass(self):
         o, s = attachments(); self.assertEqual([], failed(c.evaluate(c.attachments_checks(o, s))))
         self.assertEqual([], failed(c.evaluate(c.access_checks(access()))))

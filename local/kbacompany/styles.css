@@ -7079,3 +7079,20 @@ body.bms-comm-page .bms-comm2 .bms-comm5-delete form p { margin:0; }
 /* build2026101858: accessible empty-results recovery actions. */
 .bms-tui .bms-task1858-empty-actions{display:flex;gap:.65rem;align-items:center;flex-wrap:wrap;margin-top:.75rem}
 .bms-tui .bms-task1849-shell .bms-task1858-empty-actions{max-width:100%}
+
+/* Task menus are overlays in both shells, including the no-JS fallback. */
+.bms-tui .bms-tui-menu-items {
+    position: fixed; z-index: 1050; max-height: calc(100vh - 16px);
+    max-width: calc(100vw - 16px); overflow-y: auto; overflow-wrap: anywhere;
+    box-sizing: border-box; overscroll-behavior: contain;
+}
+
+.bms-tui .bms-tui-menu[open] {z-index:1050;}
+@media (max-width:480px) {
+    .bms-tui .bms-tui-menu-items {left:8px;right:8px;bottom:8px;min-width:0;}
+}
+.bms-tui-attachment-list {list-style:none;padding:0;margin:.5rem 0;}
+.bms-tui-attachment-list:empty {display:none;}
+.bms-tui-attachment-list li {display:flex;align-items:center;gap:.5rem;overflow-wrap:anywhere;}
+.bms-tui-attachment-list li > span {min-width:0;flex:1;}
+.bms-tui-attachment-list button {flex-shrink:0;min-height:44px;}

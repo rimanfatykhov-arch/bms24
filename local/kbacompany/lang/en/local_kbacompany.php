@@ -9662,3 +9662,8 @@ $string['employee2_open_assignment_feedback'] = 'Open the assignment link above 
 $string['privacy:metadata:companyrevocation'] = 'Company access revocation history. After erasure, only the active company/user denial is retained while the account can log in, so erasure cannot restore access.';
 
 $string['kbacompany:manageorganization'] = 'Manage company organisation';
+$string['taskdiscussion_upload_error'] = 'Attachments could not be uploaded. Your text and selected files remain in the form.';
+$string['taskdiscussion_size_error'] = 'A file or the combined attachments exceed the upload limit. Remove attachments or choose smaller files.';
+$string['taskdiscussion_count_error'] = 'Too many files selected. Remove extra attachments before sending.';
+$string['taskdiscussion_send_error'] = 'Sending was not confirmed. Your text and files remain selected. Retry without changing the form to avoid duplicates.';
+$string['taskdiscussion_remove_file'] = 'Remove file';

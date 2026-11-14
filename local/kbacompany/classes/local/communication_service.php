@@ -360,16 +360,57 @@ class communication_service {
      */
     public static function send_message_with_attachment(string $companyuuid, int $actor, string $threaduuid,
             string $body, ?array $upload, array $mentionids = [], string $replytouuid = ''): string {
+        return self::send_message_with_attachments($companyuuid, $actor, $threaduuid, $body,
+            self::normalise_uploads($upload), $mentionids, $replytouuid);
+    }
+
+    /** Accept PHP's single/multiple upload shape; reject malformed nested input. */
+    public static function normalise_uploads(?array $upload): array {
+        if ($upload === null) { return []; }
+        if (!is_array($upload['name'] ?? null)) {
+            foreach (['name', 'error', 'tmp_name', 'size', 'type'] as $field) {
+                if (!array_key_exists($field, $upload) || !is_scalar($upload[$field])) { self::fail('upload'); }
+            }
+            return (int)$upload['error'] === UPLOAD_ERR_NO_FILE ? [] : [$upload];
+        }
+        $files = [];
+        $keys = array_keys($upload['name']);
+        foreach (['error', 'tmp_name', 'size', 'type'] as $field) {
+            if (!isset($upload[$field]) || !is_array($upload[$field]) || array_keys($upload[$field]) !== $keys) {
+                self::fail('upload');
+            }
+        }
+        foreach ($keys as $key) {
+            $file = [];
+            foreach (['name', 'error', 'tmp_name', 'size', 'type'] as $field) {
+                if (!is_scalar($upload[$field][$key])) { self::fail('upload'); }
+                $file[$field] = $upload[$field][$key];
+            }
+            if ((int)$file['error'] !== UPLOAD_ERR_NO_FILE) { $files[] = $file; }
+        }
+        if (count($files) > max(1, (int)ini_get('max_file_uploads'))) { self::fail('upload'); }
+        return $files;
+    }
+
+    /** Validate every file before writing; one message and all file metadata commit together. */
+    public static function send_message_with_attachments(string $companyuuid, int $actor, string $threaduuid,
+            string $body, array $uploads, array $mentionids = [], string $replytouuid = ''): string {
         global $DB;
-        $hasfile = $upload !== null && self::validated_upload($upload) !== null;
-        if (!$hasfile) {
+        if (count($uploads) > max(1, (int)ini_get('max_file_uploads'))) { self::fail('upload'); }
+        $files = [];
+        foreach ($uploads as $upload) {
+            if (self::validated_upload($upload) !== null) { $files[] = $upload; }
+        }
+        if (!$files) {
             return self::send_message($companyuuid, $actor, $threaduuid, $body, $mentionids, $replytouuid);
         }
         $tx = $DB->start_delegated_transaction();
-        $messageuuid = self::append_message($companyuuid, $actor, $threaduuid, $body, $mentionids, $replytouuid, true);
-        self::add_uploaded_attachment($companyuuid, $actor, $messageuuid, $upload);
-        $tx->allow_commit();
-        return $messageuuid;
+        try {
+            $messageuuid = self::append_message($companyuuid, $actor, $threaduuid, $body, $mentionids, $replytouuid, true);
+            foreach ($files as $upload) { self::add_uploaded_attachment($companyuuid, $actor, $messageuuid, $upload); }
+            $tx->allow_commit();
+            return $messageuuid;
+        } catch (\Throwable $e) { $tx->rollback($e); throw $e; }
     }
 
     /** Validate one $_FILES entry without storing it; null when no file was chosen. */

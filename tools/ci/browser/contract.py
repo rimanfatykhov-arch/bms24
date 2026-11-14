@@ -20,6 +20,7 @@ FILES = {
     'p02-direct-only.txt': b'RC32 browser synthetic direct multipart upload E\n',
 }
 SHA = {name: hashlib.sha256(data).hexdigest() for name, data in FILES.items()}
+MULTI_CONTENT = {n: ('BMS retained multi-attachment synthetic file %d\n' % n).encode() for n in (1, 2, 3)}
 DENY_CODES = {403, 404}          # protected pluginfile refusal for a logged-in user without access
 LOGIN_REDIRECT_CODES = {302, 303}  # anonymous user is sent to the login page (redirect not followed)
 LIMIT_BYTES = 65536
@@ -352,10 +353,38 @@ def task_tab_checks(obs, phase='ci'):
     return out
 
 
+def multiattachment_checks(obs, exitcode=None):
+    """Require real runs on both viewports; producer PASS alone is never sufficient."""
+    def complete():
+        require(exitcode == 0, 'multiattachment browser process failed or was not run')
+        require(isinstance(obs, dict) and obs.get('status') == 'PASS' and not obs.get('error'), 'multiattachment run incomplete')
+        rows = obs.get('cases')
+        require(isinstance(rows, list) and len(rows) == 2, 'both multiattachment viewports required')
+        require(sorted(r.get('width') for r in rows) == [320, 1440], 'unexpected or duplicate viewports')
+        for row in rows:
+            require(row.get('status') == 'PASS', 'viewport did not pass')
+            require(row.get('selected_first') == 2 and row.get('selected_second') == 3, 'selection did not accumulate')
+            require(row.get('post_count') == 1 and row.get('message_count') == 1, 'missing or duplicated message')
+            require(row.get('removed_file_count') == 0, 'removed file persisted')
+            require(row.get('browser_errors') == [], 'missing or non-empty browser error observations')
+            controls = row.get('negative_controls')
+            require(isinstance(controls, list) and [r.get('http') for r in controls] == [500, 302], 'negative controls missing')
+            require(all(r.get('text_retained') is True and r.get('files_retained') == 2 and r.get('error_visible') is True
+                        for r in controls), 'negative control lost draft or accepted failure')
+            downloads = row.get('downloads')
+            require(isinstance(downloads, list) and len(downloads) == 2, 'both attachment downloads required')
+            for download, index in zip(downloads, (1, 3)):
+                require(download.get('http') == 200, 'download failed or redirected')
+                require(download.get('sha256') == hashlib.sha256(MULTI_CONTENT[index]).hexdigest(), 'download content mismatch')
+                require(isinstance(download.get('name'), str) and download['name'].endswith('-%d.txt' % index), 'wrong attachment name')
+                local_url(download.get('url', ''))
+    return {'multiattachment_complete': complete}
+
+
 def required_check_names():
     """Every check a complete BROWSER report must contain (used by browser_acceptance.py and merge_gate.py)."""
     return (['moodle_install', 'fixtures_companies_A_B'] + list(task_tab_checks({})) + list(attachments_checks({}, {}))
-            + list(access_checks({})) + list(oversize_checks({}, {})))
+            + list(access_checks({})) + list(oversize_checks({}, {})) + list(multiattachment_checks({})))
 
 
 def evaluate(checks):
