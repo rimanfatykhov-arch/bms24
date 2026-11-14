@@ -407,10 +407,12 @@ class ContractTest(unittest.TestCase):
                                                 old_file_http=404, old_file_leaked=False, controls_left=0),
                          'browser_events': list(ABORTED), 'server_errors': []})
         same = st('N', attachments=0, files=0)
-        neg = {k: {'http': 303, 'state': dict(same)} for k in c.MESSAGE_ACTION_NEGATIVES}
+        neg = {k: {'http': 200 if k in ('withdraw_without_confirmation', 'other_author_same_company') else 404,
+                   'location': '', 'state': dict(same)} for k in c.MESSAGE_ACTION_NEGATIVES}
+        redirect = {'http': 303, 'location': 'http://127.0.0.1:8080/local/kbacompany/tasks.php?uuid=C&task=T&view=detail&tab=discussion'}
         neg.update({'unchanged_before_valid': dict(same), 'target_text': 'N', 'replay_text': 'R', 'ea_text': 'E', 'reopened': True,
-                    'replay': {'first': {'http': 303}, 'again': {'http': 303}, 'state': st('R', revisions=['edit'], attachments=0, files=0)},
-                    'revoked_member': {'http': 303, 'revoked': True, 'state': st('E', attachments=0, files=0)}})
+                    'replay': {'first': dict(redirect), 'again': dict(redirect), 'state': st('R', revisions=['edit'], attachments=0, files=0)},
+                    'revoked_member': {'http': 404, 'location': '', 'revoked': True, 'state': st('E', attachments=0, files=0)}})
         return {'status': 'PASS', 'cases': rows, 'negatives': neg}
 
     def test_message_actions_valid_passes_and_mutations_fail(self):
@@ -441,6 +443,15 @@ class ContractTest(unittest.TestCase):
         for key in c.MESSAGE_ACTION_NEGATIVES:
             fails('message_actions_server_negatives', lambda o, key=key: o['negatives'][key]['state'].update(body='forbidden'))
             fails('message_actions_server_negatives', lambda o, key=key: o['negatives'].pop(key))
+            fails('message_actions_server_negatives', lambda o, key=key: o['negatives'][key].update(http=500))
+            fails('message_actions_server_negatives', lambda o, key=key: o['negatives'][key].update(http=302, location='https://example.invalid/login'))
+        for status in (500, 302, 200, None):
+            fails('message_withdraw_hides_text_and_files', lambda o, status=status: o['cases'][0]['after_withdraw'].update(old_file_http=status))
+            fails('message_actions_server_negatives', lambda o, status=status: o['negatives']['revoked_member'].update(http=status))
+        for label in ('first', 'again'):
+            fails('message_actions_server_negatives', lambda o, label=label: o['negatives']['replay'][label].update(http=500))
+            fails('message_actions_server_negatives', lambda o, label=label: o['negatives']['replay'][label].update(location='https://example.invalid/login'))
+            fails('message_actions_server_negatives', lambda o, label=label: o['negatives']['replay'][label].update(location='http://127.0.0.1:8080/login/index.php'))
         fails('message_actions_server_negatives', lambda o: o['negatives']['replay']['state'].update(revisions=['edit', 'edit']))
         fails('message_actions_server_negatives', lambda o: o['negatives']['revoked_member']['state'].update(revisions=['edit']))
         fails('message_actions_server_negatives', lambda o: o['negatives'].update(reopened=False))

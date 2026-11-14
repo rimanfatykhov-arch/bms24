@@ -540,7 +540,8 @@ def message_action_checks(obs, exitcode=None):
             require(s.get('withdrawn_marker') is True and s.get('old_body_visible') is False and r['texts'][2] not in (s.get('task_text') or ''),
                     'withdrawn text still rendered')
             require(s.get('file_link_count') == 0 and s.get('controls_left') == 0, 'file link or controls left on a withdrawn message')
-            require(s.get('old_file_http') != 200 and s.get('old_file_leaked') is False, 'old file URL still serves the file')
+            require(s.get('old_file_http') in DENY_CODES and s.get('old_file_leaked') is False,
+                    'old file URL must refuse access, not redirect or fail with HTTP 5xx')
             require(s.get('attachments') == 1, 'withdraw destroyed the attachment record instead of closing access')
 
     def events():
@@ -557,13 +558,34 @@ def message_action_checks(obs, exitcode=None):
         require(before.get('body') == n.get('target_text') and before.get('status') == 'active' and before.get('revisions') == [],
                 'negative target not recorded')
         for key in MESSAGE_ACTION_NEGATIVES:
-            s = (n.get(key) or {}).get('state')
+            response = n.get(key) or {}
+            expected = {200} if key in ('withdraw_without_confirmation', 'other_author_same_company') else DENY_CODES
+            require(response.get('http') in expected and not response.get('location'),
+                    '%s returned an unexpected HTTP status or redirect' % key)
+            s = response.get('state')
             require(isinstance(s, dict) and s.get('body') == before['body'] and s.get('status') == 'active' and s.get('revisions') == [],
                     '%s changed the message' % key)
         rp = n.get('replay') or {}
+        for label in ('first', 'again'):
+            response = rp.get(label) or {}
+            require(response.get('http') == 303, 'replay %s did not complete with the normal redirect' % label)
+            location = response.get('location')
+            local_url(location)
+            parsed = urlparse(location)
+            query = parse_qsl(parsed.query, keep_blank_values=True)
+            require(parsed.path == '/local/kbacompany/tasks.php' and not parsed.fragment
+                    and len(query) == len(dict(query))
+                    and set(dict(query)) in ({'uuid', 'task', 'view', 'tab'}, {'uuid', 'task', 'view', 'tab', 'scope'})
+                    and dict(query).get('view') == 'detail' and dict(query).get('tab') in ('overview', 'discussion')
+                    and dict(query).get('uuid') and dict(query).get('task'), 'unexpected replay redirect target')
+        require({k: dict(parse_qsl(urlparse(rp['first']['location']).query))[k] for k in ('uuid', 'task')}
+                == {k: dict(parse_qsl(urlparse(rp['again']['location']).query))[k] for k in ('uuid', 'task')},
+                'replay redirect changed company or task')
         require((rp.get('state') or {}).get('body') == n.get('replay_text') and (rp.get('state') or {}).get('revisions') == ['edit'],
                 'replayed request applied more or less than once')
         rv = n.get('revoked_member') or {}
+        require(rv.get('http') in DENY_CODES and not rv.get('location'),
+                'revoked member returned an unexpected HTTP status or redirect')
         require(rv.get('revoked') is True and n.get('reopened') is True, 'revocation not applied/reverted')
         require((rv.get('state') or {}).get('body') == n.get('ea_text') and (rv.get('state') or {}).get('revisions') == [],
                 'revoked member changed own message')
