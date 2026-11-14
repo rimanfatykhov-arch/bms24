@@ -123,7 +123,7 @@ try:
     dbversion=cmd(['mysql','-h127.0.0.1','-P'+env['DBPORT'],'-u'+env['DBUSER'],'-N','-e','SELECT VERSION()'],stdout=subprocess.PIPE,text=True).stdout.strip()
     coregit=subprocess.check_output(['git','-C',str(core),'rev-parse','HEAD'],text=True).strip()
     report['runtime']={'php':phpversion,'database':dbversion,'moodle_git':coregit,'moodle':'4.1.22'}
-    if not phpversion.startswith('8.1.') or not dbversion.startswith('10.11.19' if env['DBTYPE']=='mariadb' else '8.0.46-37') or coregit!='b27f0816159a7555a0b3ad9ff2f8f8ef701a29fa':
+    if not phpversion.startswith('8.1.') or not dbversion.startswith('10.11.19' if env['DBTYPE']=='mariadb' else '8.0.46-37') or coregit!='df1157bb845eabedd31989d6a1a6e18f638ff890':
         raise RuntimeError('unexpected runtime versions')
     baseline=root/'baseline-source'
     cmd(['git','-C',cand,'worktree','add','--detach',baseline,BASE],stdout=subprocess.DEVNULL)
