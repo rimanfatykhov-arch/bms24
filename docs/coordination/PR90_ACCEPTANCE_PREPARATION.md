@@ -1,6 +1,6 @@
 # PR90 — подготовка приёмки на настоящем Moodle
 
-Статус: PREPARED / runtime NOT RUN, 2026-11-14. Production и работающий staging не использовать.
+Актуальный статус: runtime выполнен на обеих БД в PR98; полный restore PASS, повторная отправка FAIL уже на baseline; acceptance HOLD. Итог и точный новый tree ниже. Первоначальный план сохранён как история, 2026-11-14. Production и работающий staging не использовать.
 
 ## Зафиксированный кандидат
 
@@ -17,7 +17,7 @@
 
 Установить именно проверенный plugin ZIP; Corporate из зафиксированного интеграционного source. Записать версии, checksum, tree и engine в отчёт. Секреты actors/config не публиковать. Перед новым CI необходим конкретный review commit от актуального main; текущую чужую ветку этой подготовкой не меняли.
 
-## UI matrix — все пункты NOT RUN
+## Первоначальная UI matrix — исходный план до запуска PR98
 
 | ID | Реальный сценарий | Ожидаемый результат |
 |---|---|---|
@@ -63,3 +63,16 @@ Main и head #90 повторно прочитаны из GitHub и не изм�
 Создан Draft PR #98 https://github.com/rimanfatykhov-arch/bms24/pull/98, ветка test/pr90-isolated-moodle, первоначальный head98d34d3. Это явный зависимый кандидат: PR96 head38a2115 + только CSS PR90; не main и не принятие #96. Новый workflow PR90 disposable Moodle rehearsal запущен: https://github.com/rimanfatykhov-arch/bms24/actions/runs/43563243747 .
 
 Runtime больше не блокируется отсутствием локального Docker: доступны отдельные GitHub-hosted runners с service DB каждого engine. Код готовит synthetic baseline main, install ZIP/manifest/checksum, menu/access observations и snapshot→install→restore→reinstall. Private actors/config/logs/SQL/snapshots не публикуются. Первоначальная конфигурация покрывает M01–M05 частично; M06–M10 не объявляются пройденными. PARTIAL намеренно возвращает ненулевой код. Итог требуется читать по конкретному run, не по этому описанию. Полная приёмка остаётся HOLD.
+
+## Фактический итог run43564455219 (обе БД)
+
+PR98 head960151efcc24c448be022fe126a1d81613ed5ce0; проверенный synthetic merge SHA e26e7af92f77db265a2a8858630056042be78bd1, tree d5472483057240be23e80c16e3efd0cf2923ab8a. Dependencies: PR96 **38a2115**, PR90 **62a3e9c**, main **f34ab6f**. Это не новый head947447c PR96 и не release SHA.
+
+- PASS на MariaDB/Percona: baseline fresh install;18 menu observations (9 ширин) на candidate и reinstall;15 task-tabs/mobile checks;6 access checks; MA/EA/EB и owned/legacy menu/route comparison.
+- PASS: backup code+DB+files, полное восстановление с byte-equal повторным дампом БД, hashes всего code/filedir, history и ACL/downloads после restore. Устанавливается один ZIP SHA2562620157c2017226ff1650337bfc806d1b214db2d2e11b150b492ee360a99b8c6, checksum совпадает на обеих БД.
+- FAIL: повторная отправка compact discussion — baseline_repeat, candidate и reinstall. Send message включена, но перекрыта Recent activity panel; hit-test возвращает DIV.bms24-task-panel-body. Это воспроизведение на baseline, не доказанная новая регрессия #90. Force-click/JS submit/удаление истории не применялись.
+- NOT RUN: оставшиеся write/CSRF сценарии после Timeout. Общая M01–M10 не принята; независимая проверка корректно сохраняет FAIL.
+
+[Полный отчёт и ограничения](https://github.com/rimanfatykhov-arch/bms24/pull/98#issuecomment-6873001981), [run и artifacts](https://github.com/rimanfatykhov-arch/bms24/actions/runs/43564455219). Места локализации UI: task_center.css sticky aside panel rules и task_ui_service.php composition discussion/recent activity. Product code не исправлялся тестовым harness.
+
+Следующий шаг Codex: локализовать узкое исправление перекрытия и повторить M08/матрицу после согласованного fix; текущий fallback через другую страницу не является PASS исходного сценария. Claude завершает независимые blockers #96. Никакого production-пилота до принятия обоих результатов и release gates.
