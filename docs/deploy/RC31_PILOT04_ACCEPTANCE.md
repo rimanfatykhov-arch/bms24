@@ -30,4 +30,4 @@ Existing Dev `checks` запускает весь Python suite normal/-O, вкл
 - Реальный SQL import, fresh/upgrade/ACL/browser на новом live adapter обеих СУБД, owner recovery рабочего ключа и независимость failure-domain — не доказаны supplied config или synthetic fixture.
 - Новый release artifact/owner approval/site/window не выдаются. Нет опубликованных p50/p95/SLA/retention сроков, удаления наборов или покупки ресурсов.
 
-До operational допуска: независимая приёмка текущего PR/CI, отдельный reviewed live adapter и его isolated dual-engine Moodle rehearsal, затем только новое разрешение владельца на конкретные реальные операции. PR104/этот Draft не заменяет approval или ready release.
+До operational допуска: независимая приёмка текущего PR/CI, отдельный reviewed live adapter и его isolated dual-engine Moodle rehearsal, затем только новое разрешение владельца на конкретные реальные операции. Issue #104 и этот Draft не заменяет approval или ready release.
