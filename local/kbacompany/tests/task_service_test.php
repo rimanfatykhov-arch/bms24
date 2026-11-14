@@ -49,6 +49,35 @@ final class task_service_test extends \advanced_testcase {
                 'starttime' => '17:00', 'duetime' => '09:00']]];
     }
 
+    public function test_first_discussion_keeps_historical_creator_without_inviting_them(): void {
+        global $DB;
+        $f = $this->fixture();
+        $task = $this->create($f);
+        // The administrator created the historical task but is not an employee of this company.
+        $actor = (int)$f['reviewer']->id;
+        $this->setUser($f['reviewer']);
+        $message = task_service::post_discussion_message($f['company'], $actor, $task, 'Reviewer first message');
+        $stored = $DB->get_record('local_kbacompany_commmsg', ['uuid' => $message], '*', MUST_EXIST);
+        $this->assertSame($actor, (int)$stored->authorid);
+        $this->assertSame(1, $DB->count_records('local_kbacompany_commmsg', ['threaduuid' => $stored->threaduuid]));
+        $this->assertFalse($DB->record_exists('local_kbacompany_commpart', [
+            'companyuuid' => $f['company'], 'threaduuid' => $stored->threaduuid, 'userid' => $f['admin'],
+        ]));
+        $this->assertSame($f['admin'], (int)$DB->get_field('local_kbacompany_task', 'creatorid', ['uuid' => $task]));
+        $this->assertTrue($DB->record_exists('local_kbacompany_commpart', [
+            'companyuuid' => $f['company'], 'threaduuid' => $stored->threaduuid,
+            'userid' => $f['employee']->id, 'active' => 1,
+        ]));
+        $outsider = $this->getDataGenerator()->create_user();
+        $this->setUser($outsider);
+        try {
+            task_service::post_discussion_message($f['company'], (int)$outsider->id, $task, 'Forbidden');
+            $this->fail('An outsider must not post.');
+        } catch (\moodle_exception $e) {
+            $this->assertSame(1, $DB->count_records('local_kbacompany_commmsg', ['threaduuid' => $stored->threaduuid]));
+        }
+    }
+
     /** @dataProvider invalid_task_dates */
     public function test_invalid_date_order_cannot_create_task(array $dates): void {
         global $DB;

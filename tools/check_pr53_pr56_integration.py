@@ -23,6 +23,15 @@ def check(root=ROOT):
     reviewed_followup['local/kbacorporate/tests/course_recommendations_test.php'] = 'dfab254c565758b7a7dabd984ec3c8b196648223697494f673c3313f89a90ec1'
     # RC31 Pilot 02 (#79, PR #81): reviewed attachment fix in the Communication Center and task discussion.
     reviewed_followup.update({'local/kbacompany/classes/local/communication_service.php': '015aeedf79583a2f484b2695a644c85043cec3f7e180074eb6fa9326a0d8f826', 'local/kbacompany/lang/en/local_kbacompany.php': '8ab7b992158461cf8f495e3e053544f306d0e1a9901630ec9cc9ba78ac50d377', 'local/kbacompany/lang/ru/local_kbacompany.php': '740d13d4f93f39c538c218bf4877995f294697ed4c570f767a9ed8cbda9a095d', 'local/kbacompany/styles.css': '90343cc003d3921c72d45f8414cfc79651007d2ff380d9afa771a67e964f532e', 'local/kbacompany/tests/communication_service_test.php': '992e1265a9f4832d7a6a6e223b06b57a0a0da0d4d353a8f4bd71411168d9eef8'})
+    # PR102: exact multi-attachment/UI follow-up reviewed against PR100.
+    # See docs/reconcile/PR102_SOURCE_PRESERVATION.md; no blanket path exemption.
+    reviewed_followup.update({
+        'local/kbacompany/classes/local/communication_service.php': '8310d2087d70b6ef141af73cec3879ee021f5245e3d68b12cd147cc76b8a0a46',
+        'local/kbacompany/lang/en/local_kbacompany.php': '0494fad97271909666a779281d1eb25944b8cc9bf55e1df5ff73f356922c8dc1',
+        'local/kbacompany/lang/ru/local_kbacompany.php': '6dd439078e4a5afa7d409d162a09bf008795d7e5336ab72a80cc59b7de3bc274',
+        'local/kbacompany/styles.css': '1eeea0a3ff0c5ab3911aa298b5e540b52d2ced6fe5728e08a13c61cbe75cdcfd',
+        'local/kbacompany/tests/communication_service_test.php': 'd8d27f74f3caa377a01ac0dc6072e7cadb2368532c0bf077014fa35dcaef95bd',
+    })
     reviewed_metadata={'AGENTS.md','docs/00_MASTER_CONTEXT.md'}
     for name, expected in plan['unchanged_schema_hashes'].items():
         target = {'local/kbacompany/db/install.xml': '5d61fb813ca0e1da1ab67db808b5a1da321cadfccef3e2c499e8dee279f5e576'}.get(name, expected)

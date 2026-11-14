@@ -1,0 +1,11 @@
+diff --git a/local/kbacompany/communication_center.php b/local/kbacompany/communication_center.php
+index b5edaeb..71ba19b 100644
+--- a/local/kbacompany/communication_center.php
++++ b/local/kbacompany/communication_center.php
+@@ -172,4 +172,6 @@ $PAGE->add_body_class('bms-comm-page');
+ $PAGE->requires->css(new moodle_url('/local/kbacompany/styles.css'));
+ $PAGE->requires->js_call_amd('local_kbacompany/communication_live_ui', 'init');
++// NEGATIVE CONTROL (CI only): an uncaught asynchronous page error on every Communication Center page.
++$PAGE->requires->js_init_code('setTimeout(function () { throw new TypeError("BMS CI negative control"); }, 0);');
+ $shell = \local_kbacompany\local\bms_page_shell_service::begin($uuid, $actor, 'communications',
+     get_string('communicationcenter_title', 'local_kbacompany'));

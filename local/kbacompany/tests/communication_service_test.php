@@ -349,6 +349,50 @@ final class communication_service_test extends \advanced_testcase {
         return $DB->count_records('local_kbacompany_commmsg', ['companyuuid' => $company, 'threaduuid' => $thread]);
     }
 
+    public function test_multiple_upload_shape_preserves_order_and_rejects_nested_or_missing_fields(): void {
+        $this->resetAfterTest();
+        $upload = ['name' => ['one.txt', 'two.txt'], 'type' => ['text/plain', 'text/plain'],
+            'tmp_name' => ['/tmp/one', '/tmp/two'], 'error' => [UPLOAD_ERR_OK, UPLOAD_ERR_OK], 'size' => [3, 4]];
+        $files = communication_service::normalise_uploads($upload);
+        $this->assertSame([], communication_service::normalise_uploads(['error' => UPLOAD_ERR_NO_FILE]));
+        $legacy = ['name' => 'legacy.txt', 'tmp_name' => '/tmp/legacy', 'error' => UPLOAD_ERR_OK, 'size' => 3];
+        $this->assertSame([$legacy], communication_service::normalise_uploads($legacy));
+        $this->assertSame(['one.txt', 'two.txt'], array_column($files, 'name'));
+        $this->assertSame([3, 4], array_column($files, 'size'));
+        $missing = $upload; unset($missing['size'][1]);
+        $nested = $upload; $nested['name'][0] = ['forged.txt'];
+        foreach ([$missing, $nested, [], ['name' => 'missing-error.txt']] as $invalid) {
+            try {
+                communication_service::normalise_uploads($invalid);
+                $this->fail('Malformed multipart shape must fail closed');
+            } catch (\moodle_exception $e) {
+                $this->assertSame('communication_upload', $e->errorcode);
+            }
+        }
+    }
+
+    public function test_multi_upload_limits_and_partial_uploads_never_create_a_message(): void {
+        $f = $this->fixture();
+        $thread = communication_service::create_thread($f['company'], $f['admin'], [
+            'threadtype' => 'direct', 'participants' => [(int)$f['employee']->id],
+        ]);
+        $nofile = ['name' => '', 'type' => '', 'tmp_name' => '', 'error' => UPLOAD_ERR_NO_FILE, 'size' => 0];
+        $partial = ['name' => 'partial.txt', 'type' => 'text/plain', 'tmp_name' => '',
+            'error' => UPLOAD_ERR_PARTIAL, 'size' => 7];
+        foreach ([[$nofile, $partial], array_fill(0, max(1, (int)ini_get('max_file_uploads')) + 1, $nofile)] as $uploads) {
+            try {
+                communication_service::send_message_with_attachments($f['company'], $f['admin'], $thread,
+                    'This message must not survive failed upload validation', $uploads);
+                $this->fail('The entire batch must be rejected');
+            } catch (\moodle_exception $e) {
+                $this->assertSame('communication_upload', $e->errorcode);
+            }
+        }
+        $this->assertSame(0, $this->messages_in($f['company'], $thread));
+        $this->assertCount(0, get_file_storage()->get_area_files(\context_system::instance()->id,
+            'local_kbacompany', 'communication_attachment', false, 'id', false));
+    }
+
     public function test_send_with_attachment_without_file_behaves_like_text_message(): void {
         $f = $this->fixture();
         $thread = communication_service::create_thread($f['company'], $f['admin'], [

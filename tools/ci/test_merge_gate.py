@@ -1,80 +1,289 @@
 #!/usr/bin/env python3
-"""Examples required by Issue #82 for the merge gate decision (pure function; no network)."""
+"""Merge gate decision tests (Issue #82 examples + RC32 independent review). Pure functions; no network. Run with python and python -O."""
+import copy
+import hashlib
+import json
 import sys
 import unittest
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from merge_gate import decide, FULL_WORKFLOWS  # noqa: E402
+import merge_gate as g  # noqa: E402
 
-H = 'a' * 40
+H, B, RUN = 'a' * 40, 'b' * 40, '4242'
+EXP = {'target': 'this-pr', 'head': H, 'base': B, 'run_id': RUN}
+PLANNED = ['this-pr']
+WF = list(g.FULL_WORKFLOWS)
 
 
 def cls(profile, files, tests=('task_service_test',), gates=('pr48_tenant_isolation_test',)):
-    return {'profile': profile, 'head': H, 'changed_files': files,
+    return {'profile': profile, 'head': H, 'base': B, 'changed_files': files,
             'focused_phpunit': list(tests) if profile != 'FAST' else [], 'security_gates': list(gates) if profile != 'FAST' else []}
 
 
-FAST_OK = {'status': 'PASS', 'head': H}
-def std_ok(c): return {'status': 'PASS', 'phpunit': dict({'init': 'PASS'}, **{t: 'PASS' for t in c['focused_phpunit'] + c['security_gates']})}
-BR_OK = {'status': 'PASS', 'checks': {'download_other_company_denied': {'status': 'PASS'}}}
-BROWSERS_OK = {'mariadb': BR_OK, 'mysqli': BR_OK}
-FULL_OK = {w: 'success' for w in FULL_WORKFLOWS}
+def ev(tier_, report_, profile_, engine_='', **override):
+    raw = json.dumps(report_).encode()
+    ident = {'tier': tier_, 'target': 'this-pr', 'head': H, 'base': B, 'profile': profile_, 'engine': engine_, 'run_id': RUN,
+             'run_attempt': '1', 'job': g.JOB_KEYS[tier_], 'report_sha256': hashlib.sha256(raw).hexdigest()}
+    ident.update(override)
+    return {'identity': ident, 'report': report_, 'report_sha256': hashlib.sha256(raw).hexdigest()}
 
 
-class MergeGateTest(unittest.TestCase):
+def browser_report(engine, checks=None):
+    return {'status': 'PASS', 'dbtype': engine, 'checks': checks if checks is not None else {k: {'status': 'PASS'} for k in g.required_browser_checks()}}
+
+
+def evidence(c, **kw):
+    p = c['profile']
+    e = {'FAST': ev('FAST', {'status': 'PASS', 'head': H, 'base': B}, p)}
+    if p != 'FAST':
+        e['STANDARD'] = ev('STANDARD', {'status': 'PASS', 'phpunit': dict({'init': 'PASS'}, **{t: 'PASS' for t in c['focused_phpunit'] + c['security_gates']})}, p)
+        e['BROWSER'] = {en: ev('BROWSER', browser_report(en), p, en) for en in g.ENGINES}
+    e.update(kw)
+    return e
+
+
+def jobs(planned=('this-pr',), **override):
+    j = {'Plan targets': 'success', 'Merge gate': 'in_progress'}
+    for t in planned:
+        n = g.job_names(t)
+        j[n['FAST']] = j[n['STANDARD']] = 'success'
+        for name in n['BROWSER'].values():
+            j[name] = 'success'
+    j.update(override)
+    return j
+
+
+FULL_OK = {w: {'status': 'completed', 'conclusion': 'success', 'id': 1} for w in WF}
+
+
+def attempts(j=None, n=1):
+    return {k: n for k in (j or jobs())}
+
+
+def verdict(c, e=None, j=None, planned=None, full=None, exp=None, att=None):
+    j = j if j is not None else jobs()
+    return g.decide(exp or EXP, c, e if e is not None else evidence(c), j, planned or PLANNED, full, att if att is not None else attempts(j))
+
+
+class MergeGateExamples(unittest.TestCase):
+    """Issue #82 examples (behaviour kept from PR #94)."""
+
     def test_small_safe_change_passes_without_full(self):
         c = cls('FAST', ['docs/guide.md', 'local/kbacompany/lang/en/local_kbacompany.php'])
-        v, r, req = decide(c, FAST_OK, None, {}, None)
+        v, r, req, _ = verdict(c)
         self.assertEqual('PASS', v, r); self.assertIn('not required', req['FULL'])
         c = cls('STANDARD', ['local/kbacompany/classes/local/report_ui_service.php'])
-        v, r, req = decide(c, FAST_OK, std_ok(c), BROWSERS_OK, None)
+        v, r, req, _ = verdict(c)
         self.assertEqual('PASS', v, r); self.assertIn('not required', req['FULL'])
 
     def test_db_acl_file_changes_require_full(self):
         for files in (['local/kbacompany/db/install.xml'], ['local/kbacompany/db/access.php'], ['local/kbacompany/lib.php']):
             c = cls('FULL', files)
-            v, r, _ = decide(c, FAST_OK, std_ok(c), BROWSERS_OK, None)
-            self.assertEqual('FAIL', v, files); self.assertTrue(any('FULL workflow' in x for x in r))
-            self.assertEqual('PASS', decide(c, FAST_OK, std_ok(c), BROWSERS_OK, FULL_OK)[0])
+            v, r, _, _ = verdict(c)
+            self.assertEqual('FAIL', v, files); self.assertTrue(any(x.startswith('FULL ') for x in r))
+            self.assertEqual('PASS', verdict(c, full=FULL_OK)[0], verdict(c, full=FULL_OK)[1])
 
-    def test_unknown_path_full_requires_full_workflows(self):
+    def test_unknown_path_full_requires_all_full_workflows(self):
         c = cls('FULL', ['vendor/blob.bin'])
-        self.assertEqual('FAIL', decide(c, FAST_OK, std_ok(c), {}, {w: 'success' for w in FULL_WORKFLOWS[:-1]})[0])
-        self.assertEqual('PASS', decide(c, FAST_OK, std_ok(c), {}, FULL_OK)[0])  # no local/ change: BROWSER not applicable
+        part = dict(FULL_OK); part[WF[-1]] = {'status': 'missing'}
+        self.assertEqual('FAIL', verdict(c, full=part)[0])
+        self.assertEqual('PASS', verdict(c, full=FULL_OK)[0])
 
     def test_classifier_error_blocks(self):
-        for bad in (None, {}, {'profile': 'FASTER', 'head': H}, {'profile': 'FAST'}):
-            self.assertEqual('FAIL', decide(bad, FAST_OK, None, {}, None)[0])
+        for bad in (None, {}, {'profile': 'FASTER', 'head': H, 'base': B}, {'profile': 'FAST'}):
+            self.assertEqual('FAIL', g.decide(EXP, bad, {}, jobs(), PLANNED, None, attempts())[0])
 
-    def test_failed_or_skipped_browser_blocks(self):
+    def test_failed_or_incomplete_browser_blocks(self):
         c = cls('STANDARD', ['local/kbacompany/tasks.php'])
-        for browsers in ({}, {'mariadb': BR_OK}, {'mariadb': BR_OK, 'mysqli': {'status': 'FAIL', 'checks': {}}},
-                         {'mariadb': BR_OK, 'mysqli': {'status': 'PASS', 'checks': {}}},
-                         {'mariadb': BR_OK, 'mysqli': {'status': 'PASS', 'checks': {'x': {'status': 'NOT RUN'}}}}):
-            self.assertEqual('FAIL', decide(c, FAST_OK, std_ok(c), browsers, None)[0], browsers)
+        for engine, rep in (('mysqli', None), ('mysqli', {'status': 'FAIL', 'dbtype': 'mysqli', 'checks': {}}),
+                            ('mysqli', browser_report('mysqli', {})),
+                            ('mysqli', browser_report('mysqli', dict({k: {'status': 'PASS'} for k in g.required_browser_checks()}, moodle_install={'status': 'NOT RUN'})))):
+            e = evidence(c)
+            e['BROWSER'][engine] = ev('BROWSER', rep, 'STANDARD', engine) if rep is not None else {}
+            self.assertEqual('FAIL', verdict(c, e)[0], rep)
 
-    def test_standard_not_run_cancelled_or_missing_blocks(self):
+    def test_standard_not_run_or_missing_blocks(self):
         c = cls('STANDARD', ['local/kbacompany/tasks.php'])
-        s = std_ok(c); s['phpunit']['task_service_test'] = 'NOT RUN'
-        self.assertEqual('FAIL', decide(c, FAST_OK, s, BROWSERS_OK, None)[0])
-        self.assertEqual('FAIL', decide(c, FAST_OK, None, BROWSERS_OK, None)[0])
-        s = std_ok(c); del s['phpunit']['pr48_tenant_isolation_test']
-        self.assertEqual('FAIL', decide(c, FAST_OK, s, BROWSERS_OK, None)[0])
+        e = evidence(c); r = copy.deepcopy(e['STANDARD']['report']); r['phpunit']['task_service_test'] = 'NOT RUN'
+        e['STANDARD'] = ev('STANDARD', r, 'STANDARD'); self.assertEqual('FAIL', verdict(c, e)[0])
+        e = evidence(c); e['STANDARD'] = {}; self.assertEqual('FAIL', verdict(c, e)[0])
         c0 = cls('STANDARD', ['local/kbacompany/tasks.php'], tests=(), gates=())
-        self.assertEqual('FAIL', decide(c0, FAST_OK, {'status': 'PASS', 'phpunit': {'init': 'PASS'}}, BROWSERS_OK, None)[0])
+        self.assertEqual('FAIL', verdict(c0)[0])
+
+    def test_full_failure_cancellation_or_unfinished_blocks(self):
+        c = cls('FULL', ['local/kbacompany/db/upgrade.php'])
+        for concl in ('failure', 'cancelled', None, 'skipped', 'timed_out'):
+            full = copy.deepcopy(FULL_OK); full[WF[0]] = {'status': 'in_progress' if concl is None else 'completed', 'conclusion': concl}
+            self.assertEqual('FAIL', verdict(c, full=full)[0], concl)
+
+
+class ReviewFindings(unittest.TestCase):
+    """RC32 independent review, Issue #82 comment 6872172812: each case is a false PASS on main f34ab6f."""
+
+    # ---- A. FULL run selection
+    def mk(self, rid, attempt, concl, wf=None, status='completed', head=H, base=B, pr=95, event='pull_request', path=None):
+        return {'id': rid, 'run_attempt': attempt, 'status': status, 'conclusion': concl if status == 'completed' else None,
+                'path': path or wf or WF[0], 'event': event, 'head_sha': head, 'name': 'x',
+                'pull_requests': [{'number': pr, 'base': {'sha': base}}]}
+
+    def test_old_attempt2_success_does_not_mask_new_attempt1_failure(self):
+        runs = [self.mk(100, 2, 'success', w) for w in WF] + [self.mk(200, 1, 'failure', WF[0])]
+        sel = g.select_full_runs(runs, H, B, 95)
+        self.assertEqual('failure', sel[WF[0]]['conclusion']); self.assertEqual(200, sel[WF[0]]['id'])
+        c = cls('FULL', ['local/kbacompany/lib.php'])
+        self.assertEqual('FAIL', verdict(c, full=sel)[0])
+
+    def test_newer_unfinished_or_cancelled_run_wins(self):
+        for newer in (self.mk(300, 1, None, WF[1], status='in_progress'), self.mk(300, 1, 'cancelled', WF[1])):
+            sel = g.select_full_runs([self.mk(100, 3, 'success', w) for w in WF] + [newer], H, B, 95)
+            self.assertNotEqual('success', sel[WF[1]]['conclusion'])
+
+    def test_full_runs_bound_to_path_event_head_pr_and_base(self):
+        good = [self.mk(100, 1, 'success', w) for w in WF]
+        self.assertTrue(all(v['conclusion'] == 'success' for v in g.select_full_runs(good, H, B, 95).values()))
+        for bad in ({'base': 'c' * 40}, {'head': 'c' * 40}, {'pr': 7}, {'event': 'push'}, {'path': '.github/workflows/rc30-corporate2613.yml'}):
+            runs = [self.mk(100, 1, 'success', w, **bad) for w in WF]
+            self.assertTrue(all(v.get('status') == 'missing' for v in g.select_full_runs(runs, H, B, 95).values()), bad)
+        # same display name, different workflow file: not accepted
+        impostor = [dict(self.mk(100, 1, 'success', w), path='.github/workflows/impostor.yml', name=g.FULL_WORKFLOWS[w]) for w in WF]
+        self.assertTrue(all(v.get('status') == 'missing' for v in g.select_full_runs(impostor, H, B, 95).values()))
+        # retained Corporate2613 (expected FAIL history) is not part of FULL and never mixed with the repaired workflow
+        self.assertNotIn('.github/workflows/rc30-corporate2613.yml', g.FULL_WORKFLOWS)
+        self.assertIn('.github/workflows/rc30-corporate2613-repair.yml', g.FULL_WORKFLOWS)
+        # historical replay: closed PR has an empty pull_requests list; only accepted in historical mode
+        closed = [dict(self.mk(100, 1, 'success', w), pull_requests=[]) for w in WF]
+        self.assertTrue(all(v.get('status') == 'missing' for v in g.select_full_runs(closed, H, B, 95).values()))
+        self.assertTrue(all(v['conclusion'] == 'success' for v in g.select_full_runs(closed, H, B, 95, historical=True).values()))
+
+    # ---- B. job outcomes
+    def test_pass_report_with_failed_or_cancelled_job_blocks(self):
+        c = cls('STANDARD', ['local/kbacompany/tasks.php'])
+        for job in ('FAST / this-pr', 'STANDARD / this-pr', 'BROWSER / this-pr / Percona 8.0.46-37', 'Plan targets'):
+            for concl in ('failure', 'cancelled', 'skipped', 'timed_out', 'in_progress'):
+                v, r, _, _ = verdict(c, j=jobs(**{job: concl}))
+                self.assertEqual('FAIL', v, (job, concl)); self.assertTrue(any(job in x for x in r))
+
+    def test_missing_job_or_unreadable_api_blocks(self):
+        c = cls('FAST', ['docs/a.md'])
+        j = jobs(); del j['STANDARD / this-pr']
+        self.assertEqual('FAIL', verdict(c, j=j)[0])
+        j = jobs(); del j['BROWSER / this-pr / MariaDB 10.11.19']
+        self.assertEqual('FAIL', verdict(c, j=j)[0])  # even for FAST the leg must conclude success, never skip
+        self.assertEqual('FAIL', g.decide(EXP, c, evidence(c), None, PLANNED, None, attempts())[0])
+        self.assertEqual('FAIL', g.decide(EXP, c, evidence(c), {}, PLANNED, None, attempts())[0])
+        self.assertEqual('FAIL', g.decide(EXP, c, evidence(c), jobs(), ['replay-pr80-css'], None, attempts())[0])
+
+    def test_negative_controls_required_replays_information_only(self):
+        c = cls('FULL', ['tools/ci/merge_gate.py'])
+        planned = ['this-pr', 'replay-pr80-css', 'negative-control', 'negative-browser-acl']
+        j = jobs(planned)
+        self.assertEqual('PASS', verdict(c, j=j, planned=planned, full=FULL_OK)[0])
+        j2 = dict(j, **{'BROWSER / negative-browser-acl / MariaDB 10.11.19': 'failure'})
+        self.assertEqual('FAIL', verdict(c, j=j2, planned=planned, full=FULL_OK)[0])
+        j3 = dict(j, **{'FAST / replay-pr80-css': 'failure'})
+        v, r, _, info = verdict(c, j=j3, planned=planned, full=FULL_OK)
+        self.assertEqual('PASS', v, r); self.assertEqual('failure', info['replay_jobs_information_only']['FAST / replay-pr80-css'])
+
+    # ---- C. identity and completeness
+    def test_classification_must_match_expected_head_and_base(self):
+        c = cls('FAST', ['docs/a.md'])
+        self.assertEqual('FAIL', verdict(c, exp=dict(EXP, head='c' * 40))[0])
+        self.assertEqual('FAIL', verdict(c, exp=dict(EXP, base='c' * 40))[0])
+        self.assertEqual('FAIL', verdict(c, exp=dict(EXP, head='short'))[0])
+        # everything else consistently stamped for head C; only the classification is for head H
+        C = 'c' * 40
+        e = evidence(c); e['FAST'] = ev('FAST', {'status': 'PASS', 'head': C, 'base': B}, 'FAST', head=C)
+        self.assertEqual('PASS', g.decide(dict(EXP, head=C), dict(c, head=C), e, jobs(), PLANNED, None, attempts())[0])
+        self.assertEqual('FAIL', g.decide(dict(EXP, head=C), c, e, jobs(), PLANNED, None, attempts())[0])
+
+    def test_reports_of_another_sha_run_tier_or_engine_rejected(self):
+        c = cls('STANDARD', ['local/kbacompany/tasks.php'])
+        for tier, override in (('STANDARD', {'head': 'c' * 40}), ('STANDARD', {'run_id': '1'}), ('STANDARD', {'target': 'replay-pr81-attachments'}),
+                               ('STANDARD', {'profile': 'FAST'}), ('FAST', {'base': 'c' * 40}), ('FAST', {'tier': 'STANDARD'})):
+            e = evidence(c); e[tier] = ev(tier, e[tier]['report'], 'STANDARD', **override)
+            self.assertEqual('FAIL', verdict(c, e)[0], (tier, override))
+        e = evidence(c); e['BROWSER']['mariadb'] = ev('BROWSER', browser_report('mariadb'), 'STANDARD', 'mysqli')
+        self.assertEqual('FAIL', verdict(c, e)[0])
+        e = evidence(c); e['BROWSER']['mysqli'] = ev('BROWSER', browser_report('mariadb'), 'STANDARD', 'mysqli')
+        self.assertEqual('FAIL', verdict(c, e)[0])  # report itself says another engine
+
+    def test_report_bytes_must_match_stamp(self):
+        c = cls('STANDARD', ['local/kbacompany/tasks.php'])
+        e = evidence(c); e['STANDARD']['report_sha256'] = '0' * 64
+        self.assertEqual('FAIL', verdict(c, e)[0])
+        e = evidence(c); e['FAST']['identity']['report_sha256'] = None; e['FAST']['report_sha256'] = None
+        self.assertEqual('FAIL', verdict(c, e)[0])
+
+    def test_browser_single_unrelated_check_is_not_complete(self):
+        c = cls('STANDARD', ['local/kbacompany/tasks.php'])
+        e = evidence(c)
+        e['BROWSER']['mariadb'] = ev('BROWSER', browser_report('mariadb', {'unrelated_check': {'status': 'PASS'}}), 'STANDARD', 'mariadb')
+        v, r, _, _ = verdict(c, e)
+        self.assertEqual('FAIL', v); self.assertTrue(any('missing' in x for x in r))
 
     def test_fast_must_match_head_and_pass(self):
         c = cls('FAST', ['docs/a.md'])
-        self.assertEqual('FAIL', decide(c, {'status': 'PASS', 'head': 'b' * 40}, None, {}, None)[0])
-        self.assertEqual('FAIL', decide(c, {'status': 'FAIL', 'head': H}, None, {}, None)[0])
-        self.assertEqual('FAIL', decide(c, None, None, {}, None)[0])
+        for rep in ({'status': 'PASS', 'head': 'c' * 40, 'base': B}, {'status': 'FAIL', 'head': H, 'base': B}, None):
+            e = evidence(c); e['FAST'] = ev('FAST', rep, 'FAST') if rep else {}
+            self.assertEqual('FAIL', verdict(c, e)[0], rep)
 
-    def test_full_failure_or_cancellation_blocks(self):
-        c = cls('FULL', ['local/kbacompany/db/upgrade.php'])
-        for concl in ('failure', 'cancelled', 'in_progress', 'missing', 'skipped'):
-            full = dict(FULL_OK); full['PR48 isolated Moodle acceptance'] = concl
-            self.assertEqual('FAIL', decide(c, FAST_OK, std_ok(c), BROWSERS_OK, full)[0], concl)
+    def test_low_risk_does_not_wait_for_full_but_full_profile_does(self):
+        self.assertEqual('PASS', verdict(cls('FAST', ['docs/a.md']), full=None)[0])
+        self.assertEqual('FAIL', verdict(cls('FULL', ['local/kbacompany/lib.php']), full=None)[0])
+
+    def test_workflow_engine_names_match(self):
+        wf = (Path(__file__).resolve().parents[2] / '.github' / 'workflows' / 'ci-tiers.yml').read_text(encoding='utf-8')
+        for name in g.ENGINES.values():
+            self.assertIn('name: ' + name + ',', wf)
+        for dbtype in g.ENGINES:
+            self.assertIn('dbtype: ' + dbtype + ',', wf)
+        for path in g.FULL_WORKFLOWS:
+            self.assertTrue((Path(__file__).resolve().parents[2] / path).is_file(), path)
+
+    # ---- Codex review P2 (Issue #82 comment 6872634357): attempt/job provenance of each report
+    def test_identity_attempt_and_job_must_match_the_execution(self):
+        c = cls('STANDARD', ['local/kbacompany/tasks.php'])
+        for tier, override in (('FAST', {'run_attempt': '999'}), ('FAST', {'job': 'unrelated'}), ('STANDARD', {'run_attempt': '2'}),
+                               ('STANDARD', {'job': 'fast'}), ('FAST', {'run_attempt': None}), ('FAST', {'job': None})):
+            e = evidence(c); e[tier] = ev(tier, e[tier]['report'], 'STANDARD', **override)
+            self.assertEqual('FAIL', verdict(c, e)[0], (tier, override))
+        e = evidence(c); e['BROWSER']['mysqli'] = ev('BROWSER', browser_report('mysqli'), 'STANDARD', 'mysqli', run_attempt='3')
+        self.assertEqual('FAIL', verdict(c, e)[0])
+        # execution attempt unknown for a required job => FAIL
+        att = attempts(); del att['FAST / this-pr']
+        self.assertEqual('FAIL', verdict(c, att=att)[0])
+        self.assertEqual('FAIL', verdict(c, att={})[0])
+
+    def test_execution_attempts_from_real_rerun_shapes(self):
+        # Shapes observed in run 43561610462 (re-run failed jobs) and 43561610550 (full re-run).
+        a1 = {'Plan targets': {'started_at': 't0'}, 'FAST / this-pr': {'started_at': 't1'}, 'STANDARD / this-pr': {'started_at': 't2'},
+              'BROWSER / this-pr / MariaDB 10.11.19': {'started_at': 't3'}, 'Merge gate': {'started_at': 't4'}}
+        failed_only = {1: a1, 2: dict(a1, **{'FAST / this-pr': {'started_at': 't9'}, 'Merge gate': {'started_at': 't10'}})}
+        self.assertEqual({'Plan targets': 1, 'FAST / this-pr': 2, 'STANDARD / this-pr': 1, 'BROWSER / this-pr / MariaDB 10.11.19': 1,
+                          'Merge gate': 2}, g.execution_attempts(failed_only, 2))
+        full = {1: a1, 2: {k: {'started_at': v['started_at'] + 'x'} for k, v in a1.items()}}
+        self.assertTrue(all(v == 2 for v in g.execution_attempts(full, 2).values()))
+        # copied in attempt 2 and 3, executed in 1
+        three = {1: a1, 2: dict(a1), 3: dict(a1, **{'Merge gate': {'started_at': 'n'}})}
+        self.assertEqual(1, g.execution_attempts(three, 3)['STANDARD / this-pr'])
+        self.assertEqual({}, g.execution_attempts({}, 1))
+        self.assertNotIn('X', g.execution_attempts({1: {'X': {'started_at': None}}}, 1))
+
+    def test_rerun_failed_jobs_accepts_reused_evidence_and_rejects_stale(self):
+        c = cls('STANDARD', ['local/kbacompany/tasks.php'])
+        att = attempts(); att['FAST / this-pr'] = 2   # FAST re-executed in attempt 2, the rest reused from attempt 1
+        e = evidence(c); e['FAST'] = ev('FAST', e['FAST']['report'], 'STANDARD', run_attempt='2')
+        self.assertEqual('PASS', verdict(c, e, att=att)[0], verdict(c, e, att=att)[1])
+        e = evidence(c)   # stale FAST report of the failed attempt 1
+        self.assertEqual('FAIL', verdict(c, e, att=att)[0])
+        self.assertEqual('ci-tiers-browser-this-pr-mysqli-a2', g.artifact_name('BROWSER', 'this-pr', 2, 'mysqli'))
+        self.assertEqual('ci-tiers-fast-this-pr-a1', g.artifact_name('FAST', 'this-pr', 1))
+
+    def test_decide_never_raises_on_garbage(self):
+        c = cls('FULL', ['x'])
+        for e in (None, {'FAST': 'x'}, {'BROWSER': 'x'}, {'BROWSER': {'mariadb': {'identity': {}, 'report': []}}}):
+            self.assertEqual('FAIL', g.decide(EXP, c, e, jobs(), PLANNED, {'x': 'y'}, attempts())[0])
 
 
 if __name__ == '__main__':

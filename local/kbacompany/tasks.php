@@ -7,6 +7,7 @@ use local_kbacompany\local\company_context_service;
 use local_kbacompany\local\battle_plan_service;
 use local_kbacompany\local\task_provider_service;
 use local_kbacompany\local\task_list_preferences_service as taskprefs;
+use local_kbacompany\local\communication_service;
 
 require_login();
 $context = context_system::instance();
@@ -33,6 +34,16 @@ if (!in_array($tab,['overview','checklist','result','files','discussion','histor
 $operation = optional_param('operation','',PARAM_ALPHA);
 $action = optional_param('action','',PARAM_ALPHA);
 $method = $_SERVER['REQUEST_METHOD'] ?? 'GET';
+$discussionajax = $method === 'POST' && $action === 'discussionpost' && optional_param('discussionajax', 0, PARAM_BOOL);
+$discussionreply = static function(bool $ok, string $requestkey, string $url = '', string $error = ''): void {
+    header('Content-Type: application/json; charset=utf-8');
+    header('Cache-Control: private, no-store');
+    header('X-Content-Type-Options: nosniff');
+    if (!$ok) { http_response_code(400); }
+    echo json_encode(['contract'=>'bms_task_discussion_v1', 'ok'=>$ok, 'requestkey'=>$requestkey,
+        'url'=>$url, 'error'=>$error], JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP);
+    exit;
+};
 if (!in_array($method,['GET','HEAD','POST'],true)) { throw new moodle_exception('taskcenter_post','local_kbacompany'); }
 if ($view === 'dutypositions') {
     if ($method !== 'GET' && $method !== 'HEAD') {
@@ -176,9 +187,16 @@ if($action!=='') {
         // Bounded, session-local replay protection. Not durable exactly-once across session loss.
         $receiptkey=$uuid.':'.$actor.':'.$requestkey;
         $payload=$_POST;unset($payload['sesskey'],$payload['requestkey']);ksort($payload);
-        foreach(['attachment','resultattachment','discussionattachment'] as $filekey){if(!empty($_FILES[$filekey])&&(int)($_FILES[$filekey]['error']??UPLOAD_ERR_NO_FILE)!==UPLOAD_ERR_NO_FILE){
-            $tmp=(string)($_FILES[$filekey]['tmp_name']??'');$payload['upload_'.$filekey]=['name'=>$_FILES[$filekey]['name']??'',
-                'sha256'=>is_uploaded_file($tmp)?hash_file('sha256',$tmp):'invalid'];}}
+        foreach(['attachment','resultattachment','discussionattachment'] as $filekey){
+            foreach(communication_service::normalise_uploads($_FILES[$filekey]??null) as $file){
+                $tmp=(string)($file['tmp_name']??'');$payload['upload_'.$filekey][]=['name'=>$file['name']??'',
+                    'sha256'=>is_uploaded_file($tmp)?hash_file('sha256',$tmp):'invalid'];
+            }
+        }
+        if($discussionajax && optional_param('discussionfilecount',-1,PARAM_INT)!==
+                count(communication_service::normalise_uploads($_FILES['discussionattachment']??null))){
+            throw new moodle_exception('communication_upload','local_kbacompany');
+        }
         $fingerprint=hash('sha256',json_encode($payload));
         $receipts=$SESSION->kbataskreceipts??[];
         foreach($receipts as $k=>$r){if($r['time']<time()-7200){unset($receipts[$k]);}}
@@ -186,6 +204,7 @@ if($action!=='') {
             $r=$receipts[$receiptkey];
             if($r['fingerprint']!==$fingerprint){throw new moodle_exception('tui_expired_form','local_kbacompany');}
             if($r['task']!==''&&!task_service::readable_projection($uuid,$actor,$r['task'])){throw new moodle_exception('taskcenter_reference','local_kbacompany');}
+            if($discussionajax){$discussionreply(true,$requestkey,ui::url($uuid,['task'=>$r['task'],'view'=>$r['view'],'tab'=>$r['tab']])->out(false));}
             redirect(ui::url($uuid,['task'=>$r['task'],'view'=>$r['view'],'tab'=>$r['tab']]),ui::tr('taskcenter_saved'));
         }
         if($action!=='create'&&!in_array($action,['bindsource','unbindsource'],true)&&$selected===''){throw new moodle_exception('taskcenter_reference','local_kbacompany');}
@@ -283,11 +302,13 @@ if($action!=='') {
         $nextview=in_array($action,['bindsource','unbindsource'],true)?'sourceconfig':($selected!==''?'detail':'list');
         $receipts[$receiptkey]=['fingerprint'=>$fingerprint,'task'=>$selected,'view'=>$nextview,'tab'=>$tab,'time'=>time()];
         $SESSION->kbataskreceipts=array_slice($receipts,-40,null,true);
+        if($discussionajax){$discussionreply(true,$requestkey,ui::url($uuid,['task'=>$selected,'view'=>$nextview,'tab'=>$tab,'scope'=>$scope])->out(false));}
         redirect(ui::url($uuid,['task'=>$selected,'view'=>$nextview,'tab'=>$tab,'scope'=>$scope]),ui::tr('taskcenter_saved'));
     }catch(Throwable $e){
         if($tx){try{$tx->rollback($e);}catch(Throwable $rolled){$e=$rolled;}}
         if(!($e instanceof moodle_exception)){throw $e;}
         $error=$e->getMessage();
+        if($discussionajax){$discussionreply(false,$requestkey,'',$error);}
         if($action==='create'){$view='create';$selected='';}
         else if($action==='save'){$view='edit';}
         else if($action==='linksubtask'){$view='linksubtask';}
@@ -320,6 +341,7 @@ $PAGE->set_url(ui::url($uuid,['view'=>$view,'task'=>$selected,'scope'=>$scope,'t
 $PAGE->set_title(ui::tr('taskcenter_title'));
 $PAGE->set_heading(ui::tr('pluginname'));
 $PAGE->requires->js(new moodle_url('/local/kbacompany/js/task_ui.js'));
+$PAGE->requires->js(new moodle_url('/local/kbacompany/js/task_discussion.js'));
 $shell=\local_kbacompany\local\bms_page_shell_service::begin($uuid,$actor,'tasks',ui::tr('taskcenter_title'));
 echo html_writer::start_div((\local_kbacompany\local\bms24_shell_service::is_enabled() ? 'bms-tui bms24-task-center' : 'bms-tui') .
     ($view==='list'?' bms24-task-listing':''),
