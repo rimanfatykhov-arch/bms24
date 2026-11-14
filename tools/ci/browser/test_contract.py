@@ -39,7 +39,7 @@ def attachments():
                                       'file_link_text': 'p02-direct-only.txt', 'downloads': ok_dl('p02-direct-only.txt')},
           'csrf_invalid_sesskey': {'http': 404, 'refusal_marker': True}, 'double_submit': {'center_posts': 1}}
     state = {'messages': [{'body': 'RC31 P02 double verify'}, {'body': 'x'}], 'orphan_files': 0}
-    return {'phase': 'verify', 'steps': st}, state
+    return {'phase': 'verify', 'steps': st, 'page_errors': []}, state
 
 
 def access():
@@ -58,7 +58,7 @@ def access():
 def oversize():
     return ({'steps': {'limits': {'form_maxbytes': 65536}, 'compact_oversize': {'request_sent': True, 'error_text': 'The file exceeds the permitted upload size.'},
                        'full_oversize_client': {'post_sent': False, 'file_validation': 'The file exceeds the permitted upload size.'},
-                       'full_oversize_server_direct': {'http': 200, 'error_in_page': True, 'sent_bytes': 102400}}},
+                       'full_oversize_server_direct': {'http': 200, 'error_in_page': True, 'sent_bytes': 102400}}, 'page_errors': []},
             {'messages': [{'body': 'x'}], 'orphan_files': 0})
 
 
@@ -209,10 +209,27 @@ class ContractTest(unittest.TestCase):
         self.assertIn('task_tab_desktop_no_browser_errors', c.task_tab_checks({}))
         self.assertIn('task_tab_mobile_no_browser_errors', c.task_tab_checks({}))
 
+    def test_attachment_and_oversize_page_errors_fail(self):
+        """Codex review P1 (Issue #82 comment 6872634357): page_errors were recorded but never evaluated."""
+        for errs in (['pageerror:TypeError:x'], ['console:Uncaught ReferenceError: M is not defined'], ['pageerror:Error:x', 'console:net::ERR_FAILED']):
+            with self.subTest(errs=errs):
+                o, s = attachments(); o['page_errors'] = errs
+                self.assertEqual(['attachments_no_browser_errors'], failed(c.evaluate(c.attachments_checks(o, s))))
+                o, s = oversize(); o['page_errors'] = errs
+                self.assertEqual(['oversize_no_browser_errors'], failed(c.evaluate(c.oversize_checks(o, s))))
+        for missing in (lambda o: o.pop('page_errors'), lambda o: o.__setitem__('page_errors', None), lambda o: o.__setitem__('page_errors', 'x')):
+            o, s = attachments(); missing(o)
+            self.assertIn('attachments_no_browser_errors', failed(c.evaluate(c.attachments_checks(o, s))))
+            o, s = oversize(); missing(o)
+            self.assertIn('oversize_no_browser_errors', failed(c.evaluate(c.oversize_checks(o, s))))
+        # external CDN requests aborted by the loopback route are not product errors (same rule as task tabs)
+        o, s = attachments(); o['page_errors'] = ['console:Failed to load resource: net::ERR_FAILED']
+        self.assertEqual([], failed(c.evaluate(c.attachments_checks(o, s))))
+
     def test_required_check_names_complete(self):
         names = c.required_check_names()
         self.assertEqual(len(names), len(set(names)))
-        for k in ('task_tab_run_complete', 'task_tab_mobile_tap_target_44', 'csrf_invalid_sesskey_rejected', 'revocation_preserves_history',
+        for k in ('attachments_no_browser_errors', 'oversize_no_browser_errors', 'task_tab_run_complete', 'task_tab_mobile_tap_target_44', 'csrf_invalid_sesskey_rejected', 'revocation_preserves_history',
                   'download_other_company_denied', 'revoke_in_open_session_denied', 'oversize_nothing_stored', 'moodle_install'):
             self.assertIn(k, names)
 

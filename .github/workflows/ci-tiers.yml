@@ -49,7 +49,13 @@ jobs:
                           {'name': 'negative-browser-history', 'base': head, 'head': head, 'patch': 'tools/ci/negative/browser_history_regression.patch',
                            'expect': {'fast': 'pass', 'standard': 'na', 'browser': 'fail'},
                            'browser_fail': ['revocation_preserves_history'],
-                           'browser_pass': ['moodle_install', 'download_participant_allowed', 'revoke_in_open_session_denied', 'reopen_in_open_session_allowed']}]
+                           'browser_pass': ['moodle_install', 'download_participant_allowed', 'revoke_in_open_session_denied', 'reopen_in_open_session_allowed']},
+                          # BROWSER negative control (Codex review P1): an uncaught JS error on every Communication Center page.
+                          # The browser error checks of the attachment and oversize scenarios must FAIL.
+                          {'name': 'negative-browser-page-error', 'base': head, 'head': head, 'patch': 'tools/ci/negative/browser_page_error_regression.patch',
+                           'expect': {'fast': 'pass', 'standard': 'na', 'browser': 'fail'},
+                           'browser_fail': ['attachments_no_browser_errors', 'oversize_no_browser_errors'],
+                           'browser_pass': ['moodle_install', 'download_participant_allowed', 'csrf_invalid_sesskey_rejected']}]
           # Roles (merge_gate.py): 'this-pr' = the candidate (required); 'negative-*' = required when planned (their job succeeds
           # only if the planted defect is detected); 'replay-*' = information only, never part of the candidate verdict.
           with open(os.environ['GITHUB_OUTPUT'], 'a') as out:
@@ -127,7 +133,7 @@ jobs:
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: ci-tiers-fast-${{ matrix.target.name }}
+          name: ci-tiers-fast-${{ matrix.target.name }}-a${{ github.run_attempt }}
           path: |
             ${{ runner.temp }}/classification.json
             ${{ runner.temp }}/identity.json
@@ -242,7 +248,7 @@ jobs:
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: ci-tiers-standard-${{ matrix.target.name }}
+          name: ci-tiers-standard-${{ matrix.target.name }}-a${{ github.run_attempt }}
           path: |
             ${{ runner.temp }}/classification.json
             ${{ runner.temp }}/identity.json
@@ -367,7 +373,7 @@ jobs:
       - uses: actions/upload-artifact@v4
         if: always() && steps.need.outputs.run == 'true'
         with:
-          name: ci-tiers-browser-${{ matrix.target.name }}-${{ matrix.engine.dbtype }}
+          name: ci-tiers-browser-${{ matrix.target.name }}-${{ matrix.engine.dbtype }}-a${{ github.run_attempt }}
           path: |
             ${{ runner.temp }}/browser/browser-report.json
             ${{ runner.temp }}/browser/identity.json
@@ -383,7 +389,8 @@ jobs:
     #  * job outcomes of this run attempt (Actions API): 'Plan targets', FAST / STANDARD / BROWSER (MariaDB + Percona) legs of
     #    'this-pr' and every planned 'negative-*' leg must conclude success; failure, cancellation, skip or a missing job blocks
     #    even when a PASS report was uploaded. 'replay-*' legs are information only.
-    #  * identity.json of every report (target, head, base, profile, engine, run id, report SHA256).
+    #  * identity.json of every report (target, head, base, profile, engine, run id, job, report SHA256) taken from the
+    #    artifact of the attempt in which that job actually executed (re-run of failed jobs reuses earlier successful jobs).
     #  * FAST always; STANDARD + BROWSER for profiles STANDARD/FULL; for FULL the newest FULL run per workflow file
     #    (pull_request, same head, same PR and base) must have succeeded. FAST/STANDARD never wait for FULL.
     # A PASS allows merge only - never a production deployment.
@@ -421,7 +428,7 @@ jobs:
           GITHUB_TOKEN: ${{ github.token }}
           PLANNED: ${{ needs.plan.outputs.targets }}
         run: |
-          [ -d $RUNNER_TEMP/gate/ci-tiers-fast-replay-pr80-css ] || exit 0
+          ls -d $RUNNER_TEMP/gate/ci-tiers-fast-replay-pr80-css-a* >/dev/null 2>&1 || exit 0
           common="--artifacts $RUNNER_TEMP/gate --repo ${{ github.repository }} --run-id ${{ github.run_id }} --run-attempt ${{ github.run_attempt }} --wait-full 0 --historical"
           python3 tools/ci/merge_gate.py $common --planned "$PLANNED" --report $RUNNER_TEMP/gate-pr80.json --target replay-pr80-css --pr 80 \
             --head d732306608e17cbca46c3b274f15e5955ef6cb53 --base bfc4d2b9307b520e197fa91c7ec87faa204be527 | tee -a $GITHUB_STEP_SUMMARY || true
@@ -430,7 +437,7 @@ jobs:
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: ci-tiers-merge-gate
+          name: ci-tiers-merge-gate-a${{ github.run_attempt }}
           path: |
             ${{ runner.temp }}/merge-gate.json
             ${{ runner.temp }}/gate-pr80.json

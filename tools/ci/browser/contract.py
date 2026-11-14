@@ -120,6 +120,7 @@ def attachments_checks(obs, state, phase='verify'):
             require(body_count('RC31 P02 csrf ' + phase) == 0, 'forged request created a message')),
         'no_orphan_files': lambda: (_step(obs, 'double_submit'), require(isinstance(msgs, list) and msgs, 'DB state missing'),
                                     require((state or {}).get('orphan_files') == 0, 'orphan files present')),
+        'attachments_no_browser_errors': lambda: (_step(obs, 'double_submit'), page_error_check(obs, 'attachments')()),
     }
 
 
@@ -200,6 +201,22 @@ def history_digest(rows):
     return h.hexdigest()
 
 
+def browser_errors(errors):
+    """Errors that count: everything except console lines for external requests aborted by the loopback route."""
+    return [e for e in errors if not (isinstance(e, str) and e.startswith('console:') and 'ERR_FAILED' in e)]
+
+
+def page_error_check(obs, label):
+    """The scenario must have recorded its browser error list (even when it failed) and the list must be empty."""
+    def check():
+        require(isinstance(obs, dict) and 'execution_error' not in obs, 'scenario execution failed or missing')
+        errs = obs.get('page_errors')
+        require(isinstance(errs, list), '%s: browser error list not recorded' % label)
+        bad = browser_errors(errs)
+        require(not bad, '%s: browser errors %r' % (label, bad[:3]))
+    return check
+
+
 def oversize_checks(obs, state):
     def nothing_stored():
         msgs = (state or {}).get('messages')
@@ -218,6 +235,7 @@ def oversize_checks(obs, state):
             require(_step(obs, 'full_oversize_server_direct').get('sent_bytes') == 100 * 1024, 'direct oversize request not sent'),
             require(_step(obs, 'full_oversize_server_direct').get('error_in_page') is True, 'server did not refuse the oversize file')),
         'oversize_nothing_stored': nothing_stored,
+        'oversize_no_browser_errors': lambda: (_step(obs, 'full_oversize_server_direct'), page_error_check(obs, 'oversize')()),
     }
 
 

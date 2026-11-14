@@ -45,7 +45,11 @@ with sync_playwright() as pw:
             posts.append({'path': urlparse(r.url).path, 'multipart': (r.headers.get('content-type') or '').startswith('multipart/form-data'),
                           'has_file': body.find(b'filename="p02-') >= 0})
     p.on('request', on_request)
-    p.on('pageerror', lambda e: errs.append('pageerror:' + type(e).__name__))
+    # Browser errors are evidence (Codex review P1): uncaught page exceptions and console errors are recorded for every phase,
+    # including oversize and failed runs, and evaluated by contract.page_error_checks(). net::ERR_FAILED console lines are
+    # the external CDN requests aborted by the loopback route (same rule as task_tabs.py).
+    p.on('pageerror', lambda e: errs.append('pageerror:%s:%s' % (type(e).__name__, str(e)[:120])))
+    p.on('console', lambda m: errs.append('console:' + m.text[:160]) if m.type == 'error' else None)
 
     def goto(url):
         p.goto(local_url(url), wait_until='networkidle')
@@ -157,11 +161,12 @@ with sync_playwright() as pw:
         urls = sorted({a.get_attribute('href') for a in p.locator('a[href*="communication_attachment"]').all()})
         (root / 'p02-urls.json').write_text(json.dumps(urls)); (root / 'p02-urls.json').chmod(0o644)
         obs['attachment_urls'] = len(urls)
-        obs['page_errors'] = errs
     except StopIteration:
         pass
     except Exception as e:
         obs['execution_error'] = '%s: %s' % (type(e).__name__, str(e)[:300])
+    finally:
+        obs['page_errors'] = list(errs)
     b.close()
 dest = root / ('p02-browser-' + phase + '.json')
 dest.write_text(json.dumps(obs, indent=1)); dest.chmod(0o644)

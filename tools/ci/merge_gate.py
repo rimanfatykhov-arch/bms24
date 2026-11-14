@@ -57,13 +57,46 @@ def _sha(x):
     return isinstance(x, str) and len(x) == SHA_LEN and all(ch in '0123456789abcdef' for ch in x)
 
 
-def _identity(ev, tier, expected, profile, engine=''):
-    """ev = {'identity': dict, 'report': dict, 'report_sha256': hex of the downloaded bytes}. Returns problems."""
+JOB_KEYS = {'FAST': 'fast', 'STANDARD': 'standard', 'BROWSER': 'browser'}  # GITHUB_JOB of the producing workflow job
+
+
+def execution_attempts(jobs_by_attempt, current):
+    """Attempt in which each job of the CURRENT attempt actually executed. Pure.
+
+    Observed GitHub behaviour (runs 43561610550 full re-run, 43561610462 re-run of failed jobs, Issue #82): on 'Re-run failed
+    jobs' the successful jobs are copied into the new attempt with a new job id but the original started_at, and their
+    artifacts stay those of the original attempt; re-executed jobs get a new started_at and upload new artifacts. So the
+    execution attempt is the earliest attempt whose record of the same job has the same started_at as the current record.
+    """
+    out = {}
+    cur = (jobs_by_attempt or {}).get(current) or {}
+    for name, rec in cur.items():
+        started = (rec or {}).get('started_at')
+        if not started:
+            continue
+        att = current
+        for a in range(current - 1, 0, -1):
+            prev = ((jobs_by_attempt.get(a) or {}).get(name) or {})
+            if prev.get('started_at') == started:
+                att = a
+            else:
+                break
+        out[name] = att
+    return out
+
+
+def _identity(ev, tier, expected, profile, engine='', attempt=None):
+    """ev = {'identity': dict, 'report': dict, 'report_sha256': hex of the downloaded bytes}. Returns problems.
+
+    attempt = the attempt in which the producing job actually executed (execution_attempts()); the identity must have been
+    stamped by that job execution: same run id, that attempt, the expected GITHUB_JOB key.
+    """
     if not isinstance(ev, dict) or not isinstance(ev.get('identity'), dict):
         return ['%s%s identity missing' % (tier, '/' + engine if engine else '')]
     i, p = ev['identity'], []
     want = {'tier': tier, 'target': expected['target'], 'head': expected['head'], 'base': expected['base'], 'profile': profile,
-            'engine': engine, 'run_id': str(expected['run_id'])}
+            'engine': engine, 'run_id': str(expected['run_id']), 'job': JOB_KEYS[tier],
+            'run_attempt': str(attempt) if attempt else '<execution attempt unknown>'}
     for k, v in want.items():
         if str(i.get(k)) != str(v):
             p.append('%s%s identity %s=%r, expected %r' % (tier, '/' + engine if engine else '', k, i.get(k), v))
@@ -74,15 +107,15 @@ def _identity(ev, tier, expected, profile, engine=''):
     return p
 
 
-def decide(expected, classification, evidence, jobs, planned, full):
+def decide(expected, classification, evidence, jobs, planned, full, exec_attempts=None):
     """Fail-closed wrapper: any malformed input that makes the decision raise is a FAIL, never a PASS."""
     try:
-        return _decide(expected, classification, evidence, jobs, planned, full)
+        return _decide(expected, classification, evidence, jobs, planned, full, exec_attempts)
     except Exception as e:  # noqa: BLE001
         return 'FAIL', ['gate input malformed: %s' % type(e).__name__], {}, {}
 
 
-def _decide(expected, classification, evidence, jobs, planned, full):
+def _decide(expected, classification, evidence, jobs, planned, full, exec_attempts):
     """Pure decision.
 
     expected: {'target', 'head', 'base', 'run_id'} taken from the PR event / this run (never from the reports).
@@ -91,8 +124,10 @@ def _decide(expected, classification, evidence, jobs, planned, full):
     jobs: {job name: conclusion} for this run attempt, or None when the API could not be read.
     planned: list of planned target names (plan job output).
     full: {workflow path: {'conclusion'|'status', 'id', ...}} or None (only consulted for profile FULL).
+    exec_attempts: {job name: attempt in which it executed} (execution_attempts()); evidence must come from that attempt.
     Returns (verdict, reasons, requirements, info).
     """
+    exec_attempts = exec_attempts if isinstance(exec_attempts, dict) else {}
     reasons, req, info = [], {}, {}
     if not isinstance(expected, dict) or not _sha(expected.get('head')) or not _sha(expected.get('base')) or not expected.get('run_id'):
         return 'FAIL', ['expected candidate identity (head/base/run) missing'], req, info
@@ -128,7 +163,7 @@ def _decide(expected, classification, evidence, jobs, planned, full):
     # ---- FAST (always)
     req['FAST'] = 'required'
     ev = evidence.get('FAST')
-    p = _identity(ev, 'FAST', expected, profile)
+    p = _identity(ev, 'FAST', expected, profile, attempt=exec_attempts.get(names['FAST']))
     reasons += p
     if not p:
         r = ev['report']
@@ -140,7 +175,7 @@ def _decide(expected, classification, evidence, jobs, planned, full):
         req['STANDARD'] = 'required'
         tests = list(classification.get('focused_phpunit') or []) + list(classification.get('security_gates') or [])
         ev = evidence.get('STANDARD')
-        p = _identity(ev, 'STANDARD', expected, profile)
+        p = _identity(ev, 'STANDARD', expected, profile, attempt=exec_attempts.get(names['STANDARD']))
         reasons += p
         if not tests:
             reasons.append('STANDARD selected no tests')
@@ -160,7 +195,7 @@ def _decide(expected, classification, evidence, jobs, planned, full):
         for engine in ENGINES:
             br = evidence.get('BROWSER')
             ev = br.get(engine) if isinstance(br, dict) else None
-            p = _identity(ev, 'BROWSER', expected, profile, engine)
+            p = _identity(ev, 'BROWSER', expected, profile, engine, attempt=exec_attempts.get(names['BROWSER'][engine]))
             reasons += p
             if p:
                 continue
@@ -242,20 +277,28 @@ def full_status(repo, head, base, pr, token, wait_s, historical=False):
 
 
 def run_jobs(repo, run_id, attempt, token):
+    """{job name: {'conclusion': conclusion or status, 'started_at': ...}} for one attempt."""
     jobs, page = {}, 1
     while True:
         d = _api('https://api.github.com/repos/%s/actions/runs/%s/attempts/%s/jobs?per_page=100&page=%d' % (repo, run_id, attempt, page), token)
         for j in d.get('jobs', []):
-            jobs[j['name']] = j.get('conclusion') if j.get('status') == 'completed' else j.get('status')
+            jobs[j['name']] = {'conclusion': j.get('conclusion') if j.get('status') == 'completed' else j.get('status'),
+                               'started_at': j.get('started_at')}
         if len(d.get('jobs', [])) < 100:
             return jobs
         page += 1
 
 
-def load_evidence(d, tier, target, engine=''):
-    """Read identity.json + report bytes of one tier artifact; hash the exact bytes downloaded."""
-    name = {'FAST': 'ci-tiers-fast-%s', 'STANDARD': 'ci-tiers-standard-%s', 'BROWSER': 'ci-tiers-browser-%s-' + engine}[tier] % target
-    base = d / name
+def artifact_name(tier, target, attempt, engine=''):
+    return ({'FAST': 'ci-tiers-fast-%s', 'STANDARD': 'ci-tiers-standard-%s', 'BROWSER': 'ci-tiers-browser-%s-' + engine}[tier] % target
+            + '-a%s' % attempt)
+
+
+def load_evidence(d, tier, target, attempt, engine=''):
+    """Read identity.json + report bytes of one tier artifact of the given execution attempt; hash the exact bytes."""
+    if not attempt:
+        return {}
+    base = d / artifact_name(tier, target, attempt, engine)
     report = {'FAST': base / 'fast' / 'fast-report.json', 'STANDARD': base / 'standard-report.json',
               'BROWSER': base / 'browser-report.json'}[tier]
     ev = {}
@@ -287,25 +330,32 @@ def main():
         planned = [t['name'] for t in json.loads(a.planned)]
     except Exception:
         planned = None
+    current = int(a.run_attempt)
     try:
-        classification = json.loads((d / ('ci-tiers-fast-' + a.target) / 'classification.json').read_text(encoding='utf-8'))
-    except Exception:
-        classification = None
-    evidence = {'FAST': load_evidence(d, 'FAST', a.target), 'STANDARD': load_evidence(d, 'STANDARD', a.target),
-                'BROWSER': {e: load_evidence(d, 'BROWSER', a.target, e) for e in ENGINES}}
-    try:
-        jobs = run_jobs(a.repo, a.run_id, a.run_attempt, token)
+        by_attempt = {n: run_jobs(a.repo, a.run_id, n, token) for n in range(1, current + 1)}
+        jobs = {k: v['conclusion'] for k, v in by_attempt[current].items()}
+        exec_attempts = execution_attempts(by_attempt, current)
     except Exception as e:
         print('job API error: %s' % type(e).__name__)
-        jobs = None
+        jobs, exec_attempts = None, {}
+    names = job_names(a.target)
+    try:
+        classification = json.loads((d / artifact_name('FAST', a.target, exec_attempts.get(names['FAST']))
+                                     / 'classification.json').read_text(encoding='utf-8'))
+    except Exception:
+        classification = None
+    evidence = {'FAST': load_evidence(d, 'FAST', a.target, exec_attempts.get(names['FAST'])),
+                'STANDARD': load_evidence(d, 'STANDARD', a.target, exec_attempts.get(names['STANDARD'])),
+                'BROWSER': {e: load_evidence(d, 'BROWSER', a.target, exec_attempts.get(names['BROWSER'][e]), e) for e in ENGINES}}
     full = None
     if isinstance(classification, dict) and classification.get('profile') == 'FULL':
         try:
             full = full_status(a.repo, a.head, a.base, a.pr, token, a.wait_full, a.historical)
         except Exception as e:
             print('runs API error: %s' % type(e).__name__)
-    verdict, reasons, req, info = decide(expected, classification, evidence, jobs, planned, full)
+    verdict, reasons, req, info = decide(expected, classification, evidence, jobs, planned, full, exec_attempts)
     out = {'verdict': verdict, 'reasons': reasons, 'requirements': req, 'expected': expected, 'full_runs': full, 'jobs': jobs,
+           'run_attempt': current, 'execution_attempts': exec_attempts,
            'information': info, 'mode': 'historical replay (information only)' if a.historical else 'candidate',
            'note': 'A PASS allows merge only; production deployment still needs the release card and explicit owner approval.'}
     Path(a.report).write_text(json.dumps(out, indent=1))
