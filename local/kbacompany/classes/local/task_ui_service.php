@@ -1389,18 +1389,57 @@ class task_ui_service {
         return $html.\html_writer::tag('form',$form,$formattrs);
     }
     /** One task-discussion message with its protected Communication Center attachments (pluginfile links). */
-    private static function discussion_message(array $msg): string {
+    private static function discussion_message(array $msg, string $company, array $task,
+            bool $canpost, string $tab, array $values): string {
         $files = '';
-        foreach (($msg['attachments'] ?? []) as $attachment) {
+        $active = $msg['status'] === 'active';
+        foreach (($active ? ($msg['attachments'] ?? []) : []) as $attachment) {
             $label = (string)($attachment['label'] !== '' ? $attachment['label'] : $attachment['value']);
             $files .= !empty($attachment['url']) ?
                 \html_writer::link($attachment['url'], s($label), ['class' => 'btn btn-sm btn-outline-secondary bms-tui-message-file']) :
                 \html_writer::span(s($label), 'badge badge-light');
         }
-        $text = trim((string)$msg['body']) !== '' ? \html_writer::div(format_text($msg['body'], FORMAT_PLAIN), 'bms-tui-prose') : '';
+        $text = $active ? (trim((string)$msg['body']) !== '' ?
+            \html_writer::div(format_text($msg['body'], FORMAT_PLAIN), 'bms-tui-prose') : '') :
+            self::note(self::tr('communication_messagewithdrawn'));
+        if ($active && !empty($msg['edited'])) { $text .= self::note(self::tr('communication_edited')); }
+        $actions = '';
+        if ($active && $canpost && (int)$msg['author_id'] === (int)$GLOBALS['USER']->id &&
+                $msg['task_uuid'] === '') {
+            $draft = $values['discussion_edit'] ?? [];
+            $failed = ($draft['uuid'] ?? '') === $msg['uuid'];
+            $extra = ['messageuuid'=>$msg['uuid'], 'expectedhash'=>$failed ? $draft['expectedhash'] :
+                hash('sha256', $msg['body'] . "\n" . $msg['status'])];
+            $editid = 'taskedit_' . $msg['uuid'];
+            $editbody = \html_writer::label(s(self::tr('communication_message')), $editid) .
+                \html_writer::tag('textarea', s($failed ? $draft['body'] : $msg['body']),
+                    ['id'=>$editid, 'name'=>'body', 'rows'=>3, 'required'=>'required',
+                     'maxlength'=>20000, 'class'=>'form-control']) .
+                self::link(self::url($company, ['task'=>$task['uuid'], 'tab'=>$tab]), get_string('cancel'));
+            $actions .= \html_writer::tag('details',
+                \html_writer::tag('summary', s(self::tr('communication_editmessage'))) .
+                self::post_form($company, $task, 'discussionedit', $editbody,
+                    self::tr('communication_saveedit'), $tab, $extra),
+                ['class'=>'bms-tui-message-edit', 'open'=>$failed ? 'open' : null]);
+            $checkid = 'taskwithdraw_' . $msg['uuid'];
+            $deletebody = \html_writer::tag('p', s(self::tr('communication_deletenotice'))) .
+                \html_writer::label(\html_writer::empty_tag('input',
+                    ['id'=>$checkid, 'type'=>'checkbox', 'name'=>'confirmwithdraw', 'value'=>1,
+                     'required'=>'required']) . ' ' . s(self::tr('communication_confirmdelete')), $checkid) .
+                self::link(self::url($company, ['task'=>$task['uuid'], 'tab'=>$tab]), get_string('cancel'));
+            // Deletion always uses the currently displayed message revision, not a failed edit draft.
+            $extra['expectedhash'] = hash('sha256', $msg['body'] . "\n" . $msg['status']);
+            $actions .= \html_writer::tag('details',
+                \html_writer::tag('summary', s(self::tr('communication_withdrawmessage'))) .
+                self::post_form($company, $task, 'discussionwithdraw', $deletebody,
+                    self::tr('communication_withdrawmessage'), $tab, $extra),
+                ['class'=>'bms-tui-message-withdraw']);
+        }
         return \html_writer::tag('article', \html_writer::tag('strong', s($msg['author_name'])) .
             self::note(userdate($msg['time_created'])) . $text .
-            ($files !== '' ? \html_writer::div($files, 'bms-tui-message-files') : ''), ['class' => 'bms-tui-message']);
+            ($files !== '' ? \html_writer::div($files, 'bms-tui-message-files') : '') .
+            ($actions !== '' ? \html_writer::div($actions, 'bms-tui-message-actions') : ''),
+            ['class'=>'bms-tui-message', 'id'=>'task-message-' . $msg['uuid']]);
     }
     /** One discussion message with independently removable selected attachments. */
     private static function discussion_fields(array $values): string {
@@ -1867,8 +1906,8 @@ class task_ui_service {
                 $relations.self::note(self::tr('tui_no_copies')),['class'=>'bms-tui-panel bms-task2-details']);
             $discussion=$model['discussion'];$messages='';
             if(!empty($discussion['restricted'])){$messages=self::note(self::tr('taskcenter_discussion_restricted'));}
-            else{foreach(($discussion['messages']??[]) as $msg){if($msg['status']!=='active'){continue;}
-                $messages.=self::discussion_message($msg);}}
+            else{foreach(($discussion['messages']??[]) as $msg){
+                $messages.=self::discussion_message($msg,$company,$task,!empty($discussion['can_post']),'overview',$values);}}
             if(!$messages){$messages=self::note(self::tr('taskcenter_discussion_empty'));}
             if(!empty($discussion['can_post'])){$messages.=self::post_form($company,$task,'discussionpost',
                 self::discussion_fields($values),self::tr('taskcenter_discussion_send'),'overview');}
@@ -1917,7 +1956,7 @@ class task_ui_service {
         }else if($tab==='discussion'){
             $d=$model['discussion'];$body='';
             if(!empty($d['restricted'])){$body=self::note(self::tr('taskcenter_discussion_restricted'));}
-            else{foreach($d['messages'] as $msg){if($msg['status']!=='active'){continue;}$body.=self::discussion_message($msg);}}
+            else{foreach($d['messages'] as $msg){$body.=self::discussion_message($msg,$company,$task,!empty($d['can_post']),'discussion',$values);}}
             if(!$body){$body=self::note(self::tr('taskcenter_discussion_empty'));}
             if(!empty($d['can_post'])){$body.=self::post_form($company,$task,'discussionpost',self::discussion_fields($values),self::tr('taskcenter_discussion_send'),'discussion');}
             if(empty($d['restricted'])){

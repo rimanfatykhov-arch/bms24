@@ -1230,6 +1230,22 @@ class task_service {
         return ['thread_uuid' => (string)$thread->uuid, 'messages' => $ctx['messages'], 'restricted' => false, 'can_post' => $canpost];
     }
 
+    /** Change an existing message through its canonical task thread; never join/create a thread here. */
+    public static function change_discussion_message(string $companyuuid, int $actor, string $taskuuid,
+            string $messageuuid, string $operation, string $body, string $expectedhash): void {
+        company_context_service::context($companyuuid, $actor);
+        $row = self::task($companyuuid, $taskuuid);
+        $canmanage = self::can_manage($companyuuid, $actor);
+        if (!self::can_view_row($row, $actor, $canmanage) ||
+                !self::can_post_discussion($row, $actor, $canmanage)) { self::fail('permission'); }
+        if ((string)$row->status === 'deleted') { self::fail('state'); }
+        $thread = self::discussion_thread($companyuuid, $taskuuid);
+        if (!$thread) { self::fail('reference'); }
+        // Author, active membership, linked records, revision and audit are enforced centrally.
+        communication_service::change_message($companyuuid, $actor, (string)$thread->uuid,
+            $messageuuid, $operation, $body, $expectedhash);
+    }
+
     /** Append a message to the task discussion. Posting explicitly joins an authorised manager to the thread. */
     public static function post_discussion_message(string $companyuuid, int $actor, string $taskuuid, string $body,
             ?array $upload = null): string {

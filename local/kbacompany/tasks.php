@@ -160,7 +160,7 @@ $relation = static function(string $ref): array {
     return ['parentuuid'=>'','contextkind'=>$parts[0],'contextuuid'=>$parts[1],'contextrevision'=>(int)$parts[2]];
 };
 $confirmops=['classifyduty','start','submit','accept','return','cancel','delete','observer','addbattleplan','attachmentdelete','resultattachmentdelete'];
-$allowed=array_merge(['create','save','checkadd','checkset','checkedit','checkdelete','checkmove','linksubtask','discussionpost','attachmentadd','resultattachmentadd','bindsource','unbindsource'],$confirmops);
+$allowed=array_merge(['create','save','checkadd','checkset','checkedit','checkdelete','checkmove','linksubtask','discussionpost','discussionedit','discussionwithdraw','attachmentadd','resultattachmentadd','bindsource','unbindsource'],$confirmops);
 if($action!=='') {
     if($method!=='POST'){throw new moodle_exception('taskcenter_post','local_kbacompany');}
     require_sesskey();
@@ -270,6 +270,16 @@ if($action!=='') {
         }else if($action==='attachmentdelete'){task_service::delete_attachment($uuid,$actor,$selected,$values['filename']);$tab='files';}
         else if($action==='resultattachmentdelete'){task_service::delete_result_attachment($uuid,$actor,$selected,$values['filename']);$tab='result';}
         else if($action==='discussionpost'){task_service::post_discussion_message($uuid,$actor,$selected,optional_param('message','',PARAM_RAW),$_FILES['discussionattachment']??null);$tab='discussion';}
+        else if($action==='discussionedit'||$action==='discussionwithdraw'){
+            if($action==='discussionwithdraw' && !optional_param('confirmwithdraw',false,PARAM_BOOL)){
+                throw new moodle_exception('tui_confirm_required','local_kbacompany');
+            }
+            task_service::change_discussion_message($uuid,$actor,$selected,
+                required_param('messageuuid',PARAM_RAW_TRIMMED),
+                $action==='discussionedit'?'edit':'withdraw',
+                $action==='discussionedit'?required_param('body',PARAM_RAW):'',
+                required_param('expectedhash',PARAM_RAW_TRIMMED));
+        }
         else if($action==='checkadd'){task_service::add_checklist($uuid,$actor,$selected,required_param('itemtext',PARAM_RAW),optional_param('checkassigneeid',0,PARAM_INT));}
         else if($action==='checkset'){task_service::set_checklist_state($uuid,$actor,$selected,required_param('checkuuid',PARAM_RAW_TRIMMED),required_param('done',PARAM_BOOL));}
         else if($action==='checkedit'){task_service::update_checklist($uuid,$actor,$selected,
@@ -308,6 +318,12 @@ if($action!=='') {
         if($tx){try{$tx->rollback($e);}catch(Throwable $rolled){$e=$rolled;}}
         if(!($e instanceof moodle_exception)){throw $e;}
         $error=$e->getMessage();
+        if($action==='discussionedit'){
+            // Keep the failed draft and its original revision: never silently overwrite a concurrent edit.
+            $values['discussion_edit']=['uuid'=>optional_param('messageuuid','',PARAM_RAW_TRIMMED),
+                'body'=>optional_param('body','',PARAM_RAW),
+                'expectedhash'=>optional_param('expectedhash','',PARAM_RAW_TRIMMED)];
+        }
         if($discussionajax){$discussionreply(false,$requestkey,'',$error);}
         if($action==='create'){$view='create';$selected='';}
         else if($action==='save'){$view='edit';}
