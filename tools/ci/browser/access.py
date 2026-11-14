@@ -37,8 +37,9 @@ def state(phase):
     return json.loads((root / ('p02-state-%s.json' % phase)).read_text())
 
 
-def messages():
-    return len(state('hist')['messages'])
+def history():
+    """Content snapshot (per-row hashes + digest) of company A's communication history; compared by the contract."""
+    return state('hist').get('history')
 
 
 def fetch(ctx, phase):
@@ -64,15 +65,16 @@ try:
         b = pw.chromium.launch(headless=True, args=['--disable-dev-shm-usage'])
         ea = b.new_context(); ea.route('**/*', route); login(ea, 'EA')
         obs['ea_context_id_before'] = id(ea)
-        obs['history']['before'] = messages()
+        obs['history']['before'] = history()
         fetch(ea, 'ea_before')
         eb = b.new_context(); eb.route('**/*', route); login(eb, 'EB'); fetch(eb, 'eb')
         anon = b.new_context(); anon.route('**/*', route); fetch(anon, 'anon')
-        require_switch = state('revoke_ea'); obs['revoked_flag'] = require_switch.get('ea_revoked'); fetch(ea, 'ea_revoked'); obs['history']['after_revoke'] = messages()
-        reopen = state('reopen_ea'); obs['reopened_flag'] = not reopen.get('ea_revoked'); fetch(ea, 'ea_reopened'); obs['history']['after_reopen'] = messages()
+        require_switch = state('revoke_ea'); obs['revoked_flag'] = require_switch.get('ea_revoked'); fetch(ea, 'ea_revoked'); obs['history']['after_revoke'] = history()
+        reopen = state('reopen_ea'); obs['reopened_flag'] = not reopen.get('ea_revoked'); fetch(ea, 'ea_reopened'); obs['history']['after_reopen'] = history()
         obs['ea_context_id_after'] = id(ea)
         b.close()
 except Exception as e:
     obs['execution_error'] = '%s: %s' % (type(e).__name__, str(e)[:300])
 dest = root / 'p02-access.json'; dest.write_text(json.dumps(obs, indent=1)); dest.chmod(0o644)
-print(json.dumps({k: len(v) for k, v in obs['phases'].items()}))
+print(json.dumps({'phases': {k: len(v) for k, v in obs['phases'].items()},
+                  'history': {k: (v or {}).get('digest') for k, v in obs['history'].items()}}))

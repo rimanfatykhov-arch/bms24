@@ -13,7 +13,7 @@ from pathlib import Path
 from urllib.parse import urlparse, parse_qs
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from contract import FILES, local_url  # noqa: E402
+from contract import CSRF_REFUSAL_MARKER, FILES, local_url  # noqa: E402
 from playwright.sync_api import sync_playwright  # noqa: E402
 
 if os.environ.get('BMS_CI_BROWSER') != '1':
@@ -142,11 +142,12 @@ with sync_playwright() as pw:
             'uuid': A, 'action': 'send', 'thread': thread, 'sesskey': key, 'tab': 'discussions', 'body': '',
             'attachment': {'name': 'p02-direct-only.txt', 'mimeType': 'text/plain', 'buffer': FILES['p02-direct-only.txt']}})
         goto(url)
-        note('server_file_only_direct', http=r.status, location=r.headers.get('location', ''), **observe('p02-direct-only.txt'))
+        note('server_file_only_direct', http=r.status, location=r.headers.get('location', ''),
+             expected_query={'uuid': A, 'tab': 'discussions', 'thread': thread}, **observe('p02-direct-only.txt'))
         # CSRF: forged POST with an invalid sesskey (must not create a message; checked in the DB afterwards)
         r = ctx.request.post(local_url(base + CENTER), max_redirects=0, multipart={
             'uuid': A, 'action': 'send', 'thread': thread, 'sesskey': 'invalidsesskey', 'tab': 'discussions', 'body': 'RC31 P02 csrf ' + phase})
-        note('csrf_invalid_sesskey', http=r.status)
+        note('csrf_invalid_sesskey', http=r.status, refusal_marker=CSRF_REFUSAL_MARKER in r.text(), location=r.headers.get('location', ''))
         # double submit: two fast clicks must create one message (DB count checked afterwards)
         goto(url)
         cf = p.locator('form[data-bms-comm-compose]'); cf.locator('textarea[name=body]').fill('RC31 P02 double ' + phase)

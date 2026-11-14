@@ -157,7 +157,8 @@ except Exception as e:
     report['error'] = '%s: %s' % (type(e).__name__, str(e)[:300])
 finally:
     stop_server()
-expected = ['moodle_install', 'fixtures_companies_A_B'] + list(contract.task_tab_checks({})) + list(contract.attachments_checks({}, {})) +     list(contract.access_checks({})) + list(contract.oversize_checks({}, {}))
+expected = contract.required_check_names()
+report['required_checks'] = expected
 for k in expected:
     report['checks'].setdefault(k, {'status': 'NOT RUN'})
 report['status'] = 'PASS' if all(report['checks'][k]['status'] == 'PASS' for k in expected) else 'FAIL'

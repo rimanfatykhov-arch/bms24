@@ -5,7 +5,7 @@ Pure functions, no browser/DB/network. `require()` raises RuntimeError (never `a
 Note: the loopback check below constrains what the test scripts request; it is NOT OS-level network isolation.
 """
 import hashlib
-from urllib.parse import urlparse
+from urllib.parse import urlparse, parse_qsl
 
 ORIGIN_SCHEME, ORIGIN_NETLOC = 'http', '127.0.0.1:8080'
 # Synthetic attachment files (name -> bytes). Content is unique per file, so a SHA256 match proves the exact file.
@@ -20,6 +20,18 @@ SHA = {name: hashlib.sha256(data).hexdigest() for name, data in FILES.items()}
 DENY_CODES = {403, 404}          # protected pluginfile refusal for a logged-in user without access
 LOGIN_REDIRECT_CODES = {302, 303}  # anonymous user is sent to the login page (redirect not followed)
 LIMIT_BYTES = 65536
+CSRF_REFUSAL_CODES = {403, 404}   # Moodle require_sesskey() -> moodle_exception page; 5xx is a server error, never a refusal
+CSRF_REFUSAL_MARKER = 'Your session has most likely timed out'  # Moodle 4.1 lang/en/error.php 'invalidsesskey'
+LOGIN_PATH = '/login/index.php'
+CENTER_PATH = '/local/kbacompany/communication_center.php'
+# Historical rows compared before revoke, after revoke and after reopen (see ci_state.php, phase 'hist').
+# Expected changes caused by revoke/reopen in these tables: NONE. Membership state lives in other tables and is not part of
+# the snapshot. Any added, removed or changed row here is a FAIL.
+HISTORY_TABLES = ('local_kbacompany_commmsg', 'local_kbacompany_commattach', 'local_kbacompany_commrev', 'files:communication_attachment')
+HISTORY_EXPECTED_CHANGES = ()
+TASK_TAB_CASES = ('page_and_tabs', 'keyboard_reaches_tab', 'focus_ring_visible', 'focus_ring_contrast_3to1', 'second_tab_focus_visible',
+                  'enter_activates_tab', 'active_tab_distinct', 'mouse_click_navigates_without_ring', 'desktop_tabs_not_enlarged',
+                  'desktop_no_browser_errors', 'mobile_focus_ring', 'mobile_no_page_hscroll', 'mobile_tap_target_44', 'mobile_no_browser_errors')
 
 
 def require(condition, message='BROWSER condition failed'):
@@ -33,6 +45,23 @@ def local_url(url):
     require(p.scheme == ORIGIN_SCHEME and p.netloc == ORIGIN_NETLOC and not p.username and not p.password
             and p.hostname == '127.0.0.1' and p.port == 8080, 'Non-loopback request refused: %r' % url)
     return url
+
+
+def exact_redirect(location, path, query=None):
+    """Location must be the exact loopback origin + exact path; query parameters exactly as given (None = no query)."""
+    require(isinstance(location, str) and location, 'redirect Location missing')
+    p = urlparse(location)
+    require(p.scheme == ORIGIN_SCHEME and p.netloc == ORIGIN_NETLOC and p.hostname == '127.0.0.1' and p.port == 8080
+            and not p.username and not p.password, 'redirect to a foreign origin: %r' % location)
+    require(p.path == path and not p.params and not p.fragment, 'redirect path %r != %r' % (p.path, path))
+    try:
+        pairs = parse_qsl(p.query, keep_blank_values=True, strict_parsing=bool(p.query))
+    except ValueError:
+        pairs = None
+    require(pairs is not None, 'malformed redirect query: %r' % location)
+    require(len(pairs) == len(dict(pairs)), 'duplicate redirect parameters: %r' % location)
+    require(dict(pairs) == dict(query or {}), 'redirect parameters %r != %r' % (dict(pairs), dict(query or {})))
+    return location
 
 
 def _step(obs, name):
@@ -73,16 +102,21 @@ def attachments_checks(obs, state, phase='verify'):
             _rendered(_step(obs, 'full_text_and_file'), 'p02-text-and-file.txt', 'RC31 P02 full text and file ' + phase)),
         'full_file_only': lambda: _rendered(_step(obs, 'full_file_only'), 'p02-file-only.txt'),
         'direct_multipart_new_file_stored_and_downloadable': lambda: (
-            require(_step(obs, 'server_file_only_direct').get('http') in LOGIN_REDIRECT_CODES and
-                    '/local/kbacompany/communication_center.php' in (_step(obs, 'server_file_only_direct').get('location') or ''),
-                    'direct POST not redirected back to the thread'),
+            require(_step(obs, 'server_file_only_direct').get('http') in LOGIN_REDIRECT_CODES, 'direct POST not answered with a redirect'),
+            require(isinstance(_step(obs, 'server_file_only_direct').get('expected_query'), dict)
+                    and _step(obs, 'server_file_only_direct')['expected_query'].get('uuid')
+                    and _step(obs, 'server_file_only_direct')['expected_query'].get('thread'), 'expected thread redirect not recorded'),
+            exact_redirect(_step(obs, 'server_file_only_direct').get('location'), CENTER_PATH,
+                           _step(obs, 'server_file_only_direct')['expected_query']),
             _rendered(_step(obs, 'server_file_only_direct'), 'p02-direct-only.txt')),
         'double_submit_creates_one_message': lambda: (
             require(isinstance(_step(obs, 'double_submit').get('center_posts'), int) and _step(obs, 'double_submit')['center_posts'] >= 1,
                     'double submit not performed'),
             require(body_count('RC31 P02 double ' + phase) == 1, 'double submit did not create exactly one message')),
         'csrf_invalid_sesskey_rejected': lambda: (
-            require(_step(obs, 'csrf_invalid_sesskey').get('http') is not None, 'forged request not sent'),
+            require(_step(obs, 'csrf_invalid_sesskey').get('http') in CSRF_REFUSAL_CODES,
+                    'forged request: HTTP %r is not the sesskey refusal (5xx/2xx/3xx not accepted)' % _step(obs, 'csrf_invalid_sesskey').get('http')),
+            require(_step(obs, 'csrf_invalid_sesskey').get('refusal_marker') is True, 'sesskey refusal message not shown'),
             require(body_count('RC31 P02 csrf ' + phase) == 0, 'forged request created a message')),
         'no_orphan_files': lambda: (_step(obs, 'double_submit'), require(isinstance(msgs, list) and msgs, 'DB state missing'),
                                     require((state or {}).get('orphan_files') == 0, 'orphan files present')),
@@ -118,7 +152,7 @@ def access_checks(acc):
             require(r.get('http') in codes, '%s: HTTP %r not an accepted refusal' % (name, r.get('http')))
             require(r.get('sha256') not in SHA.values(), '%s: protected content served' % name)
             if codes is LOGIN_REDIRECT_CODES:
-                require((r.get('location') or '').startswith('http://127.0.0.1:8080/login/index.php'), 'anonymous redirect is not to login')
+                exact_redirect(r.get('location'), LOGIN_PATH)
 
     def session_reused():
         logins = acc.get('logins') or {}
@@ -127,9 +161,23 @@ def access_checks(acc):
                 'EA phases did not reuse the same browser context')
 
     def history_preserved():
-        h = acc.get('history') or {}
-        require(isinstance(h.get('before'), int) and h.get('before') > 0 and h.get('before') == h.get('after_revoke') == h.get('after_reopen'),
-                'message history changed across revoke/reopen')
+        h = (acc or {}).get('history') or {}
+        names = ('before', 'after_revoke', 'after_reopen')
+        snaps = [h.get(k) for k in names]
+        for k, snap in zip(names, snaps):
+            require(isinstance(snap, dict) and isinstance(snap.get('rows'), dict), 'history snapshot %s missing' % k)
+            require(sorted(snap.get('tables') or []) == sorted(HISTORY_TABLES), 'history snapshot %s does not cover %r' % (k, HISTORY_TABLES))
+            require(set(snap['rows']) == set(HISTORY_TABLES), 'history snapshot %s tables incomplete' % k)
+            require(all(isinstance(v, dict) or v == [] for v in snap['rows'].values()), 'history snapshot %s malformed' % k)
+            require(isinstance(snap['rows'].get('local_kbacompany_commmsg'), dict) and snap['rows']['local_kbacompany_commmsg'],
+                    'history snapshot %s has no messages' % k)
+            require(snap.get('digest') == history_digest(snap['rows']), 'history snapshot %s digest does not match its rows' % k)
+        for k, snap in zip(names[1:], snaps[1:]):
+            for table in HISTORY_TABLES:
+                a, b = snaps[0]['rows'][table] or {}, snap['rows'][table] or {}  # PHP encodes an empty table as []
+                changed = sorted(set(a) ^ set(b)) + sorted(r for r in set(a) & set(b) if a[r] != b[r])
+                require(not changed, 'history %s: %s rows changed %r (expected changes: %r)' % (k, table, changed[:5], HISTORY_EXPECTED_CHANGES))
+            require(snap['digest'] == snaps[0]['digest'], 'history digest changed at ' + k)
 
     return {
         'download_participant_allowed': lambda: allowed('ea_before'),
@@ -141,6 +189,15 @@ def access_checks(acc):
                                                    allowed('ea_reopened')),
         'revocation_preserves_history': history_preserved,
     }
+
+
+def history_digest(rows):
+    """Stable digest of {table: {row key: row hash}}; recomputed by the validator, never trusted from the producer."""
+    h = hashlib.sha256()
+    for table in sorted(rows):
+        for key in sorted(rows[table] or {}):
+            h.update(('%s|%s|%s\n' % (table, key, rows[table][key])).encode())
+    return h.hexdigest()
 
 
 def oversize_checks(obs, state):
@@ -164,12 +221,34 @@ def oversize_checks(obs, state):
     }
 
 
-def task_tab_checks(obs):
-    cases = {c.get('id', '').split('.')[-1]: c.get('status') for c in (obs or {}).get('cases', [])}
-    required = ['page_and_tabs', 'keyboard_reaches_tab', 'focus_ring_visible', 'focus_ring_contrast_3to1', 'second_tab_focus_visible',
-                'enter_activates_tab', 'active_tab_distinct', 'mouse_click_navigates_without_ring', 'desktop_tabs_not_enlarged',
-                'mobile_focus_ring', 'mobile_no_page_hscroll', 'mobile_tap_target_44']
-    return {'task_tab_' + k: (lambda k=k: require(cases.get(k) == 'PASS', 'task tab case %s: %r' % (k, cases.get(k)))) for k in required}
+def task_tab_checks(obs, phase='ci'):
+    """Every required case PASS exactly once, no other case (execution, unknown) present, and the run's own status PASS."""
+    def cases():
+        require(isinstance(obs, dict) and isinstance(obs.get('cases'), list) and obs['cases'], 'task tab run missing')
+        prefix = 'P01.%s.' % phase
+        ids = [c.get('id') if isinstance(c, dict) else None for c in obs['cases']]
+        require(all(isinstance(i, str) and i.startswith(prefix) for i in ids), 'task tab case ids not from phase ' + phase)
+        names = [i[len(prefix):] for i in ids]
+        require(len(names) == len(set(names)), 'duplicate task tab cases')
+        return {n: c.get('status') for n, c in zip(names, obs['cases'])}
+
+    def run_complete():
+        got = cases()
+        require(obs.get('status') == 'PASS', 'task tab run status %r' % obs.get('status'))
+        bad = sorted(k for k, v in got.items() if v != 'PASS')
+        require(not bad, 'task tab run has non-PASS cases %r' % bad)
+        require(set(got) == set(TASK_TAB_CASES), 'task tab cases differ from the required set: %r' % sorted(set(got) ^ set(TASK_TAB_CASES)))
+
+    out = {'task_tab_run_complete': run_complete}
+    for k in TASK_TAB_CASES:
+        out['task_tab_' + k] = (lambda k=k: (run_complete(), require(cases().get(k) == 'PASS', 'task tab case %s: %r' % (k, cases().get(k)))))
+    return out
+
+
+def required_check_names():
+    """Every check a complete BROWSER report must contain (used by browser_acceptance.py and merge_gate.py)."""
+    return (['moodle_install', 'fixtures_companies_A_B'] + list(task_tab_checks({})) + list(attachments_checks({}, {}))
+            + list(access_checks({})) + list(oversize_checks({}, {})))
 
 
 def evaluate(checks):

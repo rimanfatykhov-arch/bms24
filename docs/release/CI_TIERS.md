@@ -44,11 +44,34 @@ verdict for the PR head:
 | Profile | Required for merge | FULL |
 |---|---|---|
 | FAST (docs, lang, pix; CSS until PR #92 decides) | FAST PASS | observation only |
-| STANDARD (application code without FULL triggers) | FAST + STANDARD (every selected test PASS) + BROWSER on MariaDB **and** Percona when `local/` changed | observation only |
+| STANDARD (application code without FULL triggers) | FAST + STANDARD (every selected test PASS) + BROWSER on MariaDB **and** Percona (all required checks) | observation only |
 | FULL (DB/upgrade/version, ACL/permissions/membership, File API/pluginfile/`$_FILES`, sesskey, raw SQL, external API, Corporate, CI/test infra, unknown path) | FAST + STANDARD + BROWSER + **all FULL workflows `success` on the same SHA** | **required** |
 
 Fail closed: invalid/missing classification, missing report, FAIL, NOT RUN, cancellation or unexpected skip blocks the merge.
 NOT APPLICABLE only by the rules in the table. Small diff size never lowers the profile.
+
+### RC32 review hardening (Issue #82, comment 6872172812)
+
+- **Job outcomes.** The gate reads the job conclusions of its own run attempt through the Actions API. `Plan targets`,
+  `FAST / this-pr`, `STANDARD / this-pr`, `BROWSER / this-pr / MariaDB 10.11.19` and `BROWSER / this-pr / Percona 8.0.46-37`
+  must be `success` for every profile (for FAST they finish quickly with an explicit NOT APPLICABLE step). A job that uploaded
+  a PASS report and then failed, was cancelled, skipped or is missing blocks the merge. If the API cannot be read: FAIL.
+- **Job roles.** `this-pr` = the candidate (required). `negative-*` (planted defects, only planned when the tier machinery
+  changes) = required when planned: the job succeeds only if the defect was detected. `replay-*` = information only; reported
+  under `information`, never part of the verdict.
+- **Identity.** Every FAST/STANDARD/BROWSER artifact carries `identity.json` (`tools/ci/stamp_identity.py`): tier, target,
+  head, base, profile, engine, run id/attempt, job and SHA256 of the report bytes. The gate compares it with the PR event
+  head/base and this run id, the classification head/base with the event, and re-hashes the downloaded report.
+- **BROWSER completeness.** A BROWSER report must contain every name from `contract.required_check_names()` (38) with PASS,
+  carry the expected `dbtype` and overall PASS; a report with an unrelated single PASS is incomplete.
+- **FULL selection.** Per FULL workflow *file* (`pr48-moodle-acceptance.yml`, `rc30-schema-repair.yml`,
+  `rc30-corporate2613-repair.yml`, `bms24-ci.yml`) the newest `pull_request` run for the same head SHA, PR number and base SHA
+  at event time is used; its latest attempt must be `success`. An older successful run never masks a newer failure,
+  cancellation or unfinished run. The retained Corporate2613 workflow (historical expected FAIL) is not part of FULL.
+- **Limitations.** The gate script is executed from the PR merge commit, so a PR can change the gate itself; such PRs touch
+  `tools/ci/` and are therefore always FULL. Request scoping to `127.0.0.1:8080` is not OS-level network isolation.
+
+**Rollback of the CI change:** revert the merge commit of the RC32 review PR (CI files only); no data or schema involved.
 
 **Merge ≠ production.** A green gate allows merging to `main` only. Every production installation still requires: release
 artifact identity (Git SHA + ZIP SHA256 built in CI), staging/clone acceptance, backup + rehearsed rollback, release card and
