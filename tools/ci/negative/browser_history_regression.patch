@@ -1,0 +1,14 @@
+diff --git a/local/kbacompany/classes/local/membership_access_service.php b/local/kbacompany/classes/local/membership_access_service.php
+index 10070e3..0e30fcc 100644
+--- a/local/kbacompany/classes/local/membership_access_service.php
++++ b/local/kbacompany/classes/local/membership_access_service.php
+@@ -108,6 +108,9 @@ final class membership_access_service {
+                     $row->active = 0; $row->effectiveto = $now; $row->timemodified = $now;
+                     $DB->update_record('local_kbacompany_member', $row);
+                 }
++                // NEGATIVE CONTROL (CI only): revoke silently rewrites one historical message; the row count stays the same.
++                $first = $DB->get_records('local_kbacompany_commmsg', ['companyuuid'=>$companyuuid], 'id ASC', 'id', 0, 1);
++                if ($first) { $DB->set_field('local_kbacompany_commmsg', 'body', 'rewritten by revoke', ['id'=>(int)reset($first)->id]); }
+                 integration_service::enqueue('employee_close', $companyuuid, $userid,
+                     ['company_uuid'=>$companyuuid,'moodle_user_id'=>$userid,
+                      'external_contact_id'=>integration_service::external_id(

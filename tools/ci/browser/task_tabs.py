@@ -5,6 +5,9 @@ import json, os, sys
 from pathlib import Path
 from urllib.parse import urlparse
 from playwright.sync_api import sync_playwright
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from contract import browser_event_violations  # noqa: E402
+from events import Recorder  # noqa: E402
 if os.environ.get('BMS_CI_BROWSER') != '1':
     sys.exit('CI browser fixture only')
 os.umask(0o022); root = Path(os.environ['EVIDENCE']); base = 'http://127.0.0.1:8080'
@@ -26,16 +29,14 @@ MEASURE = """el => { const s = getComputedStyle(el); const r = el.getBoundingCli
     rect: [Math.round(r.left), Math.round(r.top), Math.round(r.width), Math.round(r.height)]}; }"""
 LUM = """c => { const m = c.match(/[\\d.]+/g).map(Number); const f = v => { v/=255; return v <= .03928 ? v/12.92 : Math.pow((v+.055)/1.055, 2.4); };
   return .2126*f(m[0]) + .7152*f(m[1]) + .0722*f(m[2]); }"""
-rows = []; out = {'phase': phase, 'cases': rows}
+rows = []; out = {'phase': phase, 'cases': rows, 'browser_events': {}}
 def add(i, ok, **x): rows.append(dict(id='P01.' + phase + '.' + i, status='PASS' if ok else 'FAIL', **x))
 def contrast(page, a, b):
     la, lb = page.evaluate(LUM, a), page.evaluate(LUM, b); hi, lo = max(la, lb), min(la, lb); return round((hi + .05) / (lo + .05), 2)
 def login(ctx):
-    p = ctx.new_page(); p.set_default_timeout(30000); errs = []
-    p.on('pageerror', lambda e: errs.append('pageerror:' + type(e).__name__))
-    p.on('console', lambda m: errs.append('console:' + m.text[:120]) if m.type == 'error' else None)
+    p = ctx.new_page(); p.set_default_timeout(30000)
     p.goto(base + '/login/index.php'); p.locator('#username').fill(ma['username']); p.locator('#password').fill(ma['password'])
-    p.locator('#loginbtn').click(); p.wait_for_load_state('networkidle'); return p, errs
+    p.locator('#loginbtn').click(); p.wait_for_load_state('networkidle'); return p
 def tab_to_tabs(p, limit=150):
     for n in range(1, limit + 1):
         p.keyboard.press('Tab')
@@ -44,8 +45,9 @@ def tab_to_tabs(p, limit=150):
 with sync_playwright() as pw:
     b = pw.chromium.launch(headless=True, args=['--disable-dev-shm-usage'])
     try:
-        ctx = b.new_context(viewport={'width': 1440, 'height': 1000}); ctx.route('**/*', lambda r: r.continue_() if urlparse(r.request.url).netloc == '127.0.0.1:8080' else r.abort())
-        p, errs = login(ctx); r = p.goto(url, wait_until='networkidle')
+        ctx = b.new_context(viewport={'width': 1440, 'height': 1000}); rec = Recorder().install(ctx)
+        out['browser_events']['desktop'] = rec.events
+        p = login(ctx); r = p.goto(url, wait_until='networkidle')
         tabs = p.locator('.bms24-task-tab'); n = tabs.count(); out['tabs'] = n
         add('page_and_tabs', r.status == 200 and n >= 2, http=r.status, tabs=n)
         out['shell_css'] = p.evaluate("() => [...document.styleSheets].map(s => (s.href||'').split('/').pop().split('?')[0]).filter(x => /owned_shell|task_center|tokens/.test(x))")
@@ -76,11 +78,12 @@ with sync_playwright() as pw:
         dh = p.evaluate("() => [...document.querySelectorAll('.bms24-task-tab')].map(a => Math.round(a.getBoundingClientRect().height))"); out['desktop_tab_heights'] = dh
         # Desktop/mouse layout must not get the touch-size tabs (RC31 Pilot 01 rule is coarse-pointer only).
         add('desktop_tabs_not_enlarged', bool(dh) and max(dh) < 44, heights=sorted(set(dh)))
-        add('desktop_no_browser_errors', not [e for e in errs if 'ERR_FAILED' not in e], errors=errs[:5], note='ERR_FAILED = external CDN blocked by clone isolation')
+        dv = browser_event_violations(rec.events)
+        add('desktop_no_browser_errors', not dv, violations=dv[:5], blocked_external=sorted({e['url'] for e in rec.events if e['source'] == 'route_abort'})[:10])
         ctx.close()
         mctx = b.new_context(viewport={'width': 390, 'height': 844}, is_mobile=True, has_touch=True)
-        mctx.route('**/*', lambda r: r.continue_() if urlparse(r.request.url).netloc == '127.0.0.1:8080' else r.abort())
-        mp, merrs = login(mctx); mp.goto(url, wait_until='networkidle')
+        mrec = Recorder().install(mctx); out['browser_events']['mobile'] = mrec.events
+        mp = login(mctx); mp.goto(url, wait_until='networkidle')
         mpres = tab_to_tabs(mp, 200); mm = mp.evaluate(MEASURE, mp.evaluate_handle('document.activeElement')) if mpres else {}
         hscroll = mp.evaluate('() => document.documentElement.scrollWidth - window.innerWidth')
         add('mobile_focus_ring', bool(mpres) and mm.get('focusVisible') and mm.get('outlineStyle') != 'none' and not mm.get('clippedBy'), presses=mpres, outline=[mm.get('outlineStyle'), mm.get('outlineWidth'), mm.get('outlineColor')], clipped=mm.get('clippedBy'))
@@ -90,13 +93,14 @@ with sync_playwright() as pw:
         mh = mp.evaluate("() => [...document.querySelectorAll('.bms24-task-tab')].map(a => Math.round(a.getBoundingClientRect().height))"); out['mobile_tab_heights'] = mh
         out['mobile_pointer_coarse'] = mp.evaluate("() => matchMedia('(pointer:coarse)').matches")
         add('mobile_tap_target_44', out['mobile_pointer_coarse'] is True and bool(mh) and min(mh) >= 44, heights=sorted(set(mh)))
-        add('mobile_no_browser_errors', not [e for e in merrs if 'ERR_FAILED' not in e], errors=merrs[:5], note='ERR_FAILED = external CDN blocked by clone isolation')
+        mv = browser_event_violations(mrec.events)
+        add('mobile_no_browser_errors', not mv, violations=mv[:5], blocked_external=sorted({e['url'] for e in mrec.events if e['source'] == 'route_abort'})[:10])
         mctx.close()
     except Exception as e:
         rows.append({'id': 'P01.' + phase + '.execution', 'status': 'FAIL', 'type': type(e).__name__, 'msg': str(e)[:200]})
     finally:
         b.close()
-out['status'] = 'FAIL' if any(x['status'] == 'FAIL' for x in rows) else 'PASS'
+out['status'] = 'PASS' if rows and all(x['status'] == 'PASS' for x in rows) else 'FAIL'
 dest = root / ('pilot01-' + phase + '.json')
 with dest.open('w') as h: json.dump(out, h, indent=1)
 for png in root.glob('pilot01-' + phase + '-*.png'): png.chmod(0o644)

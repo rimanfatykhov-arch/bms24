@@ -34,5 +34,36 @@ foreach ($msgs + $empty as $m) {
 $out['orphan_files'] = (int)$DB->count_records_sql("SELECT COUNT(1) FROM {files} f WHERE f.component='local_kbacompany' AND f.filearea='communication_attachment' AND f.filename <> '.'
     AND NOT EXISTS (SELECT 1 FROM {local_kbacompany_commmsg} m WHERE m.id = f.itemid)");
 $out['max_upload'] = get_max_upload_file_size();
+if ($phase === 'hist') {
+    // Content snapshot of company A's communication history (RC32 review): one stable hash per row, keyed by a stable id.
+    // Compared by contract.access_checks() before revoke, after revoke and after reopen. No expected changes.
+    $rowhash = static function(array $v): string { return hash('sha256', json_encode(array_values($v), JSON_UNESCAPED_UNICODE)); };
+    $rows = ['local_kbacompany_commmsg' => [], 'local_kbacompany_commattach' => [], 'local_kbacompany_commrev' => [],
+             'files:communication_attachment' => []];
+    foreach ($DB->get_records('local_kbacompany_commmsg', ['companyuuid' => $A], 'id ASC') as $r) {
+        $rows['local_kbacompany_commmsg'][$r->uuid] = $rowhash([(int)$r->id, $r->threaduuid, (int)$r->authorid, hash('sha256', (string)$r->body),
+            $r->replytouuid, $r->taskuuid, $r->status, (int)$r->timecreated]);
+    }
+    foreach ($DB->get_records('local_kbacompany_commattach', ['companyuuid' => $A], 'id ASC') as $r) {
+        $rows['local_kbacompany_commattach'][$r->uuid] = $rowhash([(int)$r->id, $r->messageuuid, $r->refkind, hash('sha256', (string)$r->refvalue),
+            $r->label, (int)$r->timecreated]);
+    }
+    foreach ($DB->get_records('local_kbacompany_commrev', ['companyuuid' => $A], 'id ASC') as $r) {
+        $rows['local_kbacompany_commrev']['rev' . $r->id] = $rowhash([$r->messageuuid, (int)$r->actorid, $r->action,
+            hash('sha256', (string)$r->oldbody), (int)$r->timecreated]);
+    }
+    foreach ($DB->get_records_select('files', "component = 'local_kbacompany' AND filearea = 'communication_attachment' AND filename <> '.'",
+            null, 'id ASC') as $r) {
+        $rows['files:communication_attachment']['file' . $r->id] = $rowhash([(int)$r->contextid, (int)$r->itemid, $r->filepath, $r->filename,
+            $r->contenthash, (int)$r->filesize, (int)$r->userid, (int)$r->timecreated]);
+    }
+    $h = hash_init('sha256');
+    ksort($rows, SORT_STRING);
+    foreach ($rows as $table => $t) {
+        ksort($t, SORT_STRING);
+        foreach ($t as $key => $v) { hash_update($h, $table . '|' . $key . '|' . $v . "\n"); }
+    }
+    $out['history'] = ['tables' => array_keys($rows), 'rows' => $rows, 'digest' => hash_final($h)];
+}
 file_put_contents($EV . 'p02-state-' . $phase . '.json', json_encode($out));
 echo json_encode($out) . PHP_EOL;
