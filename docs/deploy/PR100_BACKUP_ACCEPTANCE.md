@@ -29,8 +29,8 @@
 | Наличие reusable image IDs |PASS inventory|Новый clone не запускался; pin IDs в driver ещё требуется|
 | Source account byte/inode quota |NOT RUN fresh authoritative quota|Старые panel/du оценки не достаточны|
 | Owner storage/key recovery |NOT RUN|Владелец должен указать и проверить private destination|
-| GPG source→test→owner fixture |NOT RUN independently|Заявление другого исполнителя не заменяет raw evidence|
-| Background verifier negative control |FAIL helper design|Ошибка фонового verifier может не попасть в общий exit code|
+| GPG source→test→owner fixture |PASS synthetic 2.2.20→2.4.4/2.4.9|Операционный ключ владельца не проверен; см. verifier evidence|
+| Background verifier negative control |PASS fixed helper|Исходный false PASS воспроизведён;12 negatives пойманы|
 | Новый consistent capture/independent copy |NOT RUN|Параллельный backup запрещён|
 | Реальный SQL import/baseline/ACL/files |NOT RUN|tar listing и file manifest недостаточны|
 | Exact ZIP update/rollback/reinstall |NOT RUN actual baseline|Synthetic CI отдельно|
@@ -38,7 +38,7 @@
 
 ## Передача единственному оператору
 
-Использовать BRP-1.0 из этого PR, после review закрепить commit SHA. До реального capture согласовать private sizing sheet с reviewer. Исправить и воспроизвести ошибку фонового verifier (explicit PID/wait, также ошибка archive parser), quota/bytes/inode guards, unsafe archive paths. Не переносить непроверенную библиотеку в production.
+Использовать BRP-1.0 из этого PR, после review закрепить commit SHA. До реального capture согласовать private sizing sheet с reviewer. Ошибка фонового verifier исправлена и воспроизведена до/после; см. [доказательства](PR100_VERIFIER_FIX_EVIDENCE.md). Остаются quota/bytes/inode guards и unsafe archive paths в production driver. Не переносить непроверенную библиотеку в production.
 
 Предоставить свежие account used/limit/free и units; evidence cached image IDs и driver pins; owner storage доступность/ACL/free; exact GPG versions и cross-version synthetic encrypt/decrypt/extract+hash+negative logs; восстановление owner key из backup. Затем exact capture/cleanup/watchdog failure tests и измеренную оценку паузы. Только после этого запросить окно владельца.
 
