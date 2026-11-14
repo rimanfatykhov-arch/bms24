@@ -153,6 +153,9 @@ try:
     # Run before the deliberate 64 KiB server limit, and after historical ACL snapshots.
     multi_exit = timed('multiattachments', lambda: browser('multiattachments.py', 'verify'))
     record(contract.evaluate(contract.multiattachment_checks(load('multiattachment-result.json'), multi_exit)))
+    # Edit/withdraw own task-discussion messages: owned+legacy, 1440+320, click+keyboard, server negatives.
+    actions_exit = timed('message_actions', lambda: browser('message_actions.py', 'verify'))
+    record(contract.evaluate(contract.message_action_checks(load('message-actions-result.json'), actions_exit)))
     timed('server_restart_64k', lambda: start_server(['-d', 'upload_max_filesize=64K', '-d', 'post_max_size=8M']))
     timed('oversize', lambda: browser('attachments.py', 'oversize'))
     timed('db_state_oversize', lambda: php_state('oversize'))

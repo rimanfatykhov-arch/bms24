@@ -456,10 +456,114 @@ def multiattachment_checks(obs, exitcode=None):
     return {'multiattachment_complete': complete}
 
 
+MESSAGE_ACTION_CASES = [('owned', 1440, 'click', 'discussion'), ('owned', 320, 'keyboard', 'overview'),
+                        ('legacy', 1440, 'keyboard', 'discussion'), ('legacy', 320, 'click', 'overview')]
+MESSAGE_ACTION_NEGATIVES = ('wrong_sesskey', 'get_instead_of_post', 'withdraw_without_confirmation',
+                            'other_author_same_company', 'other_company')
+
+
+def message_action_checks(obs, exitcode=None):
+    """Edit/withdraw own task-discussion messages (message_actions.py). Verdicts come from DB state + rendered observations;
+    the producer's PASS alone is never sufficient."""
+    def cases():
+        require(exitcode == 0, 'message actions browser process failed or was not run')
+        require(isinstance(obs, dict) and obs.get('status') == 'PASS' and not obs.get('error'), 'message actions run incomplete')
+        rows = obs.get('cases')
+        require(isinstance(rows, list) and [(r.get('shell'), r.get('width'), r.get('mode'), r.get('tab')) for r in rows]
+                == MESSAGE_ACTION_CASES, 'owned/legacy x desktop/mobile x click/keyboard cases required')
+        for r in rows:
+            texts = r.get('texts')
+            require(isinstance(texts, list) and len(texts) == 4 and len(set(texts)) == 4 and all(isinstance(t, str) and t for t in texts),
+                    'case texts missing')
+        return rows
+
+    def posted(r):
+        s = r.get('posted') or {}
+        require(s.get('status') == 'active' and s.get('body') == r['texts'][0] and s.get('revisions') == []
+                and s.get('attachments') == 1 and s.get('stored_files') == 1, 'message with one file was not posted')
+
+    def cancel():
+        for r in cases():
+            posted(r)
+            s = r.get('after_cancel') or {}
+            require(s.get('body') == r['texts'][0] and s.get('status') == 'active' and s.get('revisions') == [],
+                    'cancel changed the message')
+
+    def edit():
+        for r in cases():
+            s = r.get('after_edit') or {}
+            require(s.get('body') == r['texts'][1] and s.get('status') == 'active' and s.get('revisions') == ['edit'],
+                    'edit not stored once')
+            require(r['texts'][1] in (s.get('task_text') or '') and r['texts'][0] not in (s.get('task_text') or ''),
+                    'task card does not show the saved text')
+            require(s.get('edited_marker') is True, 'Edited marker missing after reload')
+            require(s.get('attachments') == 1 and s.get('stored_files') == 1, 'edit changed attachments')
+            require(s.get('download_http') == 200 and s.get('download_ok') is True, 'attachment not downloadable after edit')
+            cc = r.get('communication_center') or {}
+            require(cc.get('edited_text_count') == 1 and cc.get('original_text_count') == 0,
+                    'Communication Center does not show the same edited text')
+
+    def conflict():
+        for r in cases():
+            s = r.get('conflict') or {}
+            require(s.get('body') == r['texts'][2] and s.get('revisions') == ['edit', 'edit'],
+                    'stale tab overwrote the newer text or the newer edit was lost')
+            require(any('Message changed' in a for a in (s.get('alert') or [])), 'conflict not reported')
+            require(s.get('draft_kept') is True, 'failed edit lost its draft')
+
+    def confirm():
+        for r in cases():
+            s = r.get('unconfirmed_delete') or {}
+            require(s.get('post_requests') == 0 and s.get('status') == 'active' and s.get('body') == r['texts'][2],
+                    'unconfirmed delete was sent or applied')
+
+    def withdraw():
+        for r in cases():
+            s = r.get('after_withdraw') or {}
+            require(s.get('status') == 'withdrawn' and s.get('body') == '' and s.get('revisions') == ['edit', 'edit', 'withdraw'],
+                    'withdraw not stored with its audit history')
+            require(s.get('withdrawn_marker') is True and s.get('old_body_visible') is False and r['texts'][2] not in (s.get('task_text') or ''),
+                    'withdrawn text still rendered')
+            require(s.get('file_link_count') == 0 and s.get('controls_left') == 0, 'file link or controls left on a withdrawn message')
+            require(s.get('old_file_http') != 200 and s.get('old_file_leaked') is False, 'old file URL still serves the file')
+            require(s.get('attachments') == 1, 'withdraw destroyed the attachment record instead of closing access')
+
+    def events():
+        for r in cases():
+            violations = browser_event_violations(r.get('browser_events'))
+            require(not violations, 'browser errors: %r' % violations[:3])
+            require(r.get('server_errors') == [], 'HTTP 5xx during message actions: %r' % (r.get('server_errors'),))
+
+    def negatives():
+        require(exitcode == 0 and isinstance(obs, dict) and obs.get('status') == 'PASS' and not obs.get('error'),
+                'message actions run incomplete')
+        n = obs.get('negatives') or {}
+        before = n.get('unchanged_before_valid') or {}
+        require(before.get('body') == n.get('target_text') and before.get('status') == 'active' and before.get('revisions') == [],
+                'negative target not recorded')
+        for key in MESSAGE_ACTION_NEGATIVES:
+            s = (n.get(key) or {}).get('state')
+            require(isinstance(s, dict) and s.get('body') == before['body'] and s.get('status') == 'active' and s.get('revisions') == [],
+                    '%s changed the message' % key)
+        rp = n.get('replay') or {}
+        require((rp.get('state') or {}).get('body') == n.get('replay_text') and (rp.get('state') or {}).get('revisions') == ['edit'],
+                'replayed request applied more or less than once')
+        rv = n.get('revoked_member') or {}
+        require(rv.get('revoked') is True and n.get('reopened') is True, 'revocation not applied/reverted')
+        require((rv.get('state') or {}).get('body') == n.get('ea_text') and (rv.get('state') or {}).get('revisions') == [],
+                'revoked member changed own message')
+
+    return {'message_edit_cancel_unchanged': cancel, 'message_edit_saved_synced_with_files': edit,
+            'message_edit_conflict_keeps_newer_and_draft': conflict, 'message_withdraw_requires_confirmation': confirm,
+            'message_withdraw_hides_text_and_files': withdraw, 'message_actions_no_browser_errors': events,
+            'message_actions_server_negatives': negatives}
+
+
 def required_check_names():
     """Every check a complete BROWSER report must contain (used by browser_acceptance.py and merge_gate.py)."""
     return (['moodle_install', 'fixtures_companies_A_B'] + list(task_tab_checks({})) + list(attachments_checks({}, {}))
-            + list(access_checks({})) + list(oversize_checks({}, {})) + list(multiattachment_checks({})))
+            + list(access_checks({})) + list(oversize_checks({}, {})) + list(multiattachment_checks({}))
+            + list(message_action_checks({})))
 
 
 def evaluate(checks):

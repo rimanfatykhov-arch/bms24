@@ -66,7 +66,9 @@ final class task_discussion_participant_regression_test extends \advanced_testca
         $uuid = task_service::post_discussion_message($f['company'], $actor, $f['task'], 'Original');
         $hash = hash('sha256', "Original\nactive");
         foreach (['edit', 'withdraw'] as $operation) {
+            // Other company, another task participant (not the author), a company user without task access, stale revision.
             foreach ([[$f['other'], $actor, $hash], [$f['company'], (int)$f['assignee']->id, $hash],
+                    [$f['company'], (int)$f['unrelated']->id, $hash],
                     [$f['company'], $actor, str_repeat('0', 64)]] as $attempt) {
                 try {
                     task_service::change_discussion_message($attempt[0], $attempt[1], $f['task'],

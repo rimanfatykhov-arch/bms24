@@ -388,11 +388,79 @@ class ContractTest(unittest.TestCase):
         for garbage in ([{'source': 'requestfailed', 'url': 5}], [{'source': 'route_abort', 'url': 5}], [{}], [[]]):
             self.assertTrue(c.browser_event_violations(garbage))
 
+    def message_actions_obs(self):
+        def st(body, status='active', revisions=(), attachments=1, files=1):
+            return {'body': body, 'status': status, 'thread_uuid': 'T', 'revisions': list(revisions),
+                    'attachments': attachments, 'stored_files': files}
+        rows = []
+        for shell, width, mode, tab in c.MESSAGE_ACTION_CASES:
+            t = ['%s-%d-%s' % (shell, width, n) for n in ('t0', 't1', 't2', 't3')]
+            rows.append({'shell': shell, 'width': width, 'mode': mode, 'tab': tab, 'texts': t, 'file_sha256': 'x',
+                         'posted': st(t[0]), 'after_cancel': st(t[0]),
+                         'after_edit': dict(st(t[1], revisions=['edit']), task_text='A\n' + t[1] + '\nEdited', edited_marker=True,
+                                            download_http=200, download_ok=True),
+                         'communication_center': {'edited_text_count': 1, 'original_text_count': 0},
+                         'conflict': dict(st(t[2], revisions=['edit', 'edit']), alert=['Message changed. Refresh and retry.'], draft_kept=True),
+                         'unconfirmed_delete': dict(st(t[2], revisions=['edit', 'edit']), post_requests=0),
+                         'after_withdraw': dict(st('', 'withdrawn', ['edit', 'edit', 'withdraw']), task_text='A\nMessage withdrawn.',
+                                                withdrawn_marker=True, old_body_visible=False, file_link_count=0,
+                                                old_file_http=404, old_file_leaked=False, controls_left=0),
+                         'browser_events': list(ABORTED), 'server_errors': []})
+        same = st('N', attachments=0, files=0)
+        neg = {k: {'http': 303, 'state': dict(same)} for k in c.MESSAGE_ACTION_NEGATIVES}
+        neg.update({'unchanged_before_valid': dict(same), 'target_text': 'N', 'replay_text': 'R', 'ea_text': 'E', 'reopened': True,
+                    'replay': {'first': {'http': 303}, 'again': {'http': 303}, 'state': st('R', revisions=['edit'], attachments=0, files=0)},
+                    'revoked_member': {'http': 303, 'revoked': True, 'state': st('E', attachments=0, files=0)}})
+        return {'status': 'PASS', 'cases': rows, 'negatives': neg}
+
+    def test_message_actions_valid_passes_and_mutations_fail(self):
+        obs = self.message_actions_obs()
+        res = c.evaluate(c.message_action_checks(obs, 0))
+        self.assertEqual({k: 'PASS' for k in res}, {k: v['status'] for k, v in res.items()}, res)
+
+        def fails(check, mutate, exitcode=0):
+            o = copy.deepcopy(obs); mutate(o)
+            r = c.evaluate(c.message_action_checks(o, exitcode))
+            self.assertEqual('FAIL', r[check]['status'], (check, r[check]))
+        fails('message_edit_cancel_unchanged', lambda o: o['cases'][0]['after_cancel'].update(revisions=['edit']))
+        fails('message_edit_saved_synced_with_files', lambda o: o['cases'][1]['after_edit'].update(edited_marker=False))
+        fails('message_edit_saved_synced_with_files', lambda o: o['cases'][2]['after_edit'].update(stored_files=0))
+        fails('message_edit_saved_synced_with_files', lambda o: o['cases'][3]['communication_center'].update(original_text_count=1))
+        fails('message_edit_saved_synced_with_files', lambda o: o['cases'][0]['after_edit'].update(download_ok=False))
+        fails('message_edit_conflict_keeps_newer_and_draft', lambda o: o['cases'][0]['conflict'].update(body=o['cases'][0]['texts'][3]))
+        fails('message_edit_conflict_keeps_newer_and_draft', lambda o: o['cases'][1]['conflict'].update(draft_kept=False))
+        fails('message_withdraw_requires_confirmation', lambda o: o['cases'][2]['unconfirmed_delete'].update(post_requests=1))
+        fails('message_withdraw_hides_text_and_files', lambda o: o['cases'][3]['after_withdraw'].update(old_file_http=200, old_file_leaked=True))
+        fails('message_withdraw_hides_text_and_files', lambda o: o['cases'][0]['after_withdraw'].update(file_link_count=1))
+        fails('message_withdraw_hides_text_and_files', lambda o: o['cases'][0]['after_withdraw'].update(revisions=['withdraw']))
+        fails('message_withdraw_hides_text_and_files', lambda o: o['cases'][1]['after_withdraw'].update(attachments=0))
+        fails('message_actions_no_browser_errors', lambda o: o['cases'][0]['browser_events'].append(
+            {'source': 'pageerror', 'name': 'Error', 'message': 'x'}))
+        fails('message_actions_no_browser_errors', lambda o: o['cases'][0].pop('browser_events'))
+        fails('message_actions_no_browser_errors', lambda o: o['cases'][2].update(server_errors=[{'status': 500}]))
+        for key in c.MESSAGE_ACTION_NEGATIVES:
+            fails('message_actions_server_negatives', lambda o, key=key: o['negatives'][key]['state'].update(body='forbidden'))
+            fails('message_actions_server_negatives', lambda o, key=key: o['negatives'].pop(key))
+        fails('message_actions_server_negatives', lambda o: o['negatives']['replay']['state'].update(revisions=['edit', 'edit']))
+        fails('message_actions_server_negatives', lambda o: o['negatives']['revoked_member']['state'].update(revisions=['edit']))
+        fails('message_actions_server_negatives', lambda o: o['negatives'].update(reopened=False))
+        # incomplete matrix, wrong order, producer error or non-zero exit fail every check
+        for mutate in (lambda o: o['cases'].pop(), lambda o: o['cases'].reverse(), lambda o: o['cases'][0].update(texts=['a'] * 4)):
+            o = copy.deepcopy(obs); mutate(o)
+            r = c.evaluate(c.message_action_checks(o, 0))
+            self.assertTrue(all(v['status'] == 'FAIL' for k, v in r.items() if k != 'message_actions_server_negatives'), r)
+        for mutate, code in ((lambda o: o.update(error='boom'), 0), (lambda o: o.update(status='FAIL'), 0), (lambda o: None, 1)):
+            o = copy.deepcopy(obs); mutate(o)
+            r = c.evaluate(c.message_action_checks(o, code))
+            self.assertTrue(all(v['status'] == 'FAIL' for v in r.values()), r)
+        self.assertTrue(all(v['status'] == 'FAIL' for v in c.evaluate(c.message_action_checks(None, None)).values()))
+
     def test_required_check_names_complete(self):
         names = c.required_check_names()
         self.assertEqual(len(names), len(set(names)))
         for k in ('access_no_browser_errors', 'attachments_no_browser_errors', 'oversize_no_browser_errors', 'task_tab_run_complete', 'task_tab_mobile_tap_target_44', 'csrf_invalid_sesskey_rejected', 'revocation_preserves_history',
-                  'download_other_company_denied', 'revoke_in_open_session_denied', 'oversize_nothing_stored', 'moodle_install'):
+                  'download_other_company_denied', 'revoke_in_open_session_denied', 'oversize_nothing_stored', 'moodle_install',
+                  'message_withdraw_hides_text_and_files', 'message_actions_server_negatives'):
             self.assertIn(k, names)
 
     def test_oversize_requires_sent_request_effective_limit_and_nothing_stored(self):
