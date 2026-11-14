@@ -31,3 +31,19 @@ Existing Dev `checks` запускает весь Python suite normal/-O, вкл
 - Новый release artifact/owner approval/site/window не выдаются. Нет опубликованных p50/p95/SLA/retention сроков, удаления наборов или покупки ресурсов.
 
 До operational допуска: независимая приёмка текущего PR/CI, отдельный reviewed live adapter и его isolated dual-engine Moodle rehearsal, затем только новое разрешение владельца на конкретные реальные операции. Issue #104 и этот Draft не заменяет approval или ready release.
+
+## Независимая приёмка PR105 после первого инкремента — 15.11.2026
+
+На исходном70df08b независимые reviewers воспроизвели ошибки, отсутствовавшие в прежних тестах:
+
+| Finding | До исправления | Исправленный контракт |
+|---|---|---|
+| P1 watchdog startup/runtime death | child exit17, но operator0/PASS | readiness PID/birth/token/tool binding до первого freeze; live-health checks; любой ранний exit, включая0, даёт FAIL |
+| P1 controller/child stop race | поздний writer менял код после RECOVERED в deterministic actual-process scheduler probe | controller stopped/waited до snapshot journal; worker не пишет без опубликованной exact PID/birth/phase регистрации; зарегистрированный writer остановлен и подтверждён до restore |
+| P2 shared account quota |6200+6200B при общей квоте10000B →PASS | shared dev/UID aggregate peaks+reserve+growth сравниваются с общей quota bytes/inodes и filesystemfree; независимые before/after пробы требуютSHARED_QUOTA_SPACE/INODES |
+
+При исправлении найден и закрыт regression нового (ещё неопубликованного) STOP-протокола: expired STOP нельзя подтвердить ACK; после истечения wall/monotonic deadline выполняется stop/wait/recovery. Это не приписывается исходному70DF, где STOP-протокола не было.
+
+Final PASS записывается только после clean stop request/ACK с nonce/identity и exit0 watchdog. Неисправность завершения даёт FAIL с восстановлением fixture режима и кода, без потери новых business/file записей. Regression наблюдает отсутствие раннего resultPASS/done.success во время искусственно задержанного завершения с ошибкой. Linux controller zombie считается завершившимся; окно Popen→registration проверяется отдельным SIGKILL сценарием, worker без регистрации отказывает в записи.
+
+Локальные независимые evidence сохранены вне Git: root outputs/pilot04-review и worktree outputs/pilot04-review. В PR публикуются только обезличенные результаты и ссылки CI. Watchdog scheduler probe намеренно управляет interleaving; не называется естественно возникшим production инцидентом. Новые Linux guards требуют CI текущего исправленного head; прежний Dev70DF PASS не переносится. Ни тесты, ни gates не отключались. Production/staging не посещались.

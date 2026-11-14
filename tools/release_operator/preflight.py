@@ -157,8 +157,13 @@ def check(config, now=None):
         # Two estimates cannot each consume the same free filesystem capacity.
         peaks = [max(x['peak_bytes'] for x in capacity[n]['phases']) + capacity[n]['reserve_bytes'] + capacity[n]['growth_bytes'] for n in ('account','test')]
         need(sum(peaks) <= shutil.disk_usage(paths['backup']).free, 'SHARED_VOLUME_SPACE')
+        inode_peaks = [max(x['peak_inodes'] for x in capacity[n]['phases']) + capacity[n]['reserve_inodes'] + capacity[n]['growth_inodes'] for n in ('account','test')]
+        if capacity['account']['expected_uid'] == capacity['test']['expected_uid']:
+            # Same device/owner is conservatively one quota bucket. Two individually
+            # affordable allocations cannot each spend that bucket's remaining quota.
+            need(sum(peaks) <= min(capacity[n]['free_bytes'] for n in ('account','test')), 'SHARED_QUOTA_SPACE')
+            need(sum(inode_peaks) <= min(capacity[n]['free_inodes'] for n in ('account','test')), 'SHARED_QUOTA_INODES')
         if hasattr(os, 'statvfs'):
-            inode_peaks = [max(x['peak_inodes'] for x in capacity[n]['phases']) + capacity[n]['reserve_inodes'] + capacity[n]['growth_inodes'] for n in ('account','test')]
             need(sum(inode_peaks) <= os.statvfs(paths['backup']).f_favail, 'SHARED_VOLUME_INODES')
 
     package = config['package']

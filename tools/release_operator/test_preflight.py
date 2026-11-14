@@ -126,6 +126,30 @@ class PreflightTest(unittest.TestCase):
                 self.assertEqual(result['errors'], [code])
                 self.assertNotIn(str(self.root), json.dumps(result))
 
+    def test_shared_owner_quota_aggregates_bytes_and_inodes(self):
+        # The fixture paths share the real filesystem and owner. Each allocation
+        # fits its declared quota separately, but their simultaneous total does not.
+        import shutil
+        self.assertGreater(shutil.disk_usage(self.root).free, 20000)
+        if hasattr(os, 'statvfs'):
+            self.assertGreater(os.statvfs(self.root).f_favail, 200)
+        for resource, error in (('bytes', 'SHARED_QUOTA_SPACE'), ('inodes', 'SHARED_QUOTA_INODES')):
+            with self.subTest(resource=resource):
+                c = copy.deepcopy(self.config)
+                free, peak, reserve, growth = (10000,6000,100,100) if resource=='bytes' else (100,60,10,10)
+                for name in ('account','test'):
+                    cap = c['capacity'][name]
+                    cap['free_'+resource] = free
+                    cap['reserve_'+resource] = reserve
+                    cap['growth_'+resource] = growth
+                    for phase in cap['phases']:phase['peak_'+resource] = peak
+                    self.assertLessEqual(peak+reserve+growth,free)
+                self.assertGreater(2*(peak+reserve+growth),free)
+                self.assertEqual(self.result(c)['errors'], [error])
+                # Raising only the available shared quota admits exactly the same demand.
+                for name in ('account','test'):c['capacity'][name]['free_'+resource]=2*(peak+reserve+growth)
+                self.assertEqual(self.result(c)['status'],'PASS')
+
     def test_duplicate_json_and_cli_failure(self):
         self.path.write_text('{"schema_version":1,"schema_version":1}')
         for flags in ([], ['-O']):
