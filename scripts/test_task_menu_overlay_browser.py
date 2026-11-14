@@ -4,14 +4,25 @@ Required env: BMS_RECOVERY_BROWSER=1, TEST_ROOT (private actors.private.json),
 EVIDENCE (private directory), EXPECTED_TASK_CSS_SHA256. EXPECTED_SHELL defaults
 owned; run again on a separately configured isolated legacy fixture, never flip
 production configuration. No setup, account mutation, or POST actions here.
+The isolated runner must copy the current tools/ci/browser/events.py and
+contract.py beside this script when it runs outside the repository.
 """
 import hashlib
 import json
 import os
+import sys
 from pathlib import Path
 from urllib.parse import urljoin, urlparse
 
 from playwright.sync_api import sync_playwright
+
+# In the repository use the canonical shared BROWSER policy. The isolated runner
+# copies the same events.py/contract.py beside this script; no local exemptions.
+policy_root = Path(__file__).resolve().parents[1] / 'tools/ci/browser'
+if policy_root.is_dir():
+    sys.path.insert(0, str(policy_root))
+import events as browser_events_policy
+import contract as browser_contract
 
 BASE = 'http://127.0.0.1:8080'
 WIDTHS = [320, 360, 390, 480, 482, 720, 768, 1024, 1280, 1440]
@@ -30,9 +41,34 @@ def geometry(page):
         const card = document.querySelector('.bms-task2-layout, .bms24-task-center, .bms-tui');
         if (!card) throw new Error('task card marker missing');
         const r = card.getBoundingClientRect();
-        return {pageWidth: document.documentElement.clientWidth,
+        const detail = document.querySelector('.bms-task2-layout');
+        const d = detail ? detail.getBoundingClientRect() : null;
+        const viewportWidth = document.documentElement.clientWidth;
+        const offenders = Array.from(document.body.querySelectorAll('*')).map(e => {
+            const b=e.getBoundingClientRect(), s=getComputedStyle(e);
+            let visibleRight=b.right, visibleLeft=b.left, parent=e.parentElement;
+            const clipping=[];
+            while(parent && parent!==document.documentElement && parent!==document.body){
+                const ps=getComputedStyle(parent), pb=parent.getBoundingClientRect();
+                if(['hidden','clip','auto','scroll'].includes(ps.overflowX)){
+                    visibleRight=Math.min(visibleRight,pb.right);visibleLeft=Math.max(visibleLeft,pb.left);
+                    clipping.push({tag:parent.tagName,id:parent.id,classes:parent.className,right:pb.right,overflow:ps.overflowX});
+                }
+                parent=parent.parentElement;
+            }
+            return {tag:e.tagName,id:e.id,classes:e.className,
+                box:{x:b.x,y:b.y,width:b.width,height:b.height,right:b.right},
+                visibleRight:visibleRight,visibleLeft:visibleLeft,clipping:clipping,
+                display:s.display,visibility:s.visibility,position:s.position,overflowX:s.overflowX,whiteSpace:s.whiteSpace,
+                minWidth:s.minWidth,maxWidth:s.maxWidth,padding:s.padding,margin:s.margin,
+                flex:s.flex,boxSizing:s.boxSizing};
+        }).filter(e => e.box.width>0 && e.box.height>0 && e.visibility!=='hidden' &&
+            e.visibleRight>viewportWidth+1 && e.visibleRight>e.visibleLeft)
+            .sort((a,b)=>a.visibleRight-b.visibleRight).slice(0,20);
+        return {pageWidth: viewportWidth, offenders:offenders,
             scrollWidth: document.documentElement.scrollWidth,
-            card: {x:r.x,y:r.y,width:r.width,height:r.height}};
+            card: {x:r.x,y:r.y,width:r.width,height:r.height},
+            detailCard: d ? {x:d.x,y:d.y,width:d.width,height:d.height} : null};
     }''')
 
 
@@ -42,6 +78,10 @@ def stable(before, after):
     require(before['scrollWidth'] == after['scrollWidth'], 'scroll width changed')
     for key in ['x', 'y', 'width', 'height']:
         require(abs(before['card'][key] - after['card'][key]) <= 1, 'card geometry changed: ' + key)
+    require((before['detailCard'] is None) == (after['detailCard'] is None), 'detail card appeared/disappeared')
+    if before['detailCard'] is not None:
+        for key in ['x', 'y', 'width', 'height']:
+            require(abs(before['detailCard'][key] - after['detailCard'][key]) <= 1, 'detail card geometry changed: ' + key)
 
 
 def run():
@@ -55,7 +95,10 @@ def run():
     tools_url = BASE + '/local/kbacompany/tasks.php?uuid=' + company
     detail_url = tools_url + '&task=' + task + '&view=detail&tab=overview'
     rows, css, failures = [], [], []
-    report = {'shell': SHELL, 'status': 'FAIL', 'rows': rows, 'failures': failures, 'loaded_css': css}
+    report = {'shell': SHELL, 'status': 'FAIL', 'rows': rows, 'failures': failures, 'loaded_css': css,
+        'browser_events': [], 'browser_contexts': [], 'browser_policy_hashes': {
+            name: hashlib.sha256(Path(module.__file__).read_bytes()).hexdigest()
+            for name, module in [('events.py', browser_events_policy), ('contract.py', browser_contract)]}}
     try:
         with sync_playwright() as pw:
             browser = pw.chromium.launch(headless=True)
@@ -63,27 +106,19 @@ def run():
                 for width in WIDTHS:
                     context = browser.new_context(viewport={'width': width, 'height': 900},
                         has_touch=width <= 480, is_mobile=width <= 480)
-                    blocked, errors = set(), []
-                    def route(request):
-                        parsed = urlparse(request.request.url)
-                        if parsed.scheme == 'http' and parsed.netloc == '127.0.0.1:8080':
-                            request.continue_()
-                        else:
-                            blocked.add(request.request.url)
-                            request.abort()
-                    context.route('**/*', route)
+                    recorder = browser_events_policy.Recorder()
+                    report['browser_contexts'].append({'width': width, 'events': recorder.events})
+                    recorder.install(context)
                     page = context.new_page()
                     close_observations = []
-                    page.expose_function('recordMenuClose', lambda value: close_observations.append(value))
-                    def response(response):
+                    page.expose_function('recordMenuClose', lambda value, observations=close_observations: observations.append(value))
+                    def response(response, recorder=recorder):
                         if response.status >= 500:
-                            errors.append('HTTP ' + str(response.status))
+                            recorder.events.append({'source': 'http_error', 'url': response.url,
+                                'method': response.request.method, 'status': response.status})
                         if urlparse(response.url).path.endswith('/task_center.css'):
                             css.append({'status': response.status, 'sha256': hashlib.sha256(response.body()).hexdigest()})
                     page.on('response', response)
-                    page.on('pageerror', lambda error: errors.append(str(error)))
-                    page.on('console', lambda message: errors.append('console: ' + message.text)
-                        if message.type == 'error' and message.location.get('url') not in blocked else None)
                     page.goto(BASE + '/login/index.php', wait_until='networkidle')
                     page.locator('#username').fill(actor['username'])
                     page.locator('#password').fill(actor['password'])
@@ -97,6 +132,8 @@ def run():
                         summary, panel = menu.locator('summary'), menu.locator(PANEL)
                         summary.scroll_into_view_if_needed()
                         before = geometry(page)
+                        if name == 'actions':
+                            require(before['detailCard'] is not None, 'detail card marker missing')
                         summary.click()
                         page.wait_for_function('(s) => document.querySelector(s).open', arg=MENU)
                         page.wait_for_timeout(50)
@@ -118,7 +155,7 @@ def run():
                             }
                             const chain=[];let parent=e.parentElement;
                             while(parent){chain.push(describe(parent));parent=parent.parentElement;}
-                            return {panel:describe(e),ancestors:chain,viewport:{innerWidth:innerWidth,
+                            return {panel:describe(e),ancestors:chain,viewportMeta:Array.from(document.querySelectorAll('meta[name=viewport]')).map(m=>m.content),viewport:{innerWidth:innerWidth,
                                 innerHeight:innerHeight,scrollX:scrollX,scrollY:scrollY,
                                 visual:window.visualViewport?{width:visualViewport.width,
                                     height:visualViewport.height,offsetLeft:visualViewport.offsetLeft,
@@ -127,11 +164,13 @@ def run():
                         report.setdefault('geometry_diagnostics', []).append({'width':width,'menu':name,
                             'before':before,'after':after,'diagnostics':diagnostics})
                         page.screenshot(path=str(evidence / ('menu-' + SHELL + '-' + name + '-' + str(width) + '.png')))
+                        require(abs(after['pageWidth'] - width) <= 1 and
+                            (not diagnostics['viewport']['visual'] or abs(diagnostics['viewport']['visual']['width'] - width) <= 1),
+                            'actual CSS viewport differs from requested responsive width')
                         stable(before, after)
                         require(box and box['x'] >= -1 and box['y'] >= -1
                             and box['x'] + box['width'] <= width + 1
                             and box['y'] + box['height'] <= 901, 'menu outside viewport')
-                        page.screenshot(path=str(evidence / ('menu-' + SHELL + '-' + name + '-' + str(width) + '.png')))
                         links = panel.locator('a[href]')
                         require(links.count() > 0, 'empty menu')
                         # Real Playwright hit testing: no forced clicks or dispatchEvent.
@@ -166,6 +205,7 @@ def run():
                                     window.recordMenuClose(!menu.open);
                                 }
                             });}''', arg=MENU)
+                        close_count_before = len(close_observations)
                         # A normal click is delivered, but navigation is observed through its real request.
                         with page.expect_navigation(wait_until='networkidle') as destination:
                             with page.expect_request(lambda request: request.is_navigation_request()) as navigation:
@@ -174,8 +214,9 @@ def run():
                         require(destination.value and destination.value.status == 200, 'menu destination did not return HTTP 200')
                         require(page.url == urljoin(url, href), 'menu destination unexpectedly redirected')
                         require('/login/' not in page.url, 'menu link lost authenticated access')
-                        require(close_observations and close_observations[-1] is True, 'action click did not close menu')
-                        require(not errors, 'browser/network errors')
+                        require(len(close_observations) == close_count_before + 1 and close_observations[-1] is True,
+                            'current action click did not prove menu closure')
+                        require(not browser_contract.browser_event_violations(recorder.events), 'browser/network errors')
                         rows.append({'width': width, 'menu': name, 'before': before, 'after': after,
                             'panel': box, 'ordinary_click': 'navigation and closure verified', 'status': 'PASS'})
                     if width == 320:
@@ -235,14 +276,22 @@ def run():
                         'recent activity block remains')
                     history = page.locator('a[href*="tab=history"]').first
                     require(history.count() > 0, 'history tab missing')
-                    history.click()
-                    page.wait_for_load_state('networkidle')
+                    history_url = history.get_attribute('href')
+                    require(urlparse(urljoin(detail_url, history_url)).netloc == '127.0.0.1:8080', 'unexpected history origin')
+                    with page.expect_navigation(wait_until='networkidle') as history_response:
+                        history.click()
+                    require(history_response.value and history_response.value.status == 200
+                        and page.url == urljoin(detail_url, history_url), 'history failed or redirected')
+                    require(page.get_by_role('heading', name='History', exact=True).count() == 1
+                        or page.get_by_role('heading', name='История', exact=True).count() == 1, 'history heading missing')
                     require(page.locator('.bms-tui-message').count() > 0, 'history has no fixture events')
-                    require(not errors, 'browser/network errors')
+                    require(not browser_contract.browser_event_violations(recorder.events), 'browser/network errors')
                     rows.append({'width': width, 'history': 'PASS'})
                     context.close()
             finally:
                 browser.close()
+        require(all(not browser_contract.browser_event_violations(item['events']) for item in report['browser_contexts']),
+            'browser/network errors after context close')
         require(len(rows) == len(WIDTHS) * 3, 'incomplete browser matrix')
         if SHELL == 'owned':
             expected = os.environ['EXPECTED_TASK_CSS_SHA256']
@@ -253,6 +302,7 @@ def run():
         failures.append(type(error).__name__ + ': ' + str(error))
         raise
     finally:
+        report['browser_events'] = [event for item in report['browser_contexts'] for event in item['events']]
         (evidence / ('task-menu-overlay-' + SHELL + '.json')).write_text(json.dumps(report, indent=2))
     print('TASK_MENU_OVERLAY_PASS', SHELL, len(rows))
 

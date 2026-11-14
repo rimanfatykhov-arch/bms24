@@ -29,7 +29,7 @@ def check(root=ROOT):
         'local/kbacompany/classes/local/communication_service.php': '8310d2087d70b6ef141af73cec3879ee021f5245e3d68b12cd147cc76b8a0a46',
         'local/kbacompany/lang/en/local_kbacompany.php': '0494fad97271909666a779281d1eb25944b8cc9bf55e1df5ff73f356922c8dc1',
         'local/kbacompany/lang/ru/local_kbacompany.php': '6dd439078e4a5afa7d409d162a09bf008795d7e5336ab72a80cc59b7de3bc274',
-        'local/kbacompany/styles.css': '3e9747d5db4fc41131e324811c5cd9b70c1e886f864fbb4403a988f987613bdc',
+        'local/kbacompany/styles.css': '1eeea0a3ff0c5ab3911aa298b5e540b52d2ced6fe5728e08a13c61cbe75cdcfd',
         'local/kbacompany/tests/communication_service_test.php': 'd8d27f74f3caa377a01ac0dc6072e7cadb2368532c0bf077014fa35dcaef95bd',
     })
     reviewed_metadata={'AGENTS.md','docs/00_MASTER_CONTEXT.md'}

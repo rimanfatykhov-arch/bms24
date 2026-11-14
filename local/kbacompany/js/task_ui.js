@@ -2,6 +2,15 @@
 (function() {
     'use strict';
     function init() {
+        // Some legacy host layouts omit viewport metadata and render phones at
+        // a 980px layout width. Scope this fallback to Task Center; preserve an
+        // existing host viewport and do not restrict user zoom.
+        if (!document.head.querySelector('meta[name="viewport"]')) {
+            var viewport = document.createElement('meta');
+            viewport.name = 'viewport';
+            viewport.content = 'width=device-width, initial-scale=1';
+            document.head.appendChild(viewport);
+        }
         // One overlay behaviour for task Actions and Tools in both shells.
         document.querySelectorAll('.bms24-task-menu, .bms-tui-menu').forEach(function(menu) {
             var trigger = menu.querySelector('summary');
@@ -14,8 +23,11 @@
             }
             function place() {
                 if (!menu.open) { return; }
-                var width = document.documentElement.clientWidth;
-                var height = window.innerHeight;
+                var viewport = window.visualViewport;
+                var width = viewport ? viewport.width : document.documentElement.clientWidth;
+                var height = viewport ? viewport.height : document.documentElement.clientHeight;
+                var left = viewport ? viewport.offsetLeft : 0;
+                var topEdge = viewport ? viewport.offsetTop : 0;
                 var anchor = trigger.getBoundingClientRect();
                 var mobile = width <= 480;
                 panel.style.position = 'fixed';
@@ -26,10 +38,11 @@
                 panel.style.bottom = 'auto';
                 panel.style.maxHeight = Math.max(44, height - 16) + 'px';
                 var box = panel.getBoundingClientRect();
-                panel.style.left = (mobile ? 8 : Math.max(8, Math.min(anchor.right - box.width, width - box.width - 8))) + 'px';
-                var top = mobile ? height - box.height - 8 : anchor.bottom + 6;
-                if (top + box.height > height - 8) { top = Math.max(8, anchor.top - box.height - 6); }
-                panel.style.top = Math.max(8, Math.min(top, height - box.height - 8)) + 'px';
+                panel.style.left = (mobile ? left + 8 : Math.max(left + 8,
+                    Math.min(anchor.right - box.width, left + width - box.width - 8))) + 'px';
+                var top = mobile ? topEdge + height - box.height - 8 : anchor.bottom + 6;
+                if (top + box.height > topEdge + height - 8) { top = Math.max(topEdge + 8, anchor.top - box.height - 6); }
+                panel.style.top = Math.max(topEdge + 8, Math.min(top, topEdge + height - box.height - 8)) + 'px';
             }
             trigger.setAttribute('aria-expanded', String(menu.open));
             menu.addEventListener('toggle', function() {
@@ -52,6 +65,10 @@
             });
             window.addEventListener('resize', place);
             window.addEventListener('scroll', place, true);
+            if (window.visualViewport) {
+                window.visualViewport.addEventListener('resize', place);
+                window.visualViewport.addEventListener('scroll', place);
+            }
         });
         var root = document.querySelector('[data-task-create-url]');
         function oldCreate() {

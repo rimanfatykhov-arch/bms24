@@ -20,7 +20,7 @@ The exact before/after hashes and reviewed source basis are recorded in
 | `classes/local/communication_service.php` | Retain the singular upload API as a wrapper; normalize multiple-upload input while preserving explicit `UPLOAD_ERR_NO_FILE` and optional MIME-type compatibility; validate the whole batch; commit one message and its attachments in one transaction. | Existing upload validator, append-message authorization, file-storage checks and attachment path remain in use. No company/RBAC condition is removed. |
 | `lang/en/local_kbacompany.php` | Add five composer upload/error/remove strings. | Existing strings retained unchanged. |
 | `lang/ru/local_kbacompany.php` | Add matching five Russian composer strings. | Existing strings retained unchanged; RU/EN key parity retained. |
-| `styles.css` | Append the legacy overlay and selected-attachment-list rules. | Earlier rules remain; no data/auth/schema change. |
+| `styles.css` | Append the legacy overlay and selected-attachment-list rules, plus task-route-only phone topbar wrapping (confirmed 18px host overflow at 320px). | Earlier rules remain; no data/auth/schema change. |
 | `tests/communication_service_test.php` | Add malformed multipart, batch count, partial-upload, legacy no-file/optional-type and no-message-on-failure regressions. | Existing test methods and assertions retained; no skip/xfail added. |
 
 Paths in the table are relative to `local/kbacompany/`.

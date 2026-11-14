@@ -21,7 +21,7 @@
     {
       "path": "local/kbacompany/styles.css",
       "before_sha256_lf": "90343cc003d3921c72d45f8414cfc79651007d2ff380d9afa771a67e964f532e",
-      "after_sha256_lf": "3e9747d5db4fc41131e324811c5cd9b70c1e886f864fbb4403a988f987613bdc"
+      "after_sha256_lf": "1eeea0a3ff0c5ab3911aa298b5e540b52d2ced6fe5728e08a13c61cbe75cdcfd"
     },
     {
       "path": "local/kbacompany/tests/communication_service_test.php",

@@ -16,6 +16,10 @@ jobs:
         with: {fetch-depth: 0, persist-credentials: false}
       - uses: actions/setup-python@v5
         with: {python-version: '3.12'}
+      - name: Verify baseline policy and task viewport fallback
+        run: |
+          python tools/acceptance/pr90/test_rehearsal_policy.py
+          node tools/tests/test_task_viewport_fallback.js
       - name: Build immutable install artifact once
         env:
           PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
@@ -30,7 +34,8 @@ jobs:
   rehearsal:
     needs: package
     runs-on: ubuntu-22.04
-    timeout-minutes: 35
+    # Candidate/reinstall each exercise all ten widths in both shells, in addition to existing gates.
+    timeout-minutes: 60
     strategy:
       fail-fast: false
       matrix:

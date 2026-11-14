@@ -4,6 +4,9 @@ from pathlib import Path
 root=Path(os.environ['TEST_ROOT']).resolve(); runner=Path(os.environ['RUNNER_TEMP']).resolve()
 core=Path(os.environ['MOODLE_ROOT']).resolve(); cand=Path(os.environ['CANDIDATE_ROOT']).resolve()
 origins=json.loads((cand/'tools/acceptance/pr90/origins.json').read_text());BASE=origins['main']
+if BASE!='f34ab6ff0d2f67a56972e99c23d096ed77a9873c':raise RuntimeError('baseline product changed; independently review validator pair')
+BASELINE_VALIDATOR='01af6405bcb7db73f67cb45fee837ba97b8c6ed3'
+if origins.get('baseline_validator')!=BASELINE_VALIDATOR:raise RuntimeError('baseline validator pin changed; independent review required')
 if os.environ.get('GITHUB_ACTIONS')!='true' or runner not in root.parents or os.environ.get('DBHOST')!='127.0.0.1':
     raise SystemExit('Disposable Actions environment required')
 public=root/'public'; public.mkdir(parents=True,exist_ok=True)
@@ -90,6 +93,8 @@ def smoke(phase):
     (public/(phase+'-tabs.json')).write_text(json.dumps({'checks':checks,'observations':tabs},indent=1))
     if any(x['status']!='PASS' for x in checks.values()):raise RuntimeError('tabs/mobile failed')
     write_checks(phase)
+    multiattachment_checks(phase)
+    menu_overlay_checks(phase)
     for mode in ['owned','legacy']:
         cmd(['php',Path(__file__).with_name('shell.php'),mode],stdout=subprocess.DEVNULL)
         observed(Path(__file__).parents[1]/'discussion_button.py',phase+'-'+mode+'-discussion',phase,mode)
@@ -100,6 +105,94 @@ def smoke(phase):
     (public/(phase+'-postwrite-access.json')).write_text(json.dumps({'checks':checks,'observations':post},indent=1))
     if any(x['status']!='PASS' for x in checks.values()):raise RuntimeError('new-file ACL/revoke smoke failed')
     stop()
+def multiattachment_checks(phase):
+    # Intentional HTTP 500/302 controls have their own strict, provenance-bound recorder.
+    # The ordinary observer must not reinterpret these as unmarked network exceptions.
+    sys.path.insert(0,str(scripts)); import contract
+    target=ev/(phase+'-multiattachments');target.mkdir()
+    shutil.copyfile(ev/'actors.private.json',target/'actors.private.json')
+    result=subprocess.run([sys.executable,str(scripts/'multiattachments.py')],cwd=core,
+        env=dict(env,EVIDENCE=str(target)),stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL)
+    resultfile=target/'multiattachment-result.json'
+    obs=json.loads(resultfile.read_text()) if resultfile.exists() else None
+    checks=contract.evaluate(contract.multiattachment_checks(obs,result.returncode))
+    (public/(phase+'-multiattachments.json')).write_text(json.dumps({'exitcode':result.returncode,'checks':checks,'observations':obs},indent=2))
+    if not checks or any(v['status']!='PASS' for v in checks.values()):
+        raise RuntimeError('required candidate multiattachment/negative controls failed')
+
+def validate_menu_report(obs,mode,csshash):
+    """Independently validate complete observations, not a producer PASS label/count."""
+    import math
+    import contract
+    def require(ok,reason):
+        if not ok:raise RuntimeError('menu evidence: '+reason)
+    def number(value):return type(value) in (int,float) and math.isfinite(value)
+    require(isinstance(obs,dict) and obs.get('status')=='PASS','missing or failed report')
+    require(obs.get('shell')==mode and obs.get('failures')==[],'wrong shell or missing/error failures')
+    events=obs.get('browser_events')
+    require(isinstance(events,list) and not contract.browser_event_violations(events),'missing or invalid browser/network events')
+    widths=(320,360,390,480,482,720,768,1024,1280,1440)
+    contexts=obs.get('browser_contexts')
+    require(isinstance(contexts,list) and len(contexts)==len(widths),'missing browser contexts')
+    context_widths=set();flat=[]
+    for context in contexts:
+        require(isinstance(context,dict),'malformed browser context')
+        width=context.get('width');recorded=context.get('events')
+        require(type(width) is int and width in widths and width not in context_widths,'duplicate/unexpected browser context width')
+        require(isinstance(recorded,list) and not contract.browser_event_violations(recorded),'browser error/provenance mismatch in context')
+        context_widths.add(width);flat.extend(recorded)
+    require(context_widths==set(widths) and flat==events,'browser contexts and flat evidence differ')
+    expected={(width,kind) for width in widths for kind in ('tools','actions','history')}
+    rows=obs.get('rows');require(isinstance(rows,list) and len(rows)==len(expected),'incomplete matrix')
+    seen=set()
+    for row in rows:
+        require(isinstance(row,dict),'malformed row')
+        width=row.get('width');kind='history' if 'history' in row else row.get('menu')
+        require(type(width) is int and isinstance(kind,str) and (width,kind) in expected,'unexpected width/case')
+        require((width,kind) not in seen,'duplicate width/case');seen.add((width,kind))
+        if kind=='history':
+            require(row.get('history')=='PASS' and 'menu' not in row,'history not passed')
+            continue
+        require(row.get('status')=='PASS' and row.get('ordinary_click')=='navigation and closure verified','menu interaction not proved')
+        before,after=row.get('before'),row.get('after')
+        require(isinstance(before,dict) and isinstance(after,dict),'missing geometry')
+        for geometry in (before,after):
+            require(number(geometry.get('pageWidth')) and abs(geometry['pageWidth']-width)<=1,'wrong CSS viewport')
+            require(number(geometry.get('scrollWidth')) and geometry['scrollWidth']<=geometry['pageWidth']+1,'horizontal overflow')
+            require(isinstance(geometry.get('card'),dict),'missing card geometry')
+        for key in ('pageWidth','scrollWidth'):
+            require(abs(before[key]-after[key])<=1,'page geometry changed')
+        for key in ('x','y','width','height'):
+            require(number(before['card'].get(key)) and number(after['card'].get(key)) and
+                abs(before['card'][key]-after['card'][key])<=1,'card geometry changed/missing')
+        panel=row.get('panel');require(isinstance(panel,dict),'missing panel')
+        require(all(number(panel.get(key)) for key in ('x','y','width','height')),'invalid panel geometry')
+        require(panel['width']>0 and panel['height']>0 and panel['x']>=-1 and panel['y']>=-1 and
+            panel['x']+panel['width']<=width+1 and panel['y']+panel['height']<=901,'panel outside viewport')
+    require(seen==expected,'missing required case')
+    css=obs.get('loaded_css');require(isinstance(css,list),'CSS observations missing')
+    if mode=='owned':
+        require(bool(css) and all(isinstance(item,dict) and item.get('status')==200 and item.get('sha256')==csshash
+            for item in css),'loaded owned CSS mismatch/missing')
+
+def menu_overlay_checks(phase):
+    csshash=hashlib.sha256((core/'local/kbacompany/bms_ui/task_center.css').read_bytes()).hexdigest()
+    try:
+        for mode in ['owned','legacy']:
+            cmd(['php',Path(__file__).with_name('shell.php'),mode],stdout=subprocess.DEVNULL)
+            target=ev/(phase+'-menu-overlay-'+mode);target.mkdir()
+            result=subprocess.run([sys.executable,str(cand/'scripts/test_task_menu_overlay_browser.py')],cwd=core,
+                env=dict(env,BMS_RECOVERY_BROWSER='1',TEST_ROOT=str(ev),EVIDENCE=str(target),
+                    EXPECTED_SHELL=mode,EXPECTED_TASK_CSS_SHA256=csshash),stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL)
+            resultfile=target/('task-menu-overlay-'+mode+'.json')
+            obs=json.loads(resultfile.read_text()) if resultfile.exists() else {}
+            (public/(phase+'-menu-overlay-'+mode+'.json')).write_text(json.dumps(obs,indent=2))
+            if result.returncode:
+                raise RuntimeError('required ten-width menu/history matrix failed: '+mode)
+            validate_menu_report(obs,mode,csshash)
+    finally:
+        cmd(['php',Path(__file__).with_name('shell.php'),'owned'],stdout=subprocess.DEVNULL)
+
 def write_checks(phase):
     sys.path.insert(0,str(scripts)); import contract
     observed(scripts/'attachments.py',phase+'-writes',phase)
@@ -127,8 +220,18 @@ try:
         raise RuntimeError('unexpected runtime versions')
     baseline=root/'baseline-source'
     cmd(['git','-C',cand,'worktree','add','--detach',baseline,BASE],stdout=subprocess.DEVNULL)
-    # Existing isolated fresh-install + A/B fixture harness, using baseline source and PR96 validators.
-    cmd([sys.executable,cand/'tools/ci/browser_acceptance.py'],env=dict(env,CANDIDATE_ROOT=str(baseline)),stdout=open(root/'baseline.private.log','w'))
+    # Pin the accepted pre-feature validator, not the new feature contract against old code.
+    # This is a distinct baseline checkset; candidate/reinstall retain every current required check.
+    validator=root/'baseline-validator'
+    cmd(['git','-C',cand,'worktree','add','--detach',validator,BASELINE_VALIDATOR],stdout=subprocess.DEVNULL)
+    actualvalidator=subprocess.check_output(['git','-C',str(validator),'rev-parse','HEAD'],text=True).strip()
+    if actualvalidator!=BASELINE_VALIDATOR:raise RuntimeError('baseline validator checkout mismatch')
+    report['baseline_validation']={'product_sha':BASE,'validator_sha':actualvalidator,
+        'checkset':'accepted PR100 BROWSER prior to multiattachment feature',
+        'validator_files':digest_tree(validator/'tools/ci/browser'),
+        'runner_sha256':hashlib.sha256((validator/'tools/ci/browser_acceptance.py').read_bytes()).hexdigest()}
+    cmd([sys.executable,validator/'tools/ci/browser_acceptance.py'],env=dict(env,CANDIDATE_ROOT=str(baseline)),stdout=open(root/'baseline.private.log','w'))
+    shutil.copyfile(root/'browser-report.json',public/'baseline-browser-report.json')
     report['steps']['baseline_browser']='PASS'
     start();role_checks('baseline')
     observed(Path(__file__).with_name('discussion_geometry.py'),'baseline-geometry','baseline')
