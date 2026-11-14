@@ -41,7 +41,17 @@ jobs:
                           # BROWSER negative control: pluginfile authorization for communication attachments removed in the runner.
                           # BROWSER must FAIL on the denial checks; STANDARD has no pluginfile test for it (explicit NOT APPLICABLE).
                           {'name': 'negative-browser-acl', 'base': head, 'head': head, 'patch': 'tools/ci/negative/browser_acl_regression.patch',
-                           'expect': {'fast': 'pass', 'standard': 'na', 'browser': 'fail'}}]
+                           'expect': {'fast': 'pass', 'standard': 'na', 'browser': 'fail'},
+                           'browser_fail': ['download_other_company_denied', 'revoke_in_open_session_denied'],
+                           'browser_pass': ['moodle_install', 'download_participant_allowed']},
+                          # BROWSER negative control (RC32 review): revoke rewrites one historical message, row count unchanged.
+                          # The content snapshot must FAIL; ACL checks around it must still PASS.
+                          {'name': 'negative-browser-history', 'base': head, 'head': head, 'patch': 'tools/ci/negative/browser_history_regression.patch',
+                           'expect': {'fast': 'pass', 'standard': 'na', 'browser': 'fail'},
+                           'browser_fail': ['revocation_preserves_history'],
+                           'browser_pass': ['moodle_install', 'download_participant_allowed', 'revoke_in_open_session_denied', 'reopen_in_open_session_allowed']}]
+          # Roles (merge_gate.py): 'this-pr' = the candidate (required); 'negative-*' = required when planned (their job succeeds
+          # only if the planted defect is detected); 'replay-*' = information only, never part of the candidate verdict.
           with open(os.environ['GITHUB_OUTPUT'], 'a') as out:
               out.write('targets=' + json.dumps(targets) + '\n')
           print(json.dumps(targets, indent=1))
@@ -108,12 +118,19 @@ jobs:
       - name: Report
         if: always()
         run: python3 tools/ci/tier_summary.py --classification $RUNNER_TEMP/classification.json --fast $RUNNER_TEMP/fast/fast-report.json --target ${{ matrix.target.name }} >> $GITHUB_STEP_SUMMARY
+      - name: Bind report to candidate (identity)
+        if: always()
+        run: |
+          python3 tools/ci/stamp_identity.py --tier FAST --target ${{ matrix.target.name }} --head "${{ steps.tgt.outputs.head }}" \
+            --base ${{ matrix.target.base }} --profile "${{ steps.classify.outputs.profile }}" \
+            --report $RUNNER_TEMP/fast/fast-report.json --out $RUNNER_TEMP/identity.json
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: ci-tiers-fast-${{ matrix.target.name }}
           path: |
             ${{ runner.temp }}/classification.json
+            ${{ runner.temp }}/identity.json
             ${{ runner.temp }}/fast/fast-report.json
             ${{ runner.temp }}/fast/local_kbacompany-candidate.manifest.json
           retention-days: 14
@@ -216,12 +233,19 @@ jobs:
       - name: Report
         if: always()
         run: python3 candidate/tools/ci/tier_summary.py --classification $RUNNER_TEMP/classification.json --standard $RUNNER_TEMP/standard-report.json --target ${{ matrix.target.name }} >> $GITHUB_STEP_SUMMARY
+      - name: Bind report to candidate (identity)
+        if: always()
+        run: |
+          python3 candidate/tools/ci/stamp_identity.py --tier STANDARD --target ${{ matrix.target.name }} --head "${{ steps.tgt.outputs.head }}" \
+            --base ${{ matrix.target.base }} --profile "${{ steps.classify.outputs.profile }}" \
+            --report $RUNNER_TEMP/standard-report.json --out $RUNNER_TEMP/identity.json
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: ci-tiers-standard-${{ matrix.target.name }}
           path: |
             ${{ runner.temp }}/classification.json
+            ${{ runner.temp }}/identity.json
             ${{ runner.temp }}/standard-report.json
             ${{ runner.temp }}/standard/logs/
           retention-days: 14
@@ -318,25 +342,35 @@ jobs:
         run: python candidate/tools/ci/browser_acceptance.py
       - name: Negative control must be detected by BROWSER
         if: matrix.target.expect.browser == 'fail'
+        env:
+          TARGET: ${{ toJson(matrix.target) }}
         run: |
           python - <<'PYEOF'
           import json, os, sys
+          t = json.loads(os.environ['TARGET'])
           r = json.load(open(os.environ['RUNNER_TEMP'] + '/browser/browser-report.json'))
           st = {k: v['status'] for k, v in r['checks'].items()}
-          need = ['download_other_company_denied', 'revoke_in_open_session_denied']
-          print('BROWSER status', r['status'], {k: st.get(k) for k in need + ['download_participant_allowed', 'moodle_install']})
-          ok = r['status'] == 'FAIL' and all(st.get(k) == 'FAIL' for k in need) and st.get('moodle_install') == 'PASS' and st.get('download_participant_allowed') == 'PASS'
+          fail, ok_ = t.get('browser_fail') or [], t.get('browser_pass') or []
+          print('BROWSER status', r['status'], {k: st.get(k) for k in fail + ok_})
+          ok = bool(fail) and r['status'] == 'FAIL' and all(st.get(k) == 'FAIL' for k in fail) and all(st.get(k) == 'PASS' for k in ok_)
           sys.exit(0 if ok else 'BROWSER negative control NOT detected')
           PYEOF
       - name: Report
         if: always() && steps.need.outputs.run == 'true'
         run: python3 candidate/tools/ci/tier_summary.py --classification $RUNNER_TEMP/classification.json --browser $RUNNER_TEMP/browser/browser-report.json --target ${{ matrix.target.name }} >> $GITHUB_STEP_SUMMARY
+      - name: Bind report to candidate (identity)
+        if: always() && steps.need.outputs.run == 'true'
+        run: |
+          python3 candidate/tools/ci/stamp_identity.py --tier BROWSER --target ${{ matrix.target.name }} --head "${{ steps.tgt.outputs.head }}" \
+            --base ${{ matrix.target.base }} --profile "${{ steps.classify.outputs.profile }}" --engine ${{ matrix.engine.dbtype }} \
+            --report $RUNNER_TEMP/browser/browser-report.json --out $RUNNER_TEMP/browser/identity.json
       - uses: actions/upload-artifact@v4
         if: always() && steps.need.outputs.run == 'true'
         with:
           name: ci-tiers-browser-${{ matrix.target.name }}-${{ matrix.engine.dbtype }}
           path: |
             ${{ runner.temp }}/browser/browser-report.json
+            ${{ runner.temp }}/browser/identity.json
             ${{ runner.temp }}/browser/logs/
             ${{ runner.temp }}/browser/evidence/*.json
             ${{ runner.temp }}/browser/evidence/*.png
@@ -345,10 +379,14 @@ jobs:
           if-no-files-found: warn
 
   merge-gate:
-    # The ONE proposed required check. Always runs; decides from this PR head's reports only.
-    # FAST always; STANDARD for STANDARD/FULL; BROWSER (MariaDB + Percona) for STANDARD/FULL with local/ changes;
-    # FULL workflows must succeed for profile FULL. Missing / failed / cancelled / unexpected skip => FAIL.
-    # A PASS allows merge only — never a production deployment.
+    # The ONE required check. Always runs; decides only from evidence bound to THIS PR head/base and THIS run:
+    #  * job outcomes of this run attempt (Actions API): 'Plan targets', FAST / STANDARD / BROWSER (MariaDB + Percona) legs of
+    #    'this-pr' and every planned 'negative-*' leg must conclude success; failure, cancellation, skip or a missing job blocks
+    #    even when a PASS report was uploaded. 'replay-*' legs are information only.
+    #  * identity.json of every report (target, head, base, profile, engine, run id, report SHA256).
+    #  * FAST always; STANDARD + BROWSER for profiles STANDARD/FULL; for FULL the newest FULL run per workflow file
+    #    (pull_request, same head, same PR and base) must have succeeded. FAST/STANDARD never wait for FULL.
+    # A PASS allows merge only - never a production deployment.
     name: Merge gate
     needs: [plan, fast, standard, browser]
     if: always()
@@ -360,27 +398,35 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with: {persist-credentials: false}
-      - name: Collect this PR's tier reports
+      - name: Collect this run's tier reports
         uses: actions/download-artifact@v4
         with:
           pattern: ci-tiers-*
           path: ${{ runner.temp }}/gate
-      - name: Gate verdict (waits for FULL workflows when the profile is FULL)
+      - name: Gate verdict (job outcomes + identity + reports; waits for FULL only when the profile is FULL)
         env:
           GITHUB_TOKEN: ${{ github.token }}
+          PLANNED: ${{ needs.plan.outputs.targets }}
         run: |
           python3 tools/ci/merge_gate.py --artifacts $RUNNER_TEMP/gate --report $RUNNER_TEMP/merge-gate.json \
-            --repo ${{ github.repository }} --sha ${{ github.event.pull_request.head.sha }} --wait-full 4200 | tee -a $GITHUB_STEP_SUMMARY
+            --repo ${{ github.repository }} --target this-pr --pr ${{ github.event.pull_request.number }} \
+            --head ${{ github.event.pull_request.head.sha }} --base ${{ github.event.pull_request.base.sha }} \
+            --run-id ${{ github.run_id }} --run-attempt ${{ github.run_attempt }} --planned "$PLANNED" \
+            --wait-full 4200 | tee -a $GITHUB_STEP_SUMMARY
           exit ${PIPESTATUS[0]}
-      - name: Evidence only — gate decision replayed on completed releases (does not affect this verdict)
+      - name: Information only - gate replayed on completed releases (never affects this verdict)
         if: always()
         continue-on-error: true
         env:
           GITHUB_TOKEN: ${{ github.token }}
+          PLANNED: ${{ needs.plan.outputs.targets }}
         run: |
           [ -d $RUNNER_TEMP/gate/ci-tiers-fast-replay-pr80-css ] || exit 0
-          python3 tools/ci/merge_gate.py --artifacts $RUNNER_TEMP/gate --report $RUNNER_TEMP/gate-pr80.json --target replay-pr80-css             --repo ${{ github.repository }} --sha d732306608e17cbca46c3b274f15e5955ef6cb53 --wait-full 0 | tee -a $GITHUB_STEP_SUMMARY || true
-          python3 tools/ci/merge_gate.py --artifacts $RUNNER_TEMP/gate --report $RUNNER_TEMP/gate-pr81.json --target replay-pr81-attachments             --repo ${{ github.repository }} --sha 5f5f5dd8f11a24951c70c23f813af1186d3ce217 --wait-full 0 | tee -a $GITHUB_STEP_SUMMARY || true
+          common="--artifacts $RUNNER_TEMP/gate --repo ${{ github.repository }} --run-id ${{ github.run_id }} --run-attempt ${{ github.run_attempt }} --wait-full 0 --historical"
+          python3 tools/ci/merge_gate.py $common --planned "$PLANNED" --report $RUNNER_TEMP/gate-pr80.json --target replay-pr80-css --pr 80 \
+            --head d732306608e17cbca46c3b274f15e5955ef6cb53 --base bfc4d2b9307b520e197fa91c7ec87faa204be527 | tee -a $GITHUB_STEP_SUMMARY || true
+          python3 tools/ci/merge_gate.py $common --planned "$PLANNED" --report $RUNNER_TEMP/gate-pr81.json --target replay-pr81-attachments --pr 81 \
+            --head 5f5f5dd8f11a24951c70c23f813af1186d3ce217 --base c2d9b0c1f72d84b3efccf62c84d41cd7eda52343 | tee -a $GITHUB_STEP_SUMMARY || true
       - uses: actions/upload-artifact@v4
         if: always()
         with:

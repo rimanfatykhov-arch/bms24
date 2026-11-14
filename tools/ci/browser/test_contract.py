@@ -12,6 +12,17 @@ B = 'http://127.0.0.1:8080/pluginfile.php/1/local_kbacompany/communication_attac
 URLS = [B % (i, n) for i, n in enumerate(c.FILES, start=10)]
 
 
+DIRECT_LOC = 'http://127.0.0.1:8080/local/kbacompany/communication_center.php?uuid=A&tab=discussions&thread=T'
+
+
+def snapshot(mutate=None):
+    rows = {'local_kbacompany_commmsg': {'m-1': 'h1', 'm-2': 'h2', 'm-3': 'h3'}, 'local_kbacompany_commattach': {'a-1': 'ha'},
+            'local_kbacompany_commrev': [], 'files:communication_attachment': {'file9': 'hf'}}
+    if mutate:
+        mutate(rows)
+    return {'tables': list(c.HISTORY_TABLES), 'rows': rows, 'digest': c.history_digest(rows)}
+
+
 def ok_dl(name):
     return {name: {'http': 200, 'sha256': c.SHA[name]}}
 
@@ -24,9 +35,9 @@ def attachments():
           'full_text_and_file': {'filename_feedback': 'p02-text-and-file.txt · 36 B', 'rendered_text_exact': 'RC31 P02 full text and file verify',
                                  'file_link_text': 'p02-text-and-file.txt', 'downloads': ok_dl('p02-text-and-file.txt')},
           'full_file_only': {'file_link_text': 'p02-file-only.txt', 'downloads': ok_dl('p02-file-only.txt')},
-          'server_file_only_direct': {'http': 303, 'location': 'http://127.0.0.1:8080/local/kbacompany/communication_center.php?uuid=A',
+          'server_file_only_direct': {'http': 303, 'location': DIRECT_LOC, 'expected_query': {'uuid': 'A', 'tab': 'discussions', 'thread': 'T'},
                                       'file_link_text': 'p02-direct-only.txt', 'downloads': ok_dl('p02-direct-only.txt')},
-          'csrf_invalid_sesskey': {'http': 404}, 'double_submit': {'center_posts': 1}}
+          'csrf_invalid_sesskey': {'http': 404, 'refusal_marker': True}, 'double_submit': {'center_posts': 1}}
     state = {'messages': [{'body': 'RC31 P02 double verify'}, {'body': 'x'}], 'orphan_files': 0}
     return {'phase': 'verify', 'steps': st}, state
 
@@ -40,7 +51,7 @@ def access():
                 {'http': 303, 'location': 'http://127.0.0.1:8080/login/index.php', 'sha256': None} if kind == 'login' else {'http': 404, 'sha256': None})
         return out
     return {'expected_urls': URLS, 'logins': {'EA': 1, 'EB': 1}, 'ea_context_id_before': 7, 'ea_context_id_after': 7,
-            'revoked_flag': True, 'reopened_flag': True, 'history': {'before': 9, 'after_revoke': 9, 'after_reopen': 9},
+            'revoked_flag': True, 'reopened_flag': True, 'history': {'before': snapshot(), 'after_revoke': snapshot(), 'after_reopen': snapshot()},
             'phases': {'ea_before': rows('ok'), 'eb': rows('deny'), 'anon': rows('login'), 'ea_revoked': rows('deny'), 'ea_reopened': rows('ok')}}
 
 
@@ -52,9 +63,7 @@ def oversize():
 
 
 def tabs(status='PASS', drop=None):
-    names = ['page_and_tabs', 'keyboard_reaches_tab', 'focus_ring_visible', 'focus_ring_contrast_3to1', 'second_tab_focus_visible', 'enter_activates_tab',
-             'active_tab_distinct', 'mouse_click_navigates_without_ring', 'desktop_tabs_not_enlarged', 'mobile_focus_ring', 'mobile_no_page_hscroll', 'mobile_tap_target_44']
-    return {'cases': [{'id': 'P01.ci.' + n, 'status': status} for n in names if n != drop]}
+    return {'status': status, 'cases': [{'id': 'P01.ci.' + n, 'status': status} for n in c.TASK_TAB_CASES if n != drop]}
 
 
 def failed(results):
@@ -135,6 +144,77 @@ class ContractTest(unittest.TestCase):
         self.assertIn('revoke_in_open_session_denied', failed(c.evaluate(c.access_checks(a))))
         a = access(); a['history']['after_revoke'] = 5
         self.assertIn('revocation_preserves_history', failed(c.evaluate(c.access_checks(a))))
+
+    # ---------------- RC32 independent review (Issue #82 comment 6872172812) ----------------
+    def test_history_content_change_with_same_row_count_fails(self):
+        def edit(rows): rows['local_kbacompany_commmsg']['m-2'] = 'changed'
+        a = access(); a['history']['after_revoke'] = snapshot(edit)
+        self.assertEqual(3, len(a['history']['after_revoke']['rows']['local_kbacompany_commmsg']))  # same count
+        self.assertIn('revocation_preserves_history', failed(c.evaluate(c.access_checks(a))))
+        a = access(); a['history']['after_reopen'] = snapshot(lambda r: r['files:communication_attachment'].update(file9='other'))
+        self.assertIn('revocation_preserves_history', failed(c.evaluate(c.access_checks(a))))
+        a = access(); a['history']['after_reopen'] = snapshot(lambda r: r.__setitem__('local_kbacompany_commrev', {'rev1': 'x'}))
+        self.assertIn('revocation_preserves_history', failed(c.evaluate(c.access_checks(a))))
+        # a producer cannot claim a matching digest for different rows
+        a = access(); forged = snapshot(edit); forged['digest'] = snapshot()['digest']; a['history']['after_revoke'] = forged
+        self.assertIn('revocation_preserves_history', failed(c.evaluate(c.access_checks(a))))
+        # incomplete coverage
+        a = access(); s = snapshot(); s['tables'] = s['tables'][:1]; a['history']['before'] = s
+        self.assertIn('revocation_preserves_history', failed(c.evaluate(c.access_checks(a))))
+        self.assertEqual((), c.HISTORY_EXPECTED_CHANGES)
+
+    def test_csrf_server_error_or_missing_refusal_fails(self):
+        for http, marker in ((500, True), (502, False), (200, True), (303, True), (404, False), (None, True)):
+            with self.subTest(http=http, marker=marker):
+                o, s = attachments(); o['steps']['csrf_invalid_sesskey'] = {'http': http, 'refusal_marker': marker}
+                self.assertIn('csrf_invalid_sesskey_rejected', failed(c.evaluate(c.attachments_checks(o, s))))
+
+    def test_unexpected_redirects_fail(self):
+        for loc in ['http://127.0.0.1:8080/login/index.php.evil', 'http://127.0.0.1:8080/login/index.phpx', 'https://evil.invalid/login/index.php',
+                    'http://127.0.0.1:8080/login/index.php?next=//evil.invalid', 'http://127.0.0.1:8080/login/index.php#x',
+                    'http://127.0.0.1:8080.evil.invalid/login/index.php', 'http://u:p@127.0.0.1:8080/login/index.php', '/login/index.php', '']:
+            with self.subTest(loc=loc):
+                a = access(); [r.update(location=loc) for r in a['phases']['anon'].values()]
+                self.assertIn('download_anonymous_redirected_to_login', failed(c.evaluate(c.access_checks(a))))
+        for loc in ['https://evil.invalid/local/kbacompany/communication_center.php?uuid=A&tab=discussions&thread=T',
+                    'http://127.0.0.1:8080/evil/local/kbacompany/communication_center.php?uuid=A&tab=discussions&thread=T',
+                    'http://127.0.0.1:8080/local/kbacompany/communication_center.php?uuid=B&tab=discussions&thread=T',
+                    'http://127.0.0.1:8080/local/kbacompany/communication_center.php?uuid=A&tab=discussions&thread=T&next=x',
+                    'http://127.0.0.1:8080/local/kbacompany/communication_center.php?uuid=A&uuid=A&tab=discussions&thread=T',
+                    'http://127.0.0.1:8080/local/kbacompany/communication_center.php']:
+            with self.subTest(loc=loc):
+                o, s = attachments(); o['steps']['server_file_only_direct']['location'] = loc
+                self.assertIn('direct_multipart_new_file_stored_and_downloadable', failed(c.evaluate(c.attachments_checks(o, s))))
+        o, s = attachments(); del o['steps']['server_file_only_direct']['expected_query']
+        self.assertIn('direct_multipart_new_file_stored_and_downloadable', failed(c.evaluate(c.attachments_checks(o, s))))
+        self.assertEqual(c.exact_redirect('http://127.0.0.1:8080/login/index.php', c.LOGIN_PATH), 'http://127.0.0.1:8080/login/index.php')
+
+    def test_task_tab_errors_execution_and_run_status_fail_everything(self):
+        cases = {
+            'run status FAIL': lambda t: t.__setitem__('status', 'FAIL'),
+            'desktop browser error': lambda t: [x.update(status='FAIL') for x in t['cases'] if x['id'].endswith('desktop_no_browser_errors')],
+            'mobile browser error': lambda t: [x.update(status='FAIL') for x in t['cases'] if x['id'].endswith('mobile_no_browser_errors')],
+            'execution error row': lambda t: t['cases'].append({'id': 'P01.ci.execution', 'status': 'FAIL'}),
+            'missing errors case': lambda t: t.__setitem__('cases', [x for x in t['cases'] if not x['id'].endswith('mobile_no_browser_errors')]),
+            'duplicate case': lambda t: t['cases'].append(dict(t['cases'][0])),
+            'other phase': lambda t: [x.update(id=x['id'].replace('P01.ci.', 'P01.baseline.')) for x in t['cases']],
+            'status missing': lambda t: t.pop('status'),
+        }
+        for label, mutate in cases.items():
+            with self.subTest(label):
+                t = tabs(); mutate(t)
+                res = c.evaluate(c.task_tab_checks(t))
+                self.assertIn('task_tab_run_complete', failed(res))
+                self.assertEqual(sorted(res), failed(res), label)  # every task tab check fails, none passes on its own
+        self.assertIn('task_tab_desktop_no_browser_errors', c.task_tab_checks({}))
+        self.assertIn('task_tab_mobile_no_browser_errors', c.task_tab_checks({}))
+
+    def test_required_check_names_complete(self):
+        names = c.required_check_names()
+        self.assertEqual(len(names), len(set(names)))
+        for k in ('task_tab_run_complete', 'task_tab_mobile_tap_target_44', 'csrf_invalid_sesskey_rejected', 'revocation_preserves_history',
+                  'download_other_company_denied', 'revoke_in_open_session_denied', 'oversize_nothing_stored', 'moodle_install'):
+            self.assertIn(k, names)
 
     def test_oversize_requires_sent_request_effective_limit_and_nothing_stored(self):
         for step, key, val, check in [('compact_oversize', 'request_sent', False, 'oversize_compact_request_sent_and_refused'),

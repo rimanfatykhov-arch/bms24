@@ -96,7 +96,7 @@ with sync_playwright() as pw:
         rows.append({'id': 'P01.' + phase + '.execution', 'status': 'FAIL', 'type': type(e).__name__, 'msg': str(e)[:200]})
     finally:
         b.close()
-out['status'] = 'FAIL' if any(x['status'] == 'FAIL' for x in rows) else 'PASS'
+out['status'] = 'PASS' if rows and all(x['status'] == 'PASS' for x in rows) else 'FAIL'
 dest = root / ('pilot01-' + phase + '.json')
 with dest.open('w') as h: json.dump(out, h, indent=1)
 for png in root.glob('pilot01-' + phase + '-*.png'): png.chmod(0o644)
