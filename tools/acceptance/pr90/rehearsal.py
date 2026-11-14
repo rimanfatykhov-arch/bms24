@@ -4,8 +4,8 @@ from pathlib import Path
 root=Path(os.environ['TEST_ROOT']).resolve(); runner=Path(os.environ['RUNNER_TEMP']).resolve()
 core=Path(os.environ['MOODLE_ROOT']).resolve(); cand=Path(os.environ['CANDIDATE_ROOT']).resolve()
 origins=json.loads((cand/'tools/acceptance/pr90/origins.json').read_text());BASE=origins['main']
-if BASE!='f34ab6ff0d2f67a56972e99c23d096ed77a9873c':raise RuntimeError('baseline product changed; independently review validator pair')
-BASELINE_VALIDATOR='01af6405bcb7db73f67cb45fee837ba97b8c6ed3'
+if BASE!='d35350954146867f80877bcea4729c31477d16d3':raise RuntimeError('baseline product changed; independently review validator pair')
+BASELINE_VALIDATOR='0740524acd9e8e7eeada05374b27a1089f142dd3'
 if origins.get('baseline_validator')!=BASELINE_VALIDATOR:raise RuntimeError('baseline validator pin changed; independent review required')
 if os.environ.get('GITHUB_ACTIONS')!='true' or runner not in root.parents or os.environ.get('DBHOST')!='127.0.0.1':
     raise SystemExit('Disposable Actions environment required')
@@ -94,6 +94,7 @@ def smoke(phase):
     if any(x['status']!='PASS' for x in checks.values()):raise RuntimeError('tabs/mobile failed')
     write_checks(phase)
     multiattachment_checks(phase)
+    message_action_checks(phase)
     menu_overlay_checks(phase)
     for mode in ['owned','legacy']:
         cmd(['php',Path(__file__).with_name('shell.php'),mode],stdout=subprocess.DEVNULL)
@@ -119,6 +120,20 @@ def multiattachment_checks(phase):
     (public/(phase+'-multiattachments.json')).write_text(json.dumps({'exitcode':result.returncode,'checks':checks,'observations':obs},indent=2))
     if not checks or any(v['status']!='PASS' for v in checks.values()):
         raise RuntimeError('required candidate multiattachment/negative controls failed')
+
+def message_action_checks(phase):
+    """Edit/withdraw own task-discussion messages on the installed package (owned/legacy, 1440/320, click/keyboard)."""
+    sys.path.insert(0,str(scripts)); import contract
+    target=ev/(phase+'-message-actions');target.mkdir()
+    shutil.copyfile(ev/'actors.private.json',target/'actors.private.json')
+    result=subprocess.run([sys.executable,str(scripts/'message_actions.py')],cwd=core,
+        env=dict(env,EVIDENCE=str(target),MOODLE_ROOT=str(core)),stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL)
+    resultfile=target/'message-actions-result.json'
+    obs=json.loads(resultfile.read_text()) if resultfile.exists() else None
+    checks=contract.evaluate(contract.message_action_checks(obs,result.returncode))
+    (public/(phase+'-message-actions.json')).write_text(json.dumps({'exitcode':result.returncode,'checks':checks,'observations':obs},indent=2))
+    if not checks or any(v['status']!='PASS' for v in checks.values()):
+        raise RuntimeError('required message edit/withdraw acceptance failed')
 
 def validate_menu_report(obs,mode,csshash):
     """Independently validate complete observations, not a producer PASS label/count."""
@@ -227,7 +242,7 @@ try:
     actualvalidator=subprocess.check_output(['git','-C',str(validator),'rev-parse','HEAD'],text=True).strip()
     if actualvalidator!=BASELINE_VALIDATOR:raise RuntimeError('baseline validator checkout mismatch')
     report['baseline_validation']={'product_sha':BASE,'validator_sha':actualvalidator,
-        'checkset':'accepted PR100 BROWSER prior to multiattachment feature',
+        'checkset':'accepted PR102 BROWSER (42 checks) prior to the message-action feature',
         'validator_files':digest_tree(validator/'tools/ci/browser'),
         'runner_sha256':hashlib.sha256((validator/'tools/ci/browser_acceptance.py').read_bytes()).hexdigest()}
     cmd([sys.executable,validator/'tools/ci/browser_acceptance.py'],env=dict(env,CANDIDATE_ROOT=str(baseline)),stdout=open(root/'baseline.private.log','w'))
@@ -236,21 +251,11 @@ try:
     start();role_checks('baseline')
     observed(Path(__file__).with_name('discussion_geometry.py'),'baseline-geometry','baseline')
     stop()
+    # PR103: the baseline is the published PR102 product, in which the PR100 overlap is fixed. Its writes must PASS;
+    # the new message actions are absent there and are proven only on candidate/reinstall (message_action_checks).
     start()
-    try:
-        write_checks('baseline_repeat')
-        raise RuntimeError('baseline regression did not reproduce')
-    except Exception:
-        # An expected BEFORE failure is evidence, not a candidate PASS. Check the exact failure,
-        # not just any exception; later candidate/reinstall writes must all succeed without overrides.
-        old=json.loads((public/'baseline_repeat-writes.json').read_text())
-        geometry=json.loads((public/'geometry-baseline.json').read_text())
-        error=old['observations'].get('execution_error','')
-        blocked=[r for r in geometry if r['width']==1440 and not r['css_experiment']]
-        if not ('Timeout' in error and 'click' in error and blocked and not blocked[0]['actionable'] and not blocked[0]['geometry']['hit']):
-            raise RuntimeError('baseline failure differs from known overlap')
-        report['baseline_regression']={'status':'EXPECTED FAIL','error':error,'geometry':'geometry-baseline.json'}
-        report['steps']['baseline_overlap_reproduced']='PASS'
+    write_checks('baseline_repeat')
+    report['steps']['baseline_writes']='PASS'
     stop()
     elapsed('baseline_reproduction')
     before=state(); snapshot=root/'snapshot'; snapshot.mkdir()
