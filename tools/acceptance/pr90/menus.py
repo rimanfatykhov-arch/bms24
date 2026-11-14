@@ -39,6 +39,7 @@ with sync_playwright() as pw:
                 links=items.locator('a,button');require(links.count()>0,'empty menu')
                 links.last.scroll_into_view_if_needed();last=links.last.bounding_box();require(last and last['y']>=0 and last['y']+last['height']<=901,'last item inaccessible')
                 require(links.last.evaluate('(e)=>{let r=e.getBoundingClientRect();let t=document.elementFromPoint(r.x+r.width/2,r.y+r.height/2);return t===e||e.contains(t)}'),'last item occluded')
+                p.screenshot(path=str(out/(phase+'-'+name+'-'+str(width)+'-open.png')))
                 summary.focus();p.keyboard.press('Space');require(menu.get_attribute('open') is None,'keyboard did not close')
                 p.screenshot(path=str(out/(phase+'-'+name+'-'+str(width)+'.png')))
                 rows.append({'width':width,'menu':name,'before':before,'after':after,'box':box,'focus_visible':focus,'blocked_external_urls':sorted(blocked),'status':'PASS'})
