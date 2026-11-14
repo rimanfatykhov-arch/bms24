@@ -52,6 +52,10 @@ def smoke(phase):
     (public/(phase+'-tabs.json')).write_text(json.dumps({'checks':checks,'observations':tabs},indent=1))
     if any(x['status']!='PASS' for x in checks.values()):raise RuntimeError('tabs/mobile failed')
     write_checks(phase)
+    for mode in ['owned','legacy']:
+        cmd(['php',Path(__file__).with_name('shell.php'),mode],stdout=subprocess.DEVNULL)
+        observed(Path(__file__).parents[1]/'discussion_button.py',phase+'-'+mode+'-discussion',phase,mode)
+    cmd(['php',Path(__file__).with_name('shell.php'),'owned'],stdout=subprocess.DEVNULL)
     stop()
 def write_checks(phase):
     sys.path.insert(0,str(scripts)); import contract
@@ -80,8 +84,20 @@ try:
     observed(Path(__file__).with_name('discussion_geometry.py'),'baseline-geometry','baseline')
     stop()
     start()
-    try:write_checks('baseline_repeat');report['steps']['baseline_repeat_write']='PASS'
-    except Exception as e:report['steps']['baseline_repeat_write']='FAIL: '+type(e).__name__
+    try:
+        write_checks('baseline_repeat')
+        raise RuntimeError('baseline regression did not reproduce')
+    except Exception:
+        # An expected BEFORE failure is evidence, not a candidate PASS. Check the exact failure,
+        # not just any exception; later candidate/reinstall writes must all succeed without overrides.
+        old=json.loads((public/'baseline_repeat-writes.json').read_text())
+        geometry=json.loads((public/'geometry-baseline.json').read_text())
+        error=old['observations'].get('execution_error','')
+        blocked=[r for r in geometry if r['width']==1440 and not r['css_experiment']]
+        if not ('Timeout' in error and 'click' in error and blocked and not blocked[0]['actionable'] and not blocked[0]['geometry']['hit']):
+            raise RuntimeError('baseline failure differs from known overlap')
+        report['baseline_regression']={'status':'EXPECTED FAIL','error':error,'geometry':'geometry-baseline.json'}
+        report['steps']['baseline_overlap_reproduced']='PASS'
     stop()
     before=state(); snapshot=root/'snapshot'; snapshot.mkdir()
     shutil.copytree(core,snapshot/'code'); shutil.copytree(root/'data',snapshot/'data')
