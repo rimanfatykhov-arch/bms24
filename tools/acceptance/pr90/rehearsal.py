@@ -40,12 +40,29 @@ def install():
 def smoke(phase):
     start()
     cmd([sys.executable,Path(__file__).with_name('menus.py'),phase])
+    role_checks(phase)
     cmd([sys.executable,scripts/'access.py','all'],stdout=subprocess.DEVNULL)
     sys.path.insert(0,str(scripts)); import contract
     a=json.loads((ev/'p02-access.json').read_text()); checks=contract.evaluate(contract.access_checks(a))
     (public/(phase+'-access.json')).write_text(json.dumps({'checks':checks,'observations':a},indent=1))
     if any(x['status']!='PASS' for x in checks.values()):raise RuntimeError('access smoke failed')
+    cmd([sys.executable,scripts/'task_tabs.py','ci'],stdout=subprocess.DEVNULL)
+    tabs=json.loads((ev/'pilot01-ci.json').read_text()); checks=contract.evaluate(contract.task_tab_checks(tabs))
+    (public/(phase+'-tabs.json')).write_text(json.dumps({'checks':checks,'observations':tabs},indent=1))
+    if any(x['status']!='PASS' for x in checks.values()):raise RuntimeError('tabs/mobile failed')
+    cmd([sys.executable,scripts/'attachments.py',phase],stdout=subprocess.DEVNULL)
+    cmd(['php',scripts/'ci_state.php',core,phase],stdout=subprocess.DEVNULL)
+    obs=json.loads((ev/('p02-browser-'+phase+'.json')).read_text()); st=json.loads((ev/('p02-state-'+phase+'.json')).read_text())
+    checks=contract.evaluate(contract.attachments_checks(obs,st,phase))
+    (public/(phase+'-writes.json')).write_text(json.dumps({'checks':checks,'observations':obs},indent=1))
+    # Independent acceptance must not inherit PR96's page_errors false PASS.
+    if obs.get('page_errors') or any(x['status']!='PASS' for x in checks.values()):raise RuntimeError('write/CSRF/page errors failed')
     stop()
+def role_checks(phase):
+    for mode in ['owned','legacy']:
+        cmd(['php',Path(__file__).with_name('shell.php'),mode],stdout=subprocess.DEVNULL)
+        cmd([sys.executable,Path(__file__).with_name('roles.py'),phase,mode])
+    cmd(['php',Path(__file__).with_name('shell.php'),'owned'],stdout=subprocess.DEVNULL)
 try:
     report.update(head=git('rev-parse','HEAD'),tree=git('rev-parse','HEAD^{tree}'),pr96='38a2115b9b00692604b9b0520239bc07014d4944',pr90='62a3e9cafd8252fffc6389af044bf469ff7e3853')
     baseline=root/'baseline-source'
@@ -53,11 +70,12 @@ try:
     # Existing isolated fresh-install + A/B fixture harness, using baseline source and PR96 validators.
     cmd([sys.executable,cand/'tools/ci/browser_acceptance.py'],env=dict(env,CANDIDATE_ROOT=str(baseline)),stdout=open(root/'baseline.private.log','w'))
     report['steps']['baseline_browser']='PASS'
+    start();role_checks('baseline');stop()
     before=state(); snapshot=root/'snapshot'; snapshot.mkdir()
     shutil.copytree(core,snapshot/'code'); shutil.copytree(root/'data',snapshot/'data')
     dbargs=['-h127.0.0.1','-P'+env['DBPORT'],'-u'+env['DBUSER']]
     with open(snapshot/'db.sql','wb') as f:cmd(['mysqldump',*dbargs,'--single-transaction','--skip-comments','--skip-dump-date','bmsci_web'],stdout=f)
-    files_before=digest_tree(root/'data/filedir'); code_before=digest_tree(core/'local/kbacompany')
+    files_before=digest_tree(root/'data/filedir'); code_before=digest_tree(core)
     report['steps']['snapshot_code_db_files']='PASS'
     cmd([sys.executable,cand/'tools/build_install.py','--source',cand/'local/kbacompany','--output',public/'candidate-install.zip','--manifest',public/'manifest.json'])
     manifest=json.loads((public/'manifest.json').read_text()); manifest['source']={k:report[k] for k in ['head','tree','baseline','pr90','pr96']}; (public/'manifest.json').write_text(json.dumps(manifest,indent=2))
@@ -69,7 +87,9 @@ try:
     shutil.rmtree(root/'data'); shutil.copytree(snapshot/'data',root/'data')
     cmd(['mysql',*dbargs,'-e','DROP DATABASE bmsci_web; CREATE DATABASE bmsci_web CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci'])
     with open(snapshot/'db.sql','rb') as f:cmd(['mysql',*dbargs,'bmsci_web'],stdin=f)
-    if digest_tree(root/'data/filedir')!=files_before or digest_tree(core/'local/kbacompany')!=code_before or state()!=before:raise RuntimeError('restore content differs')
+    with open(snapshot/'restored.sql','wb') as f:cmd(['mysqldump',*dbargs,'--single-transaction','--skip-comments','--skip-dump-date','bmsci_web'],stdout=f)
+    if (snapshot/'db.sql').read_bytes()!=(snapshot/'restored.sql').read_bytes():raise RuntimeError('whole restored DB differs')
+    if digest_tree(root/'data/filedir')!=files_before or digest_tree(core)!=code_before or state()!=before:raise RuntimeError('restore content differs')
     start(); cmd([sys.executable,scripts/'access.py','all'],stdout=subprocess.DEVNULL); stop()
     restored=json.loads((ev/'p02-access.json').read_text())
     import contract
@@ -79,6 +99,10 @@ try:
     install(); smoke('reinstall'); report['steps']['reinstall']='PASS'
     # Full M07 task-action ACL / M08 task write / M09 legacy still need explicit scenarios; do not infer them from attachment ACL.
     report['matrix'].update({k:'PARTIAL: menu observations available; full acceptance not implied' for k in ['M01','M02','M03','M04','M05']})
+    report['matrix']['M06']='PASS: candidate and reinstall task-tab 44px/keyboard scenarios'
+    report['matrix']['M08']='PASS: synthetic task discussion write, double submit, invalid CSRF; not task lifecycle transition'
+    report['matrix']['M07']='PASS: same MA/EA/EB menu rights and explicit foreign task refusals as baseline'
+    report['matrix']['M09']='PASS: owned/legacy allowed and forbidden routes on baseline/candidate/reinstall'
     report['status']='PARTIAL'
 except Exception as e:
     report['error']=type(e).__name__+': '+str(e)[:180]
