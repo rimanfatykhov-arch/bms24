@@ -455,6 +455,14 @@ class ContractTest(unittest.TestCase):
             self.assertTrue(all(v['status'] == 'FAIL' for v in r.values()), r)
         self.assertTrue(all(v['status'] == 'FAIL' for v in c.evaluate(c.message_action_checks(None, None)).values()))
 
+    def test_multiattachment_files_in_access_set_need_exact_content(self):
+        ok = 'multi-' + 'a' * 32 + '-3.txt'
+        self.assertEqual(c.expected_sha(ok), c.hashlib.sha256(c.MULTI_CONTENT[3]).hexdigest())
+        for bad in ('multi-' + 'a' * 32 + '-4.txt', 'multi-' + 'A' * 32 + '-1.txt', 'multi-' + 'a' * 31 + '-1.txt',
+                    'x-multi-' + 'a' * 32 + '-1.txt', 'multi-' + 'a' * 32 + '-1.txt.php', 'unknown.txt', '', None):
+            self.assertIsNone(c.expected_sha(bad), bad)
+        self.assertEqual(c.expected_sha('p02-compact.txt'), c.SHA['p02-compact.txt'])
+
     def test_required_check_names_complete(self):
         names = c.required_check_names()
         self.assertEqual(len(names), len(set(names)))

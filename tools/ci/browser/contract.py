@@ -6,6 +6,7 @@ Note: the loopback check below constrains what the test scripts request; it is N
 """
 import hashlib
 import ipaddress
+import re
 from urllib.parse import urlparse, parse_qsl
 
 from events import ABORT_REASON
@@ -21,6 +22,19 @@ FILES = {
 }
 SHA = {name: hashlib.sha256(data).hexdigest() for name, data in FILES.items()}
 MULTI_CONTENT = {n: ('BMS retained multi-attachment synthetic file %d\n' % n).encode() for n in (1, 2, 3)}
+MULTI_NAME = re.compile(r'multi-[0-9a-f]{32}-([123])\.txt')
+
+
+def expected_sha(fname):
+    """Exact expected bytes of a synthetic attachment by file name; None for any unknown name (never served intact).
+    multiattachments.py files may already exist in a discussion (e.g. on a rehearsal baseline validated with the
+    PR102 checkset) and are then part of the protected URL set; their content is fixed per index."""
+    if fname in SHA:
+        return SHA[fname]
+    m = MULTI_NAME.fullmatch(fname or '')
+    return hashlib.sha256(MULTI_CONTENT[int(m.group(1))]).hexdigest() if m else None
+
+
 DENY_CODES = {403, 404}          # protected pluginfile refusal for a logged-in user without access
 LOGIN_REDIRECT_CODES = {302, 303}  # anonymous user is sent to the login page (redirect not followed)
 LIMIT_BYTES = 65536
@@ -150,7 +164,8 @@ def access_checks(acc):
     def allowed(name):
         for url, r in same_set(name).items():
             fname = url.split('/')[-1].split('?')[0]
-            require(r.get('http') == 200 and r.get('sha256') == SHA.get(fname), '%s: %s not served intact' % (name, fname))
+            require(r.get('http') == 200 and r.get('sha256') is not None and r.get('sha256') == expected_sha(fname),
+                    '%s: %s not served intact' % (name, fname))
 
     def denied(name, codes):
         for url, r in same_set(name).items():
