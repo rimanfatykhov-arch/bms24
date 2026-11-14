@@ -100,6 +100,7 @@ try:
         report['steps']['baseline_overlap_reproduced']='PASS'
     stop()
     before=state(); snapshot=root/'snapshot'; snapshot.mkdir()
+    baseline_urls=(ev/'p02-urls.json').read_bytes()
     shutil.copytree(core,snapshot/'code'); shutil.copytree(root/'data',snapshot/'data')
     dbargs=['-h127.0.0.1','-P'+env['DBPORT'],'-u'+env['DBUSER']]
     with open(snapshot/'db.sql','wb') as f:cmd(['mysqldump',*dbargs,'--single-transaction','--skip-comments','--skip-dump-date','bmsci_web'],stdout=f)
@@ -120,12 +121,15 @@ try:
     with open(snapshot/'restored.sql','wb') as f:cmd(['mysqldump',*dbargs,'--single-transaction','--skip-comments','--skip-dump-date','bmsci_web'],stdout=f)
     if (snapshot/'db.sql').read_bytes()!=(snapshot/'restored.sql').read_bytes():raise RuntimeError('whole restored DB differs')
     if digest_tree(root/'data/filedir')!=files_before or digest_tree(core)!=code_before or state()!=before:raise RuntimeError('restore content differs')
+    # Candidate writes create new URLs; restored ACL must use the pre-snapshot file identities.
+    (ev/'p02-urls.json').write_bytes(baseline_urls)
     start(); cmd([sys.executable,scripts/'access.py','all'],stdout=subprocess.DEVNULL); stop()
     restored=json.loads((ev/'p02-access.json').read_text())
     import contract
     checks=contract.evaluate(contract.access_checks(restored))
+    (public/'restore-checks.json').write_text(json.dumps({'checks':checks,'observations':restored},indent=1))
     if any(v['status']!='PASS' for v in checks.values()):raise RuntimeError('restored ACL/files failed')
-    (public/'restore-checks.json').write_text(json.dumps(checks,indent=1)); report['steps']['restore_code_db_files_acl']='PASS'
+    report['steps']['restore_code_db_files_acl']='PASS'
     install()
     try:smoke('reinstall');report['steps']['reinstall']='PASS'
     except Exception as e:report['steps']['reinstall']='FAIL: '+str(e)[:160]
