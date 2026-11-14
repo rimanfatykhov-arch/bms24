@@ -1,6 +1,7 @@
 """Actual-process synthetic tests. Fixtures retained; no real service is addressed."""
 import hashlib
 import json
+import math
 import os
 from pathlib import Path
 import signal
@@ -26,6 +27,7 @@ class LifecycleTest(unittest.TestCase):
         self.assertFalse((root/'maintenance.txt').exists())
         report = json.loads((root/'result.json').read_text())
         self.assertEqual(report['scope'], 'SYNTHETIC')
+        self.assertEqual(report['tool_sha256'],hashlib.sha256(SCRIPT.read_bytes()).hexdigest())
         return root, report, result
 
     def test_success_real_children_and_retained_backup(self):
@@ -38,7 +40,16 @@ class LifecycleTest(unittest.TestCase):
         self.assertEqual(json.loads((root/'clone/business.json').read_text()),['baseline','new-business-record'])
         self.assertEqual((root/'clone/file.txt').read_text(),'baseline file\nnew user file\n')
         self.assertEqual((root/'source/code.txt').read_text(),'SYNTHETIC BASELINE CODE\n')
+        self.assertEqual([row['phase'] for row in report['phase_telemetry']],report['phases'])
         for phase in report['phases']:
+            row=json.loads((root/(phase+'.phase.json')).read_text())
+            self.assertEqual(row['scope'],'SYNTHETIC')
+            self.assertEqual(row['exitcode'],0)
+            self.assertFalse(row['timed_out'])
+            self.assertTrue(math.isfinite(row['start_epoch']) and row['start_epoch']>0)
+            self.assertTrue(math.isfinite(row['duration_monotonic_seconds']) and row['duration_monotonic_seconds']>=0)
+            self.assertEqual(row['tool_sha256'],report['tool_sha256'])
+            self.assertIn('pid='+str(row['pid']), (root/(phase+'.stdout.log')).read_text())
             self.assertIn('phase PASS', (root/(phase+'.stdout.log')).read_text())
         # Exclusive create must refuse a second capture, retaining the exact archive.
         config=json.loads((root/'.synthetic-operator.json').read_text())
@@ -57,6 +68,9 @@ class LifecycleTest(unittest.TestCase):
                 expected_phase={'source':'capture','capture':'capture','verify':'verify','wrong_hash':'verify','restore':'restore','install':'install','smoke':'smoke','rollback_purge':'rollback'}.get(fault)
                 if expected_phase:
                     self.assertEqual(report['reason'],'child phase failed: '+expected_phase)
+                    telemetry=json.loads((root/(expected_phase+'.phase.json')).read_text())
+                    self.assertNotEqual(telemetry['exitcode'],0)
+                    self.assertFalse(telemetry['timed_out'])
                     expected_error={'source':'source code mismatch','wrong_hash':'backup checksum mismatch','rollback_purge':'synthetic rollback purge failed'}.get(fault,'injected '+fault+' failure')
                     self.assertIn(expected_error,(root/(expected_phase+'.stderr.log')).read_text())
                 else:
@@ -75,6 +89,11 @@ class LifecycleTest(unittest.TestCase):
         self.assertIsNone(json.loads((root/'active-child.json').read_text())['pid'])
         self.assertEqual((root/'capture.stdout.log').stat().st_size,LOG_LIMIT)
         self.assertFalse((root/'backup.json').exists())
+        row=json.loads((root/'capture.phase.json').read_text())
+        self.assertTrue(row['timed_out'])
+        self.assertNotEqual(row['exitcode'],0)
+        self.assertTrue(math.isfinite(row['duration_monotonic_seconds']) and row['duration_monotonic_seconds']>=10)
+        self.assertEqual(report['phase_telemetry'],[row])
 
     def test_wrong_token_and_unsafe_parent_refused(self):
         root, _, _=self.run_case()

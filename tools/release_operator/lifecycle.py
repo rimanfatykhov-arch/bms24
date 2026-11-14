@@ -113,7 +113,7 @@ def restore_code(root, purge_failure=False):
 
 def phase(root, config, name):
     fault = config['fault']
-    print('SYNTHETIC phase ' + name, flush=True)
+    print('SYNTHETIC phase ' + name + ' pid=' + str(os.getpid()), flush=True)
     if fault == name:
         raise RuntimeError('injected ' + name + ' failure')
     if name == 'capture':
@@ -208,44 +208,55 @@ def kill_child(pid, birth):
 
 
 def child(root, token, name, timeout):
-    args = [sys.executable, str(Path(__file__).resolve()), '_phase', '--root', str(root), '--token', token, '--phase', name]
-    process = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-                               start_new_session=os.name == 'posix')
-    birth = process_birth(process.pid)
-    require(birth is not None, 'child birth unavailable')
-    atomic(root / 'active-child.json', {'pid': process.pid, 'birth': birth, 'phase': name})
-    drain_errors = []
+    started_epoch, started_monotonic = time.time(), time.monotonic()
+    process = None
+    birth = None
+    threads, drain_errors = [], []
+    timed_out = False
     def drain(pipe, target):
         try:
-            drain_impl(pipe, target)
+            kept = 0
+            with target.open('xb') as stream:
+                while True:
+                    data = pipe.read(4096)
+                    if not data:break
+                    if kept < LOG_LIMIT:
+                        fragment = data[:LOG_LIMIT-kept];stream.write(fragment);kept += len(fragment)
         except Exception as error:
             drain_errors.append(type(error).__name__)
-    def drain_impl(pipe, target):
-        kept = 0
-        with target.open('xb') as stream:
-            while True:
-                data = pipe.read(4096)
-                if not data:
-                    break
-                if kept < LOG_LIMIT:
-                    fragment = data[:LOG_LIMIT-kept];stream.write(fragment);kept += len(fragment)
-        pipe.close()
-    threads = [threading.Thread(target=drain, args=(pipe, root / (name + '.' + label + '.log')))
-               for pipe, label in ((process.stdout, 'stdout'), (process.stderr, 'stderr'))]
-    for thread in threads:thread.start()
+        finally:pipe.close()
     try:
+        args = [sys.executable, str(Path(__file__).resolve()), '_phase', '--root', str(root), '--token', token, '--phase', name]
+        process = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                                   start_new_session=os.name == 'posix')
+        birth = process_birth(process.pid)
+        require(birth is not None, 'child birth unavailable')
+        atomic(root / 'active-child.json', {'pid': process.pid, 'birth': birth, 'phase': name})
+        threads = [threading.Thread(target=drain, args=(pipe, root / (name + '.' + label + '.log')))
+                   for pipe, label in ((process.stdout, 'stdout'), (process.stderr, 'stderr'))]
+        for thread in threads:thread.start()
         try:
             code = process.wait(timeout=timeout)
         except subprocess.TimeoutExpired:
+            timed_out = True
             kill_child(process.pid, birth);process.wait(timeout=5)
             raise RuntimeError('child phase timeout: ' + name)
         require(code == 0, 'child phase failed: ' + name)
     finally:
-        if process.poll() is None:
-            kill_child(process.pid, birth);process.wait(timeout=5)
-        for thread in threads:thread.join(timeout=5)
-        require(not any(thread.is_alive() for thread in threads) and not drain_errors, 'log drain incomplete or failed')
-        atomic(root / 'active-child.json', {'pid': None, 'phase': name})
+        try:
+            if process is not None and process.poll() is None:
+                if birth is None:process.kill()
+                else:kill_child(process.pid, birth)
+                process.wait(timeout=5)
+            for thread in threads:thread.join(timeout=5)
+            require(not any(thread.is_alive() for thread in threads) and not drain_errors, 'log drain incomplete or failed')
+            atomic(root / 'active-child.json', {'pid': None, 'phase': name})
+        finally:
+            atomic(root / (name + '.phase.json'), {
+                'scope': 'SYNTHETIC', 'phase': name, 'pid': process.pid if process else None,
+                'start_epoch': started_epoch, 'duration_monotonic_seconds': time.monotonic()-started_monotonic,
+                'exitcode': process.poll() if process else None, 'timed_out': timed_out,
+                'tool_sha256': sha(Path(__file__).read_bytes())})
 
 
 def controller_alive(pid):
@@ -287,7 +298,7 @@ def watchdog(root, config, pid):
     root, config = checked_root(root, config['token'])
     restore_code(root)
     atomic(root / 'watchdog.json', {'status': 'RECOVERED', 'scope': 'SYNTHETIC', 'code_only': True})
-    atomic(root / 'result.json', {'status': 'FAIL', 'scope': 'SYNTHETIC', 'reason': 'controller terminated or deadline', 'watchdog_recovered': True})
+    atomic(root / 'result.json', {'status': 'FAIL', 'scope': 'SYNTHETIC', 'reason': 'controller terminated or deadline', 'watchdog_recovered': True, 'tool_sha256': sha(Path(__file__).read_bytes())})
     atomic(root / 'done.json', {'success': False})
 
 
@@ -313,7 +324,7 @@ def rehearse(parent, fault, timeout):
                               '--token', token, '--pid', str(os.getpid())], stdin=subprocess.DEVNULL,
                              stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
                              start_new_session=os.name == 'posix', creationflags=flags)
-    report = {'scope': 'SYNTHETIC', 'status': 'FAIL', 'phases': [], 'not_covered': ['Moodle', 'real database', 'production', 'network isolation']}
+    report = {'scope': 'SYNTHETIC', 'tool_sha256': sha(Path(__file__).read_bytes()), 'status': 'FAIL', 'phases': [], 'not_covered': ['Moodle', 'real database', 'production', 'network isolation']}
     try:
         checked_root(root, token)
         require(shutil.disk_usage(root).free >= (2**63 if fault == 'space' else 1024*1024), 'insufficient fixture space')
@@ -341,6 +352,8 @@ def rehearse(parent, fault, timeout):
         restore_code(root)
     finally:
         resume(root)
+        report['phase_telemetry'] = [json.loads((root / (name + '.phase.json')).read_text())
+                                     for name in PHASES if (root / (name + '.phase.json')).exists()]
         atomic(root / 'result.json', report)
         atomic(root / 'done.json', {'success': report['status'] == 'PASS'})
         watch.wait(timeout=5)

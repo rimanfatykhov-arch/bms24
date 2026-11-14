@@ -31,7 +31,8 @@ expect_fail() {
     non_tar) pattern='^FAIL: verify pipeline=[0-9]+ archive=2$' ;;
     wrong_cipher_hash) pattern='^FAIL: ciphertext sha256 mismatch$' ;;
     wrong_plain_hash) pattern='^FAIL: plaintext sha256 mismatch$' ;;
-    truncated|unavailable_key) pattern='^FAIL: verify pipeline=[1-9][0-9]* archive=[0-9]+$' ;;
+    truncated) pattern="^FAIL: verify pipeline=2 archive=${truncated_tar_rc}$" ;;
+    unavailable_key) pattern='^FAIL: verify pipeline=2 archive=2$' ;;
     background_exit23) pattern='^FAIL: verify pipeline=[0-9]+ archive=23$' ;;
     hash_exit29) pattern='^FAIL: verify pipeline=29 archive=0$' ;;
     source_exit27) pattern='^FAIL: restore pipeline=27 cipher_hash=0 plain_hash=0$' ;;
@@ -52,7 +53,27 @@ expect_fail() {
 expect_fail non_tar verify_archive invalid.gpg "$(cat invalid.gpg.sha256)" "$(cat invalid.plain.sha)"
 expect_fail wrong_cipher_hash verify_archive valid.gpg "$(printf '0%.0s' {1..64})" "$psha"
 expect_fail wrong_plain_hash verify_archive valid.gpg "$csha" "$(printf '0%.0s' {1..64})"
-head -c 100 valid.gpg > truncated.gpg
+# Remove only the final authenticated trailer, preserving the complete tar payload.
+# A short header is not a valid decryption-negative: some GPG versions return 0
+# without producing plaintext for an incomplete packet header.
+valid_bytes=$(wc -c < valid.gpg)
+(( valid_bytes > 16 )) || die 'valid encrypted fixture too short'
+head -c "$((valid_bytes - 16))" valid.gpg > truncated.gpg
+[[ $(wc -c < truncated.gpg) == "$((valid_bytes - 16))" ]] || die 'truncation fixture size mismatch'
+# Isolate the intended failure: full tar bytes remain, but authenticated decrypt fails.
+decrypt_rc=0
+"${GPG_DEC[@]}" truncated.gpg > truncated.plain.tar 2> truncated.decrypt.log || decrypt_rc=$?
+(( decrypt_rc == 2 )) || die "truncated fixture expected decrypt exit2, got $decrypt_rc"
+# GPG versions may buffer all plaintext or emit a prefix before rejecting MDC.
+# Check the emitted bytes, and independently pin the parser outcome for this fixture.
+plain_bytes=$(wc -c < truncated.plain.tar)
+(( plain_bytes <= $(wc -c < fixture.tar) )) || die 'truncated decrypt emitted excess data'
+head -c "$plain_bytes" fixture.tar | cmp - truncated.plain.tar || die 'truncated decrypt plaintext differs from original prefix'
+truncated_tar_rc=0
+tar -tf truncated.plain.tar >/dev/null 2>truncated.tar.log || truncated_tar_rc=$?
+[[ $truncated_tar_rc == 0 || $truncated_tar_rc == 2 ]] || die 'unexpected standalone truncated tar status'
+[[ -s truncated.decrypt.log ]] || die 'truncated fixture missing decrypt diagnostic'
+printf 'CONTROL tail16 truncation: decrypt=2 archive=%s plaintext_bytes=%s\n' "$truncated_tar_rc" "$plain_bytes"
 expect_fail truncated verify_archive truncated.gpg "$(sha256sum truncated.gpg | cut -d' ' -f1)" "$psha"
 forced_tar_failure() { tar() { command tar "$@" >/dev/null; return 23; }; verify_archive valid.gpg "$csha" "$psha"; }
 expect_fail background_exit23 forced_tar_failure
