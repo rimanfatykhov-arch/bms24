@@ -57,7 +57,7 @@ def fetch(ctx, phase):
 
 def login(ctx, label):
     a = f['actors'][label]; p = ctx.new_page(); p.set_default_timeout(30000)
-    p.goto(local_url(base + '/login/index.php')); p.locator('#username').fill(a['username']); p.locator('#password').fill(a['password'])
+    p.goto(local_url(base + '/login/index.php'), wait_until='networkidle'); p.locator('#username').fill(a['username']); p.locator('#password').fill(a['password'])
     p.locator('#loginbtn').click(); p.wait_for_load_state('networkidle')
     obs['logins'][label] = obs['logins'].get(label, 0) + 1
     return p

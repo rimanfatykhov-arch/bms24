@@ -35,7 +35,7 @@ def contrast(page, a, b):
     la, lb = page.evaluate(LUM, a), page.evaluate(LUM, b); hi, lo = max(la, lb), min(la, lb); return round((hi + .05) / (lo + .05), 2)
 def login(ctx):
     p = ctx.new_page(); p.set_default_timeout(30000)
-    p.goto(base + '/login/index.php'); p.locator('#username').fill(ma['username']); p.locator('#password').fill(ma['password'])
+    p.goto(base + '/login/index.php', wait_until='networkidle'); p.locator('#username').fill(ma['username']); p.locator('#password').fill(ma['password'])
     p.locator('#loginbtn').click(); p.wait_for_load_state('networkidle'); return p
 def tab_to_tabs(p, limit=150):
     for n in range(1, limit + 1):

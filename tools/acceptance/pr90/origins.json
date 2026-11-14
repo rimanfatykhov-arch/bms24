@@ -5,7 +5,7 @@
   "ux_pr90": "62a3e9cafd8252fffc6389af044bf469ff7e3853",
   "discussion_pr99": "b24a5487d8467ca9b90e67698d2d3ba74da4fc3d",
   "ui_review": "https://github.com/rimanfatykhov-arch/bms24/pull/99#issuecomment-6874362582",
-  "selection": "16 CI files copied byte-for-byte from accepted PR96; only task_center.css from PR90 plus PR99 CSS patch; discussion_button.py from PR99; independently selected and strengthened disposable acceptance harness. No wholesale PR98 merge, no PR92 or SaaS architecture.",
+  "selection": "16 CI files imported from accepted PR96; integration-only login networkidle synchronization in access.py/task_tabs.py after real ERR_ABORTED reproduction; only task_center.css from PR90 plus PR99 CSS patch; discussion_button.py from PR99; independently selected and strengthened disposable acceptance harness. No wholesale PR98 merge, no PR92 or SaaS architecture.",
   "baseline_scope": "Synthetic current main code+DB+files. Production baseline and backup restore are separate pre-release conditions.",
   "version_policy": "CSS-only product change retains numeric build2026111100 and existing strict version/schema gates. Source SHA/tree plus manifest and ZIP digests identify this distinct delivery; build alone is insufficient."
 }
