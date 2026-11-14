@@ -57,3 +57,9 @@ Main и head #90 повторно прочитаны из GitHub и не изм�
 | Production pilot readiness | HOLD |
 
 Документ не содержит install ZIP: локальные outputs — evidence paths оператора, не публичные download URLs. Перед runtime получить CI artifact run 43492204724, сверить manifest и SHA256; при иной source identity пересобрать и повторить проверки. Нельзя выдавать source tree за опубликованный release SHA.
+
+## Продвижение: отдельный Actions runtime
+
+Создан Draft PR #98 https://github.com/rimanfatykhov-arch/bms24/pull/98, ветка test/pr90-isolated-moodle, первоначальный head98d34d3. Это явный зависимый кандидат: PR96 head38a2115 + только CSS PR90; не main и не принятие #96. Новый workflow PR90 disposable Moodle rehearsal запущен: https://github.com/rimanfatykhov-arch/bms24/actions/runs/43563243747 .
+
+Runtime больше не блокируется отсутствием локального Docker: доступны отдельные GitHub-hosted runners с service DB каждого engine. Код готовит synthetic baseline main, install ZIP/manifest/checksum, menu/access observations и snapshot→install→restore→reinstall. Private actors/config/logs/SQL/snapshots не публикуются. Первоначальная конфигурация покрывает M01–M05 частично; M06–M10 не объявляются пройденными. PARTIAL намеренно возвращает ненулевой код. Итог требуется читать по конкретному run, не по этому описанию. Полная приёмка остаётся HOLD.
