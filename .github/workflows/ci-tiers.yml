@@ -93,7 +93,8 @@ jobs:
           if [ -n "${{ matrix.target.patch }}" ]; then
             git -c advice.detachedHead=false checkout -q "$head"
             git apply "${{ matrix.target.patch }}"
-            git -c user.name=ci -c user.email=ci@example.invalid commit -qam "negative control (CI runner only)"
+            git add -A  # patches may create new files; "commit -a" alone would silently drop them
+            git -c user.name=ci -c user.email=ci@example.invalid commit -qm "negative control (CI runner only)"
             head=$(git rev-parse HEAD)
           fi
           echo "head=$head" >> "$GITHUB_OUTPUT"
@@ -179,7 +180,8 @@ jobs:
           if [ -n "${{ matrix.target.patch }}" ]; then
             git -c advice.detachedHead=false checkout -q "$head"
             git apply "${{ matrix.target.patch }}"
-            git -c user.name=ci -c user.email=ci@example.invalid commit -qam "negative control (CI runner only)"
+            git add -A  # patches may create new files; "commit -a" alone would silently drop them
+            git -c user.name=ci -c user.email=ci@example.invalid commit -qm "negative control (CI runner only)"
             head=$(git rev-parse HEAD)
           fi
           echo "head=$head" >> "$GITHUB_OUTPUT"
@@ -297,7 +299,8 @@ jobs:
           if [ -n "${{ matrix.target.patch }}" ]; then
             git -c advice.detachedHead=false checkout -q "$head"
             git apply "${{ matrix.target.patch }}"
-            git -c user.name=ci -c user.email=ci@example.invalid commit -qam "negative control (CI runner only)"
+            git add -A  # patches may create new files; "commit -a" alone would silently drop them
+            git -c user.name=ci -c user.email=ci@example.invalid commit -qm "negative control (CI runner only)"
             head=$(git rev-parse HEAD)
           fi
           echo "head=$head" >> "$GITHUB_OUTPUT"

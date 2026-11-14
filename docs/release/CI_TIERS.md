@@ -72,11 +72,15 @@ NOT APPLICABLE only by the rules in the table. Small diff size never lowers the 
   the test route lets only `http://127.0.0.1:8080` through and aborts every other request with the distinct code
   `blockedbyclient`, recording `{source: route_abort, url, resource_type, reason}`; every page records `requestfailed`
   `{url, resource_type, failure}`, `pageerror` and console errors `{text, url}`. **Policy** (`contract.browser_event_violations`):
-  the only tolerated errors are the `requestfailed` (`net::ERR_BLOCKED_BY_CLIENT`) and console line
-  (`Failed to load resource: net::ERR_BLOCKED_BY_CLIENT`) of a URL with an exactly matching `route_abort` record that is
-  not a loopback host. Everything else FAILs: any `net::ERR_FAILED`, any failed request to 127.0.0.0/8, ::1, localhost or
-  0.0.0.0, a similar-but-different URL, missing/contradictory abort records, pageerror, any other console error, legacy or
-  malformed events, a missing event list. No blanket exceptions. Checks: `task_tab_desktop_no_browser_errors`,
+  the only tolerated errors are, per recorded `route_abort` of an **expected** external URL
+  (`EXPECTED_BLOCKED_EXTERNAL`: exactly `https://cdn.jsdelivr.net/npm/mathjax@2.7.9/MathJax.js?delayStartupUntil=configured`,
+  the Moodle MathJax loader - the only external request observed in run 43571513719 on both engines), at most one
+  `requestfailed` with exactly `net::ERR_BLOCKED_BY_CLIENT.Inspector` and one console line exactly
+  `Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector` located at that URL (values observed with Playwright 1.49.1).
+  Everything else FAILs: any `net::ERR_FAILED`, any failed request to 127.0.0.0/8, ::1, localhost or 0.0.0.0, an abort of an
+  unexpected external URL, a similar-but-different URL, consequences without (or in excess of) abort records, other codes or
+  prefixes, pageerror, any other console error, legacy or malformed events, a missing event list. No blanket exceptions.
+  Negative-control patches are materialized with `git add -A` so that patches creating files are applied completely. Checks: `task_tab_desktop_no_browser_errors`,
   `task_tab_mobile_no_browser_errors` (re-evaluated from events, producer status not trusted), `attachments_no_browser_errors`,
   `oversize_no_browser_errors`, `access_no_browser_errors`. Runtime negative controls: `negative-browser-page-error`
   (pageerror) and `negative-browser-failed-request` (a local script on 127.0.0.1:8080 whose response is cut short; the failed

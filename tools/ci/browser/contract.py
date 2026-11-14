@@ -214,14 +214,20 @@ def history_digest(rows):
 
 
 # ---- Browser error policy (Codex review of PR #96, comment 6873684005) ----------------------------------------------------
-# The ONLY tolerated browser error: a request to a non-loopback URL that the test route itself aborted with the distinct code
-# net::ERR_BLOCKED_BY_CLIENT (events.Recorder.route), proven by a recorded route_abort event with the EXACT same URL. The
-# matching 'requestfailed' event and the Chromium console line 'Failed to load resource: net::ERR_BLOCKED_BY_CLIENT' (whose
-# console location is that URL) are then expected consequences. Everything else FAILs: any net::ERR_FAILED, any failed
-# request to a loopback host (127.0.0.0/8, ::1, localhost, 0.0.0.0) or to a URL without a matching abort record, pageerror,
-# any other console error, malformed or legacy (string) events, a missing event list.
-ALLOWED_ABORT_FAILURE = 'net::ERR_BLOCKED_BY_CLIENT'
-ALLOWED_ABORT_CONSOLE = 'Failed to load resource: net::ERR_BLOCKED_BY_CLIENT'
+# The ONLY tolerated browser error: a request to an EXPECTED external URL (EXPECTED_BLOCKED_EXTERNAL, exact string) that the
+# test route itself aborted with the distinct code 'blockedbyclient' (events.Recorder.route), proven by a recorded route_abort
+# event with the EXACT same URL. Its consequences, at most one 'requestfailed' and one console line per recorded abort of that
+# URL, must carry the exact Chromium values observed for that abort (Playwright 1.49.1 / Chromium, run 43571513719 on both
+# engines): failure 'net::ERR_BLOCKED_BY_CLIENT.Inspector', console 'Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector'
+# located at the URL. Everything else FAILs: any net::ERR_FAILED, any failed request to a loopback host (127.0.0.0/8, ::1,
+# localhost, 0.0.0.0), an abort of an unexpected external URL, a similar-but-different URL, consequences without (or in excess
+# of) abort records, pageerror, any other console error, malformed or legacy (string) events, a missing event list.
+ALLOWED_ABORT_FAILURE = 'net::ERR_BLOCKED_BY_CLIENT.Inspector'
+ALLOWED_ABORT_CONSOLE = 'Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector'
+# External resources the disposable Moodle 4.1.22 site is known to request; each is blocked by the test route and recorded.
+# Evidence: run 43571513719 (d7430ff): task tabs, attachments and access contexts on MariaDB and Percona request this single
+# external URL only (Moodle core filter_mathjaxloader default CDN). Adding a URL here is a reviewed policy change.
+EXPECTED_BLOCKED_EXTERNAL = ('https://cdn.jsdelivr.net/npm/mathjax@2.7.9/MathJax.js?delayStartupUntil=configured',)
 
 
 def loopback_host(url):
@@ -238,16 +244,25 @@ def browser_event_violations(events):
     """Return the list of violations (empty = clean), failed requests first, then page errors, then the rest. Never raises."""
     if not isinstance(events, list):
         return ['browser event list not recorded']
-    bad, aborted = [], set()
+    bad, aborted = [], {}
     req_bad, page_bad = [], []
     for e in events:
         if isinstance(e, dict) and e.get('source') == 'route_abort':
             u = e.get('url')
             if (isinstance(u, str) and urlparse(u).scheme in ('http', 'https') and urlparse(u).hostname and not loopback_host(u)
-                    and e.get('reason') == ABORT_REASON and isinstance(e.get('resource_type'), str) and e['resource_type']):
-                aborted.add(u)
+                    and e.get('reason') == ABORT_REASON and isinstance(e.get('resource_type'), str) and e['resource_type']
+                    and u in EXPECTED_BLOCKED_EXTERNAL):
+                aborted[u] = aborted.get(u, 0) + 1
             else:
-                bad.append('route_abort malformed or for a loopback URL: %r' % (u,))
+                bad.append('route_abort malformed, loopback or unexpected external URL: %r' % (u,))
+    used = {'requestfailed': {}, 'console': {}}
+
+    def consume(kind, u):
+        """At most one consequence of each kind per recorded abort of exactly this URL."""
+        if not isinstance(u, str) or aborted.get(u, 0) <= used[kind].get(u, 0):
+            return False
+        used[kind][u] = used[kind].get(u, 0) + 1
+        return True
     for e in events:
         if not isinstance(e, dict):
             bad.append('malformed event %r' % (e,))
@@ -256,11 +271,11 @@ def browser_event_violations(events):
         if src == 'route_abort':
             continue
         if src == 'requestfailed':
-            if e.get('failure') == ALLOWED_ABORT_FAILURE and u in aborted:
+            if e.get('failure') == ALLOWED_ABORT_FAILURE and consume('requestfailed', u):
                 continue
             req_bad.append('failed request %r (%r, %r)' % (u, e.get('failure'), e.get('resource_type')))
         elif src == 'console':
-            if e.get('type') == 'error' and e.get('text') == ALLOWED_ABORT_CONSOLE and u in aborted:
+            if e.get('type') == 'error' and e.get('text') == ALLOWED_ABORT_CONSOLE and consume('console', u):
                 continue
             bad.append('console %s %r at %r' % (e.get('type'), e.get('text'), u))
         elif src == 'pageerror':

@@ -13,10 +13,10 @@ URLS = [B % (i, n) for i, n in enumerate(c.FILES, start=10)]
 
 
 # A genuine intentional abort as produced by events.Recorder (route abort + its two expected consequences).
-EXT = 'https://cdn.jsdelivr.net/npm/example@1.0.0/x.js'
+EXT = c.EXPECTED_BLOCKED_EXTERNAL[0]
 ABORTED = [{'source': 'route_abort', 'url': EXT, 'resource_type': 'script', 'reason': c.ABORT_REASON},
-           {'source': 'requestfailed', 'url': EXT, 'resource_type': 'script', 'failure': 'net::ERR_BLOCKED_BY_CLIENT'},
-           {'source': 'console', 'type': 'error', 'text': 'Failed to load resource: net::ERR_BLOCKED_BY_CLIENT', 'url': EXT}]
+           {'source': 'requestfailed', 'url': EXT, 'resource_type': 'script', 'failure': 'net::ERR_BLOCKED_BY_CLIENT.Inspector'},
+           {'source': 'console', 'type': 'error', 'text': 'Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector', 'url': EXT}]
 DIRECT_LOC = 'http://127.0.0.1:8080/local/kbacompany/communication_center.php?uuid=A&tab=discussions&thread=T'
 
 
@@ -231,33 +231,33 @@ class ContractTest(unittest.TestCase):
                   {'source': 'console', 'type': 'error', 'text': 'Failed to load resource: net::ERR_FAILED', 'url': 'http://127.0.0.1:8080/x.js'},
                   {'source': 'requestfailed', 'url': 'http://127.0.0.1:8080/x.js', 'resource_type': 'script', 'failure': 'net::ERR_FAILED'},
                   {'source': 'requestfailed', 'url': 'http://127.0.0.1:8080/x.js', 'resource_type': 'fetch', 'failure': 'net::ERR_ABORTED'},
-                  {'source': 'requestfailed', 'url': 'http://127.0.0.1:8080/x.js', 'resource_type': 'script', 'failure': 'net::ERR_BLOCKED_BY_CLIENT'},
-                  {'source': 'requestfailed', 'url': 'http://127.0.0.1:9/x.js', 'resource_type': 'script', 'failure': 'net::ERR_BLOCKED_BY_CLIENT'},
-                  {'source': 'requestfailed', 'url': 'http://localhost:8080/x.js', 'resource_type': 'script', 'failure': 'net::ERR_BLOCKED_BY_CLIENT'}):
+                  {'source': 'requestfailed', 'url': 'http://127.0.0.1:8080/x.js', 'resource_type': 'script', 'failure': 'net::ERR_BLOCKED_BY_CLIENT.Inspector'},
+                  {'source': 'requestfailed', 'url': 'http://127.0.0.1:9/x.js', 'resource_type': 'script', 'failure': 'net::ERR_BLOCKED_BY_CLIENT.Inspector'},
+                  {'source': 'requestfailed', 'url': 'http://localhost:8080/x.js', 'resource_type': 'script', 'failure': 'net::ERR_BLOCKED_BY_CLIENT.Inspector'}):
             with self.subTest(e=e):
                 self.assertTrue(self.violations([e]))
         # even if a (forged) abort record exists for a loopback URL, it is refused and the failure stays a violation
         for u in ('http://127.0.0.1:8080/x.js', 'http://127.0.0.1:9/x.js', 'http://[::1]:8080/x.js', 'http://localhost/x.js', 'http://0.0.0.0/x.js'):
             with self.subTest(u=u):
                 forged = [{'source': 'route_abort', 'url': u, 'resource_type': 'script', 'reason': c.ABORT_REASON},
-                          {'source': 'requestfailed', 'url': u, 'resource_type': 'script', 'failure': 'net::ERR_BLOCKED_BY_CLIENT'}]
+                          {'source': 'requestfailed', 'url': u, 'resource_type': 'script', 'failure': 'net::ERR_BLOCKED_BY_CLIENT.Inspector'}]
                 self.assertEqual(2, len(self.violations(forged, base=[])))
 
     def test_unexpected_external_err_failed_fails(self):
         for e in ({'source': 'requestfailed', 'url': 'https://evil.invalid/x.js', 'resource_type': 'script', 'failure': 'net::ERR_FAILED'},
-                  {'source': 'requestfailed', 'url': 'https://evil.invalid/x.js', 'resource_type': 'script', 'failure': 'net::ERR_BLOCKED_BY_CLIENT'},
-                  {'source': 'console', 'type': 'error', 'text': 'Failed to load resource: net::ERR_BLOCKED_BY_CLIENT', 'url': 'https://evil.invalid/x.js'},
+                  {'source': 'requestfailed', 'url': 'https://evil.invalid/x.js', 'resource_type': 'script', 'failure': 'net::ERR_BLOCKED_BY_CLIENT.Inspector'},
+                  {'source': 'console', 'type': 'error', 'text': 'Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector', 'url': 'https://evil.invalid/x.js'},
                   {'source': 'requestfailed', 'url': EXT, 'resource_type': 'script', 'failure': 'net::ERR_FAILED'},
                   {'source': 'console', 'type': 'error', 'text': 'Failed to load resource: net::ERR_FAILED', 'url': EXT}):
             with self.subTest(e=e):
                 self.assertTrue(self.violations([e]))
 
     def test_similar_url_to_an_allowed_abort_fails(self):
-        for u in (EXT + '?x=1', EXT + '#f', EXT.replace('https:', 'http:'), EXT.replace('cdn.jsdelivr.net', 'cdn.jsdelivr.net.evil.invalid'),
-                  EXT + '/', EXT.upper(), 'https://cdn.jsdelivr.net/npm/example@1.0.0/y.js', ''):
+        for u in (EXT + '&x=1', EXT.split('?')[0], EXT + '#f', EXT.replace('https:', 'http:'), EXT.replace('cdn.jsdelivr.net', 'cdn.jsdelivr.net.evil.invalid'),
+                  EXT + '/', EXT.upper(), 'https://cdn.jsdelivr.net/npm/mathjax@2.7.8/MathJax.js?delayStartupUntil=configured', ''):
             with self.subTest(u=u):
-                self.assertTrue(self.violations([{'source': 'requestfailed', 'url': u, 'resource_type': 'script', 'failure': 'net::ERR_BLOCKED_BY_CLIENT'}]))
-                self.assertTrue(self.violations([{'source': 'console', 'type': 'error', 'text': 'Failed to load resource: net::ERR_BLOCKED_BY_CLIENT', 'url': u}]))
+                self.assertTrue(self.violations([{'source': 'requestfailed', 'url': u, 'resource_type': 'script', 'failure': 'net::ERR_BLOCKED_BY_CLIENT.Inspector'}]))
+                self.assertTrue(self.violations([{'source': 'console', 'type': 'error', 'text': 'Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector', 'url': u}]))
 
     def test_missing_or_contradictory_abort_provenance_fails(self):
         fail_only = [ABORTED[1], ABORTED[2]]  # consequences without the route abort record
@@ -271,6 +271,25 @@ class ContractTest(unittest.TestCase):
         for legacy in ('console:Failed to load resource: net::ERR_FAILED', 'pageerror:TypeError', 1, None):
             self.assertTrue(self.violations([legacy]))
         self.assertTrue(self.violations([{'source': 'navigation', 'url': EXT}]))
+
+    def test_exact_codes_unexpected_external_and_excess_consequences_fail(self):
+        # the plain code and prefixes/variants are not the observed Chromium value
+        for f in ('net::ERR_BLOCKED_BY_CLIENT', 'net::ERR_BLOCKED_BY_CLIENT.Inspector ', 'net::ERR_BLOCKED_BY_CLIENT.InspectorX', 'net::ERR_ABORTED'):
+            self.assertTrue(self.violations([], base=[ABORTED[0], dict(ABORTED[1], failure=f)]), f)
+        for t in ('Failed to load resource: net::ERR_BLOCKED_BY_CLIENT', 'Failed to load resource: net::ERR_FAILED'):
+            self.assertTrue(self.violations([], base=[ABORTED[0], dict(ABORTED[2], text=t)]), t)
+        # an external URL the test aborted but which is not an expected dependency is itself a violation
+        other = 'https://fonts.googleapis.com/css?family=x'
+        evs = [{'source': 'route_abort', 'url': other, 'resource_type': 'stylesheet', 'reason': c.ABORT_REASON},
+               {'source': 'requestfailed', 'url': other, 'resource_type': 'stylesheet', 'failure': c.ALLOWED_ABORT_FAILURE}]
+        self.assertEqual(2, len(c.browser_event_violations(evs)))
+        # more consequences than recorded aborts of that URL
+        self.assertEqual(1, len(self.violations([ABORTED[1]])))
+        self.assertEqual(1, len(self.violations([ABORTED[2]])))
+        self.assertEqual([], self.violations([ABORTED[0], ABORTED[1], ABORTED[2]]))
+        # the real shape observed in run 43571513719 (2 aborts + 2 + 2 consequences) is clean
+        self.assertEqual([], c.browser_event_violations([ABORTED[0], ABORTED[0], ABORTED[1], ABORTED[2], ABORTED[1], ABORTED[2]]))
+        self.assertEqual(('https://cdn.jsdelivr.net/npm/mathjax@2.7.9/MathJax.js?delayStartupUntil=configured',), c.EXPECTED_BLOCKED_EXTERNAL)
 
     def test_console_error_and_pageerror_fail(self):
         for e in ({'source': 'pageerror', 'name': 'TypeError', 'message': 'x'},
