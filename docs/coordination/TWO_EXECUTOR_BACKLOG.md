@@ -13,7 +13,7 @@
 | #92 | `38c1c2a0c78d7ce09e41cbd1111a2693f197134e` | OPEN, предложение классификации |
 | #95 | `9e80ee55dd27718171d266a017a217f7f231409a` | OPEN, общий SaaS-план; продуктовые решения PROPOSED |
 
-PR #93/#94 уже merged. Это не означает закрытия независимых замечаний: [review в #82](https://github.com/rimanfatykhov-arch/bms24/issues/82#issuecomment-6872172812). Исправляющий Draft PR #96 существует: новый head `947447cc23e89757a002b9de6d5e79346d4b4e58`. Предыдущий head38a2115 завершил CI PASS, но имел независимый HOLD. Новый head исправляет pageerror и rerun provenance; остаются blanket ERR_FAILED allowlist и фактический checks/FAST failure на whitespace patch. [Новый review](https://github.com/rimanfatykhov-arch/bms24/pull/96#issuecomment-6872973652). Состояние production, включая #80/#81, не проверялось.
+PR #93/#94 уже merged. Это не означает закрытия независимых замечаний: [review в #82](https://github.com/rimanfatykhov-arch/bms24/issues/82#issuecomment-6872172812). Исправляющий Draft PR #96 существует: новый head `2324cafdce3f90e7de92c00c5485de5c12b27af7`. Предыдущий head38a2115 завершил CI PASS, но имел независимый HOLD. Новый head исправляет pageerror и rerun provenance; остаётся blanket ERR_FAILED allowlist. Whitespace patch исправлен в 2324caf, Dev checks PASS; полный CI нового head проверяется отдельно. FULL и gate прежнего947447c CANCELLED, repaired PASS. [Новый review](https://github.com/rimanfatykhov-arch/bms24/pull/96#issuecomment-6873255469). Состояние production, включая #80/#81, не проверялось.
 
 ## Реестр работ
 
