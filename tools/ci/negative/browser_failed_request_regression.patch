@@ -1,0 +1,26 @@
+diff --git a/local/kbacompany/ci_negative_failed_request.php b/local/kbacompany/ci_negative_failed_request.php
+new file mode 100644
+index 0000000..83cd79e
+--- /dev/null
++++ b/local/kbacompany/ci_negative_failed_request.php
+@@ -0,0 +1,9 @@
++<?php
++// NEGATIVE CONTROL (CI only, applied in the GitHub runner by tools/ci/negative/browser_failed_request_regression.patch):
++// the declared Content-Length is larger than the body, so the browser request fails at network level
++// (net::ERR_CONTENT_LENGTH_MISMATCH) for a URL on the test origin http://127.0.0.1:8080.
++header('Content-Type: application/javascript');
++header('Content-Length: 4096');
++echo '/* truncated on purpose */';
++flush();
++exit;
+diff --git a/local/kbacompany/communication_center.php b/local/kbacompany/communication_center.php
+index b5edaeb..cc81d85 100644
+--- a/local/kbacompany/communication_center.php
++++ b/local/kbacompany/communication_center.php
+@@ -172,4 +172,6 @@ $PAGE->add_body_class('bms-comm-page');
+ $PAGE->requires->css(new moodle_url('/local/kbacompany/styles.css'));
+ $PAGE->requires->js_call_amd('local_kbacompany/communication_live_ui', 'init');
++// NEGATIVE CONTROL (CI only): a LOCAL script on the test origin whose response is cut short (failed request).
++$PAGE->requires->js(new moodle_url('/local/kbacompany/ci_negative_failed_request.php'), true);
+ $shell = \local_kbacompany\local\bms_page_shell_service::begin($uuid, $actor, 'communications',
+     get_string('communicationcenter_title', 'local_kbacompany'));
