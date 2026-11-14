@@ -13,7 +13,8 @@ from pathlib import Path
 from urllib.parse import urlparse, parse_qs
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from contract import FILES, local_url  # noqa: E402
+from contract import CSRF_REFUSAL_MARKER, FILES, local_url  # noqa: E402
+from events import Recorder  # noqa: E402
 from playwright.sync_api import sync_playwright  # noqa: E402
 
 if os.environ.get('BMS_CI_BROWSER') != '1':
@@ -36,8 +37,8 @@ def note(k, **v):
 with sync_playwright() as pw:
     b = pw.chromium.launch(headless=True, args=['--disable-dev-shm-usage'])
     ctx = b.new_context(viewport={'width': 1440, 'height': 1000})
-    ctx.route('**/*', lambda r: r.continue_() if urlparse(r.request.url).netloc == '127.0.0.1:8080' else r.abort())
-    p = ctx.new_page(); p.set_default_timeout(30000); posts = []; errs = []
+    rec = Recorder().install(ctx); obs['browser_events'] = rec.events
+    p = ctx.new_page(); p.set_default_timeout(30000); posts = []
 
     def on_request(r):
         if r.method == 'POST':
@@ -45,7 +46,8 @@ with sync_playwright() as pw:
             posts.append({'path': urlparse(r.url).path, 'multipart': (r.headers.get('content-type') or '').startswith('multipart/form-data'),
                           'has_file': body.find(b'filename="p02-') >= 0})
     p.on('request', on_request)
-    p.on('pageerror', lambda e: errs.append('pageerror:' + type(e).__name__))
+    # Browser errors are evidence: events.Recorder records route aborts, failed requests, page errors and console errors for
+    # every phase (also on failure); the verdict is contract.page_error_check() (narrow policy, no blanket exceptions).
 
     def goto(url):
         p.goto(local_url(url), wait_until='networkidle')
@@ -142,11 +144,12 @@ with sync_playwright() as pw:
             'uuid': A, 'action': 'send', 'thread': thread, 'sesskey': key, 'tab': 'discussions', 'body': '',
             'attachment': {'name': 'p02-direct-only.txt', 'mimeType': 'text/plain', 'buffer': FILES['p02-direct-only.txt']}})
         goto(url)
-        note('server_file_only_direct', http=r.status, location=r.headers.get('location', ''), **observe('p02-direct-only.txt'))
+        note('server_file_only_direct', http=r.status, location=r.headers.get('location', ''),
+             expected_query={'uuid': A, 'tab': 'discussions', 'thread': thread}, **observe('p02-direct-only.txt'))
         # CSRF: forged POST with an invalid sesskey (must not create a message; checked in the DB afterwards)
         r = ctx.request.post(local_url(base + CENTER), max_redirects=0, multipart={
             'uuid': A, 'action': 'send', 'thread': thread, 'sesskey': 'invalidsesskey', 'tab': 'discussions', 'body': 'RC31 P02 csrf ' + phase})
-        note('csrf_invalid_sesskey', http=r.status)
+        note('csrf_invalid_sesskey', http=r.status, refusal_marker=CSRF_REFUSAL_MARKER in r.text(), location=r.headers.get('location', ''))
         # double submit: two fast clicks must create one message (DB count checked afterwards)
         goto(url)
         cf = p.locator('form[data-bms-comm-compose]'); cf.locator('textarea[name=body]').fill('RC31 P02 double ' + phase)
@@ -156,7 +159,6 @@ with sync_playwright() as pw:
         urls = sorted({a.get_attribute('href') for a in p.locator('a[href*="communication_attachment"]').all()})
         (root / 'p02-urls.json').write_text(json.dumps(urls)); (root / 'p02-urls.json').chmod(0o644)
         obs['attachment_urls'] = len(urls)
-        obs['page_errors'] = errs
     except StopIteration:
         pass
     except Exception as e:
