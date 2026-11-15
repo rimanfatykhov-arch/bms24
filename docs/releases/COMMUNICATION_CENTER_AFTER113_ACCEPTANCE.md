@@ -39,6 +39,13 @@ Runtime, полный CI, новый CI ZIP/manifest и owner preview требу
 redirects дополнительно ограничены канонической страницей/тем же thread; external/login redirects FAIL.
 Незавершённый browser case сохраняется только для диагностики, не засчитывается полной матрицей.
 Этот follow-up меняет только тестовую обвязку, продуктовые байты e105 не меняются.
+Следующий реальный b4a4dd6 прогон завершил оба owned/legacy cases. На обеих СУБД RA join вернул
+штатный HTTP200 с точным `communication_contextunavailable`, а не предполагавшимся permission:
+route после отказа намеренно маскирует запрещённый объект. Oracle привязан к этому каноническому
+сообщению по доказанным response/error blocks; любые другие ошибки/500/redirect/missing по-прежнему
+FAIL. Добавлена проверка, что другой permission message не заменяет ожидаемый masked response.
+Percona дополнительно поймала ERR_ABORTED внешнего MathJax asset; ошибка не исключена/не переименована
+в PASS. Последующий обязательный CI должен пройти на актуальном head, старые результаты не переносятся.
 Старые PASS112/113 не выдаются за новый release PASS. Feature112 package/rehearsal skip не засчитывается:
 release/* выполняет действующую сборку и обе репетиции. Policy/rulesets/required checks не меняются.
 

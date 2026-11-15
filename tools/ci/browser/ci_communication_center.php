@@ -19,6 +19,7 @@ $out = ['phase' => $phase];
 if ($phase === 'denialstrings') {
     $out['texts'] = [
         'permission' => get_string('communication_permission', 'local_kbacompany'),
+        'context' => get_string('communication_contextunavailable', 'local_kbacompany'),
         'state' => get_string('communication_state', 'local_kbacompany'),
         'company' => get_string('companynotavailable', 'local_kbacompany'),
         'sesskey' => get_string('invalidsesskey', 'error'),

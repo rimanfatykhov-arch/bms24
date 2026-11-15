@@ -556,7 +556,7 @@ class ContractTest(unittest.TestCase):
 
     def communication_center_obs(self):
         ids = {'MA': 11, 'EA': 12, 'RA': 13, 'EB': 14}
-        texts = {'permission': 'Permission denied.', 'company': 'Company unavailable.',
+        texts = {'permission': 'Permission denied.', 'context': 'Object unavailable.', 'company': 'Company unavailable.',
                  'state': 'Operation unavailable.', 'sesskey': 'Invalid sesskey.'}
         def denial(kind, http=200):
             return {'http': http, 'location': '',
@@ -587,7 +587,7 @@ class ContractTest(unittest.TestCase):
                            'reply_links': 1, 'composer': 1},
                 'viewer': viewer,
                 'denied': {label: {'center_text': False, 'card_text': False, 'download': {'http': 404, 'sha256': None},
-                                   'join_http': 200, 'join_response': denial('permission' if label == 'RA' else 'company'),
+                                   'join_http': 200, 'join_response': denial('context' if label == 'RA' else 'company'),
                                    'parts': {'active': [11, 12], 'owners': [12], 'reads': []}}
                            for label in ('RA', 'EB')},
                 'direct': {'responses': [{'http': 303, 'location': 'http://127.0.0.1:8080/local/kbacompany/communication_center.php?thread='+d, 'thread': d}] * 2, 'threads': [d]},
@@ -719,6 +719,9 @@ class ContractTest(unittest.TestCase):
         res=c.evaluate(c.communication_center_checks(obs,0))
         for key in ('comm_task_discussion_denied_and_revoked','comm_group_remove_leave_transfer'):
             self.assertEqual('FAIL',res[key]['status'])
+        obs=self.communication_center_obs()
+        obs['cases'][0]['denied']['RA']['join_response']['error_texts']=[obs['denial_texts']['permission']]
+        self.assertEqual('FAIL',c.evaluate(c.communication_center_checks(obs,0))['comm_task_discussion_denied_and_revoked']['status'])
 
     def test_required_check_names_complete(self):
         names = c.required_check_names()

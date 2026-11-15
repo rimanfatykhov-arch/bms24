@@ -762,7 +762,8 @@ def communication_center_checks(obs, exitcode=None):
             for label, x in d.items():
                 require(x.get('center_text') is False and x.get('card_text') is False, label + ' read the task discussion')
                 require(refused(x.get('download')), label + ' downloaded the discussion file')
-                denied_post(x.get('join_response'), ['permission'] if label == 'RA' else ['company'])
+                # The route deliberately masks a forbidden object as unavailable, without disclosing its existence.
+                denied_post(x.get('join_response'), ['context'] if label == 'RA' else ['company'])
                 require(x.get('join_http') == x['join_response']['http'] and ids[label] not in ((x.get('parts') or {}).get('active') or []),
                         label + ' joined the task discussion')
         rv = obs.get('revocation') or {}
