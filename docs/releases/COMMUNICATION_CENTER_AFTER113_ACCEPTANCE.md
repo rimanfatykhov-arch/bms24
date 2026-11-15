@@ -33,6 +33,12 @@ Task-viewer ACL — ранее утверждённое изменение112; �
 
 Локально contract33 normal и optimized Python, source-preservation8 PASS. Все64 required names сохранены.
 Runtime, полный CI, новый CI ZIP/manifest и owner preview требуют собственных доказательств этого head.
+Первый runtime прогон e105af4 обнаружил ошибку порядка раскрытия вложенных details: XPath locator
+возвращает document order, обратный обход пытался нажать невидимый внутренний summary. Исправлено
+на outer→inner через реальные click/Enter; force/requestSubmit не добавляются. Успешные direct POST
+redirects дополнительно ограничены канонической страницей/тем же thread; external/login redirects FAIL.
+Незавершённый browser case сохраняется только для диагностики, не засчитывается полной матрицей.
+Этот follow-up меняет только тестовую обвязку, продуктовые байты e105 не меняются.
 Старые PASS112/113 не выдаются за новый release PASS. Feature112 package/rehearsal skip не засчитывается:
 release/* выполняет действующую сборку и обе репетиции. Policy/rulesets/required checks не меняются.
 

@@ -136,7 +136,8 @@ def download(ctx, href):
 def submit_form(page, form, mode):
     """Open containing details and activate a visible real submit button; never bypass hit testing."""
     require(form.count() == 1, 'form missing')
-    for detail in reversed(form.locator('xpath=ancestor::details').all()):
+    # Locator results are in document order: open outer disclosure before its nested summary.
+    for detail in form.locator('xpath=ancestor::details').all():
         if detail.get_attribute('open') is None:
             activate(page, detail.locator(':scope > summary'), mode)
     button = form.locator('button[type=submit]')
@@ -343,6 +344,8 @@ with sync_playwright() as pw:
         result['status'] = 'PASS'
     except Exception as error:
         result['error'] = '%s: %s' % (type(error).__name__, str(error)[:400])
+        if 'case' in locals():
+            result['incomplete_case'] = case  # Diagnostics only; never appended to the required complete matrix.
     finally:
         try:
             shell('owned')

@@ -810,6 +810,11 @@ def communication_center_checks(obs, exitcode=None):
             responses = d.get('responses')
             require(isinstance(responses, list) and len(responses) == 2 and all(x.get('http') == 303 for x in responses),
                     'direct conversation request failed')
+            for response in responses:
+                destination = urlparse(local_url(response.get('location', '')))
+                require(destination.path == '/local/kbacompany/communication_center.php' and
+                        dict(parse_qsl(destination.query)).get('thread') == response.get('thread'),
+                        'direct conversation redirected to an unexpected page or thread')
             uuids = {x.get('thread') for x in responses}
             require(len(uuids) == 1 and '' not in uuids and None not in uuids and d.get('threads') == list(uuids),
                     'repeated Write created another direct conversation')

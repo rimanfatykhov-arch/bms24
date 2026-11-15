@@ -590,7 +590,7 @@ class ContractTest(unittest.TestCase):
                                    'join_http': 200, 'join_response': denial('permission' if label == 'RA' else 'company'),
                                    'parts': {'active': [11, 12], 'owners': [12], 'reads': []}}
                            for label in ('RA', 'EB')},
-                'direct': {'responses': [{'http': 303, 'location': 'x', 'thread': d}] * 2, 'threads': [d]},
+                'direct': {'responses': [{'http': 303, 'location': 'http://127.0.0.1:8080/local/kbacompany/communication_center.php?thread='+d, 'thread': d}] * 2, 'threads': [d]},
                 'filters': {'discussions': {'task': 1, 'direct': 0}, 'messages': {'task': 0, 'direct': 1}, 'tabs': 2},
                 'group': {'created': created,
                           'non_owner_remove': dict(denial('permission'), parts=dict(created)),
@@ -663,6 +663,10 @@ class ContractTest(unittest.TestCase):
         fails(dc, lambda o: o['cases'][0]['direct'].update(threads=['d-uuid', 'other']))
         fails(dc, lambda o: o['cases'][1]['direct'].update(responses=[{'http': 303, 'thread': 'x'}] * 2, threads=['x']))
         fails(dc, lambda o: o['cases'][0]['direct']['responses'].__setitem__(0, {'http': 200, 'thread': 'd-uuid'}))
+        for location in ('https://example.invalid/?thread=d-uuid', 'http://127.0.0.1:8080/login/index.php?thread=d-uuid',
+                         'http://127.0.0.1:8080/local/kbacompany/communication_center.php?thread=other', ''):
+            fails(dc, lambda o, location=location: o['cases'][0]['direct']['responses'].__setitem__(0,
+                {'http': 303, 'location': location, 'thread': 'd-uuid'}))
         g = 'comm_group_remove_leave_transfer'
         fails(g, lambda o: o['cases'][0]['group']['non_owner_remove']['parts'].update(active=[11, 12, 15]))
         fails(g, lambda o: o['cases'][0]['group']['forged_sesskey'].update(http=303))
