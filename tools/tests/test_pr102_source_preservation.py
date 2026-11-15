@@ -1,5 +1,6 @@
 """Exact hash exceptions must not become path exemptions."""
 import importlib.util
+import hashlib
 import json
 from pathlib import Path
 import shutil
@@ -44,7 +45,18 @@ class SourcePreservationTest(unittest.TestCase):
     def test_exact_review_evidence_matches_candidate(self):
         for row in self.reviewed:
             with self.subTest(path=row['path']):
-                self.assertEqual(row['after_sha256_lf'], gate.digest(self.root / row['path']))
+                # The #102 evidence is immutable. #106 appends its own language keys;
+                # assert the exact historical prefix AND the exact current full-file gate.
+                path = self.root / row['path']
+                data = path.read_bytes().replace(b'\r\n', b'\n')
+                marker = b'\n// Issue #106: canonical read-only personal day summary.\n'
+                if row['path'] in ('local/kbacompany/lang/en/local_kbacompany.php',
+                                   'local/kbacompany/lang/ru/local_kbacompany.php'):
+                    self.assertEqual(1, data.count(marker))
+                    self.assertEqual(row['after_sha256_lf'], hashlib.sha256(data.split(marker)[0]).hexdigest())
+                    self.assertEqual([], gate.check(self.root))
+                else:
+                    self.assertEqual(row['after_sha256_lf'], gate.digest(path))
 
     def test_every_reviewed_path_still_rejects_unreviewed_changes(self):
         for row in self.reviewed:
