@@ -358,6 +358,9 @@ $PAGE->set_title(ui::tr('taskcenter_title'));
 $PAGE->set_heading(ui::tr('pluginname'));
 $PAGE->requires->js(new moodle_url('/local/kbacompany/js/task_ui.js'));
 $PAGE->requires->js(new moodle_url('/local/kbacompany/js/task_discussion.js'));
+// Task opened event: only a successfully rendered card on GET; the POST is sent by the client once visible.
+$recordopen = $view === 'detail' && $method === 'GET' && $action === '' && $selected !== '';
+if ($recordopen) { $PAGE->requires->js(new moodle_url('/local/kbacompany/js/task_open.js')); }
 $shell=\local_kbacompany\local\bms_page_shell_service::begin($uuid,$actor,'tasks',ui::tr('taskcenter_title'));
 echo html_writer::start_div((\local_kbacompany\local\bms24_shell_service::is_enabled() ? 'bms-tui bms24-task-center' : 'bms-tui') .
     ($view==='list'?' bms24-task-listing':''),
@@ -452,6 +455,11 @@ if($view==='list'){
     else{echo ui::action_form($uuid,$model,$operation,$values,$errors,$requestkey);}
 }else if($view==='detail'){
     echo ui::detail($uuid,$model,$tab,$permissions,$values);
+    if ($recordopen) {
+        echo html_writer::span('', '', ['hidden'=>'hidden', 'data-bms-task-open'=>'1',
+            'data-endpoint'=>(new moodle_url('/local/kbacompany/task_open.php'))->out(false),
+            'data-company'=>$uuid, 'data-task'=>(string)$model['selected']['uuid'], 'data-sesskey'=>sesskey()]);
+    }
 }else{
     require(__DIR__.'/templates/task_sources.php');
 }

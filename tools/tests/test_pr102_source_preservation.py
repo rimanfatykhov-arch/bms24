@@ -12,6 +12,9 @@ gate = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(gate)
 
 
+FOLLOWUPS = ['docs/reconcile/task-open-source-preservation.json']
+
+
 class SourcePreservationTest(unittest.TestCase):
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory()
@@ -28,8 +31,16 @@ class SourcePreservationTest(unittest.TestCase):
             target.parent.mkdir(parents=True, exist_ok=True)
             shutil.copy2(ROOT / name, target)
         evidence = json.loads((ROOT / 'docs/reconcile/pr102-source-preservation.json').read_text(encoding='utf-8'))
-        self.reviewed = evidence['files']
-        self.assertEqual(5, len(self.reviewed))
+        self.assertEqual(5, len(evidence['files']))
+        # Later exact follow-ups must chain from the previous reviewed content (before == earlier after).
+        latest = {row['path']: dict(row) for row in evidence['files']}
+        for name in FOLLOWUPS:
+            later = json.loads((ROOT / name).read_text(encoding='utf-8'))
+            for row in later['files']:
+                self.assertIn(row['path'], latest, 'follow-up must extend an already reviewed path')
+                self.assertEqual(latest[row['path']]['after_sha256_lf'], row['before_sha256_lf'], row['path'])
+                latest[row['path']] = dict(row)
+        self.reviewed = list(latest.values())
         self.assertEqual([], gate.check(self.root), 'exact candidate must first pass')
 
     def assert_mutation_blocked(self, name, prefix):

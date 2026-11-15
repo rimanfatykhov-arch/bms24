@@ -32,6 +32,11 @@ def check(root=ROOT):
         'local/kbacompany/styles.css': '1eeea0a3ff0c5ab3911aa298b5e540b52d2ced6fe5728e08a13c61cbe75cdcfd',
         'local/kbacompany/tests/communication_service_test.php': 'd8d27f74f3caa377a01ac0dc6072e7cadb2368532c0bf077014fa35dcaef95bd',
     })
+    # Task opened event (after #103): exact RU/EN string update, see docs/reconcile/TASK_OPEN_SOURCE_PRESERVATION.md.
+    reviewed_followup.update({
+        'local/kbacompany/lang/en/local_kbacompany.php': 'cf9761113aa0dd206c0c52ed9b3cdb13aebe2be2b51bf91cd5c55cac0fd18ff4',
+        'local/kbacompany/lang/ru/local_kbacompany.php': '77808151a0f34400a2ae8868ddae57b703e8dfda4a15b0f8ddd2710eadb76d06',
+    })
     reviewed_metadata={'AGENTS.md','docs/00_MASTER_CONTEXT.md'}
     for name, expected in plan['unchanged_schema_hashes'].items():
         target = {'local/kbacompany/db/install.xml': '5d61fb813ca0e1da1ab67db808b5a1da321cadfccef3e2c499e8dee279f5e576'}.get(name, expected)

@@ -1813,9 +1813,16 @@ class task_service {
                     'done' => !empty($item->done), 'sort_order' => (int)$item->sortorder,
                     'can_toggle' => $canmanage || self::can_execute($row, $actor, $canmanage) || (int)$item->assigneeid === $actor];
             }
-            foreach ($DB->get_records('local_kbacompany_tasklog', [
-                'companyuuid' => $companyuuid, 'taskuuid' => $selected,
-            ], 'id DESC', '*', 0, 50) as $entry) {
+            // The last 50 business events; "opened" events are bounded separately so that
+            // frequent opening never pushes status/result history out of the History tab.
+            $historyrows = $DB->get_records_select('local_kbacompany_tasklog',
+                'companyuuid = :company AND taskuuid = :task AND action <> :opened',
+                ['company' => $companyuuid, 'task' => $selected, 'opened' => task_open_service::ACTION],
+                'id DESC', '*', 0, 50) + $DB->get_records('local_kbacompany_tasklog', [
+                'companyuuid' => $companyuuid, 'taskuuid' => $selected, 'action' => task_open_service::ACTION,
+            ], 'id DESC', '*', 0, task_open_service::HISTORY_LIMIT);
+            krsort($historyrows);
+            foreach ($historyrows as $entry) {
                 $history[] = ['actor_id' => (int)$entry->actorid, 'actor_name' => $employees[(int)$entry->actorid] ?? '',
                     'action' => (string)$entry->action, 'old_status' => (string)$entry->oldstatus,
                     'new_status' => (string)$entry->newstatus, 'details' => json_decode((string)$entry->details, true) ?: [],
@@ -2277,13 +2284,14 @@ class task_service {
                   FROM {local_kbacompany_tasklog} l
                   JOIN (SELECT taskuuid, MAX(id) AS lastid
                           FROM {local_kbacompany_tasklog}
-                         WHERE companyuuid = :activitycompany AND taskuuid {$in}
+                         WHERE companyuuid = :activitycompany AND taskuuid {$in} AND action <> :activityopened
                       GROUP BY taskuuid) latest ON latest.lastid = l.id
                   JOIN {local_kbacompany_task} t
                     ON t.companyuuid = l.companyuuid AND t.uuid = l.taskuuid
                  WHERE {$scopewhere} AND l.companyuuid = :activitycompany2";
         $entries = $DB->get_records_sql($sql,
-            $scopeparams + $inparams + ['activitycompany'=>$companyuuid, 'activitycompany2'=>$companyuuid]);
+            $scopeparams + $inparams + ['activitycompany'=>$companyuuid, 'activitycompany2'=>$companyuuid,
+                'activityopened'=>task_open_service::ACTION]);
         if (!$entries) { return []; }
         // list_page() already loaded the permission-scoped employee directory.
         // Reuse it rather than fetching organization context a second time.

@@ -1969,6 +1969,13 @@ class task_ui_service {
         }else{
             $body=self::note(self::tr('tui_history_help'));foreach($model['history'] as $entry){$key='taskcenter_action_'.$entry['action'];
                 $label=get_string_manager()->string_exists($key,'local_kbacompany')?self::tr($key):self::tr('tui_history_event');
+                if($entry['action']===task_open_service::ACTION){
+                    // "Name opened the task" + date/time; an opening event, not proof of reading.
+                    $body.=\html_writer::tag('article',\html_writer::tag('strong',s(get_string('taskcenter_history_opened','local_kbacompany',
+                        $entry['actor_name']?:self::tr('tui_unavailable')))).self::note(userdate($entry['time_created'])),
+                        ['class'=>'bms-tui-message','data-history-action'=>task_open_service::ACTION]);
+                    continue;
+                }
                 $body.=\html_writer::tag('article',\html_writer::tag('strong',s($label)).self::note(($entry['actor_name']?:self::tr('tui_unavailable')).' · '.userdate($entry['time_created'])).
                     ($entry['new_status']!==''?self::badge($entry['new_status']):'').
                     (!empty($entry['details']['reason'])?self::field('tui_reason',(string)$entry['details']['reason']):'').

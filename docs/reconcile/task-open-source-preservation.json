@@ -1,0 +1,19 @@
+{
+  "scope": "exact intentional source updates; not runtime or release acceptance",
+  "base_sha": "dfd90535ea90d13918fce0c2707cbd5946c406f2",
+  "normalization": "CRLF to LF only",
+  "previous_evidence": "docs/reconcile/pr102-source-preservation.json",
+  "change": "task opened event in the existing History: three RU/EN strings (two added, tui_history_help reworded); existing strings otherwise unchanged",
+  "files": [
+    {
+      "path": "local/kbacompany/lang/en/local_kbacompany.php",
+      "before_sha256_lf": "0494fad97271909666a779281d1eb25944b8cc9bf55e1df5ff73f356922c8dc1",
+      "after_sha256_lf": "cf9761113aa0dd206c0c52ed9b3cdb13aebe2be2b51bf91cd5c55cac0fd18ff4"
+    },
+    {
+      "path": "local/kbacompany/lang/ru/local_kbacompany.php",
+      "before_sha256_lf": "6dd439078e4a5afa7d409d162a09bf008795d7e5336ab72a80cc59b7de3bc274",
+      "after_sha256_lf": "77808151a0f34400a2ae8868ddae57b703e8dfda4a15b0f8ddd2710eadb76d06"
+    }
+  ]
+}
