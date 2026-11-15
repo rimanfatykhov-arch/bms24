@@ -46,6 +46,16 @@ route после отказа намеренно маскирует запрещ
 FAIL. Добавлена проверка, что другой permission message не заменяет ожидаемый masked response.
 Percona дополнительно поймала ERR_ABORTED внешнего MathJax asset; ошибка не исключена/не переименована
 в PASS. Последующий обязательный CI должен пройти на актуальном head, старые результаты не переносятся.
+В следующем прогоне4ef6 все8 communication checks PASS, но MariaDB поймала тот же ERR_ABORTED
+в message-actions owned1440. В старом сценарии Save/conflict переходы ждали только load, после
+чего сразу вызывались reload/следующая навигация. Все6 expect_navigation этого сценария теперь
+ждут networkidle, как остальные его переходы; никаких сетевых исключений/игнорирования ошибок.
+Независимая синтетическая Chromium-фикстура tools/ci/browser/check_navigation_timing.py
+поднимает только127.0.0.1:8080: преждевременный reload даёт ERR_ABORTED и FAIL строгого
+browser_event_violations, ожидание networkidle даёт завершённый скрипт и PASS. Выполнена
+в контейнере без сети, оба ожидаемых результата подтверждены; это доказательство гонки
+навигации, не замена Moodle runtime. Запуск: python3 tools/ci/browser/check_navigation_timing.py
+в окружении с Playwright/Chromium и свободным loopback8080.
 Старые PASS112/113 не выдаются за новый release PASS. Feature112 package/rehearsal skip не засчитывается:
 release/* выполняет действующую сборку и обе репетиции. Policy/rulesets/required checks не меняются.
 

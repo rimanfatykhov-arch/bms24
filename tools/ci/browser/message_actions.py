@@ -77,7 +77,9 @@ def post_message(page, tab, text, file):
     form.locator('textarea').fill(text)
     if file:
         form.locator('input[type=file]').set_input_files([file])
-    with page.expect_navigation():
+    # Do not race the next action/reload against Moodle's asynchronous page scripts.
+    # A genuine aborted request remains a failure; wait rather than filtering it out.
+    with page.expect_navigation(wait_until='networkidle'):
         form.locator('button[type=submit]').click()
     page.wait_for_load_state('networkidle')
     article = page.locator('article.bms-tui-message', has_text=text)
@@ -126,7 +128,7 @@ with sync_playwright() as pw:
             edit = article.locator('details.bms-tui-message-edit')
             activate(page, edit.locator('summary'), mode)
             edit.locator('textarea').fill('MA %s cancelled draft' % token)
-            with page.expect_navigation():
+            with page.expect_navigation(wait_until='networkidle'):
                 activate(page, edit.get_by_role('link', name='Cancel', exact=True), mode)
             page.wait_for_load_state('networkidle')
             case['after_cancel'] = state(message)
@@ -134,7 +136,7 @@ with sync_playwright() as pw:
             article = page.locator('#task-message-%s' % message); edit = article.locator('details.bms-tui-message-edit')
             activate(page, edit.locator('summary'), mode)
             edit.locator('textarea').fill(t1)
-            with page.expect_navigation():
+            with page.expect_navigation(wait_until='networkidle'):
                 activate(page, edit.get_by_role('button', name='Save changes', exact=True), mode)
             page.reload(wait_until='networkidle')
             article = page.locator('#task-message-%s' % message)
@@ -157,11 +159,11 @@ with sync_playwright() as pw:
             for p, text in ((page, t2), (second, t3)):
                 e = p.locator('#task-message-%s details.bms-tui-message-edit' % message)
                 activate(p, e.locator('summary'), mode); e.locator('textarea').fill(text)
-            with page.expect_navigation():
+            with page.expect_navigation(wait_until='networkidle'):
                 activate(page, page.locator('#task-message-%s details.bms-tui-message-edit' % message)
                          .get_by_role('button', name='Save changes', exact=True), mode)
             e2 = second.locator('#task-message-%s details.bms-tui-message-edit' % message)
-            with second.expect_navigation():
+            with second.expect_navigation(wait_until='networkidle'):
                 activate(second, e2.get_by_role('button', name='Save changes', exact=True), mode)
             second.wait_for_load_state('networkidle')
             e2 = second.locator('#task-message-%s details.bms-tui-message-edit' % message)
@@ -183,7 +185,7 @@ with sync_playwright() as pw:
                 checkbox.check()
             else:
                 checkbox.focus(); page.keyboard.press('Space')
-            with page.expect_navigation():
+            with page.expect_navigation(wait_until='networkidle'):
                 activate(page, w.get_by_role('button', name='Delete', exact=True), mode)
             page.reload(wait_until='networkidle')
             old = ctx.request.get(local_url(file_url), max_redirects=0)
