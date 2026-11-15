@@ -30,7 +30,8 @@ def verify(archive, manifest, expected_zip, expected_manifest):
             raise ValueError('missing module version')
         for info in z.infolist():
             p = PurePosixPath(info.filename)
-            if p.is_absolute() or '..' in p.parts or '\\' in info.filename or p.parts[0] != 'kbacompany':
+            if (p.is_absolute() or '..' in p.parts or '\\' in info.filename or p.parts[0] != 'kbacompany'
+                    or p.as_posix() != info.filename or any(':' in part for part in p.parts)):
                 raise ValueError('unsafe or foreign component path')
             if info.is_dir() or stat.S_ISLNK(info.external_attr >> 16) or info.file_size > 128 * 1024**2:
                 raise ValueError('unsupported entry')

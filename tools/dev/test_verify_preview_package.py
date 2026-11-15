@@ -53,5 +53,9 @@ class BindingTest(unittest.TestCase):
         z, m, _ = self.fixture(['kbacompany/version.php', 'kbacompany/config.php'])
         with self.assertRaisesRegex(ValueError, 'sensitive'): self.runcheck(z, m)
 
+    def test_normalized_duplicate_destination_is_rejected(self):
+        z, m, _ = self.fixture(['kbacompany/version.php', 'kbacompany//version.php'])
+        with self.assertRaisesRegex(ValueError, 'unsafe'): self.runcheck(z, m)
+
 
 if __name__ == '__main__': unittest.main()
