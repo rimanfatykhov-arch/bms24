@@ -32,6 +32,9 @@ def check(root=ROOT):
         'local/kbacompany/styles.css': '1eeea0a3ff0c5ab3911aa298b5e540b52d2ced6fe5728e08a13c61cbe75cdcfd',
         'local/kbacompany/tests/communication_service_test.php': 'd8d27f74f3caa377a01ac0dc6072e7cadb2368532c0bf077014fa35dcaef95bd',
     })
+    # Issue106: exact append-only daily-report keys; published language prefixes preserved.
+    reviewed_followup['local/kbacompany/lang/en/local_kbacompany.php'] = '6ca3d4ce9b37504d5fcb1c7335fb8ddcfe0a3d2f56bd1726df0fea0efb04e16b'
+    reviewed_followup['local/kbacompany/lang/ru/local_kbacompany.php'] = 'ff8455235124a72be0d3f2d6c64c546028d6228e37027878eb6671b7c2417a17'
     reviewed_metadata={'AGENTS.md','docs/00_MASTER_CONTEXT.md'}
     for name, expected in plan['unchanged_schema_hashes'].items():
         target = {'local/kbacompany/db/install.xml': '5d61fb813ca0e1da1ab67db808b5a1da321cadfccef3e2c499e8dee279f5e576'}.get(name, expected)
