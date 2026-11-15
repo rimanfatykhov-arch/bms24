@@ -1,6 +1,5 @@
 """Exact hash exceptions must not become path exemptions."""
 import importlib.util
-import hashlib
 import json
 from pathlib import Path
 import shutil
@@ -11,6 +10,10 @@ ROOT = Path(__file__).resolve().parents[2]
 spec = importlib.util.spec_from_file_location('preservation', ROOT / 'tools/check_pr53_pr56_integration.py')
 gate = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(gate)
+
+
+FOLLOWUPS = ['docs/reconcile/task-open-source-preservation.json',
+             'docs/reconcile/daily-summary-after110-source-preservation.json']
 
 
 class SourcePreservationTest(unittest.TestCase):
@@ -29,8 +32,16 @@ class SourcePreservationTest(unittest.TestCase):
             target.parent.mkdir(parents=True, exist_ok=True)
             shutil.copy2(ROOT / name, target)
         evidence = json.loads((ROOT / 'docs/reconcile/pr102-source-preservation.json').read_text(encoding='utf-8'))
-        self.reviewed = evidence['files']
-        self.assertEqual(5, len(self.reviewed))
+        self.assertEqual(5, len(evidence['files']))
+        # Later exact follow-ups must chain from the previous reviewed content (before == earlier after).
+        latest = {row['path']: dict(row) for row in evidence['files']}
+        for name in FOLLOWUPS:
+            later = json.loads((ROOT / name).read_text(encoding='utf-8'))
+            for row in later['files']:
+                self.assertIn(row['path'], latest, 'follow-up must extend an already reviewed path')
+                self.assertEqual(latest[row['path']]['after_sha256_lf'], row['before_sha256_lf'], row['path'])
+                latest[row['path']] = dict(row)
+        self.reviewed = list(latest.values())
         self.assertEqual([], gate.check(self.root), 'exact candidate must first pass')
 
     def assert_mutation_blocked(self, name, prefix):
@@ -45,18 +56,7 @@ class SourcePreservationTest(unittest.TestCase):
     def test_exact_review_evidence_matches_candidate(self):
         for row in self.reviewed:
             with self.subTest(path=row['path']):
-                # The #102 evidence is immutable. #106 appends its own language keys;
-                # assert the exact historical prefix AND the exact current full-file gate.
-                path = self.root / row['path']
-                data = path.read_bytes().replace(b'\r\n', b'\n')
-                marker = b'\n// Issue #106: canonical read-only personal day summary.\n'
-                if row['path'] in ('local/kbacompany/lang/en/local_kbacompany.php',
-                                   'local/kbacompany/lang/ru/local_kbacompany.php'):
-                    self.assertEqual(1, data.count(marker))
-                    self.assertEqual(row['after_sha256_lf'], hashlib.sha256(data.split(marker)[0]).hexdigest())
-                    self.assertEqual([], gate.check(self.root))
-                else:
-                    self.assertEqual(row['after_sha256_lf'], gate.digest(path))
+                self.assertEqual(row['after_sha256_lf'], gate.digest(self.root / row['path']))
 
     def test_every_reviewed_path_still_rejects_unreviewed_changes(self):
         for row in self.reviewed:

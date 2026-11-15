@@ -596,11 +596,108 @@ def message_action_checks(obs, exitcode=None):
             'message_actions_server_negatives': negatives}
 
 
+TASK_OPEN_CASES = [('owned', 1440, 'en'), ('legacy', 320, 'ru')]
+TASK_OPEN_TEXT = {'en': 'opened the task', 'ru': 'открыл задачу'}
+
+
+def task_open_checks(obs, exitcode=None):
+    """"User opened the task" History event (task_open.py): one event per user+task per 15 minutes, only from a visible
+    successfully rendered card, server-side access re-check, no business change. Verdicts come from DB rows."""
+    def run():
+        require(exitcode == 0, 'task open browser process failed or was not run')
+        require(isinstance(obs, dict) and obs.get('status') == 'PASS' and not obs.get('error'), 'task open run incomplete')
+        rows = obs.get('cases')
+        require(isinstance(rows, list) and [(r.get('shell'), r.get('width'), r.get('lang')) for r in rows] == TASK_OPEN_CASES,
+                'owned/legacy x desktop/mobile x EN/RU cases required')
+        require(obs.get('readable') == {'MA': True, 'EA': True, 'RA': False, 'EB': False},
+                'fixture access precondition (MA/EA read, RA/EB cannot) not met')
+        return rows
+
+    def first():
+        for r in run():
+            require(r.get('list') == {'marker': 0, 'rows': 0}, 'task list wrote or prepared an opened event')
+            require(r.get('first') == {'status': '200', 'rows': 1}, 'first opening did not write exactly one event')
+            h = r.get('history') or {}
+            texts = h.get('texts') or []
+            require(h.get('count') == 1 and h.get('visible') is True and len(texts) == 1, 'History must show exactly one opening')
+            lang = r['lang']
+            require((r.get('language') or {}).get('installed') is True and (h.get('html_lang') or '').split('-')[0] == lang,
+                    'page language %s not active' % lang)
+            require(TASK_OPEN_TEXT[lang] in texts[0] and TASK_OPEN_TEXT[lang] in ((r.get('language') or {}).get('sample') or ''),
+                    'History text must say "%s"' % TASK_OPEN_TEXT[lang])
+            require(not re.search(r'\bread\b|прочит|ознаком', texts[0], re.I),
+                    'History must not claim reading or acknowledgement')
+
+    def dedupe():
+        for r in run():
+            require(r.get('repeat') == {'reload_status': '200', 'rows': 1}, 'reload or card tabs wrote a duplicate')
+            i = r.get('interval') or {}
+            require(i.get('idle_rows') == 1, 'an open page wrote an event by itself after the interval')
+            require(i.get('status') == '200' and i.get('rows') == 2, 'reopening after the interval did not write one event')
+            c = r.get('concurrent') or {}
+            replies = c.get('replies') or []
+            require(len(replies) == 8 and all(x.get('http') == 200 for x in replies), 'concurrent requests failed')
+            require([x.get('result') for x in replies].count('recorded') == 1 and c.get('rows') == 3,
+                    'concurrent requests wrote more or less than one event')
+
+    def hidden():
+        for r in run():
+            h = r.get('hidden') or {}
+            require(h.get('before_activation') == 0, 'hidden tab wrote an event before activation')
+            require(h.get('status') == '200' and h.get('after_activation') == 1, 'activation or another user did not write own event')
+
+    def business():
+        for r in run():
+            b = r.get('business') or {}
+            require(isinstance(b.get('before'), dict) and b.get('before') == b.get('after'),
+                    'task state, business history or notifications changed')
+            shape = r.get('row_shape')
+            require(isinstance(shape, list) and shape and all(x.get('oldstatus') == '' and x.get('newstatus') == ''
+                    and x.get('details') == '{}' for x in shape), 'opened event carries status or extra data')
+
+    def failure():
+        run()
+        fl = obs.get('failure') or {}
+        require(fl.get('status') == 'failed' and fl.get('title_visible') is True and fl.get('tabs') == 1
+                and fl.get('page_errors') == [] and fl.get('rows') == 0, 'a failing endpoint broke the card or wrote')
+
+    def events():
+        for r in run():
+            violations = browser_event_violations(r.get('browser_events'))
+            require(not violations, 'browser errors: %r' % violations[:3])
+            require(r.get('server_errors') == [], 'HTTP 5xx during task open: %r' % (r.get('server_errors'),))
+
+    def negatives():
+        run()
+        n = obs.get('negatives') or {}
+        for key, code in (('wrong_sesskey', 403), ('get', 405), ('head', 405), ('substituted_task', 403),
+                          ('company_task_mismatch', 403)):
+            x = n.get(key) or {}
+            require(x.get('http') == code and x.get('rows') == 0, '%s not rejected without a record' % key)
+        for key in ('same_company_no_access', 'other_company'):
+            x = n.get(key) or {}
+            require(x.get('http') == 403 and x.get('rows') == 0 and x.get('marker') == 0 and x.get('rows_after_page') == 0,
+                    '%s not rejected or a denied page prepared an event' % key)
+        us = n.get('user_substitution') or {}
+        ids = obs.get('ids') or {}
+        require(us.get('http') == 200 and us.get('result') == 'recorded' and isinstance(us.get('rows'), list)
+                and [x.get('actorid') for x in us['rows']] == [ids.get('MA')] and ids.get('MA') != ids.get('EA'),
+                'server did not record the session user')
+        rv = n.get('revoked_member') or {}
+        require(rv.get('http') == 403 and rv.get('rows') == 0 and rv.get('revoked') is True and n.get('reopened') is True,
+                'revoked member not rejected or revocation not reverted')
+
+    return {'task_open_recorded_once_in_history': first, 'task_open_deduplicated_and_concurrent': dedupe,
+            'task_open_hidden_tab_and_other_user': hidden, 'task_open_no_business_change': business,
+            'task_open_failure_keeps_card': failure, 'task_open_no_browser_errors': events,
+            'task_open_server_negatives': negatives}
+
+
 def required_check_names():
     """Every check a complete BROWSER report must contain (used by browser_acceptance.py and merge_gate.py)."""
     return (['moodle_install', 'fixtures_companies_A_B'] + list(task_tab_checks({})) + list(attachments_checks({}, {}))
             + list(access_checks({})) + list(oversize_checks({}, {})) + list(multiattachment_checks({}))
-            + list(message_action_checks({})))
+            + list(message_action_checks({})) + list(task_open_checks({})))
 
 
 def evaluate(checks):

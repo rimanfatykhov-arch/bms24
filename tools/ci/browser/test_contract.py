@@ -476,12 +476,91 @@ class ContractTest(unittest.TestCase):
             self.assertIsNone(c.expected_sha(bad), bad)
         self.assertEqual(c.expected_sha('p02-compact.txt'), c.SHA['p02-compact.txt'])
 
+    def task_open_obs(self):
+        rows = []
+        for shell, width, lang in c.TASK_OPEN_CASES:
+            text = c.TASK_OPEN_TEXT[lang]
+            snap = {'task': {'status': 'new', 'revision': '1'}, 'business_log': 1, 'notifications': 0}
+            rows.append({'shell': shell, 'width': width, 'lang': lang,
+                         'language': {'installed': True, 'sample': 'X ' + text}, 'list': {'marker': 0, 'rows': 0},
+                         'first': {'status': '200', 'rows': 1},
+                         'history': {'count': 1, 'visible': True, 'html_lang': lang, 'texts': ['First MA ' + text + '\n15.11.2026 10:00']},
+                         'repeat': {'reload_status': '200', 'rows': 1},
+                         'hidden': {'before_activation': 0, 'status': '200', 'after_activation': 1},
+                         'interval': {'idle_rows': 1, 'status': '200', 'rows': 2},
+                         'concurrent': {'replies': [{'http': 200, 'result': 'recorded'}] + [{'http': 200, 'result': 'duplicate'}] * 7,
+                                        'rows': 3},
+                         'business': {'before': snap, 'after': copy.deepcopy(snap)},
+                         'row_shape': [{'actorid': 1, 'oldstatus': '', 'newstatus': '', 'details': '{}'}],
+                         'browser_events': list(ABORTED), 'server_errors': []})
+        neg = {k: {'http': code, 'rows': 0} for k, code in (('wrong_sesskey', 403), ('get', 405), ('head', 405),
+                                                              ('substituted_task', 403), ('company_task_mismatch', 403))}
+        neg.update({k: {'http': 403, 'rows': 0, 'marker': 0, 'rows_after_page': 0, 'page_http': 404}
+                    for k in ('same_company_no_access', 'other_company')})
+        neg.update({'user_substitution': {'http': 200, 'result': 'recorded', 'ok': True, 'rows': [{'actorid': 11}]},
+                    'revoked_member': {'http': 403, 'rows': 0, 'revoked': True}, 'reopened': True})
+        return {'status': 'PASS', 'cases': rows, 'negatives': neg, 'ids': {'MA': 11, 'EA': 12},
+                'readable': {'MA': True, 'EA': True, 'RA': False, 'EB': False},
+                'failure': {'status': 'failed', 'title_visible': True, 'tabs': 1, 'page_errors': [], 'rows': 0}}
+
+    def test_task_open_valid_passes_and_mutations_fail(self):
+        obs = self.task_open_obs()
+        res = c.evaluate(c.task_open_checks(obs, 0))
+        self.assertEqual({k: 'PASS' for k in res}, {k: v['status'] for k, v in res.items()}, res)
+
+        def fails(check, mutate):
+            o = copy.deepcopy(obs); mutate(o)
+            r = c.evaluate(c.task_open_checks(o, 0))
+            self.assertEqual('FAIL', r[check]['status'], (check, r[check]))
+        fails('task_open_recorded_once_in_history', lambda o: o['cases'][0]['list'].update(rows=1))
+        fails('task_open_recorded_once_in_history', lambda o: o['cases'][1]['first'].update(rows=2))
+        fails('task_open_recorded_once_in_history', lambda o: o['cases'][0]['history'].update(count=2))
+        fails('task_open_recorded_once_in_history', lambda o: o['cases'][0]['history'].update(texts=['First MA read the task']))
+        fails('task_open_recorded_once_in_history', lambda o: o['cases'][1]['history'].update(texts=['Ivan прочитал задачу']))
+        fails('task_open_recorded_once_in_history', lambda o: o['cases'][1]['history'].update(texts=['Ivan opened the task']))
+        fails('task_open_recorded_once_in_history', lambda o: o['cases'][1]['history'].update(html_lang='en'))
+        fails('task_open_recorded_once_in_history', lambda o: o['cases'][1]['language'].update(installed=False))
+        fails('task_open_deduplicated_and_concurrent', lambda o: o['cases'][0]['repeat'].update(rows=2))
+        fails('task_open_deduplicated_and_concurrent', lambda o: o['cases'][1]['interval'].update(idle_rows=2))
+        fails('task_open_deduplicated_and_concurrent', lambda o: o['cases'][0]['interval'].update(rows=1))
+        fails('task_open_deduplicated_and_concurrent', lambda o: o['cases'][0]['concurrent'].update(rows=4))
+        fails('task_open_deduplicated_and_concurrent',
+              lambda o: o['cases'][1]['concurrent']['replies'].__setitem__(1, {'http': 200, 'result': 'recorded'}))
+        fails('task_open_deduplicated_and_concurrent', lambda o: o['cases'][1]['concurrent']['replies'].pop())
+        fails('task_open_hidden_tab_and_other_user', lambda o: o['cases'][0]['hidden'].update(before_activation=1))
+        fails('task_open_hidden_tab_and_other_user', lambda o: o['cases'][1]['hidden'].update(after_activation=0))
+        fails('task_open_no_business_change', lambda o: o['cases'][0]['business']['after']['task'].update(status='inprogress'))
+        fails('task_open_no_business_change', lambda o: o['cases'][1]['business']['after'].update(notifications=1))
+        fails('task_open_no_business_change', lambda o: o['cases'][0]['row_shape'][0].update(details='{"ip":"x"}'))
+        fails('task_open_failure_keeps_card', lambda o: o['failure'].update(page_errors=['TypeError']))
+        fails('task_open_failure_keeps_card', lambda o: o['failure'].update(rows=1))
+        fails('task_open_no_browser_errors',
+              lambda o: o['cases'][0]['browser_events'].append({'source': 'pageerror', 'name': 'Error', 'message': 'x'}))
+        fails('task_open_no_browser_errors', lambda o: o['cases'][1].update(server_errors=[{'status': 500}]))
+        for key in ('wrong_sesskey', 'get', 'head', 'substituted_task', 'company_task_mismatch',
+                    'same_company_no_access', 'other_company'):
+            fails('task_open_server_negatives', lambda o, key=key: o['negatives'][key].update(rows=1))
+            fails('task_open_server_negatives', lambda o, key=key: o['negatives'].pop(key))
+        fails('task_open_server_negatives', lambda o: o['negatives']['same_company_no_access'].update(marker=1))
+        fails('task_open_server_negatives', lambda o: o['negatives']['user_substitution'].update(rows=[{'actorid': 12}]))
+        fails('task_open_server_negatives', lambda o: o['negatives']['revoked_member'].update(http=200))
+        fails('task_open_server_negatives', lambda o: o['negatives'].update(reopened=False))
+        # incomplete matrix, wrong fixture access, producer error or non-zero exit fail every check
+        for mutate, code in ((lambda o: o['cases'].pop(), 0), (lambda o: o['cases'].reverse(), 0),
+                             (lambda o: o['readable'].update(RA=True), 0), (lambda o: o.update(error='boom'), 0),
+                             (lambda o: None, 1)):
+            o = copy.deepcopy(obs); mutate(o)
+            r = c.evaluate(c.task_open_checks(o, code))
+            self.assertTrue(all(v['status'] == 'FAIL' for v in r.values()), r)
+        self.assertTrue(all(v['status'] == 'FAIL' for v in c.evaluate(c.task_open_checks(None, None)).values()))
+
     def test_required_check_names_complete(self):
         names = c.required_check_names()
         self.assertEqual(len(names), len(set(names)))
         for k in ('access_no_browser_errors', 'attachments_no_browser_errors', 'oversize_no_browser_errors', 'task_tab_run_complete', 'task_tab_mobile_tap_target_44', 'csrf_invalid_sesskey_rejected', 'revocation_preserves_history',
                   'download_other_company_denied', 'revoke_in_open_session_denied', 'oversize_nothing_stored', 'moodle_install',
-                  'message_withdraw_hides_text_and_files', 'message_actions_server_negatives'):
+                  'message_withdraw_hides_text_and_files', 'message_actions_server_negatives',
+                  'task_open_recorded_once_in_history', 'task_open_server_negatives'):
             self.assertIn(k, names)
 
     def test_oversize_requires_sent_request_effective_limit_and_nothing_stored(self):

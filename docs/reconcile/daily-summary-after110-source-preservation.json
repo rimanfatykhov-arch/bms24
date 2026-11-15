@@ -1,0 +1,17 @@
+{
+  "baseline_head": "43c528d23836d14c08e14be5b3441916b763808f",
+  "daily_summary_source": "8e503f5126ed314f56c0ef971c407dcd7073db17",
+  "method": "Append the identical 18 dailyreport keys to each published110 file; preserve all prior bytes and the immutable review chain.",
+  "files": [
+    {
+      "path": "local/kbacompany/lang/en/local_kbacompany.php",
+      "before_sha256_lf": "cf9761113aa0dd206c0c52ed9b3cdb13aebe2be2b51bf91cd5c55cac0fd18ff4",
+      "after_sha256_lf": "35f7107fb19132298ef3a922bcf6b26bed0d794b685ea0c0f19e38d45217f8d0"
+    },
+    {
+      "path": "local/kbacompany/lang/ru/local_kbacompany.php",
+      "before_sha256_lf": "77808151a0f34400a2ae8868ddae57b703e8dfda4a15b0f8ddd2710eadb76d06",
+      "after_sha256_lf": "5088d5ad0e296bb509a1156e561502cb63208eecca97d7ae03ba8870046c0546"
+    }
+  ]
+}

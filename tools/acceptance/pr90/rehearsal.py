@@ -95,6 +95,7 @@ def smoke(phase):
     write_checks(phase)
     multiattachment_checks(phase)
     message_action_checks(phase)
+    task_open_checks(phase)
     menu_overlay_checks(phase)
     for mode in ['owned','legacy']:
         cmd(['php',Path(__file__).with_name('shell.php'),mode],stdout=subprocess.DEVNULL)
@@ -134,6 +135,20 @@ def message_action_checks(phase):
     (public/(phase+'-message-actions.json')).write_text(json.dumps({'exitcode':result.returncode,'checks':checks,'observations':obs},indent=2))
     if not checks or any(v['status']!='PASS' for v in checks.values()):
         raise RuntimeError('required message edit/withdraw acceptance failed')
+
+def task_open_checks(phase):
+    """"User opened the task" History event on the installed package (owned/legacy, 1440/320, hidden tab, concurrency)."""
+    sys.path.insert(0,str(scripts)); import contract
+    target=ev/(phase+'-task-open');target.mkdir()
+    shutil.copyfile(ev/'actors.private.json',target/'actors.private.json')
+    result=subprocess.run([sys.executable,str(scripts/'task_open.py')],cwd=core,
+        env=dict(env,EVIDENCE=str(target),MOODLE_ROOT=str(core)),stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL)
+    resultfile=target/'task-open-result.json'
+    obs=json.loads(resultfile.read_text()) if resultfile.exists() else None
+    checks=contract.evaluate(contract.task_open_checks(obs,result.returncode))
+    (public/(phase+'-task-open.json')).write_text(json.dumps({'exitcode':result.returncode,'checks':checks,'observations':obs},indent=2))
+    if not checks or any(v['status']!='PASS' for v in checks.values()):
+        raise RuntimeError('required task opened acceptance failed')
 
 def validate_menu_report(obs,mode,csshash):
     """Independently validate complete observations, not a producer PASS label/count."""

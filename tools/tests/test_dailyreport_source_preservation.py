@@ -9,8 +9,8 @@ from unittest.mock import patch
 ROOT=Path(__file__).resolve().parents[2]
 spec=importlib.util.spec_from_file_location('preservation',ROOT/'tools/check_pr53_pr56_integration.py')
 gate=importlib.util.module_from_spec(spec);spec.loader.exec_module(gate)
-PUBLISHED={'en':'0494fad97271909666a779281d1eb25944b8cc9bf55e1df5ff73f356922c8dc1',
-           'ru':'6dd439078e4a5afa7d409d162a09bf008795d7e5336ab72a80cc59b7de3bc274'}
+PUBLISHED={'en':'cf9761113aa0dd206c0c52ed9b3cdb13aebe2be2b51bf91cd5c55cac0fd18ff4',
+           'ru':'77808151a0f34400a2ae8868ddae57b703e8dfda4a15b0f8ddd2710eadb76d06'}
 
 class Preservation(unittest.TestCase):
     def test_published_prefix_unchanged_and_new_keys_do_not_override_old(self):
