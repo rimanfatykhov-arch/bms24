@@ -22,3 +22,13 @@ proves that any further unreviewed edit fails.
 
 Merge note: rebased onto #113 `5924bc0`. If #113 changes again (Codex is fixing the dev HTTP 500), this follow-up is
 rebased once more and its lang `before` re-chained on the new #113 `after`; old hashes are never carried over.
+
+## Day-summary lang guard (#113) extended, not relaxed
+
+`tools/tests/test_dailyreport_source_preservation.py` (from #107/#113) asserted that everything after the day-summary
+marker is exactly its 18 `dailyreport_*` keys, i.e. that the day summary is the last lang block. Appending this cleanup's
+23 strings after it is the same append-only pattern, so the test now splits at the next marker and checks each link:
+published #110 prefix hash (unchanged), the day-summary block (18 keys, unique, no overrides) **and** the exact #113 file
+hash up to the cleanup marker, then the cleanup block (23 keys, unique, allowed prefixes, no overrides of any earlier key).
+Negative checks retained and extended: appended bytes, overridden day-summary key, overridden cleanup key, cleanup block
+moved in front of the day summary, cleanup key redefining a day-summary key — all fail.
