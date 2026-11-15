@@ -1,0 +1,276 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Прототип — Отчёты за день</title>
+<!-- Существующая дизайн-система BMS24 из репозитория: токены, owned shell, UI Kit. Новых цветов нет. -->
+<link rel="stylesheet" href="../../../local/kbacompany/bms_ui/tokens.css">
+<link rel="stylesheet" href="../../../local/kbacompany/bms_ui/owned_shell.css">
+<link rel="stylesheet" href="../../../local/kbacompany/bms_ui/ui_kit.css">
+<style>
+/* Только компоновка прототипа, на токенах BMS24. */
+.bms24-app .dr-proto {display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;margin:0 0 16px;padding:10px 14px;border:2px dashed var(--bms24-color-agent);border-radius:10px;background:#F5F0FC;color:var(--bms24-color-navy);font-size:13px;}
+.bms24-app .dr-proto strong {color:var(--bms24-color-agent);letter-spacing:.04em;}
+.bms24-app .dr-proto label {display:inline-flex;gap:6px;align-items:center;}
+.bms24-app .dr-proto select {padding:4px 6px;border:1px solid #B9CDD6;border-radius:6px;font:inherit;}
+.bms24-app .dr-stack {display:grid;gap:16px;}
+.bms24-app .dr-two {display:grid;grid-template-columns:minmax(0,1.6fr) minmax(0,1fr);gap:16px;align-items:start;}
+.bms24-app .dr-row {display:flex;flex-wrap:wrap;gap:10px;align-items:center;}
+.bms24-app .dr-between {display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between;}
+.bms24-app .dr-field {display:grid;gap:6px;margin-bottom:14px;}
+.bms24-app .dr-field textarea, .bms24-app .dr-field input, .bms24-app .dr-field select {width:100%;padding:10px 12px;border:1px solid #B9CDD6;border-radius:var(--bms24-radius-control);font:inherit;font-size:14px;background:#fff;color:var(--bms24-color-text);}
+.bms24-app .dr-field textarea {min-height:76px;resize:vertical;}
+.bms24-app .dr-field textarea[readonly] {background:#F6FAFB;}
+.bms24-app .dr-auto {border-left:4px solid var(--bms24-color-info);}
+.bms24-app .dr-auto li, .bms24-app .dr-list li {margin:0 0 10px;}
+.bms24-app .dr-list {list-style:none;padding:0;margin:0;}
+.bms24-app .dr-src {display:inline-block;margin-left:6px;padding:1px 7px;border-radius:20px;background:#EDF2F5;color:#354D5B;font-size:11px;font-weight:650;}
+.bms24-app .dr-muted {color:var(--bms24-color-text-muted);font-size:13px;}
+.bms24-app .dr-versions {list-style:none;padding:0;margin:0;display:grid;gap:8px;}
+.bms24-app .dr-versions li {padding:10px 12px;border:1px solid var(--bms24-border);border-radius:10px;background:#fff;}
+.bms24-app .dr-versions li.is-current {border-color:var(--bms24-color-primary);box-shadow:inset 3px 0 0 var(--bms24-color-primary);}
+.bms24-app .dr-matrix td, .bms24-app .dr-matrix th {text-align:center;white-space:nowrap;}
+.bms24-app .dr-matrix td:first-child, .bms24-app .dr-matrix th:first-child {text-align:left;}
+.bms24-app .dr-cell {display:inline-flex;align-items:center;justify-content:center;min-width:34px;padding:3px 6px;border-radius:8px;font-weight:700;}
+.bms24-app .dr-cards {display:none;}
+.bms24-app .dr-card {padding:12px 14px;border:1px solid var(--bms24-border);border-radius:12px;background:#fff;margin-bottom:10px;}
+.bms24-app .dr-card h3 {margin:0 0 6px;font-size:15px;color:var(--bms24-color-navy);}
+.bms24-app .dr-legend {display:flex;flex-wrap:wrap;gap:8px;margin:10px 0 0;}
+.bms24-app .dr-choice {display:flex;flex-wrap:wrap;gap:8px;margin:6px 0 12px;}
+.bms24-app .dr-choice label {display:inline-flex;gap:6px;align-items:center;padding:8px 12px;border:1px solid var(--bms24-border);border-radius:9px;background:#fff;cursor:pointer;}
+.bms24-app .dr-toast {position:fixed;left:50%;bottom:18px;transform:translateX(-50%);max-width:min(92vw,520px);padding:12px 16px;border-radius:10px;background:var(--bms24-color-navy);color:#fff;font-size:14px;box-shadow:0 8px 24px #0004;z-index:99;display:none;}
+.bms24-app .dr-diff {display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.bms24-app .dr-short {display:none;}
+@media(max-width:860px){
+  .bms24-app .dr-two {grid-template-columns:1fr;}
+  .bms24-app .dr-hide-mobile {display:none;}
+  .bms24-app .dr-cards {display:block;}
+  .bms24-app .dr-diff {grid-template-columns:1fr;}
+  .bms24-app .dr-long {display:none;}
+  .bms24-app .dr-short {display:inline;}
+  .bms24-app .bms24-ui-tab {padding:9px 10px;}
+  .bms24-app .dr-actions .bms24-ui-btn {flex:1 1 100%;}
+}
+</style>
+</head>
+<body class="bms24-owned-page">
+<div class="bms24-app" data-bms24-owned-shell="1">
+  <a class="bms24-skip" href="#bms24-main">Перейти к содержанию</a>
+  <aside class="bms24-sidebar" aria-label="Навигация BMS24">
+    <div class="bms24-brand"><a href="#my/draft">BMS24</a><span class="bms24-brandcompany">ООО «Пример» · синтетические данные</span></div>
+    <div id="dr-nav"></div>
+  </aside>
+  <section class="bms24-frame">
+    <header class="bms24-topbar">
+      <details class="bms24-mobilemenu"><summary>Меню</summary><nav aria-label="Навигация BMS24" id="dr-nav-mobile"></nav></details>
+      <nav class="bms24-crumbs" aria-label="Хлебные крошки"><span>ООО «Пример»</span><span id="dr-crumb">Отчёты за день</span></nav>
+      <div class="bms24-topactions"><span class="dr-muted">Вы: <strong id="dr-who">Анна Смирнова</strong></span></div>
+    </header>
+    <main id="bms24-main" class="bms24-main" tabindex="-1">
+      <div class="dr-proto" role="note">
+        <strong>ПРОТОТИП</strong><span>Синтетические данные. Кнопки ничего не сохраняют и не связаны с BMS24.</span>
+        <label>Экран <select id="dr-screen" aria-label="Экран прототипа">
+          <option value="my">А. Мой отчёт</option><option value="history">Б. История отчётов</option>
+          <option value="queue">В. Отчёты сотрудников</option><option value="review">Г. Проверка отчёта</option>
+          <option value="noaccess">Нет доступа</option></select></label>
+        <label>Состояние <select id="dr-state" aria-label="Состояние экрана"></select></label>
+        <a href="mobile.html">Мобильный вид</a>
+      </div>
+      <section class="bms24-pageintro">
+        <h1>Отчёты за день</h1>
+        <p>Отчёт сотрудника за конкретную дату, проверка руководителем и история.</p>
+      </section>
+      <nav class="bms24-ui-tabs" aria-label="Разделы отчётов" id="dr-tabs"></nav>
+      <div class="bms24-content" id="dr-view"></div>
+    </main>
+  </section>
+  <div class="dr-toast" id="dr-toast" role="status" aria-live="polite"></div>
+</div>
+<script>
+(function () {
+  'use strict';
+  var STATES = {
+    my: [['none','Отчёта ещё нет'],['draft','Черновик'],['submitted','Отправлен'],['returned','Возвращён с причиной'],
+         ['accepted','Принят и оценён'],['conflict','Конфликт версии'],['error','Ошибка сохранения']],
+    history: [['list','Список по датам']],
+    queue: [['review','На проверке'],['returned','Возвращены'],['accepted','Приняты'],['matrix','Сотрудники × дни']],
+    review: [['pending','Ожидает решения'],['accepted','Принят и оценён'],['returnform','Возврат: причина не указана']],
+    noaccess: [['denied','Нет доступа']]
+  };
+  var STATUS = {
+    none: ['new','○','Отчёта нет'], draft: ['draft','✎','Черновик'], submitted: ['review','⏳','На проверке'],
+    returned: ['returned','↩','Возвращён'], accepted: ['done','✓','Принят'], late: ['paused','⏰','Отправлен позже']
+  };
+  var RATING = {positive:['👍','Положительная оценка'], negative:['👎','Отрицательная оценка'], none:['—','Принят без оценки']};
+  function badge(key, extra) { var s = STATUS[key];
+    return '<span class="bms24-ui-status bms24-ui-status--' + s[0] + '"><span aria-hidden="true">' + s[1] + '</span>' + s[2] + (extra ? ' · ' + extra : '') + '</span>'; }
+  function rating(key) { var r = RATING[key];
+    return '<span class="bms24-ui-status bms24-ui-status--active"><span aria-hidden="true">' + r[0] + '</span>' + r[1] + '</span>'; }
+  function btn(label, kind, go, note) {
+    return '<button type="button" class="bms24-ui-btn' + (kind ? ' bms24-ui-btn--' + kind : '') + '" data-go="' + (go || '') +
+      '" data-note="' + (note || '') + '">' + label + '</button>'; }
+  function alert(kind, html) { return '<div class="bms24-ui-alert' + (kind ? ' bms24-ui-alert--' + kind : '') + '" role="' + (kind === 'error' ? 'alert' : 'status') + '">' + html + '</div>'; }
+  function section(title, body, cls) { return '<section class="bms24-ui-section ' + (cls || '') + '"><h2>' + title + '</h2>' + body + '</section>'; }
+
+  var AUTO = section('Данные дня из BMS24 <span class="dr-src">только чтение</span>',
+    '<p class="bms24-ui-microcopy">Собраны автоматически. Срок задачи не означает, что она выполнена. Отправка результата не означает приёмку.</p>' +
+    '<ul class="dr-list dr-auto" style="padding-left:12px">' +
+    '<li><a href="#">Подготовить КП для «Альфа»</a> <span class="dr-src">срок 13.11</span><br><span class="dr-muted">Сейчас: на проверке · время по задаче, всего: 180 мин</span></li>' +
+    '<li><a href="#">Обновить прайс-лист Q4</a> <span class="dr-src">отправлено на проверку 13.11 16:40</span><br><span class="dr-muted">Результат: «Прайс обновлён, ссылка в файле»</span></li>' +
+    '<li><a href="#">Созвон с поставщиком</a> <span class="dr-src">из боевого плана недели</span><br><span class="dr-muted">Сейчас: в работе</span></li></ul>' +
+    '<p class="dr-muted">Часовой пояс: Europe/Moscow · день 13.11.2026, 00:00–24:00</p>', 'dr-auto');
+
+  var TEXT = {planned:'КП для «Альфа», прайс Q4, созвон с поставщиком.', done:'КП «Альфа» отправлено клиенту на согласование. Прайс Q4 обновлён и отправлен на проверку.',
+    notdone:'Созвон перенесён: поставщик не вышел на связь.', blockers:'Нужен контакт технического директора поставщика.', nextplan:'Созвон с поставщиком, правки КП после ответа клиента.'};
+  function field(id, label, value, ro, req) {
+    return '<div class="dr-field"><label class="bms24-ui-label" for="f-' + id + '">' + label + (req ? '<span class="bms24-ui-required" aria-hidden="true">*</span>' : '') + '</label>' +
+      '<textarea id="f-' + id + '"' + (ro ? ' readonly' : '') + (req ? ' required' : '') + '>' + (value || '') + '</textarea></div>'; }
+  function form(ro, values) { values = values || TEXT;
+    return field('planned','Что было запланировано',values.planned,ro) + field('done','Что сделано и какие результаты',values.done,ro,true) +
+      field('notdone','Что не выполнено и почему',values.notdone,ro) + field('blockers','Препятствия и нужная помощь',values.blockers,ro) +
+      field('nextplan','План на следующий рабочий день',values.nextplan,ro) +
+      '<fieldset class="dr-field"><legend class="bms24-ui-label">Связанные задачи</legend>' +
+      ['Подготовить КП для «Альфа»','Обновить прайс-лист Q4','Созвон с поставщиком'].map(function (t, i) {
+        return '<label><input type="checkbox" ' + (i < 2 ? 'checked ' : '') + (ro ? 'disabled ' : '') + 'style="width:auto"> ' + t + '</label>'; }).join('<br>') +
+      '<p class="bms24-ui-help">Названия отмеченных задач увидит проверяющий. Задачи не изменяются.</p></fieldset>' +
+      '<div class="dr-field"><span class="bms24-ui-label">Вложения</span><div class="dr-row"><span class="dr-src">kp-alfa.pdf · 240 КБ</span><span class="dr-src">price-q4.xlsx · 88 КБ</span>' +
+      (ro ? '' : btn('+ Добавить файл', 'quiet', '', 'Выбор файла')) + '</div></div>'; }
+  function dayPicker() {
+    return '<div class="dr-between"><div class="dr-row"><label class="bms24-ui-label" for="dr-day">Дата отчёта</label>' +
+      '<input id="dr-day" type="date" value="2026-11-13" max="2026-11-15" class="bms24-ui-input" style="padding:8px 10px;border:1px solid #B9CDD6;border-radius:9px">' +
+      btn('Показать', '', '', 'Переход к выбранной дате') + '</div><span class="dr-muted">Пятница, 13 ноября 2026</span></div>'; }
+  function versions(items) {
+    return '<ul class="dr-versions">' + items.map(function (v) { return '<li' + (v.cur ? ' class="is-current"' : '') + '><div class="dr-between"><strong>' + v.t + '</strong>' + v.b + '</div><div class="dr-muted">' + v.d + '</div></li>'; }).join('') + '</ul>'; }
+
+  var MY = {
+    none: function () { return dayPicker() + alert('', '<strong>За 13.11.2026 отчёта ещё нет.</strong> Ниже — данные дня из BMS24. Начните отчёт, чтобы сохранить свой текст.') +
+      '<div class="dr-two"><div class="dr-stack">' + section('Мой отчёт ' + badge('none'), '<p class="bms24-ui-microcopy">Черновик хранится в BMS24 и не виден руководителю до отправки.</p><div class="dr-row dr-actions">' + btn('Начать отчёт', 'primary', 'my/draft') + '</div>') + '</div>' + AUTO + '</div>'; },
+    draft: function () { return dayPicker() + '<div class="dr-two"><div class="dr-stack">' + section('Мой отчёт ' + badge('draft', 'версия 1'),
+      '<p class="bms24-ui-microcopy">Черновик сохранён 13.11.2026 в 18:05. Руководитель его не видит.</p>' + form(false) +
+      '<div class="dr-row dr-actions">' + btn('Сохранить черновик', '', 'my/draft', 'Черновик сохранён (прототип)') + btn('Отправить руководителю', 'primary', 'my/submitted') + '</div>' +
+      '<p class="bms24-ui-help">Проверяющий: Олег Петров (из боевого плана недели). Повторное нажатие не создаёт второй отправки.</p>') + '</div>' + AUTO + '</div>'; },
+    submitted: function () { return dayPicker() + alert('success', 'Отчёт отправлен 13.11.2026 в 18:12. Проверяющий: <strong>Олег Петров</strong>.') +
+      '<div class="dr-two"><div class="dr-stack">' + section('Мой отчёт ' + badge('submitted', 'версия 1'),
+      '<p class="bms24-ui-microcopy">Отправленная версия не меняется, даже если потом изменятся задачи.</p>' + form(true) +
+      '<div class="dr-row dr-actions">' + btn('Отозвать отправку', '', 'my/draft', 'Отзыв возможен до решения проверяющего') + '</div>') + '</div>' +
+      section('Версии', versions([{t:'Версия 1', b:badge('submitted'), d:'Отправлена 13.11 18:12 · ждёт решения', cur:true}])) + '</div>'; },
+    returned: function () { return dayPicker() + alert('warning', '<strong>Отчёт возвращён на доработку.</strong> Олег Петров, 14.11.2026 09:20:<br>«Укажите, какой ответ дал клиент «Альфа» и срок согласования КП.»') +
+      '<div class="dr-two"><div class="dr-stack">' + section('Мой отчёт ' + badge('returned', 'версия 1'),
+      form(true) + '<div class="dr-row dr-actions">' + btn('Доработать (создать версию 2)', 'primary', 'my/draft', 'Создан черновик версии 2 с текстом версии 1') + '</div>') + '</div>' +
+      section('Версии', versions([{t:'Версия 1', b:badge('returned'), d:'Отправлена 13.11 18:12 · возвращена 14.11 09:20 с причиной', cur:true}])) + '</div>'; },
+    accepted: function () { return dayPicker() + alert('success', '<strong>Отчёт принят.</strong> Олег Петров, 14.11.2026 11:02. ' + rating('positive') + '<br>Комментарий: «Хорошо, что сразу отметили риск по поставщику.»') +
+      '<div class="dr-two"><div class="dr-stack">' + section('Мой отчёт ' + badge('accepted', 'версия 2'), form(true) +
+      '<div class="dr-row dr-actions">' + btn('Исправить принятый отчёт', '', '', 'Создаст версию 3 с пояснением; оценка версии 2 останется в истории') + '</div>' +
+      '<p class="bms24-ui-help">Принятие отчёта не закрывает и не принимает задачи.</p>') + '</div>' +
+      section('Версии', versions([{t:'Версия 2', b:badge('accepted') + ' ' + rating('positive'), d:'Отправлена 14.11 10:15 · принята 14.11 11:02', cur:true},
+        {t:'Версия 1', b:badge('returned'), d:'Возвращена 14.11 09:20: «Укажите ответ клиента…»'}])) + '</div>'; },
+    conflict: function () { return dayPicker() + alert('error', '<strong>Черновик изменён в другом окне.</strong> Ваш текст не потерян. Сравните и выберите, что сохранить.') +
+      section('Конфликт версии черновика', '<div class="dr-diff"><div>' + field('mine','Ваш текст (не сохранён)','КП «Альфа» отправлено. Прайс Q4 обновлён.') + '</div><div>' +
+      field('theirs','Сохранено 13.11 18:07 в другом окне','КП «Альфа» отправлено клиенту на согласование. Прайс Q4 обновлён и отправлен на проверку.', true) + '</div></div>' +
+      '<div class="dr-row dr-actions">' + btn('Оставить мой текст', 'primary', 'my/draft') + btn('Взять сохранённый', '', 'my/draft') + '</div>'); },
+    error: function () { return dayPicker() + alert('error', '<strong>Черновик не сохранён:</strong> нет связи с сервером. Текст остаётся в форме. Повторите сохранение — дубля не будет.') +
+      '<div class="dr-two"><div class="dr-stack">' + section('Мой отчёт ' + badge('draft', 'есть несохранённые изменения'), form(false) +
+      '<div class="dr-row dr-actions">' + btn('Повторить сохранение', 'primary', 'my/draft') + '</div>') + '</div>' + AUTO + '</div>'; }
+  };
+
+  function historyView() {
+    var rows = [['13.11.2026, пт','accepted','positive','2','14.11 11:02'],['12.11.2026, чт','submitted','','1','—'],['11.11.2026, ср','accepted','none','1','12.11 10:30'],
+      ['10.11.2026, вт','late','','1','—'],['09.11.2026, пн','none','','—','—']];
+    var cell = function (r) { return (r[1] === 'late' ? badge('submitted') + ' ' + badge('late') : badge(r[1])) + (r[2] ? ' ' + rating(r[2]) : ''); };
+    return '<div class="bms24-ui-filterbar"><div class="dr-row"><label class="bms24-ui-label" for="h-from">Период</label><input id="h-from" type="date" value="2026-11-09"> — <input type="date" value="2026-11-15" aria-label="По">' +
+      '<select aria-label="Статус"><option>Все статусы</option><option>Черновик</option><option>На проверке</option><option>Возвращён</option><option>Принят</option></select></div></div>' +
+      section('Мои отчёты', '<div class="bms24-ui-table-wrap dr-hide-mobile" tabindex="0"><table class="bms24-ui-table"><thead><tr><th>Дата</th><th>Статус и оценка</th><th>Версия</th><th>Решение</th><th></th></tr></thead><tbody>' +
+      rows.map(function (r) { return '<tr><td>' + r[0] + '</td><td>' + cell(r) + '</td><td>' + r[3] + '</td><td>' + r[4] + '</td><td><a href="#my/' + (r[1] === 'none' ? 'none' : r[1] === 'late' ? 'submitted' : r[1]) + '">' + (r[1] === 'none' ? 'Составить' : 'Открыть') + '</a></td></tr>'; }).join('') +
+      '</tbody></table></div><div class="dr-cards">' + rows.map(function (r) { return '<div class="dr-card"><h3>' + r[0] + '</h3>' + cell(r) + '<div class="dr-muted" style="margin-top:6px">Версия ' + r[3] + ' · решение ' + r[4] + '</div><a href="#my/' + (r[1] === 'none' ? 'none' : 'accepted') + '">' + (r[1] === 'none' ? 'Составить' : 'Открыть') + '</a></div>'; }).join('') + '</div>' +
+      '<p class="bms24-ui-help">14–15.11 (выходные) не показаны как «не сдан»: в первом выпуске нет графика обязательной отчётности. «Отчёта нет» — нейтральный статус.</p>');
+  }
+
+  var PEOPLE = [['Анна Смирнова','Продажи','13.11','v1','13.11 18:12'],['Игорь Белов','Продажи','13.11','v2','14.11 08:40'],['Мария Ким','Закупки','12.11','v1','12.11 19:05']];
+  function queueView(state) {
+    var tabs = [['review','На проверке','3'],['returned','Возвращены','1'],['accepted','Приняты','12'],['matrix','Сотрудники × дни','']].map(function (t) {
+      return '<a class="bms24-ui-tab" href="#queue/' + t[0] + '"' + (t[0] === state ? ' aria-current="page"' : '') + '>' + t[1] + (t[2] ? ' (' + t[2] + ')' : '') + '</a>'; }).join('');
+    var filters = '<div class="bms24-ui-filterbar"><div class="dr-row"><select aria-label="Сотрудник"><option>Все сотрудники</option><option>Анна Смирнова</option></select>' +
+      '<select aria-label="Подразделение"><option>Все подразделения</option><option>Продажи</option><option>Закупки</option></select>' +
+      '<input type="date" value="2026-11-09" aria-label="С"> — <input type="date" value="2026-11-15" aria-label="По"></div></div>';
+    var body;
+    if (state === 'matrix') {
+      var days = ['пн 09','вт 10','ср 11','чт 12','пт 13','сб 14','вс 15'];
+      var grid = {'Анна Смирнова':['none','late','accepted','submitted','submitted','none','none'],'Игорь Белов':['accepted','accepted','returned','accepted','submitted','none','none'],'Мария Ким':['accepted','none','accepted','submitted','draft','none','none']};
+      var c = function (k) { var s = STATUS[k]; return '<span class="bms24-ui-status bms24-ui-status--' + s[0] + ' dr-cell" title="' + s[2] + '" aria-label="' + s[2] + '">' + s[1] + '</span>'; };
+      body = section('Сотрудники × дни, 09–15.11.2026', '<div class="bms24-ui-table-wrap dr-hide-mobile" tabindex="0"><table class="bms24-ui-table dr-matrix"><thead><tr><th>Сотрудник</th>' + days.map(function (d) { return '<th>' + d + '</th>'; }).join('') + '</tr></thead><tbody>' +
+        Object.keys(grid).map(function (n) { return '<tr><td>' + n + '</td>' + grid[n].map(function (k) { return '<td>' + c(k) + '</td>'; }).join('') + '</tr>'; }).join('') + '</tbody></table></div>' +
+        '<div class="dr-cards">' + Object.keys(grid).map(function (n) { return '<div class="dr-card"><h3>' + n + '</h3><div class="dr-row">' + grid[n].map(function (k, i) { return '<span class="dr-muted">' + days[i] + '</span>' + c(k); }).join(' ') + '</div></div>'; }).join('') + '</div>' +
+        '<div class="dr-legend">' + ['none','draft','submitted','returned','accepted','late'].map(function (k) { return badge(k); }).join('') + '</div>' +
+        '<p class="bms24-ui-help">Черновик сотрудника виден руководителю только как факт «черновик», без текста. «Не сдан» не используется, пока нет графика отчётности.</p>');
+    } else {
+      var st = state === 'review' ? 'submitted' : state;
+      var list = state === 'returned' ? [PEOPLE[1]] : state === 'accepted' ? [PEOPLE[2]] : PEOPLE;
+      body = section({review:'На проверке',returned:'Возвращены — ждут доработки',accepted:'Приняты'}[state],
+        '<div class="bms24-ui-table-wrap dr-hide-mobile" tabindex="0"><table class="bms24-ui-table"><thead><tr><th>Дата отчёта</th><th>Сотрудник</th><th>Подразделение</th><th>Версия</th><th>Отправлен</th><th>Статус</th><th></th></tr></thead><tbody>' +
+        list.map(function (p) { return '<tr><td>' + p[2] + '</td><td>' + p[0] + '</td><td>' + p[1] + '</td><td>' + p[3] + '</td><td>' + p[4] + '</td><td>' + badge(st) + (state === 'accepted' ? ' ' + rating('none') : '') + '</td><td><a href="#review/' + (state === 'accepted' ? 'accepted' : 'pending') + '">Открыть</a></td></tr>'; }).join('') +
+        '</tbody></table></div><div class="dr-cards">' + list.map(function (p) { return '<div class="dr-card"><h3>' + p[0] + ' · ' + p[2] + '</h3>' + badge(st) + '<div class="dr-muted" style="margin:6px 0">' + p[1] + ' · ' + p[3] + ' · отправлен ' + p[4] + '</div><a class="bms24-ui-btn" href="#review/pending">Открыть</a></div>'; }).join('') + '</div>');
+    }
+    return '<nav class="bms24-ui-tabs" aria-label="Очередь">' + tabs + '</nav>' + filters + body;
+  }
+
+  function reviewView(state) {
+    var head = '<p><a href="#queue/review">← К очереди</a></p><div class="dr-between"><h2 style="margin:0;color:var(--bms24-color-navy)">Анна Смирнова · 13.11.2026</h2>' +
+      (state === 'accepted' ? badge('accepted', 'версия 2') + rating('positive') : badge('submitted', 'версия 2')) + '</div><p class="dr-muted">Продажи · менеджер · отправлена 14.11.2026 10:15 · вы проверяющий (из боевого плана недели)</p>';
+    var report = section('Текст сотрудника', form(true, {planned:TEXT.planned, done:TEXT.done + ' Клиент ответит до 18.11.', notdone:TEXT.notdone, blockers:TEXT.blockers, nextplan:TEXT.nextplan}));
+    var snap = section('Задачи на момент отправки', '<ul class="dr-list"><li>Подготовить КП для «Альфа» <span class="dr-src">на 14.11 10:15: на проверке</span> <a href="#">открыть задачу сейчас</a></li>' +
+      '<li>Обновить прайс-лист Q4 <span class="dr-src">на 14.11 10:15: на проверке</span> <span class="dr-muted">· нет доступа к задаче сейчас</span></li></ul>' +
+      '<p class="bms24-ui-help">Снимок не меняется при изменении задач. Решение по отчёту не принимает и не закрывает задачи.</p>');
+    var hist = section('Версии и решения', versions([{t:'Версия 2', b:state === 'accepted' ? badge('accepted') + rating('positive') : badge('submitted'), d:'Отправлена 14.11 10:15' + (state === 'accepted' ? ' · принята вами 14.11 11:02' : ''), cur:true},
+      {t:'Версия 1', b:badge('returned'), d:'Возвращена вами 14.11 09:20: «Укажите ответ клиента «Альфа» и срок согласования КП.»'}]) +
+      (state === 'accepted' ? '<div class="dr-row dr-actions" style="margin-top:10px">' + btn('Изменить оценку', '', '', 'Новая запись с причиной; прежняя оценка останется в истории') + '</div>' : ''));
+    var decide = state === 'accepted' ? alert('success', 'Принято вами 14.11.2026 11:02 · ' + rating('positive') + '<br>Комментарий: «Хорошо, что сразу отметили риск по поставщику.»') :
+      section('Решение по версии 2', (state === 'returnform' ? alert('error', 'Укажите причину возврата — без неё отчёт не возвращается.') : '') +
+      '<fieldset><legend class="bms24-ui-label">Оценка при принятии</legend><div class="dr-choice">' +
+      [['positive','👍 Положительная'],['negative','👎 Отрицательная'],['none','— Без оценки']].map(function (o, i) { return '<label><input type="radio" name="rate" ' + (i === 0 ? 'checked' : '') + '> ' + o[1] + '</label>'; }).join('') + '</div></fieldset>' +
+      field('comment','Комментарий (обязателен при отрицательной оценке)','') +
+      '<div class="dr-row dr-actions">' + btn('Принять отчёт', 'primary', 'review/accepted') + '</div><hr style="border:0;border-top:1px solid var(--bms24-border);margin:16px 0">' +
+      field('reason','Причина возврата', '', false, true) + '<div class="dr-row dr-actions">' + btn('Вернуть на доработку', 'danger', state === 'returnform' ? 'review/returnform' : 'review/returnform', '') + '</div>' +
+      '<p class="bms24-ui-help">Решение относится только к версии 2. Если сотрудник отзовёт отправку, решение будет отклонено.</p>');
+    return head + '<div class="dr-two"><div class="dr-stack">' + report + snap + '</div><div class="dr-stack">' + decide + hist + '</div></div>';
+  }
+
+  function noAccess() { return alert('error', '<strong>Нет доступа к этому отчёту.</strong> Отчёт виден автору и назначенному проверяющему. Доступ к задачам сотрудника не открывает его личные отчёты.') +
+    section('Что можно сделать', '<ul><li>Открыть <a href="#my/draft">свой отчёт</a>.</li><li>Если вы должны проверять этого сотрудника, попросите администратора компании назначить вас проверяющим.</li></ul>'); }
+
+  var NAV = [['my','Мой отчёт','Мой отчёт'],['history','История отчётов','История'],['queue','Отчёты сотрудников','Сотрудники']];
+  function render() {
+    var parts = (location.hash.replace('#', '') || 'my/draft').split('/');
+    var screen = STATES[parts[0]] ? parts[0] : 'my';
+    var state = parts[1] && STATES[screen].some(function (s) { return s[0] === parts[1]; }) ? parts[1] : STATES[screen][0][0];
+    var nav = '<details class="bms24-navgroup" open><summary>Рабочее пространство</summary><nav aria-label="Рабочее пространство">' +
+      [['Задачи',''],['Календарь',''],['Отчёты за день','my/draft']].map(function (n) { var on = n[1] !== '';
+        return '<a href="' + (on ? '#' + n[1] : '#') + '" class="bms24-navitem' + (on ? ' is-active" aria-current="page' : '') + '"><span class="bms24-navlabel">' + n[0] + '</span>' + (on ? '<span class="bms24-count" aria-label="на проверке: 3">3</span>' : '') + '</a>'; }).join('') + '</nav></details>';
+    document.getElementById('dr-nav').innerHTML = nav;
+    document.getElementById('dr-nav-mobile').innerHTML = nav.replace('Отчёты за день', 'Отчёты');
+    var active = screen === 'review' || screen === 'noaccess' ? 'queue' : screen;
+    document.getElementById('dr-tabs').innerHTML = NAV.map(function (t) {
+      return '<a class="bms24-ui-tab" href="#' + t[0] + '/' + STATES[t[0]][0][0] + '"' + (t[0] === active ? ' aria-current="page"' : '') + '><span class="dr-long">' + t[1] + '</span><span class="dr-short">' + t[2] + '</span></a>'; }).join('');
+    document.getElementById('dr-who').textContent = active === 'queue' ? 'Олег Петров (проверяющий)' : 'Анна Смирнова';
+    document.getElementById('dr-crumb').textContent = 'Отчёты за день';
+    var view = screen === 'my' ? MY[state]() : screen === 'history' ? historyView() : screen === 'queue' ? queueView(state) : screen === 'review' ? reviewView(state) : noAccess();
+    document.getElementById('dr-view').innerHTML = '<div class="dr-stack">' + view + '</div>';
+    var sel = document.getElementById('dr-screen'); sel.value = screen;
+    var ss = document.getElementById('dr-state');
+    ss.innerHTML = STATES[screen].map(function (s) { return '<option value="' + s[0] + '"' + (s[0] === state ? ' selected' : '') + '>' + s[1] + '</option>'; }).join('');
+  }
+  var toastTimer;
+  function toast(text) { var t = document.getElementById('dr-toast'); t.textContent = 'Прототип: ' + text + '. Данные не сохраняются.'; t.style.display = 'block';
+    clearTimeout(toastTimer); toastTimer = setTimeout(function () { t.style.display = 'none'; }, 3200); }
+  document.addEventListener('click', function (e) {
+    var b = e.target.closest('button[data-go]'); if (b) { e.preventDefault(); if (b.dataset.note) { toast(b.dataset.note); } if (b.dataset.go) { location.hash = b.dataset.go; } return; }
+    var a = e.target.closest('a[href="#"]'); if (a) { e.preventDefault(); toast('ссылка на исходную задачу или раздел'); }
+  });
+  document.getElementById('dr-screen').addEventListener('change', function (e) { location.hash = e.target.value + '/' + STATES[e.target.value][0][0]; });
+  document.getElementById('dr-state').addEventListener('change', function (e) { location.hash = document.getElementById('dr-screen').value + '/' + e.target.value; });
+  window.addEventListener('hashchange', render);
+  render();
+})();
+</script>
+</body>
+</html>
