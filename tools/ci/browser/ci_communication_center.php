@@ -16,7 +16,14 @@ require($argv[1] . '/config.php');
 require_once($CFG->dirroot . '/user/lib.php');
 $phase = $argv[2] ?? '';
 $out = ['phase' => $phase];
-if ($phase === 'viewer') {
+if ($phase === 'denialstrings') {
+    $out['texts'] = [
+        'permission' => get_string('communication_permission', 'local_kbacompany'),
+        'state' => get_string('communication_state', 'local_kbacompany'),
+        'company' => get_string('companynotavailable', 'local_kbacompany'),
+        'sesskey' => get_string('invalidsesskey', 'error'),
+    ];
+} else if ($phase === 'viewer') {
     $evidence = rtrim((string)getenv('EVIDENCE'), '/');
     $fixtures = json_decode((string)file_get_contents($evidence . '/actors.private.json'), true);
     // Not *.json: evidence/*.json is uploaded as a CI artifact (only actors.private.json is excluded).

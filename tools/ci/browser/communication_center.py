@@ -18,8 +18,9 @@ import os
 import subprocess
 import sys
 import uuid
+from html.parser import HTMLParser
 from pathlib import Path
-from urllib.parse import parse_qs, urlencode, urlparse
+from urllib.parse import parse_qs, urlencode, urlparse, urljoin
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from contract import local_url, require  # noqa: E402
@@ -41,6 +42,9 @@ def php(*args):
     out = subprocess.run(['php', str(here / 'ci_communication_center.php'), core, *args], check=True,
                          capture_output=True, text=True).stdout
     return json.loads(out.strip().splitlines()[-1])
+
+
+result['denial_texts'] = php('denialstrings')['texts']
 
 
 def shell(mode):
@@ -93,7 +97,35 @@ def post(ctx, pairs):
     r = ctx.request.post(local_url(CENTER), data=urlencode(pairs),
                          headers={'Content-Type': 'application/x-www-form-urlencoded'}, max_redirects=0)
     location = r.headers.get('location', '')
-    return {'http': r.status, 'location': location, 'thread': (parse_qs(urlparse(location).query).get('thread') or [''])[0]}
+    if location:
+        destination = local_url(urljoin(CENTER, location))
+        require(urlparse(destination).path == urlparse(CENTER).path, 'POST redirected to an unexpected page')
+    class Errors(HTMLParser):
+        def __init__(self):
+            super().__init__(); self.stack = []; self.active = 0; self.texts = []; self.current = []
+        def handle_starttag(self, tag, attrs):
+            attrs = dict(attrs)
+            marked = bool({'alert-danger', 'errorbox', 'errormessage'} & set(attrs.get('class', '').split()))
+            marked = marked or attrs.get('data-rel') == 'fatalerror' or attrs.get('id') == 'notice'
+            if tag not in ('area', 'base', 'br', 'col', 'embed', 'hr', 'img', 'input', 'link', 'meta', 'param', 'source', 'track', 'wbr'):
+                self.stack.append((tag, marked))
+                if marked:
+                    if not self.active: self.current = []
+                    self.active += 1
+        def handle_endtag(self, tag):
+            if not any(t == tag for t, _ in self.stack): return
+            while self.stack:
+                t, marked = self.stack.pop()
+                if marked:
+                    self.active -= 1
+                    if not self.active: self.texts.append(' '.join(' '.join(self.current).split()))
+                if t == tag: break
+        def handle_data(self, data):
+            if self.active: self.current.append(data)
+    body = r.body(); parser = Errors(); parser.feed(body.decode('utf-8', errors='replace')); parser.close()
+    return {'http': r.status, 'location': location, 'url': r.url, 'error_texts': parser.texts,
+            'body_sha256': hashlib.sha256(body).hexdigest(),
+            'thread': (parse_qs(urlparse(location).query).get('thread') or [''])[0]}
 
 
 def download(ctx, href):
@@ -101,11 +133,16 @@ def download(ctx, href):
     return {'http': r.status, 'sha256': hashlib.sha256(r.body()).hexdigest() if r.status == 200 else None}
 
 
-def submit_form(page, form):
-    """Submit a rendered form (also inside a collapsed panel) exactly as the browser would, with its own fields."""
+def submit_form(page, form, mode):
+    """Open containing details and activate a visible real submit button; never bypass hit testing."""
     require(form.count() == 1, 'form missing')
+    for detail in reversed(form.locator('xpath=ancestor::details').all()):
+        if detail.get_attribute('open') is None:
+            activate(page, detail.locator(':scope > summary'), mode)
+    button = form.locator('button[type=submit]')
+    require(button.count() == 1 and button.is_visible(), 'visible submit control missing')
     with page.expect_navigation():
-        form.evaluate('f => f.requestSubmit()')
+        activate(page, button, mode)
     page.wait_for_load_state('networkidle')
 
 
@@ -211,7 +248,7 @@ with sync_playwright() as pw:
                               'center_reply_links': va.locator('#message-%s' % question).get_by_role('link', name='Reply', exact=True).count(),
                               'parts_after_reading': parts(thread)}
             if last:
-                submit_form(va, va.locator('form.bms-comm2-join'))
+                submit_form(va, va.locator('form.bms-comm2-join'), mode)
                 case['viewer']['parts_after_join'] = parts(thread)
                 case['viewer']['composer_after_join'] = va.locator('form[data-bms-comm-compose]').count()
 
@@ -227,7 +264,7 @@ with sync_playwright() as pw:
                                     ('objectuuid', task), ('sesskey', sesskey(o))])
                 case['denied'][label] = {'center_text': t_ea in center_text or t_ma in center_text,
                                          'card_text': t_ea in card_text, 'download': download(o_ctx, file_href),
-                                         'join_http': join['http'], 'parts': parts(thread)}
+                                         'join_http': join['http'], 'join_response': join, 'parts': parts(thread)}
 
             # 6. one direct conversation per pair; filters separate conversations from object discussions
             key = sesskey(ma)
@@ -267,10 +304,10 @@ with sync_playwright() as pw:
             g['owner_marker'] = ma.locator('.bms-comm2-people .bms-comm2-person-role').evaluate_all(
                 "els => els.filter(e => e.textContent.trim() === 'owner').length") == 1
             submit_form(ma, ma.locator('.bms-comm2-person form').filter(
-                has=ma.locator('input[name=participantid][value="%s"]' % uid('RA'))))
+                  has=ma.locator('input[name=participantid][value="%s"]' % uid('RA'))), mode)
             g['after_remove'] = parts(group)
             # the owner leaves: ownership passes to the longest-standing remaining member (EA, added first)
-            submit_form(ma, ma.locator('details.bms-comm2-leave form'))
+            submit_form(ma, ma.locator('details.bms-comm2-leave form'), mode)
             g['after_owner_leave'] = parts(group)
             ea.goto(center_url(tab='messages', thread=group), wait_until='networkidle')
             g['new_owner_controls'] = ea.locator('.bms-comm2-person form button').count()

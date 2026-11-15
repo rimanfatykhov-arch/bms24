@@ -556,6 +556,12 @@ class ContractTest(unittest.TestCase):
 
     def communication_center_obs(self):
         ids = {'MA': 11, 'EA': 12, 'RA': 13, 'EB': 14}
+        texts = {'permission': 'Permission denied.', 'company': 'Company unavailable.',
+                 'state': 'Operation unavailable.', 'sesskey': 'Invalid sesskey.'}
+        def denial(kind, http=200):
+            return {'http': http, 'location': '',
+                    'url': 'http://127.0.0.1:8080/local/kbacompany/communication_center.php',
+                    'body_sha256': 'a' * 64, 'error_texts': [texts[kind]]}
         va, sha, q, d = 15, 'f' * 64, 'q-uuid', 'd-uuid'
         cases = []
         for n, (shell, width, mode) in enumerate(c.COMM_CASES):
@@ -581,21 +587,22 @@ class ContractTest(unittest.TestCase):
                            'reply_links': 1, 'composer': 1},
                 'viewer': viewer,
                 'denied': {label: {'center_text': False, 'card_text': False, 'download': {'http': 404, 'sha256': None},
-                                   'join_http': 200, 'parts': {'active': [11, 12], 'owners': [12], 'reads': []}}
+                                   'join_http': 200, 'join_response': denial('permission' if label == 'RA' else 'company'),
+                                   'parts': {'active': [11, 12], 'owners': [12], 'reads': []}}
                            for label in ('RA', 'EB')},
                 'direct': {'responses': [{'http': 303, 'location': 'x', 'thread': d}] * 2, 'threads': [d]},
                 'filters': {'discussions': {'task': 1, 'direct': 0}, 'messages': {'task': 0, 'direct': 1}, 'tabs': 2},
                 'group': {'created': created,
-                          'non_owner_remove': {'http': 200, 'parts': dict(created)},
-                          'forged_sesskey': {'http': 200, 'parts': dict(created)},
-                          'leave_task_discussion': {'http': 200, 'parts': {'active': [11, 12], 'owners': [12], 'reads': []}},
+                          'non_owner_remove': dict(denial('permission'), parts=dict(created)),
+                          'forged_sesskey': dict(denial('sesskey', 403), parts=dict(created)),
+                          'leave_task_discussion': dict(denial('state'), parts={'active': [11, 12], 'owners': [12], 'reads': []}),
                           'remove_controls': 3, 'owner_marker': True,
                           'after_remove': {'active': [11, 12, 15], 'owners': [11], 'reads': []},
                           'after_owner_leave': {'active': [12, 15], 'owners': [12], 'reads': []},
                           'new_owner_controls': 1, 'access_after': {'MA': False, 'RA': False}},
                 'browser_events': list(ABORTED), 'server_errors': []})
         ok = {'http': 200, 'sha256': sha}
-        return {'status': 'PASS', 'ids': ids, 'viewer_id': va, 'cases': cases,
+        return {'status': 'PASS', 'ids': ids, 'viewer_id': va, 'cases': cases, 'denial_texts': texts,
                 'revocation': {'before': {'text': True, 'download': ok}, 'revoked': True,
                                'after': {'text': False, 'download': {'http': 404, 'sha256': None}},
                                'reopened': True, 'restored': {'text': True, 'download': ok}}}
@@ -684,6 +691,30 @@ class ContractTest(unittest.TestCase):
             res = c.evaluate(c.communication_center_checks(o, code))
             self.assertTrue(all(x['status'] == 'FAIL' for x in res.values()), res)
         self.assertTrue(all(x['status'] == 'FAIL' for x in c.evaluate(c.communication_center_checks(None, None)).values()))
+
+    def test_comm_negative_posts_require_real_expected_denial(self):
+        for case in range(2):
+            for target in ('RA', 'EB', 'non_owner_remove', 'forged_sesskey', 'leave_task_discussion'):
+                def item(obs):
+                    row=obs['cases'][case]
+                    return row['denied'][target]['join_response'] if target in ('RA', 'EB') else row['group'][target]
+                key='comm_task_discussion_denied_and_revoked' if target in ('RA', 'EB') else 'comm_group_remove_leave_transfer'
+                for status in (500, 502, 302, 303, 307, 0, None, True):
+                    obs=self.communication_center_obs(); item(obs)['http']=status
+                    if target in ('RA','EB'):obs['cases'][case]['denied'][target]['join_http']=status
+                    self.assertEqual('FAIL',c.evaluate(c.communication_center_checks(obs,0))[key]['status'],(target,status))
+                for missing in ('http','location','url','body_sha256','error_texts'):
+                    obs=self.communication_center_obs();item(obs).pop(missing)
+                    self.assertEqual('FAIL',c.evaluate(c.communication_center_checks(obs,0))[key]['status'],(target,missing))
+                for field,value in [('location','https://example.invalid/login'),('url','https://example.invalid/'),
+                                    ('body_sha256',''),('error_texts',[]),('error_texts',['A different error']),
+                                    ('error_texts',['Please sign in'])]:
+                    obs=self.communication_center_obs();item(obs)[field]=value
+                    self.assertEqual('FAIL',c.evaluate(c.communication_center_checks(obs,0))[key]['status'],(target,field,value))
+        obs=self.communication_center_obs();obs.pop('denial_texts')
+        res=c.evaluate(c.communication_center_checks(obs,0))
+        for key in ('comm_task_discussion_denied_and_revoked','comm_group_remove_leave_transfer'):
+            self.assertEqual('FAIL',res[key]['status'])
 
     def test_required_check_names_complete(self):
         names = c.required_check_names()

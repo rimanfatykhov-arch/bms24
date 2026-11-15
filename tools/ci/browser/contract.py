@@ -721,6 +721,23 @@ def communication_center_checks(obs, exitcode=None):
     def refused(d):
         return isinstance(d, dict) and d.get('http') in DENY_CODES and d.get('sha256') is None
 
+    def denied_post(d, kinds):
+        require(isinstance(d, dict) and type(d.get('http')) is int and d['http'] in (200, 403, 404),
+                'negative POST missing or unexpected HTTP (redirect/5xx are never refusals)')
+        require(d.get('location') == '', 'negative POST redirected')
+        require(local_url(d.get('url', '')) == 'http://127.0.0.1:8080/local/kbacompany/communication_center.php',
+                'negative POST came from another page')
+        require(isinstance(d.get('body_sha256'), str) and re.fullmatch('[0-9a-f]{64}', d['body_sha256']),
+                'negative POST body evidence missing')
+        strings = obs.get('denial_texts') or {}
+        require(all(isinstance(strings.get(k), str) and strings[k] and not strings[k].startswith('[[') for k in kinds),
+                'canonical denial strings missing')
+        errors = d.get('error_texts')
+        require(isinstance(errors, list) and errors and all(isinstance(x, str) for x in errors),
+                'negative POST has no rendered error block')
+        require(any(' '.join(strings[k].split()) in text for k in kinds for text in errors),
+                'negative POST did not show the expected domain denial')
+
     def viewer():
         rows, ids, va = run()
         for i, r in enumerate(rows):
@@ -745,7 +762,8 @@ def communication_center_checks(obs, exitcode=None):
             for label, x in d.items():
                 require(x.get('center_text') is False and x.get('card_text') is False, label + ' read the task discussion')
                 require(refused(x.get('download')), label + ' downloaded the discussion file')
-                require(x.get('join_http') != 303 and ids[label] not in ((x.get('parts') or {}).get('active') or []),
+                denied_post(x.get('join_response'), ['permission'] if label == 'RA' else ['company'])
+                require(x.get('join_http') == x['join_response']['http'] and ids[label] not in ((x.get('parts') or {}).get('active') or []),
                         label + ' joined the task discussion')
         rv = obs.get('revocation') or {}
         sha = rows[-1].get('file_sha256')
@@ -807,9 +825,11 @@ def communication_center_checks(obs, exitcode=None):
             require(created.get('active') == sorted([ma, ea, ra, va]) and created.get('owners') == [ma], 'group not created')
             for key in ('non_owner_remove', 'forged_sesskey'):
                 x = g.get(key) or {}
-                require(x.get('http') != 303 and (x.get('parts') or {}).get('active') == created['active'], key + ' changed the group')
+                denied_post(x, ['sesskey'] if key == 'forged_sesskey' else ['permission'])
+                require((x.get('parts') or {}).get('active') == created['active'], key + ' changed the group')
             lt = g.get('leave_task_discussion') or {}
-            require(lt.get('http') != 303 and ma in ((lt.get('parts') or {}).get('active') or []), 'left a task discussion')
+            denied_post(lt, ['state'])
+            require(ma in ((lt.get('parts') or {}).get('active') or []), 'left a task discussion')
             require(g.get('remove_controls') == 3 and g.get('owner_marker') is True, 'owner controls missing')
             require((g.get('after_remove') or {}).get('active') == sorted([ma, ea, va]), 'owner removal not applied')
             after = g.get('after_owner_leave') or {}
