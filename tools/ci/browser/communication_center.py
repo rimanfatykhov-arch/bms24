@@ -262,7 +262,10 @@ with sync_playwright() as pw:
                                                             ('sesskey', key)]), parts=parts(thread))
             ma.goto(center_url(tab='messages', thread=group), wait_until='networkidle')
             g['remove_controls'] = ma.locator('.bms-comm2-person form button').count()
-            g['owner_marker'] = 'owner' in ma.locator('.bms-comm2-people').inner_text()
+            # The members list sits in the collapsible context panel: innerText of collapsed content is empty,
+            # so count the exact role marker by textContent (one owner row).
+            g['owner_marker'] = ma.locator('.bms-comm2-people .bms-comm2-person-role').evaluate_all(
+                "els => els.filter(e => e.textContent.trim() === 'owner').length") == 1
             submit_form(ma, ma.locator('.bms-comm2-person form').filter(
                 has=ma.locator('input[name=participantid][value="%s"]' % uid('RA'))))
             g['after_remove'] = parts(group)
