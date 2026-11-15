@@ -364,6 +364,9 @@ echo html_writer::start_div((\local_kbacompany\local\bms24_shell_service::is_ena
     ['data-task-create-url'=>ui::url($uuid,['view'=>'create'])->out(false)]);
 if($error!==''){echo html_writer::div(s($error),'alert alert-danger',['role'=>'alert']);}
 if($view==='list'){
+    echo html_writer::div(html_writer::link(
+        new moodle_url('/local/kbacompany/daily_report.php', ['uuid'=>$uuid]),
+        get_string('dailyreport_title', 'local_kbacompany'), ['class'=>'btn btn-outline-secondary']), 'mb-3');
     $queryfilters = $filters;
     if ($display === 'deadlines') { $queryfilters['deadlineview'] = true; }
     $list=task_service::list_page($uuid,$actor,$queryfilters,optional_param('page',0,PARAM_INT));
