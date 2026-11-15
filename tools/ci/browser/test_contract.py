@@ -554,6 +554,137 @@ class ContractTest(unittest.TestCase):
             self.assertTrue(all(v['status'] == 'FAIL' for v in r.values()), r)
         self.assertTrue(all(v['status'] == 'FAIL' for v in c.evaluate(c.task_open_checks(None, None)).values()))
 
+    def communication_center_obs(self):
+        ids = {'MA': 11, 'EA': 12, 'RA': 13, 'EB': 14}
+        va, sha, q, d = 15, 'f' * 64, 'q-uuid', 'd-uuid'
+        cases = []
+        for n, (shell, width, mode) in enumerate(c.COMM_CASES):
+            t = ['EA %d question' % n, 'MA %d answer @Synthetic EA' % n, 'MA %d group note' % n]
+            viewer = {'card_question': True, 'card_reply': True, 'card_reader_note': True,
+                      'download': {'http': 200, 'sha256': sha}, 'center_question': 1, 'center_join': 1,
+                      'center_composer': 0, 'center_reply_links': 0,
+                      'parts_after_reading': {'active': [11, 12], 'owners': [12], 'reads': [11, 12]}}
+            if n == len(c.COMM_CASES) - 1:
+                viewer.update(parts_after_join={'active': [11, 12, 15], 'owners': [12], 'reads': [11, 12, 15]},
+                              composer_after_join=1)
+            created = {'active': [11, 12, 13, 15], 'owners': [11], 'reads': [11, 12, 13, 15]}
+            cases.append({
+                'shell': shell, 'width': width, 'mode': mode, 'texts': t, 'file_sha256': sha, 'question': q,
+                'reply_target': {'count': 1, 'text': 'Replying to: Synthetic EA ' + t[0]},
+                'reply': {'body': t[1], 'status': 'active', 'thread': 'T', 'reply_to': q, 'authorid': 11, 'mentions': [12]},
+                'mention_notification': ['mention'],
+                'card': {'quote': ['Synthetic EA\n' + t[0]], 'events': ['Task created · Synthetic MA · 15.11 10:00'],
+                         'messages_after': 8, 'messages_before': 7, 'history_opened': 1},
+                'center': {'question': 1, 'quote': ['Synthetic EA\n' + t[0]], 'events': [],
+                           'events_oldest': ['Task created · Synthetic MA · 10:00'],
+                           'open_task': {'text': 'Open task', 'href': 'http://127.0.0.1:8080/local/kbacompany/tasks.php?uuid=A&task=T'},
+                           'reply_links': 1, 'composer': 1},
+                'viewer': viewer,
+                'denied': {label: {'center_text': False, 'card_text': False, 'download': {'http': 404, 'sha256': None},
+                                   'join_http': 200, 'parts': {'active': [11, 12], 'owners': [12], 'reads': []}}
+                           for label in ('RA', 'EB')},
+                'direct': {'responses': [{'http': 303, 'location': 'x', 'thread': d}] * 2, 'threads': [d]},
+                'filters': {'discussions': {'task': 1, 'direct': 0}, 'messages': {'task': 0, 'direct': 1}, 'tabs': 2},
+                'group': {'created': created,
+                          'non_owner_remove': {'http': 200, 'parts': dict(created)},
+                          'forged_sesskey': {'http': 200, 'parts': dict(created)},
+                          'leave_task_discussion': {'http': 200, 'parts': {'active': [11, 12], 'owners': [12], 'reads': []}},
+                          'remove_controls': 3, 'owner_marker': True,
+                          'after_remove': {'active': [11, 12, 15], 'owners': [11], 'reads': []},
+                          'after_owner_leave': {'active': [12, 15], 'owners': [12], 'reads': []},
+                          'new_owner_controls': 1, 'access_after': {'MA': False, 'RA': False}},
+                'browser_events': list(ABORTED), 'server_errors': []})
+        ok = {'http': 200, 'sha256': sha}
+        return {'status': 'PASS', 'ids': ids, 'viewer_id': va, 'cases': cases,
+                'revocation': {'before': {'text': True, 'download': ok}, 'revoked': True,
+                               'after': {'text': False, 'download': {'http': 404, 'sha256': None}},
+                               'reopened': True, 'restored': {'text': True, 'download': ok}}}
+
+    def test_communication_center_valid_passes_and_mutations_fail(self):
+        obs = self.communication_center_obs()
+        res = c.evaluate(c.communication_center_checks(obs, 0))
+        self.assertEqual({k: 'PASS' for k in res}, {k: v['status'] for k, v in res.items()}, res)
+
+        def fails(check, mutate):
+            o = copy.deepcopy(obs); mutate(o)
+            r = c.evaluate(c.communication_center_checks(o, 0))
+            self.assertEqual('FAIL', r[check]['status'], (check, r[check]))
+        v = 'comm_task_discussion_read_by_task_viewer'
+        fails(v, lambda o: o['cases'][0]['viewer'].update(card_question=False))
+        fails(v, lambda o: o['cases'][1]['viewer'].update(card_reader_note=False))
+        fails(v, lambda o: o['cases'][0]['viewer'].update(download={'http': 404, 'sha256': None}))
+        fails(v, lambda o: o['cases'][0]['viewer'].update(download={'http': 200, 'sha256': 'e' * 64}))
+        fails(v, lambda o: o['cases'][0]['viewer'].update(center_composer=1))
+        fails(v, lambda o: o['cases'][0]['viewer'].update(center_join=0))
+        fails(v, lambda o: o['cases'][1]['viewer'].update(center_reply_links=1))
+        fails(v, lambda o: o['cases'][0]['viewer']['parts_after_reading']['active'].append(15))
+        fails(v, lambda o: o['cases'][0]['viewer']['parts_after_reading']['reads'].append(15))
+        fails(v, lambda o: o['cases'][1]['viewer']['parts_after_join']['active'].remove(15))
+        fails(v, lambda o: o['cases'][1]['viewer'].pop('composer_after_join'))
+        d = 'comm_task_discussion_denied_and_revoked'
+        for label in ('RA', 'EB'):
+            fails(d, lambda o, label=label: o['cases'][0]['denied'][label].update(center_text=True))
+            fails(d, lambda o, label=label: o['cases'][1]['denied'][label].update(card_text=True))
+            fails(d, lambda o, label=label: o['cases'][0]['denied'][label].update(download={'http': 200, 'sha256': 'f' * 64}))
+            fails(d, lambda o, label=label: o['cases'][0]['denied'][label].update(download={'http': 500, 'sha256': None}))
+            fails(d, lambda o, label=label: o['cases'][0]['denied'][label].update(join_http=303))
+            fails(d, lambda o, label=label: o['cases'][0]['denied'][label]['parts']['active'].append(o['ids'][label]))
+            fails(d, lambda o, label=label: o['cases'][0]['denied'].pop(label))
+        fails(d, lambda o: o['revocation']['after'].update(text=True))
+        fails(d, lambda o: o['revocation']['after'].update(download={'http': 200, 'sha256': 'f' * 64}))
+        fails(d, lambda o: o['revocation'].update(revoked=False))
+        fails(d, lambda o: o['revocation'].update(reopened=False))
+        fails(d, lambda o: o['revocation']['restored'].update(text=False))
+        fails(d, lambda o: o.pop('revocation'))
+        e = 'comm_task_events_inline_opened_in_history'
+        fails(e, lambda o: o['cases'][0]['card'].update(events=[]))
+        fails(e, lambda o: o['cases'][1]['center'].update(events_oldest=[]))
+        fails(e, lambda o: o['cases'][0]['card']['events'].append('Synthetic MA opened the task'))
+        fails(e, lambda o: o['cases'][0]['center']['events'].append('Opened'))
+        fails(e, lambda o: o['cases'][0]['card'].update(messages_after=9))
+        fails(e, lambda o: o['cases'][0]['card'].update(history_opened=0))
+        r = 'comm_reply_quote_and_mention'
+        fails(r, lambda o: o['cases'][0]['reply_target'].update(count=0))
+        fails(r, lambda o: o['cases'][0]['reply'].update(reply_to=''))
+        fails(r, lambda o: o['cases'][1]['reply'].update(mentions=[12, 13]))
+        fails(r, lambda o: o['cases'][1]['reply'].update(mentions=[]))
+        fails(r, lambda o: o['cases'][0].update(mention_notification=['message']))
+        fails(r, lambda o: o['cases'][0]['card'].update(quote=[]))
+        fails(r, lambda o: o['cases'][1]['center'].update(quote=['other']))
+        dc = 'comm_direct_conversation_unique'
+        fails(dc, lambda o: o['cases'][0]['direct']['responses'].__setitem__(1, {'http': 303, 'thread': 'other'}))
+        fails(dc, lambda o: o['cases'][0]['direct'].update(threads=['d-uuid', 'other']))
+        fails(dc, lambda o: o['cases'][1]['direct'].update(responses=[{'http': 303, 'thread': 'x'}] * 2, threads=['x']))
+        fails(dc, lambda o: o['cases'][0]['direct']['responses'].__setitem__(0, {'http': 200, 'thread': 'd-uuid'}))
+        g = 'comm_group_remove_leave_transfer'
+        fails(g, lambda o: o['cases'][0]['group']['non_owner_remove']['parts'].update(active=[11, 12, 15]))
+        fails(g, lambda o: o['cases'][0]['group']['forged_sesskey'].update(http=303))
+        fails(g, lambda o: o['cases'][0]['group']['leave_task_discussion']['parts'].update(active=[12]))
+        fails(g, lambda o: o['cases'][1]['group'].update(remove_controls=0))
+        fails(g, lambda o: o['cases'][0]['group']['after_remove'].update(active=[11, 12, 13, 15]))
+        fails(g, lambda o: o['cases'][0]['group']['after_owner_leave'].update(owners=[15]))
+        fails(g, lambda o: o['cases'][0]['group']['after_owner_leave'].update(active=[11, 12, 15]))
+        fails(g, lambda o: o['cases'][1]['group'].update(new_owner_controls=0))
+        fails(g, lambda o: o['cases'][0]['group']['access_after'].update(RA=True))
+        f = 'comm_filters_and_open_task'
+        fails(f, lambda o: o['cases'][0]['filters'].update(discussions={'task': 1, 'direct': 1}))
+        fails(f, lambda o: o['cases'][1]['filters'].update(messages={'task': 1, 'direct': 1}))
+        fails(f, lambda o: o['cases'][0]['center'].update(open_task={'text': 'Open task', 'href': 'https://example.invalid/x'}))
+        fails(f, lambda o: o['cases'][0]['center'].update(open_task={'text': '', 'href': ''}))
+        fails(f, lambda o: o['cases'][0]['center'].update(composer=0))
+        b = 'comm_no_browser_errors'
+        fails(b, lambda o: o['cases'][0]['browser_events'].append({'source': 'pageerror', 'name': 'Error', 'message': 'x'}))
+        fails(b, lambda o: o['cases'][1].update(server_errors=[{'status': 500}]))
+        fails(b, lambda o: o['cases'][0].pop('browser_events'))
+        # incomplete matrix, missing viewer, producer error or non-zero exit fail every check
+        for mutate, code in ((lambda o: o['cases'].pop(), 0), (lambda o: o['cases'].reverse(), 0),
+                             (lambda o: o.update(viewer_id=11), 0), (lambda o: o.update(error='boom'), 0),
+                             (lambda o: o['cases'][0].update(question=''), 0), (lambda o: None, 1)):
+            o = copy.deepcopy(obs); mutate(o)
+            res = c.evaluate(c.communication_center_checks(o, code))
+            self.assertTrue(all(x['status'] == 'FAIL' for x in res.values()), res)
+        self.assertTrue(all(x['status'] == 'FAIL' for x in c.evaluate(c.communication_center_checks(None, None)).values()))
+
     def test_required_check_names_complete(self):
         names = c.required_check_names()
         self.assertEqual(len(names), len(set(names)))

@@ -693,11 +693,163 @@ def task_open_checks(obs, exitcode=None):
             'task_open_server_negatives': negatives}
 
 
+COMM_CASES = [('owned', 1440, 'click'), ('legacy', 320, 'keyboard')]
+
+
+def communication_center_checks(obs, exitcode=None):
+    """Communication Center cleanup, items 1-5 (communication_center.py). Verdicts come from DB rows and rendered
+    observations; the producer's PASS alone is never sufficient."""
+    def run():
+        require(exitcode == 0, 'communication center browser process failed or was not run')
+        require(isinstance(obs, dict) and obs.get('status') == 'PASS' and not obs.get('error'), 'communication center run incomplete')
+        rows = obs.get('cases')
+        require(isinstance(rows, list) and [(r.get('shell'), r.get('width'), r.get('mode')) for r in rows] == COMM_CASES,
+                'owned/legacy x desktop/mobile x click/keyboard cases required')
+        ids = obs.get('ids') or {}
+        require(all(isinstance(ids.get(k), int) and ids[k] > 0 for k in ('MA', 'EA', 'RA', 'EB')), 'fixture ids missing')
+        require(isinstance(obs.get('viewer_id'), int) and obs['viewer_id'] not in ids.values(), 'separate task viewer missing')
+        for r in rows:
+            texts = r.get('texts')
+            require(isinstance(texts, list) and len(texts) == 3 and len(set(texts)) == 3
+                    and all(isinstance(t, str) and t for t in texts), 'case texts missing')
+            require(isinstance(r.get('question'), str) and r['question'], 'question id missing')
+        return rows, ids, obs['viewer_id']
+
+    def served(d, sha):
+        return isinstance(d, dict) and d.get('http') == 200 and d.get('sha256') is not None and d.get('sha256') == sha
+
+    def refused(d):
+        return isinstance(d, dict) and d.get('http') in DENY_CODES and d.get('sha256') is None
+
+    def viewer():
+        rows, ids, va = run()
+        for i, r in enumerate(rows):
+            v = r.get('viewer') or {}
+            require(v.get('card_question') is True and v.get('card_reply') is True, 'task viewer does not read the card discussion')
+            require(v.get('card_reader_note') is True, 'reader note missing in the card')
+            require(served(v.get('download'), r.get('file_sha256')), 'task viewer cannot download the discussion file')
+            require(v.get('center_question') == 1 and v.get('center_join') == 1 and v.get('center_composer') == 0
+                    and v.get('center_reply_links') == 0, 'Center must show the thread read-only with an explicit join')
+            p = v.get('parts_after_reading') or {}
+            require(isinstance(p.get('active'), list) and va not in p['active'] and va not in (p.get('reads') or []),
+                    'reading joined the viewer or created read state')
+            if i == len(rows) - 1:
+                j = v.get('parts_after_join') or {}
+                require(va in (j.get('active') or []) and v.get('composer_after_join') == 1, 'explicit join did not work')
+
+    def denied():
+        rows, ids, va = run()
+        for r in rows:
+            d = r.get('denied') or {}
+            require(set(d) == {'RA', 'EB'}, 'denied users missing')
+            for label, x in d.items():
+                require(x.get('center_text') is False and x.get('card_text') is False, label + ' read the task discussion')
+                require(refused(x.get('download')), label + ' downloaded the discussion file')
+                require(x.get('join_http') != 303 and ids[label] not in ((x.get('parts') or {}).get('active') or []),
+                        label + ' joined the task discussion')
+        rv = obs.get('revocation') or {}
+        sha = rows[-1].get('file_sha256')
+        require((rv.get('before') or {}).get('text') is True and served((rv.get('before') or {}).get('download'), sha),
+                'revocation precondition not met')
+        require(rv.get('revoked') is True and rv.get('reopened') is True, 'revocation not applied/reverted')
+        require((rv.get('after') or {}).get('text') is False and refused((rv.get('after') or {}).get('download')),
+                'revoked member still reads the thread or downloads its file')
+        require((rv.get('restored') or {}).get('text') is True and served((rv.get('restored') or {}).get('download'), sha),
+                'access not restored after reopen')
+
+    def events():
+        rows, ids, va = run()
+        for r in rows:
+            c, cc = r.get('card') or {}, r.get('center') or {}
+            card_events, oldest, newest = c.get('events'), cc.get('events_oldest'), cc.get('events')
+            require(isinstance(card_events, list) and any('Task created' in e for e in card_events), 'task events missing in the card')
+            require(isinstance(oldest, list) and any('Task created' in e for e in oldest), 'task events missing in the Center')
+            require(isinstance(newest, list), 'Center events not observed')
+            require(not any('opened' in e.lower() for e in card_events + oldest + newest), 'task opening shown as a discussion event')
+            require(c.get('messages_before') and c.get('messages_after') == c['messages_before'] + 1,
+                    'events were stored as messages or the reply count is wrong')
+            require(isinstance(c.get('history_opened'), int) and c['history_opened'] >= 1, 'opened missing from the task History')
+
+    def reply():
+        rows, ids, va = run()
+        for r in rows:
+            t = r['texts']
+            target = r.get('reply_target') or {}
+            require(target.get('count') == 1 and t[0] in (target.get('text') or ''), 'reply target not shown in the composer')
+            m = r.get('reply') or {}
+            require(m.get('reply_to') == r['question'] and m.get('body') == t[1] and m.get('status') == 'active',
+                    'reply not linked to the original')
+            require(m.get('mentions') == [ids['EA']], 'inline mention not resolved to exactly the participant')
+            require('mention' in (r.get('mention_notification') or []), 'mention notification missing')
+            require(any(t[0] in q for q in (r.get('card') or {}).get('quote') or []), 'quote missing in the card')
+            require(any(t[0] in q for q in (r.get('center') or {}).get('quote') or []), 'quote missing in the Center')
+
+    def direct():
+        rows, ids, va = run()
+        seen = set()
+        for r in rows:
+            d = r.get('direct') or {}
+            responses = d.get('responses')
+            require(isinstance(responses, list) and len(responses) == 2 and all(x.get('http') == 303 for x in responses),
+                    'direct conversation request failed')
+            uuids = {x.get('thread') for x in responses}
+            require(len(uuids) == 1 and '' not in uuids and None not in uuids and d.get('threads') == list(uuids),
+                    'repeated Write created another direct conversation')
+            seen |= uuids
+        require(len(seen) == 1, 'direct conversation changed between cases')
+
+    def group():
+        rows, ids, va = run()
+        ma, ea, ra = ids['MA'], ids['EA'], ids['RA']
+        for r in rows:
+            g = r.get('group') or {}
+            created = g.get('created') or {}
+            require(created.get('active') == sorted([ma, ea, ra, va]) and created.get('owners') == [ma], 'group not created')
+            for key in ('non_owner_remove', 'forged_sesskey'):
+                x = g.get(key) or {}
+                require(x.get('http') != 303 and (x.get('parts') or {}).get('active') == created['active'], key + ' changed the group')
+            lt = g.get('leave_task_discussion') or {}
+            require(lt.get('http') != 303 and ma in ((lt.get('parts') or {}).get('active') or []), 'left a task discussion')
+            require(g.get('remove_controls') == 3 and g.get('owner_marker') is True, 'owner controls missing')
+            require((g.get('after_remove') or {}).get('active') == sorted([ma, ea, va]), 'owner removal not applied')
+            after = g.get('after_owner_leave') or {}
+            require(after.get('active') == sorted([ea, va]) and after.get('owners') == [ea], 'ownership not passed on leave')
+            require(g.get('new_owner_controls') == 1, 'new owner cannot manage members')
+            require((g.get('access_after') or {}) == {'MA': False, 'RA': False}, 'removed or departed member still reads the group')
+
+    def filters():
+        rows, ids, va = run()
+        for r in rows:
+            fl, cc = r.get('filters') or {}, r.get('center') or {}
+            require(fl.get('discussions') == {'task': 1, 'direct': 0} and fl.get('messages') == {'task': 0, 'direct': 1},
+                    'filters do not separate conversations from object discussions')
+            require(isinstance(fl.get('tabs'), int) and fl['tabs'] >= 2, 'filter tabs missing')
+            link = cc.get('open_task') or {}
+            href = urlparse(link.get('href') or '')
+            require(link.get('text') == 'Open task' and href.path == '/local/kbacompany/tasks.php' and 'task=' in href.query,
+                    'Open task link missing')
+            require(cc.get('question') == 1 and cc.get('reply_links') == 1 and cc.get('composer') == 1,
+                    'participant view of the Center incomplete')
+
+    def browser_events():
+        rows, ids, va = run()
+        for r in rows:
+            violations = browser_event_violations(r.get('browser_events'))
+            require(not violations, 'browser errors: %r' % violations[:3])
+            require(r.get('server_errors') == [], 'HTTP 5xx in the Communication Center: %r' % (r.get('server_errors'),))
+
+    return {'comm_task_discussion_read_by_task_viewer': viewer, 'comm_task_discussion_denied_and_revoked': denied,
+            'comm_task_events_inline_opened_in_history': events, 'comm_reply_quote_and_mention': reply,
+            'comm_direct_conversation_unique': direct, 'comm_group_remove_leave_transfer': group,
+            'comm_filters_and_open_task': filters, 'comm_no_browser_errors': browser_events}
+
+
 def required_check_names():
     """Every check a complete BROWSER report must contain (used by browser_acceptance.py and merge_gate.py)."""
     return (['moodle_install', 'fixtures_companies_A_B'] + list(task_tab_checks({})) + list(attachments_checks({}, {}))
             + list(access_checks({})) + list(oversize_checks({}, {})) + list(multiattachment_checks({}))
-            + list(message_action_checks({})) + list(task_open_checks({})))
+            + list(message_action_checks({})) + list(task_open_checks({}))
+            + list(communication_center_checks({})))
 
 
 def evaluate(checks):

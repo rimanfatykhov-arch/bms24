@@ -159,6 +159,9 @@ try:
     # "User opened the task" History event: owned+legacy, 1440+320, hidden tab, concurrency, server negatives.
     open_exit = timed('task_open', lambda: browser('task_open.py', 'verify'))
     record(contract.evaluate(contract.task_open_checks(load('task-open-result.json'), open_exit)))
+    # Communication Center cleanup (items 1-5): task viewer read, denial/revocation, events, replies, groups, filters.
+    comm_exit = timed('communication_center', lambda: browser('communication_center.py', 'verify'))
+    record(contract.evaluate(contract.communication_center_checks(load('communication-center-result.json'), comm_exit)))
     timed('server_restart_64k', lambda: start_server(['-d', 'upload_max_filesize=64K', '-d', 'post_max_size=8M']))
     timed('oversize', lambda: browser('attachments.py', 'oversize'))
     timed('db_state_oversize', lambda: php_state('oversize'))

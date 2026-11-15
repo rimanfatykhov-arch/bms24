@@ -291,12 +291,18 @@ class communication_center_ui_service {
         foreach ($visiblemessages as $i => $message) {
             $timeline[] = ['time' => (int)$message['time_created'], 'order' => 1, 'seq' => $i, 'message' => $message];
         }
-        // Task History events are shown only on the latest page and only without a message search.
-        if ($messagequery === '' && (int)($history['page'] ?? 0) === 0) {
-            $earliest = $visiblemessages && (int)($history['pages'] ?? 1) > 1 ? (int)$visiblemessages[0]['time_created'] : 0;
+        // Task History events appear on the history page whose time window contains them (never during a search):
+        // the oldest page has no lower bound, the newest page has no upper bound.
+        if ($messagequery === '') {
+            $pageindex = (int)($history['page'] ?? 0);
+            $pagecount = max(1, (int)($history['pages'] ?? 1));
+            $lower = $visiblemessages && $pageindex < $pagecount - 1 ? (int)$visiblemessages[0]['time_created'] : PHP_INT_MIN;
+            $upper = $visiblemessages && $pageindex > 0 ?
+                (int)$visiblemessages[count($visiblemessages) - 1]['time_created'] : PHP_INT_MAX;
             foreach (($data['events'] ?? []) as $i => $event) {
-                if ((int)$event['time_created'] < $earliest) { continue; }
-                $timeline[] = ['time' => (int)$event['time_created'], 'order' => 0, 'seq' => $i, 'event' => $event];
+                $time = (int)$event['time_created'];
+                if ($time < $lower || $time > $upper) { continue; }
+                $timeline[] = ['time' => $time, 'order' => 0, 'seq' => $i, 'event' => $event];
             }
         }
         usort($timeline, static function(array $a, array $b): int {
