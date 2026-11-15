@@ -3,7 +3,7 @@
 Метки: **ПРИНЯТО** — требования владельца; **ПРЕДЛОЖЕНО** — спецификация Claude;
 **ТРЕБУЕТ РЕШЕНИЯ** — вопрос владельцу; **ПРОВЕРЕНО / НЕ ПРОВЕРЕНО** — доказательства и ограничения.
 
-Связанные документы: [проект](DAILY_REPORTS_DESIGN.md), [ADR-0009](../adr/ADR-0009-daily-employee-reports-PROPOSED.md),
+Связанные документы: [проект](DAILY_REPORTS_DESIGN.md), [ADR-0009](../adr/ADR-0009-daily-employee-reports.md),
 [прототип](prototype/README.md). Сохранённый проект в контекстном репозитории:
 `bms24-context/proposals/2026-11-15-daily-employee-reports.md` (коммит `fc975a9`).
 

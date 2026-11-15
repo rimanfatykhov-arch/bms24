@@ -134,6 +134,7 @@ PROPOSED: section «Отчёты за день» (tabs «Мой отчёт», «
 canonical report entity with immutable submitted versions, per-version review and rating, Communication
 Center discussion via the ADR-0008 descriptor, stages R0 (navigation, no schema) → R1 (report, schema) →
 R2 (review). [Audit](daily-reports/DAILY_REPORTS_AUDIT.md), [design](daily-reports/DAILY_REPORTS_DESIGN.md),
-[ADR-0009](adr/ADR-0009-daily-employee-reports-PROPOSED.md), [clickable prototype](daily-reports/prototype/README.md).
-Details D02/S2 of the general plan in open PR #95; no competing roadmap. Owner decisions В1–В12 are open.
+[ADR-0009](adr/ADR-0009-daily-employee-reports.md), [clickable prototype](daily-reports/prototype/README.md).
+Details D02/S2 of the general plan in open PR #95; no competing roadmap. Owner ACCEPTED recommended
+decisions В1–В8, В10–В12 on 15.11.2026 (В9 awaits a screenshot); first stage R0 (navigation, no schema).
 No product code, schema, merge or deployment in this step.
