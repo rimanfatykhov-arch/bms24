@@ -20,8 +20,11 @@
                 window.fetch(marker.getAttribute('data-endpoint'), {
                     method: 'POST', body: body, credentials: 'same-origin', redirect: 'error', cache: 'no-store'
                 }).then(function(response) {
-                    marker.setAttribute('data-bms-task-open-status', String(response.status));
-                }, function() {
+                    // Consume the body so the request completes (an unread stream stays open in the browser).
+                    return response.text().then(function() {
+                        marker.setAttribute('data-bms-task-open-status', String(response.status));
+                    });
+                }).then(null, function() {
                     marker.setAttribute('data-bms-task-open-status', 'failed');
                 });
             } catch (e) {
