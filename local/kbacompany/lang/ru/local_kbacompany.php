@@ -9669,3 +9669,23 @@ $string['taskdiscussion_size_error'] = 'Размер файла или всех 
 $string['taskdiscussion_count_error'] = 'Выбрано слишком много файлов. Уберите лишние вложения перед отправкой.';
 $string['taskdiscussion_send_error'] = 'Отправка не подтверждена. Текст и вложения сохранены. Повторите отправку без изменения формы, чтобы избежать дублирования.';
 $string['taskdiscussion_remove_file'] = 'Убрать файл';
+
+// Issue #106: canonical read-only personal day summary.
+$string['dailyreport_title'] = 'Сводка моего дня';
+$string['dailyreport_intro'] = 'Задачи и отправленные результаты из BMS24. Это просмотр данных, а не отправленный дневной отчёт.';
+$string['dailyreport_day'] = 'День';
+$string['dailyreport_show'] = 'Показать день';
+$string['dailyreport_timezone'] = 'Часовой пояс';
+$string['dailyreport_scope'] = 'Только мои задачи по текущим правам и назначению. После изменения назначения или прав старые события могут быть недоступны.';
+$string['dailyreport_tasks'] = 'Задачи со сроком на этот день';
+$string['dailyreport_tasksnote'] = 'Срок задачи не означает, что она была включена в дневной план. Статус показан на текущий момент.';
+$string['dailyreport_emptytasks'] = 'Задач с таким сроком нет.';
+$string['dailyreport_currentstatus'] = 'Сейчас';
+$string['dailyreport_tasktime'] = 'Фактическое время по задаче, всего — не за день';
+$string['dailyreport_minutes'] = 'мин';
+$string['dailyreport_results'] = 'Мои отправленные результаты за день';
+$string['dailyreport_resultsnote'] = 'Показаны события отправки результата, а не подтверждение руководителя. Повторные отправки после возврата показаны отдельно.';
+$string['dailyreport_emptyresults'] = 'В этот день вы не отправляли результаты доступных сейчас задач.';
+$string['dailyreport_submittedstatus'] = 'Статус после отправки';
+$string['dailyreport_missingresult'] = 'В исходном событии нет сохранённого текста результата.';
+$string['dailyreport_invaliddate'] = 'Укажите существующую дату в формате ГГГГ-ММ-ДД.';

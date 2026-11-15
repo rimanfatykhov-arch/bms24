@@ -1951,6 +1951,13 @@ class task_service {
         return self::projection_access($companyuuid, $actor);
     }
 
+    /** Own current execution scope, including explicit position coverage. Fixed SQL alias t. */
+    public static function own_query_conditions(string $companyuuid, int $actor): array {
+        $companyuuid = company_context_service::normalise_uuid($companyuuid);
+        company_context_service::context($companyuuid, $actor);
+        return self::list_conditions($companyuuid, $actor, ['scope' => 'my']);
+    }
+
     /** Exact canonical task, without loading all tasks, attachments or discussion history. */
     public static function readable_projection(string $companyuuid, int $actor, string $taskuuid): ?array {
         global $DB;

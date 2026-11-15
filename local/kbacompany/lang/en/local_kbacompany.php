@@ -9667,3 +9667,23 @@ $string['taskdiscussion_size_error'] = 'A file or the combined attachments excee
 $string['taskdiscussion_count_error'] = 'Too many files selected. Remove extra attachments before sending.';
 $string['taskdiscussion_send_error'] = 'Sending was not confirmed. Your text and files remain selected. Retry without changing the form to avoid duplicates.';
 $string['taskdiscussion_remove_file'] = 'Remove file';
+
+// Issue #106: canonical read-only personal day summary.
+$string['dailyreport_title'] = 'My day summary';
+$string['dailyreport_intro'] = 'Tasks and submitted results from BMS24. This is a read-only summary, not a submitted daily report.';
+$string['dailyreport_day'] = 'Day';
+$string['dailyreport_show'] = 'Show day';
+$string['dailyreport_timezone'] = 'Timezone';
+$string['dailyreport_scope'] = 'Only my tasks under current permissions and assignment. Historical events may become unavailable when assignment or permissions change.';
+$string['dailyreport_tasks'] = 'Tasks due on this day';
+$string['dailyreport_tasksnote'] = 'A due date does not mean a task was in a daily plan. Status is current.';
+$string['dailyreport_emptytasks'] = 'No tasks due on this day.';
+$string['dailyreport_currentstatus'] = 'Now';
+$string['dailyreport_tasktime'] = 'Actual time for the entire task, not this day';
+$string['dailyreport_minutes'] = 'min';
+$string['dailyreport_results'] = 'My results submitted during this day';
+$string['dailyreport_resultsnote'] = 'These are submission events, not manager acceptance. Resubmissions after a return are shown separately.';
+$string['dailyreport_emptyresults'] = 'No submissions on currently accessible tasks during this day.';
+$string['dailyreport_submittedstatus'] = 'Status after submission';
+$string['dailyreport_missingresult'] = 'The source event contains no saved result text.';
+$string['dailyreport_invaliddate'] = 'Enter a valid date in YYYY-MM-DD format.';
