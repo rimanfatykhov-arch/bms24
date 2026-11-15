@@ -1,0 +1,301 @@
+{
+ "phase": "ci",
+ "cases": [
+  {
+   "id": "P01.ci.page_and_tabs",
+   "status": "PASS",
+   "http": 200,
+   "tabs": 11
+  },
+  {
+   "id": "P01.ci.keyboard_reaches_tab",
+   "status": "PASS",
+   "presses": 33
+  },
+  {
+   "id": "P01.ci.focus_ring_visible",
+   "status": "PASS",
+   "outline": [
+    "solid",
+    "3px",
+    "rgb(23, 119, 181)",
+    "2px"
+   ],
+   "clipped": []
+  },
+  {
+   "id": "P01.ci.focus_ring_contrast_3to1",
+   "status": "PASS",
+   "contrast": 4.24,
+   "against": "rgb(230, 243, 237)"
+  },
+  {
+   "id": "P01.ci.second_tab_focus_visible",
+   "status": "PASS",
+   "text": "My tasks \u00b7 0"
+  },
+  {
+   "id": "P01.ci.enter_activates_tab",
+   "status": "PASS",
+   "url_matches": true,
+   "current_matches": true
+  },
+  {
+   "id": "P01.ci.active_tab_distinct",
+   "status": "PASS",
+   "active": "rgb(12, 108, 82) 3px",
+   "inactive": "rgba(0, 0, 0, 0) 3px"
+  },
+  {
+   "id": "P01.ci.mouse_click_navigates_without_ring",
+   "status": "PASS",
+   "ring_after_click": false
+  },
+  {
+   "id": "P01.ci.desktop_tabs_not_enlarged",
+   "status": "PASS",
+   "heights": [
+    34
+   ]
+  },
+  {
+   "id": "P01.ci.desktop_no_browser_errors",
+   "status": "PASS",
+   "violations": [],
+   "blocked_external": [
+    "https://cdn.jsdelivr.net/npm/mathjax@2.7.9/MathJax.js?delayStartupUntil=configured"
+   ]
+  },
+  {
+   "id": "P01.ci.mobile_focus_ring",
+   "status": "PASS",
+   "presses": 18,
+   "outline": [
+    "solid",
+    "3px",
+    "rgb(23, 119, 181)"
+   ],
+   "clipped": []
+  },
+  {
+   "id": "P01.ci.mobile_no_page_hscroll",
+   "status": "PASS",
+   "overflow_px": 0
+  },
+  {
+   "id": "P01.ci.mobile_tap_target_44",
+   "status": "PASS",
+   "heights": [
+    44
+   ]
+  },
+  {
+   "id": "P01.ci.mobile_no_browser_errors",
+   "status": "PASS",
+   "violations": [],
+   "blocked_external": [
+    "https://cdn.jsdelivr.net/npm/mathjax@2.7.9/MathJax.js?delayStartupUntil=configured"
+   ]
+  }
+ ],
+ "browser_events": {
+  "desktop": [
+   {
+    "source": "route_abort",
+    "url": "https://cdn.jsdelivr.net/npm/mathjax@2.7.9/MathJax.js?delayStartupUntil=configured",
+    "resource_type": "script",
+    "reason": "non_loopback_request_blocked_by_test_route"
+   },
+   {
+    "source": "requestfailed",
+    "url": "https://cdn.jsdelivr.net/npm/mathjax@2.7.9/MathJax.js?delayStartupUntil=configured",
+    "resource_type": "script",
+    "failure": "net::ERR_BLOCKED_BY_CLIENT.Inspector"
+   },
+   {
+    "source": "console",
+    "type": "error",
+    "text": "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+    "url": "https://cdn.jsdelivr.net/npm/mathjax@2.7.9/MathJax.js?delayStartupUntil=configured"
+   },
+   {
+    "source": "route_abort",
+    "url": "https://cdn.jsdelivr.net/npm/mathjax@2.7.9/MathJax.js?delayStartupUntil=configured",
+    "resource_type": "script",
+    "reason": "non_loopback_request_blocked_by_test_route"
+   },
+   {
+    "source": "requestfailed",
+    "url": "https://cdn.jsdelivr.net/npm/mathjax@2.7.9/MathJax.js?delayStartupUntil=configured",
+    "resource_type": "script",
+    "failure": "net::ERR_BLOCKED_BY_CLIENT.Inspector"
+   },
+   {
+    "source": "console",
+    "type": "error",
+    "text": "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+    "url": "https://cdn.jsdelivr.net/npm/mathjax@2.7.9/MathJax.js?delayStartupUntil=configured"
+   }
+  ],
+  "mobile": [
+   {
+    "source": "route_abort",
+    "url": "https://cdn.jsdelivr.net/npm/mathjax@2.7.9/MathJax.js?delayStartupUntil=configured",
+    "resource_type": "script",
+    "reason": "non_loopback_request_blocked_by_test_route"
+   },
+   {
+    "source": "requestfailed",
+    "url": "https://cdn.jsdelivr.net/npm/mathjax@2.7.9/MathJax.js?delayStartupUntil=configured",
+    "resource_type": "script",
+    "failure": "net::ERR_BLOCKED_BY_CLIENT.Inspector"
+   },
+   {
+    "source": "console",
+    "type": "error",
+    "text": "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+    "url": "https://cdn.jsdelivr.net/npm/mathjax@2.7.9/MathJax.js?delayStartupUntil=configured"
+   },
+   {
+    "source": "route_abort",
+    "url": "https://cdn.jsdelivr.net/npm/mathjax@2.7.9/MathJax.js?delayStartupUntil=configured",
+    "resource_type": "script",
+    "reason": "non_loopback_request_blocked_by_test_route"
+   },
+   {
+    "source": "requestfailed",
+    "url": "https://cdn.jsdelivr.net/npm/mathjax@2.7.9/MathJax.js?delayStartupUntil=configured",
+    "resource_type": "script",
+    "failure": "net::ERR_BLOCKED_BY_CLIENT.Inspector"
+   },
+   {
+    "source": "console",
+    "type": "error",
+    "text": "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+    "url": "https://cdn.jsdelivr.net/npm/mathjax@2.7.9/MathJax.js?delayStartupUntil=configured"
+   }
+  ]
+ },
+ "tabs": 11,
+ "shell_css": [
+  "tokens.css",
+  "owned_shell.css",
+  "task_center.css"
+ ],
+ "inactive_style": {
+  "focusVisible": false,
+  "outlineStyle": "none",
+  "outlineWidth": "0px",
+  "outlineColor": "rgb(53, 83, 71)",
+  "outlineOffset": "0px",
+  "boxShadow": "none",
+  "background": "rgb(228, 242, 251)",
+  "color": "rgb(53, 83, 71)",
+  "borderBottom": "rgba(0, 0, 0, 0) 3px",
+  "ariaCurrent": null,
+  "href": "http://127.0.0.1:8080/local/kbacompany/tasks.php?uuid=5e3da79a-5387-406a-9bb8-ffc2472b3e13&scope=my&q&status&stream&sourcekind&battleplan&signal&assignee=0&project&sort=duedate&dir=asc&display=list&page=0",
+  "text": "My tasks \u00b7 0",
+  "clippedBy": [],
+  "rect": [
+   405,
+   255,
+   99,
+   34
+  ]
+ },
+ "focus_first": {
+  "focusVisible": true,
+  "outlineStyle": "solid",
+  "outlineWidth": "3px",
+  "outlineColor": "rgb(23, 119, 181)",
+  "outlineOffset": "2px",
+  "boxShadow": "none",
+  "background": "rgb(230, 243, 237)",
+  "color": "rgb(7, 90, 66)",
+  "borderBottom": "rgb(12, 108, 82) 3px",
+  "ariaCurrent": "page",
+  "href": "http://127.0.0.1:8080/local/kbacompany/tasks.php?uuid=5e3da79a-5387-406a-9bb8-ffc2472b3e13&scope=roles&q&status&stream&sourcekind&battleplan&signal&assignee=0&project&sort=duedate&dir=asc&display=list&page=0",
+  "text": "All my roles \u00b7 1",
+  "clippedBy": [],
+  "rect": [
+   284,
+   255,
+   119,
+   34
+  ]
+ },
+ "focus_second": {
+  "focusVisible": true,
+  "outlineStyle": "solid",
+  "outlineWidth": "3px",
+  "outlineColor": "rgb(23, 119, 181)",
+  "outlineOffset": "2px",
+  "boxShadow": "none",
+  "background": "rgb(228, 242, 251)",
+  "color": "rgb(53, 83, 71)",
+  "borderBottom": "rgba(0, 0, 0, 0) 3px",
+  "ariaCurrent": null,
+  "href": "http://127.0.0.1:8080/local/kbacompany/tasks.php?uuid=5e3da79a-5387-406a-9bb8-ffc2472b3e13&scope=my&q&status&stream&sourcekind&battleplan&signal&assignee=0&project&sort=duedate&dir=asc&display=list&page=0",
+  "text": "My tasks \u00b7 0",
+  "clippedBy": [],
+  "rect": [
+   405,
+   255,
+   99,
+   34
+  ]
+ },
+ "active_style": {
+  "focusVisible": false,
+  "outlineStyle": "none",
+  "outlineWidth": "0px",
+  "outlineColor": "rgb(7, 90, 66)",
+  "outlineOffset": "0px",
+  "boxShadow": "none",
+  "background": "rgb(230, 243, 237)",
+  "color": "rgb(7, 90, 66)",
+  "borderBottom": "rgb(12, 108, 82) 3px",
+  "ariaCurrent": "page",
+  "href": "http://127.0.0.1:8080/local/kbacompany/tasks.php?uuid=5e3da79a-5387-406a-9bb8-ffc2472b3e13&scope=my&q&status&stream&sourcekind&battleplan&signal&assignee=0&project&sort=duedate&dir=asc&display=list&page=0",
+  "text": "My tasks \u00b7 0",
+  "clippedBy": [],
+  "rect": [
+   405,
+   255,
+   99,
+   34
+  ]
+ },
+ "hover_style": {
+  "background": "rgb(236, 247, 243)",
+  "color": "rgb(12, 108, 82)"
+ },
+ "desktop_tab_heights": [
+  34,
+  34,
+  34,
+  34,
+  34,
+  34,
+  34,
+  34,
+  34,
+  34,
+  34
+ ],
+ "mobile_tab_heights": [
+  44,
+  44,
+  44,
+  44,
+  44,
+  44,
+  44,
+  44,
+  44,
+  44,
+  44
+ ],
+ "mobile_pointer_coarse": true,
+ "status": "PASS"
+}

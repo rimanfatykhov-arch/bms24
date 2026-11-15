@@ -1,0 +1,203 @@
+{
+ "phase": "verify",
+ "steps": {
+  "compact_controls": {
+   "file_inputs": 1
+  },
+  "compact_text_and_file": {
+   "rendered_text_exact": "RC31 P02 compact text verify",
+   "file_link_text": "p02-compact.txt",
+   "downloads": {
+    "p02-compact.txt": {
+     "http": 200,
+     "sha256": "f1a6edc4d9457f142f72e1046ee520c4b513b1cb013bf8bb478a41731bc0f910"
+    }
+   }
+  },
+  "compact_file_only": {
+   "file_link_text": "p02-compact-only.txt",
+   "downloads": {
+    "p02-compact-only.txt": {
+     "http": 200,
+     "sha256": "2661ba76e0b82527fc687dcdb57a9f0e7f3c0031847e92fb8bab52a9a3835ef5"
+    }
+   }
+  },
+  "full_text_only": {
+   "rendered_text_exact": "RC31 P02 full text only verify"
+  },
+  "full_text_and_file": {
+   "filename_feedback": "p02-text-and-file.txt \u00b7 36 B",
+   "rendered_text_exact": "RC31 P02 full text and file verify",
+   "file_link_text": "p02-text-and-file.txt",
+   "downloads": {
+    "p02-text-and-file.txt": {
+     "http": 200,
+     "sha256": "3c77915aeecfdb21be289b4583050fa514932442fc170e9f0f69e64eadd4bf5f"
+    }
+   }
+  },
+  "full_file_only": {
+   "file_link_text": "p02-file-only.txt",
+   "downloads": {
+    "p02-file-only.txt": {
+     "http": 200,
+     "sha256": "0fb73a4ea2f547d0871b59d8359c8bebedcb793295a8d3a5c256f707729f0d32"
+    }
+   }
+  },
+  "server_file_only_direct": {
+   "http": 303,
+   "location": "http://127.0.0.1:8080/local/kbacompany/communication_center.php?uuid=5e3da79a-5387-406a-9bb8-ffc2472b3e13&tab=discussions&thread=ae12bb18-b8f7-4f4a-a919-91e4ce191990",
+   "expected_query": {
+    "uuid": "5e3da79a-5387-406a-9bb8-ffc2472b3e13",
+    "tab": "discussions",
+    "thread": "ae12bb18-b8f7-4f4a-a919-91e4ce191990"
+   },
+   "file_link_text": "p02-direct-only.txt",
+   "downloads": {
+    "p02-direct-only.txt": {
+     "http": 200,
+     "sha256": "e75db12e90795232fd916d7fbbb916e9540b731e8076200a9c11a0ab3c9247c0"
+    }
+   }
+  },
+  "csrf_invalid_sesskey": {
+   "http": 404,
+   "refusal_marker": true,
+   "location": ""
+  },
+  "double_submit": {
+   "center_posts": 4
+  }
+ },
+ "browser_events": [
+  {
+   "source": "route_abort",
+   "url": "https://cdn.jsdelivr.net/npm/mathjax@2.7.9/MathJax.js?delayStartupUntil=configured",
+   "resource_type": "script",
+   "reason": "non_loopback_request_blocked_by_test_route"
+  },
+  {
+   "source": "requestfailed",
+   "url": "https://cdn.jsdelivr.net/npm/mathjax@2.7.9/MathJax.js?delayStartupUntil=configured",
+   "resource_type": "script",
+   "failure": "net::ERR_BLOCKED_BY_CLIENT.Inspector"
+  },
+  {
+   "source": "console",
+   "type": "error",
+   "text": "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+   "url": "https://cdn.jsdelivr.net/npm/mathjax@2.7.9/MathJax.js?delayStartupUntil=configured"
+  },
+  {
+   "source": "route_abort",
+   "url": "https://cdn.jsdelivr.net/npm/mathjax@2.7.9/MathJax.js?delayStartupUntil=configured",
+   "resource_type": "script",
+   "reason": "non_loopback_request_blocked_by_test_route"
+  },
+  {
+   "source": "requestfailed",
+   "url": "https://cdn.jsdelivr.net/npm/mathjax@2.7.9/MathJax.js?delayStartupUntil=configured",
+   "resource_type": "script",
+   "failure": "net::ERR_BLOCKED_BY_CLIENT.Inspector"
+  },
+  {
+   "source": "console",
+   "type": "error",
+   "text": "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+   "url": "https://cdn.jsdelivr.net/npm/mathjax@2.7.9/MathJax.js?delayStartupUntil=configured"
+  },
+  {
+   "source": "route_abort",
+   "url": "https://cdn.jsdelivr.net/npm/mathjax@2.7.9/MathJax.js?delayStartupUntil=configured",
+   "resource_type": "script",
+   "reason": "non_loopback_request_blocked_by_test_route"
+  },
+  {
+   "source": "requestfailed",
+   "url": "https://cdn.jsdelivr.net/npm/mathjax@2.7.9/MathJax.js?delayStartupUntil=configured",
+   "resource_type": "script",
+   "failure": "net::ERR_BLOCKED_BY_CLIENT.Inspector"
+  },
+  {
+   "source": "console",
+   "type": "error",
+   "text": "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+   "url": "https://cdn.jsdelivr.net/npm/mathjax@2.7.9/MathJax.js?delayStartupUntil=configured"
+  },
+  {
+   "source": "route_abort",
+   "url": "https://cdn.jsdelivr.net/npm/mathjax@2.7.9/MathJax.js?delayStartupUntil=configured",
+   "resource_type": "script",
+   "reason": "non_loopback_request_blocked_by_test_route"
+  },
+  {
+   "source": "requestfailed",
+   "url": "https://cdn.jsdelivr.net/npm/mathjax@2.7.9/MathJax.js?delayStartupUntil=configured",
+   "resource_type": "script",
+   "failure": "net::ERR_BLOCKED_BY_CLIENT.Inspector"
+  },
+  {
+   "source": "console",
+   "type": "error",
+   "text": "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+   "url": "https://cdn.jsdelivr.net/npm/mathjax@2.7.9/MathJax.js?delayStartupUntil=configured"
+  },
+  {
+   "source": "route_abort",
+   "url": "https://cdn.jsdelivr.net/npm/mathjax@2.7.9/MathJax.js?delayStartupUntil=configured",
+   "resource_type": "script",
+   "reason": "non_loopback_request_blocked_by_test_route"
+  },
+  {
+   "source": "requestfailed",
+   "url": "https://cdn.jsdelivr.net/npm/mathjax@2.7.9/MathJax.js?delayStartupUntil=configured",
+   "resource_type": "script",
+   "failure": "net::ERR_BLOCKED_BY_CLIENT.Inspector"
+  },
+  {
+   "source": "console",
+   "type": "error",
+   "text": "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+   "url": "https://cdn.jsdelivr.net/npm/mathjax@2.7.9/MathJax.js?delayStartupUntil=configured"
+  },
+  {
+   "source": "route_abort",
+   "url": "https://cdn.jsdelivr.net/npm/mathjax@2.7.9/MathJax.js?delayStartupUntil=configured",
+   "resource_type": "script",
+   "reason": "non_loopback_request_blocked_by_test_route"
+  },
+  {
+   "source": "requestfailed",
+   "url": "https://cdn.jsdelivr.net/npm/mathjax@2.7.9/MathJax.js?delayStartupUntil=configured",
+   "resource_type": "script",
+   "failure": "net::ERR_BLOCKED_BY_CLIENT.Inspector"
+  },
+  {
+   "source": "console",
+   "type": "error",
+   "text": "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+   "url": "https://cdn.jsdelivr.net/npm/mathjax@2.7.9/MathJax.js?delayStartupUntil=configured"
+  },
+  {
+   "source": "route_abort",
+   "url": "https://cdn.jsdelivr.net/npm/mathjax@2.7.9/MathJax.js?delayStartupUntil=configured",
+   "resource_type": "script",
+   "reason": "non_loopback_request_blocked_by_test_route"
+  },
+  {
+   "source": "requestfailed",
+   "url": "https://cdn.jsdelivr.net/npm/mathjax@2.7.9/MathJax.js?delayStartupUntil=configured",
+   "resource_type": "script",
+   "failure": "net::ERR_BLOCKED_BY_CLIENT.Inspector"
+  },
+  {
+   "source": "console",
+   "type": "error",
+   "text": "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+   "url": "https://cdn.jsdelivr.net/npm/mathjax@2.7.9/MathJax.js?delayStartupUntil=configured"
+  }
+ ],
+ "attachment_urls": 5
+}

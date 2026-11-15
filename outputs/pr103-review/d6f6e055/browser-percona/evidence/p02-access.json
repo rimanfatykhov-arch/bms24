@@ -1,0 +1,340 @@
+{
+ "expected_urls": [
+  "http://127.0.0.1:8080/pluginfile.php/1/local_kbacompany/communication_attachment/1/p02-compact.txt?forcedownload=1",
+  "http://127.0.0.1:8080/pluginfile.php/1/local_kbacompany/communication_attachment/2/p02-compact-only.txt?forcedownload=1",
+  "http://127.0.0.1:8080/pluginfile.php/1/local_kbacompany/communication_attachment/4/p02-text-and-file.txt?forcedownload=1",
+  "http://127.0.0.1:8080/pluginfile.php/1/local_kbacompany/communication_attachment/5/p02-file-only.txt?forcedownload=1",
+  "http://127.0.0.1:8080/pluginfile.php/1/local_kbacompany/communication_attachment/6/p02-direct-only.txt?forcedownload=1"
+ ],
+ "phases": {
+  "ea_before": {
+   "http://127.0.0.1:8080/pluginfile.php/1/local_kbacompany/communication_attachment/1/p02-compact.txt?forcedownload=1": {
+    "http": 200,
+    "location": "",
+    "sha256": "f1a6edc4d9457f142f72e1046ee520c4b513b1cb013bf8bb478a41731bc0f910"
+   },
+   "http://127.0.0.1:8080/pluginfile.php/1/local_kbacompany/communication_attachment/2/p02-compact-only.txt?forcedownload=1": {
+    "http": 200,
+    "location": "",
+    "sha256": "2661ba76e0b82527fc687dcdb57a9f0e7f3c0031847e92fb8bab52a9a3835ef5"
+   },
+   "http://127.0.0.1:8080/pluginfile.php/1/local_kbacompany/communication_attachment/4/p02-text-and-file.txt?forcedownload=1": {
+    "http": 200,
+    "location": "",
+    "sha256": "3c77915aeecfdb21be289b4583050fa514932442fc170e9f0f69e64eadd4bf5f"
+   },
+   "http://127.0.0.1:8080/pluginfile.php/1/local_kbacompany/communication_attachment/5/p02-file-only.txt?forcedownload=1": {
+    "http": 200,
+    "location": "",
+    "sha256": "0fb73a4ea2f547d0871b59d8359c8bebedcb793295a8d3a5c256f707729f0d32"
+   },
+   "http://127.0.0.1:8080/pluginfile.php/1/local_kbacompany/communication_attachment/6/p02-direct-only.txt?forcedownload=1": {
+    "http": 200,
+    "location": "",
+    "sha256": "e75db12e90795232fd916d7fbbb916e9540b731e8076200a9c11a0ab3c9247c0"
+   }
+  },
+  "eb": {
+   "http://127.0.0.1:8080/pluginfile.php/1/local_kbacompany/communication_attachment/1/p02-compact.txt?forcedownload=1": {
+    "http": 404,
+    "location": "",
+    "sha256": null
+   },
+   "http://127.0.0.1:8080/pluginfile.php/1/local_kbacompany/communication_attachment/2/p02-compact-only.txt?forcedownload=1": {
+    "http": 404,
+    "location": "",
+    "sha256": null
+   },
+   "http://127.0.0.1:8080/pluginfile.php/1/local_kbacompany/communication_attachment/4/p02-text-and-file.txt?forcedownload=1": {
+    "http": 404,
+    "location": "",
+    "sha256": null
+   },
+   "http://127.0.0.1:8080/pluginfile.php/1/local_kbacompany/communication_attachment/5/p02-file-only.txt?forcedownload=1": {
+    "http": 404,
+    "location": "",
+    "sha256": null
+   },
+   "http://127.0.0.1:8080/pluginfile.php/1/local_kbacompany/communication_attachment/6/p02-direct-only.txt?forcedownload=1": {
+    "http": 404,
+    "location": "",
+    "sha256": null
+   }
+  },
+  "anon": {
+   "http://127.0.0.1:8080/pluginfile.php/1/local_kbacompany/communication_attachment/1/p02-compact.txt?forcedownload=1": {
+    "http": 303,
+    "location": "http://127.0.0.1:8080/login/index.php",
+    "sha256": null
+   },
+   "http://127.0.0.1:8080/pluginfile.php/1/local_kbacompany/communication_attachment/2/p02-compact-only.txt?forcedownload=1": {
+    "http": 303,
+    "location": "http://127.0.0.1:8080/login/index.php",
+    "sha256": null
+   },
+   "http://127.0.0.1:8080/pluginfile.php/1/local_kbacompany/communication_attachment/4/p02-text-and-file.txt?forcedownload=1": {
+    "http": 303,
+    "location": "http://127.0.0.1:8080/login/index.php",
+    "sha256": null
+   },
+   "http://127.0.0.1:8080/pluginfile.php/1/local_kbacompany/communication_attachment/5/p02-file-only.txt?forcedownload=1": {
+    "http": 303,
+    "location": "http://127.0.0.1:8080/login/index.php",
+    "sha256": null
+   },
+   "http://127.0.0.1:8080/pluginfile.php/1/local_kbacompany/communication_attachment/6/p02-direct-only.txt?forcedownload=1": {
+    "http": 303,
+    "location": "http://127.0.0.1:8080/login/index.php",
+    "sha256": null
+   }
+  },
+  "ea_revoked": {
+   "http://127.0.0.1:8080/pluginfile.php/1/local_kbacompany/communication_attachment/1/p02-compact.txt?forcedownload=1": {
+    "http": 404,
+    "location": "",
+    "sha256": null
+   },
+   "http://127.0.0.1:8080/pluginfile.php/1/local_kbacompany/communication_attachment/2/p02-compact-only.txt?forcedownload=1": {
+    "http": 404,
+    "location": "",
+    "sha256": null
+   },
+   "http://127.0.0.1:8080/pluginfile.php/1/local_kbacompany/communication_attachment/4/p02-text-and-file.txt?forcedownload=1": {
+    "http": 404,
+    "location": "",
+    "sha256": null
+   },
+   "http://127.0.0.1:8080/pluginfile.php/1/local_kbacompany/communication_attachment/5/p02-file-only.txt?forcedownload=1": {
+    "http": 404,
+    "location": "",
+    "sha256": null
+   },
+   "http://127.0.0.1:8080/pluginfile.php/1/local_kbacompany/communication_attachment/6/p02-direct-only.txt?forcedownload=1": {
+    "http": 404,
+    "location": "",
+    "sha256": null
+   }
+  },
+  "ea_reopened": {
+   "http://127.0.0.1:8080/pluginfile.php/1/local_kbacompany/communication_attachment/1/p02-compact.txt?forcedownload=1": {
+    "http": 200,
+    "location": "",
+    "sha256": "f1a6edc4d9457f142f72e1046ee520c4b513b1cb013bf8bb478a41731bc0f910"
+   },
+   "http://127.0.0.1:8080/pluginfile.php/1/local_kbacompany/communication_attachment/2/p02-compact-only.txt?forcedownload=1": {
+    "http": 200,
+    "location": "",
+    "sha256": "2661ba76e0b82527fc687dcdb57a9f0e7f3c0031847e92fb8bab52a9a3835ef5"
+   },
+   "http://127.0.0.1:8080/pluginfile.php/1/local_kbacompany/communication_attachment/4/p02-text-and-file.txt?forcedownload=1": {
+    "http": 200,
+    "location": "",
+    "sha256": "3c77915aeecfdb21be289b4583050fa514932442fc170e9f0f69e64eadd4bf5f"
+   },
+   "http://127.0.0.1:8080/pluginfile.php/1/local_kbacompany/communication_attachment/5/p02-file-only.txt?forcedownload=1": {
+    "http": 200,
+    "location": "",
+    "sha256": "0fb73a4ea2f547d0871b59d8359c8bebedcb793295a8d3a5c256f707729f0d32"
+   },
+   "http://127.0.0.1:8080/pluginfile.php/1/local_kbacompany/communication_attachment/6/p02-direct-only.txt?forcedownload=1": {
+    "http": 200,
+    "location": "",
+    "sha256": "e75db12e90795232fd916d7fbbb916e9540b731e8076200a9c11a0ab3c9247c0"
+   }
+  }
+ },
+ "logins": {
+  "EA": 1,
+  "EB": 1
+ },
+ "history": {
+  "before": {
+   "tables": [
+    "files:communication_attachment",
+    "local_kbacompany_commattach",
+    "local_kbacompany_commmsg",
+    "local_kbacompany_commrev"
+   ],
+   "rows": {
+    "files:communication_attachment": {
+     "file6": "b213b16b3d42189d4af550715f24bd1e893c25aceac8d573939df17250de4800",
+     "file8": "a234ab6e3c527c2d95cc9a6978dc33423aa7faee9424543ed8759a82e022ead7",
+     "file10": "0feb0a45391d67adf5bfed1b2081de2af0198f9f92a320acee22a7674499292a",
+     "file12": "e811da3d70bf210bc1f1365b34ca9637d45ec7f6da3f67ed72bc3b4dd60c56dc",
+     "file14": "b6555753f0a9c94fb21a765b2565c60c4b14278faeb0e8bacdb7c90474ec23a5"
+    },
+    "local_kbacompany_commattach": {
+     "140a7f51-c6bc-497b-a233-8f7bd97b2187": "2d9398f553ba44e73c4c3502c3ff1464fd856b2334c534b67ca6b42abf652180",
+     "eeb6ae95-ce99-4d81-8a76-27d0f7348e02": "fa751f0af4524ca6a1b4209febdf67f4416aa74f2c7c941d72a8f7097e3005b4",
+     "6da7fcd5-243b-44e4-876e-6722b83cb1a9": "7774dfc5ac28232aa7f8eccf5a77802aed2b52767bf762fbbbe13dcd9ab62240",
+     "355ebf4f-1b4a-438e-a6b4-e52c967b0beb": "f550516e8e5857b7631b54a776f52b4881386f3077b1afc3507916648156e5ed",
+     "63b1c828-cdf6-46dd-ba11-591d9a78449b": "16fd96069155799709f980d211aa76d570a8fa715dfcc5d8f10b0534c440f849"
+    },
+    "local_kbacompany_commmsg": {
+     "e7c3be97-a6db-44e2-91b5-3de0485911d1": "486a144038d28d3aedf0c33cffe29476de3633fa83cc0a4bdf33cc91043b2def",
+     "a6ab0503-91cd-499c-ad84-e2755c6ad801": "1a74af9b925349d5f5ff64533edf7b5223d14e8d9019d2a8fc52984de7994b5d",
+     "23e24edf-c65e-4938-9f46-0e7384c77f8a": "61df14568eb5b5413ac9f68ab489d4a6c061b561022c9a42aa9fb7591eb1f880",
+     "0d34824b-fa09-4eb2-b95a-d1fb7b73cfb0": "6667ad010d98a51926ade5cfb7988ce5e2becc25cb8fa72190a273f03bbeb6fa",
+     "200ea403-7261-4e6b-8aa9-761010b6880f": "34378417b155b0dd12b88e4e7cedcfc2bce240cd5699ea5a295b06cac22a537f",
+     "964badb9-cc5b-467e-8cb3-ae1331d0505b": "3c89dc43fdefe7fdb0b9c33386426448ea8bbd781daa2873d744329e7b02109b",
+     "56999fc5-ecc1-4d7c-9a16-6b33a9761816": "212cc2672bc2a112a9a7025ccec21bccd98b4405e3f2e3de10b92fb42c46682e"
+    },
+    "local_kbacompany_commrev": []
+   },
+   "digest": "0a5b78beb59b3cb3496fe382b9be7e8cded9889a9715eebccb31f43ff596180f"
+  },
+  "after_revoke": {
+   "tables": [
+    "files:communication_attachment",
+    "local_kbacompany_commattach",
+    "local_kbacompany_commmsg",
+    "local_kbacompany_commrev"
+   ],
+   "rows": {
+    "files:communication_attachment": {
+     "file6": "b213b16b3d42189d4af550715f24bd1e893c25aceac8d573939df17250de4800",
+     "file8": "a234ab6e3c527c2d95cc9a6978dc33423aa7faee9424543ed8759a82e022ead7",
+     "file10": "0feb0a45391d67adf5bfed1b2081de2af0198f9f92a320acee22a7674499292a",
+     "file12": "e811da3d70bf210bc1f1365b34ca9637d45ec7f6da3f67ed72bc3b4dd60c56dc",
+     "file14": "b6555753f0a9c94fb21a765b2565c60c4b14278faeb0e8bacdb7c90474ec23a5"
+    },
+    "local_kbacompany_commattach": {
+     "140a7f51-c6bc-497b-a233-8f7bd97b2187": "2d9398f553ba44e73c4c3502c3ff1464fd856b2334c534b67ca6b42abf652180",
+     "eeb6ae95-ce99-4d81-8a76-27d0f7348e02": "fa751f0af4524ca6a1b4209febdf67f4416aa74f2c7c941d72a8f7097e3005b4",
+     "6da7fcd5-243b-44e4-876e-6722b83cb1a9": "7774dfc5ac28232aa7f8eccf5a77802aed2b52767bf762fbbbe13dcd9ab62240",
+     "355ebf4f-1b4a-438e-a6b4-e52c967b0beb": "f550516e8e5857b7631b54a776f52b4881386f3077b1afc3507916648156e5ed",
+     "63b1c828-cdf6-46dd-ba11-591d9a78449b": "16fd96069155799709f980d211aa76d570a8fa715dfcc5d8f10b0534c440f849"
+    },
+    "local_kbacompany_commmsg": {
+     "e7c3be97-a6db-44e2-91b5-3de0485911d1": "486a144038d28d3aedf0c33cffe29476de3633fa83cc0a4bdf33cc91043b2def",
+     "a6ab0503-91cd-499c-ad84-e2755c6ad801": "1a74af9b925349d5f5ff64533edf7b5223d14e8d9019d2a8fc52984de7994b5d",
+     "23e24edf-c65e-4938-9f46-0e7384c77f8a": "61df14568eb5b5413ac9f68ab489d4a6c061b561022c9a42aa9fb7591eb1f880",
+     "0d34824b-fa09-4eb2-b95a-d1fb7b73cfb0": "6667ad010d98a51926ade5cfb7988ce5e2becc25cb8fa72190a273f03bbeb6fa",
+     "200ea403-7261-4e6b-8aa9-761010b6880f": "34378417b155b0dd12b88e4e7cedcfc2bce240cd5699ea5a295b06cac22a537f",
+     "964badb9-cc5b-467e-8cb3-ae1331d0505b": "3c89dc43fdefe7fdb0b9c33386426448ea8bbd781daa2873d744329e7b02109b",
+     "56999fc5-ecc1-4d7c-9a16-6b33a9761816": "212cc2672bc2a112a9a7025ccec21bccd98b4405e3f2e3de10b92fb42c46682e"
+    },
+    "local_kbacompany_commrev": []
+   },
+   "digest": "0a5b78beb59b3cb3496fe382b9be7e8cded9889a9715eebccb31f43ff596180f"
+  },
+  "after_reopen": {
+   "tables": [
+    "files:communication_attachment",
+    "local_kbacompany_commattach",
+    "local_kbacompany_commmsg",
+    "local_kbacompany_commrev"
+   ],
+   "rows": {
+    "files:communication_attachment": {
+     "file6": "b213b16b3d42189d4af550715f24bd1e893c25aceac8d573939df17250de4800",
+     "file8": "a234ab6e3c527c2d95cc9a6978dc33423aa7faee9424543ed8759a82e022ead7",
+     "file10": "0feb0a45391d67adf5bfed1b2081de2af0198f9f92a320acee22a7674499292a",
+     "file12": "e811da3d70bf210bc1f1365b34ca9637d45ec7f6da3f67ed72bc3b4dd60c56dc",
+     "file14": "b6555753f0a9c94fb21a765b2565c60c4b14278faeb0e8bacdb7c90474ec23a5"
+    },
+    "local_kbacompany_commattach": {
+     "140a7f51-c6bc-497b-a233-8f7bd97b2187": "2d9398f553ba44e73c4c3502c3ff1464fd856b2334c534b67ca6b42abf652180",
+     "eeb6ae95-ce99-4d81-8a76-27d0f7348e02": "fa751f0af4524ca6a1b4209febdf67f4416aa74f2c7c941d72a8f7097e3005b4",
+     "6da7fcd5-243b-44e4-876e-6722b83cb1a9": "7774dfc5ac28232aa7f8eccf5a77802aed2b52767bf762fbbbe13dcd9ab62240",
+     "355ebf4f-1b4a-438e-a6b4-e52c967b0beb": "f550516e8e5857b7631b54a776f52b4881386f3077b1afc3507916648156e5ed",
+     "63b1c828-cdf6-46dd-ba11-591d9a78449b": "16fd96069155799709f980d211aa76d570a8fa715dfcc5d8f10b0534c440f849"
+    },
+    "local_kbacompany_commmsg": {
+     "e7c3be97-a6db-44e2-91b5-3de0485911d1": "486a144038d28d3aedf0c33cffe29476de3633fa83cc0a4bdf33cc91043b2def",
+     "a6ab0503-91cd-499c-ad84-e2755c6ad801": "1a74af9b925349d5f5ff64533edf7b5223d14e8d9019d2a8fc52984de7994b5d",
+     "23e24edf-c65e-4938-9f46-0e7384c77f8a": "61df14568eb5b5413ac9f68ab489d4a6c061b561022c9a42aa9fb7591eb1f880",
+     "0d34824b-fa09-4eb2-b95a-d1fb7b73cfb0": "6667ad010d98a51926ade5cfb7988ce5e2becc25cb8fa72190a273f03bbeb6fa",
+     "200ea403-7261-4e6b-8aa9-761010b6880f": "34378417b155b0dd12b88e4e7cedcfc2bce240cd5699ea5a295b06cac22a537f",
+     "964badb9-cc5b-467e-8cb3-ae1331d0505b": "3c89dc43fdefe7fdb0b9c33386426448ea8bbd781daa2873d744329e7b02109b",
+     "56999fc5-ecc1-4d7c-9a16-6b33a9761816": "212cc2672bc2a112a9a7025ccec21bccd98b4405e3f2e3de10b92fb42c46682e"
+    },
+    "local_kbacompany_commrev": []
+   },
+   "digest": "0a5b78beb59b3cb3496fe382b9be7e8cded9889a9715eebccb31f43ff596180f"
+  }
+ },
+ "browser_events": {
+  "EA": [
+   {
+    "source": "route_abort",
+    "url": "https://cdn.jsdelivr.net/npm/mathjax@2.7.9/MathJax.js?delayStartupUntil=configured",
+    "resource_type": "script",
+    "reason": "non_loopback_request_blocked_by_test_route"
+   },
+   {
+    "source": "requestfailed",
+    "url": "https://cdn.jsdelivr.net/npm/mathjax@2.7.9/MathJax.js?delayStartupUntil=configured",
+    "resource_type": "script",
+    "failure": "net::ERR_BLOCKED_BY_CLIENT.Inspector"
+   },
+   {
+    "source": "console",
+    "type": "error",
+    "text": "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+    "url": "https://cdn.jsdelivr.net/npm/mathjax@2.7.9/MathJax.js?delayStartupUntil=configured"
+   },
+   {
+    "source": "route_abort",
+    "url": "https://cdn.jsdelivr.net/npm/mathjax@2.7.9/MathJax.js?delayStartupUntil=configured",
+    "resource_type": "script",
+    "reason": "non_loopback_request_blocked_by_test_route"
+   },
+   {
+    "source": "requestfailed",
+    "url": "https://cdn.jsdelivr.net/npm/mathjax@2.7.9/MathJax.js?delayStartupUntil=configured",
+    "resource_type": "script",
+    "failure": "net::ERR_BLOCKED_BY_CLIENT.Inspector"
+   },
+   {
+    "source": "console",
+    "type": "error",
+    "text": "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+    "url": "https://cdn.jsdelivr.net/npm/mathjax@2.7.9/MathJax.js?delayStartupUntil=configured"
+   }
+  ],
+  "EB": [
+   {
+    "source": "route_abort",
+    "url": "https://cdn.jsdelivr.net/npm/mathjax@2.7.9/MathJax.js?delayStartupUntil=configured",
+    "resource_type": "script",
+    "reason": "non_loopback_request_blocked_by_test_route"
+   },
+   {
+    "source": "requestfailed",
+    "url": "https://cdn.jsdelivr.net/npm/mathjax@2.7.9/MathJax.js?delayStartupUntil=configured",
+    "resource_type": "script",
+    "failure": "net::ERR_BLOCKED_BY_CLIENT.Inspector"
+   },
+   {
+    "source": "console",
+    "type": "error",
+    "text": "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+    "url": "https://cdn.jsdelivr.net/npm/mathjax@2.7.9/MathJax.js?delayStartupUntil=configured"
+   },
+   {
+    "source": "route_abort",
+    "url": "https://cdn.jsdelivr.net/npm/mathjax@2.7.9/MathJax.js?delayStartupUntil=configured",
+    "resource_type": "script",
+    "reason": "non_loopback_request_blocked_by_test_route"
+   },
+   {
+    "source": "requestfailed",
+    "url": "https://cdn.jsdelivr.net/npm/mathjax@2.7.9/MathJax.js?delayStartupUntil=configured",
+    "resource_type": "script",
+    "failure": "net::ERR_BLOCKED_BY_CLIENT.Inspector"
+   },
+   {
+    "source": "console",
+    "type": "error",
+    "text": "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+    "url": "https://cdn.jsdelivr.net/npm/mathjax@2.7.9/MathJax.js?delayStartupUntil=configured"
+   }
+  ],
+  "anon": []
+ },
+ "ea_context_id_before": 140233269612512,
+ "revoked_flag": true,
+ "reopened_flag": true,
+ "ea_context_id_after": 140233269612512
+}

@@ -72,7 +72,8 @@ with sync_playwright() as pw:
                     else:p.keyboard.press('Enter')
                 require(navigation.value.status<400,'write navigation failed')
                 p.wait_for_load_state('networkidle');p.reload(wait_until='networkidle')
-                require(p.get_by_text(message,exact=True).count()==1,'message not persisted exactly once after reload')
+                # Rendered occurrences only: the author's closed edit form keeps the same text in a hidden textarea.
+                require(p.get_by_text(message,exact=True).evaluate_all('els=>els.filter(e=>e.checkVisibility()).length')==1,'message not persisted exactly once after reload')
                 rows.append({'width':width,'method':method,'message':message,'geometry':geometry,'persisted_exactly_once':True,'panel_policy':phase,'recent_count':recent_count,'history_status':history_response.status,'history_events':history_events,'return_url':p.url})
             ctx.close()
         status='PASS'

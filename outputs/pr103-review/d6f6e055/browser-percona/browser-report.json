@@ -1,0 +1,220 @@
+{
+ "tier": "BROWSER",
+ "dbtype": "mysqli",
+ "timing_s": {
+  "moodle_install": 82.5,
+  "fixtures": 0.9,
+  "server_start": 1.6,
+  "task_tabs": 14.0,
+  "attachments": 17.8,
+  "db_state": 0.2,
+  "access_same_session": 9.0,
+  "multiattachments": 15.7,
+  "message_actions": 109.1,
+  "server_restart_64k": 1.4,
+  "oversize": 14.4,
+  "db_state_oversize": 0.2
+ },
+ "checks": {
+  "moodle_install": {
+   "status": "PASS"
+  },
+  "fixtures_companies_A_B": {
+   "status": "PASS"
+  },
+  "task_tab_run_complete": {
+   "status": "PASS"
+  },
+  "task_tab_page_and_tabs": {
+   "status": "PASS"
+  },
+  "task_tab_keyboard_reaches_tab": {
+   "status": "PASS"
+  },
+  "task_tab_focus_ring_visible": {
+   "status": "PASS"
+  },
+  "task_tab_focus_ring_contrast_3to1": {
+   "status": "PASS"
+  },
+  "task_tab_second_tab_focus_visible": {
+   "status": "PASS"
+  },
+  "task_tab_enter_activates_tab": {
+   "status": "PASS"
+  },
+  "task_tab_active_tab_distinct": {
+   "status": "PASS"
+  },
+  "task_tab_mouse_click_navigates_without_ring": {
+   "status": "PASS"
+  },
+  "task_tab_desktop_tabs_not_enlarged": {
+   "status": "PASS"
+  },
+  "task_tab_desktop_no_browser_errors": {
+   "status": "PASS"
+  },
+  "task_tab_mobile_focus_ring": {
+   "status": "PASS"
+  },
+  "task_tab_mobile_no_page_hscroll": {
+   "status": "PASS"
+  },
+  "task_tab_mobile_tap_target_44": {
+   "status": "PASS"
+  },
+  "task_tab_mobile_no_browser_errors": {
+   "status": "PASS"
+  },
+  "compact_has_file_control": {
+   "status": "PASS"
+  },
+  "compact_text_and_file": {
+   "status": "PASS"
+  },
+  "compact_file_only": {
+   "status": "PASS"
+  },
+  "full_text_only": {
+   "status": "PASS"
+  },
+  "full_text_and_file_with_filename_feedback": {
+   "status": "PASS"
+  },
+  "full_file_only": {
+   "status": "PASS"
+  },
+  "direct_multipart_new_file_stored_and_downloadable": {
+   "status": "PASS"
+  },
+  "double_submit_creates_one_message": {
+   "status": "PASS"
+  },
+  "csrf_invalid_sesskey_rejected": {
+   "status": "PASS"
+  },
+  "no_orphan_files": {
+   "status": "PASS"
+  },
+  "attachments_no_browser_errors": {
+   "status": "PASS"
+  },
+  "download_participant_allowed": {
+   "status": "PASS"
+  },
+  "download_other_company_denied": {
+   "status": "PASS"
+  },
+  "download_anonymous_redirected_to_login": {
+   "status": "PASS"
+  },
+  "revoke_in_open_session_denied": {
+   "status": "PASS"
+  },
+  "reopen_in_open_session_allowed": {
+   "status": "PASS"
+  },
+  "revocation_preserves_history": {
+   "status": "PASS"
+  },
+  "access_no_browser_errors": {
+   "status": "PASS"
+  },
+  "multiattachment_complete": {
+   "status": "PASS"
+  },
+  "message_edit_cancel_unchanged": {
+   "status": "PASS"
+  },
+  "message_edit_saved_synced_with_files": {
+   "status": "PASS"
+  },
+  "message_edit_conflict_keeps_newer_and_draft": {
+   "status": "PASS"
+  },
+  "message_withdraw_requires_confirmation": {
+   "status": "PASS"
+  },
+  "message_withdraw_hides_text_and_files": {
+   "status": "PASS"
+  },
+  "message_actions_no_browser_errors": {
+   "status": "PASS"
+  },
+  "message_actions_server_negatives": {
+   "status": "PASS"
+  },
+  "oversize_php_limit_effective": {
+   "status": "PASS"
+  },
+  "oversize_compact_request_sent_and_refused": {
+   "status": "PASS"
+  },
+  "oversize_full_blocked_in_browser": {
+   "status": "PASS"
+  },
+  "oversize_direct_request_sent_and_refused": {
+   "status": "PASS"
+  },
+  "oversize_nothing_stored": {
+   "status": "PASS"
+  },
+  "oversize_no_browser_errors": {
+   "status": "PASS"
+  }
+ },
+ "scope": "fresh Moodle 4.1.22 (MariaDB) + candidate plugins, PHP built-in server, Chromium; synthetic companies/users/files only",
+ "required_checks": [
+  "moodle_install",
+  "fixtures_companies_A_B",
+  "task_tab_run_complete",
+  "task_tab_page_and_tabs",
+  "task_tab_keyboard_reaches_tab",
+  "task_tab_focus_ring_visible",
+  "task_tab_focus_ring_contrast_3to1",
+  "task_tab_second_tab_focus_visible",
+  "task_tab_enter_activates_tab",
+  "task_tab_active_tab_distinct",
+  "task_tab_mouse_click_navigates_without_ring",
+  "task_tab_desktop_tabs_not_enlarged",
+  "task_tab_desktop_no_browser_errors",
+  "task_tab_mobile_focus_ring",
+  "task_tab_mobile_no_page_hscroll",
+  "task_tab_mobile_tap_target_44",
+  "task_tab_mobile_no_browser_errors",
+  "compact_has_file_control",
+  "compact_text_and_file",
+  "compact_file_only",
+  "full_text_only",
+  "full_text_and_file_with_filename_feedback",
+  "full_file_only",
+  "direct_multipart_new_file_stored_and_downloadable",
+  "double_submit_creates_one_message",
+  "csrf_invalid_sesskey_rejected",
+  "no_orphan_files",
+  "attachments_no_browser_errors",
+  "download_participant_allowed",
+  "download_other_company_denied",
+  "download_anonymous_redirected_to_login",
+  "revoke_in_open_session_denied",
+  "reopen_in_open_session_allowed",
+  "revocation_preserves_history",
+  "access_no_browser_errors",
+  "oversize_php_limit_effective",
+  "oversize_compact_request_sent_and_refused",
+  "oversize_full_blocked_in_browser",
+  "oversize_direct_request_sent_and_refused",
+  "oversize_nothing_stored",
+  "oversize_no_browser_errors",
+  "multiattachment_complete",
+  "message_edit_cancel_unchanged",
+  "message_edit_saved_synced_with_files",
+  "message_edit_conflict_keeps_newer_and_draft",
+  "message_withdraw_requires_confirmation",
+  "message_withdraw_hides_text_and_files",
+  "message_actions_no_browser_errors",
+  "message_actions_server_negatives"
+ ],
+ "status": "PASS"
+}
