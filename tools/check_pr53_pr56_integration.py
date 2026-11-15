@@ -40,6 +40,13 @@ def check(root=ROOT):
     # Daily summary after published #110: exact append-only RU/EN extension.
     reviewed_followup['local/kbacompany/lang/en/local_kbacompany.php'] = '35f7107fb19132298ef3a922bcf6b26bed0d794b685ea0c0f19e38d45217f8d0'
     reviewed_followup['local/kbacompany/lang/ru/local_kbacompany.php'] = '5088d5ad0e296bb509a1156e561502cb63208eecca97d7ae03ba8870046c0546'
+    # Communication Center cleanup (after #103): exact reviewed updates, see docs/reconcile/COMMUNICATION_CENTER_CLEANUP_SOURCE_PRESERVATION.md.
+    reviewed_followup.update({
+        'local/kbacompany/classes/local/communication_service.php': 'ecc24db60b9dacfd66be77ec7664895ef34e67b476f34387d656cfe07004e41d',
+        'local/kbacompany/lang/en/local_kbacompany.php': 'b7bb8afbfa9ee3a0277be52c937868b29f013560f1e38428e7cc7f831fc5ee2a',
+        'local/kbacompany/lang/ru/local_kbacompany.php': 'd89845b085cef3177a7b639ebd2e194be4662f40adb417706026f9b6d17c76db',
+        'local/kbacompany/styles.css': '0cbc4209807f463b30934f1f8642adfc3d50ecd52b86ba5fac0e018a48228b30',
+    })
     reviewed_metadata={'AGENTS.md','docs/00_MASTER_CONTEXT.md'}
     for name, expected in plan['unchanged_schema_hashes'].items():
         target = {'local/kbacompany/db/install.xml': '5d61fb813ca0e1da1ab67db808b5a1da321cadfccef3e2c499e8dee279f5e576'}.get(name, expected)

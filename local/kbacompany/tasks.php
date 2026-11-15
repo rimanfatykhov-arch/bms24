@@ -269,7 +269,7 @@ if($action!=='') {
             else{task_service::add_result_attachment($uuid,$actor,$selected,$_FILES[$key]);$tab='result';}
         }else if($action==='attachmentdelete'){task_service::delete_attachment($uuid,$actor,$selected,$values['filename']);$tab='files';}
         else if($action==='resultattachmentdelete'){task_service::delete_result_attachment($uuid,$actor,$selected,$values['filename']);$tab='result';}
-        else if($action==='discussionpost'){task_service::post_discussion_message($uuid,$actor,$selected,optional_param('message','',PARAM_RAW),$_FILES['discussionattachment']??null);$tab='discussion';}
+        else if($action==='discussionpost'){task_service::post_discussion_message($uuid,$actor,$selected,optional_param('message','',PARAM_RAW),$_FILES['discussionattachment']??null,optional_param('replytouuid','',PARAM_ALPHANUMEXT));$tab='discussion';}
         else if($action==='discussionedit'||$action==='discussionwithdraw'){
             if($action==='discussionwithdraw' && !optional_param('confirmwithdraw',false,PARAM_BOOL)){
                 throw new moodle_exception('tui_confirm_required','local_kbacompany');
@@ -457,6 +457,8 @@ if($view==='list'){
     if(!$valid||!in_array($operation,$confirmops,true)){echo html_writer::div(ui::tr('taskcenter_permission'),'alert alert-warning');echo ui::link(ui::url($uuid,['task'=>$selected]),ui::tr('tui_back_record'));}
     else{echo ui::action_form($uuid,$model,$operation,$values,$errors,$requestkey);}
 }else if($view==='detail'){
+    // Presentation-only reply target; the canonical service re-validates thread and status on POST.
+    $values['discussion_reply']=optional_param('reply','',PARAM_ALPHANUMEXT);
     echo ui::detail($uuid,$model,$tab,$permissions,$values);
     if ($recordopen) {
         echo html_writer::span('', '', ['hidden'=>'hidden', 'data-bms-task-open'=>'1',

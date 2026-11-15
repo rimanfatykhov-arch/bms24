@@ -209,9 +209,19 @@ class communication_center_service {
         }
         unset($thread);
         $taskcounts = task_service::dashboard_counts($companyuuid, $actor);
+        // A task discussion shows the task's History events inline (read-only, not messages).
+        $events = [];
+        $selected = $comm['selected'];
+        if ($selected && (string)$selected['context_kind'] === 'task') {
+            $events = task_service::discussion_events($companyuuid, $actor, (string)$selected['context_uuid']);
+            if (empty($selected['is_participant'])) {
+                $selected['can_join'] = task_service::can_post_discussion_for($companyuuid, $actor,
+                    (string)$selected['context_uuid']);
+            }
+        }
         return [
-            'company' => $comm['company'], 'tab' => $tab, 'threads' => $threads,
-            'selected' => $comm['selected'], 'messages' => $comm['messages'], 'history' => $comm['history'], 'employees' => $comm['employees'],
+            'company' => $comm['company'], 'tab' => $tab, 'threads' => $threads, 'events' => $events,
+            'selected' => $selected, 'messages' => $comm['messages'], 'history' => $comm['history'], 'employees' => $comm['employees'],
             'notifications' => $comm['notifications'], 'counts' => $comm['counts'], 'task_counts' => $taskcounts,
             'search' => $search, 'can_manage' => $comm['can_manage'],
         ];

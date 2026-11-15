@@ -1403,7 +1403,12 @@ class task_ui_service {
             \html_writer::div(format_text($msg['body'], FORMAT_PLAIN), 'bms-tui-prose') : '') :
             self::note(self::tr('communication_messagewithdrawn'));
         if ($active && !empty($msg['edited'])) { $text .= self::note(self::tr('communication_edited')); }
+        $text = self::discussion_quote($msg['reply_to'] ?? null) . $text;
         $actions = '';
+        if ($active && $canpost) {
+            $actions .= self::link(self::url($company, ['task'=>$task['uuid'], 'tab'=>$tab, 'reply'=>$msg['uuid']]),
+                self::tr('communication_reply')) ;
+        }
         if ($active && $canpost && (int)$msg['author_id'] === (int)$GLOBALS['USER']->id &&
                 $msg['task_uuid'] === '') {
             $draft = $values['discussion_edit'] ?? [];
@@ -1441,6 +1446,77 @@ class task_ui_service {
             ($actions !== '' ? \html_writer::div($actions, 'bms-tui-message-actions') : ''),
             ['class'=>'bms-tui-message', 'id'=>'task-message-' . $msg['uuid']]);
     }
+    /** Quoted original of a reply; a withdrawn original shows only that it was withdrawn. */
+    private static function discussion_quote(?array $quote): string {
+        if (!$quote) { return ''; }
+        $text = $quote['status'] === 'active' ? (string)$quote['excerpt'] : self::tr('communication_messagewithdrawn');
+        return \html_writer::tag('blockquote', \html_writer::tag('strong', s((string)$quote['author_name'])) .
+            \html_writer::div(s($text)), ['class' => 'bms-tui-message-quote']);
+    }
+
+    /**
+     * One task discussion timeline shared by the overview and the discussion tab:
+     * canonical messages interleaved with read-only task History events. Events are not messages.
+     */
+    private static function discussion_timeline(array $d, string $company, array $task, string $tab, array $values): string {
+        $items = [];
+        foreach (($d['events'] ?? []) as $i => $event) {
+            $items[] = ['time' => (int)$event['time_created'], 'order' => 0, 'seq' => $i, 'event' => $event];
+        }
+        foreach (($d['messages'] ?? []) as $i => $msg) {
+            $items[] = ['time' => (int)$msg['time_created'], 'order' => 1, 'seq' => $i, 'message' => $msg];
+        }
+        usort($items, static function(array $a, array $b): int {
+            return [$a['time'], $a['order'], $a['seq']] <=> [$b['time'], $b['order'], $b['seq']];
+        });
+        $canpost = !empty($d['can_post']);
+        $html = '';
+        foreach ($items as $item) {
+            if (isset($item['event'])) {
+                $html .= self::discussion_event($item['event']);
+            } else {
+                $html .= self::discussion_message($item['message'], $company, $task, $canpost, $tab, $values);
+            }
+        }
+        if ($html === '') { $html = self::note(self::tr('taskcenter_discussion_empty')); }
+        if (!$canpost) { return $html; }
+        if (empty($d['is_participant']) && !empty($d['thread_uuid'])) {
+            $html .= self::note(self::tr('taskcenter_discussion_reader'));
+        }
+        $extra = [];
+        $replyuuid = (string)($values['discussion_reply'] ?? '');
+        $replyhtml = '';
+        foreach (($d['messages'] ?? []) as $msg) {
+            if ($replyuuid !== '' && $msg['uuid'] === $replyuuid && $msg['status'] === 'active') {
+                $extra['replytouuid'] = $msg['uuid'];
+                $replyhtml = \html_writer::div(s(self::tr('communication_replyingto')) .
+                    self::discussion_quote(['author_name' => $msg['author_name'], 'status' => 'active',
+                        'excerpt' => \core_text::substr(preg_replace('/\s+/u', ' ', trim((string)$msg['body'])), 0, 160)]) .
+                    self::link(self::url($company, ['task' => $task['uuid'], 'tab' => $tab]), self::tr('communication_cancelreply')),
+                    'bms-tui-reply-target');
+                break;
+            }
+        }
+        return $html . self::post_form($company, $task, 'discussionpost', $replyhtml . self::discussion_fields($values),
+            self::tr('taskcenter_discussion_send'), $tab, $extra);
+    }
+
+    /** One read-only task event line; labels reuse the task History vocabulary. */
+    private static function discussion_event(array $event): string {
+        $key = 'taskdiscussion_event_' . (string)$event['action'];
+        $label = get_string_manager()->string_exists($key, 'local_kbacompany') ? self::tr($key) : self::tr('tui_history_event');
+        $actor = trim((string)$event['actor_name']);
+        $line = \html_writer::tag('strong', s($label));
+        if ($event['new_status'] !== '' && $event['new_status'] !== $event['old_status']) {
+            $line .= ' ' . self::badge((string)$event['new_status']);
+        }
+        $line .= ' · ' . ($actor !== '' ? s($actor) . ' · ' : '') .
+            s(userdate((int)$event['time_created'], '%d.%m %H:%M'));
+        $reason = trim((string)($event['reason'] ?? ''));
+        return \html_writer::div($line . ($reason !== '' ? \html_writer::div(s($reason), 'bms-tui-event-reason') : ''),
+            'bms-tui-discussion-event', ['role' => 'note']);
+    }
+
     /** One discussion message with independently removable selected attachments. */
     private static function discussion_fields(array $values): string {
         return self::control('message', ['label' => 'tui_message', 'type' => 'textarea', 'maxlength' => 12000], $values['message'] ?? '') .
@@ -1904,13 +1980,8 @@ class task_ui_service {
             $relations.=self::field('battleplan_title',$plans?:self::note(self::tr('tui_plan_empty')),true);
             $main.=\html_writer::tag('details',\html_writer::tag('summary',s(self::tr('taskcenter_form_relations'))).
                 $relations.self::note(self::tr('tui_no_copies')),['class'=>'bms-tui-panel bms-task2-details']);
-            $discussion=$model['discussion'];$messages='';
-            if(!empty($discussion['restricted'])){$messages=self::note(self::tr('taskcenter_discussion_restricted'));}
-            else{foreach(($discussion['messages']??[]) as $msg){
-                $messages.=self::discussion_message($msg,$company,$task,!empty($discussion['can_post']),'overview',$values);}}
-            if(!$messages){$messages=self::note(self::tr('taskcenter_discussion_empty'));}
-            if(!empty($discussion['can_post'])){$messages.=self::post_form($company,$task,'discussionpost',
-                self::discussion_fields($values),self::tr('taskcenter_discussion_send'),'overview');}
+            $discussion=$model['discussion'];
+            $messages=self::discussion_timeline($discussion,$company,$task,'overview',$values);
             // The full communication thread remains canonical. This is its task-scoped preview,
             // not a second discussion source; ACL and permissions come from $model['discussion'].
             $messages .= self::link(self::url($company,['task'=>$id,'tab'=>'discussion']),
@@ -1954,11 +2025,8 @@ class task_ui_service {
             if(!empty($actions['attachmentadd'])){$body.=self::post_form($company,$task,'attachmentadd',self::control('attachment',['label'=>'taskcenter_attachments','type'=>'file','required'=>true]),self::tr('tui_upload'),'files');}
             $html.=self::panel(self::tr('taskcenter_attachments').' ('.count($model['attachments']).')',$body);
         }else if($tab==='discussion'){
-            $d=$model['discussion'];$body='';
-            if(!empty($d['restricted'])){$body=self::note(self::tr('taskcenter_discussion_restricted'));}
-            else{foreach($d['messages'] as $msg){$body.=self::discussion_message($msg,$company,$task,!empty($d['can_post']),'discussion',$values);}}
-            if(!$body){$body=self::note(self::tr('taskcenter_discussion_empty'));}
-            if(!empty($d['can_post'])){$body.=self::post_form($company,$task,'discussionpost',self::discussion_fields($values),self::tr('taskcenter_discussion_send'),'discussion');}
+            $d=$model['discussion'];
+            $body=self::discussion_timeline($d,$company,$task,'discussion',$values);
             if(empty($d['restricted'])){
                 $discussionparams=['uuid'=>$company,'tab'=>'discussions'];
                 if(!empty($d['thread_uuid'])){$discussionparams['thread']=$d['thread_uuid'];}

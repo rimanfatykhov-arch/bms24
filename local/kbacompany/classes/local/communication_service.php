@@ -18,6 +18,12 @@ class communication_service {
     public const NOTIFICATION_KINDS = ['thread_invite', 'message', 'mention', 'task_created',
         'calendar_day', 'calendar_meeting_hour', 'calendar_task_due', 'calendar_checkpoint_tomorrow', 'bp_decision'];
     public const ATTACHMENT_KINDS = ['document', 'moodlefile', 'url', 'external'];
+    /**
+     * Object kinds whose single canonical discussion is readable by everyone allowed to open the object.
+     * Owner decision 2026-11-15: a task discussion is one conversation for all task viewers.
+     * Writing still requires explicit participation; other kinds stay participant-scoped.
+     */
+    public const VIEWER_READ_KINDS = ['task'];
 
     public static function contract(): array {
         $contract = [
@@ -42,6 +48,10 @@ class communication_service {
                 'mentions_are_explicit_and_participant_scoped',
                 'attachment_core_stores_references_and_protected_moodle_files',
                 'meeting_discussion_message_can_propose_traceable_canonical_decision',
+                'task_discussion_is_readable_by_task_viewers_without_implicit_participation',
+                'direct_conversation_is_unique_per_pair',
+                'group_members_may_leave_and_owner_may_remove',
+                'inline_mentions_resolve_only_active_participants',
             ],
         ];
         $contract['schema_hash_algorithm'] = 'sha256';
@@ -278,6 +288,21 @@ class communication_service {
                     return (string)$existing->uuid;
                 }
             }
+            if ($type === 'direct') {
+                // One personal conversation per pair: reopen it instead of fragmenting the history.
+                $existingdirect = $DB->get_records_sql("SELECT t.id, t.uuid
+                      FROM {local_kbacompany_commthread} t
+                      JOIN {local_kbacompany_commpart} pa ON pa.companyuuid = t.companyuuid
+                           AND pa.threaduuid = t.uuid AND pa.userid = :dpa AND pa.active = 1
+                      JOIN {local_kbacompany_commpart} pb ON pb.companyuuid = t.companyuuid
+                           AND pb.threaduuid = t.uuid AND pb.userid = :dpb AND pb.active = 1
+                     WHERE t.companyuuid = :dc AND t.threadtype = 'direct' AND t.status = 'active'
+                  ORDER BY t.id ASC", ['dpa' => $actor, 'dpb' => $participantids[0], 'dc' => $companyuuid], 0, 1);
+                if ($existingdirect) {
+                    $tx->allow_commit();
+                    return (string)reset($existingdirect)->uuid;
+                }
+            }
             $uuid = self::uuid(); $now = time();
             $DB->insert_record('local_kbacompany_commthread', (object)[
                 'companyuuid' => $companyuuid, 'uuid' => $uuid, 'threadtype' => $type, 'title' => $title,
@@ -454,6 +479,9 @@ class communication_service {
         foreach ($mentions as $userid) {
             if (!isset($participantids[$userid])) { self::fail('mention'); }
         }
+        // Inline "@Full Name" mentions resolve only against active participants of this thread.
+        $mentions = array_values(array_unique(array_merge($mentions, self::inline_mentions($body,
+            array_keys($participantids), self::employees($companyuuid, $actor), $actor))));
         $tx = $DB->start_delegated_transaction();
         $uuid = self::uuid(); $now = time();
         $messageid = $DB->insert_record('local_kbacompany_commmsg', (object)[
@@ -490,6 +518,77 @@ class communication_service {
         }
         $tx->allow_commit();
         return $uuid;
+    }
+
+    /** Participants explicitly named as "@Full Name" in the text (case-insensitive), never the author. */
+    public static function inline_mentions(string $body, array $participantids, array $employees, int $actor): array {
+        $found = [];
+        if (strpos($body, '@') === false) { return $found; }
+        $haystack = \core_text::strtolower($body);
+        foreach ($participantids as $userid) {
+            $userid = (int)$userid;
+            $name = trim((string)($employees[$userid] ?? ''));
+            if ($userid === $actor || $name === '') { continue; }
+            if (strpos($haystack, '@' . \core_text::strtolower($name)) !== false) { $found[] = $userid; }
+        }
+        return $found;
+    }
+
+    /** A member leaves a group conversation; ownership passes to the longest-standing remaining member. */
+    public static function leave_thread(string $companyuuid, int $actor, string $threaduuid): void {
+        global $DB;
+        company_context_service::context($companyuuid, $actor);
+        $part = self::require_participant($companyuuid, $threaduuid, $actor);
+        $thread = self::thread($companyuuid, $threaduuid);
+        if ($thread->status !== 'active' || (string)$thread->threadtype !== 'group') { self::fail('state'); }
+        $lock = \core\lock\lock_config::get_lock_factory('local_kbacompany')
+            ->get_lock('communication:' . $companyuuid, 10);
+        if (!$lock) { self::fail('lock'); }
+        try {
+            $tx = $DB->start_delegated_transaction();
+            $now = time();
+            $wasowner = (string)$part->role === 'owner';
+            $part->active = 0; $part->leftat = $now; $part->role = 'member';
+            $DB->update_record('local_kbacompany_commpart', $part);
+            if ($wasowner && !$DB->record_exists('local_kbacompany_commpart', ['companyuuid' => $companyuuid,
+                    'threaduuid' => $threaduuid, 'active' => 1, 'role' => 'owner'])) {
+                $next = $DB->get_records('local_kbacompany_commpart', ['companyuuid' => $companyuuid,
+                    'threaduuid' => $threaduuid, 'active' => 1], 'joinedat ASC, id ASC', '*', 0, 1);
+                if ($next) {
+                    $next = reset($next); $next->role = 'owner';
+                    $DB->update_record('local_kbacompany_commpart', $next);
+                }
+            }
+            $thread->timemodified = max($now, (int)$thread->timemodified + 1);
+            $DB->update_record('local_kbacompany_commthread', $thread);
+            $tx->allow_commit();
+        } catch (\Throwable $e) {
+            if (isset($tx)) { $tx->rollback($e); }
+            throw $e;
+        } finally { $lock->release(); }
+    }
+
+    /** The group owner removes another member. History is retained; the member loses access. */
+    public static function remove_participant(string $companyuuid, int $actor, string $threaduuid, int $userid): void {
+        global $DB;
+        company_context_service::context($companyuuid, $actor);
+        self::require_owner($companyuuid, $threaduuid, $actor);
+        $thread = self::thread($companyuuid, $threaduuid);
+        if ($thread->status !== 'active' || (string)$thread->threadtype !== 'group') { self::fail('state'); }
+        if ($userid === $actor) { self::fail('invalid'); }
+        $part = self::participant($companyuuid, $threaduuid, $userid);
+        if (!$part) { self::fail('reference'); }
+        $now = time();
+        $part->active = 0; $part->leftat = $now; $part->role = 'member';
+        $DB->update_record('local_kbacompany_commpart', $part);
+        $thread->timemodified = max($now, (int)$thread->timemodified + 1);
+        $DB->update_record('local_kbacompany_commthread', $thread);
+    }
+
+    /** Whether a non-participant may read this object discussion; object ACL is checked separately. */
+    private static function viewer_may_read(\stdClass $thread): bool {
+        return (string)$thread->threadtype === 'object' && (string)$thread->status === 'active' &&
+            in_array((string)$thread->contextkind, self::VIEWER_READ_KINDS, true);
     }
 
     /**
@@ -617,8 +716,10 @@ class communication_service {
         try {
             company_context_service::context($companyuuid, $actor);
             $message = self::message($companyuuid, $messageuuid);
-            if (self::participant($companyuuid, (string)$message->threaduuid, $actor) === null) { return false; }
             $thread = self::thread($companyuuid, (string)$message->threaduuid);
+            // Task discussion files follow the discussion: readable by task viewers after the object ACL below.
+            if (self::participant($companyuuid, (string)$message->threaduuid, $actor) === null &&
+                    !self::viewer_may_read($thread)) { return false; }
             self::require_thread_context($companyuuid, $actor, $thread);
             return $message->status === 'active';
         } catch (\moodle_exception $e) {
@@ -808,11 +909,20 @@ class communication_service {
 
         $selected = null; $messages = []; $historymeta = null;
         if ($selectedthread !== '') {
-            self::require_participant($companyuuid, $selectedthread, $actor);
-            $thread = self::thread($companyuuid, $selectedthread);
+            $isparticipant = self::participant($companyuuid, $selectedthread, $actor) !== null;
+            if ($isparticipant) {
+                $thread = self::thread($companyuuid, $selectedthread);
+            } else {
+                // Never distinguish a missing thread from a forbidden one for non-participants.
+                $thread = $DB->get_record('local_kbacompany_commthread',
+                    ['companyuuid' => $companyuuid, 'uuid' => $selectedthread]);
+                if (!$thread || !self::viewer_may_read($thread)) { self::fail('permission'); }
+            }
+            // Object access is re-checked for participants and viewers alike.
             $descriptor = self::require_thread_context($companyuuid, $actor, $thread);
             $selected = self::thread_dto($thread, $actor, $employees);
             $selected['context'] = $descriptor;
+            $selected['is_participant'] = $isparticipant;
             // Optional bounded history projection for Communication Center only; legacy clients unchanged.
             $historymeta = null;
             if ($history !== null) {
@@ -852,6 +962,22 @@ class communication_service {
                     $editeduuids[(string)$editeduuid] = true;
                 }
             }
+            // Quoted originals: same company and thread only; withdrawn originals expose no text.
+            $quoted = [];
+            $replyuuids = array_values(array_unique(array_filter(array_map(static function($row): string {
+                return (string)$row->replytouuid; }, array_values($records)))));
+            if ($replyuuids) {
+                list($rinsql, $rinparams) = $DB->get_in_or_equal($replyuuids, SQL_PARAMS_NAMED, 'msgreply');
+                foreach ($DB->get_records_sql('SELECT id, uuid, authorid, body, status FROM {local_kbacompany_commmsg}
+                        WHERE companyuuid = :rc AND threaduuid = :rt AND uuid ' . $rinsql,
+                        ['rc' => $companyuuid, 'rt' => $selectedthread] + $rinparams) as $original) {
+                    $excerpt = preg_replace('/\s+/u', ' ', trim((string)$original->body));
+                    $quoted[(string)$original->uuid] = ['uuid' => (string)$original->uuid,
+                        'author_name' => $employees[(int)$original->authorid] ?? '',
+                        'status' => (string)$original->status,
+                        'excerpt' => $original->status === 'active' ? \core_text::substr((string)$excerpt, 0, 160) : ''];
+                }
+            }
             foreach ($records as $message) {
                 $mentions = array_map(static function($m) { return (int)$m->userid; }, array_values($DB->get_records(
                     'local_kbacompany_commmention', ['companyuuid' => $companyuuid, 'messageuuid' => $message->uuid])));
@@ -873,13 +999,17 @@ class communication_service {
                 $messages[] = [
                     'uuid' => (string)$message->uuid, 'author_id' => (int)$message->authorid,
                     'author_name' => $employees[(int)$message->authorid] ?? '', 'body' => (string)$message->body,
-                    'reply_to_uuid' => (string)$message->replytouuid, 'task_uuid' => (string)$message->taskuuid,
+                    'reply_to_uuid' => (string)$message->replytouuid,
+                    'reply_to' => $quoted[(string)$message->replytouuid] ?? null,
+                    'task_uuid' => (string)$message->taskuuid,
                     'status' => (string)$message->status, 'mentions' => $mentions, 'attachments' => $attachments,
                     'time_created' => (int)$message->timecreated,
                     'edited' => isset($editeduuids[(string)$message->uuid]),
                 ];
             }
-            self::mark_read($companyuuid, $actor, $selectedthread);
+            if ($isparticipant) {
+                self::mark_read($companyuuid, $actor, $selectedthread);
+            }
         }
         $notifications = [];
         foreach ($DB->get_records('local_kbacompany_commnotif', [

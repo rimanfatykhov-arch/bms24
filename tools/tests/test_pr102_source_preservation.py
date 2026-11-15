@@ -13,7 +13,8 @@ spec.loader.exec_module(gate)
 
 
 FOLLOWUPS = ['docs/reconcile/task-open-source-preservation.json',
-             'docs/reconcile/daily-summary-after110-source-preservation.json']
+             'docs/reconcile/daily-summary-after110-source-preservation.json',
+             'docs/reconcile/communication-center-cleanup-source-preservation.json']
 
 
 class SourcePreservationTest(unittest.TestCase):
