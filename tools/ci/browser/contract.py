@@ -596,7 +596,8 @@ def message_action_checks(obs, exitcode=None):
             'message_actions_server_negatives': negatives}
 
 
-TASK_OPEN_CASES = [('owned', 1440), ('legacy', 320)]
+TASK_OPEN_CASES = [('owned', 1440, 'en'), ('legacy', 320, 'ru')]
+TASK_OPEN_TEXT = {'en': 'opened the task', 'ru': 'открыл задачу'}
 
 
 def task_open_checks(obs, exitcode=None):
@@ -606,8 +607,8 @@ def task_open_checks(obs, exitcode=None):
         require(exitcode == 0, 'task open browser process failed or was not run')
         require(isinstance(obs, dict) and obs.get('status') == 'PASS' and not obs.get('error'), 'task open run incomplete')
         rows = obs.get('cases')
-        require(isinstance(rows, list) and [(r.get('shell'), r.get('width')) for r in rows] == TASK_OPEN_CASES,
-                'owned/legacy x desktop/mobile cases required')
+        require(isinstance(rows, list) and [(r.get('shell'), r.get('width'), r.get('lang')) for r in rows] == TASK_OPEN_CASES,
+                'owned/legacy x desktop/mobile x EN/RU cases required')
         require(obs.get('readable') == {'MA': True, 'EA': True, 'RA': False, 'EB': False},
                 'fixture access precondition (MA/EA read, RA/EB cannot) not met')
         return rows
@@ -619,8 +620,13 @@ def task_open_checks(obs, exitcode=None):
             h = r.get('history') or {}
             texts = h.get('texts') or []
             require(h.get('count') == 1 and h.get('visible') is True and len(texts) == 1, 'History must show exactly one opening')
-            require('opened the task' in texts[0] and not re.search(r'\bread\b', texts[0], re.I),
-                    'History text must say "opened the task", never "read"')
+            lang = r['lang']
+            require((r.get('language') or {}).get('installed') is True and (h.get('html_lang') or '').split('-')[0] == lang,
+                    'page language %s not active' % lang)
+            require(TASK_OPEN_TEXT[lang] in texts[0] and TASK_OPEN_TEXT[lang] in ((r.get('language') or {}).get('sample') or ''),
+                    'History text must say "%s"' % TASK_OPEN_TEXT[lang])
+            require(not re.search(r'\bread\b|прочит|ознаком', texts[0], re.I),
+                    'History must not claim reading or acknowledgement')
 
     def dedupe():
         for r in run():

@@ -1,6 +1,6 @@
 """Real Moodle acceptance of the "user opened the task" History event; synthetic data only, loopback-only requests.
 
-Two cases (owned 1440, legacy 320): list page writes nothing; opening the card writes exactly one event shown in History as
+Two cases (owned 1440 EN, legacy 320 RU): list page writes nothing; opening the card writes exactly one event shown in History as
 "<name> opened the task"; reload and card-tab switching write nothing more; a hidden tab writes nothing until activated;
 another user gets an own event; leaving the page open past the interval writes nothing, reopening after it writes one more;
 eight concurrent POSTs write at most one; task state and notifications stay unchanged; a failing endpoint does not break
@@ -32,7 +32,7 @@ company, task = f['companies']['A']['uuid'], f['tasks']['A']['uuid']
 company_b = f['companies']['B']['uuid']
 TASKS = base + '/local/kbacompany/tasks.php'
 ENDPOINT = base + '/local/kbacompany/task_open.php'
-CASES = [('owned', 1440), ('legacy', 320)]
+CASES = [('owned', 1440, 'en'), ('legacy', 320, 'ru')]
 HIDDEN = """(() => { let v = 'hidden';
   Object.defineProperty(document, 'visibilityState', {configurable: true, get: () => v});
   Object.defineProperty(document, 'hidden', {configurable: true, get: () => v !== 'visible'});
@@ -142,8 +142,9 @@ with sync_playwright() as pw:
         result['ids'] = {label: f['actors'][label]['userid'] for label in ('MA', 'EA')}
         result['readable'] = {label: php('readable', company, task, str(f['actors'][label]['userid']))['readable']
                               for label in ('MA', 'EA', 'RA', 'EB')}
-        for shell, width in CASES:
+        for shell, width, lang in CASES:
             php('shell', shell)
+            language = php('lang', lang, str(f['actors']['MA']['userid']))
             php('clear', company, task)
             before = snapshot()
             ctx = browser.new_context(viewport={'width': width, 'height': 900})
@@ -151,7 +152,8 @@ with sync_playwright() as pw:
             server_errors = []
             page = login(ctx, 'MA')
             page.on('response', lambda r: server_errors.append({'url': r.url, 'status': r.status}) if r.status >= 500 else None)
-            case = {'shell': shell, 'width': width}
+            case = {'shell': shell, 'width': width, 'lang': lang,
+                    'language': {'installed': language['installed'], 'sample': language['sample']}}
             # 1. list page writes nothing
             page.goto(local_url(TASKS + '?' + urllib.parse.urlencode({'uuid': company})), wait_until='networkidle')
             page.wait_for_timeout(500)
@@ -164,6 +166,7 @@ with sync_playwright() as pw:
             for tab in ('checklist', 'discussion', 'files'):
                 page.goto(task_url(tab), wait_until='networkidle'); opened_status(page)
             case['history'] = history(page)
+            case['history']['html_lang'] = page.locator('html').get_attribute('lang')
             case['repeat'] = {'reload_status': s1, 'rows': len(actor_rows('MA'))}
             # 4. a hidden tab of another user writes nothing until it is activated
             hidden = browser.new_context(viewport={'width': width, 'height': 900})
@@ -193,7 +196,7 @@ with sync_playwright() as pw:
             case['server_errors'] = server_errors
             result['cases'].append(case)
             ctx.close()
-        php('shell', 'owned')
+        php('shell', 'owned'); php('lang', 'en', str(f['actors']['MA']['userid']))
 
         # ---- a failing endpoint never breaks the card (no recorder: the abort is deliberate)
         php('clear', company, task)
@@ -255,7 +258,7 @@ with sync_playwright() as pw:
             result['diagnostic_error'] = str(diagnostic)
     finally:
         try:
-            php('shell', 'owned')
+            php('shell', 'owned'); php('lang', 'en', str(f['actors']['MA']['userid']))
         except Exception:
             pass
         browser.close()

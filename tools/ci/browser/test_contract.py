@@ -478,11 +478,13 @@ class ContractTest(unittest.TestCase):
 
     def task_open_obs(self):
         rows = []
-        for shell, width in c.TASK_OPEN_CASES:
+        for shell, width, lang in c.TASK_OPEN_CASES:
+            text = c.TASK_OPEN_TEXT[lang]
             snap = {'task': {'status': 'new', 'revision': '1'}, 'business_log': 1, 'notifications': 0}
-            rows.append({'shell': shell, 'width': width, 'list': {'marker': 0, 'rows': 0},
+            rows.append({'shell': shell, 'width': width, 'lang': lang,
+                         'language': {'installed': True, 'sample': 'X ' + text}, 'list': {'marker': 0, 'rows': 0},
                          'first': {'status': '200', 'rows': 1},
-                         'history': {'count': 1, 'visible': True, 'texts': ['First MA opened the task\n15 November 2026, 10:00']},
+                         'history': {'count': 1, 'visible': True, 'html_lang': lang, 'texts': ['First MA ' + text + '\n15.11.2026 10:00']},
                          'repeat': {'reload_status': '200', 'rows': 1},
                          'hidden': {'before_activation': 0, 'status': '200', 'after_activation': 1},
                          'interval': {'idle_rows': 1, 'status': '200', 'rows': 2},
@@ -514,6 +516,10 @@ class ContractTest(unittest.TestCase):
         fails('task_open_recorded_once_in_history', lambda o: o['cases'][1]['first'].update(rows=2))
         fails('task_open_recorded_once_in_history', lambda o: o['cases'][0]['history'].update(count=2))
         fails('task_open_recorded_once_in_history', lambda o: o['cases'][0]['history'].update(texts=['First MA read the task']))
+        fails('task_open_recorded_once_in_history', lambda o: o['cases'][1]['history'].update(texts=['Ivan прочитал задачу']))
+        fails('task_open_recorded_once_in_history', lambda o: o['cases'][1]['history'].update(texts=['Ivan opened the task']))
+        fails('task_open_recorded_once_in_history', lambda o: o['cases'][1]['history'].update(html_lang='en'))
+        fails('task_open_recorded_once_in_history', lambda o: o['cases'][1]['language'].update(installed=False))
         fails('task_open_deduplicated_and_concurrent', lambda o: o['cases'][0]['repeat'].update(rows=2))
         fails('task_open_deduplicated_and_concurrent', lambda o: o['cases'][1]['interval'].update(idle_rows=2))
         fails('task_open_deduplicated_and_concurrent', lambda o: o['cases'][0]['interval'].update(rows=1))
