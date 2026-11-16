@@ -109,6 +109,10 @@ final class daily_report_ui_service {
             'data-dailyreport-version' => (int)$version->versionno]);
         $out .= html_writer::tag('p', s(implode(' · ', $meta)), ['class' => 'text-muted mb-2']);
         $out .= html_writer::tag('p', s(self::str('readonly_note')), ['class' => 'small text-muted']);
+        if (trim((string)($version->correctionnote ?? '')) !== '') {
+            $out .= html_writer::div(html_writer::tag('strong', s(self::str('correction_note')) . ': ') .
+                nl2br(s((string)$version->correctionnote)), 'alert alert-info');
+        }
         $out .= html_writer::start_tag('dl');
         foreach (daily_report_store_service::FIELDS as $field) {
             $text = trim((string)$version->$field);
@@ -145,6 +149,137 @@ final class daily_report_ui_service {
                 'border-top pt-2 mt-2 bms-dailyreport-decision');
         }
         $out .= html_writer::end_tag('article');
+        return $out;
+    }
+
+    private static function post_form(string $uuid, array $params, array $hidden, string $body, string $class = ''): string {
+        $out = html_writer::start_tag('form', ['method' => 'post', 'action' => self::url($uuid, $params)->out(false),
+            'class' => 'mb-3 ' . $class]);
+        foreach (['uuid' => $uuid, 'sesskey' => sesskey(), 'requestkey' => \core\uuid::generate()] + $hidden as $name => $value) {
+            $out .= html_writer::empty_tag('input', ['type' => 'hidden', 'name' => $name, 'value' => (string)$value]);
+        }
+        return $out . $body . html_writer::end_tag('form');
+    }
+
+    private static function textarea(string $name, string $id, string $label, bool $required): string {
+        return html_writer::div(html_writer::tag('label', s($label) . ($required ?
+                ' ' . html_writer::span('*', 'text-danger', ['aria-hidden' => 'true']) : ''), ['for' => $id]) .
+            html_writer::tag('textarea', '', ['name' => $name, 'id' => $id, 'rows' => 3, 'class' => 'form-control',
+                'maxlength' => daily_report_store_service::MAX_TEXT, 'required' => $required ? 'required' : null,
+                'aria-required' => $required ? 'true' : null]), 'form-group mb-2');
+    }
+
+    private static function ratings(string $prefix): string {
+        $out = html_writer::start_tag('fieldset', ['class' => 'mb-2']);
+        $out .= html_writer::tag('legend', s(self::str('rating')), ['class' => 'h6']);
+        foreach (daily_report_review_service::RATINGS as $rating) {
+            $id = $prefix . '-' . $rating;
+            $out .= html_writer::div(html_writer::empty_tag('input', ['type' => 'radio', 'name' => 'rating', 'value' => $rating,
+                    'id' => $id, 'class' => 'form-check-input', 'required' => 'required']) .
+                html_writer::tag('label', s(self::str('rating_' . $rating)), ['for' => $id, 'class' => 'form-check-label']),
+                'form-check');
+        }
+        return $out . html_writer::end_tag('fieldset');
+    }
+
+    /** Author controls after a decision: rework a returned version, or correct an accepted one with an explanation. */
+    public static function revision_controls(string $uuid, string $day, string $status): string {
+        if ($status === 'returned') {
+            return self::post_form($uuid, ['day' => $day], ['day' => $day, 'action' => 'rework'],
+                html_writer::tag('button', s(self::str('rework')), ['type' => 'submit', 'class' => 'btn btn-primary']));
+        }
+        if ($status === 'accepted') {
+            return self::post_form($uuid, ['day' => $day], ['day' => $day, 'action' => 'correct'],
+                self::textarea('correctionnote', 'dailyreport-correction', self::str('correction_note'), true) .
+                html_writer::tag('button', s(self::str('correct')), ['type' => 'submit', 'class' => 'btn btn-secondary']));
+        }
+        return '';
+    }
+
+    /** Reviewer queue with sub-filters; administrators also see reports without a reviewer. */
+    public static function queue(string $uuid, array $queue, bool $admin): string {
+        global $OUTPUT;
+        $links = '';
+        foreach (array_merge(daily_report_review_service::QUEUES, $admin ? ['unassigned'] : []) as $name) {
+            $current = $name === $queue['queue'];
+            $links .= html_writer::link(self::url($uuid, ['tab' => 'review', 'queue' => $name]), s(self::str('queue_' . $name)),
+                ['class' => 'btn btn-sm mr-2 mb-2 ' . ($current ? 'btn-primary' : 'btn-outline-secondary'),
+                 'aria-current' => $current ? 'page' : null]);
+        }
+        $out = html_writer::tag('nav', $links, ['aria-label' => self::str('queue_filters'), 'class' => 'mb-3']);
+        if (!$queue['items']) {
+            return $out . html_writer::tag('p', s(self::str('queue_empty')));
+        }
+        $table = new \html_table();
+        $table->attributes['class'] = 'generaltable bms-dailyreport-queue';
+        $table->head = [self::str('history_date'), self::str('employee'), self::str('history_version'),
+            self::str('history_submitted'), self::str('history_status')];
+        foreach ($queue['items'] as $row) {
+            $user = \core_user::get_user((int)$row->userid);
+            $table->data[] = [
+                html_writer::link(self::url($uuid, ['tab' => 'review', 'report' => $row->uuid]), s($row->reportday)),
+                s($user ? fullname($user) : '—'), (int)$row->versionno, s(userdate((int)$row->submittedat)),
+                self::status_badge((string)$row->status)];
+        }
+        return $out . html_writer::div(html_writer::table($table), 'table-responsive') .
+            $OUTPUT->paging_bar($queue['total'], $queue['page'], daily_report_review_service::PAGE_SIZE,
+                self::url($uuid, ['tab' => 'review', 'queue' => $queue['queue']]), 'page');
+    }
+
+    /** Report card for the reviewer or the read-only administrator, with decision forms only when allowed. */
+    public static function card(string $uuid, int $actor, array $card, array $candidates): string {
+        global $OUTPUT;
+        $report = $card['report'];
+        $out = $OUTPUT->heading(s(($card['author'] ? fullname($card['author']) : '—') . ' · ' . $report->reportday) . ' ' .
+            self::status_badge((string)$report->status), 3);
+        if ($card['admin'] && !$card['can_decide'] && !$card['can_change']) {
+            $out .= html_writer::tag('p', s(self::str('admin_readonly')), ['class' => 'text-muted']);
+        }
+        $current = $card['versions'][0] ?? null;
+        $hidden = ['tab' => 'review', 'report' => $report->uuid, 'version' => $current ? $current->uuid : ''];
+        $params = ['tab' => 'review', 'report' => $report->uuid];
+        if ($card['can_decide']) {
+            $out .= html_writer::div(
+                self::post_form($uuid, $params, $hidden + ['action' => 'accept'],
+                    html_writer::tag('h4', s(self::str('accept_heading')), ['class' => 'h6']) . self::ratings('dailyreport-rating') .
+                    self::textarea('comment', 'dailyreport-accept-comment', self::str('comment_optional'), false) .
+                    html_writer::tag('button', s(self::str('accept')), ['type' => 'submit', 'class' => 'btn btn-primary']),
+                    'border rounded p-3') .
+                self::post_form($uuid, $params, $hidden + ['action' => 'return'],
+                    html_writer::tag('h4', s(self::str('return_heading')), ['class' => 'h6']) .
+                    self::textarea('comment', 'dailyreport-return-reason', self::str('return_reason'), true) .
+                    html_writer::tag('button', s(self::str('return')), ['type' => 'submit', 'class' => 'btn btn-outline-danger']),
+                    'border rounded p-3'),
+                'bms-dailyreport-decide');
+        }
+        if ($card['can_change']) {
+            $out .= self::post_form($uuid, $params, $hidden + ['action' => 'rerate'],
+                html_writer::tag('h4', s(self::str('rerate_heading')), ['class' => 'h6']) . self::ratings('dailyreport-rerate') .
+                self::textarea('comment', 'dailyreport-rerate-reason', self::str('change_reason'), true) .
+                html_writer::tag('button', s(self::str('rerate')), ['type' => 'submit', 'class' => 'btn btn-secondary']),
+                'border rounded p-3') .
+                self::post_form($uuid, $params, $hidden + ['action' => 'return'],
+                    html_writer::tag('h4', s(self::str('revoke_heading')), ['class' => 'h6']) .
+                    self::textarea('comment', 'dailyreport-revoke-reason', self::str('return_reason'), true) .
+                    html_writer::tag('button', s(self::str('return')), ['type' => 'submit', 'class' => 'btn btn-outline-danger']),
+                    'border rounded p-3');
+        }
+        if ($card['can_reassign'] && $candidates) {
+            $select = html_writer::label(s(self::str('reassign_to')), 'dailyreport-reassign') .
+                html_writer::select($candidates, 'reviewerid', '', ['' => self::str('choose')],
+                    ['id' => 'dailyreport-reassign', 'class' => 'custom-select mr-2', 'required' => 'required']);
+            $out .= self::post_form($uuid, $params, ['tab' => 'review', 'report' => $report->uuid, 'action' => 'reassign'],
+                $select . html_writer::tag('button', s(self::str('reassign')), ['type' => 'submit', 'class' => 'btn btn-secondary']),
+                'border rounded p-3');
+        }
+        foreach ($card['versions'] as $i => $version) {
+            $reviewer = (int)$version->reviewerid > 0 ? \core_user::get_user((int)$version->reviewerid) : false;
+            if ($i === 1) {
+                $out .= $OUTPUT->heading(s(self::str('versions_previous')), 4);
+            }
+            $out .= self::version($uuid, $actor, $version, $card['links'][$version->uuid] ?? [],
+                $reviewer ? fullname($reviewer) : null, false, $card['reviews'][$version->uuid] ?? []);
+        }
         return $out;
     }
 

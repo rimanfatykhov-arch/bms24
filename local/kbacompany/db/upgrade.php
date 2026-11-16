@@ -6251,5 +6251,10 @@ function xmldb_local_kbacompany_upgrade(int $oldversion): bool {
         upgrade_plugin_savepoint(true, 2026111600, 'local', 'kbacompany');
     }
 
+    // ADR-0009 R2: registers the daily report message providers; version identity only, no DDL or data change.
+    if ($oldversion < 2026111601) {
+        upgrade_plugin_savepoint(true, 2026111601, 'local', 'kbacompany');
+    }
+
     return true;
 }

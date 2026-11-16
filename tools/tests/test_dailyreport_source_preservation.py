@@ -22,6 +22,7 @@ COMM_MARKER=b'\n// Communication Center cleanup (2026-11-15): one task discussio
 COMM_PREFIXES=(b'communication_',b'communicationcenter_',b'taskcenter_discussion_reader',b'taskdiscussion_event_')
 R0_MARKER=b'\n// Issue #106 R0: daily reports entry point (navigation and names only, no schema).\n'
 R1_MARKER=b'\n// ADR-0009 R1: saved daily reports (draft, submission, versions, history).\n'
+R2_MARKER=b'\n// ADR-0009 R2: manager review, rating, return, rework and notifications.\n'
 R0_KEYS=[b'dailyreports_nav',b'dailyreports_tabs',b'dailyreports_tab_my',b'dailyreports_button',
          b'dailyreports_nav_short',b'dailyreports_button_short']
 _COMM=json.loads((ROOT/'docs/reconcile/communication-center-cleanup-source-preservation.json').read_text(encoding='utf-8'))
@@ -62,11 +63,20 @@ class Preservation(unittest.TestCase):
                 self.assertEqual(COMM_AFTER[lang],hashlib.sha256(prefix+DAY_MARKER+day+COMM_MARKER+comm).hexdigest())
                 self.assertEqual(R0_KEYS,keys(r0))
                 self.assertFalse(set(R0_KEYS)&set(keys(prefix+day+comm)))
+            r2=None
+            if r1 is not None and R2_MARKER in r1:
+                r1,r2=r1.split(R2_MARKER)
             if r1 is not None:
                 r1keys=keys(r1)
                 self.assertEqual(54,len(r1keys));self.assertEqual(len(r1keys),len(set(r1keys)))
                 self.assertTrue(all(k.startswith((b'dailyreports_',b'privacy:metadata:dailyreports')) for k in r1keys))
                 self.assertFalse(set(r1keys)&set(keys(prefix+day+comm+r0)))
+            if r2 is not None:
+                r2keys=keys(r2)
+                self.assertEqual(46,len(r2keys));self.assertEqual(len(r2keys),len(set(r2keys)))
+                self.assertTrue(all(k.startswith((b'dailyreports_',b'messageprovider:dailyreport_',
+                                                  b'communication_notification_dailyreport_')) for k in r2keys))
+                self.assertFalse(set(r2keys)&set(keys(prefix+day+comm+r0+r1)))
 
     def test_exact_candidate_passes(self): self.assertEqual([],gate.check(ROOT))
 

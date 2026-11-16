@@ -16,6 +16,8 @@ final class daily_report_store_service_test extends \advanced_testcase {
         global $DB, $USER;
         $this->resetAfterTest(); $this->setAdminUser(); $admin = (int)$USER->id;
         set_config('dailyreports_enabled', 1, 'local_kbacompany');
+        // Reviewer notifications use Moodle messages; capture them instead of sending.
+        $this->redirectMessages();
         $cid = repository::save_company((object)['name' => 'Synthetic daily reports A', 'active' => 1]);
         $company = identity_registry::company_uuid($cid);
         $users = [];
