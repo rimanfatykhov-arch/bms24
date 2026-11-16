@@ -15,5 +15,12 @@ if ($hassiteconfig) {
             'owned' => get_string('bms24_shell_owned', 'local_kbacompany'),
         ]
     ));
+    // ADR-0009 R1: saved daily reports are off until explicitly enabled; off keeps the read-only day summary.
+    $settings->add(new admin_setting_configcheckbox(
+        'local_kbacompany/dailyreports_enabled',
+        get_string('dailyreports_enabled', 'local_kbacompany'),
+        get_string('dailyreports_enabled_help', 'local_kbacompany'),
+        0
+    ));
     $ADMIN->add('localplugins', $settings);
 }

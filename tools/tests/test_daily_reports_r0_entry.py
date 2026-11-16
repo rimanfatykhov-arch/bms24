@@ -51,12 +51,16 @@ class DailyReportsR0Entry(unittest.TestCase):
 
     def test_page_has_own_active_route_and_my_report_tab(self):
         page = text('daily_report.php')
-        self.assertIn("bms_page_shell_service::begin($uuid, (int)$USER->id, 'dailyreports',", page)
-        self.assertNotIn("(int)$USER->id, 'tasks',", page)
-        self.assertIn("get_string('dailyreports_tab_my', 'local_kbacompany'), 'active' => true", page)
+        # The actor is only ever the session user (R1 names it $actor).
+        self.assertEqual(1, page.count("$actor = (int)$USER->id;"))
+        self.assertEqual(['(int)$USER->id'], re.findall(r"\$actor\s*=(?!=)\s*([^;]+);", page))
+        self.assertIn("bms_page_shell_service::begin($uuid, $actor, 'dailyreports',", page)
+        self.assertNotIn("$actor, 'tasks',", page)
+        self.assertIn("get_string('dailyreports_tab_my', 'local_kbacompany'), 'active' => $tab === 'my']", page)
         self.assertIn("require_capability('local/kbacompany:viewowncompany', $context);", page)
-        self.assertIn("daily_report_service::context($uuid, (int)$USER->id, $day,", page)
-        self.assertNotIn('optional_param(\'userid\'', page)
+        self.assertIn("daily_report_service::context($uuid, $actor, $day,", page)
+        for forbidden in ("optional_param('userid'", "required_param('userid'", "optional_param('actor'"):
+            self.assertNotIn(forbidden, page)
 
     def test_task_center_button_uses_report_first_name(self):
         tasks = text('tasks.php')
@@ -86,13 +90,13 @@ class DailyReportsR0Entry(unittest.TestCase):
             self.assertIn(f"'{test}'", standard)
             self.assertTrue((PLUGIN / 'tests' / f'{test}.php').is_file(), test)
 
-    def test_no_schema_version_or_capability_change_against_base(self):
+    def test_no_capability_change_against_base(self):
+        # R0 and R1 add no capability; R1 schema is bound by the exact install.xml hash in the preservation gate.
         base = '881aac2'
         if subprocess.run(['git', 'cat-file', '-e', base], cwd=ROOT, capture_output=True).returncode:
             self.skipTest('base commit not available in this checkout')
-        changed = subprocess.run(['git', 'diff', '--name-only', base, '--', 'local/kbacompany/db',
-                                  'local/kbacompany/version.php'], cwd=ROOT, capture_output=True, text=True,
-                                 check=True).stdout.split()
+        changed = subprocess.run(['git', 'diff', '--name-only', base, '--', 'local/kbacompany/db/access.php'],
+                                 cwd=ROOT, capture_output=True, text=True, check=True).stdout.split()
         self.assertEqual([], changed)
 
 

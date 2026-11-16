@@ -21,6 +21,7 @@ DAY_MARKER=b'\n// Issue #106: canonical read-only personal day summary.\n'
 COMM_MARKER=b'\n// Communication Center cleanup (2026-11-15): one task discussion, task events, replies, group members.\n'
 COMM_PREFIXES=(b'communication_',b'communicationcenter_',b'taskcenter_discussion_reader',b'taskdiscussion_event_')
 R0_MARKER=b'\n// Issue #106 R0: daily reports entry point (navigation and names only, no schema).\n'
+R1_MARKER=b'\n// ADR-0009 R1: saved daily reports (draft, submission, versions, history).\n'
 R0_KEYS=[b'dailyreports_nav',b'dailyreports_tabs',b'dailyreports_tab_my',b'dailyreports_button',
          b'dailyreports_nav_short',b'dailyreports_button_short']
 _COMM=json.loads((ROOT/'docs/reconcile/communication-center-cleanup-source-preservation.json').read_text(encoding='utf-8'))
@@ -53,11 +54,19 @@ class Preservation(unittest.TestCase):
                 self.assertEqual(23,len(commkeys));self.assertEqual(len(commkeys),len(set(commkeys)))
                 self.assertTrue(all(k.startswith(COMM_PREFIXES) for k in commkeys))
                 self.assertFalse(set(commkeys)&set(keys(prefix+day)))
+            r1=None
+            if r0 is not None and R1_MARKER in r0:
+                r0,r1=r0.split(R1_MARKER)
             if r0 is not None:
                 # The #114 file (… + cleanup block) is byte-identical up to the R0 marker.
                 self.assertEqual(COMM_AFTER[lang],hashlib.sha256(prefix+DAY_MARKER+day+COMM_MARKER+comm).hexdigest())
                 self.assertEqual(R0_KEYS,keys(r0))
                 self.assertFalse(set(R0_KEYS)&set(keys(prefix+day+comm)))
+            if r1 is not None:
+                r1keys=keys(r1)
+                self.assertEqual(54,len(r1keys));self.assertEqual(len(r1keys),len(set(r1keys)))
+                self.assertTrue(all(k.startswith((b'dailyreports_',b'privacy:metadata:dailyreports')) for k in r1keys))
+                self.assertFalse(set(r1keys)&set(keys(prefix+day+comm+r0)))
 
     def test_exact_candidate_passes(self): self.assertEqual([],gate.check(ROOT))
 
