@@ -742,7 +742,7 @@ class ContractTest(unittest.TestCase):
                                                            aria_snapshot='- link "%s":' % n['nav'],
                                                            full_span={'text': n['nav'], 'aria_hidden': False,
                                                                       'display': 'block', 'visibility': 'visible'},
-                                                           short_span={'text': n['nav_short'], 'aria_hidden': True,
+                                                           short_span={'text': '', 'label': n['nav_short'], 'aria_hidden': True,
                                                                        'display': 'block' if mobile else 'none',
                                                                        'visibility': 'visible'})}
             box = {'scroll': width, 'inner': width}
@@ -791,6 +791,10 @@ class ContractTest(unittest.TestCase):
              lambda o: owned_mobile(o)['report']['menu']['item']['full_span'].update(display='none')),
             ('daily_reports_menu_after_tasks_and_current',
              lambda o: o['cases'][0]['report']['menu']['item']['short_span'].update(aria_hidden=False)),
+            ('daily_reports_menu_after_tasks_and_current',
+             lambda o: o['cases'][0]['report']['menu']['item']['short_span'].update(text='Reports')),
+            ('daily_reports_menu_after_tasks_and_current',
+             lambda o: o['cases'][0]['report']['menu']['item'].update(aria_snapshot='- link "Daily reportsReports": Daily reports')),
             ('daily_reports_menu_full_and_short_labels',
              lambda o: owned_mobile(o)['report']['menu']['item'].update(text=c.DAILY_REPORT_LABELS['ru']['nav'])),
             ('daily_reports_menu_full_and_short_labels',

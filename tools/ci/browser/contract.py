@@ -926,8 +926,8 @@ def daily_reports_nav_checks(obs, exitcode=None):
             fs, ss = item.get('full_span') or {}, item.get('short_span') or {}
             require(fs.get('text') == labels['nav'] and fs.get('aria_hidden') is False and fs.get('display') != 'none'
                     and fs.get('visibility') != 'hidden', 'full menu label must stay exposed to screen readers: %r' % (fs,))
-            require(ss.get('text') == labels['nav_short'] and ss.get('aria_hidden') is True,
-                    'short menu label must be aria-hidden: %r' % (ss,))
+            require(ss.get('label') == labels['nav_short'] and ss.get('text') == '' and ss.get('aria_hidden') is True,
+                    'short menu label must be aria-hidden CSS text, not DOM text: %r' % (ss,))
 
     def labels():
         for r in run():

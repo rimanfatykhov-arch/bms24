@@ -35,8 +35,13 @@ LINK_INFO = """a => { const r = a.getBoundingClientRect(); const u = new URL(a.h
   const seen = []; const walk = document.createTreeWalker(a, NodeFilter.SHOW_TEXT); let node;
   while ((node = walk.nextNode())) { const el = node.parentElement, b = el.getBoundingClientRect(), cs = getComputedStyle(el);
     if (node.textContent.trim() && b.width > 1 && b.height > 1 && cs.visibility !== 'hidden') seen.push(node.textContent.trim()); }
+  // CSS-generated labels (phone short label) are seen too when their element is rendered.
+  a.querySelectorAll('*').forEach(el => { const before = getComputedStyle(el, '::before').content, b = el.getBoundingClientRect();
+    if (before && before !== 'none' && before !== 'normal' && b.width > 1 && b.height > 1) {
+      const t = before.replace(/^["']|["']$/g, '').trim(); if (t) seen.push(t); } });
   const span = s => { const e = a.querySelector(s); if (!e) return null; const cs = getComputedStyle(e);
-    return {text: e.textContent.trim(), aria_hidden: !!e.closest('[aria-hidden="true"]'), display: cs.display,
+    return {text: e.textContent.trim(), label: e.getAttribute('data-label'), aria_hidden: !!e.closest('[aria-hidden="true"]'),
+            display: cs.display,
             visibility: cs.visibility}; };
   return {path: u.pathname, uuid: u.searchParams.get('uuid'), params: [...u.searchParams.keys()].sort(),
     text: seen.join(' '), raw_text: a.innerText.replace(/\\s+/g, ' ').trim(), aria_label: a.getAttribute('aria-label'),

@@ -36,12 +36,15 @@ class DailyReportsR0Entry(unittest.TestCase):
         self.assertIn("'mobilelabel' => $route['mobile_label'] ?? '',", source)
         template = text('templates/bms24_nav_groups.mustache')
         self.assertIn('<span class="bms24-navlabel bms24-navlabel-full">{{label}}</span>', template)
-        self.assertIn('<span class="bms24-navlabel bms24-navlabel-short" aria-hidden="true">{{mobilelabel}}</span>',
+        # The short label is not DOM text (it would leak into the desktop accessible name); CSS draws it on phones only.
+        self.assertIn('<span class="bms24-navlabel bms24-navlabel-short" aria-hidden="true" data-label="{{mobilelabel}}"></span>',
                       template)
         self.assertIn('{{^mobilelabel}}<span class="bms24-navlabel">{{label}}</span>{{/mobilelabel}}', template)
         css = text('bms_ui/owned_shell.css')
         self.assertIn('.bms24-app .bms24-navlabel-short {display:none;}', css)
         mobile = re.search(r'@media\(max-width:860px\) \{\.bms24-app \.bms24-navlabel-short \{display:inline;\}(.*?)\}$', css, re.M).group(1)
+        self.assertIn('.bms24-app .bms24-navlabel-short::before {content:attr(data-label);}', mobile)
+        self.assertNotIn('content:attr(data-label)', css.split('@media(max-width:860px)')[0])
         self.assertIn('.bms24-navlabel-full {position:absolute;width:1px;height:1px;', mobile)
         self.assertIn('clip:rect(0,0,0,0)', mobile)
         self.assertNotIn('display:none', mobile)
