@@ -367,9 +367,13 @@ echo html_writer::start_div((\local_kbacompany\local\bms24_shell_service::is_ena
     ['data-task-create-url'=>ui::url($uuid,['view'=>'create'])->out(false)]);
 if($error!==''){echo html_writer::div(s($error),'alert alert-danger',['role'=>'alert']);}
 if($view==='list'){
+    // ADR-0009 R0: «Отчёт» on phones (<576px), full name elsewhere; aria-label keeps the full name for screen readers.
+    $dailyreportlabel = get_string('dailyreports_button', 'local_kbacompany');
     echo html_writer::div(html_writer::link(
         new moodle_url('/local/kbacompany/daily_report.php', ['uuid'=>$uuid]),
-        get_string('dailyreport_title', 'local_kbacompany'), ['class'=>'btn btn-outline-secondary']), 'mb-3');
+        html_writer::span(s($dailyreportlabel), 'd-none d-sm-inline')
+        . html_writer::span(s(get_string('dailyreports_button_short', 'local_kbacompany')), 'd-sm-none', ['aria-hidden'=>'true']),
+        ['class'=>'btn btn-outline-secondary', 'aria-label'=>$dailyreportlabel, 'title'=>$dailyreportlabel]), 'mb-3');
     $queryfilters = $filters;
     if ($display === 'deadlines') { $queryfilters['deadlineview'] = true; }
     $list=task_service::list_page($uuid,$actor,$queryfilters,optional_param('page',0,PARAM_INT));

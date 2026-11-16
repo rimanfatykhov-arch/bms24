@@ -9716,3 +9716,11 @@ $string['taskdiscussion_event_cancel'] = 'Задача отменена';
 $string['taskdiscussion_event_edit'] = 'Задача изменена';
 $string['taskdiscussion_event_observer_change'] = 'Изменён наблюдатель';
 $string['taskdiscussion_event_subtask_added'] = 'Добавлена подзадача';
+
+// Issue #106 R0: daily reports entry point (navigation and names only, no schema).
+$string['dailyreports_nav'] = 'Отчёты за день';
+$string['dailyreports_tabs'] = 'Разделы отчётов за день';
+$string['dailyreports_tab_my'] = 'Мой отчёт';
+$string['dailyreports_button'] = 'Отчёт за день';
+$string['dailyreports_nav_short'] = 'Отчёты';
+$string['dailyreports_button_short'] = 'Отчёт';

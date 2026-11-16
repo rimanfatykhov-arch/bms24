@@ -1,0 +1,20 @@
+{
+  "scope": "exact intentional source updates; not runtime or release acceptance",
+  "base_sha": "881aac2",
+  "normalization": "CRLF to LF only",
+  "previous_evidence": "docs/reconcile/communication-center-cleanup-source-preservation.json (#114 on main)",
+  "decision": "docs/adr/ADR-0009-daily-employee-reports.md (PR #115), stage R0",
+  "change": "Append six dailyreports_ navigation strings to each language file after the Communication Center cleanup block; all earlier bytes preserved.",
+  "files": [
+    {
+      "path": "local/kbacompany/lang/en/local_kbacompany.php",
+      "before_sha256_lf": "b7bb8afbfa9ee3a0277be52c937868b29f013560f1e38428e7cc7f831fc5ee2a",
+      "after_sha256_lf": "dcbc042a4602de76173add94c8b936668a568f3681f0ca41291ead1f52afffde"
+    },
+    {
+      "path": "local/kbacompany/lang/ru/local_kbacompany.php",
+      "before_sha256_lf": "d89845b085cef3177a7b639ebd2e194be4662f40adb417706026f9b6d17c76db",
+      "after_sha256_lf": "53feac38fc2986c052d52868e5dcac147f973daf2a292af818fe7752d76468c6"
+    }
+  ]
+}

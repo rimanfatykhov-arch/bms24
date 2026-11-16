@@ -9714,3 +9714,11 @@ $string['taskdiscussion_event_cancel'] = 'Task cancelled';
 $string['taskdiscussion_event_edit'] = 'Task edited';
 $string['taskdiscussion_event_observer_change'] = 'Observer changed';
 $string['taskdiscussion_event_subtask_added'] = 'Subtask added';
+
+// Issue #106 R0: daily reports entry point (navigation and names only, no schema).
+$string['dailyreports_nav'] = 'Daily reports';
+$string['dailyreports_tabs'] = 'Daily report sections';
+$string['dailyreports_tab_my'] = 'My report';
+$string['dailyreports_button'] = 'Daily report';
+$string['dailyreports_nav_short'] = 'Reports';
+$string['dailyreports_button_short'] = 'Report';

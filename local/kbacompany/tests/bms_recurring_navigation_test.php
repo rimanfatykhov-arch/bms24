@@ -23,7 +23,9 @@ class bms_recurring_navigation_test extends \advanced_testcase {
             $keys = array_column($workspace['items'], 'key');
             $position = array_search('recurring', $keys, true);
             $this->assertNotFalse($position);
-            $this->assertSame('tasks', $keys[$position - 1]);
+            // ADR-0009 R0: Daily reports sit directly after Task Center, before recurring work.
+            $this->assertSame('dailyreports', $keys[$position - 1]);
+            $this->assertSame('tasks', $keys[$position - 2]);
             $this->assertSame('battleplan', $keys[$position + 1]);
             $item = $workspace['items'][$position];
             $this->assertStringContainsString('recurring_tasks.php', $item['url']);

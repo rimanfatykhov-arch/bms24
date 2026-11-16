@@ -5,7 +5,8 @@
     {{#items}}
     <a href="{{url}}" class="bms24-navitem{{#active}} is-active{{/active}}" {{#active}}aria-current="page"{{/active}}>
       {{#iconhtml}}<span class="bms24-navicon" aria-hidden="true">{{{iconhtml}}}</span>{{/iconhtml}}
-      <span class="bms24-navlabel">{{label}}</span>
+      {{#mobilelabel}}<span class="bms24-navlabel bms24-navlabel-full">{{label}}</span><span class="bms24-navlabel bms24-navlabel-short" aria-hidden="true" data-label="{{mobilelabel}}"></span>{{/mobilelabel}}
+      {{^mobilelabel}}<span class="bms24-navlabel">{{label}}</span>{{/mobilelabel}}
       {{#badge}}<span class="bms24-count">{{value}}</span>{{/badge}}
     </a>
     {{/items}}

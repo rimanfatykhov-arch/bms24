@@ -47,6 +47,10 @@ def check(root=ROOT):
         'local/kbacompany/lang/ru/local_kbacompany.php': 'd89845b085cef3177a7b639ebd2e194be4662f40adb417706026f9b6d17c76db',
         'local/kbacompany/styles.css': '0cbc4209807f463b30934f1f8642adfc3d50ecd52b86ba5fac0e018a48228b30',
     })
+    # Daily reports R0 (ADR-0009, after #114): exact append-only RU/EN navigation names; no schema, older keys unchanged.
+    # See docs/reconcile/DAILY_REPORTS_R0_SOURCE_PRESERVATION.md.
+    reviewed_followup['local/kbacompany/lang/en/local_kbacompany.php'] = 'dcbc042a4602de76173add94c8b936668a568f3681f0ca41291ead1f52afffde'
+    reviewed_followup['local/kbacompany/lang/ru/local_kbacompany.php'] = '53feac38fc2986c052d52868e5dcac147f973daf2a292af818fe7752d76468c6'
     reviewed_metadata={'AGENTS.md','docs/00_MASTER_CONTEXT.md'}
     for name, expected in plan['unchanged_schema_hashes'].items():
         target = {'local/kbacompany/db/install.xml': '5d61fb813ca0e1da1ab67db808b5a1da321cadfccef3e2c499e8dee279f5e576'}.get(name, expected)
