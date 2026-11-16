@@ -1,7 +1,7 @@
 """Exact source preservation remains fail-closed when day-summary strings are appended.
 
 Chain (each block is appended, never inserted): published #110 prefix -> #106/#107 day-summary block (#113) ->
-Communication Center cleanup block (#112). Every earlier block must stay byte-identical (exact SHA256 of the file up to
+Communication Center cleanup block (#112) -> daily reports R0 block (#116). Every earlier block must stay byte-identical (exact SHA256 of the file up to
 the next block marker) and later keys must never override earlier ones.
 """
 import hashlib
@@ -20,6 +20,12 @@ PUBLISHED={'en':'cf9761113aa0dd206c0c52ed9b3cdb13aebe2be2b51bf91cd5c55cac0fd18ff
 DAY_MARKER=b'\n// Issue #106: canonical read-only personal day summary.\n'
 COMM_MARKER=b'\n// Communication Center cleanup (2026-11-15): one task discussion, task events, replies, group members.\n'
 COMM_PREFIXES=(b'communication_',b'communicationcenter_',b'taskcenter_discussion_reader',b'taskdiscussion_event_')
+R0_MARKER=b'\n// Issue #106 R0: daily reports entry point (navigation and names only, no schema).\n'
+R0_KEYS=[b'dailyreports_nav',b'dailyreports_tabs',b'dailyreports_tab_my',b'dailyreports_button',
+         b'dailyreports_nav_short',b'dailyreports_button_short']
+_COMM=json.loads((ROOT/'docs/reconcile/communication-center-cleanup-source-preservation.json').read_text(encoding='utf-8'))
+COMM_AFTER={lang:next(r['after_sha256_lf'] for r in _COMM['files'] if r['path']==f'local/kbacompany/lang/{lang}/local_kbacompany.php')
+            for lang in PUBLISHED}
 _DAY=json.loads((ROOT/'docs/reconcile/daily-summary-after110-source-preservation.json').read_text(encoding='utf-8'))
 DAY_AFTER={lang:next(r['after_sha256_lf'] for r in _DAY['files'] if r['path']==f'local/kbacompany/lang/{lang}/local_kbacompany.php')
            for lang in PUBLISHED}
@@ -37,6 +43,9 @@ class Preservation(unittest.TestCase):
             self.assertEqual(18,len(daykeys));self.assertEqual(len(daykeys),len(set(daykeys)))
             self.assertTrue(all(k.startswith(b'dailyreport_') for k in daykeys))
             self.assertFalse(set(daykeys)&set(re.findall(rb"\$string\['([^']+)'\]",prefix)))
+            r0=None
+            if comm is not None and R0_MARKER in comm:
+                comm,r0=comm.split(R0_MARKER)
             if comm is not None:
                 # The #113 file (published prefix + day-summary block) is byte-identical up to the next marker.
                 self.assertEqual(DAY_AFTER[lang],hashlib.sha256(prefix+DAY_MARKER+day).hexdigest())
@@ -44,6 +53,11 @@ class Preservation(unittest.TestCase):
                 self.assertEqual(23,len(commkeys));self.assertEqual(len(commkeys),len(set(commkeys)))
                 self.assertTrue(all(k.startswith(COMM_PREFIXES) for k in commkeys))
                 self.assertFalse(set(commkeys)&set(keys(prefix+day)))
+            if r0 is not None:
+                # The #114 file (… + cleanup block) is byte-identical up to the R0 marker.
+                self.assertEqual(COMM_AFTER[lang],hashlib.sha256(prefix+DAY_MARKER+day+COMM_MARKER+comm).hexdigest())
+                self.assertEqual(R0_KEYS,keys(r0))
+                self.assertFalse(set(R0_KEYS)&set(keys(prefix+day+comm)))
 
     def test_exact_candidate_passes(self): self.assertEqual([],gate.check(ROOT))
 
@@ -52,7 +66,8 @@ class Preservation(unittest.TestCase):
         for lang in PUBLISHED:
             path=ROOT/f'local/kbacompany/lang/{lang}/local_kbacompany.php'
             for mutation in [lambda b:b+b'\n// unexpected',lambda b:b.replace(b'dailyreport_title',b'overridden_key',1),
-                             lambda b:b.replace(b'communication_reply',b'overridden_key',1)]:
+                             lambda b:b.replace(b'communication_reply',b'overridden_key',1),
+                             lambda b:b.replace(b'dailyreports_button',b'dailyreports_other',1)]:
                 changed=hashlib.sha256(mutation(path.read_bytes().replace(b'\r\n',b'\n'))).hexdigest()
                 with patch.object(gate,'digest',side_effect=lambda p: changed if p==path else original(p)):
                     self.assertIn('parent source lost: '+path.relative_to(ROOT).as_posix(),gate.check(ROOT))
@@ -63,6 +78,7 @@ class Preservation(unittest.TestCase):
             data=(ROOT/f'local/kbacompany/lang/{lang}/local_kbacompany.php').read_bytes().replace(b'\r\n',b'\n')
             prefix,tail=data.split(DAY_MARKER)
             day,comm=tail.split(COMM_MARKER)
+            comm=comm.split(R0_MARKER)[0]
             # Cleanup block moved in front of the day summary: the bytes before the cleanup marker are no longer #113.
             moved=prefix+COMM_MARKER+comm+DAY_MARKER+day
             self.assertNotEqual(DAY_AFTER[lang],hashlib.sha256(moved.split(COMM_MARKER)[0]).hexdigest())
