@@ -235,6 +235,81 @@ final class daily_report_review_service_test extends \advanced_testcase {
         });
     }
 
+    /** Reassigning a pending version moves it: the previous reviewer can neither read nor decide it any more. */
+    public function test_reassign_moves_pending_version_and_previous_reviewer_loses_it(): void {
+        global $DB;
+        $f = $this->fixture(); $lead = (int)$f['lead']->id; $peer = (int)$f['peer']->id;
+        $sent = $this->submitted($f);
+        $this->setAdminUser();
+        review::reassign($f['company'], $f['admin'], $sent['reportuuid'], $peer);
+        review::reassign($f['company'], $f['admin'], $sent['reportuuid'], $peer);
+        $this->assertSame($peer, (int)$DB->get_field('local_kbacompany_dreportver', 'reviewerid', ['uuid' => $sent['versionuuid']]));
+        $this->assertSame(1, $DB->count_records('local_kbacompany_commnotif', ['userid' => $peer, 'kind' => 'dailyreport_submitted']));
+        $this->setUser($f['lead']);
+        $this->error('dailyreports_notavailable', function() use ($f, $lead, $sent) {
+            review::card($f['company'], $lead, $sent['reportuuid']);
+        });
+        $this->error('dailyreports_notreviewer', function() use ($f, $lead, $sent) {
+            review::decide($f['company'], $lead, $sent['reportuuid'], $sent['versionuuid'], 'accepted', 'positive', '', $this->key());
+        });
+        $this->assertSame([], review::queue($f['company'], $lead, 'pending')['items']);
+        $this->setUser($f['peer']);
+        $this->assertTrue(review::card($f['company'], $peer, $sent['reportuuid'])['can_decide']);
+        // A decided report can no longer be reassigned.
+        review::decide($f['company'], $peer, $sent['reportuuid'], $sent['versionuuid'], 'accepted', 'none', '', $this->key());
+        $this->setAdminUser();
+        $this->error('dailyreports_notpending', function() use ($f, $sent, $lead) {
+            review::reassign($f['company'], $f['admin'], $sent['reportuuid'], $lead);
+        });
+    }
+
+    /** The dailyreports_enabled switch stops decisions and reassignment; stored reports and decisions are kept. */
+    public function test_disabled_switch_refuses_decisions_and_reassign_but_keeps_data(): void {
+        global $DB;
+        $f = $this->fixture(); $lead = (int)$f['lead']->id; $sent = $this->submitted($f);
+        set_config('dailyreports_enabled', 0, 'local_kbacompany');
+        $this->setUser($f['lead']);
+        $this->error('dailyreports_disabled', function() use ($f, $lead, $sent) {
+            review::decide($f['company'], $lead, $sent['reportuuid'], $sent['versionuuid'], 'accepted', 'positive', '', $this->key());
+        });
+        $this->setAdminUser();
+        $this->error('dailyreports_disabled', function() use ($f, $sent) {
+            review::reassign($f['company'], $f['admin'], $sent['reportuuid'], (int)$f['peer']->id);
+        });
+        $this->assertSame('submitted', $DB->get_field('local_kbacompany_dreport', 'status', ['uuid' => $sent['reportuuid']]));
+        $this->assertSame(1, $DB->count_records('local_kbacompany_dreportver', ['reportuuid' => $sent['reportuuid']]));
+        set_config('dailyreports_enabled', 1, 'local_kbacompany');
+        $this->setUser($f['lead']);
+        review::decide($f['company'], $lead, $sent['reportuuid'], $sent['versionuuid'], 'accepted', 'positive', '', $this->key());
+        $this->assertSame('accepted', $DB->get_field('local_kbacompany_dreport', 'status', ['uuid' => $sent['reportuuid']]));
+    }
+
+    /** Notifications go to the right user once per event and link to the page that re-checks access. */
+    public function test_notifications_reach_the_right_user_once_and_link_to_the_allowed_page(): void {
+        global $DB;
+        $f = $this->fixture(); $lead = (int)$f['lead']->id; $u = (int)$f['employee']->id;
+        $this->setUser($f['employee']);
+        $key = $this->key();
+        $one = store::submit($f['company'], $u, $f['day'], $key, 0, $this->values());
+        $two = store::submit($f['company'], $u, $f['day'], $key, 0, $this->values());
+        $this->assertSame($one['versionuuid'], $two['versionuuid']);
+        $this->setUser($f['lead']);
+        $decision = $this->key();
+        review::decide($f['company'], $lead, $one['reportuuid'], $one['versionuuid'], 'returned', '', 'Add details', $decision);
+        review::decide($f['company'], $lead, $one['reportuuid'], $one['versionuuid'], 'returned', '', 'Add details', $decision);
+        $rows = array_values($DB->get_records('local_kbacompany_commnotif', ['companyuuid' => $f['company']], 'id ASC'));
+        $this->assertSame([[$lead, 'dailyreport_submitted'], [$u, 'dailyreport_decision']],
+            array_map(static function($r) { return [(int)$r->userid, (string)$r->kind]; }, $rows));
+        $this->assertSame(0, $DB->count_records('local_kbacompany_commnotif', ['userid' => (int)$f['peer']->id]));
+        [$url, $label] = \local_kbacompany\local\communication_center_ui_service::daily_report_target($f['company'], 'dailyreport_submitted');
+        $this->assertSame('/local/kbacompany/daily_report.php', $url->get_path());
+        $this->assertSame(['uuid' => $f['company'], 'tab' => 'review'], $url->params());
+        $this->assertSame('dailyreports_tab_review', $label);
+        [$url] = \local_kbacompany\local\communication_center_ui_service::daily_report_target($f['company'], 'dailyreport_decision');
+        $this->assertSame(['uuid' => $f['company'], 'tab' => 'history'], $url->params());
+        $this->assertNull(\local_kbacompany\local\communication_center_ui_service::daily_report_target($f['company'], 'mention'));
+    }
+
     public function test_rating_change_supersedes_with_reason_and_correction_keeps_old_rating(): void {
         global $DB;
         $f = $this->fixture(); $lead = (int)$f['lead']->id; $u = (int)$f['employee']->id;

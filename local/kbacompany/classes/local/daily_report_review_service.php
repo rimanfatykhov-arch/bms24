@@ -47,11 +47,22 @@ final class daily_report_review_service {
         return $companyuuid;
     }
 
-    /** Was this user the stored reviewer of any version of the report (В6: earlier versions stay with that reviewer)? */
-    private static function reviewed_by(string $companyuuid, \stdClass $report, int $actor): bool {
+    /**
+     * Submitted versions this actor may read (В6, accepted): a company administrator reads every non-draft version
+     * read-only; a reviewer reads only the versions on which they are the stored reviewer (snapshot on the version).
+     * A new reviewer therefore sees history from their assignment on, and an earlier reviewer never receives later
+     * versions assigned to someone else. Filtered in SQL, newest first.
+     */
+    private static function readable_versions(string $companyuuid, \stdClass $report, int $actor, bool $admin): array {
         global $DB;
-        return $actor > 0 && $DB->record_exists('local_kbacompany_dreportver',
-            ['companyuuid' => $companyuuid, 'reportuuid' => $report->uuid, 'reviewerid' => $actor]);
+        $where = 'companyuuid = :c AND reportuuid = :r AND state <> :draft';
+        $params = ['c' => $companyuuid, 'r' => $report->uuid, 'draft' => 'draft'];
+        if (!$admin) {
+            $where .= ' AND reviewerid = :actor';
+            $params['actor'] = $actor;
+        }
+        return $actor > 0 ? array_values($DB->get_records_select('local_kbacompany_dreportver', $where, $params,
+            'versionno DESC')) : [];
     }
 
     /** Reviewer queue (own versions) or, for an administrator, the "without reviewer" list. */
@@ -86,34 +97,40 @@ final class daily_report_review_service {
         return ['total' => (int)$total, 'page' => $page, 'queue' => $queue, 'items' => array_values($rows)];
     }
 
-    /** Report card for a reviewer of any of its versions, or read-only for an administrator. Authors use their own view. */
+    /**
+     * Report card limited to the versions this actor may read (readable_versions), with links and decisions of those
+     * versions only. Administrators read everything read-only; authors use their own view (no self review).
+     */
     public static function card(string $companyuuid, int $actor, string $reportuuid): array {
         global $DB;
         $companyuuid = self::member($companyuuid, $actor);
         $report = self::report($companyuuid, $reportuuid);
         $admin = self::is_admin($companyuuid, $actor);
-        if ((int)$report->userid === $actor || (!$admin && !self::reviewed_by($companyuuid, $report, $actor))) {
+        $versions = (int)$report->userid === $actor ? [] : self::readable_versions($companyuuid, $report, $actor, $admin);
+        if (!$versions) {
             throw new \moodle_exception('dailyreports_notavailable', 'local_kbacompany');
         }
-        $versions = array_values($DB->get_records_select('local_kbacompany_dreportver',
-            'companyuuid = :c AND reportuuid = :r AND state <> :draft',
-            ['c' => $companyuuid, 'r' => $report->uuid, 'draft' => 'draft'], 'versionno DESC'));
         $links = []; $reviews = [];
+        $uuids = array_map(static function($version) { return (string)$version->uuid; }, $versions);
         foreach ($versions as $version) {
             $links[$version->uuid] = array_values($DB->get_records('local_kbacompany_dreportlink',
                 ['companyuuid' => $companyuuid, 'versionuuid' => $version->uuid], 'id ASC'));
         }
-        foreach ($DB->get_records('local_kbacompany_dreportrev', ['companyuuid' => $companyuuid,
-                'reportuuid' => $report->uuid], 'timecreated ASC, id ASC') as $row) {
+        [$in, $inparams] = $DB->get_in_or_equal($uuids, SQL_PARAMS_NAMED, 'rv');
+        foreach ($DB->get_records_select('local_kbacompany_dreportrev', "companyuuid = :c AND reportuuid = :r AND versionuuid {$in}",
+                ['c' => $companyuuid, 'r' => $report->uuid] + $inparams, 'timecreated ASC, id ASC') as $row) {
             $reviews[$row->versionuuid][] = $row;
         }
-        $current = $versions[0] ?? null;
+        // Decisions apply only to the report's current version, and only when it is readable here as this reviewer's.
+        $current = null;
+        foreach ($versions as $version) {
+            if ($version->uuid === $report->currentversionuuid) { $current = $version; }
+        }
         $isreviewer = $current && (int)$current->reviewerid === $actor && (int)$report->userid !== $actor;
         $last = $current ? self::last_decision($companyuuid, $current->uuid) : null;
         return ['report' => $report, 'versions' => $versions, 'links' => $links, 'reviews' => $reviews,
             'author' => \core_user::get_user((int)$report->userid), 'admin' => $admin,
-            'can_decide' => $isreviewer && $report->status === 'submitted' &&
-                $report->currentversionuuid === $current->uuid,
+            'can_decide' => $isreviewer && $report->status === 'submitted',
             'can_change' => $isreviewer && $report->status === 'accepted' && $last &&
                 (int)$last->reviewerid === $actor,
             'can_reassign' => $admin && $report->status === 'submitted'];
