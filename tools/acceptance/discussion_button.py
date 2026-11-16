@@ -51,7 +51,8 @@ def validate_panels(phase,mode,composer,recent,history_link,history_status,histo
     require(phase in ('baseline','rollback','candidate','reinstall'),'unknown discussion acceptance phase')
     require(mode in ('owned','legacy'),'unknown discussion shell')
     require(composer==1,'discussion composer missing or duplicated')
-    expected_recent=1 if phase in ('baseline','rollback') and mode=='owned' else 0
+    # The pinned published114 baseline already removed this duplicate block; history is still required.
+    expected_recent=0
     require(recent==expected_recent,'recent activity presence violates phase policy')
     require(history_link and history_status==200 and history_exact and history_heading==1 and history_events>0,
         'history missing, redirected, failed or empty')

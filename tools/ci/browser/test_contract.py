@@ -78,6 +78,20 @@ def failed(results):
 
 
 class ContractTest(unittest.TestCase):
+    def test_retained_center_file_acl_checks_exact_bytes_and_refusals(self):
+        a=access();u=B % (999,'cc-012345abcdef.txt')
+        a['expected_urls']=list(a['expected_urls'])+[u]
+        digest=c.expected_sha('cc-012345abcdef.txt')
+        for phase,rows in a['phases'].items():
+            rows[u]={'http':200,'sha256':digest} if phase in ['ea_before','ea_reopened'] else (
+                {'http':303,'location':'http://127.0.0.1:8080/login/index.php','sha256':None} if phase=='anon' else {'http':404,'sha256':None})
+        self.assertEqual([],failed(c.evaluate(c.access_checks(a))))
+        for phase,check in [('ea_before','download_participant_allowed'),('ea_reopened','reopen_in_open_session_allowed')]:
+            bad=copy.deepcopy(a);bad['phases'][phase][u]['sha256']='0'*64
+            self.assertEqual([check],failed(c.evaluate(c.access_checks(bad))))
+        bad=copy.deepcopy(a);bad['phases']['eb'][u]['sha256']=digest
+        self.assertIn('download_other_company_denied',failed(c.evaluate(c.access_checks(bad))))
+
     def test_multiattachments_fail_closed_on_missing_failure_or_forged_observations(self):
         def good():
             return {'status': 'PASS', 'cases': [
