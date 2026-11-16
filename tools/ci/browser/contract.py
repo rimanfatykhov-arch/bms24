@@ -23,6 +23,7 @@ FILES = {
 SHA = {name: hashlib.sha256(data).hexdigest() for name, data in FILES.items()}
 MULTI_CONTENT = {n: ('BMS retained multi-attachment synthetic file %d\n' % n).encode() for n in (1, 2, 3)}
 MULTI_NAME = re.compile(r'multi-[0-9a-f]{32}-([123])\.txt')
+CENTER_NAME = re.compile(r'cc-([0-9a-f]{12})\.txt')
 
 
 def expected_sha(fname):
@@ -31,6 +32,11 @@ def expected_sha(fname):
     PR102 checkset) and are then part of the protected URL set; their content is fixed per index."""
     if fname in SHA:
         return SHA[fname]
+    # communication_center.py writes these exact bytes; baseline attachments remain protected
+    # when the subsequent install/restore ACL smoke enumerates the complete discussion.
+    center = CENTER_NAME.fullmatch(fname or '')
+    if center:
+        return hashlib.sha256(('communication center attachment %s\n' % center.group(1)).encode()).hexdigest()
     m = MULTI_NAME.fullmatch(fname or '')
     return hashlib.sha256(MULTI_CONTENT[int(m.group(1))]).hexdigest() if m else None
 
@@ -170,7 +176,9 @@ def access_checks(acc):
     def denied(name, codes):
         for url, r in same_set(name).items():
             require(r.get('http') in codes, '%s: HTTP %r not an accepted refusal' % (name, r.get('http')))
-            require(r.get('sha256') not in SHA.values(), '%s: protected content served' % name)
+            protected = set(SHA.values()) | {expected_sha(u.split('/')[-1].split('?')[0]) for u in expected()}
+            protected.discard(None)
+            require(r.get('sha256') not in protected, '%s: protected content served' % name)
             if codes is LOGIN_REDIRECT_CODES:
                 exact_redirect(r.get('location'), LOGIN_PATH)
 

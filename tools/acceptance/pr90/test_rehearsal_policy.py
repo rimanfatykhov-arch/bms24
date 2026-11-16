@@ -27,6 +27,16 @@ def menu_report(mode='owned'):
         'loaded_css':[{'status':200,'sha256':'a'*64}] if mode=='owned' else []}
 
 class RehearsalPolicyTest(unittest.TestCase):
+    def test_retained_center_attachment_requires_exact_fixture_bytes(self):
+        import hashlib
+        import contract
+        token='012345abcdef'
+        digest=hashlib.sha256(('communication center attachment %s\n' % token).encode()).hexdigest()
+        self.assertEqual(digest,contract.expected_sha('cc-'+token+'.txt'))
+        self.assertNotEqual(hashlib.sha256(b'wrong bytes').hexdigest(),contract.expected_sha('cc-'+token+'.txt'))
+        for name in ['cc-012345abcdeg.txt','cc-012345abcdef.txt.exe','cc-.txt','unknown.txt']:
+            self.assertIsNone(contract.expected_sha(name))
+
     def test_discussion_panels_are_phase_bound_and_history_required(self):
         source=SOURCE.parents[1]/'discussion_button.py'
         tree=ast.parse(source.read_text())
