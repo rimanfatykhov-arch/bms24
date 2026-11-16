@@ -251,7 +251,8 @@ final class daily_report_store_service_test extends \advanced_testcase {
             'comment' => 'Reviewer comment', 'supersedesuuid' => '', 'requestkey' => $this->key(), 'timecreated' => time()]);
         $system = \context_system::instance();
         foreach ([$u, (int)$f['lead']->id] as $userid) {
-            $this->assertContains((int)$system->id, \local_kbacompany\privacy\provider::get_contexts_for_userid($userid)->get_contextids());
+            $this->assertContains((int)$system->id, array_map('intval',
+                \local_kbacompany\privacy\provider::get_contexts_for_userid($userid)->get_contextids()));
         }
         $this->setAdminUser();
         $lead = new \core_privacy\local\request\approved_contextlist($f['lead'], 'local_kbacompany', [$system->id]);
