@@ -6,6 +6,39 @@
 Метки: **ПРИНЯТО** — решение владельца; **ПРЕДЛОЖЕНО** — проект, требует согласования;
 **ПРОВЕРЕНО** — подтверждено кодом или выполненной проверкой (указано какой); **НЕ ПРОВЕРЕНО** — нет доказательства.
 
+## Срез после выпуска #114 (16.11.2026)
+
+Этот раздел добавлен после публикации и не заменяет исходный аудит от 15.11.2026: всё, что ниже раздела, — история.
+
+| Что | Значение | Доказательство |
+|---|---|---|
+| `main` | `881aac2ef334c4894b9cff2f591b75f675360e3b` | `git rev-parse origin/main`, 16.11.2026 |
+| Реализация центра | PR #112 head `5b5d839af4eb682cfb76755799bb320292b0f1e6`, MERGED 16.11.2026 | GitHub metadata #112 |
+| Опубликовано | релиз #114 head `153e4bd23f286ff50d0486732a092cb11043606d`, tree `f3bda188…`, ZIP `4bb14c85…`, production 16.11.2026 07:54:37 МСК, MERGED | #114 и [комментарий о публикации](https://github.com/rimanfatykhov-arch/bms24/pull/114#issuecomment-6909069147) |
+| Состав #114 | #103 (правка/удаление), #110 (история открытия), #113 (сводка дня), #112 (центр) | описание #114 |
+
+### Статус по уровням доказанности
+
+| Пункт | Принято владельцем | Реализовано (код `main`) | Проверено | Показано владельцу | Опубликовано |
+|---|---|---|---|---|---|
+| Одно обсуждение задачи в карточке и центре | да, «пункты 1–5» 15.11 | `task_service::discussion_context`, `communication_service::VIEWER_READ_KINDS = ['task']` | PHPUnit `communication_center_cleanup_test::test_task_viewer_reads_the_same_discussion_without_joining`; BROWSER 64/64 (#114) | dev-просмотр перед #114 | да, #114 |
+| Чтение обсуждения и файлов без автоматического участия | да | чтение для `contextkind='task'` с проверкой доступа к задаче на каждом чтении | `test_task_discussion_is_closed_to_other_company_and_users_without_task_access`, `test_viewer_read_is_limited_to_task_discussions` | да | да |
+| События задачи в ленте; открытие — в «Истории» | да | `communication_service::discussion_events`; `task_open_service` (#110) | `test_task_events_are_inline_but_are_not_messages`; `task_open_history_test`; BROWSER task_open 7/7 | да | да |
+| Ответ с цитатой и упоминания | да | `send_message*(…, $replytouuid)`, `inline_mentions` | `test_reply_quotes_original_in_same_thread_and_hides_withdrawn_text`, `test_inline_mentions_resolve_only_active_participants` | да | да |
+| Без дублей личных диалогов | да | поиск активного `direct`-треда пары в `create_thread` | `test_direct_conversation_is_reused_for_the_same_pair` | да | да |
+| Участники и владелец группы | да | `leave_thread`, `remove_participant`, роль `owner`, передача владения | `test_group_member_leaves_owner_removes_and_ownership_passes`, `test_leave_and_remove_reject_direct_and_object_threads` | да | да |
+| Фильтры и переход к задаче | да | `communication_center_service::TABS` (`unread`, `messages`, `discussions`, `mentions`, `meetings`, `notifications`) | BROWSER центр 8/8 (#112/#114) | да | да |
+| Правка/удаление своих сообщений, несколько вложений | да (#103, #102) | `change_message`, `change_discussion_message`, `send_message_with_attachments` | BROWSER message_actions 7/7, multiattachments | да | да |
+
+Пункты закрыты только в объёме, перечисленном выше. Проверка «показано владельцу» опирается на запись оператора
+в #114 и контексте, а не на собственный просмотр автора документа.
+
+### Что по-прежнему НЕ реализовано (подтверждено кодом `main`)
+
+- Тип объекта `battleplan` отсутствует в `communication_service::CONTEXT_KINDS` и в `communication_object_service::describe`.
+- ИИ-участники, адаптеры MAX/Telegram, производители `eventout` для коммуникаций — нет.
+- #88 (контракт MAX inbound) и #77 (ADR-0007 принципалов ИИ) — документы, не реализация.
+
 ## 0. Точка проверки
 
 | Что | Значение | Источник |
