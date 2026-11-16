@@ -302,11 +302,12 @@ final class daily_report_review_service_test extends \advanced_testcase {
             array_map(static function($r) { return [(int)$r->userid, (string)$r->kind]; }, $rows));
         $this->assertSame(0, $DB->count_records('local_kbacompany_commnotif', ['userid' => (int)$f['peer']->id]));
         [$url, $label] = \local_kbacompany\local\communication_center_ui_service::daily_report_target($f['company'], 'dailyreport_submitted');
-        $this->assertSame('/local/kbacompany/daily_report.php', $url->get_path());
-        $this->assertSame(['uuid' => $f['company'], 'tab' => 'review'], $url->params());
+        $this->assertTrue($url->compare(new \moodle_url('/local/kbacompany/daily_report.php',
+            ['uuid' => $f['company'], 'tab' => 'review']), URL_MATCH_EXACT));
         $this->assertSame('dailyreports_tab_review', $label);
         [$url] = \local_kbacompany\local\communication_center_ui_service::daily_report_target($f['company'], 'dailyreport_decision');
-        $this->assertSame(['uuid' => $f['company'], 'tab' => 'history'], $url->params());
+        $this->assertTrue($url->compare(new \moodle_url('/local/kbacompany/daily_report.php',
+            ['uuid' => $f['company'], 'tab' => 'history']), URL_MATCH_EXACT));
         $this->assertNull(\local_kbacompany\local\communication_center_ui_service::daily_report_target($f['company'], 'mention'));
     }
 
