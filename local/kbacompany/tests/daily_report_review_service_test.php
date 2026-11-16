@@ -154,6 +154,87 @@ final class daily_report_review_service_test extends \advanced_testcase {
         $this->assertSame('First attempt', $DB->get_field('local_kbacompany_dreportver', 'done', ['uuid' => $v1['versionuuid']]));
     }
 
+    /**
+     * В6 (accepted): with v1 reviewed by the previous lead and v2 assigned to a new lead, each reviewer reads only the
+     * versions stored for them, with only those versions' content, snapshots, linked tasks and decisions. The company
+     * administrator reads both read-only; the author keeps the full own history through the author view.
+     */
+    public function test_two_reviewers_two_versions_each_reads_only_own_versions(): void {
+        global $DB;
+        $f = $this->fixture(); $old = (int)$f['lead']->id; $new = (int)$f['peer']->id; $u = (int)$f['employee']->id;
+        $v1 = $this->submitted($f, 'Old lead version text');
+        $this->setUser($f['lead']);
+        review::decide($f['company'], $old, $v1['reportuuid'], $v1['versionuuid'], 'returned', '', 'Old lead return reason', $this->key());
+        // The responsible manager changes before the rework is submitted: new submissions resolve to the new lead.
+        $this->setAdminUser();
+        $DB->set_field('local_kbacompany_bplan', 'reviewerid', $new, ['companyuuid' => $f['company'], 'userid' => $u]);
+        $DB->set_field('local_kbacompany_bplan', 'timemodified', time() + 1, ['companyuuid' => $f['company'], 'userid' => $u]);
+        $this->setUser($f['employee']);
+        $draft = store::start_revision($f['company'], $u, $f['day']);
+        $v2 = store::submit($f['company'], $u, $f['day'], $this->key(), $draft['revision'], $this->values('New lead version text'));
+        $this->assertSame($old, (int)$DB->get_field('local_kbacompany_dreportver', 'reviewerid', ['uuid' => $v1['versionuuid']]));
+        $this->assertSame($new, (int)$DB->get_field('local_kbacompany_dreportver', 'reviewerid', ['uuid' => $v2['versionuuid']]));
+        foreach ([$v1['versionuuid'] => 'old-linked-task', $v2['versionuuid'] => 'new-linked-task'] as $version => $title) {
+            $DB->insert_record('local_kbacompany_dreportlink', (object)['companyuuid' => $f['company'], 'versionuuid' => $version,
+                'taskuuid' => \core\uuid::generate(), 'origin' => 'manual', 'title' => $title, 'status' => 'done',
+                'duedate' => $f['day'], 'timecreated' => time()]);
+        }
+        $this->setUser($f['peer']);
+        review::decide($f['company'], $new, $v2['reportuuid'], $v2['versionuuid'], 'accepted', 'positive', 'New lead comment', $this->key());
+
+        $flatten = static function(array $card): string {
+            return json_encode([$card['versions'], $card['links'], $card['reviews']], JSON_UNESCAPED_UNICODE);
+        };
+        // Previous lead: v1 only, never the later version, its links or the new lead's decision.
+        $this->setUser($f['lead']);
+        $card = review::card($f['company'], $old, $v1['reportuuid']);
+        $this->assertSame([$v1['versionuuid']], array_column($card['versions'], 'uuid'));
+        $this->assertSame([$v1['versionuuid']], array_keys($card['links']));
+        $this->assertSame([$v1['versionuuid']], array_keys($card['reviews']));
+        $text = $flatten($card);
+        $this->assertStringContainsString('Old lead version text', $text);
+        $this->assertStringContainsString('old-linked-task', $text);
+        foreach (['New lead version text', 'new-linked-task', 'New lead comment', $v2['versionuuid']] as $hidden) {
+            $this->assertStringNotContainsString($hidden, $text);
+        }
+        $this->assertFalse($card['can_decide']); $this->assertFalse($card['can_change']);
+        // New lead: v2 from the assignment on, not the earlier version or the previous lead's return reason.
+        $this->setUser($f['peer']);
+        $card = review::card($f['company'], $new, $v1['reportuuid']);
+        $this->assertSame([$v2['versionuuid']], array_column($card['versions'], 'uuid'));
+        $this->assertSame([$v2['versionuuid']], array_keys($card['links']));
+        $this->assertSame([$v2['versionuuid']], array_keys($card['reviews']));
+        $text = $flatten($card);
+        foreach (['Old lead version text', 'old-linked-task', 'Old lead return reason', $v1['versionuuid']] as $hidden) {
+            $this->assertStringNotContainsString($hidden, $text);
+        }
+        $this->assertTrue($card['can_change']);
+        // Administrator: both versions and decisions, read-only (not the reviewer, so no decision rights).
+        $this->setAdminUser();
+        $card = review::card($f['company'], $f['admin'], $v1['reportuuid']);
+        $this->assertSame([$v2['versionuuid'], $v1['versionuuid']], array_column($card['versions'], 'uuid'));
+        $this->assertEqualsCanonicalizing([$v1['versionuuid'], $v2['versionuuid']], array_keys($card['reviews']));
+        $this->assertFalse($card['can_decide']); $this->assertFalse($card['can_change']);
+        // Author: the review card stays closed (no self review); the author view has the full own history.
+        $this->setUser($f['employee']);
+        $this->error('dailyreports_notavailable', function() use ($f, $u, $v1) {
+            review::card($f['company'], $u, $v1['reportuuid']);
+        });
+        $view = store::view($f['company'], $u, $f['day']);
+        $this->assertSame([$v2['versionuuid'], $v1['versionuuid']], array_column($view['versions'], 'uuid'));
+        $this->assertCount(2, $view['reviews']);
+        // A peer with no stored version of this report reads nothing.
+        $this->setAdminUser();
+        $third = $this->getDataGenerator()->create_user();
+        $DB->insert_record('local_kbacorp_member', (object)['companyid' => $f['cid'], 'userid' => $third->id,
+            'membertype' => 'employee', 'isemployee' => 1, 'ismanager' => 0, 'isdepartmentmanager' => 0, 'ishr' => 0,
+            'timecreated' => time(), 'timemodified' => time()]);
+        $this->setUser($third);
+        $this->error('dailyreports_notavailable', function() use ($f, $third, $v1) {
+            review::card($f['company'], (int)$third->id, $v1['reportuuid']);
+        });
+    }
+
     public function test_rating_change_supersedes_with_reason_and_correction_keeps_old_rating(): void {
         global $DB;
         $f = $this->fixture(); $lead = (int)$f['lead']->id; $u = (int)$f['employee']->id;
