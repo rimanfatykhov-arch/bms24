@@ -1,0 +1,29 @@
+{
+  "scope": "exact intentional source updates; not runtime or release acceptance",
+  "base_sha": "5924bc074c2a34d485b18a4fba4f7b7aa9534358",
+  "normalization": "CRLF to LF only",
+  "previous_evidence": "docs/reconcile/pr102-source-preservation.json; lang chained after docs/reconcile/daily-summary-after110-source-preservation.json (#113 = #110 + #107)",
+  "change": "Communication Center cleanup: task discussion readable by task viewers, task events inline, replies, inline mentions, unique direct conversations, group leave/remove; RU/EN strings appended; scoped styles appended",
+  "files": [
+    {
+      "path": "local/kbacompany/classes/local/communication_service.php",
+      "before_sha256_lf": "8310d2087d70b6ef141af73cec3879ee021f5245e3d68b12cd147cc76b8a0a46",
+      "after_sha256_lf": "ecc24db60b9dacfd66be77ec7664895ef34e67b476f34387d656cfe07004e41d"
+    },
+    {
+      "path": "local/kbacompany/lang/en/local_kbacompany.php",
+      "before_sha256_lf": "35f7107fb19132298ef3a922bcf6b26bed0d794b685ea0c0f19e38d45217f8d0",
+      "after_sha256_lf": "b7bb8afbfa9ee3a0277be52c937868b29f013560f1e38428e7cc7f831fc5ee2a"
+    },
+    {
+      "path": "local/kbacompany/lang/ru/local_kbacompany.php",
+      "before_sha256_lf": "5088d5ad0e296bb509a1156e561502cb63208eecca97d7ae03ba8870046c0546",
+      "after_sha256_lf": "d89845b085cef3177a7b639ebd2e194be4662f40adb417706026f9b6d17c76db"
+    },
+    {
+      "path": "local/kbacompany/styles.css",
+      "before_sha256_lf": "1eeea0a3ff0c5ab3911aa298b5e540b52d2ced6fe5728e08a13c61cbe75cdcfd",
+      "after_sha256_lf": "0cbc4209807f463b30934f1f8642adfc3d50ecd52b86ba5fac0e018a48228b30"
+    }
+  ]
+}

@@ -1216,23 +1216,96 @@ class task_service {
         $canmanage = self::can_manage($companyuuid, $actor);
         if (!self::can_view_row($row, $actor, $canmanage)) { self::fail('permission'); }
         $canpost = self::can_post_discussion($row, $actor, $canmanage);
+        $events = self::discussion_events_rows($companyuuid, $taskuuid);
         $thread = self::discussion_thread($companyuuid, $taskuuid);
         if (!$thread) {
-            return ['thread_uuid' => '', 'messages' => [], 'restricted' => false, 'can_post' => $canpost];
+            return ['thread_uuid' => '', 'messages' => [], 'events' => $events, 'restricted' => false,
+                'is_participant' => false, 'can_post' => $canpost];
         }
-        $isparticipant = $DB->record_exists('local_kbacompany_commpart', [
-            'companyuuid' => $companyuuid, 'threaduuid' => $thread->uuid, 'userid' => $actor, 'active' => 1,
-        ]);
-        if (!$isparticipant) {
-            return ['thread_uuid' => (string)$thread->uuid, 'messages' => [], 'restricted' => true, 'can_post' => $canpost];
-        }
+        // Owner decision 2026-11-15: everyone allowed to open the task reads its one discussion.
+        // Reading does not join the thread; posting joins explicitly (post_discussion_message).
         $ctx = communication_service::context($companyuuid, $actor, (string)$thread->uuid, 'all');
-        return ['thread_uuid' => (string)$thread->uuid, 'messages' => $ctx['messages'], 'restricted' => false, 'can_post' => $canpost];
+        return ['thread_uuid' => (string)$thread->uuid, 'messages' => $ctx['messages'], 'events' => $events,
+            'restricted' => false, 'is_participant' => !empty($ctx['selected']['is_participant']),
+            'can_post' => $canpost];
+    }
+
+    /** Task actions shown inline in the task discussion. Opening/reading a task is never an event here. */
+    public const DISCUSSION_EVENT_ACTIONS = ['create', 'generate', 'start', 'submit', 'accept', 'return',
+        'cancel', 'edit', 'observer_change', 'subtask_added'];
+
+    /** Read-only projection of the existing task History for the discussion timeline (caller authorised). */
+    private static function discussion_events_rows(string $companyuuid, string $taskuuid): array {
+        global $DB;
+        list($insql, $params) = $DB->get_in_or_equal(self::DISCUSSION_EVENT_ACTIONS, SQL_PARAMS_NAMED, 'dea');
+        $params += ['dec' => $companyuuid, 'det' => $taskuuid];
+        $rows = $DB->get_records_sql("SELECT id, actorid, action, oldstatus, newstatus, details, timecreated
+              FROM {local_kbacompany_tasklog}
+             WHERE companyuuid = :dec AND taskuuid = :det AND action $insql
+          ORDER BY id DESC", $params, 0, 200);
+        $userids = array_values(array_unique(array_map(static function($r): int { return (int)$r->actorid; }, $rows)));
+        $names = [];
+        if ($userids) {
+            $namefields = 'id,' . implode(',', \core_user\fields::get_name_fields());
+            foreach ($DB->get_records_list('user', 'id', $userids, '', $namefields) as $user) {
+                $names[(int)$user->id] = fullname($user);
+            }
+        }
+        $events = [];
+        foreach (array_reverse(array_values($rows)) as $row) {
+            $details = json_decode((string)$row->details, true) ?: [];
+            $events[] = ['actor_id' => (int)$row->actorid, 'actor_name' => $names[(int)$row->actorid] ?? '',
+                'action' => (string)$row->action, 'old_status' => (string)$row->oldstatus,
+                'new_status' => (string)$row->newstatus,
+                'reason' => \core_text::substr(trim((string)($details['reason'] ?? '')), 0, 500),
+                'time_created' => (int)$row->timecreated];
+        }
+        return $events;
+    }
+
+    /** Whether the actor may view the task and write to its discussion (used before joining from the Center). */
+    public static function can_post_discussion_for(string $companyuuid, int $actor, string $taskuuid): bool {
+        try {
+            company_context_service::context($companyuuid, $actor);
+            $row = self::task($companyuuid, $taskuuid);
+        } catch (\moodle_exception $e) {
+            return false;
+        }
+        $canmanage = self::can_manage($companyuuid, $actor);
+        return (string)$row->status !== 'deleted' && self::can_view_row($row, $actor, $canmanage) &&
+            self::can_post_discussion($row, $actor, $canmanage);
+    }
+
+    /** Task events for a discussion timeline after the same view check as the task card. */
+    public static function discussion_events(string $companyuuid, int $actor, string $taskuuid): array {
+        company_context_service::context($companyuuid, $actor);
+        $row = self::task($companyuuid, $taskuuid);
+        if ((string)$row->status === 'deleted' ||
+                !self::can_view_row($row, $actor, self::can_manage($companyuuid, $actor))) {
+            self::fail('permission');
+        }
+        return self::discussion_events_rows($companyuuid, $taskuuid);
+    }
+
+    /** Change an existing message through its canonical task thread; never join/create a thread here. */
+    public static function change_discussion_message(string $companyuuid, int $actor, string $taskuuid,
+            string $messageuuid, string $operation, string $body, string $expectedhash): void {
+        company_context_service::context($companyuuid, $actor);
+        $row = self::task($companyuuid, $taskuuid);
+        $canmanage = self::can_manage($companyuuid, $actor);
+        if (!self::can_view_row($row, $actor, $canmanage) ||
+                !self::can_post_discussion($row, $actor, $canmanage)) { self::fail('permission'); }
+        if ((string)$row->status === 'deleted') { self::fail('state'); }
+        $thread = self::discussion_thread($companyuuid, $taskuuid);
+        if (!$thread) { self::fail('reference'); }
+        // Author, active membership, linked records, revision and audit are enforced centrally.
+        communication_service::change_message($companyuuid, $actor, (string)$thread->uuid,
+            $messageuuid, $operation, $body, $expectedhash);
     }
 
     /** Append a message to the task discussion. Posting explicitly joins an authorised manager to the thread. */
     public static function post_discussion_message(string $companyuuid, int $actor, string $taskuuid, string $body,
-            ?array $upload = null): string {
+            ?array $upload = null, string $replytouuid = ''): string {
         global $DB;
         company_context_service::context($companyuuid, $actor);
         $row = self::task($companyuuid, $taskuuid);
@@ -1254,7 +1327,7 @@ class task_service {
             $tx = $DB->start_delegated_transaction();
             // One canonical message and all protected attachments commit together.
             $messageuuid = communication_service::send_message_with_attachments(
-                $companyuuid, $actor, $threaduuid, $body, $uploads);
+                $companyuuid, $actor, $threaduuid, $body, $uploads, [], trim($replytouuid));
             self::log($companyuuid, $taskuuid, $actor, 'discussion_post', $row->status, $row->status,
                 ['threaduuid' => $threaduuid, 'messageuuid' => $messageuuid]);
             $tx->allow_commit();
@@ -1797,9 +1870,16 @@ class task_service {
                     'done' => !empty($item->done), 'sort_order' => (int)$item->sortorder,
                     'can_toggle' => $canmanage || self::can_execute($row, $actor, $canmanage) || (int)$item->assigneeid === $actor];
             }
-            foreach ($DB->get_records('local_kbacompany_tasklog', [
-                'companyuuid' => $companyuuid, 'taskuuid' => $selected,
-            ], 'id DESC', '*', 0, 50) as $entry) {
+            // The last 50 business events; "opened" events are bounded separately so that
+            // frequent opening never pushes status/result history out of the History tab.
+            $historyrows = $DB->get_records_select('local_kbacompany_tasklog',
+                'companyuuid = :company AND taskuuid = :task AND action <> :opened',
+                ['company' => $companyuuid, 'task' => $selected, 'opened' => task_open_service::ACTION],
+                'id DESC', '*', 0, 50) + $DB->get_records('local_kbacompany_tasklog', [
+                'companyuuid' => $companyuuid, 'taskuuid' => $selected, 'action' => task_open_service::ACTION,
+            ], 'id DESC', '*', 0, task_open_service::HISTORY_LIMIT);
+            krsort($historyrows);
+            foreach ($historyrows as $entry) {
                 $history[] = ['actor_id' => (int)$entry->actorid, 'actor_name' => $employees[(int)$entry->actorid] ?? '',
                     'action' => (string)$entry->action, 'old_status' => (string)$entry->oldstatus,
                     'new_status' => (string)$entry->newstatus, 'details' => json_decode((string)$entry->details, true) ?: [],
@@ -1933,6 +2013,13 @@ class task_service {
         $companyuuid = company_context_service::normalise_uuid($companyuuid);
         company_context_service::context($companyuuid, $actor);
         return self::projection_access($companyuuid, $actor);
+    }
+
+    /** Own current execution scope, including explicit position coverage. Fixed SQL alias t. */
+    public static function own_query_conditions(string $companyuuid, int $actor): array {
+        $companyuuid = company_context_service::normalise_uuid($companyuuid);
+        company_context_service::context($companyuuid, $actor);
+        return self::list_conditions($companyuuid, $actor, ['scope' => 'my']);
     }
 
     /** Exact canonical task, without loading all tasks, attachments or discussion history. */
@@ -2261,13 +2348,14 @@ class task_service {
                   FROM {local_kbacompany_tasklog} l
                   JOIN (SELECT taskuuid, MAX(id) AS lastid
                           FROM {local_kbacompany_tasklog}
-                         WHERE companyuuid = :activitycompany AND taskuuid {$in}
+                         WHERE companyuuid = :activitycompany AND taskuuid {$in} AND action <> :activityopened
                       GROUP BY taskuuid) latest ON latest.lastid = l.id
                   JOIN {local_kbacompany_task} t
                     ON t.companyuuid = l.companyuuid AND t.uuid = l.taskuuid
                  WHERE {$scopewhere} AND l.companyuuid = :activitycompany2";
         $entries = $DB->get_records_sql($sql,
-            $scopeparams + $inparams + ['activitycompany'=>$companyuuid, 'activitycompany2'=>$companyuuid]);
+            $scopeparams + $inparams + ['activitycompany'=>$companyuuid, 'activitycompany2'=>$companyuuid,
+                'activityopened'=>task_open_service::ACTION]);
         if (!$entries) { return []; }
         // list_page() already loaded the permission-scoped employee directory.
         // Reuse it rather than fetching organization context a second time.

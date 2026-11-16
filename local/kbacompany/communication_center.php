@@ -65,6 +65,10 @@ if ($action !== '') {
             $postkind = required_param('objectkind', PARAM_ALPHANUMEXT);
             $postuuid = required_param('objectuuid', PARAM_RAW_TRIMMED);
             $postrevision = optional_param('objectrevision', 0, PARAM_INT);
+            // Reading a task discussion is open to task viewers; joining to write needs the task write right.
+            if ($postkind === 'task' && !task_service::can_post_discussion_for($uuid, $actor, $postuuid)) {
+                throw new moodle_exception('communication_permission', 'local_kbacompany');
+            }
             // create_thread resolves the canonical object and is also the safe, idempotent join operation.
             $selected = communication_service::create_thread($uuid, $actor, [
                 'threadtype' => 'object', 'title' => '', 'contextkind' => $postkind,
@@ -91,6 +95,12 @@ if ($action !== '') {
         } else if ($action === 'addparticipant') {
             $selected = required_param('thread', PARAM_RAW_TRIMMED);
             communication_service::add_participant($uuid, $actor, $selected, required_param('participantid', PARAM_INT));
+        } else if ($action === 'removeparticipant') {
+            $selected = required_param('thread', PARAM_RAW_TRIMMED);
+            communication_service::remove_participant($uuid, $actor, $selected, required_param('participantid', PARAM_INT));
+        } else if ($action === 'leavethread') {
+            communication_service::leave_thread($uuid, $actor, required_param('thread', PARAM_RAW_TRIMMED));
+            $selected = '';
         } else if ($action === 'readnotification') {
             communication_service::mark_notification_read($uuid, $actor,
                 required_param('notification', PARAM_RAW_TRIMMED));
@@ -137,8 +147,10 @@ if ($objectkind !== '' || $objectuuid !== '') {
             'companyuuid' => $uuid, 'threadtype' => 'object', 'contextkind' => $objectkind,
             'contextuuid' => $objectuuid, 'status' => 'active',
         ], 'uuid');
-        if ($existing && $DB->record_exists('local_kbacompany_commpart', [
-                'companyuuid' => $uuid, 'threaduuid' => (string)$existing->uuid, 'userid' => $actor, 'active' => 1])) {
+        if ($existing && (in_array($objectkind, communication_service::VIEWER_READ_KINDS, true) ||
+                $DB->record_exists('local_kbacompany_commpart', [
+                'companyuuid' => $uuid, 'threaduuid' => (string)$existing->uuid, 'userid' => $actor, 'active' => 1]))) {
+            // Task viewers read the one canonical discussion; the service re-checks object access.
             $selected = (string)$existing->uuid;
         }
         $tab = 'discussions';
@@ -163,6 +175,7 @@ try {
 }
 
 $data['message_search'] = $mq;
+$data['reply'] = optional_param('reply', '', PARAM_ALPHANUMEXT);
 $data['message_page'] = optional_param('mpage', 0, PARAM_INT);
 $PAGE->set_context($context);
 $PAGE->set_url(ui::url($uuid, ['tab' => $tab, 'thread' => $selected]));

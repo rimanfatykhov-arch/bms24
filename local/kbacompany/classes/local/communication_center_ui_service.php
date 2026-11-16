@@ -63,7 +63,7 @@ class communication_center_ui_service {
         // Primary navigation follows the approved concept: the left pane owns the
         // conversation navigation and the centre pane stays focused on the chat.
         // Advanced modes remain available as compact chips instead of a separate rail.
-        $taborder = ['all', 'unread', 'mentions', 'notifications', 'meetings'];
+        $taborder = ['all', 'unread', 'messages', 'discussions', 'mentions', 'notifications', 'meetings'];
         $tabs = [];
         foreach ($taborder as $key) {
             $badge = '';
@@ -255,8 +255,13 @@ class communication_center_ui_service {
             $thread['thread_type'] === 'object' ? 'object' : '') . $heading .
             \html_writer::div($controls, 'bms-comm3-chat-controls'), 'bms-comm2-feed-head');
         if (!empty($thread['context'])) {
-            $body .= \html_writer::div(s($thread['context']['label'] . ' · ' . $thread['context']['title']),
-                'bms-comm2-feed-context');
+            $contextline = s($thread['context']['label'] . ' · ' . $thread['context']['title']);
+            if ((string)$thread['context']['url'] !== '') {
+                $contextline .= ' ' . \html_writer::link(new \moodle_url($thread['context']['url']),
+                    s(self::tr($thread['context']['kind'] === 'task' ? 'communicationcenter_opentask' : 'communication_opencontext')),
+                    ['class' => 'bms-comm2-feed-context-link']);
+            }
+            $body .= \html_writer::div($contextline, 'bms-comm2-feed-context');
         }
         // Search operates only on the canonical already-authorized selected thread projection.
         // There is no separate messages query, write operation, or change to read state.
@@ -282,18 +287,40 @@ class communication_center_ui_service {
         $page = (int)$history['page'];
         $messagehtml = '';
         $previousday = null;
-        foreach ($visiblemessages as $message) {
-            $day = business_date_service::day((int)$message['time_created']);
+        $timeline = [];
+        foreach ($visiblemessages as $i => $message) {
+            $timeline[] = ['time' => (int)$message['time_created'], 'order' => 1, 'seq' => $i, 'message' => $message];
+        }
+        // Task History events appear on the history page whose time window contains them (never during a search):
+        // the oldest page has no lower bound, the newest page has no upper bound.
+        if ($messagequery === '') {
+            $pageindex = (int)($history['page'] ?? 0);
+            $pagecount = max(1, (int)($history['pages'] ?? 1));
+            $lower = $visiblemessages && $pageindex < $pagecount - 1 ? (int)$visiblemessages[0]['time_created'] : PHP_INT_MIN;
+            $upper = $visiblemessages && $pageindex > 0 ?
+                (int)$visiblemessages[count($visiblemessages) - 1]['time_created'] : PHP_INT_MAX;
+            foreach (($data['events'] ?? []) as $i => $event) {
+                $time = (int)$event['time_created'];
+                if ($time < $lower || $time > $upper) { continue; }
+                $timeline[] = ['time' => $time, 'order' => 0, 'seq' => $i, 'event' => $event];
+            }
+        }
+        usort($timeline, static function(array $a, array $b): int {
+            return [$a['time'], $a['order'], $a['seq']] <=> [$b['time'], $b['order'], $b['seq']];
+        });
+        foreach ($timeline as $entry) {
+            $day = business_date_service::day((int)$entry['time']);
             if ($day !== $previousday) {
                 $today = business_date_service::day(time());
                 $yesterday = business_date_service::yesterday();
                 $label = $day === $today ? self::tr('bmscomm3_today') :
                     ($day === $yesterday ? self::tr('bmscomm3_yesterday') :
-                    userdate((int)$message['time_created'], '%d.%m.%Y'));
+                    userdate((int)$entry['time'], '%d.%m.%Y'));
                 $messagehtml .= \html_writer::div(s($label), 'bms-comm3-day-separator');
                 $previousday = $day;
             }
-            $messagehtml .= self::message_card($company, $thread, $message, $data['employees'], $data['tab']);
+            $messagehtml .= isset($entry['event']) ? self::event_line($entry['event']) :
+                self::message_card($company, $thread, $entry['message'], $data['employees'], $data['tab']);
         }
         if ($messagequery !== '') {
             $body .= \html_writer::div(s(get_string('communicationcenter_search_count','local_kbacompany', $matched)),
@@ -322,6 +349,27 @@ class communication_center_ui_service {
                  'aria-label'=>self::tr('communicationcenter_history_navigation')]);
         }
 
+        if (isset($thread['is_participant']) && !$thread['is_participant']) {
+            if (empty($thread['can_join'])) {
+                $body .= task_ui_service::note(self::tr('communicationcenter_readonly_note'));
+                return \html_writer::tag('main', $body, ['class' => 'bms-comm2-panel bms-comm2-feed', 'aria-label' => self::tr('communicationcenter_selectthread')]);
+            }
+            // Readers of a task discussion join explicitly before writing; reading never joins silently.
+            $join = self::post_base($company, 'createobject') . self::hidden([
+                'objectkind' => $thread['context']['kind'] ?? $thread['context_kind'],
+                'objectuuid' => $thread['context_uuid'], 'objectrevision' => $thread['context_revision'],
+            ]) . \html_writer::tag('p', s(self::tr('communicationcenter_reader_note'))) .
+                self::button(self::tr('communicationcenter_join_discussion'));
+            $body .= \html_writer::tag('form', $join, ['method' => 'post', 'class' => 'bms-comm2-compose bms-comm2-join']);
+            return \html_writer::tag('main', $body, ['class' => 'bms-comm2-panel bms-comm2-feed', 'aria-label' => self::tr('communicationcenter_selectthread')]);
+        }
+        $replytarget = null;
+        $replyuuid = (string)($data['reply'] ?? '');
+        foreach ($visiblemessages as $candidate) {
+            if ($replyuuid !== '' && $candidate['uuid'] === $replyuuid && $candidate['status'] === 'active') {
+                $replytarget = $candidate; break;
+            }
+        }
         $mentionoptions = [];
         foreach ($thread['participants'] as $participant) {
             if ((int)$participant['user_id'] !== (int)$GLOBALS['USER']->id) {
@@ -329,6 +377,14 @@ class communication_center_ui_service {
             }
         }
         $form = self::post_base($company, 'send', $thread['uuid']);
+        if ($replytarget) {
+            $form .= self::hidden(['replytouuid' => $replytarget['uuid']]);
+            $form .= \html_writer::div(s(self::tr('communication_replyingto')) . self::quote([
+                    'author_name' => $replytarget['author_name'], 'status' => 'active',
+                    'excerpt' => \core_text::substr(preg_replace('/\s+/u', ' ', trim((string)$replytarget['body'])), 0, 160)]) .
+                \html_writer::link(self::url($company, ['tab' => $data['tab'], 'thread' => $thread['uuid']]),
+                    s(self::tr('communication_cancelreply'))), 'bms-comm2-reply-target');
+        }
         $form .= \html_writer::label(s(self::tr('communication_message')), 'bms_comm2_body', false, ['class' => 'sr-only']);
         $form .= \html_writer::tag('textarea', '', ['id' => 'bms_comm2_body', 'name' => 'body', 'rows' => 3,
             'class' => 'form-control', 'placeholder' => self::tr('communicationcenter_message_placeholder')]);
@@ -349,6 +405,7 @@ class communication_center_ui_service {
             $mentionbody .= \html_writer::select($mentionoptions, 'mentions[]', [], false,
                 ['id' => 'bms_comm2_mentions', 'class' => 'form-control', 'multiple' => 'multiple']);
             $mentionbody .= \html_writer::tag('small', s(self::tr('communication_mentions_help')), ['class' => 'bms-tui-note']);
+            $mentionbody .= \html_writer::tag('small', s(self::tr('communication_mentions_inline_help')), ['class' => 'bms-tui-note']);
             $tools .= \html_writer::tag('details',
                 \html_writer::tag('summary', '@', ['title' => self::tr('communication_mentions'),
                     'aria-label' => self::tr('communication_mentions')]) .
@@ -371,6 +428,29 @@ class communication_center_ui_service {
         return \html_writer::tag('main', $body, ['class' => 'bms-comm2-panel bms-comm2-feed', 'aria-label' => self::tr('communicationcenter_selectthread')]);
     }
 
+    /** Quoted original of a reply; a withdrawn original shows only that it was withdrawn. */
+    private static function quote(?array $quote): string {
+        if (!$quote) { return ''; }
+        $text = $quote['status'] === 'active' ? (string)$quote['excerpt'] : self::tr('communication_messagewithdrawn');
+        return \html_writer::tag('blockquote', \html_writer::tag('strong', s((string)$quote['author_name'])) .
+            \html_writer::div(s($text)), ['class' => 'bms-comm2-quote']);
+    }
+
+    /** Read-only task History event inside a task discussion; never a message. */
+    private static function event_line(array $event): string {
+        $key = 'taskdiscussion_event_' . (string)$event['action'];
+        $label = get_string_manager()->string_exists($key, 'local_kbacompany') ? self::tr($key) : self::tr('tui_history_event');
+        $line = \html_writer::tag('strong', s($label));
+        if ($event['new_status'] !== '' && $event['new_status'] !== $event['old_status']) {
+            $line .= ' ' . task_ui_service::badge((string)$event['new_status']);
+        }
+        $actor = trim((string)$event['actor_name']);
+        $line .= ' · ' . ($actor !== '' ? s($actor) . ' · ' : '') . s(userdate((int)$event['time_created'], '%H:%M'));
+        $reason = trim((string)($event['reason'] ?? ''));
+        return \html_writer::div($line . ($reason !== '' ? \html_writer::div(s($reason), 'bms-comm2-event-reason') : ''),
+            'bms-comm2-event', ['role' => 'note']);
+    }
+
     private static function message_card(string $company, array $thread, array $message, array $employees, string $tab): string {
         $content = $message['status'] === 'active' ? format_text($message['body'], FORMAT_PLAIN) :
             \html_writer::tag('em', s(self::tr('communication_messagewithdrawn')));
@@ -378,7 +458,9 @@ class communication_center_ui_service {
         if (!empty($message['edited']) && $message['status'] === 'active') {
             $meta .= ' · ' . s(self::tr('communication_edited'));
         }
-        $html = \html_writer::div($meta, 'bms-comm2-message-meta') . \html_writer::div($content, 'bms-comm2-message-body');
+        $html = \html_writer::div($meta, 'bms-comm2-message-meta') . self::quote($message['reply_to'] ?? null) .
+            \html_writer::div($content, 'bms-comm2-message-body');
+        $writer = !isset($thread['is_participant']) || !empty($thread['is_participant']);
         if (!empty($message['mentions'])) {
             $names = [];
             foreach ($message['mentions'] as $userid) {
@@ -397,14 +479,18 @@ class communication_center_ui_service {
             $html .= \html_writer::div($files, 'bms-comm2-files');
         }
         $actions = '';
+        if ($writer && $message['status'] === 'active') {
+            $actions .= task_ui_service::link(self::url($company, ['tab' => $tab, 'thread' => $thread['uuid'],
+                'reply' => $message['uuid']]) , self::tr('communication_reply'));
+        }
         if ($message['task_uuid'] !== '') {
             $actions .= task_ui_service::link(task_ui_service::url($company, ['task' => $message['task_uuid']]),
                 self::tr('communication_opentask'));
-        } else if ($message['status'] === 'active') {
+        } else if ($writer && $message['status'] === 'active') {
             $actions .= task_ui_service::link(self::url($company, ['tab' => $tab, 'thread' => $thread['uuid'],
                 'convert' => $message['uuid']]), self::tr('communication_createtask'));
         }
-        if ($message['status'] === 'active' && $thread['context_kind'] === 'meeting') {
+        if ($writer && $message['status'] === 'active' && $thread['context_kind'] === 'meeting') {
             $form = self::post_base($company, 'createdecision', $thread['uuid']) .
                 self::hidden(['messageuuid' => $message['uuid']]) .
                 self::button(self::tr('communication_createdecision'), 'btn btn-sm btn-outline-primary');
@@ -512,11 +598,32 @@ class communication_center_ui_service {
             $isowner = false;
             $participantids = [];
             foreach ($thread['participants'] as $participant) {
-                $participantids[] = (int)$participant['user_id'];
                 if ((int)$participant['user_id'] === $actor && $participant['role'] === 'owner') { $isowner = true; }
-                $people .= \html_writer::div(s($participant['name']), 'bms-comm2-person');
+            }
+            $isgroup = $thread['thread_type'] === 'group';
+            foreach ($thread['participants'] as $participant) {
+                $userid = (int)$participant['user_id'];
+                $participantids[] = $userid;
+                $person = s($participant['name']);
+                if ($participant['role'] === 'owner') {
+                    $person .= ' ' . \html_writer::tag('span', s(self::tr('communication_owner')), ['class' => 'bms-comm2-person-role']);
+                }
+                if ($isgroup && $isowner && $userid !== $actor) {
+                    $remove = self::post_base($company, 'removeparticipant', $thread['uuid']) .
+                        self::hidden(['participantid' => $userid]) .
+                        self::button(self::tr('communication_removeparticipant'), 'btn btn-link btn-sm');
+                    $person .= \html_writer::tag('form', $remove, ['method' => 'post', 'class' => 'd-inline-block']);
+                }
+                $people .= \html_writer::div($person, 'bms-comm2-person');
             }
             $html .= \html_writer::div($people, 'bms-comm2-people');
+            if ($isgroup && in_array($actor, $participantids, true)) {
+                $leave = self::post_base($company, 'leavethread', $thread['uuid']) .
+                    \html_writer::tag('p', s(self::tr('communication_leave_notice'))) .
+                    self::button(self::tr('communication_leave'), 'btn btn-outline-danger btn-sm');
+                $html .= \html_writer::tag('details', \html_writer::tag('summary', s(self::tr('communication_leave'))) .
+                    \html_writer::tag('form', $leave, ['method' => 'post']), ['class' => 'bms-comm2-leave']);
+            }
             if ($isowner && $thread['thread_type'] !== 'direct') {
                 $available = array_diff_key(self::person_options($data['employees'], $actor), array_flip($participantids));
                 if ($available) {

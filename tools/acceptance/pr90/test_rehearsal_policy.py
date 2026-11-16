@@ -91,9 +91,9 @@ class RehearsalPolicyTest(unittest.TestCase):
 
     def test_baseline_validator_pin_is_independent_of_product(self):
         origins=json.loads(SOURCE.with_name('origins.json').read_text())
-        self.assertEqual(origins['baseline_validator'],'01af6405bcb7db73f67cb45fee837ba97b8c6ed3')
+        self.assertEqual(origins['baseline_validator'],'0740524acd9e8e7eeada05374b27a1089f142dd3')
         self.assertNotEqual(origins['baseline_validator'],origins['main'])
-        self.assertIn("BASE!='f34ab6ff0d2f67a56972e99c23d096ed77a9873c'",SOURCE.read_text())
+        self.assertIn("BASE!='d35350954146867f80877bcea4729c31477d16d3'",SOURCE.read_text())
         source=SOURCE.read_text()
         self.assertIn("validator/'tools/ci/browser_acceptance.py'",source)
         self.assertIn("actualvalidator!=BASELINE_VALIDATOR",source)

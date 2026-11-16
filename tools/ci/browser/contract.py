@@ -6,6 +6,7 @@ Note: the loopback check below constrains what the test scripts request; it is N
 """
 import hashlib
 import ipaddress
+import re
 from urllib.parse import urlparse, parse_qsl
 
 from events import ABORT_REASON
@@ -21,6 +22,19 @@ FILES = {
 }
 SHA = {name: hashlib.sha256(data).hexdigest() for name, data in FILES.items()}
 MULTI_CONTENT = {n: ('BMS retained multi-attachment synthetic file %d\n' % n).encode() for n in (1, 2, 3)}
+MULTI_NAME = re.compile(r'multi-[0-9a-f]{32}-([123])\.txt')
+
+
+def expected_sha(fname):
+    """Exact expected bytes of a synthetic attachment by file name; None for any unknown name (never served intact).
+    multiattachments.py files may already exist in a discussion (e.g. on a rehearsal baseline validated with the
+    PR102 checkset) and are then part of the protected URL set; their content is fixed per index."""
+    if fname in SHA:
+        return SHA[fname]
+    m = MULTI_NAME.fullmatch(fname or '')
+    return hashlib.sha256(MULTI_CONTENT[int(m.group(1))]).hexdigest() if m else None
+
+
 DENY_CODES = {403, 404}          # protected pluginfile refusal for a logged-in user without access
 LOGIN_REDIRECT_CODES = {302, 303}  # anonymous user is sent to the login page (redirect not followed)
 LIMIT_BYTES = 65536
@@ -150,7 +164,8 @@ def access_checks(acc):
     def allowed(name):
         for url, r in same_set(name).items():
             fname = url.split('/')[-1].split('?')[0]
-            require(r.get('http') == 200 and r.get('sha256') == SHA.get(fname), '%s: %s not served intact' % (name, fname))
+            require(r.get('http') == 200 and r.get('sha256') is not None and r.get('sha256') == expected_sha(fname),
+                    '%s: %s not served intact' % (name, fname))
 
     def denied(name, codes):
         for url, r in same_set(name).items():
@@ -456,10 +471,534 @@ def multiattachment_checks(obs, exitcode=None):
     return {'multiattachment_complete': complete}
 
 
+MESSAGE_ACTION_CASES = [('owned', 1440, 'click', 'discussion'), ('owned', 320, 'keyboard', 'overview'),
+                        ('legacy', 1440, 'keyboard', 'discussion'), ('legacy', 320, 'click', 'overview')]
+MESSAGE_ACTION_NEGATIVES = ('wrong_sesskey', 'get_instead_of_post', 'withdraw_without_confirmation',
+                            'other_author_same_company', 'other_company')
+
+
+def message_action_checks(obs, exitcode=None):
+    """Edit/withdraw own task-discussion messages (message_actions.py). Verdicts come from DB state + rendered observations;
+    the producer's PASS alone is never sufficient."""
+    def cases():
+        require(exitcode == 0, 'message actions browser process failed or was not run')
+        require(isinstance(obs, dict) and obs.get('status') == 'PASS' and not obs.get('error'), 'message actions run incomplete')
+        rows = obs.get('cases')
+        require(isinstance(rows, list) and [(r.get('shell'), r.get('width'), r.get('mode'), r.get('tab')) for r in rows]
+                == MESSAGE_ACTION_CASES, 'owned/legacy x desktop/mobile x click/keyboard cases required')
+        for r in rows:
+            texts = r.get('texts')
+            require(isinstance(texts, list) and len(texts) == 4 and len(set(texts)) == 4 and all(isinstance(t, str) and t for t in texts),
+                    'case texts missing')
+        return rows
+
+    def posted(r):
+        s = r.get('posted') or {}
+        require(s.get('status') == 'active' and s.get('body') == r['texts'][0] and s.get('revisions') == []
+                and s.get('attachments') == 1 and s.get('stored_files') == 1, 'message with one file was not posted')
+
+    def cancel():
+        for r in cases():
+            posted(r)
+            s = r.get('after_cancel') or {}
+            require(s.get('body') == r['texts'][0] and s.get('status') == 'active' and s.get('revisions') == [],
+                    'cancel changed the message')
+
+    def edit():
+        for r in cases():
+            s = r.get('after_edit') or {}
+            require(s.get('body') == r['texts'][1] and s.get('status') == 'active' and s.get('revisions') == ['edit'],
+                    'edit not stored once')
+            require(r['texts'][1] in (s.get('task_text') or '') and r['texts'][0] not in (s.get('task_text') or ''),
+                    'task card does not show the saved text')
+            require(s.get('edited_marker') is True, 'Edited marker missing after reload')
+            require(s.get('attachments') == 1 and s.get('stored_files') == 1, 'edit changed attachments')
+            require(s.get('download_http') == 200 and s.get('download_ok') is True, 'attachment not downloadable after edit')
+            cc = r.get('communication_center') or {}
+            require(cc.get('edited_text_count') == 1 and cc.get('original_text_count') == 0,
+                    'Communication Center does not show the same edited text')
+
+    def conflict():
+        for r in cases():
+            s = r.get('conflict') or {}
+            require(s.get('body') == r['texts'][2] and s.get('revisions') == ['edit', 'edit'],
+                    'stale tab overwrote the newer text or the newer edit was lost')
+            require(any('Message changed' in a for a in (s.get('alert') or [])), 'conflict not reported')
+            require(s.get('draft_kept') is True, 'failed edit lost its draft')
+
+    def confirm():
+        for r in cases():
+            s = r.get('unconfirmed_delete') or {}
+            require(s.get('post_requests') == 0 and s.get('status') == 'active' and s.get('body') == r['texts'][2],
+                    'unconfirmed delete was sent or applied')
+
+    def withdraw():
+        for r in cases():
+            s = r.get('after_withdraw') or {}
+            require(s.get('status') == 'withdrawn' and s.get('body') == '' and s.get('revisions') == ['edit', 'edit', 'withdraw'],
+                    'withdraw not stored with its audit history')
+            require(s.get('withdrawn_marker') is True and s.get('old_body_visible') is False and r['texts'][2] not in (s.get('task_text') or ''),
+                    'withdrawn text still rendered')
+            require(s.get('file_link_count') == 0 and s.get('controls_left') == 0, 'file link or controls left on a withdrawn message')
+            require(s.get('old_file_http') in DENY_CODES and s.get('old_file_leaked') is False,
+                    'old file URL must refuse access, not redirect or fail with HTTP 5xx')
+            require(s.get('attachments') == 1, 'withdraw destroyed the attachment record instead of closing access')
+
+    def events():
+        for r in cases():
+            violations = browser_event_violations(r.get('browser_events'))
+            require(not violations, 'browser errors: %r' % violations[:3])
+            require(r.get('server_errors') == [], 'HTTP 5xx during message actions: %r' % (r.get('server_errors'),))
+
+    def negatives():
+        require(exitcode == 0 and isinstance(obs, dict) and obs.get('status') == 'PASS' and not obs.get('error'),
+                'message actions run incomplete')
+        n = obs.get('negatives') or {}
+        before = n.get('unchanged_before_valid') or {}
+        require(before.get('body') == n.get('target_text') and before.get('status') == 'active' and before.get('revisions') == [],
+                'negative target not recorded')
+        for key in MESSAGE_ACTION_NEGATIVES:
+            response = n.get(key) or {}
+            expected = {200} if key in ('withdraw_without_confirmation', 'other_author_same_company') else DENY_CODES
+            require(response.get('http') in expected and not response.get('location'),
+                    '%s returned an unexpected HTTP status or redirect' % key)
+            s = response.get('state')
+            require(isinstance(s, dict) and s.get('body') == before['body'] and s.get('status') == 'active' and s.get('revisions') == [],
+                    '%s changed the message' % key)
+        rp = n.get('replay') or {}
+        for label in ('first', 'again'):
+            response = rp.get(label) or {}
+            require(response.get('http') == 303, 'replay %s did not complete with the normal redirect' % label)
+            location = response.get('location')
+            local_url(location)
+            parsed = urlparse(location)
+            query = parse_qsl(parsed.query, keep_blank_values=True)
+            require(parsed.path == '/local/kbacompany/tasks.php' and not parsed.fragment
+                    and len(query) == len(dict(query))
+                    and set(dict(query)) in ({'uuid', 'task', 'view', 'tab'}, {'uuid', 'task', 'view', 'tab', 'scope'})
+                    and dict(query).get('view') == 'detail' and dict(query).get('tab') in ('overview', 'discussion')
+                    and dict(query).get('uuid') and dict(query).get('task'), 'unexpected replay redirect target')
+        require({k: dict(parse_qsl(urlparse(rp['first']['location']).query))[k] for k in ('uuid', 'task')}
+                == {k: dict(parse_qsl(urlparse(rp['again']['location']).query))[k] for k in ('uuid', 'task')},
+                'replay redirect changed company or task')
+        require((rp.get('state') or {}).get('body') == n.get('replay_text') and (rp.get('state') or {}).get('revisions') == ['edit'],
+                'replayed request applied more or less than once')
+        rv = n.get('revoked_member') or {}
+        require(rv.get('http') in DENY_CODES and not rv.get('location'),
+                'revoked member returned an unexpected HTTP status or redirect')
+        require(rv.get('revoked') is True and n.get('reopened') is True, 'revocation not applied/reverted')
+        require((rv.get('state') or {}).get('body') == n.get('ea_text') and (rv.get('state') or {}).get('revisions') == [],
+                'revoked member changed own message')
+
+    return {'message_edit_cancel_unchanged': cancel, 'message_edit_saved_synced_with_files': edit,
+            'message_edit_conflict_keeps_newer_and_draft': conflict, 'message_withdraw_requires_confirmation': confirm,
+            'message_withdraw_hides_text_and_files': withdraw, 'message_actions_no_browser_errors': events,
+            'message_actions_server_negatives': negatives}
+
+
+TASK_OPEN_CASES = [('owned', 1440, 'en'), ('legacy', 320, 'ru')]
+TASK_OPEN_TEXT = {'en': 'opened the task', 'ru': 'открыл задачу'}
+
+
+def task_open_checks(obs, exitcode=None):
+    """"User opened the task" History event (task_open.py): one event per user+task per 15 minutes, only from a visible
+    successfully rendered card, server-side access re-check, no business change. Verdicts come from DB rows."""
+    def run():
+        require(exitcode == 0, 'task open browser process failed or was not run')
+        require(isinstance(obs, dict) and obs.get('status') == 'PASS' and not obs.get('error'), 'task open run incomplete')
+        rows = obs.get('cases')
+        require(isinstance(rows, list) and [(r.get('shell'), r.get('width'), r.get('lang')) for r in rows] == TASK_OPEN_CASES,
+                'owned/legacy x desktop/mobile x EN/RU cases required')
+        require(obs.get('readable') == {'MA': True, 'EA': True, 'RA': False, 'EB': False},
+                'fixture access precondition (MA/EA read, RA/EB cannot) not met')
+        return rows
+
+    def first():
+        for r in run():
+            require(r.get('list') == {'marker': 0, 'rows': 0}, 'task list wrote or prepared an opened event')
+            require(r.get('first') == {'status': '200', 'rows': 1}, 'first opening did not write exactly one event')
+            h = r.get('history') or {}
+            texts = h.get('texts') or []
+            require(h.get('count') == 1 and h.get('visible') is True and len(texts) == 1, 'History must show exactly one opening')
+            lang = r['lang']
+            require((r.get('language') or {}).get('installed') is True and (h.get('html_lang') or '').split('-')[0] == lang,
+                    'page language %s not active' % lang)
+            require(TASK_OPEN_TEXT[lang] in texts[0] and TASK_OPEN_TEXT[lang] in ((r.get('language') or {}).get('sample') or ''),
+                    'History text must say "%s"' % TASK_OPEN_TEXT[lang])
+            require(not re.search(r'\bread\b|прочит|ознаком', texts[0], re.I),
+                    'History must not claim reading or acknowledgement')
+
+    def dedupe():
+        for r in run():
+            require(r.get('repeat') == {'reload_status': '200', 'rows': 1}, 'reload or card tabs wrote a duplicate')
+            i = r.get('interval') or {}
+            require(i.get('idle_rows') == 1, 'an open page wrote an event by itself after the interval')
+            require(i.get('status') == '200' and i.get('rows') == 2, 'reopening after the interval did not write one event')
+            c = r.get('concurrent') or {}
+            replies = c.get('replies') or []
+            require(len(replies) == 8 and all(x.get('http') == 200 for x in replies), 'concurrent requests failed')
+            require([x.get('result') for x in replies].count('recorded') == 1 and c.get('rows') == 3,
+                    'concurrent requests wrote more or less than one event')
+
+    def hidden():
+        for r in run():
+            h = r.get('hidden') or {}
+            require(h.get('before_activation') == 0, 'hidden tab wrote an event before activation')
+            require(h.get('status') == '200' and h.get('after_activation') == 1, 'activation or another user did not write own event')
+
+    def business():
+        for r in run():
+            b = r.get('business') or {}
+            require(isinstance(b.get('before'), dict) and b.get('before') == b.get('after'),
+                    'task state, business history or notifications changed')
+            shape = r.get('row_shape')
+            require(isinstance(shape, list) and shape and all(x.get('oldstatus') == '' and x.get('newstatus') == ''
+                    and x.get('details') == '{}' for x in shape), 'opened event carries status or extra data')
+
+    def failure():
+        run()
+        fl = obs.get('failure') or {}
+        require(fl.get('status') == 'failed' and fl.get('title_visible') is True and fl.get('tabs') == 1
+                and fl.get('page_errors') == [] and fl.get('rows') == 0, 'a failing endpoint broke the card or wrote')
+
+    def events():
+        for r in run():
+            violations = browser_event_violations(r.get('browser_events'))
+            require(not violations, 'browser errors: %r' % violations[:3])
+            require(r.get('server_errors') == [], 'HTTP 5xx during task open: %r' % (r.get('server_errors'),))
+
+    def negatives():
+        run()
+        n = obs.get('negatives') or {}
+        for key, code in (('wrong_sesskey', 403), ('get', 405), ('head', 405), ('substituted_task', 403),
+                          ('company_task_mismatch', 403)):
+            x = n.get(key) or {}
+            require(x.get('http') == code and x.get('rows') == 0, '%s not rejected without a record' % key)
+        for key in ('same_company_no_access', 'other_company'):
+            x = n.get(key) or {}
+            require(x.get('http') == 403 and x.get('rows') == 0 and x.get('marker') == 0 and x.get('rows_after_page') == 0,
+                    '%s not rejected or a denied page prepared an event' % key)
+        us = n.get('user_substitution') or {}
+        ids = obs.get('ids') or {}
+        require(us.get('http') == 200 and us.get('result') == 'recorded' and isinstance(us.get('rows'), list)
+                and [x.get('actorid') for x in us['rows']] == [ids.get('MA')] and ids.get('MA') != ids.get('EA'),
+                'server did not record the session user')
+        rv = n.get('revoked_member') or {}
+        require(rv.get('http') == 403 and rv.get('rows') == 0 and rv.get('revoked') is True and n.get('reopened') is True,
+                'revoked member not rejected or revocation not reverted')
+
+    return {'task_open_recorded_once_in_history': first, 'task_open_deduplicated_and_concurrent': dedupe,
+            'task_open_hidden_tab_and_other_user': hidden, 'task_open_no_business_change': business,
+            'task_open_failure_keeps_card': failure, 'task_open_no_browser_errors': events,
+            'task_open_server_negatives': negatives}
+
+
+COMM_CASES = [('owned', 1440, 'click'), ('legacy', 320, 'keyboard')]
+
+
+def communication_center_checks(obs, exitcode=None):
+    """Communication Center cleanup, items 1-5 (communication_center.py). Verdicts come from DB rows and rendered
+    observations; the producer's PASS alone is never sufficient."""
+    def run():
+        require(exitcode == 0, 'communication center browser process failed or was not run')
+        require(isinstance(obs, dict) and obs.get('status') == 'PASS' and not obs.get('error'), 'communication center run incomplete')
+        rows = obs.get('cases')
+        require(isinstance(rows, list) and [(r.get('shell'), r.get('width'), r.get('mode')) for r in rows] == COMM_CASES,
+                'owned/legacy x desktop/mobile x click/keyboard cases required')
+        ids = obs.get('ids') or {}
+        require(all(isinstance(ids.get(k), int) and ids[k] > 0 for k in ('MA', 'EA', 'RA', 'EB')), 'fixture ids missing')
+        require(isinstance(obs.get('viewer_id'), int) and obs['viewer_id'] not in ids.values(), 'separate task viewer missing')
+        for r in rows:
+            texts = r.get('texts')
+            require(isinstance(texts, list) and len(texts) == 3 and len(set(texts)) == 3
+                    and all(isinstance(t, str) and t for t in texts), 'case texts missing')
+            require(isinstance(r.get('question'), str) and r['question'], 'question id missing')
+        return rows, ids, obs['viewer_id']
+
+    def served(d, sha):
+        return isinstance(d, dict) and d.get('http') == 200 and d.get('sha256') is not None and d.get('sha256') == sha
+
+    def refused(d):
+        return isinstance(d, dict) and d.get('http') in DENY_CODES and d.get('sha256') is None
+
+    def denied_post(d, kinds):
+        require(isinstance(d, dict) and type(d.get('http')) is int and d['http'] in (200, 403, 404),
+                'negative POST missing or unexpected HTTP (redirect/5xx are never refusals)')
+        require(d.get('location') == '', 'negative POST redirected')
+        require(local_url(d.get('url', '')) == 'http://127.0.0.1:8080/local/kbacompany/communication_center.php',
+                'negative POST came from another page')
+        require(isinstance(d.get('body_sha256'), str) and re.fullmatch('[0-9a-f]{64}', d['body_sha256']),
+                'negative POST body evidence missing')
+        strings = obs.get('denial_texts') or {}
+        require(all(isinstance(strings.get(k), str) and strings[k] and not strings[k].startswith('[[') for k in kinds),
+                'canonical denial strings missing')
+        errors = d.get('error_texts')
+        require(isinstance(errors, list) and errors and all(isinstance(x, str) for x in errors),
+                'negative POST has no rendered error block')
+        require(any(' '.join(strings[k].split()) in text for k in kinds for text in errors),
+                'negative POST did not show the expected domain denial')
+
+    def viewer():
+        rows, ids, va = run()
+        for i, r in enumerate(rows):
+            v = r.get('viewer') or {}
+            require(v.get('card_question') is True and v.get('card_reply') is True, 'task viewer does not read the card discussion')
+            require(v.get('card_reader_note') is True, 'reader note missing in the card')
+            require(served(v.get('download'), r.get('file_sha256')), 'task viewer cannot download the discussion file')
+            require(v.get('center_question') == 1 and v.get('center_join') == 1 and v.get('center_composer') == 0
+                    and v.get('center_reply_links') == 0, 'Center must show the thread read-only with an explicit join')
+            p = v.get('parts_after_reading') or {}
+            require(isinstance(p.get('active'), list) and va not in p['active'] and va not in (p.get('reads') or []),
+                    'reading joined the viewer or created read state')
+            if i == len(rows) - 1:
+                j = v.get('parts_after_join') or {}
+                require(va in (j.get('active') or []) and v.get('composer_after_join') == 1, 'explicit join did not work')
+
+    def denied():
+        rows, ids, va = run()
+        for r in rows:
+            d = r.get('denied') or {}
+            require(set(d) == {'RA', 'EB'}, 'denied users missing')
+            for label, x in d.items():
+                require(x.get('center_text') is False and x.get('card_text') is False, label + ' read the task discussion')
+                require(refused(x.get('download')), label + ' downloaded the discussion file')
+                # The route deliberately masks a forbidden object as unavailable, without disclosing its existence.
+                denied_post(x.get('join_response'), ['context'] if label == 'RA' else ['company'])
+                require(x.get('join_http') == x['join_response']['http'] and ids[label] not in ((x.get('parts') or {}).get('active') or []),
+                        label + ' joined the task discussion')
+        rv = obs.get('revocation') or {}
+        sha = rows[-1].get('file_sha256')
+        require((rv.get('before') or {}).get('text') is True and served((rv.get('before') or {}).get('download'), sha),
+                'revocation precondition not met')
+        require(rv.get('revoked') is True and rv.get('reopened') is True, 'revocation not applied/reverted')
+        require((rv.get('after') or {}).get('text') is False and refused((rv.get('after') or {}).get('download')),
+                'revoked member still reads the thread or downloads its file')
+        require((rv.get('restored') or {}).get('text') is True and served((rv.get('restored') or {}).get('download'), sha),
+                'access not restored after reopen')
+
+    def events():
+        rows, ids, va = run()
+        for r in rows:
+            c, cc = r.get('card') or {}, r.get('center') or {}
+            card_events, oldest, newest = c.get('events'), cc.get('events_oldest'), cc.get('events')
+            require(isinstance(card_events, list) and any('Task created' in e for e in card_events), 'task events missing in the card')
+            require(isinstance(oldest, list) and any('Task created' in e for e in oldest), 'task events missing in the Center')
+            require(isinstance(newest, list), 'Center events not observed')
+            require(not any('opened' in e.lower() for e in card_events + oldest + newest), 'task opening shown as a discussion event')
+            require(c.get('messages_before') and c.get('messages_after') == c['messages_before'] + 1,
+                    'events were stored as messages or the reply count is wrong')
+            require(isinstance(c.get('history_opened'), int) and c['history_opened'] >= 1, 'opened missing from the task History')
+
+    def reply():
+        rows, ids, va = run()
+        for r in rows:
+            t = r['texts']
+            target = r.get('reply_target') or {}
+            require(target.get('count') == 1 and t[0] in (target.get('text') or ''), 'reply target not shown in the composer')
+            m = r.get('reply') or {}
+            require(m.get('reply_to') == r['question'] and m.get('body') == t[1] and m.get('status') == 'active',
+                    'reply not linked to the original')
+            require(m.get('mentions') == [ids['EA']], 'inline mention not resolved to exactly the participant')
+            require('mention' in (r.get('mention_notification') or []), 'mention notification missing')
+            require(any(t[0] in q for q in (r.get('card') or {}).get('quote') or []), 'quote missing in the card')
+            require(any(t[0] in q for q in (r.get('center') or {}).get('quote') or []), 'quote missing in the Center')
+
+    def direct():
+        rows, ids, va = run()
+        seen = set()
+        for r in rows:
+            d = r.get('direct') or {}
+            responses = d.get('responses')
+            require(isinstance(responses, list) and len(responses) == 2 and all(x.get('http') == 303 for x in responses),
+                    'direct conversation request failed')
+            for response in responses:
+                destination = urlparse(local_url(response.get('location', '')))
+                require(destination.path == '/local/kbacompany/communication_center.php' and
+                        dict(parse_qsl(destination.query)).get('thread') == response.get('thread'),
+                        'direct conversation redirected to an unexpected page or thread')
+            uuids = {x.get('thread') for x in responses}
+            require(len(uuids) == 1 and '' not in uuids and None not in uuids and d.get('threads') == list(uuids),
+                    'repeated Write created another direct conversation')
+            seen |= uuids
+        require(len(seen) == 1, 'direct conversation changed between cases')
+
+    def group():
+        rows, ids, va = run()
+        ma, ea, ra = ids['MA'], ids['EA'], ids['RA']
+        for r in rows:
+            g = r.get('group') or {}
+            created = g.get('created') or {}
+            require(created.get('active') == sorted([ma, ea, ra, va]) and created.get('owners') == [ma], 'group not created')
+            for key in ('non_owner_remove', 'forged_sesskey'):
+                x = g.get(key) or {}
+                denied_post(x, ['sesskey'] if key == 'forged_sesskey' else ['permission'])
+                require((x.get('parts') or {}).get('active') == created['active'], key + ' changed the group')
+            lt = g.get('leave_task_discussion') or {}
+            denied_post(lt, ['state'])
+            require(ma in ((lt.get('parts') or {}).get('active') or []), 'left a task discussion')
+            require(g.get('remove_controls') == 3 and g.get('owner_marker') is True, 'owner controls missing')
+            require((g.get('after_remove') or {}).get('active') == sorted([ma, ea, va]), 'owner removal not applied')
+            after = g.get('after_owner_leave') or {}
+            require(after.get('active') == sorted([ea, va]) and after.get('owners') == [ea], 'ownership not passed on leave')
+            require(g.get('new_owner_controls') == 1, 'new owner cannot manage members')
+            require((g.get('access_after') or {}) == {'MA': False, 'RA': False}, 'removed or departed member still reads the group')
+
+    def filters():
+        rows, ids, va = run()
+        for r in rows:
+            fl, cc = r.get('filters') or {}, r.get('center') or {}
+            require(fl.get('discussions') == {'task': 1, 'direct': 0} and fl.get('messages') == {'task': 0, 'direct': 1},
+                    'filters do not separate conversations from object discussions')
+            require(isinstance(fl.get('tabs'), int) and fl['tabs'] >= 2, 'filter tabs missing')
+            link = cc.get('open_task') or {}
+            href = urlparse(link.get('href') or '')
+            require(link.get('text') == 'Open task' and href.path == '/local/kbacompany/tasks.php' and 'task=' in href.query,
+                    'Open task link missing')
+            require(cc.get('question') == 1 and cc.get('reply_links') == 1 and cc.get('composer') == 1,
+                    'participant view of the Center incomplete')
+
+    def browser_events():
+        rows, ids, va = run()
+        for r in rows:
+            violations = browser_event_violations(r.get('browser_events'))
+            require(not violations, 'browser errors: %r' % violations[:3])
+            require(r.get('server_errors') == [], 'HTTP 5xx in the Communication Center: %r' % (r.get('server_errors'),))
+
+    return {'comm_task_discussion_read_by_task_viewer': viewer, 'comm_task_discussion_denied_and_revoked': denied,
+            'comm_task_events_inline_opened_in_history': events, 'comm_reply_quote_and_mention': reply,
+            'comm_direct_conversation_unique': direct, 'comm_group_remove_leave_transfer': group,
+            'comm_filters_and_open_task': filters, 'comm_no_browser_errors': browser_events}
+
+
+DAILY_REPORT_CASES = [('owned', 1440, 'en'), ('owned', 375, 'ru'), ('legacy', 1440, 'en'), ('legacy', 375, 'ru')]
+DAILY_REPORT_LABELS = {
+    'en': {'nav': 'Daily reports', 'nav_short': 'Reports', 'tabs': 'Daily report sections', 'tab_my': 'My report',
+           'button': 'Daily report', 'button_short': 'Report'},
+    'ru': {'nav': 'Отчёты за день', 'nav_short': 'Отчёты', 'tabs': 'Разделы отчётов за день', 'tab_my': 'Мой отчёт',
+           'button': 'Отчёт за день', 'button_short': 'Отчёт'},
+}
+DAILY_REPORT_PATH = '/local/kbacompany/daily_report.php'
+
+
+def aria_link_named(snapshot, name):
+    """True when a Playwright aria_snapshot() of one element is a link whose accessible name is exactly the given name."""
+    if not isinstance(snapshot, str) or not snapshot.strip():
+        return False
+    first = snapshot.strip().splitlines()[0].strip()
+    return re.fullmatch(r'- link "%s"(?: \[[^\]]*\])*:?' % re.escape(name), first) is not None
+
+
+def daily_reports_nav_checks(obs, exitcode=None):
+    """Daily reports R0 entry (daily_reports_nav.py, ADR-0009). Owned menu order/active state, own URL and tab,
+    report-first Task Center button, short phone labels with full accessible names, no horizontal overflow."""
+    def run():
+        require(exitcode == 0, 'daily reports browser process failed or was not run')
+        require(isinstance(obs, dict) and obs.get('status') == 'PASS' and not obs.get('error'), 'daily reports run incomplete')
+        require(isinstance(obs.get('company'), str) and len(obs['company']) >= 8, 'company reference not recorded')
+        rows = obs.get('cases')
+        require(isinstance(rows, list) and [(r.get('shell'), r.get('width'), r.get('lang')) for r in rows] == DAILY_REPORT_CASES,
+                'owned/legacy x 1440 EN / 375 RU cases required')
+        for r in rows:
+            require(r.get('language_installed') is True, 'page language %s not active' % r.get('lang'))
+            require((r.get('report') or {}).get('owned_shell') is (r['shell'] == 'owned'), 'shell mode %s not active' % r['shell'])
+        return rows
+
+    def menu():
+        for r in run():
+            if r['shell'] != 'owned':
+                continue
+            m = (r.get('report') or {}).get('menu') or {}
+            labels = DAILY_REPORT_LABELS[r['lang']]
+            require(m.get('present') is True and m.get('scope_visible') is True and m.get('visible_items') == 1,
+                    'exactly one visible daily reports item in the %s px menu' % r['width'])
+            order = [x.get('path') for x in (m.get('order') or [])]
+            require('daily_report.php' in order, 'daily reports item missing from the workspace menu')
+            i = order.index('daily_report.php')
+            require(i > 0 and order[i - 1] == 'tasks.php' and order[i + 1:i + 2] == ['recurring_tasks.php'],
+                    'daily reports must sit directly after Tasks and before Recurring tasks: %r' % order)
+            current = [x.get('path') for x in m['order'] if x.get('current') == 'page']
+            require(current == ['daily_report.php'], 'only the daily reports item may be current: %r' % current)
+            item = m.get('item') or {}
+            require(item.get('path') == DAILY_REPORT_PATH and item.get('uuid') == obs['company'] and item.get('params') == ['uuid'],
+                    'menu URL must be daily_report.php?uuid=<company A> only')
+            require(aria_link_named(item.get('aria_snapshot'), labels['nav']),
+                    'menu link accessible name must be the full "%s": %r' % (labels['nav'], item.get('aria_snapshot')))
+            fs, ss = item.get('full_span') or {}, item.get('short_span') or {}
+            require(fs.get('text') == labels['nav'] and fs.get('aria_hidden') is False and fs.get('display') != 'none'
+                    and fs.get('visibility') != 'hidden', 'full menu label must stay exposed to screen readers: %r' % (fs,))
+            require(ss.get('label') == labels['nav_short'] and ss.get('text') == '' and ss.get('aria_hidden') is True,
+                    'short menu label must be aria-hidden CSS text, not DOM text: %r' % (ss,))
+
+    def labels():
+        for r in run():
+            if r['shell'] != 'owned':
+                continue
+            item = ((r.get('report') or {}).get('menu') or {}).get('item') or {}
+            names = DAILY_REPORT_LABELS[r['lang']]
+            full, short = item.get('full_box') or {}, item.get('short_box') or {}
+            if r['width'] > 860:
+                require(item.get('text') == names['nav'] and full.get('w', 0) > 1 and short.get('w', 1) == 0,
+                        'desktop menu must show the full label only: %r' % item.get('text'))
+            else:
+                require(item.get('text') == names['nav_short'] and short.get('w', 0) > 1 and full.get('w', 9) <= 1
+                        and full.get('h', 9) <= 1, 'phone menu must show the short label only: %r' % item.get('text'))
+
+    def page():
+        for r in run():
+            rep = r.get('report') or {}
+            names = DAILY_REPORT_LABELS[r['lang']]
+            require(rep.get('http') == 200 and rep.get('path') == DAILY_REPORT_PATH, 'daily report page not served')
+            require(rep.get('current_tabs') == [names['tab_my']] and rep.get('current_tab_paths') == [DAILY_REPORT_PATH],
+                    'exactly one current "%s" tab required: %r' % (names['tab_my'], rep.get('current_tabs')))
+            require(names['nav'] in (rep.get('h1') or []) and names['nav'] in (rep.get('title') or ''),
+                    'page heading and title must say "%s"' % names['nav'])
+
+    def button():
+        for r in run():
+            t = r.get('tasks') or {}
+            b = t.get('button') or {}
+            names = DAILY_REPORT_LABELS[r['lang']]
+            require(t.get('http') == 200 and t.get('buttons') == 1, 'exactly one daily report button in the Task Center')
+            require(b.get('path') == DAILY_REPORT_PATH and b.get('uuid') == obs['company'] and b.get('params') == ['uuid']
+                    and b.get('visible') is True, 'button must be visible and open daily_report.php?uuid=<company A>')
+            require(b.get('aria_label') == names['button'] and b.get('title') == names['button']
+                    and aria_link_named(b.get('aria_snapshot'), names['button']),
+                    'button must keep the full accessible name "%s"' % names['button'])
+            expected = names['button'] if r['width'] >= 576 else names['button_short']
+            require(b.get('text') == expected, 'button text at %s px must be "%s", got %r' % (r['width'], expected, b.get('text')))
+            require(r.get('clicked_path') == DAILY_REPORT_PATH, 'clicking the button did not open the daily report page')
+
+    def overflow():
+        for r in run():
+            for key, box in (('tasks', (r.get('tasks') or {}).get('hscroll')), ('report', (r.get('report') or {}).get('hscroll')),
+                             ('menu', (r.get('report') or {}).get('hscroll_after_menu'))):
+                require(isinstance(box, dict) and isinstance(box.get('scroll'), int) and box.get('inner') == r['width']
+                        and box['scroll'] <= box['inner'], '%s page scrolls horizontally at %s px: %r' % (key, r['width'], box))
+
+    def foreign():
+        run()
+        x = obs.get('foreign') or {}
+        require(isinstance(x.get('http'), int) and x['http'] < 500 and x.get('tabs') == 0 and x.get('day_form') == 0,
+                'foreign-company actor reached the daily report page: %r' % (x,))
+
+    def events():
+        for r in run():
+            violations = browser_event_violations(r.get('browser_events'))
+            require(not violations, 'browser errors: %r' % violations[:3])
+            require(r.get('server_errors') == [], 'HTTP 5xx on daily reports pages: %r' % (r.get('server_errors'),))
+
+    return {'daily_reports_menu_after_tasks_and_current': menu, 'daily_reports_menu_full_and_short_labels': labels,
+            'daily_reports_page_url_title_and_tab': page, 'daily_reports_task_center_button': button,
+            'daily_reports_no_horizontal_overflow': overflow, 'daily_reports_foreign_company_denied': foreign,
+            'daily_reports_no_browser_errors': events}
+
+
 def required_check_names():
     """Every check a complete BROWSER report must contain (used by browser_acceptance.py and merge_gate.py)."""
     return (['moodle_install', 'fixtures_companies_A_B'] + list(task_tab_checks({})) + list(attachments_checks({}, {}))
-            + list(access_checks({})) + list(oversize_checks({}, {})) + list(multiattachment_checks({})))
+            + list(access_checks({})) + list(oversize_checks({}, {})) + list(multiattachment_checks({}))
+            + list(message_action_checks({})) + list(task_open_checks({}))
+            + list(communication_center_checks({})) + list(daily_reports_nav_checks({})))
 
 
 def evaluate(checks):

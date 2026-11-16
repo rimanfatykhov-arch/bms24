@@ -23,6 +23,7 @@ class bms_workspace_ux_service {
             'calendar' => 'calendar',
             'tasks' => 'tasks',
             'recurring' => 'recurring',
+            'dailyreports' => 'dailyreports',
             'communications' => 'communications',
         ];
         if (isset($workspace[$routeactive])) {
@@ -102,6 +103,7 @@ class bms_workspace_ux_service {
             'workspace' => ['bmsworkspace_nav', '/local/kbacompany/bms_workspace.php', []],
             'calendar' => ['bmscalendar_title', '/local/kbacompany/calendar.php', []],
             'tasks' => ['taskcenter_title', '/local/kbacompany/tasks.php', ['scope' => 'my']],
+            'dailyreports' => ['dailyreports_nav', '/local/kbacompany/daily_report.php', []],
             'recurring' => ['recurringtask_title', '/local/kbacompany/recurring_tasks.php', ['view' => 'list']],
             'battleplan' => ['battleplan_title', '/local/kbacompany/battle_plan.php', []],
             'communications' => ['communicationcenter_title', '/local/kbacompany/communication_center.php', []],

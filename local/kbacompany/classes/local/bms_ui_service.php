@@ -800,6 +800,7 @@ class bms_ui_service {
             'shield' => '<path d="M12 2 20 5v6c0 5-3 8.5-8 11-5-2.5-8-6-8-11V5l8-3z"/><path d="m8.5 12 2.2 2.2 4.8-5"/>',
             'calendar' => '<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M8 3v4"/><path d="M16 3v4"/><path d="M3 10h18"/><path d="M8 14h.01"/><path d="M12 14h.01"/><path d="M16 14h.01"/><path d="M8 18h.01"/><path d="M12 18h.01"/>',
             'alert' => '<path d="M12 3 2.5 20h19L12 3z"/><path d="M12 9v5"/><path d="M12 17.5h.01"/>',
+            'report' => '<path d="M6 3h9l4 4v14H6z"/><path d="M9 11h7"/><path d="M9 15h7"/><path d="M9 19h4"/><path d="M9 7h3"/>',
         ];
         if (!isset($paths[$name])) {
             $name = 'grid';
@@ -815,7 +816,7 @@ class bms_ui_service {
         $defaulticon = ['key' => 'i/navigationitem', 'component' => 'moodle'];
         $homeicon = ['key' => 'i/home', 'component' => 'moodle'];
         $navicons = [
-            'workspace' => 'home', 'calendar' => 'calendar', 'communications' => 'message', 'tasks' => 'tasks', 'recurring' => 'cycle', 'battleplan' => 'flag', 'products' => 'chart',
+            'workspace' => 'home', 'calendar' => 'calendar', 'communications' => 'message', 'tasks' => 'tasks', 'dailyreports' => 'report', 'recurring' => 'cycle', 'battleplan' => 'flag', 'products' => 'chart',
             'architecturecenter' => 'grid', 'owner' => 'user', 'philosophy' => 'book', 'market' => 'globe', 'businessmodel' => 'layout',
             'strategy' => 'target', 'financialmodel' => 'finance', 'people' => 'users', 'employees' => 'employee', 'people_roles' => 'briefcase',
             'coverage' => 'briefcase', 'people_competencies' => 'award', 'culture' => 'heart', 'learning' => 'learning', 'management' => 'cycle', 'personalcycle' => 'clipboard-check', 'managementcycles' => 'cycle',
@@ -861,6 +862,14 @@ class bms_ui_service {
                 'label' => get_string('taskcenter_title', 'local_kbacompany'),
                 'url' => $url('tasks.php', ['scope' => 'my']),
                 'icon' => $defaulticon,
+            ],
+            // Issue #106 R0: daily reports have their own workspace entry; the page itself enforces access.
+            'dailyreports' => [
+                'group' => 'workspace', 'sidebar' => true, 'tree' => false,
+                'label' => get_string('dailyreports_nav', 'local_kbacompany'),
+                // Narrow screens show the short name; the full name stays available to screen readers.
+                'mobile_label' => get_string('dailyreports_nav_short', 'local_kbacompany'),
+                'url' => $url('daily_report.php'), 'icon' => $defaulticon,
             ],
             // A recurring definition is an ongoing task workflow, not a new Task Center provider.
             // BMS owns the route; the KBA theme only renders this semantic item.
@@ -1105,7 +1114,7 @@ class bms_ui_service {
         $definitions = [
             'workspace' => [
                 'label' => get_string('bmsworkspace_group_workspace', 'local_kbacompany'),
-                'order' => ['workspace', 'calendar', 'tasks', 'recurring', 'battleplan', 'communications'],
+                'order' => ['workspace', 'calendar', 'tasks', 'dailyreports', 'recurring', 'battleplan', 'communications'],
             ],
             'architecture' => [
                 'label' => get_string('bmsworkspace_group_architecture_short', 'local_kbacompany'),
@@ -1134,6 +1143,7 @@ class bms_ui_service {
                 $items[] = [
                     'key' => $routekey,
                     'label' => $route['sidebar_label'] ?? $route['label'],
+                    'mobilelabel' => $route['mobile_label'] ?? '',
                     'url' => $route['url'],
                     'icon' => $route['icon'] ?? null,
                     'iconhtml' => $route['iconhtml'] ?? '',

@@ -19,6 +19,34 @@ rows=[];status='FAIL'
 def require(ok,message):
     if not ok:raise RuntimeError(message)
 
+def require_one_rendered_message(page,message):
+    # A visible failed-send draft is not proof of persistence either. Only the message body counts.
+    body=page.locator('article.bms-tui-message .bms-tui-prose').get_by_text(message,exact=True)
+    require(body.count()==1 and body.is_visible(),'message not persisted exactly once after reload')
+
+def selector_controls(browser):
+    """Execute the exact persistence guard against isolated DOM faults before the Moodle checks."""
+    ctx=browser.new_context();p=ctx.new_page();message='synthetic-persistence-control'
+    article='<article class="bms-tui-message"><div class="bms-tui-prose">'+message+'</div></article>'
+    draft='<details><summary>Edit</summary><textarea>'+message+'</textarea></details>'
+    rows=[]
+    try:
+        p.set_content(article+draft)
+        require(p.get_by_text(message,exact=True).count()==2,'hidden edit draft control did not reproduce')
+        require_one_rendered_message(p,message)
+        rows.append({'case':'one_body_and_hidden_edit','status':'PASS'})
+        for name,html in [('duplicate_messages',article+article),('hidden_draft_only',draft),
+                          ('visible_failed_draft_only','<form><textarea>'+message+'</textarea></form>'),
+                          ('empty','<p>empty</p>'),('hidden_message','<div hidden>'+article+'</div>')]:
+            p.set_content(html)
+            try:require_one_rendered_message(p,message)
+            except RuntimeError as error:
+                require(str(error)=='message not persisted exactly once after reload','unrelated selector failure')
+                rows.append({'case':name,'status':'PASS','violation_detected':str(error)})
+            else:raise RuntimeError('selector negative control not detected: '+name)
+    finally:ctx.close()
+    return rows
+
 def validate_panels(phase,mode,composer,recent,history_link,history_status,history_exact,history_heading,history_events):
     require(phase in ('baseline','rollback','candidate','reinstall'),'unknown discussion acceptance phase')
     require(mode in ('owned','legacy'),'unknown discussion shell')
@@ -31,6 +59,8 @@ def validate_panels(phase,mode,composer,recent,history_link,history_status,histo
 with sync_playwright() as pw:
     b=pw.chromium.launch(headless=True)
     try:
+        controls=selector_controls(b)
+        (root/'public'/('discussion-'+phase+'-'+mode+'-selector-controls.json')).write_text(json.dumps(controls,indent=2))
         for width in [1440,768,390]:
             ctx=b.new_context(viewport={'width':width,'height':1000})
             ctx.route('**/*',lambda r:r.continue_() if urlparse(r.request.url).scheme=='http' and urlparse(r.request.url).netloc=='127.0.0.1:8080' else r.abort())
@@ -72,7 +102,7 @@ with sync_playwright() as pw:
                     else:p.keyboard.press('Enter')
                 require(navigation.value.status<400,'write navigation failed')
                 p.wait_for_load_state('networkidle');p.reload(wait_until='networkidle')
-                require(p.get_by_text(message,exact=True).count()==1,'message not persisted exactly once after reload')
+                require_one_rendered_message(p,message)
                 rows.append({'width':width,'method':method,'message':message,'geometry':geometry,'persisted_exactly_once':True,'panel_policy':phase,'recent_count':recent_count,'history_status':history_response.status,'history_events':history_events,'return_url':p.url})
             ctx.close()
         status='PASS'
