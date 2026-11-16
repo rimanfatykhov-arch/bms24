@@ -35,3 +35,12 @@ Roadmap changes live in PR117 into the open canonical-plan PR95; neither is merg
 Accepted decisions, implementation, tested evidence and actual publication must remain distinct.
 Current acceptance statuses, precise hashes, runtime evidence and owner review are recorded by the
 operator in the release PR and private/local evidence rather than guessed here.
+
+The first release120 rehearsal stopped before installation: origins still pinned old main d353509.
+The operator updated the exact baseline to published114 main881aac2 / validator153e4bd, whose full
+Git trees are equal f3bda188. The runner verifies both trees and the full accepted64-check baseline;
+candidate/reinstall retain71checks including7new R0 checks. The removed Recent activity block must
+be absent in baseline/rollback/candidate/reinstall while History remains nonempty and accessible.
+Old pins/provenance are retained in origins.previous_release. Six policy tests normal/-O pass,
+including bad product/validator/tree and missing/extra/empty baseline checkset refusals;37 browser
+contract tests pass. No product code or CI applicability was changed by this operator correction.

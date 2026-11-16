@@ -35,7 +35,7 @@ class RehearsalPolicyTest(unittest.TestCase):
         validate=ns['validate_panels']
         for phase in ('baseline','rollback','candidate','reinstall'):
             for mode in ('owned','legacy'):
-                recent=int(phase in ('baseline','rollback') and mode=='owned')
+                recent=0
                 good=[phase,mode,1,recent,True,200,True,1,2]
                 validate(*good)
                 for index,value in ((2,0),(2,2),(3,1-recent),(4,False),(5,500),(5,302),(6,False),(7,0),(8,0)):
@@ -91,9 +91,24 @@ class RehearsalPolicyTest(unittest.TestCase):
 
     def test_baseline_validator_pin_is_independent_of_product(self):
         origins=json.loads(SOURCE.with_name('origins.json').read_text())
-        self.assertEqual(origins['baseline_validator'],'0740524acd9e8e7eeada05374b27a1089f142dd3')
+        self.assertEqual(origins['baseline_validator'],'153e4bd23f286ff50d0486732a092cb11043606d')
         self.assertNotEqual(origins['baseline_validator'],origins['main'])
-        self.assertIn("BASE!='d35350954146867f80877bcea4729c31477d16d3'",SOURCE.read_text())
+        self.assertIn("BASE!='881aac2ef334c4894b9cff2f591b75f675360e3b'",SOURCE.read_text())
+
+    def test_published114_baseline_pair_and_full_checkset_fail_closed(self):
+        node=next(n for n in TREE.body if isinstance(n,ast.FunctionDef) and n.name=='validate_baseline_pair')
+        checks=json.loads((SOURCE.parents[3]/'docs/reconcile/r0-baseline-browser-checkset.json').read_text())['checks']
+        ns={'BASELINE_VALIDATOR':'153e4bd23f286ff50d0486732a092cb11043606d',
+            'BASELINE_TREE':'f3bda188f254281ab73bf5e941e55ce278d28472','BASELINE_CHECKS':checks}
+        exec(compile(ast.Module(body=[node],type_ignores=[]),str(SOURCE),'exec'),ns)
+        valid=['881aac2ef334c4894b9cff2f591b75f675360e3b',ns['BASELINE_VALIDATOR'],
+            ns['BASELINE_TREE'],ns['BASELINE_TREE'],checks]
+        ns['validate_baseline_pair'](*valid)
+        for index,bad,reason in [(0,'0'*40,'product SHA'),(1,'0'*40,'validator SHA'),
+                (2,'0'*40,'product tree'),(3,'0'*40,'validator tree'),
+                (4,checks[:-1],'checkset'),(4,checks+['fake'],'checkset'),(4,[],'checkset'),(4,None,'checkset')]:
+            args=valid.copy();args[index]=bad
+            with self.assertRaisesRegex(RuntimeError,reason):ns['validate_baseline_pair'](*args)
         source=SOURCE.read_text()
         self.assertIn("validator/'tools/ci/browser_acceptance.py'",source)
         self.assertIn("actualvalidator!=BASELINE_VALIDATOR",source)

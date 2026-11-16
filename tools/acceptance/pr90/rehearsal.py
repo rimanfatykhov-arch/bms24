@@ -4,8 +4,10 @@ from pathlib import Path
 root=Path(os.environ['TEST_ROOT']).resolve(); runner=Path(os.environ['RUNNER_TEMP']).resolve()
 core=Path(os.environ['MOODLE_ROOT']).resolve(); cand=Path(os.environ['CANDIDATE_ROOT']).resolve()
 origins=json.loads((cand/'tools/acceptance/pr90/origins.json').read_text());BASE=origins['main']
-if BASE!='d35350954146867f80877bcea4729c31477d16d3':raise RuntimeError('baseline product changed; independently review validator pair')
-BASELINE_VALIDATOR='0740524acd9e8e7eeada05374b27a1089f142dd3'
+if BASE!='881aac2ef334c4894b9cff2f591b75f675360e3b':raise RuntimeError('baseline product changed; independently review validator pair')
+BASELINE_VALIDATOR='153e4bd23f286ff50d0486732a092cb11043606d'
+BASELINE_TREE='f3bda188f254281ab73bf5e941e55ce278d28472'
+BASELINE_CHECKS=json.loads((cand/'docs/reconcile/r0-baseline-browser-checkset.json').read_text())['checks']
 if origins.get('baseline_validator')!=BASELINE_VALIDATOR:raise RuntimeError('baseline validator pin changed; independent review required')
 if os.environ.get('GITHUB_ACTIONS')!='true' or runner not in root.parents or os.environ.get('DBHOST')!='127.0.0.1':
     raise SystemExit('Disposable Actions environment required')
@@ -52,6 +54,13 @@ def verify_package():
 def cmd(args,**kw):
     return subprocess.run([str(x) for x in args],env=kw.pop('env',env),cwd=core,check=True,**kw)
 def git(*args): return subprocess.check_output(['git','-C',str(cand),*args],text=True).strip()
+
+def validate_baseline_pair(product_sha,validator_sha,product_tree,validator_tree,checks):
+    if product_sha!='881aac2ef334c4894b9cff2f591b75f675360e3b':raise RuntimeError('baseline product SHA mismatch')
+    if validator_sha!=BASELINE_VALIDATOR:raise RuntimeError('baseline validator SHA mismatch')
+    if product_tree!=BASELINE_TREE:raise RuntimeError('baseline product tree mismatch')
+    if validator_tree!=BASELINE_TREE:raise RuntimeError('baseline validator tree mismatch')
+    if len(BASELINE_CHECKS)!=64 or checks!=BASELINE_CHECKS:raise RuntimeError('baseline browser checkset mismatch')
 def stop():
     global server
     if server:
@@ -256,8 +265,15 @@ try:
     cmd(['git','-C',cand,'worktree','add','--detach',validator,BASELINE_VALIDATOR],stdout=subprocess.DEVNULL)
     actualvalidator=subprocess.check_output(['git','-C',str(validator),'rev-parse','HEAD'],text=True).strip()
     if actualvalidator!=BASELINE_VALIDATOR:raise RuntimeError('baseline validator checkout mismatch')
+    basetree=subprocess.check_output(['git','-C',str(baseline),'rev-parse','HEAD^{tree}'],text=True).strip()
+    validatortree=subprocess.check_output(['git','-C',str(validator),'rev-parse','HEAD^{tree}'],text=True).strip()
+    checknames=json.loads(subprocess.check_output([sys.executable,'-c',
+        'import sys,json;sys.path.insert(0,sys.argv[1]);import contract;print(json.dumps(contract.required_check_names()))',
+        str(validator/'tools/ci/browser')],text=True))
+    validate_baseline_pair(BASE,actualvalidator,basetree,validatortree,checknames)
     report['baseline_validation']={'product_sha':BASE,'validator_sha':actualvalidator,
-        'checkset':'accepted PR102 BROWSER (42 checks) prior to the message-action feature',
+        'checkset':'accepted published PR114 BROWSER (64 checks), before R0 navigation',
+        'product_tree':basetree,'validator_tree':validatortree,'required_checks':checknames,
         'validator_files':digest_tree(validator/'tools/ci/browser'),
         'runner_sha256':hashlib.sha256((validator/'tools/ci/browser_acceptance.py').read_bytes()).hexdigest()}
     cmd([sys.executable,validator/'tools/ci/browser_acceptance.py'],env=dict(env,CANDIDATE_ROOT=str(baseline)),stdout=open(root/'baseline.private.log','w'))
@@ -266,8 +282,8 @@ try:
     start();role_checks('baseline')
     observed(Path(__file__).with_name('discussion_geometry.py'),'baseline-geometry','baseline')
     stop()
-    # PR103: the baseline is the published PR102 product, in which the PR100 overlap is fixed. Its writes must PASS;
-    # the new message actions are absent there and are proven only on candidate/reinstall (message_action_checks).
+    # The published114 baseline already contains messages, task-open and communication checks.
+    # Candidate/reinstall retain all current checks and add the R0 navigation acceptance.
     start()
     write_checks('baseline_repeat')
     report['steps']['baseline_writes']='PASS'
