@@ -870,12 +870,120 @@ def communication_center_checks(obs, exitcode=None):
             'comm_filters_and_open_task': filters, 'comm_no_browser_errors': browser_events}
 
 
+DAILY_REPORT_CASES = [('owned', 1440, 'en'), ('owned', 375, 'ru'), ('legacy', 1440, 'en'), ('legacy', 375, 'ru')]
+DAILY_REPORT_LABELS = {
+    'en': {'nav': 'Daily reports', 'nav_short': 'Reports', 'tabs': 'Daily report sections', 'tab_my': 'My report',
+           'button': 'Daily report', 'button_short': 'Report'},
+    'ru': {'nav': 'Отчёты за день', 'nav_short': 'Отчёты', 'tabs': 'Разделы отчётов за день', 'tab_my': 'Мой отчёт',
+           'button': 'Отчёт за день', 'button_short': 'Отчёт'},
+}
+DAILY_REPORT_PATH = '/local/kbacompany/daily_report.php'
+
+
+def daily_reports_nav_checks(obs, exitcode=None):
+    """Daily reports R0 entry (daily_reports_nav.py, ADR-0009). Owned menu order/active state, own URL and tab,
+    report-first Task Center button, short phone labels with full accessible names, no horizontal overflow."""
+    def run():
+        require(exitcode == 0, 'daily reports browser process failed or was not run')
+        require(isinstance(obs, dict) and obs.get('status') == 'PASS' and not obs.get('error'), 'daily reports run incomplete')
+        require(isinstance(obs.get('company'), str) and len(obs['company']) >= 8, 'company reference not recorded')
+        rows = obs.get('cases')
+        require(isinstance(rows, list) and [(r.get('shell'), r.get('width'), r.get('lang')) for r in rows] == DAILY_REPORT_CASES,
+                'owned/legacy x 1440 EN / 375 RU cases required')
+        for r in rows:
+            require(r.get('language_installed') is True, 'page language %s not active' % r.get('lang'))
+            require((r.get('report') or {}).get('owned_shell') is (r['shell'] == 'owned'), 'shell mode %s not active' % r['shell'])
+        return rows
+
+    def menu():
+        for r in run():
+            if r['shell'] != 'owned':
+                continue
+            m = (r.get('report') or {}).get('menu') or {}
+            labels = DAILY_REPORT_LABELS[r['lang']]
+            require(m.get('present') is True and m.get('scope_visible') is True and m.get('visible_items') == 1,
+                    'exactly one visible daily reports item in the %s px menu' % r['width'])
+            order = [x.get('path') for x in (m.get('order') or [])]
+            require('daily_report.php' in order, 'daily reports item missing from the workspace menu')
+            i = order.index('daily_report.php')
+            require(i > 0 and order[i - 1] == 'tasks.php' and order[i + 1:i + 2] == ['recurring_tasks.php'],
+                    'daily reports must sit directly after Tasks and before Recurring tasks: %r' % order)
+            current = [x.get('path') for x in m['order'] if x.get('current') == 'page']
+            require(current == ['daily_report.php'], 'only the daily reports item may be current: %r' % current)
+            item = m.get('item') or {}
+            require(item.get('path') == DAILY_REPORT_PATH and item.get('uuid') == obs['company'] and item.get('params') == ['uuid'],
+                    'menu URL must be daily_report.php?uuid=<company A> only')
+            require(m.get('accessible_full', 0) >= 1, 'menu link must keep the full accessible name "%s"' % labels['nav'])
+
+    def labels():
+        for r in run():
+            if r['shell'] != 'owned':
+                continue
+            item = ((r.get('report') or {}).get('menu') or {}).get('item') or {}
+            names = DAILY_REPORT_LABELS[r['lang']]
+            full, short = item.get('full_box') or {}, item.get('short_box') or {}
+            if r['width'] > 860:
+                require(item.get('text') == names['nav'] and full.get('w', 0) > 1 and short.get('w', 1) == 0,
+                        'desktop menu must show the full label only: %r' % item.get('text'))
+            else:
+                require(item.get('text') == names['nav_short'] and short.get('w', 0) > 1 and full.get('w', 9) <= 1
+                        and full.get('h', 9) <= 1, 'phone menu must show the short label only: %r' % item.get('text'))
+
+    def page():
+        for r in run():
+            rep = r.get('report') or {}
+            names = DAILY_REPORT_LABELS[r['lang']]
+            require(rep.get('http') == 200 and rep.get('path') == DAILY_REPORT_PATH, 'daily report page not served')
+            require(rep.get('current_tabs') == [names['tab_my']] and rep.get('current_tab_paths') == [DAILY_REPORT_PATH],
+                    'exactly one current "%s" tab required: %r' % (names['tab_my'], rep.get('current_tabs')))
+            require(names['nav'] in (rep.get('h1') or []) and names['nav'] in (rep.get('title') or ''),
+                    'page heading and title must say "%s"' % names['nav'])
+
+    def button():
+        for r in run():
+            t = r.get('tasks') or {}
+            b = t.get('button') or {}
+            names = DAILY_REPORT_LABELS[r['lang']]
+            require(t.get('http') == 200 and t.get('buttons') == 1, 'exactly one daily report button in the Task Center')
+            require(b.get('path') == DAILY_REPORT_PATH and b.get('uuid') == obs['company'] and b.get('params') == ['uuid']
+                    and b.get('visible') is True, 'button must be visible and open daily_report.php?uuid=<company A>')
+            require(b.get('aria_label') == names['button'] and b.get('title') == names['button'] and b.get('accessible') == 1,
+                    'button must keep the full accessible name "%s"' % names['button'])
+            expected = names['button'] if r['width'] >= 576 else names['button_short']
+            require(b.get('text') == expected, 'button text at %s px must be "%s", got %r' % (r['width'], expected, b.get('text')))
+            require(r.get('clicked_path') == DAILY_REPORT_PATH, 'clicking the button did not open the daily report page')
+
+    def overflow():
+        for r in run():
+            for key, box in (('tasks', (r.get('tasks') or {}).get('hscroll')), ('report', (r.get('report') or {}).get('hscroll')),
+                             ('menu', (r.get('report') or {}).get('hscroll_after_menu'))):
+                require(isinstance(box, dict) and isinstance(box.get('scroll'), int) and box.get('inner') == r['width']
+                        and box['scroll'] <= box['inner'], '%s page scrolls horizontally at %s px: %r' % (key, r['width'], box))
+
+    def foreign():
+        run()
+        x = obs.get('foreign') or {}
+        require(isinstance(x.get('http'), int) and x['http'] < 500 and x.get('tabs') == 0 and x.get('day_form') == 0,
+                'foreign-company actor reached the daily report page: %r' % (x,))
+
+    def events():
+        for r in run():
+            violations = browser_event_violations(r.get('browser_events'))
+            require(not violations, 'browser errors: %r' % violations[:3])
+            require(r.get('server_errors') == [], 'HTTP 5xx on daily reports pages: %r' % (r.get('server_errors'),))
+
+    return {'daily_reports_menu_after_tasks_and_current': menu, 'daily_reports_menu_full_and_short_labels': labels,
+            'daily_reports_page_url_title_and_tab': page, 'daily_reports_task_center_button': button,
+            'daily_reports_no_horizontal_overflow': overflow, 'daily_reports_foreign_company_denied': foreign,
+            'daily_reports_no_browser_errors': events}
+
+
 def required_check_names():
     """Every check a complete BROWSER report must contain (used by browser_acceptance.py and merge_gate.py)."""
     return (['moodle_install', 'fixtures_companies_A_B'] + list(task_tab_checks({})) + list(attachments_checks({}, {}))
             + list(access_checks({})) + list(oversize_checks({}, {})) + list(multiattachment_checks({}))
             + list(message_action_checks({})) + list(task_open_checks({}))
-            + list(communication_center_checks({})))
+            + list(communication_center_checks({})) + list(daily_reports_nav_checks({})))
 
 
 def evaluate(checks):

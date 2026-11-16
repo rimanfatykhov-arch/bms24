@@ -723,6 +723,94 @@ class ContractTest(unittest.TestCase):
         obs['cases'][0]['denied']['RA']['join_response']['error_texts']=[obs['denial_texts']['permission']]
         self.assertEqual('FAIL',c.evaluate(c.communication_center_checks(obs,0))['comm_task_discussion_denied_and_revoked']['status'])
 
+    def daily_obs(self):
+        company = 'a1b2c3d4-0000-4000-8000-00000000000a'
+        order = [{'path': p, 'current': None} for p in ('bms_workspace.php', 'calendar.php', 'tasks.php')] + \
+            [{'path': 'daily_report.php', 'current': 'page'}] + \
+            [{'path': p, 'current': None} for p in ('recurring_tasks.php', 'battle_plan.php', 'communication_center.php')]
+        cases = []
+        for shell, width, lang in c.DAILY_REPORT_CASES:
+            n = c.DAILY_REPORT_LABELS[lang]
+            link = {'path': c.DAILY_REPORT_PATH, 'uuid': company, 'params': ['uuid'], 'visible': True}
+            mobile = width < 861
+            menu = {'present': False}
+            if shell == 'owned':
+                menu = {'present': True, 'scope_visible': True, 'items': 1, 'visible_items': 1, 'order': copy.deepcopy(order),
+                        'accessible_full': 1, 'item': dict(link, text=n['nav_short'] if mobile else n['nav'], aria_current='page',
+                                                           full_box={'w': 1, 'h': 1} if mobile else {'w': 105, 'h': 18},
+                                                           short_box={'w': 51, 'h': 18} if mobile else {'w': 0, 'h': 0})}
+            box = {'scroll': width, 'inner': width}
+            cases.append({'shell': shell, 'width': width, 'lang': lang, 'language_installed': True,
+                          'tasks': {'http': 200, 'buttons': 1, 'hscroll': dict(box), 'button': dict(
+                              link, text=n['button'] if width >= 576 else n['button_short'], aria_label=n['button'],
+                              title=n['button'], accessible=1)},
+                          'clicked_path': c.DAILY_REPORT_PATH,
+                          'report': {'http': 200, 'path': c.DAILY_REPORT_PATH, 'title': n['nav'] + ' | BMS', 'h1': [n['nav']],
+                                     'current_tabs': [n['tab_my']], 'current_tab_paths': [c.DAILY_REPORT_PATH],
+                                     'owned_shell': shell == 'owned', 'hscroll': dict(box), 'menu': menu,
+                                     'hscroll_after_menu': dict(box)},
+                          'browser_events': [], 'server_errors': []})
+        return {'status': 'PASS', 'company': company, 'cases': cases, 'foreign': {'http': 200, 'tabs': 0, 'day_form': 0}}
+
+    def test_daily_reports_nav_genuine_run_passes(self):
+        res = c.evaluate(c.daily_reports_nav_checks(self.daily_obs(), 0))
+        self.assertEqual({k: 'PASS' for k in res}, {k: v['status'] for k, v in res.items()})
+        self.assertEqual(7, len(res))
+        for k in res:
+            self.assertIn(k, c.required_check_names())
+
+    def test_daily_reports_nav_regressions_fail(self):
+        def owned_mobile(o):
+            return o['cases'][1]
+
+        def swap_order(o):
+            m = o['cases'][0]['report']['menu']['order']
+            m[2], m[3] = m[3], m[2]
+
+        mutations = [
+            ('daily_reports_menu_after_tasks_and_current', swap_order),
+            ('daily_reports_menu_after_tasks_and_current',
+             lambda o: o['cases'][0]['report']['menu']['order'][2].update(current='page')),
+            ('daily_reports_menu_after_tasks_and_current',
+             lambda o: o['cases'][0]['report']['menu']['item'].update(params=['userid', 'uuid'])),
+            ('daily_reports_menu_after_tasks_and_current',
+             lambda o: o['cases'][0]['report']['menu']['item'].update(uuid='other-company-uuid')),
+            ('daily_reports_menu_after_tasks_and_current', lambda o: owned_mobile(o)['report']['menu'].update(accessible_full=0)),
+            ('daily_reports_menu_full_and_short_labels',
+             lambda o: owned_mobile(o)['report']['menu']['item'].update(text=c.DAILY_REPORT_LABELS['ru']['nav'])),
+            ('daily_reports_menu_full_and_short_labels',
+             lambda o: owned_mobile(o)['report']['menu']['item'].update(full_box={'w': 0, 'h': 0}, short_box={'w': 0, 'h': 0})),
+            ('daily_reports_page_url_title_and_tab', lambda o: o['cases'][2]['report'].update(current_tabs=[])),
+            ('daily_reports_page_url_title_and_tab', lambda o: o['cases'][3]['report'].update(h1=['Сводка моего дня'])),
+            ('daily_reports_task_center_button', lambda o: o['cases'][3]['tasks']['button'].update(text='Отчёт за день')),
+            ('daily_reports_task_center_button', lambda o: o['cases'][0]['tasks']['button'].update(aria_label=None)),
+            ('daily_reports_task_center_button', lambda o: o['cases'][2].update(clicked_path='/local/kbacompany/tasks.php')),
+            ('daily_reports_task_center_button', lambda o: o['cases'][1]['tasks'].update(buttons=2)),
+            ('daily_reports_no_horizontal_overflow', lambda o: o['cases'][3]['report']['hscroll'].update(scroll=420)),
+            ('daily_reports_no_horizontal_overflow', lambda o: o['cases'][1]['report'].update(hscroll_after_menu=None)),
+            ('daily_reports_foreign_company_denied', lambda o: o['foreign'].update(tabs=1)),
+            ('daily_reports_foreign_company_denied', lambda o: o['foreign'].update(http=500)),
+            ('daily_reports_no_browser_errors', lambda o: o['cases'][0]['browser_events'].append(
+                {'source': 'pageerror', 'name': 'TypeError', 'message': 'x'})),
+            ('daily_reports_no_browser_errors', lambda o: o['cases'][2]['server_errors'].append({'url': 'u', 'status': 500})),
+        ]
+        for name, mutate in mutations:
+            obs = self.daily_obs()
+            mutate(obs)
+            with self.subTest(check=name, mutation=mutate):
+                self.assertIn(name, failed(c.evaluate(c.daily_reports_nav_checks(obs, 0))))
+
+    def test_daily_reports_nav_incomplete_runs_fail_every_check(self):
+        missing_case = self.daily_obs()
+        missing_case['cases'].pop()
+        wrong_shell = self.daily_obs()
+        wrong_shell['cases'][2]['report']['owned_shell'] = True
+        for obs, code in [(self.daily_obs(), 1), (None, None), (missing_case, 0), (wrong_shell, 0),
+                          (dict(self.daily_obs(), error='boom'), 0), (dict(self.daily_obs(), company=''), 0)]:
+            with self.subTest(code=code):
+                res = c.evaluate(c.daily_reports_nav_checks(obs, code))
+                self.assertTrue(all(v['status'] == 'FAIL' for v in res.values()))
+
     def test_required_check_names_complete(self):
         names = c.required_check_names()
         self.assertEqual(len(names), len(set(names)))

@@ -162,6 +162,9 @@ try:
     # Communication Center cleanup (items 1-5): task viewer read, denial/revocation, events, replies, groups, filters.
     comm_exit = timed('communication_center', lambda: browser('communication_center.py', 'verify'))
     record(contract.evaluate(contract.communication_center_checks(load('communication-center-result.json'), comm_exit)))
+    # Daily reports R0 entry (ADR-0009): menu order/active state, tab, button, short phone labels, owned+legacy, 1440+375.
+    daily_exit = timed('daily_reports_nav', lambda: browser('daily_reports_nav.py', 'verify'))
+    record(contract.evaluate(contract.daily_reports_nav_checks(load('daily-reports-nav-result.json'), daily_exit)))
     timed('server_restart_64k', lambda: start_server(['-d', 'upload_max_filesize=64K', '-d', 'post_max_size=8M']))
     timed('oversize', lambda: browser('attachments.py', 'oversize'))
     timed('db_state_oversize', lambda: php_state('oversize'))
