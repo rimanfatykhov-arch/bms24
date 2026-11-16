@@ -738,12 +738,18 @@ class ContractTest(unittest.TestCase):
                 menu = {'present': True, 'scope_visible': True, 'items': 1, 'visible_items': 1, 'order': copy.deepcopy(order),
                         'accessible_full': 1, 'item': dict(link, text=n['nav_short'] if mobile else n['nav'], aria_current='page',
                                                            full_box={'w': 1, 'h': 1} if mobile else {'w': 105, 'h': 18},
-                                                           short_box={'w': 51, 'h': 18} if mobile else {'w': 0, 'h': 0})}
+                                                           short_box={'w': 51, 'h': 18} if mobile else {'w': 0, 'h': 0},
+                                                           aria_snapshot='- link "%s":' % n['nav'],
+                                                           full_span={'text': n['nav'], 'aria_hidden': False,
+                                                                      'display': 'block', 'visibility': 'visible'},
+                                                           short_span={'text': n['nav_short'], 'aria_hidden': True,
+                                                                       'display': 'block' if mobile else 'none',
+                                                                       'visibility': 'visible'})}
             box = {'scroll': width, 'inner': width}
             cases.append({'shell': shell, 'width': width, 'lang': lang, 'language_installed': True,
                           'tasks': {'http': 200, 'buttons': 1, 'hscroll': dict(box), 'button': dict(
                               link, text=n['button'] if width >= 576 else n['button_short'], aria_label=n['button'],
-                              title=n['button'], accessible=1)},
+                              title=n['button'], accessible=1, aria_snapshot='- link "%s"' % n['button'])},
                           'clicked_path': c.DAILY_REPORT_PATH,
                           'report': {'http': 200, 'path': c.DAILY_REPORT_PATH, 'title': n['nav'] + ' | BMS', 'h1': [n['nav']],
                                      'current_tabs': [n['tab_my']], 'current_tab_paths': [c.DAILY_REPORT_PATH],
@@ -775,7 +781,16 @@ class ContractTest(unittest.TestCase):
              lambda o: o['cases'][0]['report']['menu']['item'].update(params=['userid', 'uuid'])),
             ('daily_reports_menu_after_tasks_and_current',
              lambda o: o['cases'][0]['report']['menu']['item'].update(uuid='other-company-uuid')),
-            ('daily_reports_menu_after_tasks_and_current', lambda o: owned_mobile(o)['report']['menu'].update(accessible_full=0)),
+            ('daily_reports_menu_after_tasks_and_current',
+             lambda o: owned_mobile(o)['report']['menu']['item'].update(aria_snapshot='- link "Отчёты":')),
+            ('daily_reports_menu_after_tasks_and_current',
+             lambda o: o['cases'][0]['report']['menu']['item'].update(aria_snapshot=None)),
+            ('daily_reports_menu_after_tasks_and_current',
+             lambda o: owned_mobile(o)['report']['menu']['item']['full_span'].update(aria_hidden=True)),
+            ('daily_reports_menu_after_tasks_and_current',
+             lambda o: owned_mobile(o)['report']['menu']['item']['full_span'].update(display='none')),
+            ('daily_reports_menu_after_tasks_and_current',
+             lambda o: o['cases'][0]['report']['menu']['item']['short_span'].update(aria_hidden=False)),
             ('daily_reports_menu_full_and_short_labels',
              lambda o: owned_mobile(o)['report']['menu']['item'].update(text=c.DAILY_REPORT_LABELS['ru']['nav'])),
             ('daily_reports_menu_full_and_short_labels',
@@ -784,6 +799,7 @@ class ContractTest(unittest.TestCase):
             ('daily_reports_page_url_title_and_tab', lambda o: o['cases'][3]['report'].update(h1=['Сводка моего дня'])),
             ('daily_reports_task_center_button', lambda o: o['cases'][3]['tasks']['button'].update(text='Отчёт за день')),
             ('daily_reports_task_center_button', lambda o: o['cases'][0]['tasks']['button'].update(aria_label=None)),
+            ('daily_reports_task_center_button', lambda o: o['cases'][3]['tasks']['button'].update(aria_snapshot='- link "Отчёт"')),
             ('daily_reports_task_center_button', lambda o: o['cases'][2].update(clicked_path='/local/kbacompany/tasks.php')),
             ('daily_reports_task_center_button', lambda o: o['cases'][1]['tasks'].update(buttons=2)),
             ('daily_reports_no_horizontal_overflow', lambda o: o['cases'][3]['report']['hscroll'].update(scroll=420)),
@@ -799,6 +815,14 @@ class ContractTest(unittest.TestCase):
             mutate(obs)
             with self.subTest(check=name, mutation=mutate):
                 self.assertIn(name, failed(c.evaluate(c.daily_reports_nav_checks(obs, 0))))
+
+    def test_aria_link_named_is_exact(self):
+        self.assertTrue(c.aria_link_named('- link "Daily reports":\n  - /url: http://127.0.0.1:8080/x', 'Daily reports'))
+        self.assertTrue(c.aria_link_named('- link "Daily reports" [current]', 'Daily reports'))
+        for snap in [None, '', '- link "Daily reports Reports"', '- button "Daily reports"', '- link "Daily report"',
+                     '- text: Daily reports']:
+            with self.subTest(snap=snap):
+                self.assertFalse(c.aria_link_named(snap, 'Daily reports'))
 
     def test_daily_reports_nav_incomplete_runs_fail_every_check(self):
         missing_case = self.daily_obs()

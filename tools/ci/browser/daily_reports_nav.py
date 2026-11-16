@@ -31,10 +31,18 @@ HSCROLL = '() => ({scroll: document.documentElement.scrollWidth, inner: window.i
 LINK_INFO = """a => { const r = a.getBoundingClientRect(); const u = new URL(a.href);
   const box = s => { const e = a.querySelector(s); if (!e) return null; const b = e.getBoundingClientRect();
     return {w: Math.round(b.width), h: Math.round(b.height)}; };
+  // Text a sighted user sees: text nodes whose element is rendered larger than the 1px visually-hidden clip.
+  const seen = []; const walk = document.createTreeWalker(a, NodeFilter.SHOW_TEXT); let node;
+  while ((node = walk.nextNode())) { const el = node.parentElement, b = el.getBoundingClientRect(), cs = getComputedStyle(el);
+    if (node.textContent.trim() && b.width > 1 && b.height > 1 && cs.visibility !== 'hidden') seen.push(node.textContent.trim()); }
+  const span = s => { const e = a.querySelector(s); if (!e) return null; const cs = getComputedStyle(e);
+    return {text: e.textContent.trim(), aria_hidden: !!e.closest('[aria-hidden="true"]'), display: cs.display,
+            visibility: cs.visibility}; };
   return {path: u.pathname, uuid: u.searchParams.get('uuid'), params: [...u.searchParams.keys()].sort(),
-    text: a.innerText.replace(/\\s+/g, ' ').trim(), aria_label: a.getAttribute('aria-label'),
+    text: seen.join(' '), raw_text: a.innerText.replace(/\\s+/g, ' ').trim(), aria_label: a.getAttribute('aria-label'),
     aria_current: a.getAttribute('aria-current'), visible: r.width > 0 && r.height > 0,
-    full_box: box('.bms24-navlabel-full'), short_box: box('.bms24-navlabel-short')}; }"""
+    full_box: box('.bms24-navlabel-full'), short_box: box('.bms24-navlabel-short'),
+    full_span: span('.bms24-navlabel-full'), short_span: span('.bms24-navlabel-short')}; }"""
 NAV_ORDER = """scope => [...scope.querySelectorAll('a.bms24-navitem')].map(a => ({
   path: new URL(a.href).pathname.split('/').pop(), current: a.getAttribute('aria-current')}))"""
 
@@ -73,8 +81,10 @@ def menu(page, width, full):
     out = {'present': True, 'scope_visible': scope.is_visible(), 'items': items.count(), 'visible_items': len(visible),
            'order': scope.evaluate(NAV_ORDER)}
     if visible:
-        out['item'] = items.nth(visible[0]).evaluate(LINK_INFO)
-    # Accessible name: the short label is aria-hidden, the full name must still name the link.
+        link = items.nth(visible[0])
+        out['item'] = link.evaluate(LINK_INFO)
+        # Accessible name from Chromium's accessibility tree: the short label is aria-hidden, the full name names the link.
+        out['item']['aria_snapshot'] = link.aria_snapshot()
     out['accessible_full'] = scope.get_by_role('link', name=full, exact=True).count()
     return out
 
@@ -100,6 +110,7 @@ try:
             if buttons.count():
                 case['tasks']['button'] = buttons.first.evaluate(LINK_INFO)
                 case['tasks']['button']['title'] = buttons.first.get_attribute('title')
+                case['tasks']['button']['aria_snapshot'] = buttons.first.aria_snapshot()
                 case['tasks']['button']['accessible'] = page.get_by_role(
                     'link', name=case['tasks']['button']['aria_label'] or '-', exact=True).count()
             # ---- the button really opens the report page

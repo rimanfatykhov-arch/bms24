@@ -880,6 +880,14 @@ DAILY_REPORT_LABELS = {
 DAILY_REPORT_PATH = '/local/kbacompany/daily_report.php'
 
 
+def aria_link_named(snapshot, name):
+    """True when a Playwright aria_snapshot() of one element is a link whose accessible name is exactly the given name."""
+    if not isinstance(snapshot, str) or not snapshot.strip():
+        return False
+    first = snapshot.strip().splitlines()[0].strip()
+    return re.fullmatch(r'- link "%s"(?: \[[^\]]*\])*:?' % re.escape(name), first) is not None
+
+
 def daily_reports_nav_checks(obs, exitcode=None):
     """Daily reports R0 entry (daily_reports_nav.py, ADR-0009). Owned menu order/active state, own URL and tab,
     report-first Task Center button, short phone labels with full accessible names, no horizontal overflow."""
@@ -913,7 +921,13 @@ def daily_reports_nav_checks(obs, exitcode=None):
             item = m.get('item') or {}
             require(item.get('path') == DAILY_REPORT_PATH and item.get('uuid') == obs['company'] and item.get('params') == ['uuid'],
                     'menu URL must be daily_report.php?uuid=<company A> only')
-            require(m.get('accessible_full', 0) >= 1, 'menu link must keep the full accessible name "%s"' % labels['nav'])
+            require(aria_link_named(item.get('aria_snapshot'), labels['nav']),
+                    'menu link accessible name must be the full "%s": %r' % (labels['nav'], item.get('aria_snapshot')))
+            fs, ss = item.get('full_span') or {}, item.get('short_span') or {}
+            require(fs.get('text') == labels['nav'] and fs.get('aria_hidden') is False and fs.get('display') != 'none'
+                    and fs.get('visibility') != 'hidden', 'full menu label must stay exposed to screen readers: %r' % (fs,))
+            require(ss.get('text') == labels['nav_short'] and ss.get('aria_hidden') is True,
+                    'short menu label must be aria-hidden: %r' % (ss,))
 
     def labels():
         for r in run():
@@ -947,7 +961,8 @@ def daily_reports_nav_checks(obs, exitcode=None):
             require(t.get('http') == 200 and t.get('buttons') == 1, 'exactly one daily report button in the Task Center')
             require(b.get('path') == DAILY_REPORT_PATH and b.get('uuid') == obs['company'] and b.get('params') == ['uuid']
                     and b.get('visible') is True, 'button must be visible and open daily_report.php?uuid=<company A>')
-            require(b.get('aria_label') == names['button'] and b.get('title') == names['button'] and b.get('accessible') == 1,
+            require(b.get('aria_label') == names['button'] and b.get('title') == names['button']
+                    and aria_link_named(b.get('aria_snapshot'), names['button']),
                     'button must keep the full accessible name "%s"' % names['button'])
             expected = names['button'] if r['width'] >= 576 else names['button_short']
             require(b.get('text') == expected, 'button text at %s px must be "%s", got %r' % (r['width'], expected, b.get('text')))
