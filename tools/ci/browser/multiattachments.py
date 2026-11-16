@@ -108,7 +108,8 @@ with sync_playwright() as pw:
             page.wait_for_load_state('networkidle')
             require(len(posts) == 1, 'Duplicate send request')
             page.reload(wait_until='networkidle')
-            require(page.get_by_text(text, exact=True).count() == 1, 'Message missing or duplicated after reload')
+            # Rendered occurrences only: the author's closed edit form (<details>) holds the same text in a hidden textarea.
+            require(page.get_by_text(text, exact=True).evaluate_all('els => els.filter(e => e.checkVisibility()).length') == 1, 'Message missing or duplicated after reload')
             downloads = []
             for file in (files[0], files[2]):
                 link = page.get_by_role('link', name=file['name'], exact=True)
@@ -125,7 +126,7 @@ with sync_playwright() as pw:
             result['cases'].append({'width': width, 'status': 'PASS', 'downloads': downloads,
                                    'negative_controls': controls, 'selected_first': selected_first,
                                    'selected_second': selected_second, 'post_count': len(posts),
-                                   'message_count': page.get_by_text(text, exact=True).count(),
+                                   'message_count': page.get_by_text(text, exact=True).evaluate_all('els => els.filter(e => e.checkVisibility()).length'),
                                    'removed_file_count': page.get_by_role('link', name=files[1]['name'], exact=True).count(),
                                    'browser_errors': errors, 'browser_events': recorder.events})
             context.close()

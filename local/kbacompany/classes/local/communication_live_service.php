@@ -60,13 +60,16 @@ class communication_live_service {
             // checks in the bounded list. Avoid repeating two lookups and a possible expensive
             // object permission check on every 25-second refresh.
             if (!isset($allowed[$selected])) {
-                if (!$DB->record_exists('local_kbacompany_commpart', [
-                        'companyuuid' => $companyuuid, 'threaduuid' => $selected, 'userid' => $actor, 'active' => 1])) {
-                    throw new \moodle_exception('communication_permission', 'local_kbacompany');
-                }
                 $thread = $DB->get_record('local_kbacompany_commthread', [
                     'companyuuid' => $companyuuid, 'uuid' => $selected]);
                 if (!$thread) {
+                    throw new \moodle_exception('communication_permission', 'local_kbacompany');
+                }
+                // Task discussions are readable by task viewers (object ACL below); others need participation.
+                $viewerreadable = (string)$thread->threadtype === 'object' && (string)$thread->status === 'active' &&
+                    in_array((string)$thread->contextkind, communication_service::VIEWER_READ_KINDS, true);
+                if (!$viewerreadable && !$DB->record_exists('local_kbacompany_commpart', [
+                        'companyuuid' => $companyuuid, 'threaduuid' => $selected, 'userid' => $actor, 'active' => 1])) {
                     throw new \moodle_exception('communication_permission', 'local_kbacompany');
                 }
                 if ((string)$thread->threadtype === 'object') {

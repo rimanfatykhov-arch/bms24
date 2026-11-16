@@ -388,11 +388,348 @@ class ContractTest(unittest.TestCase):
         for garbage in ([{'source': 'requestfailed', 'url': 5}], [{'source': 'route_abort', 'url': 5}], [{}], [[]]):
             self.assertTrue(c.browser_event_violations(garbage))
 
+    def message_actions_obs(self):
+        def st(body, status='active', revisions=(), attachments=1, files=1):
+            return {'body': body, 'status': status, 'thread_uuid': 'T', 'revisions': list(revisions),
+                    'attachments': attachments, 'stored_files': files}
+        rows = []
+        for shell, width, mode, tab in c.MESSAGE_ACTION_CASES:
+            t = ['%s-%d-%s' % (shell, width, n) for n in ('t0', 't1', 't2', 't3')]
+            rows.append({'shell': shell, 'width': width, 'mode': mode, 'tab': tab, 'texts': t, 'file_sha256': 'x',
+                         'posted': st(t[0]), 'after_cancel': st(t[0]),
+                         'after_edit': dict(st(t[1], revisions=['edit']), task_text='A\n' + t[1] + '\nEdited', edited_marker=True,
+                                            download_http=200, download_ok=True),
+                         'communication_center': {'edited_text_count': 1, 'original_text_count': 0},
+                         'conflict': dict(st(t[2], revisions=['edit', 'edit']), alert=['Message changed. Refresh and retry.'], draft_kept=True),
+                         'unconfirmed_delete': dict(st(t[2], revisions=['edit', 'edit']), post_requests=0),
+                         'after_withdraw': dict(st('', 'withdrawn', ['edit', 'edit', 'withdraw']), task_text='A\nMessage withdrawn.',
+                                                withdrawn_marker=True, old_body_visible=False, file_link_count=0,
+                                                old_file_http=404, old_file_leaked=False, controls_left=0),
+                         'browser_events': list(ABORTED), 'server_errors': []})
+        same = st('N', attachments=0, files=0)
+        neg = {k: {'http': 200 if k in ('withdraw_without_confirmation', 'other_author_same_company') else 404,
+                   'location': '', 'state': dict(same)} for k in c.MESSAGE_ACTION_NEGATIVES}
+        redirect = {'http': 303, 'location': 'http://127.0.0.1:8080/local/kbacompany/tasks.php?uuid=C&task=T&view=detail&tab=discussion'}
+        neg.update({'unchanged_before_valid': dict(same), 'target_text': 'N', 'replay_text': 'R', 'ea_text': 'E', 'reopened': True,
+                    'replay': {'first': dict(redirect), 'again': dict(redirect), 'state': st('R', revisions=['edit'], attachments=0, files=0)},
+                    'revoked_member': {'http': 404, 'location': '', 'revoked': True, 'state': st('E', attachments=0, files=0)}})
+        return {'status': 'PASS', 'cases': rows, 'negatives': neg}
+
+    def test_message_actions_valid_passes_and_mutations_fail(self):
+        obs = self.message_actions_obs()
+        res = c.evaluate(c.message_action_checks(obs, 0))
+        self.assertEqual({k: 'PASS' for k in res}, {k: v['status'] for k, v in res.items()}, res)
+
+        def fails(check, mutate, exitcode=0):
+            o = copy.deepcopy(obs); mutate(o)
+            r = c.evaluate(c.message_action_checks(o, exitcode))
+            self.assertEqual('FAIL', r[check]['status'], (check, r[check]))
+        fails('message_edit_cancel_unchanged', lambda o: o['cases'][0]['after_cancel'].update(revisions=['edit']))
+        fails('message_edit_saved_synced_with_files', lambda o: o['cases'][1]['after_edit'].update(edited_marker=False))
+        fails('message_edit_saved_synced_with_files', lambda o: o['cases'][2]['after_edit'].update(stored_files=0))
+        fails('message_edit_saved_synced_with_files', lambda o: o['cases'][3]['communication_center'].update(original_text_count=1))
+        for count in (0, 2):
+            fails('message_edit_saved_synced_with_files', lambda o, count=count: o['cases'][0]['communication_center'].update(edited_text_count=count))
+        fails('message_edit_saved_synced_with_files', lambda o: o['cases'][0]['after_edit'].update(download_ok=False))
+        fails('message_edit_conflict_keeps_newer_and_draft', lambda o: o['cases'][0]['conflict'].update(body=o['cases'][0]['texts'][3]))
+        fails('message_edit_conflict_keeps_newer_and_draft', lambda o: o['cases'][1]['conflict'].update(draft_kept=False))
+        fails('message_withdraw_requires_confirmation', lambda o: o['cases'][2]['unconfirmed_delete'].update(post_requests=1))
+        fails('message_withdraw_hides_text_and_files', lambda o: o['cases'][3]['after_withdraw'].update(old_file_http=200, old_file_leaked=True))
+        fails('message_withdraw_hides_text_and_files', lambda o: o['cases'][0]['after_withdraw'].update(file_link_count=1))
+        fails('message_withdraw_hides_text_and_files', lambda o: o['cases'][0]['after_withdraw'].update(revisions=['withdraw']))
+        fails('message_withdraw_hides_text_and_files', lambda o: o['cases'][1]['after_withdraw'].update(attachments=0))
+        fails('message_actions_no_browser_errors', lambda o: o['cases'][0]['browser_events'].append(
+            {'source': 'pageerror', 'name': 'Error', 'message': 'x'}))
+        fails('message_actions_no_browser_errors', lambda o: o['cases'][0].pop('browser_events'))
+        fails('message_actions_no_browser_errors', lambda o: o['cases'][2].update(server_errors=[{'status': 500}]))
+        for key in c.MESSAGE_ACTION_NEGATIVES:
+            fails('message_actions_server_negatives', lambda o, key=key: o['negatives'][key]['state'].update(body='forbidden'))
+            fails('message_actions_server_negatives', lambda o, key=key: o['negatives'].pop(key))
+            fails('message_actions_server_negatives', lambda o, key=key: o['negatives'][key].update(http=500))
+            fails('message_actions_server_negatives', lambda o, key=key: o['negatives'][key].update(http=302, location='https://example.invalid/login'))
+        for status in (500, 302, 200, None):
+            fails('message_withdraw_hides_text_and_files', lambda o, status=status: o['cases'][0]['after_withdraw'].update(old_file_http=status))
+            fails('message_actions_server_negatives', lambda o, status=status: o['negatives']['revoked_member'].update(http=status))
+        for label in ('first', 'again'):
+            fails('message_actions_server_negatives', lambda o, label=label: o['negatives']['replay'][label].update(http=500))
+            fails('message_actions_server_negatives', lambda o, label=label: o['negatives']['replay'][label].update(location='https://example.invalid/login'))
+            fails('message_actions_server_negatives', lambda o, label=label: o['negatives']['replay'][label].update(location='http://127.0.0.1:8080/login/index.php'))
+        fails('message_actions_server_negatives', lambda o: o['negatives']['replay']['state'].update(revisions=['edit', 'edit']))
+        fails('message_actions_server_negatives', lambda o: o['negatives']['revoked_member']['state'].update(revisions=['edit']))
+        fails('message_actions_server_negatives', lambda o: o['negatives'].update(reopened=False))
+        # incomplete matrix, wrong order, producer error or non-zero exit fail every check
+        for mutate in (lambda o: o['cases'].pop(), lambda o: o['cases'].reverse(), lambda o: o['cases'][0].update(texts=['a'] * 4)):
+            o = copy.deepcopy(obs); mutate(o)
+            r = c.evaluate(c.message_action_checks(o, 0))
+            self.assertTrue(all(v['status'] == 'FAIL' for k, v in r.items() if k != 'message_actions_server_negatives'), r)
+        for mutate, code in ((lambda o: o.update(error='boom'), 0), (lambda o: o.update(status='FAIL'), 0), (lambda o: None, 1)):
+            o = copy.deepcopy(obs); mutate(o)
+            r = c.evaluate(c.message_action_checks(o, code))
+            self.assertTrue(all(v['status'] == 'FAIL' for v in r.values()), r)
+        self.assertTrue(all(v['status'] == 'FAIL' for v in c.evaluate(c.message_action_checks(None, None)).values()))
+
+    def test_multiattachment_files_in_access_set_need_exact_content(self):
+        ok = 'multi-' + 'a' * 32 + '-3.txt'
+        self.assertEqual(c.expected_sha(ok), c.hashlib.sha256(c.MULTI_CONTENT[3]).hexdigest())
+        for bad in ('multi-' + 'a' * 32 + '-4.txt', 'multi-' + 'A' * 32 + '-1.txt', 'multi-' + 'a' * 31 + '-1.txt',
+                    'x-multi-' + 'a' * 32 + '-1.txt', 'multi-' + 'a' * 32 + '-1.txt.php', 'unknown.txt', '', None):
+            self.assertIsNone(c.expected_sha(bad), bad)
+        self.assertEqual(c.expected_sha('p02-compact.txt'), c.SHA['p02-compact.txt'])
+
+    def task_open_obs(self):
+        rows = []
+        for shell, width, lang in c.TASK_OPEN_CASES:
+            text = c.TASK_OPEN_TEXT[lang]
+            snap = {'task': {'status': 'new', 'revision': '1'}, 'business_log': 1, 'notifications': 0}
+            rows.append({'shell': shell, 'width': width, 'lang': lang,
+                         'language': {'installed': True, 'sample': 'X ' + text}, 'list': {'marker': 0, 'rows': 0},
+                         'first': {'status': '200', 'rows': 1},
+                         'history': {'count': 1, 'visible': True, 'html_lang': lang, 'texts': ['First MA ' + text + '\n15.11.2026 10:00']},
+                         'repeat': {'reload_status': '200', 'rows': 1},
+                         'hidden': {'before_activation': 0, 'status': '200', 'after_activation': 1},
+                         'interval': {'idle_rows': 1, 'status': '200', 'rows': 2},
+                         'concurrent': {'replies': [{'http': 200, 'result': 'recorded'}] + [{'http': 200, 'result': 'duplicate'}] * 7,
+                                        'rows': 3},
+                         'business': {'before': snap, 'after': copy.deepcopy(snap)},
+                         'row_shape': [{'actorid': 1, 'oldstatus': '', 'newstatus': '', 'details': '{}'}],
+                         'browser_events': list(ABORTED), 'server_errors': []})
+        neg = {k: {'http': code, 'rows': 0} for k, code in (('wrong_sesskey', 403), ('get', 405), ('head', 405),
+                                                              ('substituted_task', 403), ('company_task_mismatch', 403))}
+        neg.update({k: {'http': 403, 'rows': 0, 'marker': 0, 'rows_after_page': 0, 'page_http': 404}
+                    for k in ('same_company_no_access', 'other_company')})
+        neg.update({'user_substitution': {'http': 200, 'result': 'recorded', 'ok': True, 'rows': [{'actorid': 11}]},
+                    'revoked_member': {'http': 403, 'rows': 0, 'revoked': True}, 'reopened': True})
+        return {'status': 'PASS', 'cases': rows, 'negatives': neg, 'ids': {'MA': 11, 'EA': 12},
+                'readable': {'MA': True, 'EA': True, 'RA': False, 'EB': False},
+                'failure': {'status': 'failed', 'title_visible': True, 'tabs': 1, 'page_errors': [], 'rows': 0}}
+
+    def test_task_open_valid_passes_and_mutations_fail(self):
+        obs = self.task_open_obs()
+        res = c.evaluate(c.task_open_checks(obs, 0))
+        self.assertEqual({k: 'PASS' for k in res}, {k: v['status'] for k, v in res.items()}, res)
+
+        def fails(check, mutate):
+            o = copy.deepcopy(obs); mutate(o)
+            r = c.evaluate(c.task_open_checks(o, 0))
+            self.assertEqual('FAIL', r[check]['status'], (check, r[check]))
+        fails('task_open_recorded_once_in_history', lambda o: o['cases'][0]['list'].update(rows=1))
+        fails('task_open_recorded_once_in_history', lambda o: o['cases'][1]['first'].update(rows=2))
+        fails('task_open_recorded_once_in_history', lambda o: o['cases'][0]['history'].update(count=2))
+        fails('task_open_recorded_once_in_history', lambda o: o['cases'][0]['history'].update(texts=['First MA read the task']))
+        fails('task_open_recorded_once_in_history', lambda o: o['cases'][1]['history'].update(texts=['Ivan прочитал задачу']))
+        fails('task_open_recorded_once_in_history', lambda o: o['cases'][1]['history'].update(texts=['Ivan opened the task']))
+        fails('task_open_recorded_once_in_history', lambda o: o['cases'][1]['history'].update(html_lang='en'))
+        fails('task_open_recorded_once_in_history', lambda o: o['cases'][1]['language'].update(installed=False))
+        fails('task_open_deduplicated_and_concurrent', lambda o: o['cases'][0]['repeat'].update(rows=2))
+        fails('task_open_deduplicated_and_concurrent', lambda o: o['cases'][1]['interval'].update(idle_rows=2))
+        fails('task_open_deduplicated_and_concurrent', lambda o: o['cases'][0]['interval'].update(rows=1))
+        fails('task_open_deduplicated_and_concurrent', lambda o: o['cases'][0]['concurrent'].update(rows=4))
+        fails('task_open_deduplicated_and_concurrent',
+              lambda o: o['cases'][1]['concurrent']['replies'].__setitem__(1, {'http': 200, 'result': 'recorded'}))
+        fails('task_open_deduplicated_and_concurrent', lambda o: o['cases'][1]['concurrent']['replies'].pop())
+        fails('task_open_hidden_tab_and_other_user', lambda o: o['cases'][0]['hidden'].update(before_activation=1))
+        fails('task_open_hidden_tab_and_other_user', lambda o: o['cases'][1]['hidden'].update(after_activation=0))
+        fails('task_open_no_business_change', lambda o: o['cases'][0]['business']['after']['task'].update(status='inprogress'))
+        fails('task_open_no_business_change', lambda o: o['cases'][1]['business']['after'].update(notifications=1))
+        fails('task_open_no_business_change', lambda o: o['cases'][0]['row_shape'][0].update(details='{"ip":"x"}'))
+        fails('task_open_failure_keeps_card', lambda o: o['failure'].update(page_errors=['TypeError']))
+        fails('task_open_failure_keeps_card', lambda o: o['failure'].update(rows=1))
+        fails('task_open_no_browser_errors',
+              lambda o: o['cases'][0]['browser_events'].append({'source': 'pageerror', 'name': 'Error', 'message': 'x'}))
+        fails('task_open_no_browser_errors', lambda o: o['cases'][1].update(server_errors=[{'status': 500}]))
+        for key in ('wrong_sesskey', 'get', 'head', 'substituted_task', 'company_task_mismatch',
+                    'same_company_no_access', 'other_company'):
+            fails('task_open_server_negatives', lambda o, key=key: o['negatives'][key].update(rows=1))
+            fails('task_open_server_negatives', lambda o, key=key: o['negatives'].pop(key))
+        fails('task_open_server_negatives', lambda o: o['negatives']['same_company_no_access'].update(marker=1))
+        fails('task_open_server_negatives', lambda o: o['negatives']['user_substitution'].update(rows=[{'actorid': 12}]))
+        fails('task_open_server_negatives', lambda o: o['negatives']['revoked_member'].update(http=200))
+        fails('task_open_server_negatives', lambda o: o['negatives'].update(reopened=False))
+        # incomplete matrix, wrong fixture access, producer error or non-zero exit fail every check
+        for mutate, code in ((lambda o: o['cases'].pop(), 0), (lambda o: o['cases'].reverse(), 0),
+                             (lambda o: o['readable'].update(RA=True), 0), (lambda o: o.update(error='boom'), 0),
+                             (lambda o: None, 1)):
+            o = copy.deepcopy(obs); mutate(o)
+            r = c.evaluate(c.task_open_checks(o, code))
+            self.assertTrue(all(v['status'] == 'FAIL' for v in r.values()), r)
+        self.assertTrue(all(v['status'] == 'FAIL' for v in c.evaluate(c.task_open_checks(None, None)).values()))
+
+    def communication_center_obs(self):
+        ids = {'MA': 11, 'EA': 12, 'RA': 13, 'EB': 14}
+        texts = {'permission': 'Permission denied.', 'context': 'Object unavailable.', 'company': 'Company unavailable.',
+                 'state': 'Operation unavailable.', 'sesskey': 'Invalid sesskey.'}
+        def denial(kind, http=200):
+            return {'http': http, 'location': '',
+                    'url': 'http://127.0.0.1:8080/local/kbacompany/communication_center.php',
+                    'body_sha256': 'a' * 64, 'error_texts': [texts[kind]]}
+        va, sha, q, d = 15, 'f' * 64, 'q-uuid', 'd-uuid'
+        cases = []
+        for n, (shell, width, mode) in enumerate(c.COMM_CASES):
+            t = ['EA %d question' % n, 'MA %d answer @Synthetic EA' % n, 'MA %d group note' % n]
+            viewer = {'card_question': True, 'card_reply': True, 'card_reader_note': True,
+                      'download': {'http': 200, 'sha256': sha}, 'center_question': 1, 'center_join': 1,
+                      'center_composer': 0, 'center_reply_links': 0,
+                      'parts_after_reading': {'active': [11, 12], 'owners': [12], 'reads': [11, 12]}}
+            if n == len(c.COMM_CASES) - 1:
+                viewer.update(parts_after_join={'active': [11, 12, 15], 'owners': [12], 'reads': [11, 12, 15]},
+                              composer_after_join=1)
+            created = {'active': [11, 12, 13, 15], 'owners': [11], 'reads': [11, 12, 13, 15]}
+            cases.append({
+                'shell': shell, 'width': width, 'mode': mode, 'texts': t, 'file_sha256': sha, 'question': q,
+                'reply_target': {'count': 1, 'text': 'Replying to: Synthetic EA ' + t[0]},
+                'reply': {'body': t[1], 'status': 'active', 'thread': 'T', 'reply_to': q, 'authorid': 11, 'mentions': [12]},
+                'mention_notification': ['mention'],
+                'card': {'quote': ['Synthetic EA\n' + t[0]], 'events': ['Task created · Synthetic MA · 15.11 10:00'],
+                         'messages_after': 8, 'messages_before': 7, 'history_opened': 1},
+                'center': {'question': 1, 'quote': ['Synthetic EA\n' + t[0]], 'events': [],
+                           'events_oldest': ['Task created · Synthetic MA · 10:00'],
+                           'open_task': {'text': 'Open task', 'href': 'http://127.0.0.1:8080/local/kbacompany/tasks.php?uuid=A&task=T'},
+                           'reply_links': 1, 'composer': 1},
+                'viewer': viewer,
+                'denied': {label: {'center_text': False, 'card_text': False, 'download': {'http': 404, 'sha256': None},
+                                   'join_http': 200, 'join_response': denial('context' if label == 'RA' else 'company'),
+                                   'parts': {'active': [11, 12], 'owners': [12], 'reads': []}}
+                           for label in ('RA', 'EB')},
+                'direct': {'responses': [{'http': 303, 'location': 'http://127.0.0.1:8080/local/kbacompany/communication_center.php?thread='+d, 'thread': d}] * 2, 'threads': [d]},
+                'filters': {'discussions': {'task': 1, 'direct': 0}, 'messages': {'task': 0, 'direct': 1}, 'tabs': 2},
+                'group': {'created': created,
+                          'non_owner_remove': dict(denial('permission'), parts=dict(created)),
+                          'forged_sesskey': dict(denial('sesskey', 403), parts=dict(created)),
+                          'leave_task_discussion': dict(denial('state'), parts={'active': [11, 12], 'owners': [12], 'reads': []}),
+                          'remove_controls': 3, 'owner_marker': True,
+                          'after_remove': {'active': [11, 12, 15], 'owners': [11], 'reads': []},
+                          'after_owner_leave': {'active': [12, 15], 'owners': [12], 'reads': []},
+                          'new_owner_controls': 1, 'access_after': {'MA': False, 'RA': False}},
+                'browser_events': list(ABORTED), 'server_errors': []})
+        ok = {'http': 200, 'sha256': sha}
+        return {'status': 'PASS', 'ids': ids, 'viewer_id': va, 'cases': cases, 'denial_texts': texts,
+                'revocation': {'before': {'text': True, 'download': ok}, 'revoked': True,
+                               'after': {'text': False, 'download': {'http': 404, 'sha256': None}},
+                               'reopened': True, 'restored': {'text': True, 'download': ok}}}
+
+    def test_communication_center_valid_passes_and_mutations_fail(self):
+        obs = self.communication_center_obs()
+        res = c.evaluate(c.communication_center_checks(obs, 0))
+        self.assertEqual({k: 'PASS' for k in res}, {k: v['status'] for k, v in res.items()}, res)
+
+        def fails(check, mutate):
+            o = copy.deepcopy(obs); mutate(o)
+            r = c.evaluate(c.communication_center_checks(o, 0))
+            self.assertEqual('FAIL', r[check]['status'], (check, r[check]))
+        v = 'comm_task_discussion_read_by_task_viewer'
+        fails(v, lambda o: o['cases'][0]['viewer'].update(card_question=False))
+        fails(v, lambda o: o['cases'][1]['viewer'].update(card_reader_note=False))
+        fails(v, lambda o: o['cases'][0]['viewer'].update(download={'http': 404, 'sha256': None}))
+        fails(v, lambda o: o['cases'][0]['viewer'].update(download={'http': 200, 'sha256': 'e' * 64}))
+        fails(v, lambda o: o['cases'][0]['viewer'].update(center_composer=1))
+        fails(v, lambda o: o['cases'][0]['viewer'].update(center_join=0))
+        fails(v, lambda o: o['cases'][1]['viewer'].update(center_reply_links=1))
+        fails(v, lambda o: o['cases'][0]['viewer']['parts_after_reading']['active'].append(15))
+        fails(v, lambda o: o['cases'][0]['viewer']['parts_after_reading']['reads'].append(15))
+        fails(v, lambda o: o['cases'][1]['viewer']['parts_after_join']['active'].remove(15))
+        fails(v, lambda o: o['cases'][1]['viewer'].pop('composer_after_join'))
+        d = 'comm_task_discussion_denied_and_revoked'
+        for label in ('RA', 'EB'):
+            fails(d, lambda o, label=label: o['cases'][0]['denied'][label].update(center_text=True))
+            fails(d, lambda o, label=label: o['cases'][1]['denied'][label].update(card_text=True))
+            fails(d, lambda o, label=label: o['cases'][0]['denied'][label].update(download={'http': 200, 'sha256': 'f' * 64}))
+            fails(d, lambda o, label=label: o['cases'][0]['denied'][label].update(download={'http': 500, 'sha256': None}))
+            fails(d, lambda o, label=label: o['cases'][0]['denied'][label].update(join_http=303))
+            fails(d, lambda o, label=label: o['cases'][0]['denied'][label]['parts']['active'].append(o['ids'][label]))
+            fails(d, lambda o, label=label: o['cases'][0]['denied'].pop(label))
+        fails(d, lambda o: o['revocation']['after'].update(text=True))
+        fails(d, lambda o: o['revocation']['after'].update(download={'http': 200, 'sha256': 'f' * 64}))
+        fails(d, lambda o: o['revocation'].update(revoked=False))
+        fails(d, lambda o: o['revocation'].update(reopened=False))
+        fails(d, lambda o: o['revocation']['restored'].update(text=False))
+        fails(d, lambda o: o.pop('revocation'))
+        e = 'comm_task_events_inline_opened_in_history'
+        fails(e, lambda o: o['cases'][0]['card'].update(events=[]))
+        fails(e, lambda o: o['cases'][1]['center'].update(events_oldest=[]))
+        fails(e, lambda o: o['cases'][0]['card']['events'].append('Synthetic MA opened the task'))
+        fails(e, lambda o: o['cases'][0]['center']['events'].append('Opened'))
+        fails(e, lambda o: o['cases'][0]['card'].update(messages_after=9))
+        fails(e, lambda o: o['cases'][0]['card'].update(history_opened=0))
+        r = 'comm_reply_quote_and_mention'
+        fails(r, lambda o: o['cases'][0]['reply_target'].update(count=0))
+        fails(r, lambda o: o['cases'][0]['reply'].update(reply_to=''))
+        fails(r, lambda o: o['cases'][1]['reply'].update(mentions=[12, 13]))
+        fails(r, lambda o: o['cases'][1]['reply'].update(mentions=[]))
+        fails(r, lambda o: o['cases'][0].update(mention_notification=['message']))
+        fails(r, lambda o: o['cases'][0]['card'].update(quote=[]))
+        fails(r, lambda o: o['cases'][1]['center'].update(quote=['other']))
+        dc = 'comm_direct_conversation_unique'
+        fails(dc, lambda o: o['cases'][0]['direct']['responses'].__setitem__(1, {'http': 303, 'thread': 'other'}))
+        fails(dc, lambda o: o['cases'][0]['direct'].update(threads=['d-uuid', 'other']))
+        fails(dc, lambda o: o['cases'][1]['direct'].update(responses=[{'http': 303, 'thread': 'x'}] * 2, threads=['x']))
+        fails(dc, lambda o: o['cases'][0]['direct']['responses'].__setitem__(0, {'http': 200, 'thread': 'd-uuid'}))
+        for location in ('https://example.invalid/?thread=d-uuid', 'http://127.0.0.1:8080/login/index.php?thread=d-uuid',
+                         'http://127.0.0.1:8080/local/kbacompany/communication_center.php?thread=other', ''):
+            fails(dc, lambda o, location=location: o['cases'][0]['direct']['responses'].__setitem__(0,
+                {'http': 303, 'location': location, 'thread': 'd-uuid'}))
+        g = 'comm_group_remove_leave_transfer'
+        fails(g, lambda o: o['cases'][0]['group']['non_owner_remove']['parts'].update(active=[11, 12, 15]))
+        fails(g, lambda o: o['cases'][0]['group']['forged_sesskey'].update(http=303))
+        fails(g, lambda o: o['cases'][0]['group']['leave_task_discussion']['parts'].update(active=[12]))
+        fails(g, lambda o: o['cases'][1]['group'].update(remove_controls=0))
+        fails(g, lambda o: o['cases'][0]['group']['after_remove'].update(active=[11, 12, 13, 15]))
+        fails(g, lambda o: o['cases'][0]['group']['after_owner_leave'].update(owners=[15]))
+        fails(g, lambda o: o['cases'][0]['group']['after_owner_leave'].update(active=[11, 12, 15]))
+        fails(g, lambda o: o['cases'][1]['group'].update(new_owner_controls=0))
+        fails(g, lambda o: o['cases'][0]['group']['access_after'].update(RA=True))
+        f = 'comm_filters_and_open_task'
+        fails(f, lambda o: o['cases'][0]['filters'].update(discussions={'task': 1, 'direct': 1}))
+        fails(f, lambda o: o['cases'][1]['filters'].update(messages={'task': 1, 'direct': 1}))
+        fails(f, lambda o: o['cases'][0]['center'].update(open_task={'text': 'Open task', 'href': 'https://example.invalid/x'}))
+        fails(f, lambda o: o['cases'][0]['center'].update(open_task={'text': '', 'href': ''}))
+        fails(f, lambda o: o['cases'][0]['center'].update(composer=0))
+        b = 'comm_no_browser_errors'
+        fails(b, lambda o: o['cases'][0]['browser_events'].append({'source': 'pageerror', 'name': 'Error', 'message': 'x'}))
+        fails(b, lambda o: o['cases'][1].update(server_errors=[{'status': 500}]))
+        fails(b, lambda o: o['cases'][0].pop('browser_events'))
+        # incomplete matrix, missing viewer, producer error or non-zero exit fail every check
+        for mutate, code in ((lambda o: o['cases'].pop(), 0), (lambda o: o['cases'].reverse(), 0),
+                             (lambda o: o.update(viewer_id=11), 0), (lambda o: o.update(error='boom'), 0),
+                             (lambda o: o['cases'][0].update(question=''), 0), (lambda o: None, 1)):
+            o = copy.deepcopy(obs); mutate(o)
+            res = c.evaluate(c.communication_center_checks(o, code))
+            self.assertTrue(all(x['status'] == 'FAIL' for x in res.values()), res)
+        self.assertTrue(all(x['status'] == 'FAIL' for x in c.evaluate(c.communication_center_checks(None, None)).values()))
+
+    def test_comm_negative_posts_require_real_expected_denial(self):
+        for case in range(2):
+            for target in ('RA', 'EB', 'non_owner_remove', 'forged_sesskey', 'leave_task_discussion'):
+                def item(obs):
+                    row=obs['cases'][case]
+                    return row['denied'][target]['join_response'] if target in ('RA', 'EB') else row['group'][target]
+                key='comm_task_discussion_denied_and_revoked' if target in ('RA', 'EB') else 'comm_group_remove_leave_transfer'
+                for status in (500, 502, 302, 303, 307, 0, None, True):
+                    obs=self.communication_center_obs(); item(obs)['http']=status
+                    if target in ('RA','EB'):obs['cases'][case]['denied'][target]['join_http']=status
+                    self.assertEqual('FAIL',c.evaluate(c.communication_center_checks(obs,0))[key]['status'],(target,status))
+                for missing in ('http','location','url','body_sha256','error_texts'):
+                    obs=self.communication_center_obs();item(obs).pop(missing)
+                    self.assertEqual('FAIL',c.evaluate(c.communication_center_checks(obs,0))[key]['status'],(target,missing))
+                for field,value in [('location','https://example.invalid/login'),('url','https://example.invalid/'),
+                                    ('body_sha256',''),('error_texts',[]),('error_texts',['A different error']),
+                                    ('error_texts',['Please sign in'])]:
+                    obs=self.communication_center_obs();item(obs)[field]=value
+                    self.assertEqual('FAIL',c.evaluate(c.communication_center_checks(obs,0))[key]['status'],(target,field,value))
+        obs=self.communication_center_obs();obs.pop('denial_texts')
+        res=c.evaluate(c.communication_center_checks(obs,0))
+        for key in ('comm_task_discussion_denied_and_revoked','comm_group_remove_leave_transfer'):
+            self.assertEqual('FAIL',res[key]['status'])
+        obs=self.communication_center_obs()
+        obs['cases'][0]['denied']['RA']['join_response']['error_texts']=[obs['denial_texts']['permission']]
+        self.assertEqual('FAIL',c.evaluate(c.communication_center_checks(obs,0))['comm_task_discussion_denied_and_revoked']['status'])
+
     def test_required_check_names_complete(self):
         names = c.required_check_names()
         self.assertEqual(len(names), len(set(names)))
         for k in ('access_no_browser_errors', 'attachments_no_browser_errors', 'oversize_no_browser_errors', 'task_tab_run_complete', 'task_tab_mobile_tap_target_44', 'csrf_invalid_sesskey_rejected', 'revocation_preserves_history',
-                  'download_other_company_denied', 'revoke_in_open_session_denied', 'oversize_nothing_stored', 'moodle_install'):
+                  'download_other_company_denied', 'revoke_in_open_session_denied', 'oversize_nothing_stored', 'moodle_install',
+                  'message_withdraw_hides_text_and_files', 'message_actions_server_negatives',
+                  'task_open_recorded_once_in_history', 'task_open_server_negatives'):
             self.assertIn(k, names)
 
     def test_oversize_requires_sent_request_effective_limit_and_nothing_stored(self):

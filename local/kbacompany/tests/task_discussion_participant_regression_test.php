@@ -38,6 +38,107 @@ final class task_discussion_participant_regression_test extends \advanced_testca
         return compact('admin', 'company', 'other', 'assignee', 'reviewer', 'unrelated', 'task');
     }
 
+    public function test_task_author_edits_and_withdraws_canonical_message(): void {
+        global $DB;
+        $f = $this->fixture();
+        $this->setUser($f['reviewer']);
+        $actor = (int)$f['reviewer']->id;
+        $uuid = task_service::post_discussion_message($f['company'], $actor, $f['task'], 'Original');
+        task_service::change_discussion_message($f['company'], $actor, $f['task'], $uuid,
+            'edit', 'Corrected', hash('sha256', "Original\nactive"));
+        $context = task_service::discussion_context($f['company'], $actor, $f['task']);
+        $this->assertSame('Corrected', $context['messages'][0]['body']);
+        $this->assertTrue($context['messages'][0]['edited']);
+        $canonical = communication_service::context($f['company'], $actor, $context['thread_uuid'], 'all');
+        $this->assertSame('Corrected', $canonical['messages'][0]['body']);
+        task_service::change_discussion_message($f['company'], $actor, $f['task'], $uuid,
+            'withdraw', '', hash('sha256', "Corrected\nactive"));
+        $this->assertFalse(communication_service::can_view_message($f['company'], $actor, $uuid));
+        $this->assertSame('withdrawn', $DB->get_field('local_kbacompany_commmsg', 'status', ['uuid'=>$uuid]));
+        $this->assertEquals(2, $DB->count_records('local_kbacompany_commrev', ['messageuuid'=>$uuid]));
+    }
+
+    public function test_task_message_changes_reject_wrong_company_non_author_and_stale_revision(): void {
+        global $DB;
+        $f = $this->fixture();
+        $this->setUser($f['reviewer']);
+        $actor = (int)$f['reviewer']->id;
+        $uuid = task_service::post_discussion_message($f['company'], $actor, $f['task'], 'Original');
+        $hash = hash('sha256', "Original\nactive");
+        foreach (['edit', 'withdraw'] as $operation) {
+            // Other company, another task participant (not the author), a company user without task access, stale revision.
+            foreach ([[$f['other'], $actor, $hash], [$f['company'], (int)$f['assignee']->id, $hash],
+                    [$f['company'], (int)$f['unrelated']->id, $hash],
+                    [$f['company'], $actor, str_repeat('0', 64)]] as $attempt) {
+                try {
+                    task_service::change_discussion_message($attempt[0], $attempt[1], $f['task'],
+                        $uuid, $operation, 'Forbidden', $attempt[2]);
+                    $this->fail('Unauthorised or stale mutation succeeded');
+                } catch (\moodle_exception $e) {
+                    $this->assertNotEmpty($e->errorcode);
+                }
+                $this->assertSame('Original', $DB->get_field('local_kbacompany_commmsg', 'body', ['uuid'=>$uuid]));
+                $this->assertSame('active', $DB->get_field('local_kbacompany_commmsg', 'status', ['uuid'=>$uuid]));
+                $this->assertEquals(0, $DB->count_records('local_kbacompany_commrev', ['messageuuid'=>$uuid]));
+            }
+        }
+    }
+
+    public function test_task_cannot_mutate_message_from_another_thread(): void {
+        global $DB;
+        $f = $this->fixture();
+        $this->setUser($f['reviewer']);
+        $actor = (int)$f['reviewer']->id;
+        task_service::post_discussion_message($f['company'], $actor, $f['task'], 'Task discussion');
+        $thread = communication_service::create_thread($f['company'], $actor, [
+            'threadtype'=>'direct', 'title'=>'', 'participants'=>[(int)$f['assignee']->id]]);
+        $foreign = communication_service::send_message($f['company'], $actor, $thread, 'Private message');
+        try {
+            task_service::change_discussion_message($f['company'], $actor, $f['task'], $foreign,
+                'withdraw', '', hash('sha256', "Private message\nactive"));
+            $this->fail('Cross-thread mutation succeeded');
+        } catch (\moodle_exception $e) {
+            $this->assertSame('communication_permission', $e->errorcode);
+        }
+        $this->assertSame('active', $DB->get_field('local_kbacompany_commmsg', 'status', ['uuid'=>$foreign]));
+    }
+
+    public function test_task_message_controls_and_failed_edit_preserve_revision(): void {
+        $f = $this->fixture();
+        $this->setUser($f['reviewer']);
+        $actor = (int)$f['reviewer']->id;
+        task_service::post_discussion_message($f['company'], $actor, $f['task'], 'Original');
+        $context = task_service::discussion_context($f['company'], $actor, $f['task']);
+        $message = $context['messages'][0];
+        $renderer = new \ReflectionMethod(\local_kbacompany\local\task_ui_service::class, 'discussion_message');
+        $renderer->setAccessible(true);
+        $task = ['uuid'=>$f['task'], 'revision'=>1];
+        $render = function(array $msg, bool $canpost = true, array $values = []) use ($renderer, $f, $task): string {
+            return $renderer->invoke(null, $msg, $f['company'], $task, $canpost, 'discussion', $values);
+        };
+        $html = $render($message);
+        $this->assertStringContainsString('value="discussionedit"', $html);
+        $this->assertStringContainsString('value="discussionwithdraw"', $html);
+        $this->assertStringContainsString('name="confirmwithdraw"', $html);
+        $this->assertStringContainsString('name="sesskey"', $html);
+        $this->assertStringNotContainsString('value="discussionedit"', $render($message, false));
+        $other = $message;
+        $other['author_id'] = (int)$f['assignee']->id;
+        $this->assertStringNotContainsString('value="discussionwithdraw"', $render($other));
+        $draft = ['discussion_edit'=>['uuid'=>$message['uuid'], 'body'=>'<script>draft</script>',
+            'expectedhash'=>str_repeat('a', 64)]];
+        $html = $render($message, true, $draft);
+        $this->assertStringContainsString('&lt;script&gt;draft&lt;/script&gt;', $html);
+        $this->assertStringContainsString(str_repeat('a', 64), $html);
+        $withdrawn = $message;
+        $withdrawn['status'] = 'withdrawn';
+        $withdrawn['attachments'] = [['label'=>'private-file', 'value'=>'secret', 'url'=>'https://example.invalid/secret']];
+        $html = $render($withdrawn);
+        $this->assertStringNotContainsString('Original', $html);
+        $this->assertStringNotContainsString('private-file', $html);
+        $this->assertStringNotContainsString('value="discussionedit"', $html);
+    }
+
     private function assert_denied_without_message(callable $operation): void {
         global $DB;
         $before = $DB->count_records('local_kbacompany_commmsg');

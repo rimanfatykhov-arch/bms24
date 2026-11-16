@@ -7105,3 +7105,15 @@ body.bms-comm-page .bms-comm2 .bms-comm5-delete form p { margin:0; }
     body#page-local-kbacompany-tasks .kba-bms-topbar__end {max-width:100%;}
     body#page-local-kbacompany-tasks .kba-bms-topbar__end {flex-wrap:wrap;margin-left:auto;}
 }
+
+/* Communication Center cleanup 2026-11-15: replies, task events in discussions, group members. */
+.bms-comm2-quote, .bms-tui-message-quote {margin:.25rem 0 .5rem;padding:.4rem .7rem;border-left:3px solid var(--bms-primary,#1777B5);background:var(--bms-surface-muted,#E4F2FB);border-radius:.35rem;font-size:.9rem;line-height:1.4;overflow-wrap:anywhere;}
+.bms-comm2-quote strong, .bms-tui-message-quote strong {display:block;font-size:.85rem;}
+.bms-comm2-event, .bms-tui-discussion-event {margin:.5rem auto;padding:.35rem .75rem;max-width:42rem;text-align:center;font-size:.85rem;line-height:1.45;color:var(--bms-muted,#596c62);background:var(--bms-surface-muted,#ECF7F3);border-radius:1rem;overflow-wrap:anywhere;}
+.bms-comm2-event-reason, .bms-tui-event-reason {margin-top:.2rem;font-style:italic;}
+.bms-comm2-reply-target, .bms-tui-reply-target {display:flex;flex-wrap:wrap;gap:.5rem;align-items:center;margin-bottom:.5rem;font-size:.9rem;}
+.bms-comm2-reply-target .bms-comm2-quote, .bms-tui-reply-target .bms-tui-message-quote {flex:1 1 16rem;margin:0;}
+.bms-comm2-feed-context-link {margin-left:.5rem;font-weight:600;white-space:nowrap;}
+.bms-comm2-person-role {font-size:.8rem;color:var(--bms-muted,#596c62);}
+.bms-comm2-leave {margin-top:.75rem;}
+.bms-comm2-join p {margin:0 0 .5rem;}
