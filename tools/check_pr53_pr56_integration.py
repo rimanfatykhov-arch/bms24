@@ -51,15 +51,24 @@ def check(root=ROOT):
     # See docs/reconcile/DAILY_REPORTS_R0_SOURCE_PRESERVATION.md.
     reviewed_followup['local/kbacompany/lang/en/local_kbacompany.php'] = 'dcbc042a4602de76173add94c8b936668a568f3681f0ca41291ead1f52afffde'
     reviewed_followup['local/kbacompany/lang/ru/local_kbacompany.php'] = '53feac38fc2986c052d52868e5dcac147f973daf2a292af818fe7752d76468c6'
-    # Communication Center E2 (after published #120): exact reviewed updates, see docs/reconcile/COMMUNICATION_CENTER_E2_SOURCE_PRESERVATION.md.
+    # Daily reports R1 (ADR-0009): saved report strings appended after the R0 block; see DAILY_REPORTS_R1_SCHEMA.md.
+    reviewed_followup['local/kbacompany/lang/en/local_kbacompany.php'] = 'efe44c09bfa2559779ad69aca6645e9a1c3a56477a858041fb5826184f452a02'
+    reviewed_followup['local/kbacompany/lang/ru/local_kbacompany.php'] = 'f661b9d42a53e6b78020d352fbed6f0ea4ccad46d11596782e466895b1840208'
+    # Daily reports R2 (ADR-0009): review strings appended after R1; two notification kinds added to the canonical
+    # Communication Center allowlist only. See docs/reconcile/DAILY_REPORTS_R2_REVIEW.md.
+    reviewed_followup['local/kbacompany/lang/en/local_kbacompany.php'] = 'bc4d02332d0e930526ca7d16cd8de6a394886ab172f8a0ec6afb036be393fd69'
+    reviewed_followup['local/kbacompany/lang/ru/local_kbacompany.php'] = 'bb64599ec5f4ed72c875d2a9f37bcf077344173e2c968530d8eff151ac4c185c'
+    reviewed_followup['local/kbacompany/classes/local/communication_service.php'] = '877ef95b6afc40797a7bbb19522d49d1c93bf0bac04cf5a1bc2d65df44eec3e6'
+    # Communication Center E2 (after daily reports R2): exact reviewed updates, see docs/reconcile/COMMUNICATION_CENTER_E2_SOURCE_PRESERVATION.md.
     reviewed_followup.update({
-        'local/kbacompany/classes/local/communication_service.php': 'e5ddad56dc6918ebf976f92d5482eacb56ea8f601603dcf02e6ac4acd6d2a762',
-        'local/kbacompany/lang/en/local_kbacompany.php': '2f54390d6eac9fc11fd0f19f47f36e85804993ac9eaa5b5fc6b864f47f531be6',
-        'local/kbacompany/lang/ru/local_kbacompany.php': 'e93d69489799d038c3bf80d36fc00f65aa383f7e41692bcd5cb1bc6b12348144',
+        'local/kbacompany/classes/local/communication_service.php': '7433c0f6d21133e38de79f05da131daafda7bc245769225d973b8bdf69bf177a',
+        'local/kbacompany/lang/en/local_kbacompany.php': '313dacec7726f2052466bb56c956411b31b5b9d28e6267aed422130d72df5e41',
+        'local/kbacompany/lang/ru/local_kbacompany.php': '347f6b5b8f66b2c5b089a423ef1633730349f70c04bd41093df8c8aeeb883708',
     })
     reviewed_metadata={'AGENTS.md','docs/00_MASTER_CONTEXT.md'}
     for name, expected in plan['unchanged_schema_hashes'].items():
-        target = {'local/kbacompany/db/install.xml': '5d61fb813ca0e1da1ab67db808b5a1da321cadfccef3e2c499e8dee279f5e576'}.get(name, expected)
+        # ADR-0009 R1 appends five additive daily report tables; every earlier table definition is unchanged.
+        target = {'local/kbacompany/db/install.xml': '06a60b36d0d5a4dfc86924bc43819a0d7b2c6fd054888639d3363fbec5979845'}.get(name, expected)
         if digest(root/name)!=target:
             errors.append('shared schema/helper changed: '+name)
     for row in plan['rows']:
@@ -74,7 +83,7 @@ def check(root=ROOT):
         errors.append('one historical0902 release note was lost')
     upgrade=(root/'local/kbacompany/db/upgrade.php').read_text(encoding='utf-8')
     versions=[int(v) for v in re.findall(r'upgrade_plugin_savepoint\(true,\s*(\d+)',upgrade)]
-    if len(versions)!=483 or versions!=sorted(set(versions)) or versions[-1]!=2026111100:
+    if len(versions)!=485 or versions!=sorted(set(versions)) or versions[-3:]!=[2026111100,2026111600,2026111601]:
         errors.append('merged upgrade chronology/identity changed')
     driver=(root/'tools/tests/moodle_acceptance.php').read_text(encoding='utf-8')
     for ref in [plan['pr53_sha'],plan['pr56_sha']]:

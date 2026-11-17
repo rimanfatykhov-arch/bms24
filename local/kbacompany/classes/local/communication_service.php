@@ -16,7 +16,8 @@ class communication_service {
     public const CONTEXT_KINDS = ['company', 'task', 'project', 'process', 'document', 'goal', 'statistic',
         'kbaelement', 'improvement', 'meeting', 'battleplan'];
     public const NOTIFICATION_KINDS = ['thread_invite', 'message', 'mention', 'task_created',
-        'calendar_day', 'calendar_meeting_hour', 'calendar_task_due', 'calendar_checkpoint_tomorrow', 'bp_decision'];
+        'calendar_day', 'calendar_meeting_hour', 'calendar_task_due', 'calendar_checkpoint_tomorrow', 'bp_decision',
+        'dailyreport_submitted', 'dailyreport_decision'];
     public const ATTACHMENT_KINDS = ['document', 'moodlefile', 'url', 'external'];
     /**
      * Object kinds whose single canonical discussion is readable by everyone allowed to open the object.

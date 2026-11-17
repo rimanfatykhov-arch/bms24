@@ -6239,5 +6239,22 @@ function xmldb_local_kbacompany_upgrade(int $oldversion): bool {
         upgrade_plugin_savepoint(true, 2026111100, 'local', 'kbacompany');
     }
 
+    // ADR-0009 R1: additive daily report tables (report, versions, linked tasks, decisions, journal).
+    // Created from install.xml so fresh install and upgrade share one definition. No data backfill.
+    if ($oldversion < 2026111600) {
+        foreach (['local_kbacompany_dreport', 'local_kbacompany_dreportver', 'local_kbacompany_dreportlink',
+                'local_kbacompany_dreportrev', 'local_kbacompany_dreportlog'] as $name) {
+            if (!$dbman->table_exists($name)) {
+                $dbman->install_one_table_from_xmldb_file(__DIR__ . '/install.xml', $name);
+            }
+        }
+        upgrade_plugin_savepoint(true, 2026111600, 'local', 'kbacompany');
+    }
+
+    // ADR-0009 R2: registers the daily report message providers; version identity only, no DDL or data change.
+    if ($oldversion < 2026111601) {
+        upgrade_plugin_savepoint(true, 2026111601, 'local', 'kbacompany');
+    }
+
     return true;
 }

@@ -1,0 +1,3 @@
+# RC29 candidate build2026111601 (not released)
+
+ADR-0009 R2: manager review of saved daily reports — decision per version (accept with rating positive / negative / without rating, return with reason), rating change and revoked acceptance as superseding rows, rework and correction as new versions, administrator reassignment, notifications through the Communication Center and Moodle messages. Version step only registers the two message providers; no DDL. Still behind `local_kbacompany/dailyreports_enabled` (default off). Pairs with Corporate 2026111100. HOLD until CI, Moodle PHPUnit, dual-engine upgrade and browser acceptance; never deployed by this change.

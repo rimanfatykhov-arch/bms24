@@ -3,10 +3,10 @@
 Bounded review of the protected files changed by E2. It is **not** runtime acceptance, owner approval, or permission
 to publish.
 
-Exact before/after LF-normalized SHA256 values: `communication-center-e2-source-preservation.json`. Base: `main`
-`9736452` (= published #120 on #114). `before` of each file equals the previous reviewed `after`:
-`communication_service.php` — the Communication Center cleanup follow-up; both lang files — the daily reports R0
-follow-up (#120). Chain: PR102 → #110 → #113 → cleanup (#114) → R0 (#120) → E2; no link is reset.
+Exact before/after LF-normalized SHA256 values: `communication-center-e2-source-preservation.json`. Base: current
+`main` after daily reports R1/R2 (#118/#119, merged into this branch). `before` of each file equals the latest reviewed
+`after` over PR102 and every follow-up in `FOLLOWUPS` order (for all three files that is the R2 follow-up).
+Chain: PR102 → #110 → #113 → cleanup (#114) → R0 (#120) → R1 → R2 → E2; no link is reset.
 
 | File | Intentional change | Preservation assessment |
 | --- | --- | --- |
@@ -17,9 +17,9 @@ follow-up (#120). Chain: PR102 → #110 → #113 → cleanup (#114) → R0 (#120
 Gate changes: one more exact-hash `reviewed_followup` entry in `tools/check_pr53_pr56_integration.py`; the evidence file
 added to `FOLLOWUPS` in `tools/tests/test_pr102_source_preservation.py` (chain must link, every reviewed path still
 rejects an unreviewed edit). `tools/tests/test_dailyreport_source_preservation.py` splits at the new E2 marker: the
-published #120 file must be byte-identical up to it (`R0_AFTER` hash), the E2 block must be exactly the 6 listed keys
+R2 file (main after #119) must be byte-identical up to it (`R2_AFTER` hash), the E2 block must be exactly the 6 listed keys
 with no override of any earlier key; the mutation list gains an E2 key override. No path exemption, skipped checker,
 manifest, schema or migration change.
 
-Merge note: R1/R2 daily reports (#118/#119) also append lang strings and gate entries. Whichever lands second rebases and
-re-chains its lang `before` on the other's `after`.
+Merge note: R1/R2 (#118/#119) landed first; `origin/main` was merged into this branch (no rebase), the E2 lang block was
+re-appended after the R2 block and every hash re-chained on R2.

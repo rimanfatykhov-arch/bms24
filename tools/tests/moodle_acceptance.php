@@ -482,7 +482,11 @@ if ($fresh) {
             'membership_revocation_test', 'pr48_tenant_isolation_test',
             'task_manager_workspace1853_test', 'task_manager_access_regression_test',
             // ADR-0009 R0: daily reports navigation and the updated recurring-route order contract.
-            'bms_daily_reports_navigation_test', 'bms_recurring_navigation_test'];
+            'bms_daily_reports_navigation_test', 'bms_recurring_navigation_test',
+            // ADR-0009 R1: saved drafts, idempotent immutable submissions, snapshots, reviewer, isolation.
+            'daily_report_store_service_test', 'daily_report_service_test',
+            // ADR-0009 R2: version-bound decisions, ratings, rework, reassignment, no self review.
+            'daily_report_review_service_test'];
     }
     foreach ($focused as $test) {
         if ($code !== 0) { $report['phpunit'][$test] = 'NOT RUN'; continue; }
