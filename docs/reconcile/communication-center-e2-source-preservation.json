@@ -1,0 +1,24 @@
+{
+  "scope": "exact intentional source updates; not runtime or release acceptance",
+  "base_sha": "9736452cd91145f3bfd6467cfecfca1ba7ceadce",
+  "normalization": "CRLF to LF only",
+  "previous_evidence": "communication_service.php after communication-center-cleanup; lang after daily-reports-r0 (#120)",
+  "change": "Communication Center E2: battleplan discussion kind (readable by plan viewers, Q9); 6 RU/EN strings appended",
+  "files": [
+    {
+      "path": "local/kbacompany/classes/local/communication_service.php",
+      "before_sha256_lf": "ecc24db60b9dacfd66be77ec7664895ef34e67b476f34387d656cfe07004e41d",
+      "after_sha256_lf": "e5ddad56dc6918ebf976f92d5482eacb56ea8f601603dcf02e6ac4acd6d2a762"
+    },
+    {
+      "path": "local/kbacompany/lang/en/local_kbacompany.php",
+      "before_sha256_lf": "dcbc042a4602de76173add94c8b936668a568f3681f0ca41291ead1f52afffde",
+      "after_sha256_lf": "2f54390d6eac9fc11fd0f19f47f36e85804993ac9eaa5b5fc6b864f47f531be6"
+    },
+    {
+      "path": "local/kbacompany/lang/ru/local_kbacompany.php",
+      "before_sha256_lf": "53feac38fc2986c052d52868e5dcac147f973daf2a292af818fe7752d76468c6",
+      "after_sha256_lf": "e93d69489799d038c3bf80d36fc00f65aa383f7e41692bcd5cb1bc6b12348144"
+    }
+  ]
+}

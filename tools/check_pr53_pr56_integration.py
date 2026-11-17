@@ -51,6 +51,12 @@ def check(root=ROOT):
     # See docs/reconcile/DAILY_REPORTS_R0_SOURCE_PRESERVATION.md.
     reviewed_followup['local/kbacompany/lang/en/local_kbacompany.php'] = 'dcbc042a4602de76173add94c8b936668a568f3681f0ca41291ead1f52afffde'
     reviewed_followup['local/kbacompany/lang/ru/local_kbacompany.php'] = '53feac38fc2986c052d52868e5dcac147f973daf2a292af818fe7752d76468c6'
+    # Communication Center E2 (after published #120): exact reviewed updates, see docs/reconcile/COMMUNICATION_CENTER_E2_SOURCE_PRESERVATION.md.
+    reviewed_followup.update({
+        'local/kbacompany/classes/local/communication_service.php': 'e5ddad56dc6918ebf976f92d5482eacb56ea8f601603dcf02e6ac4acd6d2a762',
+        'local/kbacompany/lang/en/local_kbacompany.php': '2f54390d6eac9fc11fd0f19f47f36e85804993ac9eaa5b5fc6b864f47f531be6',
+        'local/kbacompany/lang/ru/local_kbacompany.php': 'e93d69489799d038c3bf80d36fc00f65aa383f7e41692bcd5cb1bc6b12348144',
+    })
     reviewed_metadata={'AGENTS.md','docs/00_MASTER_CONTEXT.md'}
     for name, expected in plan['unchanged_schema_hashes'].items():
         target = {'local/kbacompany/db/install.xml': '5d61fb813ca0e1da1ab67db808b5a1da321cadfccef3e2c499e8dee279f5e576'}.get(name, expected)

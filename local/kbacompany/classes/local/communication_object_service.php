@@ -95,6 +95,16 @@ class communication_object_service {
             $title = (string)$row->title;
             if ($title === '') { $title = (string)$row->code; }
             $url = new \moodle_url('/local/kbacompany/deviations.php', ['uuid' => $companyuuid, 'deviation' => $objectuuid]);
+        } else if ($kind === 'battleplan') {
+            // The plan read rule decides; inaccessible and non-existent plans stay indistinguishable.
+            try {
+                $target = battle_plan_service::discussion_target($companyuuid, $actor, $objectuuid);
+            } catch (\moodle_exception $e) {
+                self::fail();
+            }
+            $title = (string)$target['title'];
+            $url = new \moodle_url('/local/kbacompany/battle_plan.php', ['uuid' => $companyuuid, 'plan' => $objectuuid,
+                'view' => 'detail', 'tab' => 'discussion']);
         } else if ($kind === 'kbaelement') {
             // Learning elements are resolved by their existing task provider. No raw DB access is exposed here.
             try {

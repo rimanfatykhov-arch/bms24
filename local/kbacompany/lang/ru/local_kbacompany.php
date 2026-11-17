@@ -9724,3 +9724,11 @@ $string['dailyreports_tab_my'] = 'Мой отчёт';
 $string['dailyreports_button'] = 'Отчёт за день';
 $string['dailyreports_nav_short'] = 'Отчёты';
 $string['dailyreports_button_short'] = 'Отчёт';
+
+// Communication Center E2 (2026-11-16): Battle Plan discussion (Q9).
+$string['bpu_tab_discussion'] = 'Обсуждение';
+$string['bpu_discussion_empty'] = 'Сообщений пока нет. Начните обсуждение этого плана.';
+$string['bpu_discussion_readonly'] = 'Вы можете читать обсуждение плана. Писать в нём могут участники плана и руководители с правом изменять план.';
+$string['bpu_discussion_reader'] = 'Вы видите обсуждение, потому что вам доступен план. Ваше сообщение добавит вас в участники обсуждения.';
+$string['communication_object_battleplan'] = 'Боевой план';
+$string['communicationcenter_openplan'] = 'Открыть план';

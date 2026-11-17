@@ -14,16 +14,17 @@ class communication_service {
     public const THREAD_TYPES = ['direct', 'group', 'object'];
     public const THREAD_STATUSES = ['active', 'archived'];
     public const CONTEXT_KINDS = ['company', 'task', 'project', 'process', 'document', 'goal', 'statistic',
-        'kbaelement', 'improvement', 'meeting'];
+        'kbaelement', 'improvement', 'meeting', 'battleplan'];
     public const NOTIFICATION_KINDS = ['thread_invite', 'message', 'mention', 'task_created',
         'calendar_day', 'calendar_meeting_hour', 'calendar_task_due', 'calendar_checkpoint_tomorrow', 'bp_decision'];
     public const ATTACHMENT_KINDS = ['document', 'moodlefile', 'url', 'external'];
     /**
      * Object kinds whose single canonical discussion is readable by everyone allowed to open the object.
-     * Owner decision 2026-11-15: a task discussion is one conversation for all task viewers.
+     * Owner decisions: a task discussion is one conversation for all task viewers (Q1, 2026-11-15) and a Battle Plan
+     * discussion for all plan viewers (Q9, 2026-11-16).
      * Writing still requires explicit participation; other kinds stay participant-scoped.
      */
-    public const VIEWER_READ_KINDS = ['task'];
+    public const VIEWER_READ_KINDS = ['task', 'battleplan'];
 
     public static function contract(): array {
         $contract = [
@@ -52,6 +53,7 @@ class communication_service {
                 'direct_conversation_is_unique_per_pair',
                 'group_members_may_leave_and_owner_may_remove',
                 'inline_mentions_resolve_only_active_participants',
+                'battle_plan_discussion_is_readable_by_plan_viewers_and_never_changes_the_plan',
             ],
         ];
         $contract['schema_hash_algorithm'] = 'sha256';

@@ -23,6 +23,12 @@ COMM_PREFIXES=(b'communication_',b'communicationcenter_',b'taskcenter_discussion
 R0_MARKER=b'\n// Issue #106 R0: daily reports entry point (navigation and names only, no schema).\n'
 R0_KEYS=[b'dailyreports_nav',b'dailyreports_tabs',b'dailyreports_tab_my',b'dailyreports_button',
          b'dailyreports_nav_short',b'dailyreports_button_short']
+E2_MARKER=b'\n// Communication Center E2 (2026-11-16): Battle Plan discussion (Q9).\n'
+E2_KEYS=[b'bpu_tab_discussion',b'bpu_discussion_empty',b'bpu_discussion_readonly',b'bpu_discussion_reader',
+         b'communication_object_battleplan',b'communicationcenter_openplan']
+_R0=json.loads((ROOT/'docs/reconcile/daily-reports-r0-source-preservation.json').read_text(encoding='utf-8'))
+R0_AFTER={lang:next(r['after_sha256_lf'] for r in _R0['files'] if r['path']==f'local/kbacompany/lang/{lang}/local_kbacompany.php')
+          for lang in ('en','ru')}
 _COMM=json.loads((ROOT/'docs/reconcile/communication-center-cleanup-source-preservation.json').read_text(encoding='utf-8'))
 COMM_AFTER={lang:next(r['after_sha256_lf'] for r in _COMM['files'] if r['path']==f'local/kbacompany/lang/{lang}/local_kbacompany.php')
             for lang in PUBLISHED}
@@ -46,6 +52,9 @@ class Preservation(unittest.TestCase):
             r0=None
             if comm is not None and R0_MARKER in comm:
                 comm,r0=comm.split(R0_MARKER)
+            e2=None
+            if r0 is not None and E2_MARKER in r0:
+                r0,e2=r0.split(E2_MARKER)
             if comm is not None:
                 # The #113 file (published prefix + day-summary block) is byte-identical up to the next marker.
                 self.assertEqual(DAY_AFTER[lang],hashlib.sha256(prefix+DAY_MARKER+day).hexdigest())
@@ -58,6 +67,11 @@ class Preservation(unittest.TestCase):
                 self.assertEqual(COMM_AFTER[lang],hashlib.sha256(prefix+DAY_MARKER+day+COMM_MARKER+comm).hexdigest())
                 self.assertEqual(R0_KEYS,keys(r0))
                 self.assertFalse(set(R0_KEYS)&set(keys(prefix+day+comm)))
+            if e2 is not None:
+                # The published #120 file (… + R0 block) is byte-identical up to the E2 marker.
+                self.assertEqual(R0_AFTER[lang],hashlib.sha256(prefix+DAY_MARKER+day+COMM_MARKER+comm+R0_MARKER+r0).hexdigest())
+                self.assertEqual(E2_KEYS,keys(e2))
+                self.assertFalse(set(E2_KEYS)&set(keys(prefix+day+comm+r0)))
 
     def test_exact_candidate_passes(self): self.assertEqual([],gate.check(ROOT))
 
@@ -67,7 +81,8 @@ class Preservation(unittest.TestCase):
             path=ROOT/f'local/kbacompany/lang/{lang}/local_kbacompany.php'
             for mutation in [lambda b:b+b'\n// unexpected',lambda b:b.replace(b'dailyreport_title',b'overridden_key',1),
                              lambda b:b.replace(b'communication_reply',b'overridden_key',1),
-                             lambda b:b.replace(b'dailyreports_button',b'dailyreports_other',1)]:
+                             lambda b:b.replace(b'dailyreports_button',b'dailyreports_other',1),
+                             lambda b:b.replace(b'communicationcenter_openplan',b'overridden_key',1)]:
                 changed=hashlib.sha256(mutation(path.read_bytes().replace(b'\r\n',b'\n'))).hexdigest()
                 with patch.object(gate,'digest',side_effect=lambda p: changed if p==path else original(p)):
                     self.assertIn('parent source lost: '+path.relative_to(ROOT).as_posix(),gate.check(ROOT))

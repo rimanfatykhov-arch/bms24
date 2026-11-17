@@ -258,7 +258,8 @@ class communication_center_ui_service {
             $contextline = s($thread['context']['label'] . ' · ' . $thread['context']['title']);
             if ((string)$thread['context']['url'] !== '') {
                 $contextline .= ' ' . \html_writer::link(new \moodle_url($thread['context']['url']),
-                    s(self::tr($thread['context']['kind'] === 'task' ? 'communicationcenter_opentask' : 'communication_opencontext')),
+                    s(self::tr($thread['context']['kind'] === 'task' ? 'communicationcenter_opentask' :
+                        ($thread['context']['kind'] === 'battleplan' ? 'communicationcenter_openplan' : 'communication_opencontext'))),
                     ['class' => 'bms-comm2-feed-context-link']);
             }
             $body .= \html_writer::div($contextline, 'bms-comm2-feed-context');

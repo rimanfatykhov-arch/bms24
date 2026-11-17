@@ -853,6 +853,101 @@ class ContractTest(unittest.TestCase):
                 res = c.evaluate(c.daily_reports_nav_checks(obs, code))
                 self.assertTrue(all(v['status'] == 'FAIL' for v in res.values()))
 
+    def plan_discussion_obs(self):
+        ids = {'MA': 11, 'EA': 12, 'RA': 13, 'EB': 14, 'VA': 15}
+        sha = 'f' * 64
+        cases = []
+        for n, (shell, width, mode) in enumerate(c.PLAN_CASES):
+            t = ['EA %d plan question' % n, 'VA %d plan answer' % n]
+            reader = {'card_question': True, 'card_answer': True, 'card_note': True, 'download': {'http': 200, 'sha256': sha},
+                      'center_question': 1, 'center_join': 1, 'center_composer': 0,
+                      'open_plan': {'text': 'Open plan',
+                                    'href': 'http://127.0.0.1:8080/local/kbacompany/battle_plan.php?uuid=A&plan=P&view=detail&tab=discussion'},
+                      'parts_after_reading': {'active': [12, 15], 'reads': [12, 15]}}
+            if n == len(c.PLAN_CASES) - 1:
+                reader.update(parts_after_join={'active': [11, 12, 15], 'reads': [11, 12, 15]}, composer_after_join=1)
+            cases.append({'shell': shell, 'width': width, 'mode': mode, 'texts': t, 'file_sha256': sha, 'question': 'q-%d' % n,
+                          'tab_link': 1, 'card_owner': {'question': 1},
+                          'reply_target': {'count': 1, 'text': 'Replying to: Synthetic EA ' + t[0]},
+                          'reply': {'body': t[1], 'status': 'active', 'thread': 'T', 'reply_to': 'q-%d' % n, 'authorid': 15, 'mentions': []},
+                          'card_quote': ['Synthetic EA\n' + t[0]], 'reader': reader,
+                          'denied': {label: {'card_text': False, 'center_text': False, 'download': {'http': 404, 'sha256': None},
+                                             'post_http': 303, 'join_http': 200, 'parts': {'active': [12, 15], 'reads': []},
+                                             'messages': 4 + n * 2} for label in ('RA', 'EB')},
+                          'forged': {'http': 200, 'messages': 4 + n * 2}, 'messages_before_refusals': 4 + n * 2,
+                          'browser_events': list(ABORTED), 'server_errors': []})
+        snap = {'phase': 'snapshot', 'plan': {'status': 'draft', 'userid': 12, 'reviewerid': 15, 'observerid': 0, 'timemodified': 1,
+                                              'approvedby': 0, 'submittedat': 0, 'approvedat': 0, 'closedat': 0}, 'reviews': 0}
+        ok = {'http': 200, 'sha256': sha}
+        return {'status': 'PASS', 'ids': ids, 'cases': cases, 'plan_before': snap, 'plan_after': copy.deepcopy(snap),
+                'revocation': {'before': {'text': True, 'download': ok}, 'revoked': True,
+                               'after': {'text': False, 'download': {'http': 404, 'sha256': None}},
+                               'reopened': True, 'restored': {'text': True, 'download': ok}}}
+
+    def test_plan_discussion_valid_passes_and_mutations_fail(self):
+        obs = self.plan_discussion_obs()
+        res = c.evaluate(c.plan_discussion_checks(obs, 0))
+        self.assertEqual({k: 'PASS' for k in res}, {k: v['status'] for k, v in res.items()}, res)
+
+        def fails(check, mutate):
+            o = copy.deepcopy(obs); mutate(o)
+            r = c.evaluate(c.plan_discussion_checks(o, 0))
+            self.assertEqual('FAIL', r[check]['status'], (check, r[check]))
+        rt = 'plan_discussion_card_and_center'
+        fails(rt, lambda o: o['cases'][0].update(tab_link=0))
+        fails(rt, lambda o: o['cases'][1]['card_owner'].update(question=0))
+        fails(rt, lambda o: o['cases'][0]['reply_target'].update(count=0))
+        fails(rt, lambda o: o['cases'][0]['reply'].update(reply_to=''))
+        fails(rt, lambda o: o['cases'][1]['reply'].update(authorid=11))
+        fails(rt, lambda o: o['cases'][0].update(card_quote=[]))
+        fails(rt, lambda o: o['cases'][0]['reader'].update(open_plan={'text': 'Open plan', 'href': 'https://example.invalid/x'}))
+        fails(rt, lambda o: o['cases'][1]['reader'].update(open_plan={'text': 'Open object',
+              'href': 'http://127.0.0.1:8080/local/kbacompany/battle_plan.php?plan=P&tab=discussion'}))
+        rd = 'plan_discussion_reader_not_joined'
+        fails(rd, lambda o: o['cases'][0]['reader'].update(card_question=False))
+        fails(rd, lambda o: o['cases'][0]['reader'].update(card_note=False))
+        fails(rd, lambda o: o['cases'][1]['reader'].update(download={'http': 404, 'sha256': None}))
+        fails(rd, lambda o: o['cases'][0]['reader'].update(center_composer=1))
+        fails(rd, lambda o: o['cases'][0]['reader'].update(center_join=0))
+        fails(rd, lambda o: o['cases'][0]['reader']['parts_after_reading']['active'].append(11))
+        fails(rd, lambda o: o['cases'][0]['reader']['parts_after_reading']['reads'].append(11))
+        fails(rd, lambda o: o['cases'][0]['reader']['parts_after_reading']['active'].remove(15))
+        fails(rd, lambda o: o['cases'][1]['reader']['parts_after_join']['active'].remove(11))
+        rf = 'plan_discussion_refusals_and_revocation'
+        for label in ('RA', 'EB'):
+            fails(rf, lambda o, label=label: o['cases'][0]['denied'][label].update(card_text=True))
+            fails(rf, lambda o, label=label: o['cases'][1]['denied'][label].update(center_text=True))
+            fails(rf, lambda o, label=label: o['cases'][0]['denied'][label].update(download={'http': 200, 'sha256': 'f' * 64}))
+            fails(rf, lambda o, label=label: o['cases'][0]['denied'][label].update(download={'http': 500, 'sha256': None}))
+            fails(rf, lambda o, label=label: o['cases'][0]['denied'][label].update(join_http=303))
+            fails(rf, lambda o, label=label: o['cases'][0]['denied'][label]['parts']['active'].append(o['ids'][label]))
+            fails(rf, lambda o, label=label: o['cases'][0]['denied'][label].update(messages=5))
+            fails(rf, lambda o, label=label: o['cases'][1]['denied'][label].update(post_http=500))
+            fails(rf, lambda o, label=label: o['cases'][0]['denied'].pop(label))
+        fails(rf, lambda o: o['cases'][0]['forged'].update(messages=5))
+        fails(rf, lambda o: o['cases'][0]['forged'].update(http=303))
+        fails(rf, lambda o: o['revocation']['after'].update(text=True))
+        fails(rf, lambda o: o['revocation']['after'].update(download={'http': 200, 'sha256': 'f' * 64}))
+        fails(rf, lambda o: o['revocation'].update(revoked=False))
+        fails(rf, lambda o: o['revocation'].update(reopened=False))
+        fails(rf, lambda o: o['revocation']['restored'].update(text=False))
+        un = 'plan_discussion_plan_unchanged'
+        fails(un, lambda o: o['plan_after']['plan'].update(status='submitted'))
+        fails(un, lambda o: o['plan_after'].update(reviews=1))
+        fails(un, lambda o: o.pop('plan_before'))
+        be = 'plan_discussion_no_browser_errors'
+        fails(be, lambda o: o['cases'][0]['browser_events'].append({'source': 'pageerror', 'name': 'Error', 'message': 'x'}))
+        fails(be, lambda o: o['cases'][1].update(server_errors=[{'status': 500}]))
+        fails(be, lambda o: o['cases'][0].pop('browser_events'))
+        # incomplete matrix, missing actor, producer error or non-zero exit fail every check
+        for mutate, code in ((lambda o: o['cases'].pop(), 0), (lambda o: o['cases'].reverse(), 0),
+                             (lambda o: o['ids'].update(VA=11), 0), (lambda o: o.update(error='boom'), 0),
+                             (lambda o: o['cases'][0].update(question=''), 0), (lambda o: None, 1)):
+            o = copy.deepcopy(obs); mutate(o)
+            r = c.evaluate(c.plan_discussion_checks(o, code))
+            self.assertTrue(all(x['status'] == 'FAIL' for x in r.values()), r)
+        self.assertTrue(all(x['status'] == 'FAIL' for x in c.evaluate(c.plan_discussion_checks(None, None)).values()))
+
     def test_required_check_names_complete(self):
         names = c.required_check_names()
         self.assertEqual(len(names), len(set(names)))
