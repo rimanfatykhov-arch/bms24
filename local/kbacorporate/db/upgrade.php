@@ -4,6 +4,56 @@
 defined('MOODLE_INTERNAL') || die();
 require_once(__DIR__ . '/../classes/local/economic_indicators.php');
 
+
+/** ADR-0005: defaults for future rows only; never update membership/status data. */
+function local_kbacorporate_adr0005_defaults(): void {
+    global $DB;
+    if ($DB->get_dbfamily() !== 'mysql' || !preg_match('/^[a-zA-Z0-9_]+$/D', $DB->get_prefix())) {
+        throw new coding_exception('ADR-0005 requires verified MySQL/MariaDB definitions');
+    }
+    $specs = [
+        ['local_kbacorp_member', 'isemployee', 'I', 1, ['0', '1'], '0', XMLDB_TYPE_INTEGER],
+        ['local_kbacorp_devplan', 'status', 'C', 20, ['draft', 'active'], 'draft', XMLDB_TYPE_CHAR],
+    ];
+    // Validate both definitions before the first ALTER. Unknown shape/default is
+    // not authorization for coercion; MySQL DDL is not transactionally reversible.
+    foreach ($specs as [$table, $field, $type, $length, $allowed, $target, $xmltype]) {
+        $column = $DB->get_columns($table, false)[$field] ?? null;
+        $metasize = $type === 'I' ? 2 : $length; // Moodle reports signed TINYINT capacity as2.
+        if (!$column || $column->meta_type !== $type || (int)$column->max_length !== $metasize ||
+                !$column->not_null || $column->auto_increment ||
+                !in_array((string)$column->default_value, $allowed, true)) {
+            throw new coding_exception('ADR-0005 unexpected column definition: ' . $table . '.' . $field);
+        }
+        $native = $DB->get_record_sql('SELECT COLUMN_TYPE AS columntype, EXTRA AS extra
+            FROM information_schema.COLUMNS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME=? AND COLUMN_NAME=?',
+            [$DB->get_prefix() . $table, $field], MUST_EXIST);
+        $validtype = $type === 'I' ? preg_match('/^tinyint(?:\\([0-9]+\\))?$/D', $native->columntype) :
+            $native->columntype === 'varchar(20)';
+        if (!$validtype || $native->extra !== '') {
+            throw new coding_exception('ADR-0005 unexpected native definition: ' . $table . '.' . $field);
+        }
+    }
+    foreach ($specs as [$table, $field, $type, $length, $allowed, $target, $xmltype]) {
+        $column = $DB->get_columns($table, false)[$field];
+        if ((string)$column->default_value !== $target) {
+            // Moodle4.1 XMLDB change_field_default rejects indexed columns.
+            // Native default-only DDL preserves the field and every index;
+            // identifiers/literals come exclusively from the closed specs above.
+            $DB->change_database_structure(['ALTER TABLE `' . $DB->get_prefix() . $table . '` ALTER COLUMN `' . $field . '`' .
+                ' SET DEFAULT ' . ($type === 'I' ? '0' : "'draft'")], [$table]);
+        }
+    }
+    foreach ($specs as [$table, $field, $type, $length, $allowed, $target, $xmltype]) {
+        $column = $DB->get_columns($table, false)[$field];
+        if ((string)$column->default_value !== $target || $column->meta_type !== $type ||
+                !$column->not_null || $column->auto_increment ||
+                (int)$column->max_length !== ($type === 'I' ? 2 : $length)) {
+            throw new coding_exception('ADR-0005 default postcondition failed: ' . $table . '.' . $field);
+        }
+    }
+}
+
 /**
  * Upgrade steps for KBA Corporate Dashboard.
  *
@@ -2756,6 +2806,13 @@ function xmldb_local_kbacorporate_upgrade($oldversion) {
     // Isolated ERP compatibility patch; no schema, roles or business-data migration.
     if ($oldversion < 2026110901) {
         upgrade_plugin_savepoint(true, 2026110901, 'local', 'kbacorporate');
+    }
+
+    // Accepted ADR-0005 (same step and savepoint as the Corporate2613 package); retain all existing rows and
+    // historical indexes. Real installations already ran it from that package; no-op when defaults are 0/'draft'.
+    if ($oldversion < 2026111004) {
+        local_kbacorporate_adr0005_defaults();
+        upgrade_plugin_savepoint(true, 2026111004, 'local', 'kbacorporate');
     }
 
     if ($oldversion < 2026111100) {

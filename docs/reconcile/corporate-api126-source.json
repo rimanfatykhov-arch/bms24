@@ -3436,7 +3436,7 @@
     {
       "path": "local/kbacorporate/db/upgrade.php",
       "archive_sha256": "c1668acbdc0d106a133002ca71e745a1c376b4f9e80a50ea7cad85fa5b071948",
-      "source_sha256": "0e3972020a43537c1524b4c8ade694e3b5df5a9c3563c85fdebf02d70a868374",
+      "source_sha256": "ef39434356106043292de20bf355165961ca07462e9ead6a79f19bbc4b6d5019",
       "status": "modified"
     },
     {
@@ -5187,7 +5187,7 @@
     {
       "path": "local/kbacorporate/db/upgrade.php",
       "archive_sha256": "c1668acbdc0d106a133002ca71e745a1c376b4f9e80a50ea7cad85fa5b071948",
-      "source_sha256": "0e3972020a43537c1524b4c8ade694e3b5df5a9c3563c85fdebf02d70a868374",
+      "source_sha256": "ef39434356106043292de20bf355165961ca07462e9ead6a79f19bbc4b6d5019",
       "status": "modified"
     },
     {
@@ -5325,7 +5325,7 @@
     "Authorize single-task projection before task query; owner SQL scope for employees",
     "Correct two stale API assertions to 1.26",
     "Move three standalone fixture scripts from PHPUnit discovery to cli/",
-    "ADR-0005: fresh XMLDB member.isemployee DEFAULT 0, matching the upgrade path and the Corporate2613 package"
+    "ADR-0005: fresh XMLDB member.isemployee DEFAULT 0 and the upgrade step 2026111004 (same function and savepoint as the Corporate2613 package)"
   ],
   "candidate_version": 2026111100,
   "candidate_release": "0.40.13-bms.3",
@@ -5427,6 +5427,11 @@
         "path": "local/kbacorporate/db/install.xml",
         "before_sha256": "7f9e0afa21b3319e38e0171b27ea791f35bfd5f797f1697ca58a0ea54b22a252",
         "after_sha256": "6b90b62780bbc7b29ad7096b94738530b61cc672d9a5d9a498c1466b94e76ac4"
+      },
+      {
+        "path": "local/kbacorporate/db/upgrade.php",
+        "before_sha256": "0e3972020a43537c1524b4c8ade694e3b5df5a9c3563c85fdebf02d70a868374",
+        "after_sha256": "ef39434356106043292de20bf355165961ca07462e9ead6a79f19bbc4b6d5019"
       }
     ]
   }
