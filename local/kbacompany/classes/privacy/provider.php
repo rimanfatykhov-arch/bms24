@@ -442,6 +442,28 @@ class provider implements
             'workspaceuuid' => 'privacy:metadata:bmscompanysync:content',
             'snapshotrevision' => 'privacy:metadata:bmscompanysync:content',
         ], 'privacy:metadata:bmscompanysync');
+        // ADR-0009 daily reports: author text, task snapshots, reviewer decisions, journal.
+        $collection->add_database_table('local_kbacompany_dreport', [
+            'userid' => 'privacy:metadata:dailyreports', 'reportday' => 'privacy:metadata:dailyreports',
+            'timezone' => 'privacy:metadata:dailyreports', 'status' => 'privacy:metadata:dailyreports',
+        ], 'privacy:metadata:dailyreports');
+        $collection->add_database_table('local_kbacompany_dreportver', [
+            'createdby' => 'privacy:metadata:dailyreports', 'reviewerid' => 'privacy:metadata:dailyreports',
+            'planned' => 'privacy:metadata:dailyreports', 'done' => 'privacy:metadata:dailyreports',
+            'notdone' => 'privacy:metadata:dailyreports', 'blockers' => 'privacy:metadata:dailyreports',
+            'nextplan' => 'privacy:metadata:dailyreports', 'correctionnote' => 'privacy:metadata:dailyreports',
+            'autosnapshot' => 'privacy:metadata:dailyreports', 'positionsnapshot' => 'privacy:metadata:dailyreports',
+        ], 'privacy:metadata:dailyreports');
+        $collection->add_database_table('local_kbacompany_dreportlink', [
+            'title' => 'privacy:metadata:dailyreports', 'status' => 'privacy:metadata:dailyreports',
+        ], 'privacy:metadata:dailyreports');
+        $collection->add_database_table('local_kbacompany_dreportrev', [
+            'reviewerid' => 'privacy:metadata:dailyreports', 'decision' => 'privacy:metadata:dailyreports',
+            'rating' => 'privacy:metadata:dailyreports', 'comment' => 'privacy:metadata:dailyreports',
+        ], 'privacy:metadata:dailyreports');
+        $collection->add_database_table('local_kbacompany_dreportlog', [
+            'actorid' => 'privacy:metadata:dailyreports', 'details' => 'privacy:metadata:dailyreports',
+        ], 'privacy:metadata:dailyreports');
         return $collection;
     }
 
@@ -605,6 +627,13 @@ class provider implements
             WHERE c.contextlevel = :dcflevel AND EXISTS (SELECT f.id FROM {files} f
                 WHERE f.contextid = c.id AND f.component = :dcfcomponent AND f.filearea = :dcfarea AND f.userid = :dcfuser)",
             ['dcflevel'=>CONTEXT_SYSTEM,'dcfcomponent'=>'local_kbacompany','dcfarea'=>'document_revision','dcfuser'=>$userid]);
+        $contextlist->add_from_sql('SELECT ctx.id FROM {context} ctx WHERE ctx.contextlevel = :drlevel
+            AND (EXISTS (SELECT 1 FROM {local_kbacompany_dreport} dr WHERE dr.userid = :druser)
+              OR EXISTS (SELECT 1 FROM {local_kbacompany_dreportver} dv WHERE dv.reviewerid = :drreviewer)
+              OR EXISTS (SELECT 1 FROM {local_kbacompany_dreportrev} dd WHERE dd.reviewerid = :drdecider)
+              OR EXISTS (SELECT 1 FROM {local_kbacompany_dreportlog} dl WHERE dl.actorid = :dractor))',
+            ['drlevel' => CONTEXT_SYSTEM, 'druser' => $userid, 'drreviewer' => $userid, 'drdecider' => $userid,
+             'dractor' => $userid]);
         return $contextlist;
     }
 
@@ -615,6 +644,7 @@ class provider implements
         if (!in_array($systemcontext->id, $contextlist->get_contextids())) {
             return;
         }
+        self::export_daily_reports((int)$contextlist->get_user()->id, $systemcontext);
         $revocations = $DB->get_records_select('local_kbacompany_revoke',
             'userid = :subject OR revokedby = :revoker OR reopenedby = :opener',
             ['subject'=>$contextlist->get_user()->id,'revoker'=>$contextlist->get_user()->id,
@@ -1057,6 +1087,10 @@ class provider implements
         global $DB;
         if ($context->contextlevel === CONTEXT_SYSTEM) {
             self::forget_revocation_audit(null);
+            foreach (['local_kbacompany_dreportlog', 'local_kbacompany_dreportrev', 'local_kbacompany_dreportlink',
+                    'local_kbacompany_dreportver', 'local_kbacompany_dreport'] as $table) {
+                $DB->delete_records($table);
+            }
             $DB->delete_records('local_kbacompany_commrev');
             self::document_files_for_privacy(null, true);
             self::forget_workflow(null);
@@ -1196,6 +1230,7 @@ class provider implements
         $systemcontext = \context_system::instance();
         if (in_array($systemcontext->id, $contextlist->get_contextids())) {
             self::forget_revocation_audit((int)$contextlist->get_user()->id);
+            self::forget_daily_reports((int)$contextlist->get_user()->id);
             self::document_files_for_privacy((int)$contextlist->get_user()->id, true);
             self::forget_workflow((int)$contextlist->get_user()->id);
             $where = ['actorid' => $contextlist->get_user()->id];
@@ -1472,6 +1507,60 @@ class provider implements
         }
         $records->close();
     }
+    /** Own reports with every version, linked-task snapshot and decision; decisions this user made on others' reports. */
+    private static function export_daily_reports(int $userid, \context $context): void {
+        global $DB;
+        $reports = [];
+        foreach ($DB->get_records('local_kbacompany_dreport', ['userid' => $userid], 'reportday ASC') as $report) {
+            $versions = [];
+            foreach ($DB->get_records('local_kbacompany_dreportver', ['companyuuid' => $report->companyuuid,
+                    'reportuuid' => $report->uuid], 'versionno ASC') as $version) {
+                $version->links = array_values($DB->get_records('local_kbacompany_dreportlink',
+                    ['companyuuid' => $report->companyuuid, 'versionuuid' => $version->uuid], 'id ASC',
+                    'taskuuid, origin, title, status, duedate'));
+                $version->submittedat = $version->submittedat ? transform::datetime($version->submittedat) : '';
+                $versions[] = $version;
+            }
+            $report->versions = $versions;
+            $report->decisions = array_values($DB->get_records('local_kbacompany_dreportrev',
+                ['companyuuid' => $report->companyuuid, 'reportuuid' => $report->uuid], 'timecreated ASC',
+                'versionuuid, decision, rating, comment, timecreated'));
+            $reports[] = $report;
+        }
+        $decisions = array_values($DB->get_records('local_kbacompany_dreportrev', ['reviewerid' => $userid],
+            'timecreated ASC', 'companyuuid, reportuuid, versionuuid, decision, rating, comment, timecreated'));
+        if ($reports || $decisions) {
+            writer::with_context($context)->export_data(
+                [get_string('privacy:metadata:dailyreports', 'local_kbacompany')],
+                (object)['reports' => $reports, 'decisions_as_reviewer' => $decisions]);
+        }
+    }
+
+    /**
+     * Owner decision В7: reports are company records deleted only by a privacy request. The author's own reports go
+     * entirely; on other people's reports this user's reviewer identity and comments are removed, decisions stay.
+     */
+    private static function forget_daily_reports(int $userid): void {
+        global $DB;
+        foreach ($DB->get_records('local_kbacompany_dreport', ['userid' => $userid], '', 'id, uuid, companyuuid') as $report) {
+            $where = ['companyuuid' => $report->companyuuid, 'reportuuid' => $report->uuid];
+            foreach ($DB->get_fieldset_select('local_kbacompany_dreportver', 'uuid',
+                    'companyuuid = :companyuuid AND reportuuid = :reportuuid', $where) as $versionuuid) {
+                $DB->delete_records('local_kbacompany_dreportlink',
+                    ['companyuuid' => $report->companyuuid, 'versionuuid' => $versionuuid]);
+            }
+            $DB->delete_records('local_kbacompany_dreportrev', $where);
+            $DB->delete_records('local_kbacompany_dreportlog', $where);
+            $DB->delete_records('local_kbacompany_dreportver', $where);
+            $DB->delete_records('local_kbacompany_dreport', ['id' => $report->id]);
+        }
+        $DB->set_field('local_kbacompany_dreportrev', 'comment', null, ['reviewerid' => $userid]);
+        $DB->set_field('local_kbacompany_dreportrev', 'reviewerid', 0, ['reviewerid' => $userid]);
+        $DB->set_field('local_kbacompany_dreportver', 'reviewerid', 0, ['reviewerid' => $userid]);
+        $DB->set_field('local_kbacompany_dreportlog', 'details', null, ['actorid' => $userid]);
+        $DB->set_field('local_kbacompany_dreportlog', 'actorid', 0, ['actorid' => $userid]);
+    }
+
     /** Erasure must not grant access: retain only active deny identity while an account can log in. */
     private static function forget_revocation_audit(?int $userid): void {
         global $DB;

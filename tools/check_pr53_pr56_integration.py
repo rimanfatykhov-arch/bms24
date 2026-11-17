@@ -51,9 +51,13 @@ def check(root=ROOT):
     # See docs/reconcile/DAILY_REPORTS_R0_SOURCE_PRESERVATION.md.
     reviewed_followup['local/kbacompany/lang/en/local_kbacompany.php'] = 'dcbc042a4602de76173add94c8b936668a568f3681f0ca41291ead1f52afffde'
     reviewed_followup['local/kbacompany/lang/ru/local_kbacompany.php'] = '53feac38fc2986c052d52868e5dcac147f973daf2a292af818fe7752d76468c6'
+    # Daily reports R1 (ADR-0009): saved report strings appended after the R0 block; see DAILY_REPORTS_R1_SCHEMA.md.
+    reviewed_followup['local/kbacompany/lang/en/local_kbacompany.php'] = 'efe44c09bfa2559779ad69aca6645e9a1c3a56477a858041fb5826184f452a02'
+    reviewed_followup['local/kbacompany/lang/ru/local_kbacompany.php'] = 'f661b9d42a53e6b78020d352fbed6f0ea4ccad46d11596782e466895b1840208'
     reviewed_metadata={'AGENTS.md','docs/00_MASTER_CONTEXT.md'}
     for name, expected in plan['unchanged_schema_hashes'].items():
-        target = {'local/kbacompany/db/install.xml': '5d61fb813ca0e1da1ab67db808b5a1da321cadfccef3e2c499e8dee279f5e576'}.get(name, expected)
+        # ADR-0009 R1 appends five additive daily report tables; every earlier table definition is unchanged.
+        target = {'local/kbacompany/db/install.xml': '06a60b36d0d5a4dfc86924bc43819a0d7b2c6fd054888639d3363fbec5979845'}.get(name, expected)
         if digest(root/name)!=target:
             errors.append('shared schema/helper changed: '+name)
     for row in plan['rows']:
@@ -68,7 +72,7 @@ def check(root=ROOT):
         errors.append('one historical0902 release note was lost')
     upgrade=(root/'local/kbacompany/db/upgrade.php').read_text(encoding='utf-8')
     versions=[int(v) for v in re.findall(r'upgrade_plugin_savepoint\(true,\s*(\d+)',upgrade)]
-    if len(versions)!=483 or versions!=sorted(set(versions)) or versions[-1]!=2026111100:
+    if len(versions)!=484 or versions!=sorted(set(versions)) or versions[-1]!=2026111600 or versions[-2]!=2026111100:
         errors.append('merged upgrade chronology/identity changed')
     driver=(root/'tools/tests/moodle_acceptance.php').read_text(encoding='utf-8')
     for ref in [plan['pr53_sha'],plan['pr56_sha']]:

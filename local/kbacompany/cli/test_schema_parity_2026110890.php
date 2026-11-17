@@ -47,10 +47,50 @@ class xmldb_index {
 class SchemaParityManager {
     public $db;
     public $adds = [];
+    public $installs = [];
     public $failon = null;
     public $silenton = null;
+    public $failinstall = null;
+    public $incompleteinstall = null;
+    public $xmloverride = null;
     public function __construct($db) { $this->db = $db; }
-    public function table_exists($table) { return $table->name !== $this->db->missingtable; }
+    // Moodle's database_manager::table_exists() accepts an xmldb_table or a table name string.
+    public function table_exists($table) {
+        if (!is_string($table) && !($table instanceof xmldb_table)) {
+            throw new InvalidArgumentException('table_exists() needs xmldb_table or string');
+        }
+        $name = is_string($table) ? $table : $table->name;
+        return $name !== $this->db->missingtable && !isset($this->db->absenttables[$name]);
+    }
+    // Models database_manager::install_one_table_from_xmldb_file(): the table must be defined in the
+    // XMLDB file; its fields, keys and indexes are recorded so the test can compare them independently.
+    public function install_one_table_from_xmldb_file($file, $tablename) {
+        if ($this->table_exists($tablename)) { throw new RuntimeException('table already exists: ' . $tablename); }
+        if ($tablename === $this->failinstall) { throw new RuntimeException('simulated create table failure'); }
+        $xml = simplexml_load_file($this->xmloverride ?? $file);
+        $found = null;
+        foreach ($xml->TABLES->TABLE as $definition) {
+            if ((string)$definition['NAME'] === $tablename) { $found = $definition; }
+        }
+        if (!$found) { throw new RuntimeException('table not defined in XMLDB file: ' . $tablename); }
+        $structure = ['fields' => [], 'keys' => [], 'indexes' => []];
+        foreach ($found->FIELDS->FIELD as $field) {
+            $structure['fields'][(string)$field['NAME']] = [(string)$field['TYPE'], (string)$field['LENGTH'],
+                (string)$field['NOTNULL'], (string)$field['SEQUENCE'], isset($field['DEFAULT']) ? (string)$field['DEFAULT'] : null];
+        }
+        foreach ($found->KEYS->KEY as $key) {
+            $structure['keys'][(string)$key['NAME']] = [(string)$key['TYPE'], (string)$key['FIELDS']];
+        }
+        if (isset($found->INDEXES)) {
+            foreach ($found->INDEXES->INDEX as $index) {
+                $structure['indexes'][(string)$index['NAME']] = [(string)$index['UNIQUE'], (string)$index['FIELDS']];
+            }
+        }
+        if ($tablename === $this->incompleteinstall) { array_pop($structure['indexes']); }
+        $this->installs[] = $tablename;
+        unset($this->db->absenttables[$tablename]);
+        $this->db->tables[$tablename] = $structure;
+    }
     public function field_exists($table, $field) {
         $key = $table->name . '.' . $field->name;
         return !isset($this->db->targets[$key]) || isset($this->db->columns[$table->name][$field->name]);
@@ -70,12 +110,17 @@ class SchemaParityDatabase {
     public $targets;
     public $manager;
     public $missingtable = null;
+    // Tables introduced after the published #114 level (2026111100) are absent before their upgrade step.
+    public $absenttables = [];
+    public $tables = [];
     // Sentinel existing values in two companies; any repair DML is unsupported.
     public $rows = ['A' => ['starttime' => '09:15', 'duetime' => '17:20', 'executionstatus' => 'done'],
         'B' => ['starttime' => '10:00', 'duetime' => '18:00', 'executionstatus' => 'inprogress']];
     public function __construct($targets, $presentmask) {
         $this->targets = $targets;
         $this->manager = new SchemaParityManager($this);
+        global $newtables;
+        $this->absenttables = array_fill_keys(array_keys($newtables), true);
         $bit = 1;
         foreach ($targets as $key => $metadata) {
             [$table, $field] = explode('.', $key);
@@ -165,15 +210,53 @@ foreach (['local_kbacompany_task' => ['starttime', 'duetime'],
             'default_value' => $attrs['DEFAULT']];
     }
 }
+// Tables added after 2026111100 and their XMLDB structure, parsed independently (DOM) of the manager double (SimpleXML).
+$dom = new DOMDocument();
+$dom->load(__DIR__ . '/../db/install.xml');
+$newtables = [];
+foreach ($dom->getElementsByTagName('TABLE') as $tablenode) {
+    $name = $tablenode->getAttribute('NAME');
+    if (!preg_match('/^local_kbacompany_dreport/', $name)) { continue; }
+    $structure = ['fields' => [], 'keys' => [], 'indexes' => []];
+    foreach ($tablenode->getElementsByTagName('FIELD') as $node) {
+        $structure['fields'][$node->getAttribute('NAME')] = [$node->getAttribute('TYPE'), $node->getAttribute('LENGTH'),
+            $node->getAttribute('NOTNULL'), $node->getAttribute('SEQUENCE'), $node->hasAttribute('DEFAULT') ? $node->getAttribute('DEFAULT') : null];
+    }
+    foreach ($tablenode->getElementsByTagName('KEY') as $node) {
+        $structure['keys'][$node->getAttribute('NAME')] = [$node->getAttribute('TYPE'), $node->getAttribute('FIELDS')];
+    }
+    foreach ($tablenode->getElementsByTagName('INDEX') as $node) {
+        $structure['indexes'][$node->getAttribute('NAME')] = [$node->getAttribute('UNIQUE'), $node->getAttribute('FIELDS')];
+    }
+    $newtables[$name] = $structure;
+}
+if (count($newtables) !== 5) { throw new RuntimeException('expected five ADR-0009 R1 tables in install.xml'); }
+foreach ($newtables as $name => $structure) {
+    if (!$structure['fields'] || !isset($structure['keys']['primary'])) { throw new RuntimeException('incomplete XMLDB fixture: ' . $name); }
+}
+if (!preg_match('/\$plugin->version\s*=\s*(\d+);/', file_get_contents(__DIR__ . '/../version.php'), $versionmatch)) {
+    throw new RuntimeException('plugin version not found');
+}
+$targetversion = (int)$versionmatch[1];
+function new_tables_installed($DB) {
+    global $newtables;
+    return !$DB->absenttables && $DB->tables == $newtables;
+}
 require_once(__DIR__ . '/../db/upgrade.php');
 
-foreach ([2026101645, 2026101879, 2026110802, 2026110804, 2026110890] as $oldversion) {
+foreach ([2026101645, 2026101879, 2026110802, 2026110804, 2026110890, 2026111100] as $oldversion) {
     foreach (range(0, 7) as $presentmask) {
+        // The published #114 level (2026111100) already contains every repaired field.
+        if ($oldversion >= 2026111100 && $presentmask !== 7) { continue; }
         $DB = new SchemaParityDatabase($targets, $presentmask);
         $before = $DB->rows;
         $savepoints = [];
         parity_check(xmldb_local_kbacompany_upgrade($oldversion), 'actual upgrade returns success');
-        parity_check(end($savepoints) === 2026111100, 'repair checkpoint reached from ' . $oldversion);
+        parity_check(end($savepoints) === $targetversion, 'final version.php checkpoint reached from ' . $oldversion);
+        parity_check($oldversion >= 2026111100 || in_array(2026111100, $savepoints, true), 'repair checkpoint passed from ' . $oldversion);
+        parity_check(in_array(2026111600, $savepoints, true), 'daily report table step passed from ' . $oldversion);
+        parity_check(new_tables_installed($DB), 'five R1 tables installed exactly as install.xml from ' . $oldversion);
+        parity_check($DB->manager->installs === array_keys($newtables), 'each new table installed once, in order');
         foreach ($targets as $key => $metadata) {
             [$table, $field] = explode('.', $key);
             parity_check($DB->columns[$table][$field] == $metadata, 'matches fresh XMLDB: ' . $key);
@@ -189,9 +272,10 @@ foreach ([2026101645, 2026101879, 2026110802, 2026110804, 2026110890] as $oldver
         parity_check($adds === $expectedadds, 'only missing target fields are added');
         xmldb_local_kbacompany_upgrade($oldversion);
         parity_check($DB->manager->adds === $adds, 'retry adds no duplicate fields');
+        parity_check($DB->manager->installs === array_keys($newtables) && new_tables_installed($DB), 'retry installs no table twice');
         $savepoints = [];
-        xmldb_local_kbacompany_upgrade(2026111100);
-        parity_check(!$savepoints && $DB->manager->adds === $adds, 'installed target is no-op');
+        xmldb_local_kbacompany_upgrade($targetversion);
+        parity_check(!$savepoints && $DB->manager->adds === $adds && count($DB->manager->installs) === 5, 'installed target is no-op');
     }
 }
 
@@ -219,7 +303,7 @@ foreach (['failon', 'silenton'] as $failuremode) {
     parity_check(isset($DB->columns['local_kbacompany_task']['starttime']), 'partial DDL model exercised');
     $DB->manager->$failuremode = null;
     xmldb_local_kbacompany_upgrade(2026101879);
-    parity_check(end($savepoints) === 2026111100, 'partial DDL retry reaches checkpoint');
+    parity_check(end($savepoints) === $targetversion && new_tables_installed($DB), 'partial DDL retry reaches final checkpoint');
 }
 $DB = new SchemaParityDatabase($targets, 0);
 $DB->missingtable = 'local_kbacompany_deviation';
@@ -230,5 +314,51 @@ try {
 } catch (ddl_table_missing_exception $e) {
     parity_check(!array_filter($savepoints, static function($v) { return $v >= 2026110890; }) && !$DB->manager->adds, 'missing table stops before DDL/savepoint');
 }
-echo "PASS: schema parity upgrade entrypoint, 40 version/partial-state cases and failures; $assertions assertions\n";
+// ADR-0009 R1 tables from the published 2026111100 level: partial state, failed create, incomplete table, missing definition.
+$names = array_keys($newtables);
+$DB = new SchemaParityDatabase($targets, 7);
+unset($DB->absenttables[$names[1]]);
+$DB->tables[$names[1]] = $newtables[$names[1]];
+$savepoints = [];
+xmldb_local_kbacompany_upgrade(2026111100);
+parity_check($DB->manager->installs === array_values(array_diff($names, [$names[1]])) && new_tables_installed($DB),
+    'only absent daily report tables are installed');
+
+$DB = new SchemaParityDatabase($targets, 7);
+$DB->manager->failinstall = $names[2];
+$savepoints = [];
+$failed = false;
+try { xmldb_local_kbacompany_upgrade(2026111100); } catch (RuntimeException $e) { $failed = true; }
+parity_check($failed && !array_filter($savepoints, static function($v) { return $v >= 2026111600; }),
+    'failed table creation cannot advance the 2026111600 savepoint');
+parity_check($DB->manager->installs === array_slice($names, 0, 2) && isset($DB->absenttables[$names[2]]), 'partial create state modelled');
+$DB->manager->failinstall = null;
+$savepoints = [];
+xmldb_local_kbacompany_upgrade(2026111100);
+parity_check(end($savepoints) === $targetversion && new_tables_installed($DB) && count($DB->manager->installs) === 5,
+    'retry after failed create installs the remaining tables once');
+
+$DB = new SchemaParityDatabase($targets, 7);
+$DB->manager->incompleteinstall = $names[0];
+$savepoints = [];
+xmldb_local_kbacompany_upgrade(2026111100);
+parity_check(!new_tables_installed($DB), 'an incomplete (damaged) daily report table is detected by the structure comparison');
+
+$broken = tempnam(sys_get_temp_dir(), 'xmldb');
+file_put_contents($broken, preg_replace('/<TABLE NAME="' . $names[3] . '".*?<\/TABLE>/s', '', file_get_contents(__DIR__ . '/../db/install.xml')));
+$DB = new SchemaParityDatabase($targets, 7);
+$DB->manager->xmloverride = $broken;
+$savepoints = [];
+$failed = false;
+try { xmldb_local_kbacompany_upgrade(2026111100); } catch (RuntimeException $e) { $failed = strpos($e->getMessage(), 'not defined') !== false; }
+unlink($broken);
+parity_check($failed && !array_filter($savepoints, static function($v) { return $v >= 2026111600; }),
+    'missing table definition stops before the 2026111600 savepoint');
+
+$DB = new SchemaParityDatabase($targets, 7);
+$failed = false;
+try { $DB->manager->table_exists(42); } catch (InvalidArgumentException $e) { $failed = true; }
+parity_check($failed, 'table_exists() rejects unsupported argument types');
+
+echo "PASS: schema parity upgrade entrypoint, 41 version/partial-state cases, five R1 tables and failures; target $targetversion; $assertions assertions\n";
 echo "NOT RUN: actual Moodle SQL drivers, fresh install and complete historical migration semantics\n";

@@ -3616,5 +3616,115 @@
         <KEYS><KEY NAME="primary" TYPE="primary" FIELDS="id" /></KEYS>
         <INDEXES><INDEX NAME="company_user_open_ix" UNIQUE="false" FIELDS="companyuuid,userid,timereopened" /></INDEXES>
       </TABLE>
+        <TABLE NAME="local_kbacompany_dreport" COMMENT="ADR-0009 daily report: one per company, employee and civil day">
+        <FIELDS>
+          <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true" />
+          <FIELD NAME="uuid" TYPE="char" LENGTH="36" NOTNULL="true" />
+          <FIELD NAME="companyuuid" TYPE="char" LENGTH="36" NOTNULL="true" />
+          <FIELD NAME="userid" TYPE="int" LENGTH="10" NOTNULL="true" />
+          <FIELD NAME="reportday" TYPE="char" LENGTH="10" NOTNULL="true" />
+          <FIELD NAME="timezone" TYPE="char" LENGTH="100" NOTNULL="true" DEFAULT="" />
+          <FIELD NAME="status" TYPE="char" LENGTH="12" NOTNULL="true" DEFAULT="draft" />
+          <FIELD NAME="currentversionuuid" TYPE="char" LENGTH="36" NOTNULL="true" DEFAULT="" />
+          <FIELD NAME="draftversionuuid" TYPE="char" LENGTH="36" NOTNULL="true" DEFAULT="" />
+          <FIELD NAME="revision" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" />
+          <FIELD NAME="timecreated" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" />
+          <FIELD NAME="timemodified" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" />
+        </FIELDS>
+        <KEYS><KEY NAME="primary" TYPE="primary" FIELDS="id" /></KEYS>
+        <INDEXES>
+          <INDEX NAME="uuid_uix" UNIQUE="true" FIELDS="uuid" />
+          <INDEX NAME="company_user_day_uix" UNIQUE="true" FIELDS="companyuuid,userid,reportday" />
+          <INDEX NAME="company_status_day_ix" UNIQUE="false" FIELDS="companyuuid,status,reportday" />
+        </INDEXES>
+      </TABLE>
+        <TABLE NAME="local_kbacompany_dreportver" COMMENT="ADR-0009 daily report version; submitted versions are immutable">
+        <FIELDS>
+          <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true" />
+          <FIELD NAME="uuid" TYPE="char" LENGTH="36" NOTNULL="true" />
+          <FIELD NAME="companyuuid" TYPE="char" LENGTH="36" NOTNULL="true" />
+          <FIELD NAME="reportuuid" TYPE="char" LENGTH="36" NOTNULL="true" />
+          <FIELD NAME="versionno" TYPE="int" LENGTH="10" NOTNULL="true" />
+          <FIELD NAME="state" TYPE="char" LENGTH="12" NOTNULL="true" DEFAULT="draft" />
+          <FIELD NAME="planned" TYPE="text" NOTNULL="false" />
+          <FIELD NAME="done" TYPE="text" NOTNULL="false" />
+          <FIELD NAME="notdone" TYPE="text" NOTNULL="false" />
+          <FIELD NAME="blockers" TYPE="text" NOTNULL="false" />
+          <FIELD NAME="nextplan" TYPE="text" NOTNULL="false" />
+          <FIELD NAME="correctionnote" TYPE="text" NOTNULL="false" />
+          <FIELD NAME="autosnapshot" TYPE="text" NOTNULL="false" />
+          <FIELD NAME="positionsnapshot" TYPE="text" NOTNULL="false" />
+          <FIELD NAME="reviewerid" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" />
+          <FIELD NAME="reviewersource" TYPE="char" LENGTH="20" NOTNULL="true" DEFAULT="" />
+          <FIELD NAME="requestkey" TYPE="char" LENGTH="36" NOTNULL="true" DEFAULT="" />
+          <FIELD NAME="contenthash" TYPE="char" LENGTH="64" NOTNULL="true" DEFAULT="" />
+          <FIELD NAME="revision" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" />
+          <FIELD NAME="createdby" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" />
+          <FIELD NAME="submittedat" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" />
+          <FIELD NAME="timecreated" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" />
+          <FIELD NAME="timemodified" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" />
+        </FIELDS>
+        <KEYS><KEY NAME="primary" TYPE="primary" FIELDS="id" /></KEYS>
+        <INDEXES>
+          <INDEX NAME="uuid_uix" UNIQUE="true" FIELDS="uuid" />
+          <INDEX NAME="report_versionno_uix" UNIQUE="true" FIELDS="reportuuid,versionno" />
+          <INDEX NAME="report_requestkey_ix" UNIQUE="false" FIELDS="reportuuid,requestkey" />
+          <INDEX NAME="company_reviewer_state_ix" UNIQUE="false" FIELDS="companyuuid,reviewerid,state" />
+        </INDEXES>
+      </TABLE>
+        <TABLE NAME="local_kbacompany_dreportlink" COMMENT="ADR-0009 tasks linked to a version with their state at submission">
+        <FIELDS>
+          <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true" />
+          <FIELD NAME="companyuuid" TYPE="char" LENGTH="36" NOTNULL="true" />
+          <FIELD NAME="versionuuid" TYPE="char" LENGTH="36" NOTNULL="true" />
+          <FIELD NAME="taskuuid" TYPE="char" LENGTH="36" NOTNULL="true" />
+          <FIELD NAME="origin" TYPE="char" LENGTH="12" NOTNULL="true" DEFAULT="manual" />
+          <FIELD NAME="title" TYPE="char" LENGTH="255" NOTNULL="true" DEFAULT="" />
+          <FIELD NAME="status" TYPE="char" LENGTH="20" NOTNULL="true" DEFAULT="" />
+          <FIELD NAME="duedate" TYPE="char" LENGTH="10" NOTNULL="true" DEFAULT="" />
+          <FIELD NAME="timecreated" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" />
+        </FIELDS>
+        <KEYS><KEY NAME="primary" TYPE="primary" FIELDS="id" /></KEYS>
+        <INDEXES>
+          <INDEX NAME="version_task_uix" UNIQUE="true" FIELDS="versionuuid,taskuuid" />
+          <INDEX NAME="company_version_ix" UNIQUE="false" FIELDS="companyuuid,versionuuid" />
+        </INDEXES>
+      </TABLE>
+        <TABLE NAME="local_kbacompany_dreportrev" COMMENT="ADR-0009 reviewer decision and rating of one version; append-only">
+        <FIELDS>
+          <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true" />
+          <FIELD NAME="uuid" TYPE="char" LENGTH="36" NOTNULL="true" />
+          <FIELD NAME="companyuuid" TYPE="char" LENGTH="36" NOTNULL="true" />
+          <FIELD NAME="reportuuid" TYPE="char" LENGTH="36" NOTNULL="true" />
+          <FIELD NAME="versionuuid" TYPE="char" LENGTH="36" NOTNULL="true" />
+          <FIELD NAME="reviewerid" TYPE="int" LENGTH="10" NOTNULL="true" />
+          <FIELD NAME="decision" TYPE="char" LENGTH="12" NOTNULL="true" />
+          <FIELD NAME="rating" TYPE="char" LENGTH="12" NOTNULL="true" DEFAULT="" />
+          <FIELD NAME="comment" TYPE="text" NOTNULL="false" />
+          <FIELD NAME="supersedesuuid" TYPE="char" LENGTH="36" NOTNULL="true" DEFAULT="" />
+          <FIELD NAME="requestkey" TYPE="char" LENGTH="36" NOTNULL="true" />
+          <FIELD NAME="timecreated" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" />
+        </FIELDS>
+        <KEYS><KEY NAME="primary" TYPE="primary" FIELDS="id" /></KEYS>
+        <INDEXES>
+          <INDEX NAME="uuid_uix" UNIQUE="true" FIELDS="uuid" />
+          <INDEX NAME="version_requestkey_uix" UNIQUE="true" FIELDS="versionuuid,requestkey" />
+          <INDEX NAME="company_report_ix" UNIQUE="false" FIELDS="companyuuid,reportuuid" />
+        </INDEXES>
+      </TABLE>
+        <TABLE NAME="local_kbacompany_dreportlog" COMMENT="ADR-0009 append-only daily report action journal">
+        <FIELDS>
+          <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true" />
+          <FIELD NAME="companyuuid" TYPE="char" LENGTH="36" NOTNULL="true" />
+          <FIELD NAME="reportuuid" TYPE="char" LENGTH="36" NOTNULL="true" />
+          <FIELD NAME="versionuuid" TYPE="char" LENGTH="36" NOTNULL="true" DEFAULT="" />
+          <FIELD NAME="actorid" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" />
+          <FIELD NAME="action" TYPE="char" LENGTH="30" NOTNULL="true" />
+          <FIELD NAME="details" TYPE="text" NOTNULL="false" />
+          <FIELD NAME="timecreated" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" />
+        </FIELDS>
+        <KEYS><KEY NAME="primary" TYPE="primary" FIELDS="id" /></KEYS>
+        <INDEXES><INDEX NAME="company_report_ix" UNIQUE="false" FIELDS="companyuuid,reportuuid" /></INDEXES>
+      </TABLE>
   </TABLES>
 </XMLDB>
