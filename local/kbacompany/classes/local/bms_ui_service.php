@@ -759,7 +759,7 @@ class bms_ui_service {
                 $review++;
             }
         }
-        $incoming = (int)($counts['unread_threads'] ?? 0) + (int)($counts['unread_notifications'] ?? 0);
+        $incoming = (int)($counts['unread_threads'] ?? 0);
         return [
             'incoming' => $incoming,
             'tasks' => (int)($counts['tasks'] ?? 0),
@@ -837,7 +837,7 @@ class bms_ui_service {
             $communicationbadge = [
                 'value' => (string)$counts['incoming'],
                 'variant' => 'brand',
-                'title' => get_string('communication_unread', 'local_kbacompany'),
+                'title' => get_string('communicationux_thread_count', 'local_kbacompany'),
             ];
         }
 

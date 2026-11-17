@@ -9834,3 +9834,16 @@ $string['bpu_discussion_readonly'] = 'You can read this plan discussion. Plan pa
 $string['bpu_discussion_reader'] = 'You see this discussion because you can open the plan. Posting a message adds you to the discussion.';
 $string['communication_object_battleplan'] = 'Battle Plan';
 $string['communicationcenter_openplan'] = 'Open plan';
+
+// Communication Center UX-1 (2026-11-18): sections and accessible presentation.
+$string['communicationux_conversations'] = 'Conversations';
+$string['communicationux_notification_count'] = 'Unread notifications';
+$string['communicationux_filters'] = 'Conversation filters';
+$string['communicationux_details'] = 'Details and participants';
+$string['communicationux_empty_search'] = 'No conversations match this search. Change the search or clear it.';
+$string['communicationux_empty_all'] = 'No conversations in this section yet. Start a conversation or open an object discussion.';
+$string['communicationux_empty_filtered'] = 'No conversations match this filter. Show all conversations in this section.';
+$string['communicationux_reset'] = 'Show all in this section';
+$string['communicationux_read'] = 'Read';
+$string['communicationux_unread'] = 'Unread';
+$string['communicationux_thread_count'] = 'Conversations and discussions with unread messages';

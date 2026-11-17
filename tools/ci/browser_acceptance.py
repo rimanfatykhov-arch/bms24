@@ -165,6 +165,8 @@ try:
     # Battle Plan discussion (Communication Center E2, Q9); reuses the synthetic viewer VA created above as plan reviewer.
     plan_exit = timed('plan_discussion', lambda: browser('plan_discussion.py', 'verify'))
     record(contract.evaluate(contract.plan_discussion_checks(load('plan-discussion-result.json'), plan_exit)))
+    ux_exit = timed('communication_ux', lambda: browser('communication_ux.py', 'verify'))
+    record(contract.evaluate(contract.communication_ux_checks(load('communication-ux-result.json'), ux_exit)))
     # Daily reports R0 entry (ADR-0009): menu order/active state, tab, button, short phone labels, owned+legacy, 1440+375.
     daily_exit = timed('daily_reports_nav', lambda: browser('daily_reports_nav.py', 'verify'))
     record(contract.evaluate(contract.daily_reports_nav_checks(load('daily-reports-nav-result.json'), daily_exit)))

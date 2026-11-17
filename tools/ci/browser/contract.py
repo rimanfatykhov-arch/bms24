@@ -1218,13 +1218,51 @@ def plan_discussion_checks(obs, exitcode=None):
             'plan_discussion_no_browser_errors': browser_events}
 
 
+def communication_ux_checks(obs, exitcode=None):
+    """Fail closed on incomplete real Moodle UX-1 evidence, independently of producer status."""
+    def verify():
+        require(exitcode in (None, 0) and obs.get('status') == 'PASS', 'UX browser run failed')
+        rows = obs.get('cases')
+        expected = {(s, w) for s in ['owned', 'legacy'] for w in [320, 375, 390, 768, 1440]}
+        require(isinstance(rows, list) and len(rows) == 10, 'UX matrix incomplete')
+        require({(r.get('shell'), r.get('width')) for r in rows} == expected, 'UX matrix mismatch')
+        def luminance(color):
+            match = re.fullmatch(r'rgb\((\d+),\s*(\d+),\s*(\d+)\)', color)
+            require(match is not None, 'opaque computed color missing')
+            rgb = [int(x) / 255 for x in match.groups()]
+            require(all(0 <= v <= 1 for v in rgb), 'invalid color')
+            linear = [v / 12.92 if v <= 0.04045 else ((v + 0.055) / 1.055) ** 2.4 for v in rgb]
+            return sum(v * w for v, w in zip(linear, [0.2126, 0.7152, 0.0722]))
+        for row in rows:
+            require(row.get('http') == 200 and row.get('notifications_http') == 200, 'unexpected HTTP status')
+            require(row.get('sections') == 3, 'expected exactly three primary sections')
+            for field, value in [('default_section', 'messages'), ('default_filter', 'all')]:
+                url = local_url(row.get(field, ''))
+                query = dict(parse_qsl(urlparse(url).query))
+                require(query.get('tab' if field == 'default_section' else 'filter') == value, 'wrong default')
+            for field in ['no_meetings', 'no_bulk', 'thread_available', 'panel_open', 'panel_closed',
+                          'focus_restored', 'notification_screen', 'no_conversation_area']:
+                require(row.get(field) is True, 'UX missing/failed ' + field)
+            for field in ['overflow', 'thread_overflow', 'notifications_overflow']:
+                require(row.get(field) is False, 'overflow or missing measurement: ' + field)
+            require(row.get('server_errors') == [], 'server error evidence missing or HTTP500')
+            require(isinstance(row.get('browser_events'), list), 'browser events missing')
+            require(not browser_event_violations(row['browser_events']), 'unexpected browser/network errors')
+            colors = row.get('colors')
+            require(isinstance(colors, list) and len(colors) == 3, 'computed chip colors missing')
+            for pair in colors:
+                a, b = luminance(pair['foreground']), luminance(pair['background'])
+                require((max(a, b) + 0.05) / (min(a, b) + 0.05) >= 4.5, 'chip contrast below4.5')
+    return {'communication_ux1_layout_and_navigation': verify}
+
+
 def required_check_names():
     """Every check a complete BROWSER report must contain (used by browser_acceptance.py and merge_gate.py)."""
     return (['moodle_install', 'fixtures_companies_A_B'] + list(task_tab_checks({})) + list(attachments_checks({}, {}))
             + list(access_checks({})) + list(oversize_checks({}, {})) + list(multiattachment_checks({}))
             + list(message_action_checks({})) + list(task_open_checks({}))
             + list(communication_center_checks({})) + list(daily_reports_nav_checks({}))
-            + list(daily_reports_flow_checks({})) + list(plan_discussion_checks({})))
+            + list(daily_reports_flow_checks({})) + list(plan_discussion_checks({})) + list(communication_ux_checks({})))
 
 
 def evaluate(checks):

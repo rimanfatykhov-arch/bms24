@@ -26,6 +26,8 @@ R2_MARKER=b'\n// ADR-0009 R2: manager review, rating, return, rework and notific
 R0_KEYS=[b'dailyreports_nav',b'dailyreports_tabs',b'dailyreports_tab_my',b'dailyreports_button',
          b'dailyreports_nav_short',b'dailyreports_button_short']
 E2_MARKER=b'\n// Communication Center E2 (2026-11-16): Battle Plan discussion (Q9).\n'
+UX_MARKER=b'\n// Communication Center UX-1 (2026-11-18): sections and accessible presentation.\n'
+UX_KEYS=[b'communicationux_conversations', b'communicationux_notification_count', b'communicationux_filters', b'communicationux_details', b'communicationux_empty_search', b'communicationux_empty_all', b'communicationux_empty_filtered', b'communicationux_reset', b'communicationux_read', b'communicationux_unread', b'communicationux_thread_count']
 E2_KEYS=[b'bpu_tab_discussion',b'bpu_discussion_empty',b'bpu_discussion_readonly',b'bpu_discussion_reader',
          b'communication_object_battleplan',b'communicationcenter_openplan']
 _R2=json.loads((ROOT/'docs/reconcile/daily-reports-r2-source-preservation.json').read_text(encoding='utf-8'))
@@ -80,6 +82,13 @@ class Preservation(unittest.TestCase):
             e2=None
             if r2 is not None and E2_MARKER in r2:
                 r2,e2=r2.split(E2_MARKER)
+            if e2 is not None and UX_MARKER in e2:
+                e2,ux=e2.split(UX_MARKER)
+                self.assertEqual(UX_KEYS, keys(ux))
+                self.assertFalse(set(keys(ux)) & set(keys(data.split(UX_MARKER)[0])))
+                original=json.loads((ROOT/'docs/reconcile/communication-center-e2-source-preservation.json').read_text())
+                expected=next(x['after_sha256_lf'] for x in original['files'] if x['path']==f'local/kbacompany/lang/{lang}/local_kbacompany.php')
+                self.assertEqual(expected,hashlib.sha256(data.split(UX_MARKER)[0]).hexdigest())
             if e2 is not None:
                 # The R2 file (… + R2 block, main after #119) is byte-identical up to the E2 marker.
                 self.assertEqual(R2_AFTER[lang],hashlib.sha256(prefix+DAY_MARKER+day+COMM_MARKER+comm+R0_MARKER+r0

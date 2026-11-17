@@ -71,6 +71,8 @@ def check(root=ROOT):
         target = {'local/kbacompany/db/install.xml': '06a60b36d0d5a4dfc86924bc43819a0d7b2c6fd054888639d3363fbec5979845'}.get(name, expected)
         if digest(root/name)!=target:
             errors.append('shared schema/helper changed: '+name)
+    # UX-1: exact append-only language/scoped CSS follow-up over E2.
+    reviewed_followup.update({'local/kbacompany/lang/en/local_kbacompany.php': 'eac98f182ea03d8332608ede1ad216c2fbde9398634653cb3a2e65eb0bfe890b', 'local/kbacompany/lang/ru/local_kbacompany.php': '6e5cb24b46f5c918bd4d48b50f6ad6f2c6a231a423490374a32481479da268bf', 'local/kbacompany/styles.css': 'cd2d2163a340a79e0b4766e90d63aad3b39a31d334fa4430c6eee686200e4e7f'})
     for row in plan['rows']:
         path=root/row['path']
         if not path.is_file() or path.is_symlink():
