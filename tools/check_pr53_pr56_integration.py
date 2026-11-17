@@ -54,6 +54,11 @@ def check(root=ROOT):
     # Daily reports R1 (ADR-0009): saved report strings appended after the R0 block; see DAILY_REPORTS_R1_SCHEMA.md.
     reviewed_followup['local/kbacompany/lang/en/local_kbacompany.php'] = 'efe44c09bfa2559779ad69aca6645e9a1c3a56477a858041fb5826184f452a02'
     reviewed_followup['local/kbacompany/lang/ru/local_kbacompany.php'] = 'f661b9d42a53e6b78020d352fbed6f0ea4ccad46d11596782e466895b1840208'
+    # Daily reports R2 (ADR-0009): review strings appended after R1; two notification kinds added to the canonical
+    # Communication Center allowlist only. See docs/reconcile/DAILY_REPORTS_R2_REVIEW.md.
+    reviewed_followup['local/kbacompany/lang/en/local_kbacompany.php'] = 'bc4d02332d0e930526ca7d16cd8de6a394886ab172f8a0ec6afb036be393fd69'
+    reviewed_followup['local/kbacompany/lang/ru/local_kbacompany.php'] = 'bb64599ec5f4ed72c875d2a9f37bcf077344173e2c968530d8eff151ac4c185c'
+    reviewed_followup['local/kbacompany/classes/local/communication_service.php'] = '877ef95b6afc40797a7bbb19522d49d1c93bf0bac04cf5a1bc2d65df44eec3e6'
     reviewed_metadata={'AGENTS.md','docs/00_MASTER_CONTEXT.md'}
     for name, expected in plan['unchanged_schema_hashes'].items():
         # ADR-0009 R1 appends five additive daily report tables; every earlier table definition is unchanged.
@@ -72,7 +77,7 @@ def check(root=ROOT):
         errors.append('one historical0902 release note was lost')
     upgrade=(root/'local/kbacompany/db/upgrade.php').read_text(encoding='utf-8')
     versions=[int(v) for v in re.findall(r'upgrade_plugin_savepoint\(true,\s*(\d+)',upgrade)]
-    if len(versions)!=484 or versions!=sorted(set(versions)) or versions[-1]!=2026111600 or versions[-2]!=2026111100:
+    if len(versions)!=485 or versions!=sorted(set(versions)) or versions[-3:]!=[2026111100,2026111600,2026111601]:
         errors.append('merged upgrade chronology/identity changed')
     driver=(root/'tools/tests/moodle_acceptance.php').read_text(encoding='utf-8')
     for ref in [plan['pr53_sha'],plan['pr56_sha']]:

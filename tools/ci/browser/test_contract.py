@@ -853,6 +853,82 @@ class ContractTest(unittest.TestCase):
                 res = c.evaluate(c.daily_reports_nav_checks(obs, code))
                 self.assertTrue(all(v['status'] == 'FAIL' for v in res.values()))
 
+    def daily_flow_obs(self):
+        MA, EA = 11, 12
+        rows = []
+        for (shell, width), today, day in zip(c.DAILY_REPORTS_FLOW_CASES, (True, False), ('2026-11-16', '2026-11-15')):
+            t = {k: 'DR %s %s' % (shell, k) for k in ('draft', 'tab1', 'tab2', 'submit', 'rework', 'forged')}
+            v1 = {'uuid': 'v1-' + shell, 'no': 1, 'state': 'submitted', 'done': t['submit'], 'reviewerid': MA,
+                  'snapshot_sha': 's', 'contenthash': 'h', 'snapshot_has_marker': today}
+            v2 = dict(v1, uuid='v2-' + shell, no=2, done=t['rework'])
+            notes = [{'userid': MA, 'kind': 'dailyreport_submitted', 'title': 'Report ' + day}] * 2 + \
+                    [{'userid': EA, 'kind': 'dailyreport_decision', 'title': 'Decision ' + day}] * 2
+            accepted = [{'versionuuid': v1['uuid'], 'decision': 'returned', 'rating': ''},
+                        {'versionuuid': v2['uuid'], 'decision': 'accepted', 'rating': 'positive'}]
+            row = {'shell': shell, 'width': width, 'day': day, 'today': today, 'texts': t, 'ids': {'MA': MA, 'EA': EA},
+                   'relogin_draft': t['draft'], 'hscroll_form': True, 'hscroll_card': True,
+                   'conflict': {'shown': 1, 'tab2_kept': True, 'tab1_saved': True},
+                   'submit_http': [303] * 8, 'forged_http': [200], 'get_http': 200,
+                   'after_submit': {'report': {'status': 'submitted'}, 'versions': [v1], 'decisions': []},
+                   'after_forged': {'report': {'status': 'submitted'}, 'versions': [v1], 'decisions': []},
+                   'return_http': [303] * 8, 'accept_http': [303] * 8, 'accept_version': v2['uuid'],
+                   'after_return': {'report': {'status': 'returned'}, 'versions': [v1], 'decisions': accepted[:1]},
+                   'after_rework': {'report': {'status': 'submitted'}, 'versions': [v1, v2], 'decisions': accepted[:1]},
+                   'after_accept': {'report': {'status': 'accepted'}, 'versions': [v1, v2], 'decisions': accepted,
+                                    'notifications': notes},
+                   'after_negatives': {'report': {'status': 'accepted'}, 'versions': [v1, v2], 'decisions': copy.deepcopy(accepted)},
+                   'negatives': {'EB': {'http': [200]}, 'RA': {'http': [200]}}, 'notification_links': 1,
+                   'browser_events': list(ABORTED), 'server_errors': []}
+            if today:
+                row['after_touch'] = {'report': {'status': 'submitted'}, 'versions': [dict(v1)], 'decisions': []}
+            rows.append(row)
+        return {'status': 'PASS', 'setup': {'enabled': True}, 'cases': rows}
+
+    def test_daily_reports_flow_valid_passes_and_mutations_fail(self):
+        obs = self.daily_flow_obs()
+        res = c.evaluate(c.daily_reports_flow_checks(obs, 0))
+        self.assertEqual({k: 'PASS' for k in res}, {k: v['status'] for k, v in res.items()}, res)
+
+        def fails(check, mutate):
+            o = copy.deepcopy(obs); mutate(o)
+            r = c.evaluate(c.daily_reports_flow_checks(o, 0))
+            self.assertEqual('FAIL', r[check]['status'], (check, r[check]))
+        fails('daily_report_draft_relogin_and_conflict', lambda o: o['cases'][0].update(relogin_draft=''))
+        fails('daily_report_draft_relogin_and_conflict', lambda o: o['cases'][1]['conflict'].update(tab2_kept=False))
+        fails('daily_report_concurrent_submit_one_version', lambda o: o['cases'][0]['after_submit']['versions'].append(
+            dict(o['cases'][0]['after_submit']['versions'][0], uuid='dup')))
+        fails('daily_report_concurrent_submit_one_version', lambda o: o['cases'][1].update(submit_http=[303] * 7 + [500]))
+        fails('daily_report_concurrent_submit_one_version', lambda o: o['cases'][0]['after_submit']['versions'][0].update(reviewerid=0))
+        fails('daily_report_csrf_and_get_rejected', lambda o: o['cases'][0].update(forged_http=[303]))
+        fails('daily_report_csrf_and_get_rejected', lambda o: o['cases'][1]['after_forged']['versions'][0].update(
+            done=o['cases'][1]['texts']['forged']))
+        fails('daily_report_snapshot_immutable', lambda o: o['cases'][0]['after_touch']['versions'][0].update(snapshot_sha='changed'))
+        fails('daily_report_snapshot_immutable', lambda o: o['cases'][0]['after_submit']['versions'][0].update(snapshot_has_marker=False))
+        fails('daily_report_return_rework_accept_once', lambda o: o['cases'][0]['after_return']['decisions'].append(
+            dict(o['cases'][0]['after_return']['decisions'][0])))
+        fails('daily_report_return_rework_accept_once', lambda o: o['cases'][1].update(accept_version='v1-legacy'))
+        fails('daily_report_return_rework_accept_once', lambda o: o['cases'][0]['after_accept']['decisions'][1].update(
+            versionuuid='v1-owned'))
+        fails('daily_report_return_rework_accept_once', lambda o: o['cases'][1]['after_rework']['versions'][0].update(done='rewritten'))
+        fails('daily_report_notifications_once_with_link', lambda o: o['cases'][0]['after_accept']['notifications'].append(
+            {'userid': 11, 'kind': 'dailyreport_submitted', 'title': 'Report 2026-11-16'}))
+        fails('daily_report_notifications_once_with_link', lambda o: o['cases'][1]['after_accept']['notifications'].__setitem__(
+            0, {'userid': 99, 'kind': 'dailyreport_submitted', 'title': 'Report 2026-11-15'}))
+        fails('daily_report_notifications_once_with_link', lambda o: o['cases'][0].update(notification_links=0))
+        fails('daily_report_foreign_and_nonreviewer_denied', lambda o: o['cases'][0]['after_negatives']['decisions'].append(
+            {'versionuuid': 'v2-owned', 'decision': 'accepted', 'rating': 'negative'}))
+        fails('daily_report_foreign_and_nonreviewer_denied', lambda o: o['cases'][1]['negatives']['RA'].update(http=[500]))
+        fails('daily_report_layout_and_browser_errors', lambda o: o['cases'][1].update(hscroll_form=False))
+        fails('daily_report_layout_and_browser_errors', lambda o: o['cases'][0]['browser_events'].append(
+            {'source': 'pageerror', 'name': 'Error', 'message': 'x'}))
+        for mutate, code in ((lambda o: o['cases'].pop(), 0), (lambda o: o['cases'].reverse(), 0),
+                             (lambda o: o['setup'].update(enabled=False), 0), (lambda o: o.update(error='boom'), 0),
+                             (lambda o: None, 1)):
+            o = copy.deepcopy(obs); mutate(o)
+            r = c.evaluate(c.daily_reports_flow_checks(o, code))
+            self.assertTrue(all(v['status'] == 'FAIL' for v in r.values()), r)
+        self.assertTrue(all(v['status'] == 'FAIL' for v in c.evaluate(c.daily_reports_flow_checks(None, None)).values()))
+
     def test_required_check_names_complete(self):
         names = c.required_check_names()
         self.assertEqual(len(names), len(set(names)))

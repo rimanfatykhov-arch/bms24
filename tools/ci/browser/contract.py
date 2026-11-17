@@ -5,6 +5,7 @@ Pure functions, no browser/DB/network. `require()` raises RuntimeError (never `a
 Note: the loopback check below constrains what the test scripts request; it is NOT OS-level network isolation.
 """
 import hashlib
+import json
 import ipaddress
 import re
 from urllib.parse import urlparse, parse_qsl
@@ -1001,12 +1002,123 @@ def daily_reports_nav_checks(obs, exitcode=None):
             'daily_reports_no_browser_errors': events}
 
 
+DAILY_REPORTS_FLOW_CASES = [('owned', 1440), ('legacy', 375)]
+
+
+def daily_reports_flow_checks(obs, exitcode=None):
+    """Saved daily reports R1/R2 (daily_reports_flow.py). Verdicts come from DB state read after each step; the producer's
+    PASS alone is never sufficient."""
+    def run():
+        require(exitcode == 0, 'daily reports flow browser process failed or was not run')
+        require(isinstance(obs, dict) and obs.get('status') == 'PASS' and not obs.get('error'), 'daily reports flow incomplete')
+        require((obs.get('setup') or {}).get('enabled') is True, 'daily reports not enabled by the fixture')
+        rows = obs.get('cases')
+        require(isinstance(rows, list) and [(r.get('shell'), r.get('width')) for r in rows] == DAILY_REPORTS_FLOW_CASES,
+                'owned 1440 / legacy 375 cases required')
+        require([r.get('today') for r in rows] == [True, False], 'today and an earlier day required')
+        for r in rows:
+            t = r.get('texts') or {}
+            require(len(t) == 6 and len(set(t.values())) == 6 and all(isinstance(v, str) and v for v in t.values()), 'case texts missing')
+        return rows
+
+    def submitted(st):
+        return [v for v in (st or {}).get('versions') or [] if v.get('state') != 'draft']
+
+    def draft_and_conflict():
+        for r in run():
+            require(r.get('relogin_draft') == r['texts']['draft'], 'server draft lost after a new login')
+            c = r.get('conflict') or {}
+            require(c.get('shown') == 1 and c.get('tab2_kept') is True and c.get('tab1_saved') is True,
+                    'two-tab conflict not reported or a text was lost')
+
+    def submit_once():
+        for r in run():
+            http = r.get('submit_http') or []
+            require(len(http) == 8 and all(isinstance(x, int) and x < 500 for x in http) and 303 in http,
+                    'concurrent submissions failed: %r' % (http,))
+            st = r.get('after_submit') or {}
+            versions = submitted(st)
+            require((st.get('report') or {}).get('status') == 'submitted' and len(versions) == 1
+                    and versions[0].get('done') == r['texts']['submit'], 'concurrent submissions did not create exactly one version')
+            require(versions[0].get('reviewerid') == (r.get('ids') or {}).get('MA'), 'battle plan reviewer not stored on the version')
+
+    def csrf():
+        for r in run():
+            forged = r.get('forged_http') or []
+            require(len(forged) == 1 and isinstance(forged[0], int) and forged[0] != 303 and forged[0] < 500,
+                    'forged sesskey request was redirected as a success or failed with 5xx: %r' % (forged,))
+            require(isinstance(r.get('get_http'), int) and r['get_http'] < 500, 'GET with action parameters failed')
+            require(submitted(r.get('after_forged')) == submitted(r.get('after_submit')), 'forged sesskey or GET changed the report')
+            require(r['texts']['forged'] not in json.dumps(r.get('after_forged'), ensure_ascii=False), 'forged text stored')
+
+    def snapshot():
+        rows = run()
+        today = rows[0]
+        before, after = submitted(today.get('after_submit')), submitted(today.get('after_touch'))
+        require(before and after and before[0].get('snapshot_has_marker') is True, 'task of the day missing from the snapshot')
+        require(after[0].get('snapshot_sha') == before[0].get('snapshot_sha') and after[0].get('contenthash') == before[0].get('contenthash')
+                and after[0].get('snapshot_has_marker') is True, 'submitted snapshot changed after the task changed')
+
+    def review_cycle():
+        for r in run():
+            for key in ('return_http', 'accept_http'):
+                http = r.get(key) or []
+                require(len(http) == 8 and all(isinstance(x, int) and x < 500 for x in http), '%s failed: %r' % (key, http))
+            ret = r.get('after_return') or {}
+            v1 = submitted(ret)
+            require((ret.get('report') or {}).get('status') == 'returned' and len(v1) == 1 and
+                    [(d.get('versionuuid'), d.get('decision')) for d in ret.get('decisions') or []] == [(v1[0]['uuid'], 'returned')],
+                    'concurrent return did not record exactly one decision')
+            rw = r.get('after_rework') or {}
+            vs = submitted(rw)
+            require((rw.get('report') or {}).get('status') == 'submitted' and len(vs) == 2 and vs[0]['uuid'] == v1[0]['uuid']
+                    and vs[0].get('done') == r['texts']['submit'] and vs[1].get('done') == r['texts']['rework'],
+                    'rework did not create version 2 while keeping version 1')
+            acc = r.get('after_accept') or {}
+            require(r.get('accept_version') == vs[1]['uuid'], 'accept form not bound to the current version')
+            require((acc.get('report') or {}).get('status') == 'accepted' and
+                    [(d.get('versionuuid'), d.get('decision'), d.get('rating')) for d in acc.get('decisions') or []] ==
+                    [(vs[0]['uuid'], 'returned', ''), (vs[1]['uuid'], 'accepted', 'positive')],
+                    'concurrent accept did not bind exactly one positive decision to version 2')
+
+    def notifications():
+        for r in run():
+            ids = r.get('ids') or {}
+            rows = [n for n in (r.get('after_accept') or {}).get('notifications') or [] if r['day'] in (n.get('title') or '')]
+            got = sorted((n.get('userid'), n.get('kind')) for n in rows)
+            require(got == sorted([(ids.get('MA'), 'dailyreport_submitted')] * 2 + [(ids.get('EA'), 'dailyreport_decision')] * 2),
+                    'notifications wrong recipient or duplicated: %r' % (got,))
+            require(isinstance(r.get('notification_links'), int) and r['notification_links'] >= 1,
+                    'reviewer notification has no link to the review tab')
+
+    def negatives():
+        for r in run():
+            for label in ('EB', 'RA'):
+                http = ((r.get('negatives') or {}).get(label) or {}).get('http') or []
+                require(len(http) == 1 and isinstance(http[0], int) and http[0] < 500, '%s request failed unexpectedly' % label)
+            require((r.get('after_negatives') or {}).get('decisions') == (r.get('after_accept') or {}).get('decisions'),
+                    'a foreign or non-reviewer request changed the decisions')
+
+    def layout_and_events():
+        for r in run():
+            require(r.get('hscroll_form') is True and r.get('hscroll_card') is True, 'horizontal scroll at %s px' % r.get('width'))
+            violations = browser_event_violations(r.get('browser_events'))
+            require(not violations, 'browser errors: %r' % violations[:3])
+            require(r.get('server_errors') == [], 'HTTP 5xx: %r' % (r.get('server_errors'),))
+
+    return {'daily_report_draft_relogin_and_conflict': draft_and_conflict, 'daily_report_concurrent_submit_one_version': submit_once,
+            'daily_report_csrf_and_get_rejected': csrf, 'daily_report_snapshot_immutable': snapshot,
+            'daily_report_return_rework_accept_once': review_cycle, 'daily_report_notifications_once_with_link': notifications,
+            'daily_report_foreign_and_nonreviewer_denied': negatives, 'daily_report_layout_and_browser_errors': layout_and_events}
+
+
 def required_check_names():
     """Every check a complete BROWSER report must contain (used by browser_acceptance.py and merge_gate.py)."""
     return (['moodle_install', 'fixtures_companies_A_B'] + list(task_tab_checks({})) + list(attachments_checks({}, {}))
             + list(access_checks({})) + list(oversize_checks({}, {})) + list(multiattachment_checks({}))
             + list(message_action_checks({})) + list(task_open_checks({}))
-            + list(communication_center_checks({})) + list(daily_reports_nav_checks({})))
+            + list(communication_center_checks({})) + list(daily_reports_nav_checks({}))
+            + list(daily_reports_flow_checks({})))
 
 
 def evaluate(checks):

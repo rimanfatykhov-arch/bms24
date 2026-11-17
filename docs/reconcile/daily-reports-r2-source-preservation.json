@@ -1,0 +1,25 @@
+{
+  "scope": "exact intentional source updates; not runtime or release acceptance",
+  "base_sha": "1ec8970",
+  "normalization": "CRLF to LF only",
+  "previous_evidence": "docs/reconcile/daily-reports-r1-source-preservation.json (#118)",
+  "decision": "docs/adr/ADR-0009-daily-employee-reports.md (PR #115), stage R2",
+  "change": "Append the ADR-0009 R2 block (46 review keys) after R1; add dailyreport_submitted and dailyreport_decision to communication_service::NOTIFICATION_KINDS only.",
+  "files": [
+    {
+      "path": "local/kbacompany/lang/en/local_kbacompany.php",
+      "before_sha256_lf": "efe44c09bfa2559779ad69aca6645e9a1c3a56477a858041fb5826184f452a02",
+      "after_sha256_lf": "bc4d02332d0e930526ca7d16cd8de6a394886ab172f8a0ec6afb036be393fd69"
+    },
+    {
+      "path": "local/kbacompany/lang/ru/local_kbacompany.php",
+      "before_sha256_lf": "f661b9d42a53e6b78020d352fbed6f0ea4ccad46d11596782e466895b1840208",
+      "after_sha256_lf": "bb64599ec5f4ed72c875d2a9f37bcf077344173e2c968530d8eff151ac4c185c"
+    },
+    {
+      "path": "local/kbacompany/classes/local/communication_service.php",
+      "before_sha256_lf": "ecc24db60b9dacfd66be77ec7664895ef34e67b476f34387d656cfe07004e41d",
+      "after_sha256_lf": "877ef95b6afc40797a7bbb19522d49d1c93bf0bac04cf5a1bc2d65df44eec3e6"
+    }
+  ]
+}

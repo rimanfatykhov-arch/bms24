@@ -376,7 +376,61 @@ final class daily_report_store_service {
         } finally {
             $lock->release();
         }
+        // R2: tell the reviewer once per version (a replayed request returned earlier and never gets here).
+        if ((int)$draft->reviewerid > 0) {
+            daily_report_review_service::notify($companyuuid, (int)$draft->reviewerid, 'dailyreport_submitted',
+                [$draft->uuid], get_string('dailyreports_notify_submitted', 'local_kbacompany', $day),
+                daily_report_ui_service::url($companyuuid, ['tab' => 'review', 'report' => $report->uuid]));
+        }
         return ['reportuuid' => $report->uuid, 'versionuuid' => $draft->uuid, 'replayed' => false];
+    }
+
+    /**
+     * Start the next version (ADR-0009 §5.4, §5.6). After a return the text of the returned version is copied for
+     * rework; after an acceptance a correction needs an explanation (В4). The old version, its decision and rating stay
+     * untouched in the history; the new version starts without a rating.
+     */
+    public static function start_revision(string $companyuuid, int $actor, string $day, string $note = ''): array {
+        global $DB;
+        self::require_enabled();
+        $companyuuid = self::scope($companyuuid, $actor, $day);
+        $note = trim(str_replace("\r\n", "\n", $note));
+        if (\core_text::strlen($note) > self::MAX_TEXT) {
+            throw new \moodle_exception('dailyreports_texttoolong', 'local_kbacompany');
+        }
+        $lock = self::lock($companyuuid, $actor, $day);
+        try {
+            $report = self::find($companyuuid, $actor, $day);
+            if (!$report || (string)$report->draftversionuuid !== '' ||
+                    !in_array((string)$report->status, ['returned', 'accepted'], true)) {
+                throw new \moodle_exception('dailyreports_notrevisable', 'local_kbacompany');
+            }
+            if ($report->status === 'accepted' && $note === '') {
+                throw new \moodle_exception('dailyreports_correctionrequired', 'local_kbacompany');
+            }
+            $current = self::version($companyuuid, $report->uuid, (string)$report->currentversionuuid);
+            $tx = $DB->start_delegated_transaction();
+            try {
+                $values = [];
+                foreach (self::FIELDS as $field) {
+                    $values[$field] = (string)($current->$field ?? '');
+                }
+                $draft = self::new_version($companyuuid, $report->uuid, $actor, $values,
+                    $report->status === 'accepted' ? $note : '');
+                self::replace_links($companyuuid, $draft->uuid, array_map(static function($link): string {
+                    return (string)$link->taskuuid;
+                }, $current ? self::links($companyuuid, $current->uuid) : []));
+                $kind = $report->status === 'accepted' ? 'correction_started' : 'rework_started';
+                self::touch_report($report, ['status' => 'draft', 'draftversionuuid' => $draft->uuid]);
+                self::log($companyuuid, $report->uuid, $draft->uuid, $actor, $kind, ['versionno' => (int)$draft->versionno]);
+                $tx->allow_commit();
+            } catch (\Throwable $e) {
+                $tx->rollback($e);
+            }
+        } finally {
+            $lock->release();
+        }
+        return ['versionuuid' => $draft->uuid, 'revision' => (int)$draft->revision];
     }
 
     /** Store the state of each linked task at submission; a task the author can no longer open is dropped. */

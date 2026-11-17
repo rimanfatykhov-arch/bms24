@@ -540,6 +540,21 @@ class communication_center_ui_service {
         return $html;
     }
 
+    /**
+     * Daily report notifications carry no thread or task: link to the reviewer queue or the author's history.
+     * The daily report page re-checks company, membership and review rights; the link itself grants nothing.
+     * @return array|null [moodle_url, string key] or null for other kinds
+     */
+    public static function daily_report_target(string $company, string $kind): ?array {
+        if ($kind === 'dailyreport_submitted') {
+            return [daily_report_ui_service::url($company, ['tab' => 'review']), 'dailyreports_tab_review'];
+        }
+        if ($kind === 'dailyreport_decision') {
+            return [daily_report_ui_service::url($company, ['tab' => 'history']), 'dailyreports_tab_history'];
+        }
+        return null;
+    }
+
     private static function notification_cards(string $company, array $notifications, int $limit): string {
         if (!$notifications) { return task_ui_service::note(self::tr('communication_nonotifications')); }
         $html = ''; $n = 0;
@@ -551,6 +566,10 @@ class communication_center_ui_service {
             if ($notification['thread_uuid'] !== '') {
                 $actions .= task_ui_service::link(self::url($company, ['tab' => 'all', 'thread' => $notification['thread_uuid']]),
                     self::tr('communication_open'));
+            }
+            $target = self::daily_report_target($company, (string)$notification['kind']);
+            if ($target) {
+                $actions .= task_ui_service::link($target[0], self::tr($target[1]));
             }
             if (!$notification['is_read']) {
                 $form = self::post_base($company, 'readnotification') .
