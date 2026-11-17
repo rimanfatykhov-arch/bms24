@@ -103,6 +103,7 @@ def fresh_upgrade_schema(upgrade):
     from daily_reports_upgrade_policy import fresh_equal
     fresh=root/'fresh-equivalent';data=root/'fresh-data'
     if fresh.exists() or data.exists():raise RuntimeError('fresh acceptance directory already exists')
+    data.mkdir(mode=0o770)
     shutil.copytree(core,fresh,ignore=shutil.ignore_patterns('.git'))
     source=(core/'config.php').read_text()
     if source.count("$CFG->dbname = 'bmsci_web';")!=1 or repr(str(root/'data')) not in source:
@@ -113,9 +114,13 @@ def fresh_upgrade_schema(upgrade):
     cmd(['mysql','-h127.0.0.1','-P'+env['DBPORT'],'-u'+env['DBUSER'],'-e',
          'CREATE DATABASE bmsci_fresh CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci'],stdout=subprocess.DEVNULL)
     with (root/'fresh-install.private.log').open('w') as log:
-        cmd(['php',fresh/'admin/cli/install_database.php','--agree-license','--adminuser=admin',
-             '--adminpass=Isolated-Fresh-Acceptance1!','--adminemail=ci@example.invalid',
-             '--fullname=Synthetic fresh acceptance','--shortname=FRESH','--lang=en'],stdout=log,stderr=log)
+        try:
+            cmd(['php',fresh/'admin/cli/install_database.php','--agree-license','--adminuser=admin',
+                 '--adminpass=Isolated-Fresh-Acceptance1!','--adminemail=ci@example.invalid',
+                 '--fullname=Synthetic fresh acceptance','--shortname=FRESH','--lang=en'],stdout=log,stderr=log)
+        except subprocess.CalledProcessError:
+            log.flush()
+            raise RuntimeError('fresh install failed: '+(root/'fresh-install.private.log').read_text()[-600:])
     fresh_equal(upgrade_probe('fresh-equivalent',fresh),upgrade)
 
 def daily_reports_flow(phase):
