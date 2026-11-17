@@ -1,0 +1,21 @@
+{
+  "scope": "exact intentional source updates; not runtime or release acceptance",
+  "base_sha": "2739a5d",
+  "normalization": "CRLF to LF only",
+  "previous_evidence": "docs/reconcile/corporate-api126-source.json (ADR-0006 follow-up)",
+  "decision": "docs/adr/ADR-0005-corporate2613-schema-policy-PROPOSED.md (ACCEPTED 2026-11-10); finding P1 in PR #124",
+  "change": "Fresh XMLDB local_kbacorp_member.isemployee DEFAULT 1 -> 0; inventory entry marked modified with exact hashes.",
+  "files": [
+    {
+      "path": "local/kbacorporate/db/install.xml",
+      "before_sha256_lf": "7f9e0afa21b3319e38e0171b27ea791f35bfd5f797f1697ca58a0ea54b22a252",
+      "after_sha256_lf": "6b90b62780bbc7b29ad7096b94738530b61cc672d9a5d9a498c1466b94e76ac4",
+      "note": "after hash equals release/corporate2613/manifest.json db/install.xml"
+    },
+    {
+      "path": "docs/reconcile/corporate-api126-source.json",
+      "before_sha256_lf": "a1d20c4e5ed07b6018ca05c25198fea697de7062ee7f823c95d5820e363e11de",
+      "after_sha256_lf": "c5056e72332b20df56cbf2813612f1414c188508a86fde0a8329c8ca2eb18efb"
+    }
+  ]
+}

@@ -486,7 +486,9 @@ if ($fresh) {
             // ADR-0009 R1: saved drafts, idempotent immutable submissions, snapshots, reviewer, isolation.
             'daily_report_store_service_test', 'daily_report_service_test',
             // ADR-0009 R2: version-bound decisions, ratings, rework, reassignment, no self review.
-            'daily_report_review_service_test'];
+            'daily_report_review_service_test',
+            // ADR-0005 fresh default (PR #124 finding P1).
+            'corporate_member_default_adr0005_test'];
     }
     foreach ($focused as $test) {
         if ($code !== 0) { $report['phpunit'][$test] = 'NOT RUN'; continue; }

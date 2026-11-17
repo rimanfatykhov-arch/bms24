@@ -3460,8 +3460,8 @@
     {
       "path": "local/kbacorporate/db/install.xml",
       "archive_sha256": "7f9e0afa21b3319e38e0171b27ea791f35bfd5f797f1697ca58a0ea54b22a252",
-      "source_sha256": "7f9e0afa21b3319e38e0171b27ea791f35bfd5f797f1697ca58a0ea54b22a252",
-      "status": "unchanged"
+      "source_sha256": "6b90b62780bbc7b29ad7096b94738530b61cc672d9a5d9a498c1466b94e76ac4",
+      "status": "modified"
     },
     {
       "path": "local/kbacorporate/db/tasks.php",
@@ -5197,6 +5197,12 @@
       "status": "modified"
     },
     {
+      "path": "local/kbacorporate/db/install.xml",
+      "archive_sha256": "7f9e0afa21b3319e38e0171b27ea791f35bfd5f797f1697ca58a0ea54b22a252",
+      "source_sha256": "6b90b62780bbc7b29ad7096b94738530b61cc672d9a5d9a498c1466b94e76ac4",
+      "status": "modified"
+    },
+    {
       "path": "local/kbacorporate/department_members.php",
       "archive_sha256": "47514b33188d33da3e57fac477c45258dcf5a1959567a1eebfe6f919284264a5",
       "source_sha256": "6f59679645c617de5ba076544af5275aebda543bbc4a53b58c6f0a1877f211d5",
@@ -5318,7 +5324,8 @@
   "local_patches": [
     "Authorize single-task projection before task query; owner SQL scope for employees",
     "Correct two stale API assertions to 1.26",
-    "Move three standalone fixture scripts from PHPUnit discovery to cli/"
+    "Move three standalone fixture scripts from PHPUnit discovery to cli/",
+    "ADR-0005: fresh XMLDB member.isemployee DEFAULT 0, matching the upgrade path and the Corporate2613 package"
   ],
   "candidate_version": 2026111100,
   "candidate_release": "0.40.13-bms.3",
@@ -5415,6 +5422,11 @@
         "path": "local/kbacorporate/tests/erp_exchange_test.php",
         "before_sha256": "63b7daeceaaf2bdfdf777bf87f93c0b915e074822db12f2c9cc240616876bcc6",
         "after_sha256": "569057a26f010c5bf3a4c657478da4bc3d7d748f1f1effe5a2fb2cb1ddd639dc"
+      },
+      {
+        "path": "local/kbacorporate/db/install.xml",
+        "before_sha256": "7f9e0afa21b3319e38e0171b27ea791f35bfd5f797f1697ca58a0ea54b22a252",
+        "after_sha256": "6b90b62780bbc7b29ad7096b94738530b61cc672d9a5d9a498c1466b94e76ac4"
       }
     ]
   }

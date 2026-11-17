@@ -59,6 +59,9 @@ def check(root=ROOT):
     reviewed_followup['local/kbacompany/lang/en/local_kbacompany.php'] = 'bc4d02332d0e930526ca7d16cd8de6a394886ab172f8a0ec6afb036be393fd69'
     reviewed_followup['local/kbacompany/lang/ru/local_kbacompany.php'] = 'bb64599ec5f4ed72c875d2a9f37bcf077344173e2c968530d8eff151ac4c185c'
     reviewed_followup['local/kbacompany/classes/local/communication_service.php'] = '877ef95b6afc40797a7bbb19522d49d1c93bf0bac04cf5a1bc2d65df44eec3e6'
+    # ADR-0005 fresh-default fix (#124 P1): local Corporate install.xml member.isemployee DEFAULT 0, byte-identical
+    # to the Corporate2613 package file; inventory updated. See docs/reconcile/CORPORATE_FRESH_ADR0005.md.
+    reviewed_followup['docs/reconcile/corporate-api126-source.json'] = 'c5056e72332b20df56cbf2813612f1414c188508a86fde0a8329c8ca2eb18efb'
     reviewed_metadata={'AGENTS.md','docs/00_MASTER_CONTEXT.md'}
     for name, expected in plan['unchanged_schema_hashes'].items():
         # ADR-0009 R1 appends five additive daily report tables; every earlier table definition is unchanged.
