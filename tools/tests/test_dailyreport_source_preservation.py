@@ -25,6 +25,11 @@ R1_MARKER=b'\n// ADR-0009 R1: saved daily reports (draft, submission, versions, 
 R2_MARKER=b'\n// ADR-0009 R2: manager review, rating, return, rework and notifications.\n'
 R0_KEYS=[b'dailyreports_nav',b'dailyreports_tabs',b'dailyreports_tab_my',b'dailyreports_button',
          b'dailyreports_nav_short',b'dailyreports_button_short']
+NAV_MARKER=b'\n// Adaptive BMS24 navigation (2026-11-18): narrow-window menu button and drawer close label.\n'
+NAV_KEYS=[b'bms24_menu_button',b'bms24_menu_close']
+_R2=json.loads((ROOT/'docs/reconcile/daily-reports-r2-source-preservation.json').read_text(encoding='utf-8'))
+R2_AFTER={lang:next(r['after_sha256_lf'] for r in _R2['files'] if r['path']==f'local/kbacompany/lang/{lang}/local_kbacompany.php')
+          for lang in ('en','ru')}
 _COMM=json.loads((ROOT/'docs/reconcile/communication-center-cleanup-source-preservation.json').read_text(encoding='utf-8'))
 COMM_AFTER={lang:next(r['after_sha256_lf'] for r in _COMM['files'] if r['path']==f'local/kbacompany/lang/{lang}/local_kbacompany.php')
             for lang in PUBLISHED}
@@ -71,6 +76,14 @@ class Preservation(unittest.TestCase):
                 self.assertEqual(54,len(r1keys));self.assertEqual(len(r1keys),len(set(r1keys)))
                 self.assertTrue(all(k.startswith((b'dailyreports_',b'privacy:metadata:dailyreports')) for k in r1keys))
                 self.assertFalse(set(r1keys)&set(keys(prefix+day+comm+r0)))
+            nav=None
+            if r2 is not None and NAV_MARKER in r2:
+                r2,nav=r2.split(NAV_MARKER)
+            if nav is not None:
+                # The R2 file (main after #119) is byte-identical up to the adaptive navigation marker.
+                self.assertEqual(R2_AFTER[lang],hashlib.sha256(data.split(NAV_MARKER)[0]).hexdigest())
+                self.assertEqual(NAV_KEYS,keys(nav))
+                self.assertFalse(set(NAV_KEYS)&set(keys(data.split(NAV_MARKER)[0])))
             if r2 is not None:
                 r2keys=keys(r2)
                 self.assertEqual(46,len(r2keys));self.assertEqual(len(r2keys),len(set(r2keys)))
@@ -86,7 +99,8 @@ class Preservation(unittest.TestCase):
             path=ROOT/f'local/kbacompany/lang/{lang}/local_kbacompany.php'
             for mutation in [lambda b:b+b'\n// unexpected',lambda b:b.replace(b'dailyreport_title',b'overridden_key',1),
                              lambda b:b.replace(b'communication_reply',b'overridden_key',1),
-                             lambda b:b.replace(b'dailyreports_button',b'dailyreports_other',1)]:
+                             lambda b:b.replace(b'dailyreports_button',b'dailyreports_other',1),
+                             lambda b:b.replace(b'bms24_menu_close',b'overridden_key',1)]:
                 changed=hashlib.sha256(mutation(path.read_bytes().replace(b'\r\n',b'\n'))).hexdigest()
                 with patch.object(gate,'digest',side_effect=lambda p: changed if p==path else original(p)):
                     self.assertIn('parent source lost: '+path.relative_to(ROOT).as_posix(),gate.check(ROOT))

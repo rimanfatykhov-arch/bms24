@@ -1,0 +1,20 @@
+{
+  "scope": "exact intentional source updates; not runtime or release acceptance",
+  "base_sha": "fbf36ed",
+  "normalization": "CRLF to LF only",
+  "previous_evidence": "docs/reconcile/daily-reports-r2-source-preservation.json (#119)",
+  "decision": "docs/ui/ADAPTIVE_NAVIGATION.md (adaptive BMS24 navigation, owned shell)",
+  "change": "Append the adaptive navigation block (2 keys: bms24_menu_button, bms24_menu_close) after R2; no earlier key changed.",
+  "files": [
+    {
+      "path": "local/kbacompany/lang/en/local_kbacompany.php",
+      "before_sha256_lf": "bc4d02332d0e930526ca7d16cd8de6a394886ab172f8a0ec6afb036be393fd69",
+      "after_sha256_lf": "334f7aa2239c3e059506df507a26007bbfc08db54b532c32887c484ac007f6d9"
+    },
+    {
+      "path": "local/kbacompany/lang/ru/local_kbacompany.php",
+      "before_sha256_lf": "bb64599ec5f4ed72c875d2a9f37bcf077344173e2c968530d8eff151ac4c185c",
+      "after_sha256_lf": "ace7e28e039e17581624e30bfe99e7315d2adbc94b133c15eccba5b52a586636"
+    }
+  ]
+}

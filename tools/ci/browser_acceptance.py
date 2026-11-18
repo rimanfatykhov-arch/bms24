@@ -168,6 +168,9 @@ try:
     # Saved daily reports R1/R2: draft, conflict, concurrent submit/decisions, CSRF, snapshot, review cycle, notifications.
     flow_exit = timed('daily_reports_flow', lambda: browser('daily_reports_flow.py', 'verify'))
     record(contract.evaluate(contract.daily_reports_flow_checks(load('daily-reports-flow-result.json'), flow_exit)))
+    # Adaptive navigation (docs/ui/ADAPTIVE_NAVIGATION.md): owned drawer <= 860 px / sidebar, legacy, no-JS, 16 cases.
+    nav_exit = timed('adaptive_nav', lambda: browser('adaptive_nav.py', 'verify'))
+    record(contract.evaluate(contract.adaptive_nav_checks(load('adaptive-nav-result.json'), nav_exit)))
     timed('server_restart_64k', lambda: start_server(['-d', 'upload_max_filesize=64K', '-d', 'post_max_size=8M']))
     timed('oversize', lambda: browser('attachments.py', 'oversize'))
     timed('db_state_oversize', lambda: php_state('oversize'))

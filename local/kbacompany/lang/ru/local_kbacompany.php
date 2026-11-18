@@ -9828,3 +9828,7 @@ $string['messageprovider:dailyreport_submitted'] = 'Отчёт за день ж�
 $string['messageprovider:dailyreport_decision'] = 'Решение по моему отчёту за день';
 $string['communication_notification_dailyreport_submitted'] = 'Отчёт на проверку';
 $string['communication_notification_dailyreport_decision'] = 'Решение по отчёту';
+
+// Adaptive BMS24 navigation (2026-11-18): narrow-window menu button and drawer close label.
+$string['bms24_menu_button'] = 'Меню';
+$string['bms24_menu_close'] = 'Закрыть меню';

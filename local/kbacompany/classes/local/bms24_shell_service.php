@@ -29,6 +29,8 @@ final class bms24_shell_service {
         $PAGE->requires->css(new \moodle_url('/local/kbacompany/bms_ui/owned_shell.css'));
         $PAGE->requires->css(new \moodle_url('/local/kbacompany/bms_ui/ui_kit.css'));
         $PAGE->requires->css(new \moodle_url('/local/kbacompany/bms_ui/task_center.css'));
+        // Narrow windows: modal navigation drawer over the page (docs/ui/ADAPTIVE_NAVIGATION.md). Owned mode only.
+        $PAGE->requires->js_call_amd('local_kbacompany/bms24_nav_drawer', 'init');
     }
 
     public static function render(array $model): string {

@@ -9826,3 +9826,7 @@ $string['messageprovider:dailyreport_submitted'] = 'Daily report waiting for rev
 $string['messageprovider:dailyreport_decision'] = 'Decision on my daily report';
 $string['communication_notification_dailyreport_submitted'] = 'Daily report to review';
 $string['communication_notification_dailyreport_decision'] = 'Decision on a daily report';
+
+// Adaptive BMS24 navigation (2026-11-18): narrow-window menu button and drawer close label.
+$string['bms24_menu_button'] = 'Menu';
+$string['bms24_menu_close'] = 'Close menu';

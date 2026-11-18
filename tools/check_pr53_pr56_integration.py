@@ -63,6 +63,10 @@ def check(root=ROOT):
     # the Corporate2613 package; inventory updated. See docs/reconcile/CORPORATE_FRESH_ADR0005.md.
     reviewed_followup['docs/reconcile/corporate-api126-source.json'] = '95f5c6fd853b1167a6be761617bca56423ee93d65d6ac31600b534c0a3240415'
     reviewed_followup['local/kbacorporate/db/upgrade.php'] = 'ef39434356106043292de20bf355165961ca07462e9ead6a79f19bbc4b6d5019'
+    # Adaptive BMS24 navigation (after R2): exact append-only RU/EN block of 2 keys (menu button, drawer close).
+    # See docs/ui/ADAPTIVE_NAVIGATION.md and docs/reconcile/adaptive-navigation-source-preservation.json.
+    reviewed_followup['local/kbacompany/lang/en/local_kbacompany.php'] = '334f7aa2239c3e059506df507a26007bbfc08db54b532c32887c484ac007f6d9'
+    reviewed_followup['local/kbacompany/lang/ru/local_kbacompany.php'] = 'ace7e28e039e17581624e30bfe99e7315d2adbc94b133c15eccba5b52a586636'
     reviewed_metadata={'AGENTS.md','docs/00_MASTER_CONTEXT.md'}
     for name, expected in plan['unchanged_schema_hashes'].items():
         # ADR-0009 R1 appends five additive daily report tables; every earlier table definition is unchanged.
