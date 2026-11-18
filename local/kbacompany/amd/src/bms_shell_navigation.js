@@ -34,7 +34,13 @@ define([], function() {
         sidebar.insertBefore(header, sidebar.firstChild);
         header.appendChild(toggle);
         if (brand) { brand.classList.add('bms-shell-nav-brand'); header.appendChild(brand); }
-        function apply(compact) {
+        // Owned shell: the compact sidebar is a desktop preference. In a narrow window (drawer menu, no sidebar) it
+        // must not apply, otherwise its icon-only rules leak into the drawer (docs/ui/ADAPTIVE_NAVIGATION.md).
+        var narrow = owned && window.matchMedia ? window.matchMedia('(max-width: 860px)') : null;
+        var preferred = false;
+        function apply(wanted) {
+            preferred = wanted;
+            var compact = wanted && !(narrow && narrow.matches);
             shell.classList.toggle('bms-shell-nav-compact', compact);
             toggle.setAttribute('aria-expanded', compact ? 'false' : 'true');
             toggle.setAttribute('aria-label', compact ? 'Развернуть меню' : 'Свернуть меню');
@@ -70,6 +76,11 @@ define([], function() {
             apply(compact);
             try { window.localStorage.setItem(storageKey, compact ? '1' : '0'); } catch (e) { /* private mode */ }
         });
+        if (narrow) {
+            var onchange = function() { apply(preferred); };
+            if (narrow.addEventListener) { narrow.addEventListener('change', onchange); }
+            else if (narrow.addListener) { narrow.addListener(onchange); }
+        }
     }
     return {init: init};
 });

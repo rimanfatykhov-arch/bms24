@@ -1279,7 +1279,7 @@ def adaptive_nav_checks(obs, exitcode=None):
         for r in wide_rows():
             ts = [t for t in (r['layout'].get('sidebar') or {}).get('targets') or [] if t.get('text')]
             small = [t for t in ts if t.get('h', 0) < ADAPTIVE_NAV_MIN_TARGET or t.get('w', 0) < ADAPTIVE_NAV_MIN_TARGET]
-            require(len(ts) >= 4 and not small, '%s: sidebar targets below 44 px: %r' % (r['id'], small[:4]))
+            require(len(ts) >= 4 and not small, '%s: sidebar menu items/group headers below 44 px: %r' % (r['id'], small[:4]))
 
     def scroll_lock():
         for r in narrow_rows():

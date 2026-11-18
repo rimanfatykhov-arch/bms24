@@ -31,7 +31,9 @@ result = {'status': 'FAIL', 'company': company, 'cases': []}
 
 # ---- in-page probes (read-only, except STRESS which clones one rendered link and removes it again)
 COMMON = r"""
+// Content of a closed <details> keeps a layout box in current Chromium; checkVisibility() is the rendered truth.
 const vis = e => { if (!e) return false; const r = e.getBoundingClientRect(), cs = getComputedStyle(e);
+  if (e.checkVisibility && !e.checkVisibility({visibilityProperty: true})) return false;
   return r.width > 1 && r.height > 1 && cs.visibility !== 'hidden' && cs.display !== 'none'; };
 const box = e => { if (!e) return null; const r = e.getBoundingClientRect();
   return {x: Math.round(r.left), y: Math.round(r.top), w: Math.round(r.width), h: Math.round(r.height),
@@ -48,16 +50,16 @@ const brokenWords = label => { const out = []; const walk = document.createTreeW
   return out; };
 const labelReport = scope => [...scope.querySelectorAll('a.bms24-navitem')].filter(vis).map(a => {
   const r = a.getBoundingClientRect(); const count = a.querySelector('.bms24-count');
-  const labels = [...a.querySelectorAll('.bms24-navlabel')].filter(l => { const b = l.getBoundingClientRect(); return b.width > 1 && b.height > 1; });
+  const labels = [...a.querySelectorAll('.bms24-navlabel')].filter(l => { const b = l.getBoundingClientRect(); return b.width > 1 && b.height > 1 && vis(l); });
   const cr = count && vis(count) ? count.getBoundingClientRect() : null;
   return {text: a.innerText.replace(/\s+/g, ' ').trim(), broken: labels.flatMap(brokenWords),
     count: count ? {visible: vis(count), text: count.textContent.trim(), clipped: count.scrollWidth > count.clientWidth + 1,
       inside: !!cr && cr.left >= r.left - 1 && cr.right <= r.right + 1 && cr.top >= r.top - 1 && cr.bottom <= r.bottom + 1} : null}; });
-const targets = scope => [...scope.querySelectorAll('a[href],button,summary')].filter(vis).map(e => ({
+const targets = (scope, sel) => [...scope.querySelectorAll(sel || 'a[href],button,summary')].filter(vis).map(e => ({
   text: (e.getAttribute('aria-label') || e.innerText || '').replace(/\s+/g, ' ').trim().slice(0, 60), ...box(e)}));
 const outside = scope => { const s = scope.getBoundingClientRect();
   return [...scope.querySelectorAll('*')].filter(e => { const r = e.getBoundingClientRect();
-    return r.width > 1 && r.height > 1 && (r.left < s.left - 1 || r.right > s.right + 1); })
+    return r.width > 1 && r.height > 1 && vis(e) && (r.left < s.left - 1 || r.right > s.right + 1); })
     .map(e => (e.className && e.className.baseVal === undefined ? e.className : e.tagName) + '').slice(0, 5); };
 const scrollers = scope => [scope, ...scope.querySelectorAll('*')].filter(e => {
   const cs = getComputedStyle(e); return ['auto', 'scroll'].includes(cs.overflowX) || ['auto', 'scroll'].includes(cs.overflowY); });
@@ -82,7 +84,7 @@ LAYOUT = '() => {' + COMMON + r"""
     main_inert: !!(main && main.closest('[inert]')),
     backdrop_visible: vis(document.querySelector('[data-bms24-drawer-backdrop]')),
     active: document.activeElement ? (document.activeElement === btn ? 'menubutton' : document.activeElement.tagName) : null,
-    sidebar: side && vis(side) ? {groups: groups(side), labels: labelReport(side), targets: targets(side), outside: outside(side),
+    sidebar: side && vis(side) ? {groups: groups(side), labels: labelReport(side), targets: targets(side, 'a.bms24-navitem,summary'), outside: outside(side),
       current_visible: vis(side.querySelector('a[aria-current="page"]'))} : null};
 }"""
 
