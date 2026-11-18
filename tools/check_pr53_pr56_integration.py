@@ -59,6 +59,12 @@ def check(root=ROOT):
     reviewed_followup['local/kbacompany/lang/en/local_kbacompany.php'] = 'bc4d02332d0e930526ca7d16cd8de6a394886ab172f8a0ec6afb036be393fd69'
     reviewed_followup['local/kbacompany/lang/ru/local_kbacompany.php'] = 'bb64599ec5f4ed72c875d2a9f37bcf077344173e2c968530d8eff151ac4c185c'
     reviewed_followup['local/kbacompany/classes/local/communication_service.php'] = '877ef95b6afc40797a7bbb19522d49d1c93bf0bac04cf5a1bc2d65df44eec3e6'
+    # Communication Center E2 (after daily reports R2): exact reviewed updates, see docs/reconcile/COMMUNICATION_CENTER_E2_SOURCE_PRESERVATION.md.
+    reviewed_followup.update({
+        'local/kbacompany/classes/local/communication_service.php': '7433c0f6d21133e38de79f05da131daafda7bc245769225d973b8bdf69bf177a',
+        'local/kbacompany/lang/en/local_kbacompany.php': '313dacec7726f2052466bb56c956411b31b5b9d28e6267aed422130d72df5e41',
+        'local/kbacompany/lang/ru/local_kbacompany.php': '347f6b5b8f66b2c5b089a423ef1633730349f70c04bd41093df8c8aeeb883708',
+    })
     # ADR-0005 fix (#124 P1): local Corporate install.xml DEFAULT 0 and upgrade step 2026111004, both identical to
     # the Corporate2613 package; inventory updated. See docs/reconcile/CORPORATE_FRESH_ADR0005.md.
     reviewed_followup['docs/reconcile/corporate-api126-source.json'] = '95f5c6fd853b1167a6be761617bca56423ee93d65d6ac31600b534c0a3240415'

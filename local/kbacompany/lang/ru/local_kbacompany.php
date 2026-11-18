@@ -9828,3 +9828,11 @@ $string['messageprovider:dailyreport_submitted'] = 'Отчёт за день ж�
 $string['messageprovider:dailyreport_decision'] = 'Решение по моему отчёту за день';
 $string['communication_notification_dailyreport_submitted'] = 'Отчёт на проверку';
 $string['communication_notification_dailyreport_decision'] = 'Решение по отчёту';
+
+// Communication Center E2 (2026-11-16): Battle Plan discussion (Q9).
+$string['bpu_tab_discussion'] = 'Обсуждение';
+$string['bpu_discussion_empty'] = 'Сообщений пока нет. Начните обсуждение этого плана.';
+$string['bpu_discussion_readonly'] = 'Вы можете читать обсуждение плана. Писать в нём могут участники плана и руководители с правом изменять план.';
+$string['bpu_discussion_reader'] = 'Вы видите обсуждение, потому что вам доступен план. Ваше сообщение добавит вас в участники обсуждения.';
+$string['communication_object_battleplan'] = 'Боевой план';
+$string['communicationcenter_openplan'] = 'Открыть план';

@@ -219,6 +219,12 @@ class communication_center_service {
                     (string)$selected['context_uuid']);
             }
         }
+        if ($selected && (string)$selected['context_kind'] === battle_plan_discussion_service::KIND
+                && empty($selected['is_participant'])) {
+            // A plan reader joins only with the plan write-to-discussion right (Q9).
+            $selected['can_join'] = battle_plan_discussion_service::can_post_for($companyuuid, $actor,
+                (string)$selected['context_uuid']);
+        }
         return [
             'company' => $comm['company'], 'tab' => $tab, 'threads' => $threads, 'events' => $events,
             'selected' => $selected, 'messages' => $comm['messages'], 'history' => $comm['history'], 'employees' => $comm['employees'],

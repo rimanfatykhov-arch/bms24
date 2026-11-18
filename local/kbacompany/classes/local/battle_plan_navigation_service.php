@@ -17,7 +17,7 @@ final class battle_plan_navigation_service {
         $status = (string)$p['status'];
         $active = $view === 'metrics' ? 'indicators' : ($view === 'detail' ? $tab : '');
         $tabs = [];
-        foreach (['overview', 'tasks', 'indicators', 'review', 'history'] as $key) {
+        foreach (['overview', 'tasks', 'indicators', 'review', 'discussion', 'history'] as $key) {
             $tabs[] = ['key'=>$key, 'selected'=>$active === $key,
                 'params'=>['plan'=>(string)$p['uuid'], 'view'=>'detail', 'tab'=>$key]];
         }

@@ -9826,3 +9826,11 @@ $string['messageprovider:dailyreport_submitted'] = 'Daily report waiting for rev
 $string['messageprovider:dailyreport_decision'] = 'Decision on my daily report';
 $string['communication_notification_dailyreport_submitted'] = 'Daily report to review';
 $string['communication_notification_dailyreport_decision'] = 'Decision on a daily report';
+
+// Communication Center E2 (2026-11-16): Battle Plan discussion (Q9).
+$string['bpu_tab_discussion'] = 'Discussion';
+$string['bpu_discussion_empty'] = 'No messages yet. Start the conversation about this plan.';
+$string['bpu_discussion_readonly'] = 'You can read this plan discussion. Plan participants and managers with the right to edit the plan can write in it.';
+$string['bpu_discussion_reader'] = 'You see this discussion because you can open the plan. Posting a message adds you to the discussion.';
+$string['communication_object_battleplan'] = 'Battle Plan';
+$string['communicationcenter_openplan'] = 'Open plan';

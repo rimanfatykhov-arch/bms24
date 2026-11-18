@@ -1,6 +1,7 @@
 <?php
 require_once(__DIR__ . '/../../config.php');
 
+use local_kbacompany\local\battle_plan_discussion_service;
 use local_kbacompany\local\communication_center_service;
 use local_kbacompany\local\communication_live_service;
 use local_kbacompany\local\communication_center_ui_service as ui;
@@ -67,6 +68,11 @@ if ($action !== '') {
             $postrevision = optional_param('objectrevision', 0, PARAM_INT);
             // Reading a task discussion is open to task viewers; joining to write needs the task write right.
             if ($postkind === 'task' && !task_service::can_post_discussion_for($uuid, $actor, $postuuid)) {
+                throw new moodle_exception('communication_permission', 'local_kbacompany');
+            }
+            // The same for a Battle Plan discussion (Q9): reading follows the plan, joining needs the plan write right.
+            if ($postkind === 'battleplan' &&
+                    !battle_plan_discussion_service::can_post_for($uuid, $actor, $postuuid)) {
                 throw new moodle_exception('communication_permission', 'local_kbacompany');
             }
             // create_thread resolves the canonical object and is also the safe, idempotent join operation.

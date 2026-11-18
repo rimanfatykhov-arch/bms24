@@ -162,6 +162,9 @@ try:
     # Communication Center cleanup (items 1-5): task viewer read, denial/revocation, events, replies, groups, filters.
     comm_exit = timed('communication_center', lambda: browser('communication_center.py', 'verify'))
     record(contract.evaluate(contract.communication_center_checks(load('communication-center-result.json'), comm_exit)))
+    # Battle Plan discussion (Communication Center E2, Q9); reuses the synthetic viewer VA created above as plan reviewer.
+    plan_exit = timed('plan_discussion', lambda: browser('plan_discussion.py', 'verify'))
+    record(contract.evaluate(contract.plan_discussion_checks(load('plan-discussion-result.json'), plan_exit)))
     # Daily reports R0 entry (ADR-0009): menu order/active state, tab, button, short phone labels, owned+legacy, 1440+375.
     daily_exit = timed('daily_reports_nav', lambda: browser('daily_reports_nav.py', 'verify'))
     record(contract.evaluate(contract.daily_reports_nav_checks(load('daily-reports-nav-result.json'), daily_exit)))
