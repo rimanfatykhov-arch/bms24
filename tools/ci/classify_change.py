@@ -63,7 +63,9 @@ FULL_CONTENT = [
     (r'\b(xmldb_|\$dbman->|upgrade_plugin_savepoint)', 'schema / upgrade operation'),
 ]
 # ---------------------------------------------------------------- FAST: presentation only.
-FAST_PATHS = ['*.css', '*.md', 'docs/*', '*.png', '*.svg', '*.jpg', '*.gif', '*.txt',
+# CSS is deliberately NOT here: PR #86's security review showed CSS semantics (opacity/visibility,
+# resource URLs) can weaken the UI security contract in ways a FAST-level check cannot tell apart.
+FAST_PATHS = ['*.md', 'docs/*', '*.png', '*.svg', '*.jpg', '*.gif', '*.txt',
               'local/kbacompany/lang/*', 'local/kbacompany/pix/*']
 # Paths that need STANDARD at least (server/client logic without FULL triggers).
 STANDARD_PATHS = ['local/kbacompany/*.php', 'local/kbacompany/classes/*', 'local/kbacompany/templates/*',
@@ -141,6 +143,14 @@ def classify(repo: Path, base: str, head: str) -> dict:
         full = next((why for pat, why in FULL_PATHS if match(path, pat)), None)
         if full:
             raise_to('FULL', full, path)
+        elif path.endswith('.css'):
+            # RC32 unification of the #87/#86 classifiers: BMS-owned CSS is STANDARD, not FAST —
+            # the CSS UI contract plus the always-on STANDARD security gates and the BROWSER tier
+            # run for it. CSS anywhere else is an unknown path and stays FULL.
+            if match(path, 'local/kbacompany/*.css'):
+                raise_to('STANDARD', 'CSS presentation semantics — CSS UI contract + security gates + BROWSER tier', path)
+            else:
+                raise_to('FULL', 'unknown path — unclassified changes default to FULL', path)
         elif any(match(path, pat) for pat in FAST_PATHS):
             reasons.append({'profile': 'FAST', 'reason': 'presentation/text only', 'where': path})
         elif any(match(path, pat) for pat in STANDARD_PATHS):
