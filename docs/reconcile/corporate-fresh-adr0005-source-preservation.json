@@ -1,0 +1,27 @@
+{
+  "scope": "exact intentional source updates; not runtime or release acceptance",
+  "base_sha": "2739a5d",
+  "normalization": "CRLF to LF only",
+  "previous_evidence": "docs/reconcile/corporate-api126-source.json (ADR-0006 follow-up)",
+  "decision": "docs/adr/ADR-0005-corporate2613-schema-policy-PROPOSED.md (ACCEPTED 2026-11-10); finding P1 in PR #124",
+  "change": "Fresh XMLDB local_kbacorp_member.isemployee DEFAULT 1 -> 0 and the ADR-0005 upgrade step 2026111004 ported byte-for-byte from release/corporate2613/compatibility.patch; inventory entries marked with exact hashes.",
+  "files": [
+    {
+      "path": "local/kbacorporate/db/install.xml",
+      "before_sha256_lf": "7f9e0afa21b3319e38e0171b27ea791f35bfd5f797f1697ca58a0ea54b22a252",
+      "after_sha256_lf": "6b90b62780bbc7b29ad7096b94738530b61cc672d9a5d9a498c1466b94e76ac4",
+      "note": "after hash equals release/corporate2613/manifest.json db/install.xml"
+    },
+    {
+      "path": "local/kbacorporate/db/upgrade.php",
+      "before_sha256_lf": "0e3972020a43537c1524b4c8ade694e3b5df5a9c3563c85fdebf02d70a868374",
+      "after_sha256_lf": "ef39434356106043292de20bf355165961ca07462e9ead6a79f19bbc4b6d5019",
+      "note": "function local_kbacorporate_adr0005_defaults() and savepoint 2026111004 identical to the Corporate2613 patch"
+    },
+    {
+      "path": "docs/reconcile/corporate-api126-source.json",
+      "before_sha256_lf": "a1d20c4e5ed07b6018ca05c25198fea697de7062ee7f823c95d5820e363e11de",
+      "after_sha256_lf": "95f5c6fd853b1167a6be761617bca56423ee93d65d6ac31600b534c0a3240415"
+    }
+  ]
+}
