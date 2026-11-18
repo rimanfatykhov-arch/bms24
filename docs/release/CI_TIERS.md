@@ -84,7 +84,7 @@ NOT APPLICABLE only by the rules in the table. Small diff size never lowers the 
   `task_tab_mobile_no_browser_errors` (re-evaluated from events, producer status not trusted), `attachments_no_browser_errors`,
   `oversize_no_browser_errors`, `access_no_browser_errors`. Runtime negative controls: `negative-browser-page-error`
   (pageerror) and `negative-browser-failed-request` (a local script on 127.0.0.1:8080 whose response is cut short; the failed
-  request must be the reported cause). BROWSER has 79 required checks (incl. 7 for editing/withdrawing task-discussion messages, 7 for the task-opened History event, 8 for the Communication Center cleanup, 7 for the daily reports entry and 8 for saved daily reports R1/R2).
+  request must be the reported cause). BROWSER has 95 required checks (incl. 7 for editing/withdrawing task-discussion messages, 7 for the task-opened History event, 8 for the Communication Center cleanup, 7 for the daily reports entry, 8 for saved daily reports R1/R2 and 16 for the adaptive BMS24 navigation, `adaptive_nav.py`).
 - **Re-run provenance (Codex review P2).** Artifacts are named `...-a<run_attempt>`. For every required job the gate computes
   the attempt in which it actually executed (on *Re-run failed jobs* GitHub copies successful jobs into the new attempt with
   the original `started_at`; verified on runs 43561610462 and 43561610550). It reads only that attempt's artifact and requires

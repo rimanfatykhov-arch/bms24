@@ -1112,13 +1112,300 @@ def daily_reports_flow_checks(obs, exitcode=None):
             'daily_report_foreign_and_nonreviewer_denied': negatives, 'daily_report_layout_and_browser_errors': layout_and_events}
 
 
+
+# ---- Adaptive BMS24 navigation (docs/ui/ADAPTIVE_NAVIGATION.md): owned drawer <= 860 px, sidebar >= 861 px.
+ADAPTIVE_NAV_BREAKPOINT = 860
+# (id, shell, actor, lang, width, height, device scale factor, JavaScript)
+ADAPTIVE_NAV_CASES = [
+    ('owned-320-ru', 'owned', 'MA', 'ru', 320, 640, 1, True), ('owned-375-ru', 'owned', 'MA', 'ru', 375, 812, 1, True),
+    ('owned-390-en', 'owned', 'MA', 'en', 390, 844, 1, True), ('owned-768-ru', 'owned', 'MA', 'ru', 768, 1024, 1, True),
+    ('owned-860-ru', 'owned', 'MA', 'ru', 860, 900, 1, True), ('owned-861-ru', 'owned', 'MA', 'ru', 861, 900, 1, True),
+    ('owned-1024-ru', 'owned', 'MA', 'ru', 1024, 768, 1, True), ('owned-1440-en', 'owned', 'MA', 'en', 1440, 900, 1, True),
+    ('owned-390x480-ru', 'owned', 'MA', 'ru', 390, 480, 1, True), ('owned-844x390-ru', 'owned', 'MA', 'ru', 844, 390, 1, True),
+    ('owned-zoom200-ru', 'owned', 'MA', 'ru', 720, 450, 2, True), ('owned-375-employee-ru', 'owned', 'EA', 'ru', 375, 812, 1, True),
+    ('legacy-375-ru', 'legacy', 'MA', 'ru', 375, 812, 1, True), ('legacy-1440-en', 'legacy', 'MA', 'en', 1440, 900, 1, True),
+    ('nojs-375-ru', 'owned', 'MA', 'ru', 375, 812, 1, False), ('nojs-1440-en', 'owned', 'MA', 'en', 1440, 900, 1, False),
+]
+ADAPTIVE_NAV_ROUTES = ['communication_center.php', 'daily_report.php', 'battle_plan.php', 'tasks.php']
+ADAPTIVE_NAV_STRESS = {'label': 'Согласование очень длинного названия раздела управления подразделениями', 'count': '9999'}
+ADAPTIVE_NAV_MIN_TARGET = 44
+ADAPTIVE_NAV_MARKER = 'BMS24 adaptive navigation draft'
+
+
+def adaptive_nav_checks(obs, exitcode=None):
+    """Adaptive navigation (adaptive_nav.py). Every verdict is recomputed from geometry/state observations; the producer's
+    PASS only means the run completed. Narrow = owned shell with JavaScript at <= 860 CSS px."""
+    def run():
+        require(exitcode == 0, 'adaptive navigation browser process failed or was not run')
+        require(isinstance(obs, dict) and obs.get('status') == 'PASS' and not obs.get('error'), 'adaptive navigation run incomplete')
+        rows = obs.get('cases')
+        require(isinstance(rows, list) and [(r.get('id'), r.get('shell'), r.get('actor'), r.get('lang'), r.get('width'), r.get('height'),
+                                             r.get('dpr'), r.get('js')) for r in rows] == [tuple(c) for c in ADAPTIVE_NAV_CASES],
+                'adaptive navigation case list differs')
+        for r in rows:
+            require(not r.get('error'), '%s: %s' % (r['id'], r.get('error')))
+            require(r.get('language_installed') is True and r.get('http') == 200, '%s: page or language not served' % r['id'])
+            lay = r.get('layout') or {}
+            require(lay.get('owned') is (r['shell'] == 'owned') and lay.get('inner') == r['width'],
+                    '%s: shell mode or viewport not active: %r' % (r['id'], (lay.get('owned'), lay.get('inner'))))
+        return rows
+
+    def narrow_rows():
+        rows = [r for r in run() if r['shell'] == 'owned' and r['js'] and r['width'] <= ADAPTIVE_NAV_BREAKPOINT]
+        require(len(rows) == 9, 'narrow owned cases missing')
+        return rows
+
+    def wide_rows():
+        rows = [r for r in run() if r['shell'] == 'owned' and r['js'] and r['width'] > ADAPTIVE_NAV_BREAKPOINT]
+        require(len(rows) == 3, 'wide owned cases missing')
+        return rows
+
+    def fits(box, width, height=None):
+        return (isinstance(box, dict) and all(isinstance(box.get(k), int) for k in ('x', 'y', 'r', 'b'))
+                and box['x'] >= 0 and box['r'] <= width and (height is None or (box['y'] >= 0 and box['b'] <= height + 1)))
+
+    def no_hscroll(scroll, client, width, where):
+        require(isinstance(scroll, int) and isinstance(client, int) and 0 < client <= width and scroll <= client,
+                '%s scrolls horizontally: scrollWidth %r > clientWidth %r' % (where, scroll, client))
+
+    def desktop():
+        for r in wide_rows():
+            lay = r['layout']; side = lay.get('sidebar') or {}
+            require(lay.get('sidebar_visible') is True and side.get('current_visible') is True, '%s: sidebar or current item hidden' % r['id'])
+            require((lay.get('button') or {}).get('visible') is False and lay.get('summary_visible') is False
+                    and lay.get('drawer_visible') is False and lay.get('drawer_focusables') == 0,
+                    '%s: hidden mobile menu is rendered or focusable' % r['id'])
+            cur = [g for g in side.get('groups') or [] if g.get('current')]
+            require(cur and all(g.get('open') and g.get('visible') == g.get('items') for g in cur),
+                    '%s: group of the current page not open with its items: %r' % (r['id'], cur))
+
+    def button():
+        for r in narrow_rows():
+            b = (r.get('before_open') or {}).get('button') or {}
+            require(b.get('tag') == 'BUTTON' and b.get('type') == 'button' and b.get('visible') is True and b.get('hidden_attr') is False,
+                    '%s: menu button missing or not a visible <button>: %r' % (r['id'], b))
+            require(b.get('w', 0) >= ADAPTIVE_NAV_MIN_TARGET and b.get('h', 0) >= ADAPTIVE_NAV_MIN_TARGET, '%s: menu button below 44x44' % r['id'])
+            require(b.get('expanded') == 'false' and b.get('controls') == 'bms24-drawer' and b.get('controls_exists') is True
+                    and isinstance(b.get('name'), str) and len(b['name']) >= 3, '%s: aria-expanded/aria-controls/name wrong: %r' % (r['id'], b))
+            require(r.get('open_method') == 'button' and (r.get('drawer') or {}).get('expanded') == 'true',
+                    '%s: menu not opened by the button or aria-expanded not true' % r['id'])
+            require((r.get('before_open') or {}).get('summary_visible') is False, '%s: no-JS summary still shown with JS' % r['id'])
+        for r in run():
+            require((r.get('layout') or {}).get('menu_roles') == 0 and (r.get('drawer') or {}).get('menu_roles', 0) == 0,
+                    '%s: role=menu used for site navigation' % r['id'])
+
+    def modal():
+        for r in narrow_rows():
+            d = r.get('drawer') or {}
+            require(d.get('visible') is True and d.get('role') == 'dialog' and d.get('modal') == 'true' and len(d.get('name') or '') >= 3
+                    and d.get('id') == 'bms24-drawer',
+                    '%s: drawer is not a named modal dialog: %r' % (r['id'], {k: d.get(k) for k in ('role', 'modal', 'name', 'id')}))
+            require(fits(d.get('box'), r['width'], r['height']) and d['box']['y'] == 0 and d['box']['b'] >= r['height'] - 1,
+                    '%s: drawer not within the viewport at full height: %r' % (r['id'], d.get('box')))
+            bd = d.get('backdrop') or {}
+            require(bd.get('visible') is True and bd.get('x') == 0 and bd.get('y') == 0 and bd.get('w', 0) >= r['width'] - 1
+                    and bd.get('h', 0) >= r['height'] - 1, '%s: backdrop does not cover the viewport: %r' % (r['id'], bd))
+            require(d.get('focus_inside') is True, '%s: focus not moved into the drawer' % r['id'])
+            fw, bw = r.get('tab_forward') or [], r.get('tab_backward') or []
+            require(len(fw) >= 4 and all(x is True for x in fw) and len(bw) == 4 and all(x is True for x in bw),
+                    '%s: Tab/Shift+Tab left the open drawer: %r %r' % (r['id'], fw, bw))
+            require(d.get('main_inert') is True and d.get('sidebar_inert') is True, '%s: page behind the drawer is not inert' % r['id'])
+            cl = d.get('close') or {}
+            require(cl.get('tag') == 'BUTTON' and cl.get('visible') is True and len(cl.get('name') or '') >= 3
+                    and cl.get('w', 0) >= ADAPTIVE_NAV_MIN_TARGET and cl.get('h', 0) >= ADAPTIVE_NAV_MIN_TARGET,
+                    '%s: explicit 44x44 close button missing: %r' % (r['id'], cl))
+
+    def overflow():
+        for r in run():
+            lay = r.get('layout') or {}
+            no_hscroll(lay.get('scroll'), lay.get('client'), r['width'], '%s page' % r['id'])
+        for r in narrow_rows():
+            d = r.get('drawer') or {}
+            no_hscroll(d.get('doc_scroll'), d.get('client'), r['width'], '%s page with open drawer' % r['id'])
+            require(d.get('outside') == [], '%s: menu content sticks out of the drawer: %r' % (r['id'], d.get('outside')))
+            sc = d.get('scrollers')
+            require(isinstance(sc, list) and sc, '%s: drawer scroll container not recorded' % r['id'])
+            for s in sc:
+                require(isinstance(s.get('sw'), int) and isinstance(s.get('cw'), int) and s['sw'] <= s['cw'] + 1,
+                        '%s: drawer scrolls horizontally: %r' % (r['id'], s))
+            st = r.get('stress') or {}
+            require(st.get('done') is True and st.get('outside') == [] and fits(st.get('box'), r['width']),
+                    '%s: long label/large counter overflows the drawer: %r' % (r['id'], st))
+            last = r.get('last_item') or {}
+            no_hscroll(last.get('doc_scroll'), last.get('client'), r['width'], '%s page with all groups open' % r['id'])
+        for r in wide_rows():
+            require((r['layout'].get('sidebar') or {}).get('outside') == [], '%s: sidebar content sticks out' % r['id'])
+
+    def groups_current():
+        for r in narrow_rows():
+            d = r.get('drawer') or {}
+            cur = d.get('current') or {}
+            require(cur.get('visible') is True and cur.get('open') is True and cur.get('path') == 'tasks.php',
+                    '%s: current page item not visible in an open group: %r' % (r['id'], cur))
+            gs = d.get('groups') or []
+            require(gs and all(g.get('visible') == g.get('items') for g in gs if g.get('open')),
+                    '%s: an open group hides its items: %r' % (r['id'], [g for g in gs if g.get('open')]))
+            alls = r.get('groups_all_open') or []
+            require(alls and len(alls) == len(gs) and all(g.get('open') and g.get('items', 0) >= 1 and g.get('visible') == g.get('items')
+                                                          for g in alls),
+                    '%s: a group cannot be opened or shows no items: %r' % (r['id'], alls))
+
+    def labels_counts():
+        for r in narrow_rows():
+            reps = list((r.get('drawer') or {}).get('labels') or [])
+            require(len(reps) >= 4, '%s: menu labels not recorded' % r['id'])
+            st = ((r.get('stress') or {}).get('report')) or {}
+            require((st.get('text') or '').startswith(ADAPTIVE_NAV_STRESS['label'].split()[0])
+                    and (st.get('count') or {}).get('text') == ADAPTIVE_NAV_STRESS['count'] and (st.get('count') or {}).get('visible') is True,
+                    '%s: stress label not measured: %r' % (r['id'], st))
+            reps.append(st)
+            for x in reps:
+                require(x.get('broken') == [], '%s: word broken across lines in %r: %r' % (r['id'], x.get('text'), x.get('broken')))
+                cnt = x.get('count')
+                if cnt and cnt.get('visible'):
+                    require(cnt.get('clipped') is False and cnt.get('inside') is True, '%s: counter clipped in %r' % (r['id'], x.get('text')))
+        for r in wide_rows():
+            reps = (r['layout'].get('sidebar') or {}).get('labels') or []
+            require(len(reps) >= 4, '%s: sidebar labels not recorded' % r['id'])
+            for x in reps:
+                require(x.get('broken') == [], '%s: sidebar word broken in %r' % (r['id'], x.get('text')))
+
+    def tap_targets():
+        for r in narrow_rows():
+            ts = (r.get('drawer') or {}).get('targets') or []
+            require(len(ts) >= 4, '%s: drawer targets not recorded' % r['id'])
+            small = [t for t in ts if t.get('w', 0) < ADAPTIVE_NAV_MIN_TARGET or t.get('h', 0) < ADAPTIVE_NAV_MIN_TARGET]
+            require(not small, '%s: tap targets below 44x44: %r' % (r['id'], small[:4]))
+        for r in wide_rows():
+            ts = [t for t in (r['layout'].get('sidebar') or {}).get('targets') or [] if t.get('text')]
+            small = [t for t in ts if t.get('h', 0) < ADAPTIVE_NAV_MIN_TARGET or t.get('w', 0) < ADAPTIVE_NAV_MIN_TARGET]
+            require(len(ts) >= 4 and not small, '%s: sidebar targets below 44 px: %r' % (r['id'], small[:4]))
+
+    def scroll_lock():
+        for r in narrow_rows():
+            d, before = r.get('drawer') or {}, r.get('before_open') or {}
+            require(d.get('html_overflow') == 'hidden', '%s: page behind the drawer is still scrollable' % r['id'])
+            w = r.get('wheel') or {}
+            require(isinstance(w.get('before'), int) and w.get('after') == w['before'], '%s: page scrolled under the drawer: %r' % (r['id'], w))
+            require(isinstance(before.get('main'), dict) and d.get('main') == before.get('main') and d.get('client') == before.get('client'),
+                    '%s: opening the drawer moved or resized the page: %r -> %r' % (r['id'], before.get('main'), d.get('main')))
+
+    def closing(state, r, label):
+        require(isinstance(state, dict), '%s: %s close not performed' % (r['id'], label))
+        require(state.get('drawer_visible') is False and state.get('backdrop_visible') is False and state.get('drawer_focusables') == 0,
+                '%s: drawer/backdrop left after %s close' % (r['id'], label))
+        require(state.get('expanded') == 'false' and state.get('active') == 'menubutton',
+                '%s: focus/aria-expanded not restored after %s: %r' % (r['id'], label, (state.get('expanded'), state.get('active'))))
+        require(isinstance(state.get('scrolly'), int) and state.get('scrolly') == state.get('expected_scrolly')
+                and state.get('html_overflow') != 'hidden' and state.get('main_inert') is False,
+                '%s: scroll position or scroll lock not restored after %s: %r' % (r['id'], label, state))
+        require(state.get('field') == ADAPTIVE_NAV_MARKER, '%s: typed page data lost after %s' % (r['id'], label))
+
+    def close_methods():
+        exposed = 0
+        for r in narrow_rows():
+            require(r.get('field_present') is True, '%s: page field for the data check missing' % r['id'])
+            closing(r.get('close_escape'), r, 'Escape')
+            closing(r.get('close_button'), r, 'close button')
+            if r.get('backdrop_exposed') is True:
+                exposed += 1
+                closing(r.get('close_backdrop'), r, 'backdrop')
+            else:
+                require(r.get('backdrop_exposed') is False and r['width'] < 360,
+                        '%s: drawer must leave the backdrop exposed above 359 px' % r['id'])
+        require(exposed >= 8, 'backdrop close exercised in too few cases: %d' % exposed)
+
+    def last_item():
+        for r in narrow_rows():
+            last = r.get('last_item') or {}
+            require(last.get('found') is True and last.get('hit') is True and isinstance(last.get('top'), int) and last['top'] >= 0
+                    and isinstance(last.get('bottom'), int) and last['bottom'] <= r['height'],
+                    '%s: last menu item not reachable by vertical scrolling: %r' % (r['id'], last))
+
+    def resize():
+        rows = {r['id']: r for r in run()}
+        for cid, wide in (('owned-375-ru', 1440), ('owned-861-ru', 861)):
+            z = rows[cid].get('resize') or {}
+            require(z.get('opened') == 'button' and z.get('open') is True, '%s: drawer not opened before resizing' % cid)
+            tw = z.get('to_wide') or {}
+            require(tw.get('inner') == wide and tw.get('drawer_visible') is False and tw.get('backdrop_visible') is False
+                    and tw.get('html_overflow') != 'hidden' and tw.get('main_inert') is False and tw.get('sidebar_visible') is True
+                    and tw.get('drawer_focusables') == 0 and isinstance(tw.get('scroll'), int) and tw['scroll'] <= wide,
+                    '%s: overlay or scroll lock left after widening: %r' % (cid, tw))
+            bn = z.get('back_narrow') or {}
+            require(bn.get('drawer_visible') is False and (bn.get('button') or {}).get('visible') is True
+                    and (bn.get('button') or {}).get('expanded') == 'false' and bn.get('html_overflow') != 'hidden'
+                    and bn.get('backdrop_visible') is False, '%s: menu state wrong after narrowing again: %r' % (cid, bn))
+            require(z.get('reopen') == 'button' and z.get('reopen_visible') is True and (z.get('reclosed') or {}).get('drawer_visible') is False,
+                    '%s: drawer cannot be reopened/closed after resizing' % cid)
+
+    def routes():
+        r = next(x for x in run() if x['id'] == 'owned-375-ru')
+        steps = r.get('routes') or []
+        require([s.get('target') for s in steps] == ADAPTIVE_NAV_ROUTES, 'route transitions not recorded')
+        for s in steps:
+            require(s.get('opened') == 'button' and s.get('links', 0) >= 1 and s.get('visible') is True and s.get('http') == 200
+                    and s.get('path') == s['target'], 'menu link to %s did not open it: %r' % (s['target'], s))
+            cur = s.get('current') or {}
+            require(s.get('opened_after') == 'button' and cur.get('path') == s['target'] and cur.get('visible') is True and cur.get('open') is True,
+                    'after opening %s the menu does not show it as current in an open group: %r' % (s['target'], cur))
+            no_hscroll(s.get('doc_scroll'), s.get('client'), 375, '%s with open drawer' % s['target'])
+
+    def employee():
+        rows = {r['id']: r for r in run()}
+        ma, ea = rows['owned-375-ru'], rows['owned-375-employee-ru']
+        count = lambda r: sum(g.get('items', 0) for g in (r.get('groups_all_open') or []))
+        require(0 < count(ea) <= count(ma), 'employee menu not rendered or larger than the manager menu: %r/%r' % (count(ea), count(ma)))
+
+    def nojs():
+        rows = {r['id']: r for r in run()}
+        n, w = rows['nojs-375-ru'], rows['nojs-1440-en']
+        require((n['layout'].get('button') or {}).get('visible') is False and n.get('summary_visible') is True,
+                'no-JS phone: the summary fallback must be shown and the JS button hidden')
+        d = n.get('drawer') or {}
+        require(d.get('visible') is True and fits(d.get('box'), 375) and len(d.get('labels') or []) >= 4 and d.get('outside') == [],
+                'no-JS phone: menu links not usable: %r' % {k: d.get(k) for k in ('visible', 'box', 'outside')})
+        sc = d.get('scrollers')
+        require(isinstance(sc, list) and sc and all(isinstance(s.get('sw'), int) and s['sw'] <= s.get('cw', -1) + 1 for s in sc),
+                'no-JS phone: menu scrolls horizontally: %r' % (sc,))
+        no_hscroll(d.get('doc_scroll'), d.get('client'), 375, 'no-JS phone page with menu')
+        last = n.get('last_item') or {}
+        require(last.get('found') is True and last.get('hit') is True, 'no-JS phone: last menu item not reachable: %r' % (last,))
+        require(w['layout'].get('sidebar_visible') is True and (w['layout'].get('sidebar') or {}).get('current_visible') is True,
+                'no-JS desktop: sidebar not usable')
+
+    def legacy():
+        for r in run():
+            if r['shell'] != 'legacy':
+                continue
+            lay = r['layout']
+            require(lay.get('owned') is False and lay.get('button') is None and lay.get('drawer_visible') is False
+                    and lay.get('html_overflow') != 'hidden' and lay.get('main_inert') is False,
+                    '%s: owned drawer leaked into the legacy shell' % r['id'])
+
+    def events():
+        for r in run():
+            violations = browser_event_violations(r.get('browser_events'))
+            require(not violations, '%s: browser errors: %r' % (r['id'], violations[:3]))
+            if r['js']:
+                require(r.get('server_errors') == [], '%s: HTTP 5xx: %r' % (r['id'], r.get('server_errors')))
+
+    return {'adaptive_nav_desktop_sidebar_unchanged': desktop, 'adaptive_nav_menu_button_accessible': button,
+            'adaptive_nav_drawer_modal_and_focus_trap': modal, 'adaptive_nav_no_horizontal_overflow': overflow,
+            'adaptive_nav_groups_open_and_current': groups_current, 'adaptive_nav_labels_wrap_and_counters': labels_counts,
+            'adaptive_nav_tap_targets_44': tap_targets, 'adaptive_nav_scroll_lock_page_stable': scroll_lock,
+            'adaptive_nav_close_escape_button_backdrop': close_methods, 'adaptive_nav_last_item_reachable': last_item,
+            'adaptive_nav_resize_no_stale_overlay': resize, 'adaptive_nav_route_transitions': routes,
+            'adaptive_nav_shorter_employee_menu': employee, 'adaptive_nav_no_js_fallback': nojs,
+            'adaptive_nav_legacy_shell_unchanged': legacy, 'adaptive_nav_no_browser_errors': events}
+
 def required_check_names():
     """Every check a complete BROWSER report must contain (used by browser_acceptance.py and merge_gate.py)."""
     return (['moodle_install', 'fixtures_companies_A_B'] + list(task_tab_checks({})) + list(attachments_checks({}, {}))
             + list(access_checks({})) + list(oversize_checks({}, {})) + list(multiattachment_checks({}))
             + list(message_action_checks({})) + list(task_open_checks({}))
             + list(communication_center_checks({})) + list(daily_reports_nav_checks({}))
-            + list(daily_reports_flow_checks({})))
+            + list(daily_reports_flow_checks({})) + list(adaptive_nav_checks({})))
 
 
 def evaluate(checks):
