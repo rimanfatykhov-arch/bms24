@@ -5,7 +5,7 @@ root=Path(os.environ['TEST_ROOT']).resolve(); runner=Path(os.environ['RUNNER_TEM
 core=Path(os.environ['MOODLE_ROOT']).resolve(); cand=Path(os.environ['CANDIDATE_ROOT']).resolve()
 origins=json.loads((cand/'tools/acceptance/pr90/origins.json').read_text());BASE=origins['main']
 if BASE!='9736452cd91145f3bfd6467cfecfca1ba7ceadce':raise RuntimeError('baseline product changed; independently review validator pair')
-INTEGRATION_BASE='2739a5d3986b71893979f2f3178b2063a7fa4780'
+INTEGRATION_BASE='fbf36ed350732b46a232a56a216b3d78c733da34'
 BASELINE_VALIDATOR='f7b4c09e69b6fd10c293394b49c136c6dc200104'
 BASELINE_TREE='314bdd6bfecbe860168fc0d1875aeab429a1d787'
 BASELINE_CHECKS=json.loads((cand/'docs/reconcile/r1r2-baseline-browser-checkset.json').read_text())['checks']

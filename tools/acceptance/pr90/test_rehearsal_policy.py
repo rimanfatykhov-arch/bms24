@@ -105,6 +105,12 @@ class RehearsalPolicyTest(unittest.TestCase):
         self.assertNotEqual(origins['baseline_validator'],origins['main'])
         self.assertIn("BASE!='9736452cd91145f3bfd6467cfecfca1ba7ceadce'",SOURCE.read_text())
 
+    def test_integration_pin_includes_corporate125_without_changing_deployed_baseline(self):
+        source=SOURCE.read_text()
+        self.assertIn("INTEGRATION_BASE='fbf36ed350732b46a232a56a216b3d78c733da34'",source)
+        self.assertIn("manifest['source']['base']!=INTEGRATION_BASE",source)
+        self.assertNotIn("INTEGRATION_BASE='2739a5d3986b71893979f2f3178b2063a7fa4780'",source)
+
     def test_published120_baseline_pair_and_full_checkset_fail_closed(self):
         node=next(n for n in TREE.body if isinstance(n,ast.FunctionDef) and n.name=='validate_baseline_pair')
         checks=json.loads((SOURCE.parents[3]/'docs/reconcile/r1r2-baseline-browser-checkset.json').read_text())['checks']
