@@ -80,6 +80,8 @@ body.bms24-owned-page {margin:0;background:var(--bms24-surface-sky);}
    moves to its own line instead of breaking the word. */
 .bms24-app .bms24-navitem .bms24-navlabel {flex:1 1 0;min-width:min-content;overflow-wrap:break-word;word-break:normal;}
 .bms24-app .bms24-navitem .bms24-count {flex:none;margin-left:auto;white-space:nowrap;}
+/* The brand subtitle wraps inside the 220 px sidebar instead of sticking out (shared rule below keeps nowrap for legacy). */
+body .bms24-app:not(.bms-shell-nav-compact) .bms-shell-nav-header .bms-shell-nav-brand .bms24-brandcompany {white-space:normal !important;overflow-wrap:break-word;}
 .bms24-app .bms24-menubutton {display:none;}
 .bms24-app .bms24-drawerhead {display:flex;align-items:center;justify-content:space-between;gap:8px;flex:none;padding:6px 12px;border-bottom:1px solid #FFFFFF26;}
 .bms24-app .bms24-drawerbrand a {display:inline-flex;align-items:center;min-height:44px;min-width:44px;color:#fff;font-weight:800;font-size:20px;letter-spacing:-.03em;}

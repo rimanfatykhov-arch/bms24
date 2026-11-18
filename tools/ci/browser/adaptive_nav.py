@@ -76,7 +76,10 @@ LAYOUT = '() => {' + COMMON + r"""
   return {owned: !!document.querySelector('[data-bms24-owned-shell]'), inner: innerWidth, innerh: innerHeight,
     client: document.documentElement.clientWidth, scroll: document.documentElement.scrollWidth, scrolly: Math.round(scrollY),
     main: box(main), sidebar_visible: vis(side), summary_visible: vis(sum), drawer_visible: vis(d),
-    drawer_focusables: d ? focusables(d).length : 0, menu_roles: document.querySelectorAll('[role="menu"],[role="menuitem"],[role="menubar"]').length,
+    drawer_focusables: d ? focusables(d).length : 0,
+    // BMS site navigation only (sidebar and menu); Moodle's own user menu in the top bar is a real menu and is not counted.
+    menu_roles: [...document.querySelectorAll('.bms24-sidebar, .bms24-mobilemenu')].reduce((n, s) =>
+      n + s.querySelectorAll('[role="menu"],[role="menuitem"],[role="menubar"]').length, 0),
     button: btn ? {tag: btn.tagName, type: btn.getAttribute('type'), visible: vis(btn), ...box(btn), expanded: btn.getAttribute('aria-expanded'),
       controls: ctl, controls_exists: !!(ctl && document.getElementById(ctl)), name: (btn.getAttribute('aria-label') || btn.innerText).replace(/\s+/g, ' ').trim(),
       hidden_attr: btn.hasAttribute('hidden')} : null,
