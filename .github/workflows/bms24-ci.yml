@@ -58,6 +58,18 @@ jobs:
           python tools/test_github_import_1877.py
           python tools/test_github_import_1879.py
           python tools/dev_ai_cycle.py validate --task dev_ai/templates/task.example.json
+      - name: Pilot04 release operator preflight and lifecycle negatives (synthetic only)
+        run: |
+          python -m unittest discover -s tools/release_operator -p 'test_*.py' -v
+          python -O -m unittest discover -s tools/release_operator -p 'test_*.py' -v
+      - name: Pilot04 inherited encrypted-stream negatives (synthetic key only)
+        shell: bash
+        run: |
+          set -euo pipefail
+          fixture=$(mktemp -d)
+          export BMS_FIXTURE_DIR="$fixture"
+          trap 'GNUPGHOME="$fixture/synthetic-key" gpgconf --kill gpg-agent || true' EXIT
+          LC_ALL=C bash tools/backup/test-stream.sh
       - name: Moodle static checks
         run: |
           python tools/check_reconcile_1879.py
