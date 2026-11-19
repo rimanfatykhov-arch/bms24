@@ -49,6 +49,7 @@ CSRF_REFUSAL_CODES = {403, 404}   # Moodle require_sesskey() -> moodle_exception
 CSRF_REFUSAL_MARKER = 'Your session has most likely timed out'  # Moodle 4.1 lang/en/error.php 'invalidsesskey'
 LOGIN_PATH = '/login/index.php'
 CENTER_PATH = '/local/kbacompany/communication_center.php'
+PLAN_PATH = '/local/kbacompany/battle_plan.php'
 # Historical rows compared before revoke, after revoke and after reopen (see ci_state.php, phase 'hist').
 # Expected changes caused by revoke/reopen in these tables: NONE. Membership state lives in other tables and is not part of
 # the snapshot. Any added, removed or changed row here is a FAIL.
@@ -87,6 +88,18 @@ def exact_redirect(location, path, query=None):
     require(len(pairs) == len(dict(pairs)), 'duplicate redirect parameters: %r' % location)
     require(dict(pairs) == dict(query or {}), 'redirect parameters %r != %r' % (dict(pairs), dict(query or {})))
     return location
+
+
+def upload_redirect_query(row):
+    """The accepted redirect after a direct upload to a discussion: exactly uuid/tab=discussions/thread, plus filter=all
+    when the Center renders the UX-1 filters (UX-1 always keeps the default filter in its own links). The schema is fixed
+    here, never taken from the producer: only the company/thread values are recorded by it."""
+    base = row.get('expected_query')
+    require(isinstance(base, dict) and set(base) == {'uuid', 'tab', 'thread'} and base.get('tab') == 'discussions'
+            and all(isinstance(base[k], str) and base[k] for k in base), 'upload redirect base query not recorded exactly')
+    ux = row.get('ux_filters')
+    require(ux in (0, 1) and not isinstance(ux, bool), 'UX-1 filter presence not recorded')
+    return dict(base, filter='all') if ux == 1 else dict(base)
 
 
 def _step(obs, name):
@@ -128,11 +141,8 @@ def attachments_checks(obs, state, phase='verify'):
         'full_file_only': lambda: _rendered(_step(obs, 'full_file_only'), 'p02-file-only.txt'),
         'direct_multipart_new_file_stored_and_downloadable': lambda: (
             require(_step(obs, 'server_file_only_direct').get('http') in LOGIN_REDIRECT_CODES, 'direct POST not answered with a redirect'),
-            require(isinstance(_step(obs, 'server_file_only_direct').get('expected_query'), dict)
-                    and _step(obs, 'server_file_only_direct')['expected_query'].get('uuid')
-                    and _step(obs, 'server_file_only_direct')['expected_query'].get('thread'), 'expected thread redirect not recorded'),
             exact_redirect(_step(obs, 'server_file_only_direct').get('location'), CENTER_PATH,
-                           _step(obs, 'server_file_only_direct')['expected_query']),
+                           upload_redirect_query(_step(obs, 'server_file_only_direct'))),
             _rendered(_step(obs, 'server_file_only_direct'), 'p02-direct-only.txt')),
         'double_submit_creates_one_message': lambda: (
             require(isinstance(_step(obs, 'double_submit').get('center_posts'), int) and _step(obs, 'double_submit')['center_posts'] >= 1,
@@ -1175,24 +1185,65 @@ def plan_discussion_checks(obs, exitcode=None):
                 j = v.get('parts_after_join') or {}
                 require(ma in (j.get('active') or []) and v.get('composer_after_join') == 1, 'explicit join did not work')
 
+    def reasons():
+        texts = obs.get('reasons')
+        keys = ('plan_unavailable', 'company_unavailable', 'thread_permission', 'invalid_sesskey')
+        require(isinstance(texts, dict) and set(texts) == set(keys)
+                and all(isinstance(texts[k], str) and texts[k].strip() for k in keys)
+                and len({texts[k] for k in keys}) == len(keys), 'expected refusal texts missing')
+        target = obs.get('urls') or {}
+        require(all(isinstance(target.get(k), str) and target[k] for k in ('company', 'plan')), 'plan target missing')
+        return texts, target
+
+    def shown(response, text):
+        found = (response or {}).get('alerts')
+        return isinstance(found, list) and any(isinstance(a, str) and text in a for a in found)
+
+    def participants(snapshot):
+        require(isinstance(snapshot, dict) and set(snapshot) == {'active', 'reads'}
+                and all(isinstance(snapshot[k], list) and all(isinstance(u, int) and not isinstance(u, bool) for u in snapshot[k])
+                        for k in snapshot), 'participant observation missing')
+        return snapshot
+
     def refusals():
         rows, ids = run()
+        texts, target = reasons()
+        back = {'uuid': target['company'], 'plan': target['plan'], 'view': 'detail', 'tab': 'discussion'}
+        # Who is refused and why (owner decision Q9): RA may not open the plan, EB is outside the company. Each refusal
+        # must be the product's own answer for that reason, not any non-success page.
+        expected = {'RA': {'post': texts['plan_unavailable'], 'join_http': (200,), 'join': texts['thread_permission']},
+                    'EB': {'post': texts['company_unavailable'], 'join_http': (403, 404), 'join': texts['company_unavailable']}}
         for r in rows:
+            before = participants(r.get('parts_before_refusals'))
+            require(ids['EA'] in before['active'] and ids['VA'] in before['active'],
+                    'plan participants not established before the refusals')
+            count = r.get('messages_before_refusals')
+            require(isinstance(count, int) and not isinstance(count, bool) and count >= 2, 'message count before refusals missing')
             d = r.get('denied') or {}
             require(set(d) == {'RA', 'EB'}, 'denied users missing')
             for label, x in d.items():
+                want = expected[label]
                 require(x.get('card_text') is False and x.get('center_text') is False, label + ' read the plan discussion')
                 require(refused(x.get('download')), label + ' downloaded the plan discussion file')
-                require(x.get('join_http') in (200, 403, 404)
-                        and x.get('join_location') == ''
-                        and ids[label] not in ((x.get('parts') or {}).get('active') or []),
-                        label + ' join refusal must be non-redirect 200/403/404 with unchanged participants')
-                require(x.get('post_http') in (200, 303, 403, 404) and x.get('messages') == r.get('messages_before_refusals'),
-                        label + ' stored a plan message or the refusal failed with an unexpected status')
+                post = x.get('post') or {}
+                require(post.get('http') == 303 and x.get('post_http') == 303, label + ' post refusal is not the redirect back to the plan')
+                exact_redirect(post.get('location'), PLAN_PATH, back)
+                followed = post.get('followed') or {}
+                require(isinstance(followed.get('http'), int) and followed['http'] < 500 and shown(followed, want['post']),
+                        label + ' post refusal does not show the expected reason')
+                join = x.get('join') or {}
+                require(join.get('http') in want['join_http'] and x.get('join_http') == join.get('http')
+                        and join.get('location') == '' and x.get('join_location') == '',
+                        label + ' join refusal has an unexpected status or redirect: %r' % (join.get('http'),))
+                require(shown(join, want['join']), label + ' join refusal does not show the expected reason')
+                require(participants(x.get('parts')) == before and ids[label] not in before['active'],
+                        label + ' refusal changed the participants')
+                require(x.get('messages') == count, label + ' stored a plan message')
             f = r.get('forged') or {}
-            require(f.get('http') in (200, 403, 404) and f.get('location') == ''
-                    and f.get('messages') == r.get('messages_before_refusals'),
-                    'forged sesskey refusal must not be 3xx/5xx or mutate messages')
+            require(f.get('http') in DENY_CODES and f.get('location') == '' and shown(f, texts['invalid_sesskey']),
+                    'forged sesskey was not refused as an invalid session key: %r' % (f.get('http'),))
+            require(f.get('messages') == count and participants(f.get('parts')) == before,
+                    'forged sesskey changed messages or participants')
         rv = obs.get('revocation') or {}
         sha = rows[-1].get('file_sha256')
         require((rv.get('before') or {}).get('text') is True and served((rv.get('before') or {}).get('download'), sha),
@@ -1222,6 +1273,51 @@ def plan_discussion_checks(obs, exitcode=None):
             'plan_discussion_no_browser_errors': browser_events}
 
 
+UX_NAV_STEPS = [('section', 'discussions'), ('section', 'notifications'), ('section', 'messages'),
+                ('filter', 'unread'), ('filter', 'mentions'), ('filter', 'all'),
+                ('section', 'discussions'), ('filter', 'unread'), ('filter', 'mentions'), ('filter', 'all')]
+
+
+def exact_center_link(url, expected):
+    """A Communication Center URL: loopback origin, exact path, exactly the expected parameters (no duplicates)."""
+    require(isinstance(url, str) and url, 'Center link missing')
+    parsed = urlparse(local_url(url))
+    require(parsed.path == CENTER_PATH and not parsed.params and not parsed.fragment, 'Center link targets a wrong route: %r' % url)
+    try:
+        pairs = parse_qsl(parsed.query, keep_blank_values=True, strict_parsing=True)
+    except ValueError:
+        pairs = None
+    require(pairs is not None and len(pairs) == len(dict(pairs)), 'Center link has malformed/duplicate params: %r' % url)
+    require(dict(pairs) == expected, 'Center link parameters %r != %r' % (dict(pairs), expected))
+
+
+def ux_navigation(steps, company):
+    """Clicked navigation: each step lands on the exact URL with the expected active section/filter and content."""
+    require(isinstance(steps, list) and len(steps) == len(UX_NAV_STEPS), 'UX navigation steps missing')
+    section = 'messages'
+    for step, (kind, key) in zip(steps, UX_NAV_STEPS):
+        require(isinstance(step, dict) and step.get('kind') == kind and step.get('key') == key, 'UX navigation order differs')
+        require(step.get('http') == 200, 'UX navigation %s=%s HTTP %r' % (kind, key, step.get('http')))
+        if kind == 'section':
+            section = key
+            landed = {'uuid': company, 'tab': key}
+        else:
+            require(section in ('messages', 'discussions'), 'filter clicked outside a list section')
+            landed = {'uuid': company, 'tab': section, 'filter': key}
+        exact_center_link(step.get('url'), landed)
+        require(step.get('active_sections') == 1, 'exactly one active section expected')
+        exact_center_link(step.get('active_section'), {'uuid': company, 'tab': section})
+        if section == 'notifications':
+            require(step.get('notifications') == 1 and step.get('layout') == 0 and step.get('filters') == 0
+                    and step.get('active_filters') == 0, 'notifications section content wrong')
+        else:
+            require(step.get('notifications') == 0 and step.get('layout') == 1 and step.get('filters') == 1
+                    and step.get('active_filters') == 1, '%s section content wrong' % section)
+            exact_center_link(step.get('active_filter'), {'uuid': company, 'tab': section,
+                                                          'filter': key if kind == 'filter' else 'all'})
+        require(step.get('overflow') is False, 'horizontal overflow after navigation')
+
+
 def communication_ux_checks(obs, exitcode=None):
     """Fail closed on incomplete real Moodle UX-1 evidence, independently of producer status."""
     def verify():
@@ -1243,22 +1339,9 @@ def communication_ux_checks(obs, exitcode=None):
             require(row.get('sections') == 3, 'expected exactly three primary sections')
             company = obs.get('companyuuid')
             require(isinstance(company, str) and company, 'UX company context missing')
-            for field in ('default_section', 'default_filter'):
-                url = local_url(row.get(field, ''))
-                parsed = urlparse(url)
-                require(parsed.path == CENTER_PATH and not parsed.params and not parsed.fragment,
-                        'UX section/filter link targets a wrong route')
-                try:
-                    pairs = parse_qsl(parsed.query, keep_blank_values=True, strict_parsing=True)
-                except ValueError:
-                    pairs = None
-                require(pairs is not None and len(pairs) == len(dict(pairs)),
-                        'UX section/filter link has malformed/duplicate params')
-                expected = {'uuid': company, 'tab': 'messages'}
-                if field == 'default_filter':
-                    expected['filter'] = 'all'
-                require(dict(pairs) == expected,
-                        'UX section/filter link has missing/extra/wrong parameters')
+            exact_center_link(row.get('default_section'), {'uuid': company, 'tab': 'messages'})
+            exact_center_link(row.get('default_filter'), {'uuid': company, 'tab': 'messages', 'filter': 'all'})
+            ux_navigation(row.get('navigation'), company)
             for field in ['no_meetings', 'no_bulk', 'thread_available', 'panel_open', 'panel_closed',
                           'focus_restored', 'notification_screen', 'no_conversation_area']:
                 require(row.get(field) is True, 'UX missing/failed ' + field)

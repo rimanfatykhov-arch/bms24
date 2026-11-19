@@ -4,9 +4,9 @@ import os
 import subprocess
 import sys
 from pathlib import Path
-from urllib.parse import urlencode
+from urllib.parse import parse_qs, urlencode, urlparse
 from playwright.sync_api import sync_playwright
-from contract import local_url, require
+from contract import UX_NAV_STEPS, local_url, require
 from events import Recorder
 
 require(os.environ.get('BMS_CI_BROWSER') == '1', 'disposable browser only')
@@ -21,6 +21,27 @@ result = {'status': 'FAIL', 'companyuuid': company, 'cases': []}
 
 def shell(mode):
     subprocess.run(['php', str(here / 'ci_message_actions.php'), core, 'shell', mode], check=True, capture_output=True)
+
+
+def navigate(page, kind, key):
+    """One real user click on a visible section link or filter chip; the observation is what the browser then shows."""
+    nav = page.locator('.bms-comm-ux-sections a' if kind == 'section' else '.bms-comm-ux-filters a.bms-comm-ux-chip')
+    field = 'tab' if kind == 'section' else 'filter'
+    target = [a for a in nav.all() if parse_qs(urlparse(a.get_attribute('href') or '').query).get(field) == [key]]
+    require(len(target) == 1 and target[0].is_visible(), 'visible %s link %s missing' % (kind, key))
+    with page.expect_navigation() as info:
+        target[0].click()
+    page.wait_for_load_state('networkidle')
+    section = page.locator('.bms-comm-ux-sections a[aria-current=page]')
+    chip = page.locator('.bms-comm-ux-chip[aria-current=true]')
+    return {'kind': kind, 'key': key, 'http': info.value.status if info.value else None, 'url': page.url,
+            'active_section': section.get_attribute('href') if section.count() == 1 else None,
+            'active_sections': section.count(),
+            'active_filter': chip.get_attribute('href') if chip.count() == 1 else None, 'active_filters': chip.count(),
+            'notifications': page.locator('.bms-comm-ux-notifications[data-section=notifications]').count(),
+            'layout': page.locator('.bms-comm2-layout').count(),
+            'filters': page.locator('.bms-comm-ux-filters').count(),
+            'overflow': page.evaluate('document.documentElement.scrollWidth > innerWidth + 1')}
 
 
 def url(**kwargs):
@@ -69,6 +90,9 @@ with sync_playwright() as p:
                     case['panel_closed'] = not page.locator('#bms-comm3-context-details').evaluate('(e) => e.open')
                     case['focus_restored'] = toggle.evaluate('(e) => document.activeElement === e')
                     case['thread_overflow'] = page.evaluate('document.documentElement.scrollWidth > innerWidth + 1')
+                # Real clicks through the three sections and the filters of both list sections (UX_NAV_STEPS).
+                page.goto(url(), wait_until='networkidle')
+                case['navigation'] = [navigate(page, kind, key) for kind, key in UX_NAV_STEPS]
                 response = page.goto(url(tab='notifications'), wait_until='networkidle')
                 case['notifications_http'] = response.status
                 case['notification_screen'] = page.locator('.bms-comm-ux-notifications').count() == 1

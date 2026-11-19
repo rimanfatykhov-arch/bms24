@@ -9,12 +9,14 @@ membership is revoked (thread and file refused in the same session) and reopened
 Observations only -> EVIDENCE/plan-discussion-result.json; the verdict is computed by contract.plan_discussion_checks.
 """
 import hashlib
+import html
 import json
 import os
 import subprocess
 import sys
 import uuid
 from pathlib import Path
+from html.parser import HTMLParser
 from urllib.parse import parse_qs, urlencode, urlparse
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
@@ -84,10 +86,56 @@ def sesskey(page):
     return page.evaluate('() => M.cfg.sesskey')
 
 
-def raw_post(ctx, url, pairs):
+VOID = ('area', 'base', 'br', 'col', 'embed', 'hr', 'img', 'input', 'link', 'meta', 'source', 'track', 'wbr')
+
+
+class AlertText(HTMLParser):
+    """Text of Moodle alert boxes (role=alert or class "alert"/"errorbox"): the refusal reason shown to the user."""
+    def __init__(self):
+        super().__init__(convert_charrefs=True)
+        self.depth = 0; self.stack = []; self.alerts = []
+
+    def handle_starttag(self, tag, attrs):
+        if tag in VOID:
+            return
+        a = dict(attrs); classes = (a.get('class') or '').split()
+        hit = a.get('role') == 'alert' or 'alert' in classes or 'errorbox' in classes
+        if hit and self.depth == 0:
+            self.alerts.append('')
+        self.stack.append(hit)
+        self.depth += 1 if hit else 0
+
+    def handle_endtag(self, tag):
+        if tag in VOID or not self.stack:
+            return
+        if self.stack.pop():
+            self.depth -= 1
+
+    def handle_data(self, data):
+        if self.depth > 0:
+            self.alerts[-1] += data
+
+
+def alerts(body):
+    parser = AlertText()
+    try:
+        parser.feed(body.decode('utf-8', 'replace')); parser.close()
+    except Exception:  # an unparsable page has no recognisable reason; the contract then fails
+        return []
+    return [' '.join(html.unescape(t).split()) for t in parser.alerts if t.strip()]
+
+
+def raw_post(ctx, url, pairs, follow=False):
+    """POST without following redirects. The response itself (status, Location, alert texts) is kept: these API
+    requests do not reach page.on('response'), so their status is judged only from here. With follow=True a 3xx is
+    followed once in the same session to read the notification that carries the refusal reason."""
     r = ctx.request.post(local_url(url), data=urlencode(pairs),
                          headers={'Content-Type': 'application/x-www-form-urlencoded'}, max_redirects=0)
-    return {'http': r.status, 'location': r.headers.get('location', '')}
+    out = {'http': r.status, 'location': r.headers.get('location', ''), 'alerts': alerts(r.body())}
+    if follow and 300 <= r.status < 400 and out['location']:
+        g = ctx.request.get(local_url(out['location']), max_redirects=0)
+        out['followed'] = {'http': g.status, 'alerts': alerts(g.body())}
+    return out
 
 
 def download(ctx, href):
@@ -107,6 +155,8 @@ with sync_playwright() as pw:
         result['ids'] = {'MA': uid('MA'), 'EA': uid('EA'), 'RA': uid('RA'), 'EB': uid('EB'), 'VA': viewer['userid']}
         plan_url = local_url(PLAN + '?' + urlencode({'uuid': company, 'plan': plan, 'view': 'detail', 'tab': 'discussion'}))
         result['plan_before'] = plan_php('snapshot', company, plan)
+        result['reasons'] = plan_php('strings')['strings']
+        result['urls'] = {'company': company, 'plan': plan}
         for index, (shellmode, width, mode) in enumerate(CASES):
             last = index == len(CASES) - 1
             shell(shellmode)
@@ -189,6 +239,7 @@ with sync_playwright() as pw:
 
             # 4. refusals: RA (same company, no plan access), EB (other company), forged sesskey
             count = comm('messages', thread)['count']
+            case['parts_before_refusals'] = parts(thread)
             case['denied'] = {}
             for label in ('RA', 'EB'):
                 o_ctx, o = open_ctx(label, record=False)
@@ -198,17 +249,18 @@ with sync_playwright() as pw:
                        wait_until='networkidle')
                 center = o.locator('body').inner_text()
                 post = raw_post(o_ctx, POST, [('uuid', company), ('plan', plan), ('action', 'post'),
-                                               ('message', 'forbidden %s' % token), ('sesskey', sesskey(o))])
+                                               ('message', 'forbidden %s' % token), ('sesskey', sesskey(o))],
+                                follow=True)
                 join = raw_post(o_ctx, CENTER, [('uuid', company), ('action', 'createobject'), ('objectkind', 'battleplan'),
                                                  ('objectuuid', plan), ('sesskey', sesskey(o))])
                 case['denied'][label] = {'card_text': t_q in card, 'center_text': t_q in center,
-                                         'download': download(o_ctx, file_href), 'post_http': post['http'],
-                                         'join_http': join['http'], 'join_location': join['location'], 'parts': parts(thread),
-                                         'messages': comm('messages', thread)['count']}
+                                         'download': download(o_ctx, file_href), 'post': post, 'post_http': post['http'],
+                                         'join': join, 'join_http': join['http'], 'join_location': join['location'],
+                                         'parts': parts(thread), 'messages': comm('messages', thread)['count']}
             forged = raw_post(ea_ctx, POST, [('uuid', company), ('plan', plan), ('action', 'post'),
                                              ('message', 'forged %s' % token), ('sesskey', '0' * 10)])
-            case['forged'] = {'http': forged['http'], 'location': forged['location'],
-                              'messages': comm('messages', thread)['count']}
+            case['forged'] = {'http': forged['http'], 'location': forged['location'], 'alerts': forged['alerts'],
+                              'messages': comm('messages', thread)['count'], 'parts': parts(thread)}
             case['messages_before_refusals'] = count
 
             case['browser_events'] = [e for _, rec in contexts if rec for e in rec.events]

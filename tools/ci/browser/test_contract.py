@@ -17,7 +17,8 @@ EXT = c.EXPECTED_BLOCKED_EXTERNAL[0]
 ABORTED = [{'source': 'route_abort', 'url': EXT, 'resource_type': 'script', 'reason': c.ABORT_REASON},
            {'source': 'requestfailed', 'url': EXT, 'resource_type': 'script', 'failure': 'net::ERR_BLOCKED_BY_CLIENT.Inspector'},
            {'source': 'console', 'type': 'error', 'text': 'Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector', 'url': EXT}]
-DIRECT_LOC = 'http://127.0.0.1:8080/local/kbacompany/communication_center.php?uuid=A&tab=discussions&thread=T'
+DIRECT_LOC = 'http://127.0.0.1:8080/local/kbacompany/communication_center.php?uuid=A&tab=discussions&thread=T&filter=all'
+DIRECT_LOC_PRE_UX1 = 'http://127.0.0.1:8080/local/kbacompany/communication_center.php?uuid=A&tab=discussions&thread=T'
 
 
 def snapshot(mutate=None):
@@ -41,6 +42,7 @@ def attachments():
                                  'file_link_text': 'p02-text-and-file.txt', 'downloads': ok_dl('p02-text-and-file.txt')},
           'full_file_only': {'file_link_text': 'p02-file-only.txt', 'downloads': ok_dl('p02-file-only.txt')},
           'server_file_only_direct': {'http': 303, 'location': DIRECT_LOC, 'expected_query': {'uuid': 'A', 'tab': 'discussions', 'thread': 'T'},
+                                      'ux_filters': 1,
                                       'file_link_text': 'p02-direct-only.txt', 'downloads': ok_dl('p02-direct-only.txt')},
           'csrf_invalid_sesskey': {'http': 404, 'refusal_marker': True}, 'double_submit': {'center_posts': 1}}
     state = {'messages': [{'body': 'RC31 P02 double verify'}, {'body': 'x'}], 'orphan_files': 0}
@@ -75,6 +77,14 @@ def tabs(status='PASS', drop=None):
 
 def failed(results):
     return sorted(k for k, v in results.items() if v['status'] != 'PASS')
+
+
+
+PD_REASONS = {'plan_unavailable': 'Battle Plan or item is unavailable.',
+              'company_unavailable': 'The company is unavailable or outside your access scope.',
+              'thread_permission': 'You do not have access to this thread.',
+              'invalid_sesskey': 'Your session has most likely timed out. Please log in again.'}
+PD_BACK = 'http://127.0.0.1:8080/local/kbacompany/battle_plan.php?uuid=A&plan=P&view=detail&tab=discussion'
 
 
 class ContractTest(unittest.TestCase):
@@ -268,6 +278,23 @@ class ContractTest(unittest.TestCase):
                 self.assertIn('direct_multipart_new_file_stored_and_downloadable', failed(c.evaluate(c.attachments_checks(o, s))))
         o, s = attachments(); del o['steps']['server_file_only_direct']['expected_query']
         self.assertIn('direct_multipart_new_file_stored_and_downloadable', failed(c.evaluate(c.attachments_checks(o, s))))
+        # Accepted UX-1 schema: exactly uuid/tab=discussions/thread + filter=all; before UX-1 (replay baselines) no filter.
+        direct = 'direct_multipart_new_file_stored_and_downloadable'
+        o, s = attachments(); o['steps']['server_file_only_direct'].update(ux_filters=0, location=DIRECT_LOC_PRE_UX1)
+        self.assertNotIn(direct, failed(c.evaluate(c.attachments_checks(o, s))))
+        for change in ({'location': DIRECT_LOC_PRE_UX1}, {'ux_filters': 0}, {'location': DIRECT_LOC.replace('all', 'unread')},
+                       {'location': DIRECT_LOC + '&filter=all'}, {'location': DIRECT_LOC + '&q=x'}, {'ux_filters': None},
+                       {'ux_filters': True}, {'ux_filters': 2},
+                       {'expected_query': {'uuid': 'A', 'tab': 'discussions', 'thread': 'T', 'filter': 'all'}},
+                       {'expected_query': {'uuid': 'A', 'tab': 'discussions', 'thread': 'T', 'next': 'x'}},
+                       {'expected_query': {'uuid': 'A', 'tab': 'messages', 'thread': 'T'}},
+                       {'expected_query': {'uuid': '', 'tab': 'discussions', 'thread': 'T'}},
+                       {'location': 'https://evil.invalid/local/kbacompany/communication_center.php?uuid=A&tab=discussions&thread=T&filter=all'}):
+            with self.subTest(change=change):
+                o, s = attachments(); o['steps']['server_file_only_direct'].update(change)
+                self.assertIn(direct, failed(c.evaluate(c.attachments_checks(o, s))))
+        o, s = attachments(); del o['steps']['server_file_only_direct']['ux_filters']
+        self.assertIn(direct, failed(c.evaluate(c.attachments_checks(o, s))))
         self.assertEqual(c.exact_redirect('http://127.0.0.1:8080/login/index.php', c.LOGIN_PATH), 'http://127.0.0.1:8080/login/index.php')
 
     def test_task_tab_errors_execution_and_run_status_fail_everything(self):
@@ -929,6 +956,18 @@ class ContractTest(unittest.TestCase):
             self.assertTrue(all(v['status'] == 'FAIL' for v in r.values()), r)
         self.assertTrue(all(v['status'] == 'FAIL' for v in c.evaluate(c.daily_reports_flow_checks(None, None)).values()))
 
+    @staticmethod
+    def plan_denied(label, n):
+        """Real Moodle refusals (#135 BROWSER evidence): RA may not open the plan, EB is outside the company."""
+        post_reason = PD_REASONS['plan_unavailable' if label == 'RA' else 'company_unavailable']
+        join = ({'http': 200, 'location': '', 'alerts': [PD_REASONS['thread_permission']]} if label == 'RA'
+                else {'http': 404, 'location': '', 'alerts': [PD_REASONS['company_unavailable']]})
+        return {'card_text': False, 'center_text': False, 'download': {'http': 404, 'sha256': None},
+                'post': {'http': 303, 'location': PD_BACK, 'alerts': [],
+                         'followed': {'http': 200 if label == 'RA' else 404, 'alerts': ['\u00d7 ' + post_reason]}},
+                'post_http': 303, 'join': join, 'join_http': join['http'], 'join_location': '',
+                'parts': {'active': [12, 15], 'reads': [12, 15]}, 'messages': 4 + n * 2}
+
     def plan_discussion_obs(self):
         ids = {'MA': 11, 'EA': 12, 'RA': 13, 'EB': 14, 'VA': 15}
         sha = 'f' * 64
@@ -947,15 +986,17 @@ class ContractTest(unittest.TestCase):
                           'reply_target': {'count': 1, 'text': 'Replying to: Synthetic EA ' + t[0]},
                           'reply': {'body': t[1], 'status': 'active', 'thread': 'T', 'reply_to': 'q-%d' % n, 'authorid': 15, 'mentions': []},
                           'card_quote': ['Synthetic EA\n' + t[0]], 'reader': reader,
-                          'denied': {label: {'card_text': False, 'center_text': False, 'download': {'http': 404, 'sha256': None},
-                                             'post_http': 303, 'join_http': 200, 'join_location': '', 'parts': {'active': [12, 15], 'reads': []},
-                                             'messages': 4 + n * 2} for label in ('RA', 'EB')},
-                          'forged': {'http': 200, 'location': '', 'messages': 4 + n * 2}, 'messages_before_refusals': 4 + n * 2,
+                          'parts_before_refusals': {'active': [12, 15], 'reads': [12, 15]},
+                          'denied': {label: self.plan_denied(label, n) for label in ('RA', 'EB')},
+                          'forged': {'http': 404, 'location': '', 'alerts': [PD_REASONS['invalid_sesskey']], 'messages': 4 + n * 2,
+                                     'parts': {'active': [12, 15], 'reads': [12, 15]}},
+                          'messages_before_refusals': 4 + n * 2,
                           'browser_events': list(ABORTED), 'server_errors': []})
         snap = {'phase': 'snapshot', 'plan': {'status': 'draft', 'userid': 12, 'reviewerid': 15, 'observerid': 0, 'timemodified': 1,
                                               'approvedby': 0, 'submittedat': 0, 'approvedat': 0, 'closedat': 0}, 'reviews': 0}
         ok = {'http': 200, 'sha256': sha}
         return {'status': 'PASS', 'ids': ids, 'cases': cases, 'plan_before': snap, 'plan_after': copy.deepcopy(snap),
+                'reasons': dict(PD_REASONS), 'urls': {'company': 'A', 'plan': 'P'},
                 'revocation': {'before': {'text': True, 'download': ok}, 'revoked': True,
                                'after': {'text': False, 'download': {'http': 404, 'sha256': None}},
                                'reopened': True, 'restored': {'text': True, 'download': ok}}}
@@ -987,6 +1028,39 @@ class ContractTest(unittest.TestCase):
         fails(bad, lambda o: o['cases'][0]['denied']['RA'].update(join_http=500))
         fails(bad, lambda o: o['cases'][0]['denied']['RA'].update(join_http=302))
         fails(bad, lambda o: o['cases'][0]['denied']['RA'].update(join_location='http://127.0.0.1:8080/login/index.php'))
+        # Codex #123/#135 repros: missing or emptied participant evidence must FAIL, not pass silently.
+        fails(bad, lambda o: o['cases'][0]['denied']['RA'].pop('parts'))
+        fails(bad, lambda o: o['cases'][0]['denied']['RA']['parts'].update(active=[]))
+        fails(bad, lambda o: o['cases'][1]['denied']['EB']['parts'].update(reads=[12]))
+        fails(bad, lambda o: o['cases'][0].pop('parts_before_refusals'))
+        fails(bad, lambda o: o['cases'][0].update(parts_before_refusals={'active': [], 'reads': []}))
+        fails(bad, lambda o: o['cases'][0]['forged'].pop('parts'))
+        fails(bad, lambda o: o['cases'][0]['forged']['parts']['active'].append(13))
+        # The refusal must be the expected one: an arbitrary 200 page, a wrong reason, an unexpected redirect, a missing
+        # response or a 5xx is not a refusal.
+        fails(bad, lambda o: o['cases'][0]['denied']['RA']['join'].update(alerts=[]))
+        fails(bad, lambda o: o['cases'][0]['denied']['RA']['join'].update(alerts=['Changes saved']))
+        fails(bad, lambda o: o['cases'][0]['denied']['EB']['join'].update(http=200))
+        fails(bad, lambda o: o['cases'][0]['denied']['EB'].update(join_http=500))
+        fails(bad, lambda o: o['cases'][0]['denied']['RA'].pop('join'))
+        fails(bad, lambda o: o['cases'][0]['denied']['RA'].pop('post'))
+        fails(bad, lambda o: o['cases'][0]['denied']['RA']['post'].update(http=500))
+        fails(bad, lambda o: o['cases'][0]['denied']['RA']['post'].update(http=200, location=''))
+        fails(bad, lambda o: o['cases'][1]['denied']['EB']['post'].update(location='http://127.0.0.1:8080/login/index.php'))
+        fails(bad, lambda o: o['cases'][1]['denied']['EB']['post'].update(location='https://example.invalid' + PD_BACK[21:]))
+        fails(bad, lambda o: o['cases'][0]['denied']['RA']['post'].update(location=PD_BACK + '&extra=1'))
+        fails(bad, lambda o: o['cases'][0]['denied']['RA']['post'].update(location=PD_BACK + '&tab=discussion'))
+        fails(bad, lambda o: o['cases'][0]['denied']['RA']['post'].pop('followed'))
+        fails(bad, lambda o: o['cases'][0]['denied']['RA']['post']['followed'].update(http=500))
+        fails(bad, lambda o: o['cases'][0]['denied']['RA']['post']['followed'].update(alerts=[PD_REASONS['company_unavailable']]))
+        fails(bad, lambda o: o['cases'][0]['forged'].update(http=200))
+        fails(bad, lambda o: o['cases'][0]['forged'].update(alerts=[]))
+        fails(bad, lambda o: o['cases'][0]['forged'].pop('alerts'))
+        fails(bad, lambda o: o.pop('reasons'))
+        fails(bad, lambda o: o['reasons'].update(invalid_sesskey=''))
+        fails(bad, lambda o: o['reasons'].update(thread_permission=o['reasons']['plan_unavailable']))
+        fails(bad, lambda o: o.pop('urls'))
+        fails(bad, lambda o: o['cases'][0].update(messages_before_refusals=None))
         rd = 'plan_discussion_reader_not_joined'
         fails(rd, lambda o: o['cases'][0]['reader'].update(card_question=False))
         fails(rd, lambda o: o['cases'][0]['reader'].update(card_note=False))
@@ -1004,9 +1078,12 @@ class ContractTest(unittest.TestCase):
             fails(rf, lambda o, label=label: o['cases'][0]['denied'][label].update(download={'http': 200, 'sha256': 'f' * 64}))
             fails(rf, lambda o, label=label: o['cases'][0]['denied'][label].update(download={'http': 500, 'sha256': None}))
             fails(rf, lambda o, label=label: o['cases'][0]['denied'][label].update(join_http=303))
+            fails(rf, lambda o, label=label: o['cases'][0]['denied'][label]['join'].update(http=303))
+            fails(rf, lambda o, label=label: o['cases'][0]['denied'][label]['join'].update(location=PD_BACK))
             fails(rf, lambda o, label=label: o['cases'][0]['denied'][label]['parts']['active'].append(o['ids'][label]))
             fails(rf, lambda o, label=label: o['cases'][0]['denied'][label].update(messages=5))
             fails(rf, lambda o, label=label: o['cases'][1]['denied'][label].update(post_http=500))
+            fails(rf, lambda o, label=label: o['cases'][1]['denied'][label]['post'].update(http=500))
             fails(rf, lambda o, label=label: o['cases'][0]['denied'].pop(label))
         fails(rf, lambda o: o['cases'][0]['forged'].update(messages=5))
         fails(rf, lambda o: o['cases'][0]['forged'].update(http=303))
