@@ -9828,3 +9828,24 @@ $string['messageprovider:dailyreport_submitted'] = 'Отчёт за день ж�
 $string['messageprovider:dailyreport_decision'] = 'Решение по моему отчёту за день';
 $string['communication_notification_dailyreport_submitted'] = 'Отчёт на проверку';
 $string['communication_notification_dailyreport_decision'] = 'Решение по отчёту';
+
+// Communication Center E2 (2026-11-16): Battle Plan discussion (Q9).
+$string['bpu_tab_discussion'] = 'Обсуждение';
+$string['bpu_discussion_empty'] = 'Сообщений пока нет. Начните обсуждение этого плана.';
+$string['bpu_discussion_readonly'] = 'Вы можете читать обсуждение плана. Писать в нём могут участники плана и руководители с правом изменять план.';
+$string['bpu_discussion_reader'] = 'Вы видите обсуждение, потому что вам доступен план. Ваше сообщение добавит вас в участники обсуждения.';
+$string['communication_object_battleplan'] = 'Боевой план';
+$string['communicationcenter_openplan'] = 'Открыть план';
+
+// Communication Center UX-1 (2026-11-18): sections and accessible presentation.
+$string['communicationux_conversations'] = 'Разговоры';
+$string['communicationux_notification_count'] = 'Непрочитанные уведомления';
+$string['communicationux_filters'] = 'Отбор разговоров';
+$string['communicationux_details'] = 'Подробности и участники';
+$string['communicationux_empty_search'] = 'По этому запросу разговоров нет. Измените запрос или сбросьте поиск.';
+$string['communicationux_empty_all'] = 'В этом разделе пока нет разговоров. Начните разговор или откройте обсуждение объекта.';
+$string['communicationux_empty_filtered'] = 'Под этот отбор разговоров нет. Покажите все разговоры раздела.';
+$string['communicationux_reset'] = 'Показать все в разделе';
+$string['communicationux_read'] = 'Прочитано';
+$string['communicationux_unread'] = 'Не прочитано';
+$string['communicationux_thread_count'] = 'Разговоры и обсуждения с непрочитанными сообщениями';

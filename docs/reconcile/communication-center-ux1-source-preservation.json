@@ -1,0 +1,22 @@
+{
+  "scope": "exact UX-1 append-only strings/scoped CSS, no notification rules or ACL changes",
+  "base_sha": "aebe1856bd1c1bd09cb4aa2782bcb5aa8d3b9ea0",
+  "normalization": "CRLF to LF only",
+  "files": [
+    {
+      "path": "local/kbacompany/lang/en/local_kbacompany.php",
+      "before_sha256_lf": "313dacec7726f2052466bb56c956411b31b5b9d28e6267aed422130d72df5e41",
+      "after_sha256_lf": "eac98f182ea03d8332608ede1ad216c2fbde9398634653cb3a2e65eb0bfe890b"
+    },
+    {
+      "path": "local/kbacompany/lang/ru/local_kbacompany.php",
+      "before_sha256_lf": "347f6b5b8f66b2c5b089a423ef1633730349f70c04bd41093df8c8aeeb883708",
+      "after_sha256_lf": "6e5cb24b46f5c918bd4d48b50f6ad6f2c6a231a423490374a32481479da268bf"
+    },
+    {
+      "path": "local/kbacompany/styles.css",
+      "before_sha256_lf": "0cbc4209807f463b30934f1f8642adfc3d50ecd52b86ba5fac0e018a48228b30",
+      "after_sha256_lf": "cd2d2163a340a79e0b4766e90d63aad3b39a31d334fa4430c6eee686200e4e7f"
+    }
+  ]
+}

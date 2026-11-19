@@ -213,6 +213,35 @@ class battle_plan_service {
         return $row;
     }
 
+    /**
+     * Discussion target of one plan for an actor who may READ it (owner decision Q9, 2026-11-16: the plan discussion
+     * is readable by everyone allowed to open the plan). Uses the existing plan read rule (access_sql); never grants
+     * plan rights. Throws the plan's ordinary refusal for an unreadable or foreign plan.
+     */
+    public static function discussion_target(string $companyuuid, int $actor, string $planuuid): array {
+        global $DB;
+        $row = self::plan($companyuuid, $planuuid, $actor);
+        $user = $DB->get_record('user', ['id' => (int)$row->userid],
+            'id,' . implode(',', \core_user\fields::get_name_fields()));
+        return [
+            'uuid' => (string)$row->uuid, 'status' => (string)$row->status,
+            'user_id' => (int)$row->userid, 'reviewer_id' => (int)$row->reviewerid,
+            'observer_id' => (int)$row->observerid, 'created_by' => (int)$row->createdby,
+            'title' => self::period_label((string)$row->periodstart, (string)$row->periodend) .
+                ($user ? ' · ' . fullname($user) : ''),
+            'can_post' => self::can_post_discussion_row($row, $actor),
+        ];
+    }
+
+    /** Writing to the plan discussion: plan people and plan managers; read-only department viewers cannot write. */
+    private static function can_post_discussion_row(\stdClass $row, int $actor): bool {
+        $companyuuid = (string)$row->companyuuid;
+        return self::can_manage($companyuuid, $actor) || (int)$row->userid === $actor
+            || (int)$row->reviewerid === $actor || (int)$row->observerid === $actor
+            || access_role_service::may_edit_department_plan($companyuuid, $actor, (int)$row->userid)
+            || in_array((int)$row->userid, access_role_service::department_approve_userids($companyuuid, $actor), true);
+    }
+
     private static function can_access_plan(\stdClass $plan, int $actor, bool $canmanage): bool {
         return $canmanage || access_role_service::may_edit_department_plan((string)$plan->companyuuid, $actor, (int)$plan->userid)
             || ((int)$plan->createdby === $actor && (string)$plan->status === 'draft'
