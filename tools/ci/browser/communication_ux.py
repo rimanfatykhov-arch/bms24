@@ -16,7 +16,7 @@ core = os.environ['MOODLE_ROOT']
 f = json.loads((root / 'actors.private.json').read_text())
 company = f['companies']['A']['uuid']
 base = 'http://127.0.0.1:8080'
-result = {'status': 'FAIL', 'cases': []}
+result = {'status': 'FAIL', 'companyuuid': company, 'cases': []}
 
 
 def shell(mode):
