@@ -60,38 +60,40 @@ class communication_center_ui_service {
         $tab = (string)$data['tab'];
         $selected = $data['selected'];
         $counts = $data['counts'];
-        // Primary navigation follows the approved concept: the left pane owns the
-        // conversation navigation and the centre pane stays focused on the chat.
-        // Advanced modes remain available as compact chips instead of a separate rail.
-        $taborder = ['all', 'unread', 'messages', 'discussions', 'mentions', 'notifications', 'meetings'];
+        $filter = (string)($data['filter'] ?? 'all');
+        $section = $tab === 'notifications' ? 'notifications' : ($tab === 'discussions' ? 'discussions' : 'messages');
         $tabs = [];
-        foreach ($taborder as $key) {
-            $badge = '';
-            if ($key === 'unread' && !empty($counts['unread_threads'])) {
-                $badge = \html_writer::tag('span', (string)(int)$counts['unread_threads'], ['class' => 'bms-comm3-tab-badge']);
-            } else if ($key === 'mentions' && !empty($counts['mentions'])) {
-                $badge = \html_writer::tag('span', (string)(int)$counts['mentions'], ['class' => 'bms-comm3-tab-badge']);
-            } else if ($key === 'notifications' && !empty($counts['unread_notifications'])) {
-                $badge = \html_writer::tag('span', (string)(int)$counts['unread_notifications'], ['class' => 'bms-comm3-tab-badge']);
-            }
-            $label = \html_writer::tag('span', s(self::tr('communicationcenter_tab_' . $key)), ['class' => 'bms-comm3-tab-label']) . $badge;
-            $tabs[] = \html_writer::link(self::url($company, ['tab' => $key]), $label,
-                ['class' => 'bms-comm2-filter' . ($key === $tab ? ' is-active' : ''),
-                 'aria-current' => $key === $tab ? 'page' : null]);
+        foreach (['messages', 'discussions', 'notifications'] as $key) {
+            $label = self::tr($key === 'messages' ? 'communicationux_conversations' : 'communicationcenter_tab_' . $key);
+            $badge = $key === 'notifications' && !empty($counts['unread_notifications']) ?
+                \html_writer::tag('span', (string)(int)$counts['unread_notifications'],
+                    ['class' => 'bms-comm3-tab-badge', 'title' => self::tr('communicationux_notification_count')]) : '';
+            $tabs[] = \html_writer::link(self::url($company, ['tab' => $key]), s($label) . $badge,
+                ['class' => 'bms-comm2-filter' . ($key === $section ? ' is-active' : ''),
+                 'aria-current' => $key === $section ? 'page' : null]);
         }
         $navigation = \html_writer::tag('nav', implode('', $tabs),
-            ['class' => 'bms-comm2-filters',
-            'aria-label' => self::tr('communicationcenter_title')]);
-        $navigation .= \html_writer::div(
-            \html_writer::tag('span', s(self::tr('communication_unreadthreads') . ': ' . (int)$counts['unread_threads'])) .
-            \html_writer::tag('span', s(self::tr('communication_mentions') . ': ' . (int)$counts['mentions'])) .
-            \html_writer::tag('span', s(self::tr('communication_notifications') . ': ' . (int)$counts['unread_notifications'])),
-            'bms-comm2-inline-stats');
-        $left = self::thread_sidebar($company, $data, $navigation);
+            ['class' => 'bms-comm2-filters bms-comm-ux-sections', 'aria-label' => self::tr('communicationcenter_title')]);
+        if ($section === 'notifications') {
+            return $navigation . \html_writer::div(self::feed($company, $data, ''),
+                'bms-comm-ux-notifications', ['data-section' => 'notifications']);
+        }
+        $chips = '';
+        foreach (['all', 'unread', 'mentions'] as $key) {
+            $chips .= \html_writer::link(self::url($company, ['tab' => $section, 'filter' => $key]),
+                s($key === 'mentions' ? '@' : self::tr('communicationcenter_tab_' . $key)),
+                ['title' => self::tr('communicationcenter_tab_' . $key), 'class' => 'bms-comm-ux-chip' . ($key === $filter ? ' is-active' : ''),
+                 'aria-current' => $key === $filter ? 'true' : null]);
+        }
+        $chips = \html_writer::tag('nav', $chips, ['class' => 'bms-comm-ux-filters',
+            'aria-label' => self::tr('communicationux_filters')]);
+        $left = self::thread_sidebar($company, $data, $chips);
         $centre = self::feed($company, $data, $convertmessage);
-        $right = self::context_panel($company, $data, $objectrequest, (int)$USER->id, $convertmessage);
-        return \html_writer::div($left . $centre . $right, 'bms-comm2-layout',
-            ['data-has-thread' => $selected ? '1' : '0']);
+        // No empty permanent column. Native details remains usable without JavaScript.
+        $right = $selected || $objectrequest ?
+            self::context_panel($company, $data, $objectrequest, (int)$USER->id, $convertmessage) : '';
+        return $navigation . \html_writer::div($left . $centre . $right, 'bms-comm2-layout',
+            ['data-has-thread' => $selected ? '1' : '0', 'data-section' => $section]);
     }
 
     /** Compact, accessible object-mode switcher; navigation only, never a data source. */
@@ -126,7 +128,7 @@ class communication_center_ui_service {
     private static function thread_sidebar(string $company, array $data, string $navigation = ''): string {
         $tab = (string)$data['tab'];
         $search = (string)$data['search'];
-        $form = self::hidden(['uuid' => $company, 'tab' => $tab]);
+        $form = self::hidden(['uuid' => $company, 'tab' => $tab, 'filter' => $data['filter'] ?? 'all']);
         $form .= \html_writer::label(s(self::tr('tui_search')), 'bms_comm2_search', false, ['class' => 'sr-only']);
         $form .= \html_writer::empty_tag('input', ['type' => 'search', 'id' => 'bms_comm2_search', 'name' => 'q',
             'value' => $search, 'class' => 'form-control', 'placeholder' => self::tr('tui_search')]);
@@ -176,7 +178,7 @@ class communication_center_ui_service {
             $time = (int)$thread['last_message_at'] > 0 ?
                 \html_writer::tag('time', s(userdate((int)$thread['last_message_at'], '%H:%M')),
                     ['class'=>'bms-comm3-thread-time']) : '';
-            $title = \html_writer::tag('strong', s($thread['title']), ['class'=>'bms-comm3-thread-name']);
+            $title = \html_writer::tag('strong', s($thread['title']), ['class'=>'bms-comm3-thread-name', 'title' => (string)$thread['title']]);
             $top = \html_writer::div($title . $time, 'bms-comm3-thread-top');
             $contextlabel = !empty($thread['context']) ? (string)$thread['context']['label'] : $meta;
             $details = \html_writer::div(s($contextlabel), 'bms-comm3-thread-kind');
@@ -192,12 +194,16 @@ class communication_center_ui_service {
             $body = self::avatar((string)$thread['title'], $thread['thread_type'] === 'object' ? 'object' : '') .
                 $info . \html_writer::div($trailing, 'bms-comm3-thread-flags');
             $items .= \html_writer::link(self::url($company,
-                ['tab'=>$tab, 'thread'=>$thread['uuid'], 'q'=>$data['search']]), $body,
+                ['tab'=>$tab, 'thread'=>$thread['uuid'], 'q'=>$data['search'], 'filter'=>$data['filter'] ?? 'all']), $body,
                 ['class'=>$classes . ' bms-comm3-thread',
                  'data-thread-uuid'=>$thread['uuid'],
                  'aria-current'=>strpos($classes, 'is-active') !== false ? 'true' : null]);
         }
-        if ($items === '') { $items = task_ui_service::note(self::tr('communicationcenter_no_threads')); }
+        if ($items === '') {
+            $items = task_ui_service::note(self::tr('communicationux_empty_' .
+                ($search !== '' ? 'search' : (($data['filter'] ?? 'all') === 'all' ? 'all' : 'filtered'))));
+            $items .= task_ui_service::link(self::url($company, ['tab' => $tab]), self::tr('communicationux_reset'));
+        }
         $html .= \html_writer::div($items, 'bms-comm2-thread-list');
         return \html_writer::tag('aside', $html, ['class' => 'bms-comm2-panel bms-comm2-sidebar', 'aria-label' => self::tr('communicationcenter_conversations_title')]);
     }
@@ -237,7 +243,7 @@ class communication_center_ui_service {
 
         $participantcount = count($thread['participants']);
         $heading = \html_writer::div(
-            \html_writer::tag('h2', s($thread['title']), ['class' => 'bms-comm2-feed-title']) .
+            \html_writer::tag('h2', s($thread['title']), ['class' => 'bms-comm2-feed-title', 'title' => (string)$thread['title']]) .
             \html_writer::tag('span', s(self::tr('communication_participants') . ': ' . $participantcount),
                 ['class' => 'bms-comm2-feed-people']), 'bms-comm3-chat-heading');
         $controls = \html_writer::tag('button', '⌕', ['type'=>'button',
@@ -245,10 +251,10 @@ class communication_center_ui_service {
             'aria-label'=>self::tr('communicationcenter_search_messages'),
             'title'=>self::tr('communicationcenter_search_messages'), 'aria-controls'=>'bms-comm3-search-panel',
             'aria-expanded'=>'false']);
-        $controls .= \html_writer::tag('button', '☷', ['type'=>'button',
+        $controls .= \html_writer::tag('button', s(self::tr('communicationux_details')), ['type'=>'button',
             'class'=>'bms-comm3-iconbtn', 'data-bms-comm-context-toggle'=>'1',
             'aria-label'=>self::tr('communicationcenter_context_title'),
-            'title'=>self::tr('communicationcenter_context_title'), 'aria-expanded'=>'false']);
+            'title'=>self::tr('communicationcenter_context_title'), 'aria-controls'=>'bms-comm3-context-details', 'aria-expanded'=>'false']);
         $back = \html_writer::link(self::url($company, ['tab'=>$data['tab']]), '‹',
             ['class'=>'bms-comm3-mobile-back', 'aria-label'=>self::tr('communicationcenter_conversations_title')]);
         $body = \html_writer::div($back . self::avatar((string)$thread['title'],
@@ -258,7 +264,8 @@ class communication_center_ui_service {
             $contextline = s($thread['context']['label'] . ' · ' . $thread['context']['title']);
             if ((string)$thread['context']['url'] !== '') {
                 $contextline .= ' ' . \html_writer::link(new \moodle_url($thread['context']['url']),
-                    s(self::tr($thread['context']['kind'] === 'task' ? 'communicationcenter_opentask' : 'communication_opencontext')),
+                    s(self::tr($thread['context']['kind'] === 'task' ? 'communicationcenter_opentask' :
+                        ($thread['context']['kind'] === 'battleplan' ? 'communicationcenter_openplan' : 'communication_opencontext'))),
                     ['class' => 'bms-comm2-feed-context-link']);
             }
             $body .= \html_writer::div($contextline, 'bms-comm2-feed-context');
@@ -577,6 +584,9 @@ class communication_center_ui_service {
                     self::button(self::tr('communication_markread'), 'btn btn-sm btn-outline-secondary');
                 $actions .= \html_writer::tag('form', $form, ['method' => 'post', 'class' => 'd-inline-block']);
             }
+            $actions .= $notification['is_read'] ? \html_writer::tag('span', s(self::tr('communicationux_read')),
+                ['class' => 'bms-comm-ux-read-state']) : \html_writer::tag('span', s(self::tr('communicationux_unread')),
+                ['class' => 'bms-comm-ux-unread-state']);
             $html .= \html_writer::tag('article',
                 \html_writer::tag('strong', s($kind)) .
                 \html_writer::div(s($notification['title']), 'bms-comm2-notification-title') .
@@ -665,7 +675,7 @@ class communication_center_ui_service {
         }
 
         $summary = \html_writer::tag('span', '☰', ['class' => 'bms-comm3-context-icon', 'aria-hidden' => 'true']) .
-            \html_writer::tag('span', s(self::tr('communicationcenter_context_title')), ['class' => 'sr-only']);
+            \html_writer::tag('span', s(self::tr('communicationcenter_context_title')), ['class' => 'bms-comm-ux-details-label']);
         return \html_writer::tag('aside', \html_writer::tag('details',
             \html_writer::tag('summary', $summary, ['title' => self::tr('communicationcenter_context_title'),
                 'aria-label' => self::tr('communicationcenter_context_title')]) .

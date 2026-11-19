@@ -24,6 +24,7 @@ define([], function() {
                     var url = new URL(search.form.action || window.location.href, window.location.href);
                     url.searchParams.set('uuid', search.form.elements.uuid.value);
                     url.searchParams.set('tab', search.form.elements.tab.value);
+                    if (search.form.elements.filter) { url.searchParams.set('filter', search.form.elements.filter.value); }
                     url.searchParams.set('q', search.value.trim());
                     url.searchParams.delete('thread');
                     controller = new AbortController();
@@ -95,9 +96,17 @@ define([], function() {
             });
             var contextClose = workspace.querySelector('[data-bms-comm-context-close]');
             if (contextClose) {
-                contextClose.addEventListener('click', function() { context.open = false; });
+                contextClose.addEventListener('click', function() { context.open = false; contextToggle.focus(); });
             }
         }
+
+        workspace.addEventListener('keydown', function(event) {
+            if (event.key === 'Escape' && context && context.open) {
+                context.open = false;
+                if (contextToggle) { contextToggle.focus(); }
+                event.preventDefault();
+            }
+        });
 
         // Read-only change probe: no long polling and no background requests in hidden tabs.
         // A heavy page projection is fetched only after a version change.

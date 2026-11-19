@@ -7117,3 +7117,40 @@ body.bms-comm-page .bms-comm2 .bms-comm5-delete form p { margin:0; }
 .bms-comm2-person-role {font-size:.8rem;color:var(--bms-muted,#596c62);}
 .bms-comm2-leave {margin-top:.75rem;}
 .bms-comm2-join p {margin:0 0 .5rem;}
+
+/* Communication Center UX-1: scoped in both owned and legacy shell. */
+body.bms-comm-page .bms-comm2 .bms-comm2-layout {grid-template-columns:minmax(220px,30%) minmax(0,1fr);position:relative;}
+body.bms-comm-page .bms-comm2 .bms-comm2-context {position:absolute;right:0;top:0;bottom:0;width:0;min-width:0;border:0;z-index:30;overflow:visible;}
+body.bms-comm-page .bms-comm2 .bms-comm2-context:has(details[open]) {position:absolute;right:0;top:0;bottom:0;width:min(360px,100%);background:#fff;border:1px solid #c5d6e0;overflow:auto;box-shadow:-8px 8px 24px #0b2b4126;}
+body.bms-comm-page .bms-comm2 .bms-comm2-context-toggle > summary {position:relative;display:block;width:auto;padding:.75rem;color:#0b2b41;background:#e4f2fb;cursor:pointer;}
+body.bms-comm-page .bms-comm2 .bms-comm2-context-toggle:not([open]) > summary {position:absolute;right:8px;top:8px;max-width:160px;}
+body.bms-comm-page .bms-comm2 .bms-comm3-context-icon {display:none;}
+body.bms-comm-page .bms-comm2 .bms-comm3-context-close {right:8px;top:8px;}
+body.bms-comm-page .bms-comm2 .bms-comm-ux-sections {display:flex;flex-wrap:wrap;gap:.3rem;margin-bottom:.65rem;}
+body.bms-comm-page .bms-comm2 .bms-comm-ux-filters {display:flex;flex-wrap:wrap;gap:.4rem;padding:.65rem;}
+body.bms-comm-page .bms-comm2 .bms-comm-ux-chip {display:inline-flex;align-items:center;min-height:44px;padding:.3rem .65rem;color:#25485e;background:#fff;border:1px solid #a8bfce;border-radius:1rem;}
+body.bms-comm-page .bms-comm2 .bms-comm-ux-chip.is-active {color:#fff;background:#0b2b41;border-color:#0b2b41;}
+body.bms-comm-page .bms-comm2 .bms-comm-ux-sections .bms-comm2-filter {color:#0b2b41;background:#e4f2fb;min-height:44px;white-space:normal;}
+body.bms-comm-page .bms-comm2 .bms-comm-ux-sections .bms-comm2-filter.is-active {color:#fff;background:#0b2b41;}
+body.bms-comm-page .bms-comm2 .bms-comm3-tab-badge {color:#fff;background:#0c6c52;}
+body.bms-comm-page .bms-comm2 .bms-comm2-welcome-help {color:#25485e;}
+body.bms-comm-page .bms-comm2 .bms-comm-ux-notifications {display:block;min-width:0;width:100%;}
+body.bms-comm-page .bms-comm2 .bms-comm-ux-notifications .bms-comm2-feed {width:100%;height:auto;min-height:240px;}
+body.bms-comm-page .bms-comm2 .bms-comm-ux-readall {margin:0 0 1rem;}
+body.bms-comm-page .bms-comm2 .bms-comm-ux-read-state {color:#25485e;}
+body.bms-comm-page .bms-comm2 .bms-comm-ux-unread-state {color:#0c6c52;font-weight:600;}
+body.bms-comm-page .bms-comm2 .bms-comm3-thread-name,.bms-comm2 .bms-comm2-feed-title {white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;}
+body.bms-comm-page .bms-comm2 .bms-comm3-chat-heading {min-width:0;}
+body.bms-comm-page .bms-comm2 :is(a,button,summary,input,textarea,select):focus-visible {outline:3px solid #0c6c52;outline-offset:2px;}
+@media(max-width:768px) {
+ body.bms-comm-page .bms-comm2 .bms-comm2-layout {grid-template-columns:minmax(0,1fr);}
+ body.bms-comm-page .bms-comm2 .bms-comm-ux-sections .bms-comm2-filter {flex:1 1 80px;justify-content:center;font-size:.85rem;padding:.4rem;}
+ body.bms-comm-page .bms-comm2 .bms-comm3-chat-controls {flex-wrap:wrap;}
+ body.bms-comm-page .bms-comm2 .bms-comm3-chat-controls [data-bms-comm-context-toggle] {font-size:.75rem;}
+}
+
+.bms-comm2[data-live-ui="1"] .bms-comm2-layout[data-has-thread="1"] .bms-comm2-context-toggle:not([open]) > summary {display:none;}
+
+body.bms-comm-page .bms-comm2 .bms-comm2-welcome-title, body.bms-comm-page .bms-comm2 .bms-comm2-welcome-icon {color:#0b2b41;}
+body.bms-comm-page .bms-comm2 .bms-comm2-welcome-content {background:#e4f2fb;color:#25485e;}
+body.bms-comm-page .bms-comm2 .bms-comm2-context-toggle > summary {height:auto;min-height:44px;}

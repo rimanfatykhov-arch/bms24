@@ -112,7 +112,7 @@ class communication_center_service {
         $learning = $DB->count_records_sql("SELECT COUNT(t.id) FROM {local_kbacompany_task} t
             WHERE t.companyuuid=:c AND t.assigneeid=:a AND t.stream='develop'
               AND t.status NOT IN ('done','cancelled','deleted')", ['c'=>$companyuuid,'a'=>$actor]);
-        return ['incoming'=>(int)$unreadthreads+(int)$unreadnotifications,
+        return ['incoming'=>(int)$unreadthreads,
             'tasks'=>$tasks['my_open'], 'overdue'=>$tasks['overdue'], 'control'=>$tasks['review'],
             'learning'=>(int)$learning, 'unread_threads'=>(int)$unreadthreads,
             'unread_notifications'=>(int)$unreadnotifications];
@@ -124,12 +124,20 @@ class communication_center_service {
      * The canonical communication service remains the source of truth. This method
      * only filters and groups participant-visible threads for the three-pane UI.
      */
-    public static function workspace_context(string $companyuuid, int $actor, string $tab = 'inbox',
-            string $selectedthread = '', string $search = '', string $messagequery = '', int $messagepage = 0): array {
+    public static function workspace_context(string $companyuuid, int $actor, string $tab = 'messages',
+            string $selectedthread = '', string $search = '', string $messagequery = '', int $messagepage = 0, string $filter = 'all'): array {
         global $DB;
         company_context_service::context($companyuuid, $actor);
-        if (!in_array($tab, self::TABS, true) || $tab === 'tasks') { $tab = 'inbox'; }
-        $scope = 'all';
+        if (!in_array($tab, self::TABS, true) || $tab === 'tasks') { $tab = 'messages'; }
+        if ($tab === 'meetings') { $tab = 'discussions'; }
+        if (in_array($tab, ['inbox', 'unread', 'mentions'], true)) {
+            $filter = $tab === 'mentions' ? 'mentions' : 'unread';
+            $tab = 'messages';
+        }
+        if ($tab === 'all') { $tab = 'messages'; }
+        if (!in_array($filter, ['all', 'unread', 'mentions'], true)) { $filter = 'all'; }
+        if ($tab === 'notifications') { $selectedthread = ''; }
+        $scope = $filter;
         if ($tab === 'unread') { $scope = 'unread'; }
         if ($tab === 'mentions') { $scope = 'mentions'; }
         $comm = communication_service::context($companyuuid, $actor, $selectedthread, $scope,
@@ -219,8 +227,14 @@ class communication_center_service {
                     (string)$selected['context_uuid']);
             }
         }
+        if ($selected && (string)$selected['context_kind'] === battle_plan_discussion_service::KIND
+                && empty($selected['is_participant'])) {
+            // A plan reader joins only with the plan write-to-discussion right (Q9).
+            $selected['can_join'] = battle_plan_discussion_service::can_post_for($companyuuid, $actor,
+                (string)$selected['context_uuid']);
+        }
         return [
-            'company' => $comm['company'], 'tab' => $tab, 'threads' => $threads, 'events' => $events,
+            'company' => $comm['company'], 'tab' => $tab, 'filter' => $filter, 'threads' => $threads, 'events' => $events,
             'selected' => $selected, 'messages' => $comm['messages'], 'history' => $comm['history'], 'employees' => $comm['employees'],
             'notifications' => $comm['notifications'], 'counts' => $comm['counts'], 'task_counts' => $taskcounts,
             'search' => $search, 'can_manage' => $comm['can_manage'],

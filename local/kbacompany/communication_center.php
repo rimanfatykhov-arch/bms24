@@ -1,6 +1,7 @@
 <?php
 require_once(__DIR__ . '/../../config.php');
 
+use local_kbacompany\local\battle_plan_discussion_service;
 use local_kbacompany\local\communication_center_service;
 use local_kbacompany\local\communication_live_service;
 use local_kbacompany\local\communication_center_ui_service as ui;
@@ -17,7 +18,16 @@ $uuid = required_param('uuid', PARAM_RAW_TRIMMED);
 $actor = (int)$USER->id;
 company_context_service::context($uuid, $actor);
 
-$tab = optional_param('tab', 'inbox', PARAM_ALPHA);
+$tab = optional_param('tab', 'messages', PARAM_ALPHA);
+$filter = optional_param('filter', 'all', PARAM_ALPHA);
+if (!in_array($filter, ['all', 'unread', 'mentions'], true)) { $filter = 'all'; }
+// Preserve legacy meeting URLs and their selected canonical thread.
+if ($tab === 'meetings') { $tab = 'discussions'; }
+if (in_array($tab, ['inbox', 'unread', 'mentions'], true)) {
+    $filter = $tab === 'mentions' ? 'mentions' : 'unread';
+    $tab = 'messages';
+}
+if ($tab === 'all') { $tab = 'messages'; }
 $selected = optional_param('thread', '', PARAM_RAW_TRIMMED);
 $convertmessage = optional_param('convert', '', PARAM_RAW_TRIMMED);
 $q = optional_param('q', '', PARAM_RAW_TRIMMED);
@@ -43,7 +53,7 @@ if ($tab === 'tasks' && $method !== 'POST' && $action === '') {
     redirect(task_ui_service::url($uuid, $params));
 }
 $allowedtabs = ['all', 'inbox', 'unread', 'messages', 'discussions', 'mentions', 'meetings', 'notifications'];
-if (!in_array($tab, $allowedtabs, true)) { $tab = 'inbox'; }
+if (!in_array($tab, $allowedtabs, true)) { $tab = 'messages'; }
 
 $error = '';
 if ($action !== '') {
@@ -67,6 +77,11 @@ if ($action !== '') {
             $postrevision = optional_param('objectrevision', 0, PARAM_INT);
             // Reading a task discussion is open to task viewers; joining to write needs the task write right.
             if ($postkind === 'task' && !task_service::can_post_discussion_for($uuid, $actor, $postuuid)) {
+                throw new moodle_exception('communication_permission', 'local_kbacompany');
+            }
+            // The same for a Battle Plan discussion (Q9): reading follows the plan, joining needs the plan write right.
+            if ($postkind === 'battleplan' &&
+                    !battle_plan_discussion_service::can_post_for($uuid, $actor, $postuuid)) {
                 throw new moodle_exception('communication_permission', 'local_kbacompany');
             }
             // create_thread resolves the canonical object and is also the safe, idempotent join operation.
@@ -129,7 +144,7 @@ if ($action !== '') {
         } else {
             throw new moodle_exception('communication_invalid', 'local_kbacompany');
         }
-        redirect(ui::url($uuid, ['tab' => $tab, 'thread' => $selected]),
+        redirect(ui::url($uuid, ['tab' => $tab, 'thread' => $selected, 'filter' => $filter]),
             get_string('communication_saved', 'local_kbacompany'));
     } catch (moodle_exception $e) {
         if ($e->module !== 'local_kbacompany') { throw $e; }
@@ -162,16 +177,17 @@ if ($objectkind !== '' || $objectuuid !== '') {
     }
 }
 
+if ($tab === 'notifications') { $selected = ''; $convertmessage = ''; }
 try {
     $data = communication_center_service::workspace_context($uuid, $actor, $tab, $selected, $q,
-        $mq, optional_param('mpage', 0, PARAM_INT));
+        $mq, optional_param('mpage', 0, PARAM_INT), $filter);
 } catch (moodle_exception $e) {
     if ($e->module !== 'local_kbacompany') { throw $e; }
     // Do not leak whether a thread/object exists after access was revoked.
     $selected = '';
     $convertmessage = '';
     $error = get_string('communication_contextunavailable', 'local_kbacompany');
-    $data = communication_center_service::workspace_context($uuid, $actor, $tab, '', $q);
+    $data = communication_center_service::workspace_context($uuid, $actor, $tab, '', $q, '', 0, $filter);
 }
 
 $data['message_search'] = $mq;
