@@ -203,11 +203,12 @@ with sync_playwright() as pw:
                                                  ('objectuuid', plan), ('sesskey', sesskey(o))])
                 case['denied'][label] = {'card_text': t_q in card, 'center_text': t_q in center,
                                          'download': download(o_ctx, file_href), 'post_http': post['http'],
-                                         'join_http': join['http'], 'parts': parts(thread),
+                                         'join_http': join['http'], 'join_location': join['location'], 'parts': parts(thread),
                                          'messages': comm('messages', thread)['count']}
             forged = raw_post(ea_ctx, POST, [('uuid', company), ('plan', plan), ('action', 'post'),
                                              ('message', 'forged %s' % token), ('sesskey', '0' * 10)])
-            case['forged'] = {'http': forged['http'], 'messages': comm('messages', thread)['count']}
+            case['forged'] = {'http': forged['http'], 'location': forged['location'],
+                              'messages': comm('messages', thread)['count']}
             case['messages_before_refusals'] = count
 
             case['browser_events'] = [e for _, rec in contexts if rec for e in rec.events]
