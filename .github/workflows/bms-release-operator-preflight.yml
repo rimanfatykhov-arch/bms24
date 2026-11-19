@@ -1,0 +1,38 @@
+name: BMS Release Operator V0 - read-only preflight
+
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/bms-release-operator-preflight.yml'
+      - 'tools/release_operator/**'
+      - 'docs/releases/operator/**'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  informational-read-only:
+    name: Static contract tests and HOLD report (never deploys)
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Test fail-closed request policy
+        run: python -m unittest discover -s tools/release_operator -p 'test_*.py' -v
+      - name: Inspect sample candidate without verifying live evidence
+        run: |
+          python tools/release_operator/preflight.py \
+            --request docs/releases/operator/r1r2-request.sample.json \
+            --report release-operator-v0-report.json
+          python -c "import json; x=json.load(open('release-operator-v0-report.json')); assert x['status']=='HOLD' and not x['deployable'] and x['actions_executed']==[]"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: bms-release-operator-v0-hold-report
+          path: release-operator-v0-report.json
+          retention-days: 14
