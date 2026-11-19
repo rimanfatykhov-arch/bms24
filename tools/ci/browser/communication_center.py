@@ -139,7 +139,20 @@ def submit_form(page, form, mode):
     # Locator results are in document order: open outer disclosure before its nested summary.
     for detail in form.locator('xpath=ancestor::details').all():
         if detail.get_attribute('open') is None:
-            activate(page, detail.locator(':scope > summary'), mode)
+            if detail.get_attribute('id') == 'bms-comm3-context-details':
+                # UX-1 hides this details summary; open it through the real visible
+                # "Details" button. Never use force=True or direct DOM.open.
+                trigger = page.locator('[data-bms-comm-context-toggle]')
+                require(trigger.count() == 1 and trigger.is_visible(),
+                        'visible UX context toggle missing')
+                activate(page, trigger, mode)
+            else:
+                summary = detail.locator(':scope > summary')
+                require(summary.count() == 1 and summary.is_visible(),
+                        'visible nested disclosure summary missing')
+                activate(page, summary, mode)
+        require(detail.get_attribute('open') is not None,
+                'real disclosure control did not open')
     button = form.locator('button[type=submit]')
     require(button.count() == 1 and button.is_visible(), 'visible submit control missing')
     with page.expect_navigation():
