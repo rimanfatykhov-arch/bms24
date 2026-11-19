@@ -948,9 +948,9 @@ class ContractTest(unittest.TestCase):
                           'reply': {'body': t[1], 'status': 'active', 'thread': 'T', 'reply_to': 'q-%d' % n, 'authorid': 15, 'mentions': []},
                           'card_quote': ['Synthetic EA\n' + t[0]], 'reader': reader,
                           'denied': {label: {'card_text': False, 'center_text': False, 'download': {'http': 404, 'sha256': None},
-                                             'post_http': 303, 'join_http': 200, 'parts': {'active': [12, 15], 'reads': []},
+                                             'post_http': 303, 'join_http': 200, 'join_location': '', 'parts': {'active': [12, 15], 'reads': []},
                                              'messages': 4 + n * 2} for label in ('RA', 'EB')},
-                          'forged': {'http': 200, 'messages': 4 + n * 2}, 'messages_before_refusals': 4 + n * 2,
+                          'forged': {'http': 200, 'location': '', 'messages': 4 + n * 2}, 'messages_before_refusals': 4 + n * 2,
                           'browser_events': list(ABORTED), 'server_errors': []})
         snap = {'phase': 'snapshot', 'plan': {'status': 'draft', 'userid': 12, 'reviewerid': 15, 'observerid': 0, 'timemodified': 1,
                                               'approvedby': 0, 'submittedat': 0, 'approvedat': 0, 'closedat': 0}, 'reviews': 0}
@@ -979,6 +979,14 @@ class ContractTest(unittest.TestCase):
         fails(rt, lambda o: o['cases'][0]['reader'].update(open_plan={'text': 'Open plan', 'href': 'https://example.invalid/x'}))
         fails(rt, lambda o: o['cases'][1]['reader'].update(open_plan={'text': 'Open object',
               'href': 'http://127.0.0.1:8080/local/kbacompany/battle_plan.php?plan=P&tab=discussion'}))
+        # Refusal status must reject fake 5xx/login redirects, not merely !=303.
+        bad = 'plan_discussion_refusals_and_revocation'
+        fails(bad, lambda o: o['cases'][0]['forged'].update(http=500))
+        fails(bad, lambda o: o['cases'][0]['forged'].update(http=302))
+        fails(bad, lambda o: o['cases'][0]['forged'].update(location='http://127.0.0.1:8080/login/index.php'))
+        fails(bad, lambda o: o['cases'][0]['denied']['RA'].update(join_http=500))
+        fails(bad, lambda o: o['cases'][0]['denied']['RA'].update(join_http=302))
+        fails(bad, lambda o: o['cases'][0]['denied']['RA'].update(join_location='http://127.0.0.1:8080/login/index.php'))
         rd = 'plan_discussion_reader_not_joined'
         fails(rd, lambda o: o['cases'][0]['reader'].update(card_question=False))
         fails(rd, lambda o: o['cases'][0]['reader'].update(card_note=False))
