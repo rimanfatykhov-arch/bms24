@@ -82,7 +82,7 @@ def failed(results):
 
 PD_REASONS = {'plan_unavailable': 'Battle Plan or item is unavailable.',
               'company_unavailable': 'The company is unavailable or outside your access scope.',
-              'thread_permission': 'You do not have access to this thread.',
+              'thread_permission': 'This object or discussion is unavailable.',
               'invalid_sesskey': 'Your session has most likely timed out. Please log in again.'}
 PD_BACK = 'http://127.0.0.1:8080/local/kbacompany/battle_plan.php?uuid=A&plan=P&view=detail&tab=discussion'
 
@@ -1052,6 +1052,8 @@ class ContractTest(unittest.TestCase):
         fails(bad, lambda o: o['cases'][0]['denied']['RA']['post'].update(location=PD_BACK + '&tab=discussion'))
         fails(bad, lambda o: o['cases'][0]['denied']['RA']['post'].pop('followed'))
         fails(bad, lambda o: o['cases'][0]['denied']['RA']['post']['followed'].update(http=500))
+        fails(bad, lambda o: o['cases'][0]['denied']['RA']['post']['followed'].update(http=302))
+        fails(bad, lambda o: o['cases'][0]['denied']['RA']['post']['followed'].update(http=303))
         fails(bad, lambda o: o['cases'][0]['denied']['RA']['post']['followed'].update(alerts=[PD_REASONS['company_unavailable']]))
         fails(bad, lambda o: o['cases'][0]['forged'].update(http=200))
         fails(bad, lambda o: o['cases'][0]['forged'].update(alerts=[]))

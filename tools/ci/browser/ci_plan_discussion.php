@@ -55,7 +55,8 @@ if ($phase === 'plan') {
     // refused, not only that it was.
     $out['strings'] = ['plan_unavailable' => get_string('battleplan_reference', 'local_kbacompany'),
         'company_unavailable' => get_string('companynotavailable', 'local_kbacompany'),
-        'thread_permission' => get_string('communication_permission', 'local_kbacompany'),
+        // The Center renders the non-disclosing object error after an inaccessible-object join.
+        'thread_permission' => get_string('communication_contextunavailable', 'local_kbacompany'),
         'invalid_sesskey' => get_string('invalidsesskey', 'error')];
 } else {
     fwrite(STDERR, "unknown phase\n"); exit(2);

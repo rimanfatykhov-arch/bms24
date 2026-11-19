@@ -1229,7 +1229,7 @@ def plan_discussion_checks(obs, exitcode=None):
                 require(post.get('http') == 303 and x.get('post_http') == 303, label + ' post refusal is not the redirect back to the plan')
                 exact_redirect(post.get('location'), PLAN_PATH, back)
                 followed = post.get('followed') or {}
-                require(isinstance(followed.get('http'), int) and followed['http'] < 500 and shown(followed, want['post']),
+                require(followed.get('http') in (200, 403, 404) and shown(followed, want['post']),
                         label + ' post refusal does not show the expected reason')
                 join = x.get('join') or {}
                 require(join.get('http') in want['join_http'] and x.get('join_http') == join.get('http')
