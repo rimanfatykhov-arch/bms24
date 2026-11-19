@@ -1,0 +1,19 @@
+{
+  "schema": "bms24.release_operator.ci_plan.v1b",
+  "repository": "rimanfatykhov-arch/bms24",
+  "pr_number": 124,
+  "head_sha": "30a720c18f231a70bdb08cd65e8cba8206d62f7b",
+  "checkout_sha": "a04a818cdedb0699abe408918876ad60cb32d20a",
+  "base_sha": "fbf36ed350732b46a232a56a216b3d78c733da34",
+  "profile": "R1R2-2026111601",
+  "runs": {
+    "tiers": {"id": 44237304436, "attempt": 1},
+    "full": {"id": 44237304478, "attempt": 1},
+    "package": {"id": 44237304437, "attempt": 1}
+  },
+  "artifact": {
+    "id": 14398405898,
+    "name": "release-install-44237304437-a1",
+    "workflow_run_id": 44237304437
+  }
+}
