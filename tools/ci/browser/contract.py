@@ -1183,12 +1183,16 @@ def plan_discussion_checks(obs, exitcode=None):
             for label, x in d.items():
                 require(x.get('card_text') is False and x.get('center_text') is False, label + ' read the plan discussion')
                 require(refused(x.get('download')), label + ' downloaded the plan discussion file')
-                require(x.get('join_http') != 303 and ids[label] not in ((x.get('parts') or {}).get('active') or []),
-                        label + ' joined the plan discussion')
+                require(x.get('join_http') in (200, 403, 404)
+                        and x.get('join_location') == ''
+                        and ids[label] not in ((x.get('parts') or {}).get('active') or []),
+                        label + ' join refusal must be non-redirect 200/403/404 with unchanged participants')
                 require(x.get('post_http') in (200, 303, 403, 404) and x.get('messages') == r.get('messages_before_refusals'),
                         label + ' stored a plan message or the refusal failed with an unexpected status')
             f = r.get('forged') or {}
-            require(f.get('http') != 303 and f.get('messages') == r.get('messages_before_refusals'), 'forged sesskey stored a message')
+            require(f.get('http') in (200, 403, 404) and f.get('location') == ''
+                    and f.get('messages') == r.get('messages_before_refusals'),
+                    'forged sesskey refusal must not be 3xx/5xx or mutate messages')
         rv = obs.get('revocation') or {}
         sha = rows[-1].get('file_sha256')
         require((rv.get('before') or {}).get('text') is True and served((rv.get('before') or {}).get('download'), sha),
@@ -1221,7 +1225,8 @@ def plan_discussion_checks(obs, exitcode=None):
 def communication_ux_checks(obs, exitcode=None):
     """Fail closed on incomplete real Moodle UX-1 evidence, independently of producer status."""
     def verify():
-        require(exitcode in (None, 0) and obs.get('status') == 'PASS', 'UX browser run failed')
+        require(exitcode == 0 and isinstance(obs, dict) and obs.get('status') == 'PASS'
+                and not obs.get('error'), 'UX browser run missing/failed')
         rows = obs.get('cases')
         expected = {(s, w) for s in ['owned', 'legacy'] for w in [320, 375, 390, 768, 1440]}
         require(isinstance(rows, list) and len(rows) == 10, 'UX matrix incomplete')
@@ -1236,10 +1241,24 @@ def communication_ux_checks(obs, exitcode=None):
         for row in rows:
             require(row.get('http') == 200 and row.get('notifications_http') == 200, 'unexpected HTTP status')
             require(row.get('sections') == 3, 'expected exactly three primary sections')
-            for field, value in [('default_section', 'messages'), ('default_filter', 'all')]:
+            company = obs.get('companyuuid')
+            require(isinstance(company, str) and company, 'UX company context missing')
+            for field in ('default_section', 'default_filter'):
                 url = local_url(row.get(field, ''))
-                query = dict(parse_qsl(urlparse(url).query))
-                require(query.get('tab' if field == 'default_section' else 'filter') == value, 'wrong default')
+                parsed = urlparse(url)
+                require(parsed.path == CENTER_PATH and not parsed.params and not parsed.fragment,
+                        'UX section/filter link targets a wrong route')
+                try:
+                    pairs = parse_qsl(parsed.query, keep_blank_values=True, strict_parsing=True)
+                except ValueError:
+                    pairs = None
+                require(pairs is not None and len(pairs) == len(dict(pairs)),
+                        'UX section/filter link has malformed/duplicate params')
+                expected = {'uuid': company, 'tab': 'messages'}
+                if field == 'default_filter':
+                    expected['filter'] = 'all'
+                require(dict(pairs) == expected,
+                        'UX section/filter link has missing/extra/wrong parameters')
             for field in ['no_meetings', 'no_bulk', 'thread_available', 'panel_open', 'panel_closed',
                           'focus_restored', 'notification_screen', 'no_conversation_area']:
                 require(row.get(field) is True, 'UX missing/failed ' + field)
