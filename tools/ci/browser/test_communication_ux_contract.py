@@ -5,9 +5,9 @@ from contract import communication_ux_checks, evaluate
 
 class UXContractTest(unittest.TestCase):
     def observation(self):
-        return {'status': 'PASS', 'cases': [dict(shell=s, width=w, http=200, sections=3,
-            default_section='http://127.0.0.1:8080/local/kbacompany/communication_center.php?tab=messages',
-            default_filter='http://127.0.0.1:8080/local/kbacompany/communication_center.php?filter=all',
+        return {'status': 'PASS', 'companyuuid': 'A', 'cases': [dict(shell=s, width=w, http=200, sections=3,
+            default_section='http://127.0.0.1:8080/local/kbacompany/communication_center.php?uuid=A&tab=messages',
+            default_filter='http://127.0.0.1:8080/local/kbacompany/communication_center.php?uuid=A&tab=messages&filter=all',
             no_meetings=True, no_bulk=True, overflow=False,
             colors=[{'foreground':'rgb(255, 255, 255)', 'background':'rgb(11, 43, 65)'},
                     {'foreground':'rgb(37, 72, 94)', 'background':'rgb(255, 255, 255)'},
@@ -25,6 +25,11 @@ class UXContractTest(unittest.TestCase):
             lambda o:o['cases'][0].update(overflow=True), lambda o:o['cases'][0].update(focus_restored=False),
             lambda o:o['cases'][0].update(no_conversation_area=False),
             lambda o:o['cases'][0].update(default_filter='http://127.0.0.1:8080/?filter=unread'),
+            lambda o:o['cases'][0].update(default_section='http://127.0.0.1:8080/wrong-route.php?uuid=A&tab=messages'),
+            lambda o:o['cases'][0].update(default_filter='http://127.0.0.1:8080/wrong-route.php?uuid=A&tab=messages&filter=all'),
+            lambda o:o['cases'][0].update(default_section='http://127.0.0.1:8080/local/kbacompany/communication_center.php?uuid=B&tab=messages'),
+            lambda o:o['cases'][0].update(default_filter='http://127.0.0.1:8080/local/kbacompany/communication_center.php?uuid=A&tab=messages&filter=all&filter=all'),
+            lambda o:o['cases'][0].update(default_section='http://127.0.0.1:8080/local/kbacompany/communication_center.php?uuid=A&tab=messages&extra=1'),
             lambda o:o['cases'][0].update(colors=[]),
             lambda o:o['cases'][0]['colors'][0].update(foreground='rgb(255, 255, 255)',background='rgb(228, 242, 251)'),
             lambda o:o['cases'][0].update(server_errors=[500]),
@@ -33,6 +38,7 @@ class UXContractTest(unittest.TestCase):
             o=copy.deepcopy(good);mutate(o)
             self.assertTrue(any(x['status']=='FAIL' for x in evaluate(communication_ux_checks(o,0)).values()))
         self.assertTrue(any(x['status']=='FAIL' for x in evaluate(communication_ux_checks(good,1)).values()))
+        self.assertTrue(any(x['status']=='FAIL' for x in evaluate(communication_ux_checks(good,None)).values()))
 
 
 if __name__=='__main__':unittest.main()
