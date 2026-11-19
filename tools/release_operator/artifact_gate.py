@@ -102,6 +102,8 @@ def verify(request_path: Path, archive_path: Path, manifest_path: Path,
     must(archive_path.is_file() and not archive_path.is_symlink(), "archive unavailable or symlink")
     must(archive_path.stat().st_size <= MAX_ZIP_BYTES, "archive exceeds size bound")
     must(sha_file(archive_path) == candidate["zip_sha256"], "archive SHA256 differs from pinned request")
+    must(manifest_path.is_file() and not manifest_path.is_symlink(), "manifest unavailable or symlink")
+    must(manifest_path.stat().st_size <= MAX_MANIFEST_BYTES, "manifest exceeds size bound")
     must(sha_file(manifest_path) == candidate["manifest_sha256"],
          "manifest SHA256 differs from pinned request")
     manifest = read_json(manifest_path, MAX_MANIFEST_BYTES)
