@@ -157,7 +157,10 @@ with sync_playwright() as pw:
             'attachment': {'name': 'p02-direct-only.txt', 'mimeType': 'text/plain', 'buffer': FILES['p02-direct-only.txt']}})
         goto(url)
         note('server_file_only_direct', http=r.status, location=r.headers.get('location', ''),
-             expected_query={'uuid': A, 'tab': 'discussions', 'thread': thread}, **observe('p02-direct-only.txt'))
+             expected_query={
+                 'uuid': A, 'tab': 'discussions', 'thread': thread,
+                 **({'filter': 'all'} if p.locator('.bms-comm-ux-filters').count() == 1 else {}),
+             }, **observe('p02-direct-only.txt'))
         # CSRF: forged POST with an invalid sesskey (must not create a message; checked in the DB afterwards)
         r = ctx.request.post(local_url(base + CENTER), max_redirects=0, multipart={
             'uuid': A, 'action': 'send', 'thread': thread, 'sesskey': 'invalidsesskey', 'tab': 'discussions', 'body': 'RC31 P02 csrf ' + phase})
