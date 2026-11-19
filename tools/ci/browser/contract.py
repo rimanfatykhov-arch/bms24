@@ -1187,7 +1187,7 @@ def plan_discussion_checks(obs, exitcode=None):
 
     def reasons():
         texts = obs.get('reasons')
-        keys = ('plan_unavailable', 'company_unavailable', 'thread_permission', 'invalid_sesskey')
+        keys = ('plan_unavailable', 'company_unavailable', 'object_unavailable', 'invalid_sesskey')
         require(isinstance(texts, dict) and set(texts) == set(keys)
                 and all(isinstance(texts[k], str) and texts[k].strip() for k in keys)
                 and len({texts[k] for k in keys}) == len(keys), 'expected refusal texts missing')
@@ -1210,8 +1210,9 @@ def plan_discussion_checks(obs, exitcode=None):
         texts, target = reasons()
         back = {'uuid': target['company'], 'plan': target['plan'], 'view': 'detail', 'tab': 'discussion'}
         # Who is refused and why (owner decision Q9): RA may not open the plan, EB is outside the company. Each refusal
-        # must be the product's own answer for that reason, not any non-success page.
-        expected = {'RA': {'post': texts['plan_unavailable'], 'join_http': (200,), 'join': texts['thread_permission']},
+        # must be the product's own answer for that reason, not any non-success page. RA's join is refused in the Center
+        # page itself (200) with the non-disclosing 'object or discussion unavailable' text.
+        expected = {'RA': {'post': texts['plan_unavailable'], 'join_http': (200,), 'join': texts['object_unavailable']},
                     'EB': {'post': texts['company_unavailable'], 'join_http': (403, 404), 'join': texts['company_unavailable']}}
         for r in rows:
             before = participants(r.get('parts_before_refusals'))
