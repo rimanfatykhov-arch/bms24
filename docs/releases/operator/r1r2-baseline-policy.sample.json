@@ -1,0 +1,13 @@
+{
+  "schema": "bms24.release_operator.baseline_policy.v1b",
+  "target": "production",
+  "bms_runtime_tree_sha256": "eff04f92f29bc553afba3ba9b8a7fb053a2b6624a141bfdb8cf1f9cc6cbd6fce",
+  "corporate_runtime_tree_sha256": "f6fc849adbad8338cf8ab8d6c69a16323782281949e85d10ccc4ca9df2840ac7",
+  "corporate_plugin_version": 2026111100,
+  "moodle_version": "4.1.22",
+  "php_major_minor": "8.1",
+  "db_family": "Percona",
+  "min_free_bytes": 4731174912,
+  "safety_margin_bytes": 536870912,
+  "min_free_inodes": 10000
+}
