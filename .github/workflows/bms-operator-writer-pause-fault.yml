@@ -1,0 +1,25 @@
+name: BMS24 V1i synthetic writer-pause fault
+on:
+  pull_request:
+    paths:
+      - 'tools/release_operator/writer_pause_fault.py'
+      - 'tools/release_operator/test_writer_pause_fault.py'
+      - '.github/workflows/bms-operator-writer-pause-fault.yml'
+permissions:
+  contents: read
+jobs:
+  ci-only-writer-pause:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 10
+    env:
+      BMS_WRITER_PAUSE_TEST: '1'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Safety and negative regression tests
+        run: |
+          python3 -m unittest discover -s tools/release_operator -p 'test_writer_pause_fault.py' -v
+          python3 -O -m unittest discover -s tools/release_operator -p 'test_writer_pause_fault.py' -v
+      - name: Actual Linux worker SIGSTOP survives SIGKILL of controller
+        run: python3 tools/release_operator/writer_pause_fault.py
