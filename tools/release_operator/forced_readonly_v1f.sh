@@ -12,7 +12,7 @@ case "${SSH_ORIGINAL_COMMAND:-}" in
       /var/www/p706494/data/www/edu.kzn.mba </dev/null
     ;;
   capacity)
-    exec /usr/bin/python3 -I \
+    exec /usr/bin/python3 -E -s \
       /var/www/p706494/data/.bms24-inventory/capacity_bridge.py </dev/null
     ;;
   *)
