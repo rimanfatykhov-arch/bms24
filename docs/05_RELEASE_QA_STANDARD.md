@@ -1,5 +1,7 @@
 # BMS24 Release & QA Standard — Codex
 
+> **Текущий процесс выпуска (20.11.2026):** [BMS24 Release Conveyor v1](deploy/BMS24_RELEASE_CONVEYOR_V1.md) — Build once → immutable ZIP → постоянный test → приёмка → ТОТ ЖЕ ZIP на production. Разделение релизов по рискам (code/UI и DB/ACL/integrations), короткая Release Card, единый оператор и проверяемое доказательство публикации. Исторические RC29/RC30 форматы ниже — справочная история, не причина блокировать новый согласованный процесс. Для миграций БД требования backup/restore/writer pause/phase recovery ниже сохраняются.
+
 ## Publication acceptance (Issue63)
 
 Every increment follows development → testing → approved publication → post-deploy
