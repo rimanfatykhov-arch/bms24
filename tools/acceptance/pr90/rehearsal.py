@@ -352,6 +352,17 @@ try:
     files_before=digest_tree(root/'data/filedir'); data_before=digest_tree(root/'data'); code_before=digest_tree(core)
     report['steps']['snapshot_code_db_files']='PASS'
     elapsed('snapshot_code_db_files')
+    # V1j: verify independent restore of the EXACT captured snapshot into
+    # separate MySQL DB + code/config + moodledata trees before any upgrade.
+    # The accepted product ZIP and original #124 branch remain unchanged.
+    from independent_restore import verify_independent_restore
+    report['independent_restore'] = verify_independent_restore(
+        snapshot=snapshot, root=root, dbargs=dbargs, cmd=cmd,
+        digest_tree=digest_tree, original_code=code_before,
+        original_data=data_before,
+        original_sql_sha256=hashlib.sha256((snapshot/'db.sql').read_bytes()).hexdigest())
+    report['steps']['independent_full_site_restore']='PASS'
+    elapsed('independent_full_site_restore')
     install()
     from daily_reports_upgrade_policy import upgraded,unchanged
     upgrade_after=upgrade_probe('candidate-upgraded');upgraded(upgrade_before,upgrade_after)
