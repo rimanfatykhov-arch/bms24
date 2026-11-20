@@ -1,5 +1,7 @@
 # BMS24 — Instructions for Codex (VS Code / repository root)
 
+> **Актуальный стандарт новых релизов (20.11.2026):** [Release Conveyor v1](docs/deploy/BMS24_RELEASE_CONVEYOR_V1.md): одна задача → один PR → единый immutable ZIP → test → приёмка → тот же ZIP на production. Версии/кандидаты RC29 в этом документе — исторический контекст, **не текущая версия production и не текущая очередь**. Проверять GitHub/main и реальный server inventory перед работой. Для изменений БД обязательны непрерывная остановка writes и независимо проверенный полный backup/restore; CI никогда не заменяет production GO.
+
 Current source candidate: `local/kbacompany/version.php` → `local_kbacompany` **1.1.0-rc29**, `$plugin->version = 2026111002` (selective PR53 + PR56 integration; Corporate remains2026110901; not deployable over newer feature trees). Approved ADR-0002 baseline is a36c5ab8; see `docs/reconcile/ISSUE44_SCHEMA_REPAIR.md`. Reconciled from PR #8 with main files retained and the PR #40 acceptance fix. See `docs/reconcile/PR8_RECONCILIATION.md`. This is NOT an accepted production release. Historical build1642 documentation is retained as history.
 
 ## Read only what is relevant
