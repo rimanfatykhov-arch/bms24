@@ -4,10 +4,11 @@ from pathlib import Path
 root=Path(os.environ['TEST_ROOT']).resolve(); runner=Path(os.environ['RUNNER_TEMP']).resolve()
 core=Path(os.environ['MOODLE_ROOT']).resolve(); cand=Path(os.environ['CANDIDATE_ROOT']).resolve()
 origins=json.loads((cand/'tools/acceptance/pr90/origins.json').read_text());BASE=origins['main']
-if BASE!='881aac2ef334c4894b9cff2f591b75f675360e3b':raise RuntimeError('baseline product changed; independently review validator pair')
-BASELINE_VALIDATOR='153e4bd23f286ff50d0486732a092cb11043606d'
-BASELINE_TREE='f3bda188f254281ab73bf5e941e55ce278d28472'
-BASELINE_CHECKS=json.loads((cand/'docs/reconcile/r0-baseline-browser-checkset.json').read_text())['checks']
+if BASE!='9736452cd91145f3bfd6467cfecfca1ba7ceadce':raise RuntimeError('baseline product changed; independently review validator pair')
+INTEGRATION_BASE='fbf36ed350732b46a232a56a216b3d78c733da34'
+BASELINE_VALIDATOR='f7b4c09e69b6fd10c293394b49c136c6dc200104'
+BASELINE_TREE='314bdd6bfecbe860168fc0d1875aeab429a1d787'
+BASELINE_CHECKS=json.loads((cand/'docs/reconcile/r1r2-baseline-browser-checkset.json').read_text())['checks']
 if origins.get('baseline_validator')!=BASELINE_VALIDATOR:raise RuntimeError('baseline validator pin changed; independent review required')
 if os.environ.get('GITHUB_ACTIONS')!='true' or runner not in root.parents or os.environ.get('DBHOST')!='127.0.0.1':
     raise SystemExit('Disposable Actions environment required')
@@ -34,7 +35,7 @@ def verify_package():
             raise RuntimeError('package checksum mismatch')
     if manifest['source']['checkout_sha']!=git('rev-parse','HEAD') or manifest['source']['tree']!=git('rev-parse','HEAD^{tree}'):
         raise RuntimeError('package source identity mismatch')
-    if manifest['source']['pr_head']!=os.environ['PR_HEAD_SHA'] or manifest['source']['base']!=os.environ['PR_BASE_SHA'] or manifest['source']['base']!=BASE:
+    if manifest['source']['pr_head']!=os.environ['PR_HEAD_SHA'] or manifest['source']['base']!=os.environ['PR_BASE_SHA'] or manifest['source']['base']!=INTEGRATION_BASE:
         raise RuntimeError('package PR identity/base changed; re-evaluate integration')
     sys.path.insert(0,str(cand/'tools'));from build_install import collect_files
     _,expected=collect_files(cand/'local/kbacompany');expected=dict(expected)
@@ -56,11 +57,11 @@ def cmd(args,**kw):
 def git(*args): return subprocess.check_output(['git','-C',str(cand),*args],text=True).strip()
 
 def validate_baseline_pair(product_sha,validator_sha,product_tree,validator_tree,checks):
-    if product_sha!='881aac2ef334c4894b9cff2f591b75f675360e3b':raise RuntimeError('baseline product SHA mismatch')
+    if product_sha!='9736452cd91145f3bfd6467cfecfca1ba7ceadce':raise RuntimeError('baseline product SHA mismatch')
     if validator_sha!=BASELINE_VALIDATOR:raise RuntimeError('baseline validator SHA mismatch')
     if product_tree!=BASELINE_TREE:raise RuntimeError('baseline product tree mismatch')
     if validator_tree!=BASELINE_TREE:raise RuntimeError('baseline validator tree mismatch')
-    if len(BASELINE_CHECKS)!=64 or checks!=BASELINE_CHECKS:raise RuntimeError('baseline browser checkset mismatch')
+    if len(BASELINE_CHECKS)!=71 or checks!=BASELINE_CHECKS:raise RuntimeError('baseline browser checkset mismatch')
 def stop():
     global server
     if server:
@@ -87,6 +88,58 @@ def install():
     entries=json.loads((public/'manifest.json').read_text())['entries']
     expected={e['path'].removeprefix('kbacompany/'):e['sha256'] for e in entries}
     if digest_tree(core/'local/kbacompany')!=expected:raise RuntimeError('installed plugin differs from immutable package')
+
+def upgrade_probe(tag,site=None):
+    from daily_reports_upgrade_policy import require
+    target=site or core
+    proc=cmd(['php',Path(__file__).with_name('daily_reports_upgrade.php'),target],
+             env=dict(env,BMS_R1R2_ACCEPTANCE='1'),stdout=subprocess.PIPE,text=True)
+    evidence=json.loads(proc.stdout)
+    require(isinstance(evidence.get('rows'),dict) and evidence['rows'],'domain evidence missing')
+    (public/(tag+'-upgrade.json')).write_text(json.dumps(evidence,indent=1))
+    return evidence
+
+def fresh_upgrade_schema(upgrade):
+    from daily_reports_upgrade_policy import fresh_equal
+    fresh=root/'fresh-equivalent';data=root/'fresh-data'
+    if fresh.exists() or data.exists():raise RuntimeError('fresh acceptance directory already exists')
+    data.mkdir(mode=0o770)
+    shutil.copytree(core,fresh,ignore=shutil.ignore_patterns('.git'))
+    source=(core/'config.php').read_text()
+    if source.count("$CFG->dbname = 'bmsci_web';")!=1 or repr(str(root/'data')) not in source:
+        raise RuntimeError('unexpected isolated config shape')
+    config=source.replace("$CFG->dbname = 'bmsci_web';","$CFG->dbname = 'bmsci_fresh';").replace(repr(str(root/'data')),repr(str(data)))
+    config=config.replace("http://127.0.0.1:8080","http://127.0.0.1:8081")
+    (fresh/'config.php').write_text(config)
+    cmd(['mysql','-h127.0.0.1','-P'+env['DBPORT'],'-u'+env['DBUSER'],'-e',
+         'CREATE DATABASE bmsci_fresh CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci'],stdout=subprocess.DEVNULL)
+    with (root/'fresh-install.private.log').open('w') as log:
+        try:
+            cmd(['php',fresh/'admin/cli/install_database.php','--agree-license','--adminuser=admin',
+                 '--adminpass=Isolated-Fresh-Acceptance1!','--adminemail=ci@example.invalid',
+                 '--fullname=Synthetic fresh acceptance','--shortname=FRESH','--lang=en'],stdout=log,stderr=log)
+        except subprocess.CalledProcessError:
+            log.flush()
+            raise RuntimeError('fresh install failed: '+(root/'fresh-install.private.log').read_text()[-600:])
+    fresh_equal(upgrade_probe('fresh-equivalent',fresh),upgrade)
+
+def daily_reports_flow(phase):
+    import contract
+    from daily_reports_upgrade_policy import unchanged,switch_preserves
+    result=subprocess.run([sys.executable,str(scripts/'daily_reports_flow.py')],env=env,cwd=core)
+    path=ev/'daily-reports-flow-result.json'
+    observed=json.loads(path.read_text()) if path.exists() else None
+    checks=contract.evaluate(contract.daily_reports_flow_checks(observed,result.returncode))
+    (public/(phase+'-daily-reports.json')).write_text(json.dumps({'observations':observed,'checks':checks},indent=1))
+    if len(checks)!=8 or any(c['status']!='PASS' for c in checks.values()):raise RuntimeError('daily report workflow failed')
+    stop();before=upgrade_probe(phase+'-with-reports')
+    cmd(['php',core/'admin/cli/upgrade.php','--non-interactive'],stdout=subprocess.DEVNULL)
+    unchanged(before,upgrade_probe(phase+'-repeat-with-reports'))
+    def toggle(on):
+        code="define('CLI_SCRIPT',true);require "+repr(str(core/'config.php'))+";set_config('dailyreports_enabled',"+str(on)+",'local_kbacompany');"
+        cmd(['php','-r',code],stdout=subprocess.DEVNULL)
+    toggle(0);disabled=upgrade_probe(phase+'-feature-off');toggle(1)
+    switch_preserves(before,disabled,upgrade_probe(phase+'-feature-restored'));start()
 def smoke(phase):
     start()
     observed(Path(__file__).with_name('discussion_geometry.py'),phase+'-geometry',phase)
@@ -105,6 +158,7 @@ def smoke(phase):
     multiattachment_checks(phase)
     message_action_checks(phase)
     task_open_checks(phase)
+    daily_reports_flow(phase)
     menu_overlay_checks(phase)
     for mode in ['owned','legacy']:
         cmd(['php',Path(__file__).with_name('shell.php'),mode],stdout=subprocess.DEVNULL)
@@ -272,7 +326,7 @@ try:
         str(validator/'tools/ci/browser')],text=True))
     validate_baseline_pair(BASE,actualvalidator,basetree,validatortree,checknames)
     report['baseline_validation']={'product_sha':BASE,'validator_sha':actualvalidator,
-        'checkset':'accepted published PR114 BROWSER (64 checks), before R0 navigation',
+        'checkset':'accepted published PR120 BROWSER (71 checks), before R1/R2',
         'product_tree':basetree,'validator_tree':validatortree,'required_checks':checknames,
         'validator_files':digest_tree(validator/'tools/ci/browser'),
         'runner_sha256':hashlib.sha256((validator/'tools/ci/browser_acceptance.py').read_bytes()).hexdigest()}
@@ -290,6 +344,7 @@ try:
     stop()
     elapsed('baseline_reproduction')
     before=state(); snapshot=root/'snapshot'; snapshot.mkdir()
+    upgrade_before=upgrade_probe('published120-before')
     baseline_urls=(ev/'p02-urls.json').read_bytes()
     shutil.copytree(core,snapshot/'code'); shutil.copytree(root/'data',snapshot/'data')
     dbargs=['-h127.0.0.1','-P'+env['DBPORT'],'-u'+env['DBUSER']]
@@ -297,7 +352,24 @@ try:
     files_before=digest_tree(root/'data/filedir'); data_before=digest_tree(root/'data'); code_before=digest_tree(core)
     report['steps']['snapshot_code_db_files']='PASS'
     elapsed('snapshot_code_db_files')
+    # V1j: verify independent restore of the EXACT captured snapshot into
+    # separate MySQL DB + code/config + moodledata trees before any upgrade.
+    # The accepted product ZIP and original #124 branch remain unchanged.
+    from independent_restore import verify_independent_restore
+    report['independent_restore'] = verify_independent_restore(
+        snapshot=snapshot, root=root, dbargs=dbargs, cmd=cmd,
+        digest_tree=digest_tree, original_code=code_before,
+        original_data=data_before,
+        original_sql_sha256=hashlib.sha256((snapshot/'db.sql').read_bytes()).hexdigest())
+    report['steps']['independent_full_site_restore']='PASS'
+    elapsed('independent_full_site_restore')
     install()
+    from daily_reports_upgrade_policy import upgraded,unchanged
+    upgrade_after=upgrade_probe('candidate-upgraded');upgraded(upgrade_before,upgrade_after)
+    cmd(['php',core/'admin/cli/upgrade.php','--non-interactive'],stdout=subprocess.DEVNULL)
+    unchanged(upgrade_after,upgrade_probe('candidate-upgrade-repeat'))
+    fresh_upgrade_schema(upgrade_after)
+    report['steps']['published120_upgrade_repeat_fresh_schema']='PASS'
     try:smoke('candidate');report['steps']['candidate_install_smoke']='PASS'
     except Exception as e:report['steps']['candidate_install_smoke']='FAIL: '+str(e)[:160]
     elapsed('install_and_smoke')
