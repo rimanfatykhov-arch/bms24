@@ -220,7 +220,6 @@ $PAGE->set_title(get_string('communicationcenter_title', 'local_kbacompany'));
 $PAGE->set_heading(get_string('pluginname', 'local_kbacompany'));
 $PAGE->add_body_class('bms-comm-page');
 $PAGE->requires->css(new moodle_url('/local/kbacompany/styles.css'));
-$PAGE->requires->css(new moodle_url('/local/kbacompany/bms_ui/communication_center.css'));
 $PAGE->requires->js_call_amd('local_kbacompany/communication_live_ui', 'init');
 $shell = \local_kbacompany\local\bms_page_shell_service::begin($uuid, $actor, 'communications',
     get_string('communicationcenter_title', 'local_kbacompany'));
