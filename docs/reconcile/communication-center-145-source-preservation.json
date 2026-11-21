@@ -1,0 +1,22 @@
+{
+  "scope": "exact #145 append-only language strings and one scoped CSS alignment rule; presentation only, no schema, ACL or runtime behaviour change",
+  "base_sha": "b16f0ae0e62533f90b55afdc435e84b62a570602",
+  "normalization": "CRLF to LF only",
+  "files": [
+    {
+      "path": "local/kbacompany/lang/en/local_kbacompany.php",
+      "before_sha256_lf": "eac98f182ea03d8332608ede1ad216c2fbde9398634653cb3a2e65eb0bfe890b",
+      "after_sha256_lf": "b7846695bdd8fa7bed201f102308c245725c5576e768b5ed3b88cf70ebf1aa0a"
+    },
+    {
+      "path": "local/kbacompany/lang/ru/local_kbacompany.php",
+      "before_sha256_lf": "6e5cb24b46f5c918bd4d48b50f6ad6f2c6a231a423490374a32481479da268bf",
+      "after_sha256_lf": "2436dd5c20ba4608c82bff1d7358efa89794a1866b0acc384e19bc18708615aa"
+    },
+    {
+      "path": "local/kbacompany/styles.css",
+      "before_sha256_lf": "cd2d2163a340a79e0b4766e90d63aad3b39a31d334fa4430c6eee686200e4e7f",
+      "after_sha256_lf": "95563c9160349cb2f40047f092e78e77c446ee6113d48d13456250dfef271417"
+    }
+  ]
+}
