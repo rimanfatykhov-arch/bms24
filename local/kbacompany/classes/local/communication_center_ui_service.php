@@ -617,7 +617,10 @@ class communication_center_ui_service {
                     if ((int)$id !== $actor && !in_array((int)$id, $ids, true)) { $available[(int)$id] = $name; }
                 }
                 if ($available) {
-                    $model['add'] = ['hidden' => self::post_base($company, 'addparticipant', $thread['uuid']),
+                    // Never name this key "add": Mustache calls a method of that name on object frames,
+                    // and Moodle's mustache_helper_collection::add() takes two arguments, so {{#add}}
+                    // throws ArgumentCountError at render time.
+                    $model['addperson'] = ['hidden' => self::post_base($company, 'addparticipant', $thread['uuid']),
                         'options' => self::options($available), 'label' => self::tr('communication_addparticipant')];
                 }
             }
