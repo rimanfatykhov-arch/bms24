@@ -28,6 +28,8 @@ R0_KEYS=[b'dailyreports_nav',b'dailyreports_tabs',b'dailyreports_tab_my',b'daily
 E2_MARKER=b'\n// Communication Center E2 (2026-11-16): Battle Plan discussion (Q9).\n'
 UX_MARKER=b'\n// Communication Center UX-1 (2026-11-18): sections and accessible presentation.\n'
 UX_KEYS=[b'communicationux_conversations', b'communicationux_notification_count', b'communicationux_filters', b'communicationux_details', b'communicationux_empty_search', b'communicationux_empty_all', b'communicationux_empty_filtered', b'communicationux_reset', b'communicationux_read', b'communicationux_unread', b'communicationux_thread_count']
+C145_MARKER=b'\n// ADR-0009 / #145: strings for the templated communication centre.\n'
+C145_KEYS=[b'communicationux2_badge_total',b'communicationux2_badge_unread',b'communicationux2_audience_object',b'communicationux2_compose_placeholder',b'communicationux2_direct',b'communicationux2_due',b'communicationux2_edit',b'communicationux2_empty_search_text',b'communicationux2_empty_search_title',b'communicationux2_files',b'communicationux2_group_members',b'communicationux2_group_people',b'communicationux2_kv_due',b'communicationux2_kv_status',b'communicationux2_kv_type',b'communicationux2_mark_all',b'communicationux2_mark_read',b'communicationux2_new_messages',b'communicationux2_newconversation',b'communicationux2_notification_settings',b'communicationux2_only_unread',b'communicationux2_open_calendar',b'communicationux2_open_conversation',b'communicationux2_reset_search',b'communicationux2_select_text',b'communicationux2_select_title',b'communicationux2_show_all',b'communicationux2_you']
 E2_KEYS=[b'bpu_tab_discussion',b'bpu_discussion_empty',b'bpu_discussion_readonly',b'bpu_discussion_reader',
          b'communication_object_battleplan',b'communicationcenter_openplan']
 _R2=json.loads((ROOT/'docs/reconcile/daily-reports-r2-source-preservation.json').read_text(encoding='utf-8'))
@@ -84,6 +86,10 @@ class Preservation(unittest.TestCase):
                 r2,e2=r2.split(E2_MARKER)
             if e2 is not None and UX_MARKER in e2:
                 e2,ux=e2.split(UX_MARKER)
+                if C145_MARKER in ux:
+                    ux,c145=ux.split(C145_MARKER)
+                    self.assertEqual(C145_KEYS,keys(c145))
+                    self.assertFalse(set(C145_KEYS)&set(keys(data.split(C145_MARKER)[0])))
                 self.assertEqual(UX_KEYS, keys(ux))
                 self.assertFalse(set(keys(ux)) & set(keys(data.split(UX_MARKER)[0])))
                 original=json.loads((ROOT/'docs/reconcile/communication-center-e2-source-preservation.json').read_text())
