@@ -11,7 +11,7 @@
 <div class="bms24-comm-convactions bms-comm3-chat-controls">
 <button type="button" class="bms24-comm-btn bms24-comm-btn--ghost bms24-comm-iconbtn" data-bms-comm-search-toggle="1" aria-controls="bms-comm3-search-panel" aria-expanded="false" aria-label="{{searchlabel}}" title="{{searchlabel}}">⌕</button>
 {{#openlink}}<a class="bms24-comm-btn bms-comm2-feed-context-link" href="{{url}}"><span aria-hidden="true">↗</span> {{label}}</a>{{/openlink}}
-<button type="button" class="bms24-comm-btn bms24-comm-btn--ghost" data-bms-comm-context-toggle="1" aria-controls="bms-comm3-context-details" aria-expanded="false" title="{{detailstitle}}"><span aria-hidden="true">ⓘ</span> {{detailslabel}}</button>
+<button type="button" class="bms24-comm-btn bms24-comm-btn--ghost bms24-comm-iconbtn" data-bms-comm-context-toggle="1" aria-controls="bms-comm3-context-details" aria-expanded="false" aria-label="{{detailstitle}}" title="{{detailstitle}}"><span aria-hidden="true">ⓘ</span><span class="sr-only">{{detailslabel}}</span></button>
 </div>
 </header>
 {{#messagesearch}}<form method="get" id="bms-comm3-search-panel" class="bms24-comm-msgsearch bms-comm2-search bms-comm2-message-search" data-has-query="{{#hasquery}}1{{/hasquery}}{{^hasquery}}0{{/hasquery}}">
