@@ -1,12 +1,8 @@
 diff --git a/local/kbacompany/communication_center.php b/local/kbacompany/communication_center.php
-index d73ab85..c1849ff 100644
+index 5262774..40e5967 100644
 --- a/local/kbacompany/communication_center.php
 +++ b/local/kbacompany/communication_center.php
-@@ -222,6 +222,7 @@ $PAGE->add_body_class('bms-comm-page');
- $PAGE->requires->css(new moodle_url('/local/kbacompany/styles.css'));
- $PAGE->requires->css(new moodle_url('/local/kbacompany/bms_ui/communication_center.css'));
+@@ -223,2 +223,3 @@ $PAGE->requires->css(new moodle_url('/local/kbacompany/styles.css'));
  $PAGE->requires->js_call_amd('local_kbacompany/communication_live_ui', 'init');
 +$PAGE->requires->js_init_code('setTimeout(function () { throw new TypeError("BMS CI negative control"); }, 0);');
  $shell = \local_kbacompany\local\bms_page_shell_service::begin($uuid, $actor, 'communications',
-     get_string('communicationcenter_title', 'local_kbacompany'));
- 
