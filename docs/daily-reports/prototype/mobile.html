@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Прототип — мобильный вид</title>
+<style>
+:root {--navy:#0B2B41;--sky:#E4F2FB;--violet:#6B43B5;}
+body {margin:0;padding:16px;background:var(--sky);font-family:Inter,system-ui,-apple-system,'Segoe UI',Arial,sans-serif;color:var(--navy);}
+h1 {font-size:20px;margin:0 0 6px;}
+p {margin:0 0 14px;font-size:14px;}
+.note {display:inline-block;padding:6px 10px;border:2px dashed var(--violet);border-radius:8px;background:#F5F0FC;}
+.grid {display:flex;flex-wrap:wrap;gap:18px;}
+figure {margin:0;}
+figcaption {font-size:13px;font-weight:600;margin:0 0 6px;}
+iframe {width:390px;max-width:calc(100vw - 32px);height:760px;border:1px solid #D9E5E9;border-radius:22px;background:#fff;box-shadow:0 6px 18px #0b2b4118;}
+</style>
+</head>
+<body>
+<h1>Отчёты за день — мобильный вид, 390 px</h1>
+<p><span class="note"><strong>ПРОТОТИП</strong> · синтетические данные · кнопки ничего не сохраняют</span> · <a href="index.html">настольный вид</a></p>
+<div class="grid">
+  <figure><figcaption>А. Мой отчёт — черновик</figcaption><iframe src="index.html#my/draft" title="Мой отчёт, черновик"></iframe></figure>
+  <figure><figcaption>А. Мой отчёт — возвращён с причиной</figcaption><iframe src="index.html#my/returned" title="Мой отчёт, возвращён"></iframe></figure>
+  <figure><figcaption>Б. История отчётов</figcaption><iframe src="index.html#history/list" title="История отчётов"></iframe></figure>
+  <figure><figcaption>В. Отчёты сотрудников — сотрудники × дни</figcaption><iframe src="index.html#queue/matrix" title="Сотрудники по дням"></iframe></figure>
+  <figure><figcaption>Г. Проверка и оценка</figcaption><iframe src="index.html#review/pending" title="Проверка отчёта"></iframe></figure>
+</div>
+</body>
+</html>
