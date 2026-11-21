@@ -524,9 +524,11 @@ final class daily_report_store_service {
     }
 
     /**
-     * Owner decision В1: the Battle Plan reviewer of the reporting week, else the manager of the employee's
-     * organisation unit (walking up the reporting line), else nobody ("without reviewer" until an admin assigns).
-     * Self review is never returned (В1, ADR-0009 D6).
+     * Reviewer resolution (owner decision 21.11.2026, supersedes ADR-0009 В1/D6 on self review):
+     * 1) the Battle Plan reviewer of the reporting week;
+     * 2) otherwise the nearest manager above the employee in the organisation chart, walking up parent units;
+     * 3) otherwise nobody is above the employee, so the author reviews their own report and the version records
+     *    reviewerid = author with reviewersource = 'self_top'. A silent "no reviewer" is no longer produced.
      */
     public static function resolve_reviewer(string $companyuuid, int $employee, string $day): array {
         global $DB;
@@ -541,7 +543,11 @@ final class daily_report_store_service {
             }
         }
         $manager = self::org_manager($companyuuid, $employee);
-        return $manager > 0 ? [$manager, 'orgstructure'] : [0, 'none'];
+        if ($manager > 0) {
+            return [$manager, 'orgstructure'];
+        }
+        // Top of the reporting line: the author reviews own report, explicitly and auditably.
+        return [$employee, 'self_top'];
     }
 
     private static function org_manager(string $companyuuid, int $employee): int {
@@ -577,12 +583,18 @@ final class daily_report_store_service {
                         return $candidate;
                     }
                 }
-                $parent = (string)$DB->get_field('local_kbacompany_orgreport', 'manageruuid',
+                // local_kbacompany_orgreport maps a unit to its responsible manager (a person), never to
+                // the next unit; only orgnode.parentuuid describes the hierarchy. Keeping the two apart
+                // prevents a manager id from being walked as if it were a unit.
+                $unitmanagerraw = (string)$DB->get_field('local_kbacompany_orgreport', 'manageruuid',
                     ['companyuuid' => $companyuuid, 'nodeuuid' => $unit]);
-                if ($parent === '') {
-                    $parent = (string)$DB->get_field('local_kbacompany_orgnode', 'parentuuid',
-                        ['companyuuid' => $companyuuid, 'uuid' => $unit]);
+                $unitmanager = ctype_digit($unitmanagerraw) ? (int)$unitmanagerraw : 0;
+                if ($unitmanager > 0 && $unitmanager !== $employee &&
+                        self::eligible_reviewer($companyuuid, $unitmanager, $employee)) {
+                    return $unitmanager;
                 }
+                $parent = (string)$DB->get_field('local_kbacompany_orgnode', 'parentuuid',
+                    ['companyuuid' => $companyuuid, 'uuid' => $unit]);
                 if ($parent !== '') {
                     $parents[] = $parent;
                 }
