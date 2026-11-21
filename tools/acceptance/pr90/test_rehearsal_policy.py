@@ -101,17 +101,23 @@ class RehearsalPolicyTest(unittest.TestCase):
 
     def test_baseline_validator_pin_is_independent_of_product(self):
         origins=json.loads(SOURCE.with_name('origins.json').read_text())
-        self.assertEqual(origins['baseline_validator'],'153e4bd23f286ff50d0486732a092cb11043606d')
+        self.assertEqual(origins['baseline_validator'],'f7b4c09e69b6fd10c293394b49c136c6dc200104')
         self.assertNotEqual(origins['baseline_validator'],origins['main'])
-        self.assertIn("BASE!='881aac2ef334c4894b9cff2f591b75f675360e3b'",SOURCE.read_text())
+        self.assertIn("BASE!='9736452cd91145f3bfd6467cfecfca1ba7ceadce'",SOURCE.read_text())
 
-    def test_published114_baseline_pair_and_full_checkset_fail_closed(self):
+    def test_integration_pin_includes_corporate125_without_changing_deployed_baseline(self):
+        source=SOURCE.read_text()
+        self.assertIn("INTEGRATION_BASE='fbf36ed350732b46a232a56a216b3d78c733da34'",source)
+        self.assertIn("manifest['source']['base']!=INTEGRATION_BASE",source)
+        self.assertNotIn("INTEGRATION_BASE='2739a5d3986b71893979f2f3178b2063a7fa4780'",source)
+
+    def test_published120_baseline_pair_and_full_checkset_fail_closed(self):
         node=next(n for n in TREE.body if isinstance(n,ast.FunctionDef) and n.name=='validate_baseline_pair')
-        checks=json.loads((SOURCE.parents[3]/'docs/reconcile/r0-baseline-browser-checkset.json').read_text())['checks']
-        ns={'BASELINE_VALIDATOR':'153e4bd23f286ff50d0486732a092cb11043606d',
-            'BASELINE_TREE':'f3bda188f254281ab73bf5e941e55ce278d28472','BASELINE_CHECKS':checks}
+        checks=json.loads((SOURCE.parents[3]/'docs/reconcile/r1r2-baseline-browser-checkset.json').read_text())['checks']
+        ns={'BASELINE_VALIDATOR':'f7b4c09e69b6fd10c293394b49c136c6dc200104',
+            'BASELINE_TREE':'314bdd6bfecbe860168fc0d1875aeab429a1d787','BASELINE_CHECKS':checks}
         exec(compile(ast.Module(body=[node],type_ignores=[]),str(SOURCE),'exec'),ns)
-        valid=['881aac2ef334c4894b9cff2f591b75f675360e3b',ns['BASELINE_VALIDATOR'],
+        valid=['9736452cd91145f3bfd6467cfecfca1ba7ceadce',ns['BASELINE_VALIDATOR'],
             ns['BASELINE_TREE'],ns['BASELINE_TREE'],checks]
         ns['validate_baseline_pair'](*valid)
         for index,bad,reason in [(0,'0'*40,'product SHA'),(1,'0'*40,'validator SHA'),

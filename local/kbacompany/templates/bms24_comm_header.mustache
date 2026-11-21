@@ -1,0 +1,6 @@
+{{!
+    Communication Center (#145) card header actions: section tabs with counters and "New conversation".
+    Render-only. Context: tabs[] {label, url, active, badge {value, variant, title}}, sectionslabel, newconversation.
+}}
+<nav class="bms24-comm-tabs bms-comm2-filters bms-comm-ux-sections" aria-label="{{sectionslabel}}">{{#tabs}}<a href="{{url}}" class="bms24-comm-tab bms-comm2-filter{{#active}} is-active{{/active}}" data-section-key="{{key}}"{{#active}} aria-current="page"{{/active}}><span>{{label}}</span>{{#badge}} {{> local_kbacompany/bms24_badge}}{{/badge}}</a>{{/tabs}}</nav>
+{{#newconversation}}{{> local_kbacompany/bms24_comm_new}}{{/newconversation}}

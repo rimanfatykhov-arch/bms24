@@ -447,3 +447,6 @@ body.bms24-owned-page {margin:0;background:var(--bms24-surface-sky);}
 .bms24-app .bms-workspace-1808 .bms-workspace-widget--overview .bms24-stat {padding:12px 14px;box-shadow:none}
 .bms24-app .bms-workspace-1808 .bms-workspace-widget--overview .bms24-statvalue {font-size:24px}
 .bms24-app .bms-workspace-1808 .bms-workspace-widget--today .bms-workspace-today-strip {box-shadow:0 2px 10px #0b2b4108}
+
+/* UX-1: preserve whole words in the Communication Center menu label. */
+.bms24-app .bms24-navitem[href*="communication_center.php"] .bms24-navlabel {overflow-wrap:normal;word-break:normal;}

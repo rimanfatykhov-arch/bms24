@@ -112,7 +112,7 @@ class communication_center_service {
         $learning = $DB->count_records_sql("SELECT COUNT(t.id) FROM {local_kbacompany_task} t
             WHERE t.companyuuid=:c AND t.assigneeid=:a AND t.stream='develop'
               AND t.status NOT IN ('done','cancelled','deleted')", ['c'=>$companyuuid,'a'=>$actor]);
-        return ['incoming'=>(int)$unreadthreads+(int)$unreadnotifications,
+        return ['incoming'=>(int)$unreadthreads,
             'tasks'=>$tasks['my_open'], 'overdue'=>$tasks['overdue'], 'control'=>$tasks['review'],
             'learning'=>(int)$learning, 'unread_threads'=>(int)$unreadthreads,
             'unread_notifications'=>(int)$unreadnotifications];
@@ -124,12 +124,20 @@ class communication_center_service {
      * The canonical communication service remains the source of truth. This method
      * only filters and groups participant-visible threads for the three-pane UI.
      */
-    public static function workspace_context(string $companyuuid, int $actor, string $tab = 'inbox',
-            string $selectedthread = '', string $search = '', string $messagequery = '', int $messagepage = 0): array {
+    public static function workspace_context(string $companyuuid, int $actor, string $tab = 'messages',
+            string $selectedthread = '', string $search = '', string $messagequery = '', int $messagepage = 0, string $filter = 'all'): array {
         global $DB;
         company_context_service::context($companyuuid, $actor);
-        if (!in_array($tab, self::TABS, true) || $tab === 'tasks') { $tab = 'inbox'; }
-        $scope = 'all';
+        if (!in_array($tab, self::TABS, true) || $tab === 'tasks') { $tab = 'messages'; }
+        if ($tab === 'meetings') { $tab = 'discussions'; }
+        if (in_array($tab, ['inbox', 'unread', 'mentions'], true)) {
+            $filter = $tab === 'mentions' ? 'mentions' : 'unread';
+            $tab = 'messages';
+        }
+        if ($tab === 'all') { $tab = 'messages'; }
+        if (!in_array($filter, ['all', 'unread', 'mentions'], true)) { $filter = 'all'; }
+        if ($tab === 'notifications') { $selectedthread = ''; }
+        $scope = $filter;
         if ($tab === 'unread') { $scope = 'unread'; }
         if ($tab === 'mentions') { $scope = 'mentions'; }
         $comm = communication_service::context($companyuuid, $actor, $selectedthread, $scope,
@@ -219,12 +227,149 @@ class communication_center_service {
                     (string)$selected['context_uuid']);
             }
         }
+        if ($selected && (string)$selected['context_kind'] === battle_plan_discussion_service::KIND
+                && empty($selected['is_participant'])) {
+            // A plan reader joins only with the plan write-to-discussion right (Q9).
+            $selected['can_join'] = battle_plan_discussion_service::can_post_for($companyuuid, $actor,
+                (string)$selected['context_uuid']);
+        }
+        $messages = self::with_attachment_sizes($companyuuid, $selected ? (string)$selected['uuid'] : '', $comm['messages']);
+        // #145: per-section totals and unread counts for the section tabs. With the default "all" filter the
+        // canonical projection already holds every visible thread; otherwise count with the same visibility rules.
+        $sections = $filter === 'all' ? self::count_sections($comm['threads']) : self::section_counts($companyuuid, $actor);
         return [
-            'company' => $comm['company'], 'tab' => $tab, 'threads' => $threads, 'events' => $events,
-            'selected' => $selected, 'messages' => $comm['messages'], 'history' => $comm['history'], 'employees' => $comm['employees'],
+            'company' => $comm['company'], 'tab' => $tab, 'filter' => $filter, 'threads' => $threads, 'events' => $events,
+            'selected' => $selected, 'messages' => $messages, 'history' => $comm['history'], 'employees' => $comm['employees'],
             'notifications' => $comm['notifications'], 'counts' => $comm['counts'], 'task_counts' => $taskcounts,
-            'search' => $search, 'can_manage' => $comm['can_manage'],
+            'search' => $search, 'can_manage' => $comm['can_manage'], 'sections' => $sections,
+            'selected_meta' => $selected ? self::object_meta($companyuuid, $actor, $selected) : null,
         ];
+    }
+
+    /**
+     * File sizes for the already authorized messages of the selected thread (display only). Message ids are resolved
+     * inside the company and thread; file rows only for this plugin's protected communication attachment area.
+     */
+    private static function with_attachment_sizes(string $companyuuid, string $threaduuid, array $messages): array {
+        global $DB;
+        $uuids = [];
+        foreach ($messages as $message) {
+            foreach ($message['attachments'] as $attachment) {
+                if ($attachment['kind'] === 'moodlefile') { $uuids[] = (string)$message['uuid']; break; }
+            }
+        }
+        if ($threaduuid === '' || !$uuids) { return $messages; }
+        list($insql, $params) = $DB->get_in_or_equal($uuids, SQL_PARAMS_NAMED, 'szm');
+        $ids = $DB->get_records_sql_menu("SELECT uuid, id FROM {local_kbacompany_commmsg}
+            WHERE companyuuid=:szc AND threaduuid=:szt AND uuid $insql",
+            ['szc' => $companyuuid, 'szt' => $threaduuid] + $params);
+        if (!$ids) { return $messages; }
+        list($idsql, $idparams) = $DB->get_in_or_equal(array_map('intval', array_values($ids)), SQL_PARAMS_NAMED, 'szi');
+        $sizes = [];
+        foreach ($DB->get_records_sql("SELECT id, itemid, filename, filesize FROM {files}
+                WHERE contextid=:szctx AND component='local_kbacompany' AND filearea='communication_attachment'
+                  AND filename<>'.' AND itemid $idsql",
+                ['szctx' => \context_system::instance()->id] + $idparams) as $file) {
+            $sizes[(int)$file->itemid . '/' . (string)$file->filename] = (int)$file->filesize;
+        }
+        foreach ($messages as &$message) {
+            $id = (int)($ids[(string)$message['uuid']] ?? 0);
+            foreach ($message['attachments'] as &$attachment) {
+                $key = $id . '/' . (string)$attachment['value'];
+                if ($attachment['kind'] === 'moodlefile' && isset($sizes[$key])) { $attachment['size'] = $sizes[$key]; }
+            }
+            unset($attachment);
+        }
+        unset($message);
+        return $messages;
+    }
+
+    /** Section of a thread type: direct and group conversations versus object discussions. */
+    public static function section_of(string $threadtype): string {
+        return $threadtype === 'object' ? 'discussions' : 'messages';
+    }
+
+    /** @return array ['messages' => ['total' => int, 'unread' => int], 'discussions' => [...]] */
+    private static function count_sections(array $threads): array {
+        $out = ['messages' => ['total' => 0, 'unread' => 0], 'discussions' => ['total' => 0, 'unread' => 0]];
+        foreach ($threads as $thread) {
+            $key = self::section_of((string)$thread['thread_type']);
+            $out[$key]['total']++;
+            if ((int)$thread['unread_count'] > 0) { $out[$key]['unread']++; }
+        }
+        return $out;
+    }
+
+    /**
+     * Visible thread totals per section without hydrating messages. Company and participation are part of the query;
+     * an object thread counts only while the actor can still open its object (the same rule as the thread list).
+     */
+    public static function section_counts(string $companyuuid, int $actor): array {
+        global $DB;
+        company_context_service::context($companyuuid, $actor);
+        $out = ['messages' => ['total' => 0, 'unread' => 0], 'discussions' => ['total' => 0, 'unread' => 0]];
+        $rows = $DB->get_records_sql("SELECT t.id, t.threadtype, t.contextkind, t.contextuuid, t.contextrevision,
+                CASE WHEN EXISTS (SELECT m.id FROM {local_kbacompany_commmsg} m
+                    WHERE m.companyuuid=t.companyuuid AND m.threaduuid=t.uuid AND m.status='active'
+                      AND m.authorid<>:secauthor AND m.id>COALESCE((SELECT r.lastmessageid
+                        FROM {local_kbacompany_commread} r WHERE r.companyuuid=t.companyuuid
+                        AND r.threaduuid=t.uuid AND r.userid=:secreader),0)) THEN 1 ELSE 0 END AS hasunread
+              FROM {local_kbacompany_commthread} t
+             WHERE t.companyuuid=:seccompany
+               AND EXISTS (SELECT p.id FROM {local_kbacompany_commpart} p
+                    WHERE p.companyuuid=t.companyuuid AND p.threaduuid=t.uuid AND p.userid=:secactor AND p.active=1)",
+            ['seccompany' => $companyuuid, 'secactor' => $actor, 'secauthor' => $actor, 'secreader' => $actor]);
+        foreach ($rows as $row) {
+            if ((string)$row->threadtype === 'object') {
+                try {
+                    communication_object_service::describe($companyuuid, $actor, (string)$row->contextkind,
+                        (string)$row->contextuuid, (int)$row->contextrevision);
+                } catch (\moodle_exception $e) { continue; }
+            }
+            $key = self::section_of((string)$row->threadtype);
+            $out[$key]['total']++;
+            if (!empty($row->hasunread)) { $out[$key]['unread']++; }
+        }
+        return $out;
+    }
+
+    /**
+     * Section to open when the link names none (#145): the first list section with unread content, otherwise the
+     * first with any content, otherwise conversations. Pure function; no access decision and nothing stored.
+     */
+    public static function default_tab(array $sections): string {
+        foreach (['unread', 'total'] as $measure) {
+            foreach (['messages', 'discussions'] as $key) {
+                if ((int)($sections[$key][$measure] ?? 0) > 0) { return $key; }
+            }
+        }
+        return 'messages';
+    }
+
+    /** Status and due date of the selected object for the thread header; only for an already authorized thread. */
+    private static function object_meta(string $companyuuid, int $actor, array $selected): ?array {
+        global $DB;
+        if (empty($selected['context'])) { return null; }
+        $kind = (string)$selected['context']['kind'];
+        $uuid = (string)$selected['context']['uuid'];
+        if ($kind === 'task') {
+            $row = $DB->get_record('local_kbacompany_task', ['companyuuid' => $companyuuid, 'uuid' => $uuid],
+                'id,status,duedate');
+            if (!$row || !in_array((string)$row->status, task_service::STATUSES, true)) { return null; }
+            return ['status' => get_string('taskcenter_status_' . $row->status, 'local_kbacompany'),
+                'due' => (string)$row->duedate];
+        }
+        if ($kind === battle_plan_discussion_service::KIND) {
+            try {
+                $target = battle_plan_service::discussion_target($companyuuid, $actor, $uuid);
+            } catch (\moodle_exception $e) {
+                return null;
+            }
+            $key = 'battleplan_status_' . (string)$target['status'];
+            return ['status' => get_string_manager()->string_exists($key, 'local_kbacompany') ?
+                get_string($key, 'local_kbacompany') : '', 'due' => ''];
+        }
+        return null;
     }
 
     /** Focused paginated screen projection. Does not open threads or mark messages read. */
