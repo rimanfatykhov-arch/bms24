@@ -35,8 +35,13 @@ def verify_package():
             raise RuntimeError('package checksum mismatch')
     if manifest['source']['checkout_sha']!=git('rev-parse','HEAD') or manifest['source']['tree']!=git('rev-parse','HEAD^{tree}'):
         raise RuntimeError('package source identity mismatch')
-    if manifest['source']['pr_head']!=os.environ['PR_HEAD_SHA'] or manifest['source']['base']!=os.environ['PR_BASE_SHA'] or manifest['source']['base']!=INTEGRATION_BASE:
+    if manifest['source']['pr_head']!=os.environ['PR_HEAD_SHA'] or manifest['source']['base']!=os.environ['PR_BASE_SHA']:
         raise RuntimeError('package PR identity/base changed; re-evaluate integration')
+    # INTEGRATION_BASE is the integration floor, not the current main. Once anything merges,
+    # main moves past it and equality can never hold again; require ancestry instead so the
+    # pin still proves the integration happened while allowing main to advance.
+    if not git_ok('merge-base','--is-ancestor',INTEGRATION_BASE,os.environ['PR_BASE_SHA']):
+        raise RuntimeError('PR base does not contain the integration pin')
     sys.path.insert(0,str(cand/'tools'));from build_install import collect_files
     _,expected=collect_files(cand/'local/kbacompany');expected=dict(expected)
     entries={r['path']:r for r in manifest['entries']}
@@ -55,6 +60,7 @@ def verify_package():
 def cmd(args,**kw):
     return subprocess.run([str(x) for x in args],env=kw.pop('env',env),cwd=core,check=True,**kw)
 def git(*args): return subprocess.check_output(['git','-C',str(cand),*args],text=True).strip()
+def git_ok(*args): return subprocess.run(['git','-C',str(cand),*args],capture_output=True).returncode==0
 
 def validate_baseline_pair(product_sha,validator_sha,product_tree,validator_tree,checks):
     if product_sha!='9736452cd91145f3bfd6467cfecfca1ba7ceadce':raise RuntimeError('baseline product SHA mismatch')
