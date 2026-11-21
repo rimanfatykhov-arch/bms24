@@ -6256,11 +6256,5 @@ function xmldb_local_kbacompany_upgrade(int $oldversion): bool {
         upgrade_plugin_savepoint(true, 2026111601, 'local', 'kbacompany');
     }
 
-    // #145: communication centre rendered through Mustache templates. Presentation only —
-    // no DDL, no data change. The new version keeps this package distinguishable from #124 (2026111601).
-    if ($oldversion < 2026112101) {
-        upgrade_plugin_savepoint(true, 2026112101, 'local', 'kbacompany');
-    }
-
     return true;
 }
