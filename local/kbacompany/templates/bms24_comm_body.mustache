@@ -1,7 +1,7 @@
 {{!
     Communication Center (#145) card body: notifications, or list + conversation + details drawer. Render-only.
 }}
-{{#isnotifications}}{{#notifications}}<div class="bms24-comm-layout bms-comm2 bms-comm2-layout" data-section="{{section}}">{{> local_kbacompany/bms24_comm_notifications}}</div>{{/notifications}}{{/isnotifications}}
+{{#isnotifications}}{{#notifications}}<div class="bms24-comm-notifswrap bms-comm2">{{> local_kbacompany/bms24_comm_notifications}}</div>{{/notifications}}{{/isnotifications}}
 {{#layout}}<div class="bms24-comm-layout bms-comm2 bms-comm2-layout" data-section="{{section}}" data-has-thread="{{#hasthread}}1{{/hasthread}}{{^hasthread}}0{{/hasthread}}">
 {{#list}}{{> local_kbacompany/bms24_comm_list}}{{/list}}
 {{#thread}}{{> local_kbacompany/bms24_comm_thread}}{{/thread}}
