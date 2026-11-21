@@ -122,3 +122,19 @@ projection observed in tested native two-tenant/revocation cases; HTTP/browser/d
 stack NOT RUN. See [PR68 acceptance](reconcile/PR68_ACCEPTANCE.md) and evidence.
 RC30 HOLD with15 remaining failures. Next bounded priority: Word export/locale tests.
 No production/staging access, deployment or PR merge.
+
+## 2026-11-15 — Communication Center audit and plan (docs only)
+
+ACCEPTED owner goal: employee communication; AI employees (terminals) in the same work
+discussions; discussions of tasks, Battle Plans and other entities; MAX/Telegram and other
+channels with history kept in BMS24; an object discussion from its card and from the center
+is one conversation. Audit of main d353509 plus published PR #103 dfd9053: the existing
+communication_service is the single canonical journal (no second message service); MAX/
+Telegram adapters and AI participants do not exist in code; eventout has no communication
+producers; battleplan is not an object kind. Proposed ADR-0008, staged plan and owner
+questions: [audit](communication/COMMUNICATION_CENTER_AUDIT.md),
+[plan](communication/COMMUNICATION_CENTER_PLAN.md),
+[ADR-0008](adr/ADR-0008-communication-center-canonical-history-PROPOSED.md). Recommended
+first slice E1 (one task discussion visible to everyone allowed to open the task) is an ACL
+change needing owner choice Q1 and extended acceptance; start after #107/#110 land. No code,
+schema, CI, bots, tokens, merge or deployment in this step.
