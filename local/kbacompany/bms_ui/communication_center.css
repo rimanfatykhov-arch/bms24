@@ -261,6 +261,24 @@ body.bms-comm-page #bms24-comm-root .bms24-comm-iconbtn {
     font-size: 18px;
 }
 
+/* Line icons (inline SVG, currentColor) instead of emoji glyphs, which render inconsistently across platforms. */
+body.bms-comm-page #bms24-comm-root .bms24-comm-ico {
+    flex: 0 0 auto;
+    width: 16px;
+    height: 16px;
+    vertical-align: middle;
+}
+
+body.bms-comm-page #bms24-comm-root .bms24-comm-iconbtn .bms24-comm-ico {
+    width: 18px;
+    height: 18px;
+}
+
+/* "Participants" / "Details": icon and visible label, as in the prototype; icon only on phones. */
+body.bms-comm-page #bms24-comm-root .bms24-comm-detailsbtn {
+    color: var(--cc-navy);
+}
+
 body.bms-comm-page #bms24-comm-root .bms24-comm-muted {
     color: var(--cc-muted);
     font-size: 12px;
@@ -359,6 +377,67 @@ body.bms-comm-page #bms24-comm-root .bms24-comm-newform label {
 body.bms-comm-page #bms24-comm-root .bms24-comm-newform .bms24-comm-btn {
     align-self: flex-end;
     margin-top: 6px;
+}
+
+body.bms-comm-page #bms24-comm-root .bms24-comm-newhead {
+    margin: 0 0 6px;
+    color: var(--cc-navy);
+    font-size: 16px;
+    font-weight: 700;
+}
+
+/* Type: a segmented control over the same threadtype radios (screen D); works without JavaScript. */
+body.bms-comm-page #bms24-comm-root .bms24-comm-seg {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 2px;
+    margin: 0 0 4px;
+    padding: 3px;
+    border: 0;
+    border-radius: 10px;
+    background: var(--cc-sky);
+}
+
+body.bms-comm-page #bms24-comm-root .bms24-comm-seg input {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+}
+
+body.bms-comm-page #bms24-comm-root .bms24-comm-seg label {
+    margin: 0;
+    padding: 7px 10px;
+    border-radius: 8px;
+    color: var(--cc-muted);
+    font-weight: 600;
+    text-align: center;
+    cursor: pointer;
+}
+
+body.bms-comm-page #bms24-comm-root .bms24-comm-seg input:checked + label {
+    background: #fff;
+    color: var(--cc-navy);
+    box-shadow: 0 1px 2px rgba(11, 43, 65, .12);
+}
+
+body.bms-comm-page #bms24-comm-root .bms24-comm-seg input:focus-visible + label {
+    outline: 2px solid var(--cc-blue);
+    outline-offset: 1px;
+}
+
+body.bms-comm-page #bms24-comm-root .bms24-comm-newtitle {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+/* A direct conversation has no title: show the field only for a group (browsers without :has keep it visible). */
+body.bms-comm-page #bms24-comm-root .bms24-comm-newform:has(#bms_comm2_type_direct:checked) .bms24-comm-newtitle {
+    display: none;
+}
+
+body.bms-comm-page #bms24-comm-root .bms24-comm-newform select[multiple] {
+    min-height: 180px;
 }
 
 /* ---------- list + conversation layout ---------- */
@@ -875,7 +954,7 @@ body.bms-comm-page #bms24-comm-root .bms24-comm-dot {
 body.bms-comm-page #bms24-comm-root .bms24-comm-msg {
     display: flex;
     flex-direction: column;
-    align-self: flex-start;
+    align-self: stretch;
     gap: 4px;
     width: auto;
     max-width: min(640px, 88%);
@@ -1098,6 +1177,7 @@ body.bms-comm-page #bms24-comm-root .bms24-comm-compose textarea {
     padding: 8px 10px;
     border: 1px solid var(--cc-border);
     border-radius: var(--cc-radius-ctl);
+    font-family: inherit;
     font-size: 14px;
     resize: vertical;
 }
@@ -1212,6 +1292,21 @@ body.bms-comm-page #bms24-comm-root .bms24-comm-drawer[open] {
     box-shadow: -12px 0 24px rgba(11, 43, 65, .12);
 }
 
+/* The native summary is only the accessible toggle target; legacy styles.css paints it as a sky bar. Keep it hidden. */
+body.bms-comm-page #bms24-comm-root .bms24-comm-drawer > summary {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    min-height: 0;
+    margin: -1px;
+    padding: 0;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    border: 0;
+    white-space: nowrap;
+    writing-mode: horizontal-tb;
+}
+
 body.bms-comm-page #bms24-comm-root .bms24-comm-drawerhead {
     display: flex;
     align-items: center;
@@ -1269,6 +1364,16 @@ body.bms-comm-page #bms24-comm-root .bms24-comm-kv dt {
 body.bms-comm-page #bms24-comm-root .bms24-comm-kv dd {
     margin: 0;
     overflow-wrap: anywhere;
+}
+
+/* The object name has a visually hidden term, so it takes the whole row instead of shifting the columns. */
+body.bms-comm-page #bms24-comm-root .bms24-comm-kv .bms-comm2-context-name {
+    grid-column: 1 / -1;
+    color: var(--cc-navy);
+}
+
+body.bms-comm-page #bms24-comm-root .bms24-comm-person .bms-comm2-person-role {
+    display: block;
 }
 
 body.bms-comm-page #bms24-comm-root .bms24-comm-people {
@@ -1591,6 +1696,21 @@ body.bms-comm-page #bms24-comm-root .bms24-comm-nempty {
 
     body.bms-comm-page #bms24-comm-root .bms24-comm-convtitle {
         flex-basis: 0;
+    }
+
+    body.bms-comm-page #bms24-comm-root .bms24-comm-detailsbtn {
+        width: 36px;
+        min-width: 36px;
+        padding: 0;
+    }
+
+    body.bms-comm-page #bms24-comm-root .bms24-comm-detailsbtn .bms24-comm-btnlabel {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        overflow: hidden;
+        clip: rect(0 0 0 0);
+        white-space: nowrap;
     }
 
     body.bms-comm-page #bms24-comm-root .bms24-comm-nrow {
