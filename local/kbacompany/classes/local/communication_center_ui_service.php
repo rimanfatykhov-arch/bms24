@@ -486,7 +486,7 @@ class communication_center_ui_service {
      * @return array|null [moodle_url, string key] or null for other kinds
      */
     public static function daily_report_target(string $company, string $kind): ?array {
-        if ($kind === 'dailyreport_submitted') {
+        if ($kind === 'dailyreport_submitted' || $kind === 'dailyreport_copy') {
             return [daily_report_ui_service::url($company, ['tab' => 'review']), 'dailyreports_tab_review'];
         }
         if ($kind === 'dailyreport_decision') {

@@ -70,14 +70,15 @@ final class daily_report_store_service {
         global $DB;
         $companyuuid = self::scope($companyuuid, $actor, $day);
         $report = self::find($companyuuid, $actor, $day);
-        $out = ['report' => $report, 'draft' => null, 'draftlinks' => [], 'versions' => [], 'links' => [],
-            'reviews' => [], 'late' => false];
+        $out = ['report' => $report, 'draft' => null, 'draftlinks' => [], 'draftcc' => [], 'versions' => [],
+            'links' => [], 'copies' => [], 'reviews' => [], 'late' => false];
         if (!$report) {
             return $out;
         }
         $out['draft'] = self::version($companyuuid, $report->uuid, (string)$report->draftversionuuid);
         if ($out['draft']) {
             $out['draftlinks'] = self::links($companyuuid, $out['draft']->uuid);
+            $out['draftcc'] = daily_report_reviewer_service::copies($companyuuid, $out['draft']->uuid);
         }
         $versions = $DB->get_records_select('local_kbacompany_dreportver',
             'companyuuid = :c AND reportuuid = :r AND state <> :draft',
@@ -85,6 +86,7 @@ final class daily_report_store_service {
         foreach ($versions as $version) {
             $out['versions'][] = $version;
             $out['links'][$version->uuid] = self::links($companyuuid, $version->uuid);
+            $out['copies'][$version->uuid] = daily_report_reviewer_service::copies($companyuuid, $version->uuid);
         }
         $out['reviews'] = self::reviews($companyuuid, $report->uuid);
         $current = $out['versions'][0] ?? null;
@@ -212,6 +214,19 @@ final class daily_report_store_service {
         }
     }
 
+    /** Copy recipients of a draft by source; frozen with the version at submission (ADR-0010 D5). */
+    private static function replace_copies(string $companyuuid, string $reportuuid, string $versionuuid, array $userids,
+            string $source = 'manual'): void {
+        global $DB;
+        $DB->delete_records('local_kbacompany_dreportcc', ['companyuuid' => $companyuuid, 'versionuuid' => $versionuuid,
+            'source' => $source]);
+        foreach ($userids as $userid) {
+            $DB->insert_record('local_kbacompany_dreportcc', (object)['companyuuid' => $companyuuid,
+                'reportuuid' => $reportuuid, 'versionuuid' => $versionuuid, 'userid' => (int)$userid, 'source' => $source,
+                'timecreated' => time()]);
+        }
+    }
+
     private static function new_version(string $companyuuid, string $reportuuid, int $actor, array $values,
             string $correctionnote = ''): \stdClass {
         global $DB;
@@ -242,7 +257,7 @@ final class daily_report_store_service {
      * $expectedrevision is the draft revision the form was rendered with (0 = no report yet). Stale = conflict.
      */
     private static function write_draft(string $companyuuid, int $actor, string $day, array $values, array $taskuuids,
-            int $expectedrevision): array {
+            int $expectedrevision, array $ccusers = []): array {
         global $DB;
         $report = self::find($companyuuid, $actor, $day);
         if (!$report) {
@@ -275,23 +290,26 @@ final class daily_report_store_service {
             self::touch_report($report, []);
         }
         self::replace_links($companyuuid, $draft->uuid, $taskuuids);
+        self::replace_copies($companyuuid, $report->uuid, $draft->uuid, $ccusers);
         self::log($companyuuid, $report->uuid, $draft->uuid, $actor, 'draft_saved', ['revision' => (int)$draft->revision]);
         return [$report, $draft];
     }
 
     /** Save the server draft. A stale revision raises dailyreports_conflict and changes nothing. */
     public static function save_draft(string $companyuuid, int $actor, string $day, array $values, array $taskuuids,
-            int $expectedrevision): array {
+            int $expectedrevision, array $ccusers = []): array {
         global $DB;
         self::require_enabled();
         $companyuuid = self::scope($companyuuid, $actor, $day);
         $values = self::clean_values($values);
         $taskuuids = self::clean_links($companyuuid, $actor, $taskuuids);
+        $ccusers = daily_report_reviewer_service::clean_cc($companyuuid, $actor, $ccusers);
         $lock = self::lock($companyuuid, $actor, $day);
         try {
             $tx = $DB->start_delegated_transaction();
             try {
-                [$report, $draft] = self::write_draft($companyuuid, $actor, $day, $values, $taskuuids, $expectedrevision);
+                [$report, $draft] = self::write_draft($companyuuid, $actor, $day, $values, $taskuuids, $expectedrevision,
+                    $ccusers);
                 $tx->allow_commit();
             } catch (\Throwable $e) {
                 $tx->rollback($e);
@@ -308,7 +326,7 @@ final class daily_report_store_service {
      * $expectedrevision; then the draft is frozen with its task snapshot, day snapshot, reviewer and content hash.
      */
     public static function submit(string $companyuuid, int $actor, string $day, string $requestkey,
-            int $expectedrevision, ?array $values = null, array $taskuuids = []): array {
+            int $expectedrevision, ?array $values = null, array $taskuuids = [], array $ccusers = []): array {
         global $DB;
         self::require_enabled();
         $companyuuid = self::scope($companyuuid, $actor, $day);
@@ -319,6 +337,7 @@ final class daily_report_store_service {
         if ($values !== null) {
             $values = self::clean_values($values);
             $taskuuids = self::clean_links($companyuuid, $actor, $taskuuids);
+            $ccusers = daily_report_reviewer_service::clean_cc($companyuuid, $actor, $ccusers);
         }
         $lock = self::lock($companyuuid, $actor, $day);
         try {
@@ -335,7 +354,7 @@ final class daily_report_store_service {
             try {
                 if ($values !== null) {
                     [$report, $draft] = self::write_draft($companyuuid, $actor, $day, $values, $taskuuids,
-                        $expectedrevision);
+                        $expectedrevision, $ccusers);
                 } else {
                     $draft = $report ? self::version($companyuuid, $report->uuid, (string)$report->draftversionuuid) : null;
                     if (!$draft || $draft->state !== 'draft') {
@@ -349,7 +368,22 @@ final class daily_report_store_service {
                     throw new \moodle_exception('dailyreports_donerequired', 'local_kbacompany');
                 }
                 $links = self::freeze_links($companyuuid, $actor, $draft->uuid, $day);
-                [$reviewerid, $source] = self::resolve_reviewer($companyuuid, $actor, $day);
+                $resolved = self::resolve($companyuuid, $actor, $day);
+                $reviewerid = (int)$resolved['reviewerid'];
+                $source = (string)$resolved['source'];
+                // Copies are frozen with the version: manual recipients still eligible now, plus the org-chart rule.
+                // The reviewer never also receives a copy.
+                $manual = [];
+                foreach (daily_report_reviewer_service::copies($companyuuid, $draft->uuid) as $copy) {
+                    if ((string)$copy->source === 'manual' && (int)$copy->userid !== $reviewerid &&
+                            self::eligible_reviewer($companyuuid, (int)$copy->userid, $actor)) {
+                        $manual[] = (int)$copy->userid;
+                    }
+                }
+                self::replace_copies($companyuuid, $report->uuid, $draft->uuid, $manual);
+                self::replace_copies($companyuuid, $report->uuid, $draft->uuid, array_values(array_diff(
+                    $resolved['cc'], $manual, [$reviewerid, $actor])), 'orgrule');
+                $copies = daily_report_reviewer_service::copies($companyuuid, $draft->uuid);
                 $now = time();
                 $draft->autosnapshot = json_encode(self::day_snapshot($companyuuid, $actor, $day),
                     JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
@@ -367,7 +401,9 @@ final class daily_report_store_service {
                 self::touch_report($report, ['status' => 'submitted', 'currentversionuuid' => $draft->uuid,
                     'draftversionuuid' => '']);
                 self::log($companyuuid, $report->uuid, $draft->uuid, $actor, 'submitted',
-                    ['versionno' => (int)$draft->versionno, 'reviewersource' => $source, 'links' => count($links),
+                    ['versionno' => (int)$draft->versionno, 'reviewerid' => $reviewerid, 'reviewersource' => $source,
+                     'selfreview' => $source === 'self_top', 'links' => count($links),
+                     'copies' => array_map(static function($copy): int { return (int)$copy->userid; }, $copies),
                      'late' => strcmp(business_date_service::day($now), $day) > 0]);
                 $tx->allow_commit();
             } catch (\Throwable $e) {
@@ -377,9 +413,16 @@ final class daily_report_store_service {
             $lock->release();
         }
         // R2: tell the reviewer once per version (a replayed request returned earlier and never gets here).
-        if ((int)$draft->reviewerid > 0) {
+        // A self review at the top is the author's own task: nobody is notified about it.
+        if ((int)$draft->reviewerid > 0 && (int)$draft->reviewerid !== $actor) {
             daily_report_review_service::notify($companyuuid, (int)$draft->reviewerid, 'dailyreport_submitted',
                 [$draft->uuid], get_string('dailyreports_notify_submitted', 'local_kbacompany', $day),
+                daily_report_ui_service::url($companyuuid, ['tab' => 'review', 'report' => $report->uuid]));
+        }
+        // ADR-0010 D5: each copy recipient is told once per version; a copy grants reading only.
+        foreach ($copies as $copy) {
+            daily_report_review_service::notify($companyuuid, (int)$copy->userid, 'dailyreport_copy', [$draft->uuid],
+                get_string('dailyreports_notify_copy', 'local_kbacompany', $day),
                 daily_report_ui_service::url($companyuuid, ['tab' => 'review', 'report' => $report->uuid]));
         }
         return ['reportuuid' => $report->uuid, 'versionuuid' => $draft->uuid, 'replayed' => false];
@@ -420,6 +463,13 @@ final class daily_report_store_service {
                 self::replace_links($companyuuid, $draft->uuid, array_map(static function($link): string {
                     return (string)$link->taskuuid;
                 }, $current ? self::links($companyuuid, $current->uuid) : []));
+                $manual = [];
+                foreach ($current ? daily_report_reviewer_service::copies($companyuuid, $current->uuid) : [] as $copy) {
+                    if ((string)$copy->source === 'manual') {
+                        $manual[] = (int)$copy->userid;
+                    }
+                }
+                self::replace_copies($companyuuid, $report->uuid, $draft->uuid, $manual);
                 $kind = $report->status === 'accepted' ? 'correction_started' : 'rework_started';
                 self::touch_report($report, ['status' => 'draft', 'draftversionuuid' => $draft->uuid]);
                 self::log($companyuuid, $report->uuid, $draft->uuid, $actor, $kind, ['versionno' => (int)$draft->versionno]);
@@ -524,71 +574,40 @@ final class daily_report_store_service {
     }
 
     /**
-     * Owner decision В1: the Battle Plan reviewer of the reporting week, else the manager of the employee's
-     * organisation unit (walking up the reporting line), else nobody ("without reviewer" until an admin assigns).
-     * Self review is never returned (В1, ADR-0009 D6).
+     * Reviewer and automatic copy (ADR-0010, owner decision 21.11.2026; replaces ADR-0009 D6 at the top only):
+     * 1) the Battle Plan reviewer of the reporting week (owner decision В1, unchanged);
+     * 2) otherwise the nearest eligible manager up the organisation chart (daily_report_reviewer_service::chain);
+     * 3) otherwise the company top reviewer, when configured and eligible;
+     * 4) otherwise, only for an author at the top of the chart, the author ('self_top', the persisted self-review marker);
+     * 5) otherwise nobody ('none'): the report waits in "without reviewer" for an administrator.
+     * @return array ['reviewerid' => int, 'source' => string, 'cc' => int[]]
      */
-    public static function resolve_reviewer(string $companyuuid, int $employee, string $day): array {
+    public static function resolve(string $companyuuid, int $employee, string $day): array {
         global $DB;
         $plans = $DB->get_records_select('local_kbacompany_bplan',
             'companyuuid = :c AND userid = :u AND periodstart <= :d1 AND periodend >= :d2 AND reviewerid > 0',
             ['c' => $companyuuid, 'u' => $employee, 'd1' => $day, 'd2' => $day], 'timemodified DESC, id DESC',
             'id, reviewerid, status', 0, 10);
+        $battleplan = 0;
         foreach ($plans as $plan) {
             if (!in_array((string)$plan->status, ['cancelled', 'archived'], true) &&
                     self::eligible_reviewer($companyuuid, (int)$plan->reviewerid, $employee)) {
-                return [(int)$plan->reviewerid, 'battleplan'];
+                $battleplan = (int)$plan->reviewerid;
+                break;
             }
         }
-        $manager = self::org_manager($companyuuid, $employee);
-        return $manager > 0 ? [$manager, 'orgstructure'] : [0, 'none'];
+        return daily_report_reviewer_service::resolve($companyuuid, $employee, $battleplan);
     }
 
-    private static function org_manager(string $companyuuid, int $employee): int {
-        global $DB;
-        $employees = self::org_employees($companyuuid, $employee);
-        $managers = [];
-        $units = [];
-        foreach ($employees as $row) {
-            foreach ($row['org_assignments'] ?? [] as $assignment) {
-                $unit = (string)$assignment['org_unit_uuid'];
-                if ((string)$assignment['role'] === 'manager') {
-                    $managers[$unit][] = (int)$row['user_id'];
-                }
-                if ((int)$row['user_id'] === $employee) {
-                    $units[] = $unit;
-                }
-            }
-        }
-        $visited = [];
-        for ($level = 0; $units && $level < 10; $level++) {
-            $parents = [];
-            foreach ($units as $unit) {
-                if ($unit === '' || isset($visited[$unit])) {
-                    continue;
-                }
-                $visited[$unit] = true;
-                $candidates = array_values(array_filter($managers[$unit] ?? [], static function(int $id) use ($employee) {
-                    return $id !== $employee;
-                }));
-                sort($candidates);
-                foreach ($candidates as $candidate) {
-                    if (self::eligible_reviewer($companyuuid, $candidate, $employee)) {
-                        return $candidate;
-                    }
-                }
-                $parent = (string)$DB->get_field('local_kbacompany_orgreport', 'manageruuid',
-                    ['companyuuid' => $companyuuid, 'nodeuuid' => $unit]);
-                if ($parent === '') {
-                    $parent = (string)$DB->get_field('local_kbacompany_orgnode', 'parentuuid',
-                        ['companyuuid' => $companyuuid, 'uuid' => $unit]);
-                }
-                if ($parent !== '') {
-                    $parents[] = $parent;
-                }
-            }
-            $units = $parents;
-        }
-        return 0;
+    /** [reviewerid, source] for callers of R1/R2. */
+    public static function resolve_reviewer(string $companyuuid, int $employee, string $day): array {
+        $resolved = self::resolve($companyuuid, $employee, $day);
+        return [(int)$resolved['reviewerid'], (string)$resolved['source']];
+    }
+
+    /** Who reviews this day's report if it is submitted now (ADR-0010 D7); computed, never stored. */
+    public static function preview(string $companyuuid, int $actor, string $day): array {
+        $companyuuid = self::scope($companyuuid, $actor, $day);
+        return self::resolve($companyuuid, $actor, $day);
     }
 }

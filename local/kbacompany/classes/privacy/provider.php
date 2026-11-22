@@ -464,6 +464,14 @@ class provider implements
         $collection->add_database_table('local_kbacompany_dreportlog', [
             'actorid' => 'privacy:metadata:dailyreports', 'details' => 'privacy:metadata:dailyreports',
         ], 'privacy:metadata:dailyreports');
+        // ADR-0010: copy recipients of a version and the company review rules.
+        $collection->add_database_table('local_kbacompany_dreportcc', [
+            'userid' => 'privacy:metadata:dailyreports', 'source' => 'privacy:metadata:dailyreports',
+            'timecreated' => 'privacy:metadata:dailyreports',
+        ], 'privacy:metadata:dailyreports');
+        $collection->add_database_table('local_kbacompany_dreportset', [
+            'topreviewerid' => 'privacy:metadata:dailyreports', 'modifiedby' => 'privacy:metadata:dailyreports',
+        ], 'privacy:metadata:dailyreports');
         return $collection;
     }
 
@@ -631,9 +639,12 @@ class provider implements
             AND (EXISTS (SELECT 1 FROM {local_kbacompany_dreport} dr WHERE dr.userid = :druser)
               OR EXISTS (SELECT 1 FROM {local_kbacompany_dreportver} dv WHERE dv.reviewerid = :drreviewer)
               OR EXISTS (SELECT 1 FROM {local_kbacompany_dreportrev} dd WHERE dd.reviewerid = :drdecider)
-              OR EXISTS (SELECT 1 FROM {local_kbacompany_dreportlog} dl WHERE dl.actorid = :dractor))',
+              OR EXISTS (SELECT 1 FROM {local_kbacompany_dreportlog} dl WHERE dl.actorid = :dractor)
+              OR EXISTS (SELECT 1 FROM {local_kbacompany_dreportcc} dc WHERE dc.userid = :drcopy)
+              OR EXISTS (SELECT 1 FROM {local_kbacompany_dreportset} ds WHERE ds.topreviewerid = :drtop
+                  OR ds.modifiedby = :drmodifier))',
             ['drlevel' => CONTEXT_SYSTEM, 'druser' => $userid, 'drreviewer' => $userid, 'drdecider' => $userid,
-             'dractor' => $userid]);
+             'dractor' => $userid, 'drcopy' => $userid, 'drtop' => $userid, 'drmodifier' => $userid]);
         return $contextlist;
     }
 
@@ -1087,8 +1098,9 @@ class provider implements
         global $DB;
         if ($context->contextlevel === CONTEXT_SYSTEM) {
             self::forget_revocation_audit(null);
-            foreach (['local_kbacompany_dreportlog', 'local_kbacompany_dreportrev', 'local_kbacompany_dreportlink',
-                    'local_kbacompany_dreportver', 'local_kbacompany_dreport'] as $table) {
+            foreach (['local_kbacompany_dreportcc', 'local_kbacompany_dreportset', 'local_kbacompany_dreportlog',
+                    'local_kbacompany_dreportrev', 'local_kbacompany_dreportlink', 'local_kbacompany_dreportver',
+                    'local_kbacompany_dreport'] as $table) {
                 $DB->delete_records($table);
             }
             $DB->delete_records('local_kbacompany_commrev');
@@ -1518,6 +1530,8 @@ class provider implements
                 $version->links = array_values($DB->get_records('local_kbacompany_dreportlink',
                     ['companyuuid' => $report->companyuuid, 'versionuuid' => $version->uuid], 'id ASC',
                     'taskuuid, origin, title, status, duedate'));
+                $version->copies = array_values($DB->get_records('local_kbacompany_dreportcc',
+                    ['companyuuid' => $report->companyuuid, 'versionuuid' => $version->uuid], 'id ASC', 'userid, source'));
                 $version->submittedat = $version->submittedat ? transform::datetime($version->submittedat) : '';
                 $versions[] = $version;
             }
@@ -1529,10 +1543,15 @@ class provider implements
         }
         $decisions = array_values($DB->get_records('local_kbacompany_dreportrev', ['reviewerid' => $userid],
             'timecreated ASC', 'companyuuid, reportuuid, versionuuid, decision, rating, comment, timecreated'));
-        if ($reports || $decisions) {
+        $copies = array_values($DB->get_records('local_kbacompany_dreportcc', ['userid' => $userid], 'id ASC',
+            'id, companyuuid, reportuuid, versionuuid, source, timecreated'));
+        $rules = array_values($DB->get_records_select('local_kbacompany_dreportset', 'topreviewerid = :t OR modifiedby = :m',
+            ['t' => $userid, 'm' => $userid], 'id ASC', 'id, companyuuid, toppolicy, topreviewerid, ccpolicy, modifiedby'));
+        if ($reports || $decisions || $copies || $rules) {
             writer::with_context($context)->export_data(
                 [get_string('privacy:metadata:dailyreports', 'local_kbacompany')],
-                (object)['reports' => $reports, 'decisions_as_reviewer' => $decisions]);
+                (object)['reports' => $reports, 'decisions_as_reviewer' => $decisions, 'copies_received' => $copies,
+                    'review_rules' => $rules]);
         }
     }
 
@@ -1549,6 +1568,7 @@ class provider implements
                 $DB->delete_records('local_kbacompany_dreportlink',
                     ['companyuuid' => $report->companyuuid, 'versionuuid' => $versionuuid]);
             }
+            $DB->delete_records('local_kbacompany_dreportcc', $where);
             $DB->delete_records('local_kbacompany_dreportrev', $where);
             $DB->delete_records('local_kbacompany_dreportlog', $where);
             $DB->delete_records('local_kbacompany_dreportver', $where);
@@ -1557,6 +1577,11 @@ class provider implements
         $DB->set_field('local_kbacompany_dreportrev', 'comment', null, ['reviewerid' => $userid]);
         $DB->set_field('local_kbacompany_dreportrev', 'reviewerid', 0, ['reviewerid' => $userid]);
         $DB->set_field('local_kbacompany_dreportver', 'reviewerid', 0, ['reviewerid' => $userid]);
+        // ADR-0010: copies addressed to this user go; a company rule naming them falls back to the safe default.
+        $DB->delete_records('local_kbacompany_dreportcc', ['userid' => $userid]);
+        $DB->execute("UPDATE {local_kbacompany_dreportset} SET toppolicy = 'self', topreviewerid = 0
+            WHERE topreviewerid = :userid", ['userid' => $userid]);
+        $DB->set_field('local_kbacompany_dreportset', 'modifiedby', 0, ['modifiedby' => $userid]);
         $DB->set_field('local_kbacompany_dreportlog', 'details', null, ['actorid' => $userid]);
         $DB->set_field('local_kbacompany_dreportlog', 'actorid', 0, ['actorid' => $userid]);
     }
