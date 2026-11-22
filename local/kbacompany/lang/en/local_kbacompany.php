@@ -9827,6 +9827,82 @@ $string['messageprovider:dailyreport_decision'] = 'Decision on my daily report';
 $string['communication_notification_dailyreport_submitted'] = 'Daily report to review';
 $string['communication_notification_dailyreport_decision'] = 'Decision on a daily report';
 
+// Communication Center E2 (2026-11-16): Battle Plan discussion (Q9).
+$string['bpu_tab_discussion'] = 'Discussion';
+$string['bpu_discussion_empty'] = 'No messages yet. Start the conversation about this plan.';
+$string['bpu_discussion_readonly'] = 'You can read this plan discussion. Plan participants and managers with the right to edit the plan can write in it.';
+$string['bpu_discussion_reader'] = 'You see this discussion because you can open the plan. Posting a message adds you to the discussion.';
+$string['communication_object_battleplan'] = 'Battle Plan';
+$string['communicationcenter_openplan'] = 'Open plan';
+
+// Communication Center UX-1 (2026-11-18): sections and accessible presentation.
+$string['communicationux_conversations'] = 'Conversations';
+$string['communicationux_notification_count'] = 'Unread notifications';
+$string['communicationux_filters'] = 'Conversation filters';
+$string['communicationux_details'] = 'Details and participants';
+$string['communicationux_empty_search'] = 'No conversations match this search. Change the search or clear it.';
+$string['communicationux_empty_all'] = 'No conversations in this section yet. Start a conversation or open an object discussion.';
+$string['communicationux_empty_filtered'] = 'No conversations match this filter. Show all conversations in this section.';
+$string['communicationux_reset'] = 'Show all in this section';
+$string['communicationux_read'] = 'Read';
+$string['communicationux_unread'] = 'Unread';
+$string['communicationux_thread_count'] = 'Conversations and discussions with unread messages';
+// ADR-0009 / #145: strings for the templated communication centre.
+$string['communicationux2_badge_total'] = 'Total: {$a}';
+$string['communicationux2_badge_unread'] = 'Unread: {$a}';
+$string['communicationux2_audience_object'] = 'Everyone with access to the task will see this message.';
+$string['communicationux2_compose_placeholder'] = 'Message… Mention: @First Last';
+$string['communicationux2_direct'] = 'Direct conversation';
+$string['communicationux2_due'] = 'due {$a}';
+$string['communicationux2_edit'] = 'Edit';
+$string['communicationux2_empty_search_text'] = 'Nothing found for "{$a}".';
+$string['communicationux2_empty_search_title'] = 'Nothing found';
+$string['communicationux2_files'] = 'Files';
+$string['communicationux2_group_members'] = 'Members: {$a}';
+$string['communicationux2_group_people'] = 'Group · {$a}';
+$string['communicationux2_kv_due'] = 'Due';
+$string['communicationux2_kv_status'] = 'Status';
+$string['communicationux2_kv_type'] = 'Type';
+$string['communicationux2_mark_all'] = 'Mark all as read';
+$string['communicationux2_mark_read'] = 'Mark as read';
+$string['communicationux2_new_messages'] = 'New messages';
+$string['communicationux2_newconversation'] = 'New conversation';
+$string['communicationux2_notification_settings'] = 'Notification settings';
+$string['communicationux2_only_unread'] = 'Unread only';
+$string['communicationux2_open_calendar'] = 'Open calendar';
+$string['communicationux2_open_conversation'] = 'Open conversation';
+$string['communicationux2_reset_search'] = 'Reset search';
+$string['communicationux2_select_text'] = 'Select a conversation on the left to read and reply.';
+$string['communicationux2_select_title'] = 'Select a chat and start talking';
+$string['communicationux2_show_all'] = 'Show all';
+$string['communicationux2_you'] = 'You';
+
+// #145: remaining communicationux2_* strings (dynamic families: type, group, empty, goto, search).
+$string['communicationux2_chip_mentions'] = 'Mentions';
+$string['communicationux2_details'] = 'Details and participants';
+$string['communicationux2_empty_discussions_title'] = 'No discussions in this section yet';
+$string['communicationux2_empty_discussions_text'] = 'Discussions appear once work on tasks and plans starts.';
+$string['communicationux2_empty_mentions_title'] = 'No mentions';
+$string['communicationux2_empty_mentions_text'] = 'Nobody has mentioned you in conversations or discussions yet.';
+$string['communicationux2_empty_messages_title'] = 'No conversations in this section';
+$string['communicationux2_empty_messages_text'] = 'Start a conversation or open the discussion of an object.';
+$string['communicationux2_empty_unread_title'] = 'Nothing unread';
+$string['communicationux2_empty_unread_text'] = 'Every message in this section has been read.';
+$string['communicationux2_goto_discussions'] = 'Go to discussions ({$a})';
+$string['communicationux2_goto_messages'] = 'Go to conversations ({$a})';
+$string['communicationux2_group_earlier'] = 'Earlier';
+$string['communicationux2_group_today'] = 'Today';
+$string['communicationux2_no_unread_notifications'] = 'No unread notifications';
+$string['communicationux2_search_objects'] = 'Search by object name';
+$string['communicationux2_search_people'] = 'Search by name or title';
+$string['communicationux2_type_dailyreport'] = 'Daily report';
+$string['communicationux2_type_dayplan'] = 'Day plan';
+$string['communicationux2_type_meeting'] = 'Meeting';
+$string['communicationux2_type_mention'] = 'Mention';
+$string['communicationux2_type_message'] = 'Message';
+$string['communicationux2_type_other'] = 'Notification';
+$string['communicationux2_type_task'] = 'Task';
+
 // Adaptive BMS24 navigation (2026-11-18): narrow-window menu button and drawer close label.
 $string['bms24_menu_button'] = 'Menu';
 $string['bms24_menu_close'] = 'Close menu';

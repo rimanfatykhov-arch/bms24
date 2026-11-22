@@ -26,7 +26,7 @@ if (in_array($view,['all','watching'],true)) { $scope=$view; $view=$planuuid!=='
 if (!in_array($scope,['all','my','review','watching'],true)) { throw new moodle_exception('invalidparameter'); }
 if (!in_array($view,['list','create','detail','edit','fill','action','metrics'],true)) { throw new moodle_exception('invalidparameter'); }
 $tab=optional_param('tab','overview',PARAM_ALPHA);
-if (!in_array($tab,['overview','tasks','indicators','review','history'],true)) { throw new moodle_exception('invalidparameter'); }
+if (!in_array($tab,['overview','tasks','indicators','review','discussion','history'],true)) { throw new moodle_exception('invalidparameter'); }
 $templatekey=optional_param('template','',PARAM_ALPHANUMEXT);
 if ($templatekey!=='' && $method!=='POST') { $view='fill'; }
 $targetuser=optional_param($method==='POST'?'userid':'user',0,PARAM_INT);
@@ -414,6 +414,12 @@ if ($view==='list') {
     else if ($tab==='tasks') { echo ui::tasks($uuid,$data); }
     else if ($tab==='review') {
         echo ui::review($uuid,$data,$values,$errors,$queuefields);
+    }
+    else if ($tab==='discussion') {
+        // One canonical plan discussion (Communication Center, Q9); read rule = plan read rule.
+        echo \local_kbacompany\local\battle_plan_discussion_ui_service::render($uuid,
+            \local_kbacompany\local\battle_plan_discussion_service::context($uuid, $actor, (string)$data['selected']['uuid']),
+            optional_param('reply', '', PARAM_ALPHANUMEXT));
     }
     else if ($tab==='history') { echo ui::history($data); }
     else if ($tab==='indicators') {

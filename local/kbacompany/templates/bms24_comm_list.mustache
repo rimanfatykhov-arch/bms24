@@ -1,0 +1,25 @@
+{{!
+    Conversation list (#145): search by name or title, filter chips, rows with initials avatar, object type, preview,
+    time and unread badge. Live updates replace .bms-comm2-thread-list. Render-only.
+}}
+<aside class="bms24-comm-side bms-comm2-panel bms-comm2-sidebar" aria-label="{{label}}">
+<div class="bms24-comm-sidehead">
+<span class="bms-comm4-unread-indicator" aria-label="{{unreadlabel}}" aria-live="polite" hidden>{{unreadtotal}}</span>
+<form method="get" class="bms24-comm-search bms-comm2-search" role="search">
+{{#search}}{{#hidden}}<input type="hidden" name="{{name}}" value="{{value}}">{{/hidden}}
+<label for="bms_comm2_search" class="sr-only">{{label}}</label>
+<span class="bms24-comm-searchicon" aria-hidden="true">⌕</span>
+<input type="search" id="bms_comm2_search" name="q" value="{{value}}" placeholder="{{placeholder}}">{{/search}}
+<input type="submit" hidden tabindex="-1">
+</form>
+<nav class="bms24-comm-chips bms-comm-ux-filters" aria-label="{{filterslabel}}">{{#chips}}<a href="{{url}}" title="{{title}}" class="bms24-comm-chip bms-comm-ux-chip{{#active}} is-active{{/active}}"{{#active}} aria-current="true"{{/active}}>{{label}}</a>{{/chips}}</nav>
+</div>
+<div class="bms24-comm-list bms-comm2-thread-list">
+{{#items}}<a href="{{url}}" class="bms24-comm-item bms-comm2-thread bms-comm3-thread{{#active}} is-active{{/active}}{{#unread}} has-unread{{/unread}}" data-thread-uuid="{{uuid}}"{{#active}} aria-current="true"{{/active}}>
+<span class="bms24-comm-ava bms24-comm-ava--{{avatarvariant}}" aria-hidden="true">{{initials}}</span>
+<span class="bms24-comm-itembody"><span class="bms24-comm-itemtitle" title="{{title}}">{{title}}</span>{{#kind}}<span class="bms24-comm-itemkind"><span class="bms24-comm-pill bms24-comm-pill--{{variant}}">{{label}}</span></span>{{/kind}}{{#preview}}<span class="bms24-comm-itempreview">{{preview}}</span>{{/preview}}</span>
+<span class="bms24-comm-itemmeta">{{#time}}<time>{{time}}</time>{{/time}}{{#mention}}<span class="bms24-comm-at" title="{{mentiontitle}}" aria-label="{{mentiontitle}}">@</span>{{/mention}}{{#unread}}<span class="bms24-comm-badge bms24-comm-badge--unread" aria-label="{{unreadtitle}}: {{unread}}">{{unread}}</span>{{/unread}}</span>
+</a>{{/items}}
+{{#empty}}<div class="bms24-comm-listempty">{{> local_kbacompany/bms24_empty_state}}</div>{{/empty}}
+</div>
+</aside>

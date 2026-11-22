@@ -18,6 +18,9 @@ FOLLOWUPS = ['docs/reconcile/task-open-source-preservation.json',
              'docs/reconcile/daily-reports-r0-source-preservation.json',
              'docs/reconcile/daily-reports-r1-source-preservation.json',
              'docs/reconcile/daily-reports-r2-source-preservation.json',
+             'docs/reconcile/communication-center-e2-source-preservation.json',
+             'docs/reconcile/communication-center-ux1-source-preservation.json',
+             'docs/reconcile/communication-center-145-source-preservation.json',
              'docs/reconcile/adaptive-navigation-source-preservation.json']
 
 

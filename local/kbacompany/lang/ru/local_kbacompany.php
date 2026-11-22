@@ -9829,6 +9829,82 @@ $string['messageprovider:dailyreport_decision'] = 'Решение по моем�
 $string['communication_notification_dailyreport_submitted'] = 'Отчёт на проверку';
 $string['communication_notification_dailyreport_decision'] = 'Решение по отчёту';
 
+// Communication Center E2 (2026-11-16): Battle Plan discussion (Q9).
+$string['bpu_tab_discussion'] = 'Обсуждение';
+$string['bpu_discussion_empty'] = 'Сообщений пока нет. Начните обсуждение этого плана.';
+$string['bpu_discussion_readonly'] = 'Вы можете читать обсуждение плана. Писать в нём могут участники плана и руководители с правом изменять план.';
+$string['bpu_discussion_reader'] = 'Вы видите обсуждение, потому что вам доступен план. Ваше сообщение добавит вас в участники обсуждения.';
+$string['communication_object_battleplan'] = 'Боевой план';
+$string['communicationcenter_openplan'] = 'Открыть план';
+
+// Communication Center UX-1 (2026-11-18): sections and accessible presentation.
+$string['communicationux_conversations'] = 'Разговоры';
+$string['communicationux_notification_count'] = 'Непрочитанные уведомления';
+$string['communicationux_filters'] = 'Отбор разговоров';
+$string['communicationux_details'] = 'Подробности и участники';
+$string['communicationux_empty_search'] = 'По этому запросу разговоров нет. Измените запрос или сбросьте поиск.';
+$string['communicationux_empty_all'] = 'В этом разделе пока нет разговоров. Начните разговор или откройте обсуждение объекта.';
+$string['communicationux_empty_filtered'] = 'Под этот отбор разговоров нет. Покажите все разговоры раздела.';
+$string['communicationux_reset'] = 'Показать все в разделе';
+$string['communicationux_read'] = 'Прочитано';
+$string['communicationux_unread'] = 'Не прочитано';
+$string['communicationux_thread_count'] = 'Разговоры и обсуждения с непрочитанными сообщениями';
+// ADR-0009 / #145: strings for the templated communication centre.
+$string['communicationux2_badge_total'] = 'Всего: {$a}';
+$string['communicationux2_badge_unread'] = 'Непрочитанных: {$a}';
+$string['communicationux2_audience_object'] = 'Сообщение увидят все, у кого есть доступ к задаче.';
+$string['communicationux2_compose_placeholder'] = 'Сообщение… Упомянуть: @Имя Фамилия';
+$string['communicationux2_direct'] = 'Личный разговор';
+$string['communicationux2_due'] = 'срок {$a}';
+$string['communicationux2_edit'] = 'Изменить';
+$string['communicationux2_empty_search_text'] = 'По запросу «{$a}» ничего не найдено.';
+$string['communicationux2_empty_search_title'] = 'Ничего не найдено';
+$string['communicationux2_files'] = 'Файлы';
+$string['communicationux2_group_members'] = 'Участники: {$a}';
+$string['communicationux2_group_people'] = 'Группа · {$a}';
+$string['communicationux2_kv_due'] = 'Срок';
+$string['communicationux2_kv_status'] = 'Статус';
+$string['communicationux2_kv_type'] = 'Тип';
+$string['communicationux2_mark_all'] = 'Отметить все прочитанными';
+$string['communicationux2_mark_read'] = 'Отметить прочитанным';
+$string['communicationux2_new_messages'] = 'Новые сообщения';
+$string['communicationux2_newconversation'] = 'Новый разговор';
+$string['communicationux2_notification_settings'] = 'Настройки уведомлений';
+$string['communicationux2_only_unread'] = 'Только непрочитанные';
+$string['communicationux2_open_calendar'] = 'Открыть календарь';
+$string['communicationux2_open_conversation'] = 'Открыть разговор';
+$string['communicationux2_reset_search'] = 'Сбросить поиск';
+$string['communicationux2_select_text'] = 'Выберите переписку слева, чтобы читать сообщения и отвечать.';
+$string['communicationux2_select_title'] = 'Выберите чат и начните общение';
+$string['communicationux2_show_all'] = 'Показать все';
+$string['communicationux2_you'] = 'Вы';
+
+// #145: remaining communicationux2_* strings (dynamic families: type, group, empty, goto, search).
+$string['communicationux2_chip_mentions'] = 'Упоминания';
+$string['communicationux2_details'] = 'Подробности и участники';
+$string['communicationux2_empty_discussions_title'] = 'В этом разделе пока нет обсуждений';
+$string['communicationux2_empty_discussions_text'] = 'Обсуждения появятся, когда начнётся работа с задачами и планами.';
+$string['communicationux2_empty_mentions_title'] = 'Нет упоминаний';
+$string['communicationux2_empty_mentions_text'] = 'Вас пока не упоминали в разговорах и обсуждениях.';
+$string['communicationux2_empty_messages_title'] = 'В этом разделе нет разговоров';
+$string['communicationux2_empty_messages_text'] = 'Начните разговор или откройте обсуждение объекта.';
+$string['communicationux2_empty_unread_title'] = 'Нет непрочитанных';
+$string['communicationux2_empty_unread_text'] = 'Все сообщения в этом разделе прочитаны.';
+$string['communicationux2_goto_discussions'] = 'Перейти к обсуждениям ({$a})';
+$string['communicationux2_goto_messages'] = 'Перейти к разговорам ({$a})';
+$string['communicationux2_group_earlier'] = 'Ранее';
+$string['communicationux2_group_today'] = 'Сегодня';
+$string['communicationux2_no_unread_notifications'] = 'Непрочитанных уведомлений нет';
+$string['communicationux2_search_objects'] = 'Поиск по названию объекта';
+$string['communicationux2_search_people'] = 'Поиск по имени или названию';
+$string['communicationux2_type_dailyreport'] = 'Отчёт за день';
+$string['communicationux2_type_dayplan'] = 'План дня';
+$string['communicationux2_type_meeting'] = 'Встреча';
+$string['communicationux2_type_mention'] = 'Упоминание';
+$string['communicationux2_type_message'] = 'Сообщение';
+$string['communicationux2_type_other'] = 'Уведомление';
+$string['communicationux2_type_task'] = 'Задача';
+
 // Adaptive BMS24 navigation (2026-11-18): narrow-window menu button and drawer close label.
 $string['bms24_menu_button'] = 'Меню';
 $string['bms24_menu_close'] = 'Закрыть меню';

@@ -1,26 +1,42 @@
 {
-  "main": "881aac2ef334c4894b9cff2f591b75f675360e3b",
+  "main": "9736452cd91145f3bfd6467cfecfca1ba7ceadce",
   "ci_pr96": "0ca01a84deece538d7b7dad83772b7611a87df52",
   "ci_review": "https://github.com/rimanfatykhov-arch/bms24/pull/96#issuecomment-6874575341",
   "ux_pr90": "62a3e9cafd8252fffc6389af044bf469ff7e3853",
   "discussion_pr99": "b24a5487d8467ca9b90e67698d2d3ba74da4fc3d",
   "ui_review": "https://github.com/rimanfatykhov-arch/bms24/pull/99#issuecomment-6874362582",
   "selection": "16 CI files imported from accepted PR96; integration-only login networkidle synchronization in access.py/task_tabs.py after real ERR_ABORTED reproduction; only task_center.css from PR90 plus PR99 CSS patch; discussion_button.py from PR99; independently selected and strengthened disposable acceptance harness. No wholesale PR98 merge, no PR92 or SaaS architecture.",
-  "baseline_scope": "Synthetic current main, identical tree to published114; real production backup is separate.",
+  "baseline_scope": "Published R0/PR120 source 9736452, numeric2026111100, synthetic baseline; real restored-data evidence is separate.",
   "version_policy": "The original PR100 delivery was CSS-only. The corrected candidate includes PHP participant/upload handling and JS/UI changes, with no schema migration; numeric build2026111100 is retained under existing strict version/schema gates. Source SHA/tree plus manifest and ZIP digests identify this distinct delivery; build alone is insufficient.",
-  "baseline_validator": "153e4bd23f286ff50d0486732a092cb11043606d",
-  "baseline_contract_policy": "Main881aac2 and accepted published114 validator153e4bd have exact same treef3bda188. All64baselinechecks required; candidate/reinstall retain all71 including7R0navigationchecks. No expected product failure; removed recent-activity block must remain absent and History present in every phase.",
+  "baseline_validator": "f7b4c09e69b6fd10c293394b49c136c6dc200104",
+  "baseline_contract_policy": "Product9736452 and accepted validatorf7b4c09 share tree314bdd6; all71baselinechecks retained, candidate79 required.",
   "rehearsal_timeout_policy": "60 minutes for the existing rehearsal job: four additional full ten-width menu matrices (candidate/reinstall, owned/legacy), plus strict multiattachment controls. No reduction of previous gates.",
   "previous_release": {
-    "main": "d35350954146867f80877bcea4729c31477d16d3",
-    "baseline_validator": "0740524acd9e8e7eeada05374b27a1089f142dd3",
-    "baseline_contract_policy": "Baseline product d353509 is validated by the exact accepted PR102 head 0740524 (same product tree) with its full 42-check BROWSER set; candidate and reinstall add the 7 message-action checks. Baseline writes must PASS: the PR100 overlap defect is fixed in this baseline and is no longer reproduced as an expected failure.",
-    "previous": {
-      "main": "f34ab6ff0d2f67a56972e99c23d096ed77a9873c",
-      "baseline_validator": "01af6405bcb7db73f67cb45fee837ba97b8c6ed3",
-      "note": "PR100/PR102 rehearsal pins, superseded for PR103 after PR102 was published and merged"
+    "main": "881aac2ef334c4894b9cff2f591b75f675360e3b",
+    "ci_pr96": "0ca01a84deece538d7b7dad83772b7611a87df52",
+    "ci_review": "https://github.com/rimanfatykhov-arch/bms24/pull/96#issuecomment-6874575341",
+    "ux_pr90": "62a3e9cafd8252fffc6389af044bf469ff7e3853",
+    "discussion_pr99": "b24a5487d8467ca9b90e67698d2d3ba74da4fc3d",
+    "ui_review": "https://github.com/rimanfatykhov-arch/bms24/pull/99#issuecomment-6874362582",
+    "selection": "16 CI files imported from accepted PR96; integration-only login networkidle synchronization in access.py/task_tabs.py after real ERR_ABORTED reproduction; only task_center.css from PR90 plus PR99 CSS patch; discussion_button.py from PR99; independently selected and strengthened disposable acceptance harness. No wholesale PR98 merge, no PR92 or SaaS architecture.",
+    "baseline_scope": "Synthetic current main, identical tree to published114; real production backup is separate.",
+    "version_policy": "The original PR100 delivery was CSS-only. The corrected candidate includes PHP participant/upload handling and JS/UI changes, with no schema migration; numeric build2026111100 is retained under existing strict version/schema gates. Source SHA/tree plus manifest and ZIP digests identify this distinct delivery; build alone is insufficient.",
+    "baseline_validator": "153e4bd23f286ff50d0486732a092cb11043606d",
+    "baseline_contract_policy": "Main881aac2 and accepted published114 validator153e4bd have exact same treef3bda188. All64baselinechecks required; candidate/reinstall retain all71 including7R0navigationchecks. No expected product failure; removed recent-activity block must remain absent and History present in every phase.",
+    "rehearsal_timeout_policy": "60 minutes for the existing rehearsal job: four additional full ten-width menu matrices (candidate/reinstall, owned/legacy), plus strict multiattachment controls. No reduction of previous gates.",
+    "previous_release": {
+      "main": "d35350954146867f80877bcea4729c31477d16d3",
+      "baseline_validator": "0740524acd9e8e7eeada05374b27a1089f142dd3",
+      "baseline_contract_policy": "Baseline product d353509 is validated by the exact accepted PR102 head 0740524 (same product tree) with its full 42-check BROWSER set; candidate and reinstall add the 7 message-action checks. Baseline writes must PASS: the PR100 overlap defect is fixed in this baseline and is no longer reproduced as an expected failure.",
+      "previous": {
+        "main": "f34ab6ff0d2f67a56972e99c23d096ed77a9873c",
+        "baseline_validator": "01af6405bcb7db73f67cb45fee837ba97b8c6ed3",
+        "note": "PR100/PR102 rehearsal pins, superseded for PR103 after PR102 was published and merged"
+      },
+      "note": "Old PR103/110/113/114 rehearsal baseline, superseded by published114 for R0."
     },
-    "note": "Old PR103/110/113/114 rehearsal baseline, superseded by published114 for R0."
+    "pr103_selection": "a26f8c5 cherry-picked onto main d353509 (PR102 merged, published); adds BROWSER message_actions.py with 7 fail-closed contract checks; product change limited to task_service.php, task_ui_service.php, tasks.php and a PHPUnit test; no schema/version change."
   },
-  "pr103_selection": "a26f8c5 cherry-picked onto main d353509 (PR102 merged, published); adds BROWSER message_actions.py with 7 fail-closed contract checks; product change limited to task_service.php, task_ui_service.php, tasks.php and a PHPUnit test; no schema/version change."
+  "pr103_selection": "a26f8c5 cherry-picked onto main d353509 (PR102 merged, published); adds BROWSER message_actions.py with 7 fail-closed contract checks; product change limited to task_service.php, task_ui_service.php, tasks.php and a PHPUnit test; no schema/version change.",
+  "integration_base": "2739a5d3986b71893979f2f3178b2063a7fa4780"
 }

@@ -1,0 +1,49 @@
+{{!
+    Conversation (#145): header with object, status, due date and actions; date and "new messages" separators;
+    incoming/outgoing bubbles; composer. #bms-comm2-history and [data-bms-comm-compose] are live-update contracts.
+    Render-only: every right and value comes from the authorized projection.
+}}
+<main class="bms24-comm-conv bms-comm2-panel bms-comm2-feed" aria-label="{{feedlabel}}">
+<header class="bms24-comm-convhead bms-comm2-feed-head">
+<a class="bms24-comm-back bms-comm3-mobile-back" href="{{backurl}}" aria-label="{{backlabel}}">‹</a>
+<div class="bms24-comm-convtitle bms-comm3-chat-heading"><h2 class="bms-comm2-feed-title" title="{{title}}">{{title}}</h2>
+<div class="bms24-comm-kind">{{#kindline}}{{#pill}}<span class="bms24-comm-pill bms24-comm-pill--{{variant}}">{{label}}</span>{{/pill}}{{#status}}<span>{{status}}</span>{{/status}}{{#due}}<span aria-hidden="true">·</span><span>{{due}}</span>{{/due}}{{#text}}<span>{{text}}</span>{{/text}}{{/kindline}}</div></div>
+<div class="bms24-comm-convactions bms-comm3-chat-controls">
+<button type="button" class="bms24-comm-btn bms24-comm-btn--ghost bms24-comm-iconbtn" data-bms-comm-search-toggle="1" aria-controls="bms-comm3-search-panel" aria-expanded="false" aria-label="{{searchlabel}}" title="{{searchlabel}}">⌕</button>
+{{#openlink}}<span class="bms24-comm-openwrap"><span aria-hidden="true">↗</span> <a class="bms24-comm-btn bms-comm2-feed-context-link" href="{{url}}">{{label}}</a></span>{{/openlink}}
+<button type="button" class="bms24-comm-btn bms24-comm-btn--ghost bms24-comm-iconbtn" data-bms-comm-context-toggle="1" aria-controls="bms-comm3-context-details" aria-expanded="false" aria-label="{{detailstitle}}" title="{{detailstitle}}"><span aria-hidden="true"><svg class="bms24-comm-svg" width="18" height="18" viewBox="0 0 24 24" fill="currentColor" focusable="false"><path d="M9 11a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7Zm0 1.6c-3 0-5.5 1.6-5.5 3.7V19h11v-2.7c0-2.1-2.5-3.7-5.5-3.7Z"/><path d="M17 11.6a3 3 0 1 0 0-6 3 3 0 0 0 0 6Zm.4 1.5c2.6.2 4.6 1.6 4.6 3.4V19h-4.3v-2.4c0-1.4-.6-2.6-1.7-3.4.4-.1.9-.1 1.4-.1Z"/></svg></span><span class="sr-only">{{detailslabel}}</span></button>
+</div>
+</header>
+{{#messagesearch}}<form method="get" id="bms-comm3-search-panel" class="bms24-comm-msgsearch bms-comm2-search bms-comm2-message-search" data-has-query="{{#hasquery}}1{{/hasquery}}{{^hasquery}}0{{/hasquery}}">
+{{#hidden}}<input type="hidden" name="{{name}}" value="{{value}}">{{/hidden}}
+<label for="bms_comm2_messagesearch" class="sr-only">{{searchlabel}}</label>
+<input type="search" id="bms_comm2_messagesearch" name="mq" value="{{value}}" class="form-control" placeholder="{{searchlabel}}">
+<input type="submit" hidden tabindex="-1">
+{{#hasquery}}<a class="bms24-comm-btn" href="{{clearurl}}">{{clearlabel}}</a>{{/hasquery}}
+</form>
+{{#count}}<div class="bms24-comm-muted bms-comm2-search-count">{{count}}</div>{{/count}}{{/messagesearch}}
+<div class="bms24-comm-feed bms-comm2-messages" id="bms-comm2-history" tabindex="0" aria-label="{{feedlabel}}">
+{{#entries}}{{#isday}}<div class="bms24-comm-day bms-comm3-day-separator">{{label}}</div>{{/isday}}{{#isnew}}<div class="bms24-comm-newline" role="separator">{{label}}</div>{{/isnew}}{{#isevent}}<div class="bms24-comm-event bms-comm2-event" role="note"><span class="bms24-comm-dot" aria-hidden="true"></span><b>{{label}}</b>{{#status}} <span class="bms24-comm-pill bms24-comm-pill--sky">{{status}}</span>{{/status}}<span>·{{#actor}} {{actor}} ·{{/actor}} {{time}}</span>{{#reason}}<span class="bms-comm2-event-reason">{{reason}}</span>{{/reason}}</div>{{/isevent}}{{#ismessage}}{{> local_kbacompany/bms24_comm_message}}{{/ismessage}}{{/entries}}
+{{#nomessages}}<p class="bms24-comm-muted bms24-comm-nomessages">{{nomessages}}</p>{{/nomessages}}
+</div>
+{{#pager}}<nav class="bms24-comm-pager bms-comm2-message-pager" aria-label="{{label}}">{{#older}}<a class="bms24-comm-btn" href="{{url}}">{{label}}</a>{{/older}}<span class="bms-comm2-page-number">{{text}}</span>{{#newer}}<a class="bms24-comm-btn" href="{{url}}">{{label}}</a>{{/newer}}</nav>{{/pager}}
+{{#readonly}}<div class="bms24-comm-compose"><p class="bms24-comm-alert bms24-comm-alert--info">{{readonly}}</p></div>{{/readonly}}
+{{#join}}<form method="post" class="bms24-comm-compose bms-comm2-compose bms-comm2-join">{{#hidden}}<input type="hidden" name="{{name}}" value="{{value}}">{{/hidden}}<p class="bms24-comm-alert bms24-comm-alert--info">{{note}}</p><button type="submit" class="bms24-comm-btn bms24-comm-btn--primary">{{label}}</button></form>{{/join}}
+{{#compose}}<form method="post" enctype="multipart/form-data" class="bms24-comm-compose bms-comm2-compose" data-bms-comm-compose="1" data-maxbytes="{{maxbytes}}" data-msg-empty="{{msgempty}}" data-msg-toolarge="{{msgtoolarge}}">
+{{#hidden}}<input type="hidden" name="{{name}}" value="{{value}}">{{/hidden}}
+{{#reply}}<div class="bms24-comm-replying bms-comm2-reply-target"><blockquote class="bms24-comm-quote bms-comm2-quote"><b>{{label}} {{author}}</b>{{excerpt}}</blockquote><a class="bms24-comm-btn bms24-comm-btn--ghost" href="{{cancelurl}}">{{cancellabel}}</a></div>{{/reply}}
+<label for="bms_comm2_body" class="sr-only">{{bodylabel}}</label>
+<textarea id="bms_comm2_body" name="body" rows="2" class="form-control" placeholder="{{placeholder}}"></textarea>
+<div class="bms24-comm-bar bms-comm3-compose-bar">
+<div class="bms24-comm-tools bms-comm3-compose-tools">
+<input type="file" name="attachment" id="bms_comm2_attachment" class="bms24-comm-fileinput bms-comm3-file-input">
+<label for="bms_comm2_attachment" class="bms24-comm-btn bms24-comm-btn--ghost bms-comm3-tool" title="{{filetitle}}"><span aria-hidden="true">📎</span> {{fileslabel}}</label>
+<span class="bms24-comm-filename bms-comm3-file-name" data-bms-comm-filename="1" aria-live="polite"></span>
+<button type="button" class="bms24-comm-fileclear bms-comm3-file-clear" data-bms-comm-file-clear="1" hidden title="{{fileremove}}" aria-label="{{fileremove}}">×</button>
+{{#mentions}}<details class="bms24-comm-mentionpicker bms-comm3-mention-picker"><summary title="{{label}}" aria-label="{{label}}">@</summary><div class="bms24-comm-popover bms-comm3-mention-picker-body"><label for="bms_comm2_mentions">{{label}}</label><select id="bms_comm2_mentions" name="mentions[]" class="form-control" multiple>{{#options}}<option value="{{value}}">{{label}}</option>{{/options}}</select><small class="bms24-comm-muted">{{help}}</small><small class="bms24-comm-muted">{{inlinehelp}}</small></div></details>{{/mentions}}
+{{#audience}}<span class="bms24-comm-audience">{{audience}}</span>{{/audience}}
+</div>
+<div class="bms24-comm-sendwrap bms-comm3-compose-actions"><button type="submit" class="bms24-comm-btn bms24-comm-btn--primary bms-comm3-send"><span aria-hidden="true">➤</span> {{sendlabel}}</button></div>
+</div>
+</form>{{/compose}}
+</main>

@@ -1,20 +1,20 @@
 {
   "scope": "exact intentional source updates; not runtime or release acceptance",
-  "base_sha": "fbf36ed",
+  "base_sha": "36cc7dd",
   "normalization": "CRLF to LF only",
-  "previous_evidence": "docs/reconcile/daily-reports-r2-source-preservation.json (#119)",
+  "previous_evidence": "docs/reconcile/communication-center-145-source-preservation.json (#145)",
   "decision": "docs/ui/ADAPTIVE_NAVIGATION.md (adaptive BMS24 navigation, owned shell)",
-  "change": "Append the adaptive navigation block (2 keys: bms24_menu_button, bms24_menu_close) after R2; no earlier key changed.",
+  "change": "Append the adaptive navigation block (2 keys: bms24_menu_button, bms24_menu_close) after the #145 block; no earlier key changed.",
   "files": [
     {
       "path": "local/kbacompany/lang/en/local_kbacompany.php",
-      "before_sha256_lf": "bc4d02332d0e930526ca7d16cd8de6a394886ab172f8a0ec6afb036be393fd69",
-      "after_sha256_lf": "334f7aa2239c3e059506df507a26007bbfc08db54b532c32887c484ac007f6d9"
+      "before_sha256_lf": "ffa8c3cc82b19e1e15fdc12f5ec901a6621a7a92abed5f2097ec6e97f71bf348",
+      "after_sha256_lf": "6d7cc238dc68e6ae15065696241d27352b902afa55ffbcb874ea2728a38129bd"
     },
     {
       "path": "local/kbacompany/lang/ru/local_kbacompany.php",
-      "before_sha256_lf": "bb64599ec5f4ed72c875d2a9f37bcf077344173e2c968530d8eff151ac4c185c",
-      "after_sha256_lf": "ace7e28e039e17581624e30bfe99e7315d2adbc94b133c15eccba5b52a586636"
+      "before_sha256_lf": "0ff5746d50f5cfc84b13d582f210e6262549973ebd7d08f4667262edaf2cb46b",
+      "after_sha256_lf": "c07330b3c72bc45f5ff8b4121b222d8244a605d0ebaf5e3ea447c78ad25a206f"
     }
   ]
 }
