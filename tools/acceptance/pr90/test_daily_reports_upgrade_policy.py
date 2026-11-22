@@ -1,21 +1,55 @@
 import copy
 import unittest
-from daily_reports_upgrade_policy import NEW, upgraded, fresh_equal, unchanged, switch_preserves
+from daily_reports_upgrade_policy import ADR0010_TABLES, NEW, upgraded, fresh_equal, unchanged, switch_preserves
+
+
+def add_tables(before, version, tables):
+    after = copy.deepcopy(before)
+    after['version'] = version
+    schema = before['schemas']['local_kbacompany_task']
+    for name in sorted(tables):
+        after['tables'].append(name)
+        after['schemas'][name] = copy.deepcopy(schema)
+        after['rows'][name] = {'count': 0, 'sha256': 'empty'}
+    return after
 
 
 def fixture():
     table='local_kbacompany_task';schema={'columns':{'id':{'type':'bigint'}},'indexes':{}}
     before={'version':2026111100,'enabled':False,'tables':[table],'schemas':{table:schema},
             'rows':{table:{'count':1,'sha256':'original'}}}
-    after=copy.deepcopy(before);after['version']=2026111601
-    for n in sorted(NEW):
-        after['tables'].append(n);after['schemas'][n]=copy.deepcopy(schema);after['rows'][n]={'count':0,'sha256':'empty'}
-    return before,after
+    return before, add_tables(before, 2026111601, NEW)
 
 
 class UpgradePolicyTest(unittest.TestCase):
     def test_additive_upgrade_and_fresh_schema(self):
         before,after=fixture();upgraded(before,after);fresh_equal(after,after);unchanged(after,after)
+
+    def test_adr0010_upgrade_from_both_supported_origins(self):
+        r0, r1r2 = fixture()
+        r1r2['rows']['local_kbacompany_dreport'] = {'count': 1, 'sha256': 'submitted'}
+        candidate = add_tables(r1r2, 2026112301, ADR0010_TABLES)
+        upgraded(r1r2, candidate)
+        fresh = add_tables(r0, 2026112301, NEW | ADR0010_TABLES)
+        upgraded(r0, fresh)
+        fresh_equal(fresh, candidate)
+        for name in sorted(ADR0010_TABLES):
+            bad = copy.deepcopy(candidate)
+            bad['rows'][name]['count'] = 1
+            with self.subTest(table=name), self.assertRaises(RuntimeError):
+                upgraded(r1r2, bad)
+        bad = copy.deepcopy(candidate)
+        bad['rows']['local_kbacompany_dreport']['sha256'] = 'lost'
+        with self.assertRaises(RuntimeError):
+            upgraded(r1r2, bad)
+        bad = copy.deepcopy(candidate)
+        bad['enabled'] = True
+        with self.assertRaises(RuntimeError):
+            upgraded(r1r2, bad)
+        missing = copy.deepcopy(r1r2)
+        missing['tables'].remove('local_kbacompany_dreport')
+        with self.assertRaises(RuntimeError):
+            upgraded(missing, candidate)
 
     def test_missing_extra_table_wrong_version_or_old_data_change_fail(self):
         for what in ['missing','extra','version','data','schema','backfill','empty']:
