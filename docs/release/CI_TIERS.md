@@ -22,7 +22,7 @@ Verified on the completed releases: PR #80 (CSS) → **FAST**; PR #81 (attachmen
 
 | Job | What | Target |
 |---|---|---|
-| Plan | targets = this PR; when `tools/ci/**` or this workflow changes, also replays PR #80 and PR #81 | seconds |
+| Plan | targets = this PR; when `tools/ci/**` or this workflow changes, adds the seeded-defect controls | seconds |
 | FAST | classifier (+ unit tests), `git diff --check`, PHP 8.1 lint, JS syntax, AMD src/build sync, EN/RU parity, CSS brace + BMS UI scoping, deterministic ZIP from `git archive` with source identity (every entry == Git blob) and SHA256 | 1–3 min |
 | STANDARD | runs for STANDARD and FULL: fresh Moodle 4.1.22 PHPUnit site (MariaDB, composer vendor cached, **no historical upgrades**), focused PHPUnit + security gates (`pr48_tenant_isolation`, `membership_revocation`, `rc30_integrated_access`, `task_membership_regression`, `privacy_provider`) | 5–10 min |
 | BROWSER | runs for STANDARD and FULL in parallel with STANDARD: fresh Moodle 4.1.22 (MariaDB) + candidate plugins, PHP built-in server, synthetic companies A/B, Chromium with outbound requests blocked. 21 checks: task-tab keyboard focus; attachments in the compact task discussion and Communication Center (text, text+file, file only, double submit, invalid sesskey, size limit at `upload_max_filesize=64K`, no orphan files); protected download for participant / other company / anonymous / revoked / reopened | ~3.5 min |
@@ -57,8 +57,8 @@ NOT APPLICABLE only by the rules in the table. Small diff size never lowers the 
   must be `success` for every profile (for FAST they finish quickly with an explicit NOT APPLICABLE step). A job that uploaded
   a PASS report and then failed, was cancelled, skipped or is missing blocks the merge. If the API cannot be read: FAIL.
 - **Job roles.** `this-pr` = the candidate (required). `negative-*` (planted defects, only planned when the tier machinery
-  changes) = required when planned: the job succeeds only if the defect was detected. `replay-*` = information only; reported
-  under `information`, never part of the verdict.
+  changes) = required when planned: the job succeeds only if the defect was detected. The historical #80 and #81 replays
+  were pilot evidence and are no longer scheduled in PR CI.
 - **Identity.** Every FAST/STANDARD/BROWSER artifact carries `identity.json` (`tools/ci/stamp_identity.py`): tier, target,
   head, base, profile, engine, run id/attempt, job and SHA256 of the report bytes. The gate compares it with the PR event
   head/base and this run id, the classification head/base with the event, and re-hashes the downloaded report.
