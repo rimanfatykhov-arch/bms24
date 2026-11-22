@@ -18,7 +18,18 @@ $uuid = required_param('uuid', PARAM_RAW_TRIMMED);
 $actor = (int)$USER->id;
 company_context_service::context($uuid, $actor);
 
-$tab = optional_param('tab', 'inbox', PARAM_ALPHA);
+// #145: a link without a section opens the remembered section or the one with content (resolved below).
+$tabparam = optional_param('tab', '', PARAM_ALPHA);
+$tab = $tabparam;
+$filter = optional_param('filter', 'all', PARAM_ALPHA);
+if (!in_array($filter, ['all', 'unread', 'mentions'], true)) { $filter = 'all'; }
+// Preserve legacy meeting URLs and their selected canonical thread.
+if ($tab === 'meetings') { $tab = 'discussions'; }
+if (in_array($tab, ['inbox', 'unread', 'mentions'], true)) {
+    $filter = $tab === 'mentions' ? 'mentions' : 'unread';
+    $tab = 'messages';
+}
+if ($tab === 'all') { $tab = 'messages'; }
 $selected = optional_param('thread', '', PARAM_RAW_TRIMMED);
 $convertmessage = optional_param('convert', '', PARAM_RAW_TRIMMED);
 $q = optional_param('q', '', PARAM_RAW_TRIMMED);
@@ -44,7 +55,7 @@ if ($tab === 'tasks' && $method !== 'POST' && $action === '') {
     redirect(task_ui_service::url($uuid, $params));
 }
 $allowedtabs = ['all', 'inbox', 'unread', 'messages', 'discussions', 'mentions', 'meetings', 'notifications'];
-if (!in_array($tab, $allowedtabs, true)) { $tab = 'inbox'; }
+if ($tab !== '' && !in_array($tab, $allowedtabs, true)) { $tab = 'messages'; }
 
 $error = '';
 if ($action !== '') {
@@ -110,6 +121,16 @@ if ($action !== '') {
         } else if ($action === 'readnotification') {
             communication_service::mark_notification_read($uuid, $actor,
                 required_param('notification', PARAM_RAW_TRIMMED));
+            $tab = 'notifications';
+        } else if ($action === 'readallnotifications') {
+            // #145: "Mark all as read" marks only the actor's own notifications shown by the canonical projection;
+            // each one goes through the same service call as the single action.
+            foreach (communication_service::context($uuid, $actor, '', 'all')['notifications'] as $notification) {
+                if (empty($notification['is_read'])) {
+                    communication_service::mark_notification_read($uuid, $actor, (string)$notification['uuid']);
+                }
+            }
+            $tab = 'notifications';
         } else if ($action === 'createdecision') {
             $selected = required_param('thread', PARAM_RAW_TRIMMED);
             communication_service::create_decision_from_message($uuid, $actor,
@@ -135,7 +156,7 @@ if ($action !== '') {
         } else {
             throw new moodle_exception('communication_invalid', 'local_kbacompany');
         }
-        redirect(ui::url($uuid, ['tab' => $tab, 'thread' => $selected]),
+        redirect(ui::url($uuid, ['tab' => $tab, 'thread' => $selected, 'filter' => $filter]),
             get_string('communication_saved', 'local_kbacompany'));
     } catch (moodle_exception $e) {
         if ($e->module !== 'local_kbacompany') { throw $e; }
@@ -168,16 +189,26 @@ if ($objectkind !== '' || $objectuuid !== '') {
     }
 }
 
+// #145: a selected thread always opens in its own section; without a section and thread, use the default rule.
+if ($selected !== '' && $tab !== 'notifications') {
+    $threadtype = $DB->get_field('local_kbacompany_commthread', 'threadtype', ['companyuuid' => $uuid, 'uuid' => $selected]);
+    if ($threadtype !== false) { $tab = communication_center_service::section_of((string)$threadtype); }
+}
+if ($tab === '') {
+    // No stored preference (no new personal data): open the first section that has content.
+    $tab = communication_center_service::default_tab(communication_center_service::section_counts($uuid, $actor));
+}
+if ($tab === 'notifications') { $selected = ''; $convertmessage = ''; }
 try {
     $data = communication_center_service::workspace_context($uuid, $actor, $tab, $selected, $q,
-        $mq, optional_param('mpage', 0, PARAM_INT));
+        $mq, optional_param('mpage', 0, PARAM_INT), $filter);
 } catch (moodle_exception $e) {
     if ($e->module !== 'local_kbacompany') { throw $e; }
     // Do not leak whether a thread/object exists after access was revoked.
     $selected = '';
     $convertmessage = '';
     $error = get_string('communication_contextunavailable', 'local_kbacompany');
-    $data = communication_center_service::workspace_context($uuid, $actor, $tab, '', $q);
+    $data = communication_center_service::workspace_context($uuid, $actor, $tab, '', $q, '', 0, $filter);
 }
 
 $data['message_search'] = $mq;

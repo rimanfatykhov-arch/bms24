@@ -19,6 +19,8 @@ jobs:
       - name: Verify baseline policy and task viewport fallback
         run: |
           python tools/acceptance/pr90/test_rehearsal_policy.py
+          python tools/acceptance/pr90/test_daily_reports_upgrade_policy.py
+          python -O tools/acceptance/pr90/test_daily_reports_upgrade_policy.py
           node tools/tests/test_task_viewport_fallback.js
       - name: Build immutable install artifact once
         env:

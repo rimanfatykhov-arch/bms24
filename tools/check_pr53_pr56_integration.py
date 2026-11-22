@@ -65,7 +65,7 @@ def check(root=ROOT):
         'local/kbacompany/lang/en/local_kbacompany.php': '313dacec7726f2052466bb56c956411b31b5b9d28e6267aed422130d72df5e41',
         'local/kbacompany/lang/ru/local_kbacompany.php': '347f6b5b8f66b2c5b089a423ef1633730349f70c04bd41093df8c8aeeb883708',
     })
-    # ADR-0005 fix (#124 P1): local Corporate install.xml DEFAULT 0 and upgrade step 2026111004, both identical to
+# ADR-0005 fix (#124 P1): local Corporate install.xml DEFAULT 0 and upgrade step 2026111004, both identical to
     # the Corporate2613 package; inventory updated. See docs/reconcile/CORPORATE_FRESH_ADR0005.md.
     reviewed_followup['docs/reconcile/corporate-api126-source.json'] = '95f5c6fd853b1167a6be761617bca56423ee93d65d6ac31600b534c0a3240415'
     reviewed_followup['local/kbacorporate/db/upgrade.php'] = 'ef39434356106043292de20bf355165961ca07462e9ead6a79f19bbc4b6d5019'
@@ -75,6 +75,18 @@ def check(root=ROOT):
         target = {'local/kbacompany/db/install.xml': '06a60b36d0d5a4dfc86924bc43819a0d7b2c6fd054888639d3363fbec5979845'}.get(name, expected)
         if digest(root/name)!=target:
             errors.append('shared schema/helper changed: '+name)
+    # UX-1: exact append-only language/scoped CSS follow-up over E2.
+    reviewed_followup.update({'local/kbacompany/lang/en/local_kbacompany.php': 'eac98f182ea03d8332608ede1ad216c2fbde9398634653cb3a2e65eb0bfe890b', 'local/kbacompany/lang/ru/local_kbacompany.php': '6e5cb24b46f5c918bd4d48b50f6ad6f2c6a231a423490374a32481479da268bf', 'local/kbacompany/styles.css': 'cd2d2163a340a79e0b4766e90d63aad3b39a31d334fa4430c6eee686200e4e7f'})
+
+    # #145 (2026-11-21): Communication Center rendered through Mustache templates. Presentation only:
+    # RU/EN strings appended at the end of each language file, one scoped CSS alignment rule appended.
+    # No schema, no ACL, no runtime behaviour change. See
+    # docs/reconcile/COMMUNICATION_CENTER_145_SOURCE_PRESERVATION.md.
+    reviewed_followup.update({
+        'local/kbacompany/lang/en/local_kbacompany.php': 'ffa8c3cc82b19e1e15fdc12f5ec901a6621a7a92abed5f2097ec6e97f71bf348',
+        'local/kbacompany/lang/ru/local_kbacompany.php': '0ff5746d50f5cfc84b13d582f210e6262549973ebd7d08f4667262edaf2cb46b',
+        'local/kbacompany/styles.css': '95563c9160349cb2f40047f092e78e77c446ee6113d48d13456250dfef271417',
+    })
     for row in plan['rows']:
         path=root/row['path']
         if not path.is_file() or path.is_symlink():

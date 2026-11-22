@@ -4,6 +4,7 @@
 //                                 the given synthetic user; prints {plan, week}; reuses it on repeat calls
 //   snapshot <company> <plan>  -> JSON: business fields of the plan (read-only), to prove a message never changes it
 //   thread <company> <plan>    -> JSON: canonical plan discussion thread uuid (read-only)
+//   strings                    -> JSON: exact refusal texts (plan/company unavailable, thread permission, sesskey)
 // Never used outside BMS_CI_BROWSER.
 define('CLI_SCRIPT', true);
 if (getenv('BMS_CI_BROWSER') !== '1') { fwrite(STDERR, "CI browser fixture only\n"); exit(2); }
@@ -49,6 +50,14 @@ if ($phase === 'plan') {
     $rows = $DB->get_records('local_kbacompany_commthread', ['companyuuid' => $argv[3], 'threadtype' => 'object',
         'contextkind' => 'battleplan', 'contextuuid' => $argv[4], 'status' => 'active'], 'id ASC', 'id, uuid', 0, 1);
     $out['thread'] = $rows ? (string)reset($rows)->uuid : '';
+} else if ($phase === 'strings') {
+    // Exact refusal texts in the site language of the disposable Moodle: the contract confirms WHY a request was
+    // refused, not only that it was.
+    $out['strings'] = ['plan_unavailable' => get_string('battleplan_reference', 'local_kbacompany'),
+        'company_unavailable' => get_string('companynotavailable', 'local_kbacompany'),
+        // The Center renders the non-disclosing object error after an inaccessible-object join.
+        'thread_permission' => get_string('communication_contextunavailable', 'local_kbacompany'),
+        'invalid_sesskey' => get_string('invalidsesskey', 'error')];
 } else {
     fwrite(STDERR, "unknown phase\n"); exit(2);
 }

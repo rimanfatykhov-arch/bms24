@@ -10,6 +10,9 @@ tasks=read('classes/local/task_service.php')
 plans=read('classes/local/battle_plan_service.php')
 runner=read('cli/build_release.py')
 commui=read('classes/local/communication_center_ui_service.php')
+# #145: navigation moved into mustache templates, where <nav> is plain supported HTML.
+navtemplates=sum(1 for f in (ROOT/'templates').glob('bms24_comm*.mustache')
+                  if '<nav' in f.read_text(encoding='utf-8'))
 checks={
  'coordination delegates company ACL to canonical overview': 'battle_plan_management_overview_service::context(' in coord,
  'coordination delegates readiness to canonical service': 'battle_plan_week_readiness_service::context(' in coord,
@@ -30,7 +33,7 @@ checks={
  'Battle Plan canonical create service retained': 'function create_plan(' in plans and 'ensure_plan_record(' in plans,
  'communication fallback uses Moodle string manager': "get_string_manager()->string_exists($key, 'local_kbacompany')" in commui,
  'communication fallback never calls undefined global string_exists': not bool(re.search(r'(?<!->)\bstring_exists\(', commui)),
- 'communication navigation uses Moodle-supported html_writer tag': not bool(re.search(r'\\?html_writer::nav\s*\(', commui)) and commui.count("html_writer::tag('nav'") >= 2,
+ 'communication navigation uses Moodle-supported html_writer tag': not bool(re.search(r'\\?html_writer::nav\s*\(', commui)) and (commui.count("html_writer::tag('nav'") >= 2 or navtemplates >= 2),
  'release runner validates RU/EN parity': 'validate_languages()' in runner,
  'release runner validates upgrade checkpoint': 'validate_upgrade(build)' in runner,
  'release runner validates XML': 'validate_xml()' in runner,

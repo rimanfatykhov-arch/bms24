@@ -1,0 +1,24 @@
+{{!
+    Task from a message (#145): the canonical createtask form, unchanged fields and sesskey. Render-only.
+}}
+<section class="bms24-comm-taskform bms-comm2-task-create"><h3>{{title}}</h3>
+<form method="post" class="bms-comm2-task-form">
+{{#hidden}}<input type="hidden" name="{{name}}" value="{{value}}">{{/hidden}}
+{{#labels}}<label for="bms_comm2_task_title">{{title}}</label>{{/labels}}
+<input type="text" name="title" id="bms_comm2_task_title" value="{{tasktitle}}" class="form-control" required>
+{{#labels}}<label for="bms_comm2_task_product">{{product}}</label>{{/labels}}
+<textarea name="product" id="bms_comm2_task_product" rows="2" class="form-control" required></textarea>
+{{#labels}}<label for="bms_comm2_task_description">{{description}}</label>{{/labels}}
+<textarea name="description" id="bms_comm2_task_description" rows="3" class="form-control">{{description}}</textarea>
+{{#labels}}<label for="bms_comm2_task_assignee">{{assignee}}</label>{{/labels}}
+<select name="assigneeid" id="bms_comm2_task_assignee" class="form-control">{{#assignees}}<option value="{{value}}"{{#selected}} selected{{/selected}}>{{label}}</option>{{/assignees}}</select>
+{{#labels}}<label for="bms_comm2_task_reviewer">{{reviewer}}</label>{{/labels}}
+<select name="reviewerid" id="bms_comm2_task_reviewer" class="form-control">{{#reviewers}}<option value="{{value}}"{{#selected}} selected{{/selected}}>{{label}}</option>{{/reviewers}}</select>
+{{#labels}}<label for="bms_comm2_task_stream">{{stream}}</label>{{/labels}}
+<select name="stream" id="bms_comm2_task_stream" class="form-control">{{#streams}}<option value="{{value}}"{{#selected}} selected{{/selected}}>{{label}}</option>{{/streams}}</select>
+{{#labels}}<label for="bms_comm2_task_priority">{{priority}}</label>{{/labels}}
+<select name="priority" id="bms_comm2_task_priority" class="form-control">{{#priorities}}<option value="{{value}}"{{#selected}} selected{{/selected}}>{{label}}</option>{{/priorities}}</select>
+{{#labels}}<label for="bms_comm2_task_due">{{due}}</label>{{/labels}}
+<input type="date" name="duedate" id="bms_comm2_task_due" class="form-control">
+<button type="submit" class="bms24-comm-btn bms24-comm-btn--primary">{{submit}}</button>
+</form></section>
