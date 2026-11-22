@@ -21,6 +21,16 @@ final class daily_report_review_service {
         return permission_service::can_manage_people($companyuuid, $actor);
     }
 
+    /**
+     * Owner decision 21.11.2026: a manager sees the reports of the whole company, read-only unless they are the
+     * stored reviewer of the version. "Manager" is the company member flag, set when the person leads a unit.
+     */
+    public static function is_manager(string $companyuuid, int $actor): bool {
+        global $DB;
+        return $actor > 0 && $DB->record_exists('local_kbacompany_member',
+            ['companyuuid' => $companyuuid, 'userid' => $actor, 'active' => 1, 'ismanager' => 1]);
+    }
+
     private static function report(string $companyuuid, string $reportuuid): \stdClass {
         global $DB;
         $report = $DB->get_record('local_kbacompany_dreport', ['companyuuid' => $companyuuid, 'uuid' => $reportuuid]);
@@ -106,7 +116,11 @@ final class daily_report_review_service {
         $companyuuid = self::member($companyuuid, $actor);
         $report = self::report($companyuuid, $reportuuid);
         $admin = self::is_admin($companyuuid, $actor);
-        $versions = (int)$report->userid === $actor ? [] : self::readable_versions($companyuuid, $report, $actor, $admin);
+        $canreadall = $admin || self::is_manager($companyuuid, $actor);
+        // Owner decision 21.11.2026: a company administrator and a manager read every report of the
+        // company read-only, including their own. An ordinary author still uses the personal view.
+        $versions = ((int)$report->userid === $actor && !$canreadall)
+            ? [] : self::readable_versions($companyuuid, $report, $actor, $canreadall);
         if (!$versions) {
             throw new \moodle_exception('dailyreports_notavailable', 'local_kbacompany');
         }
@@ -122,25 +136,31 @@ final class daily_report_review_service {
             $reviews[$row->versionuuid][] = $row;
         }
         // Decisions apply only to the report's current version, and only when it is readable here as this reviewer's.
+        // Decisions apply only to the report's current version, and only when it is readable here as this reviewer's.
+        // A self_top version is decided by its author: at the top of the reporting line nobody else exists.
         $current = null;
         foreach ($versions as $version) {
             if ($version->uuid === $report->currentversionuuid) { $current = $version; }
         }
-        $isreviewer = $current && (int)$current->reviewerid === $actor && (int)$report->userid !== $actor;
+        $selfreview = $current && (string)$current->reviewersource === 'self_top';
+        $isreviewer = $current && (((int)$current->reviewerid === $actor && (int)$report->userid !== $actor) ||
+            ($selfreview && (int)$current->reviewerid === $actor && (int)$report->userid === $actor));
         $last = $current ? self::last_decision($companyuuid, $current->uuid) : null;
         return ['report' => $report, 'versions' => $versions, 'links' => $links, 'reviews' => $reviews,
             'author' => \core_user::get_user((int)$report->userid), 'admin' => $admin,
+            'manager' => $canreadall && !$admin, 'selfreview' => (bool)$selfreview,
             'can_decide' => $isreviewer && $report->status === 'submitted',
             'can_change' => $isreviewer && $report->status === 'accepted' && $last &&
                 (int)$last->reviewerid === $actor,
             'can_reassign' => $admin && $report->status === 'submitted'];
     }
 
-    /** The reviewer tab is shown to stored reviewers and to company administrators only. */
+    /** The reviewer tab is shown to stored reviewers, to company administrators and to managers. */
     public static function has_review_access(string $companyuuid, int $actor): bool {
         global $DB;
         $companyuuid = self::member($companyuuid, $actor);
-        return self::is_admin($companyuuid, $actor) || $DB->record_exists_select('local_kbacompany_dreportver',
+        return self::is_admin($companyuuid, $actor) || self::is_manager($companyuuid, $actor) ||
+            $DB->record_exists_select('local_kbacompany_dreportver',
             'companyuuid = :c AND reviewerid = :u AND state <> :draft', ['c' => $companyuuid, 'u' => $actor, 'draft' => 'draft']);
     }
 
@@ -231,7 +251,10 @@ final class daily_report_review_service {
             }
             $report = self::report($companyuuid, $reportuuid);
             $version = self::version($companyuuid, $report, $versionuuid);
-            if ((int)$report->userid === $actor || (int)$version->reviewerid !== $actor) {
+            // Owner decision 21.11.2026: a self_top version is decided by its author, because
+            // the organisation chart has nobody above them. Every other self decision stays refused.
+            if (((int)$report->userid === $actor && (string)$version->reviewersource !== 'self_top') ||
+                    (int)$version->reviewerid !== $actor) {
                 throw new \moodle_exception('dailyreports_notreviewer', 'local_kbacompany');
             }
             if ($report->currentversionuuid !== $version->uuid || $version->state !== 'submitted') {
