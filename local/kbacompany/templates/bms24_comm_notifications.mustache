@@ -6,7 +6,6 @@
 <div class="bms24-comm-ntools">
 <h2 class="bms24-comm-ntitle">{{title}}{{#unread}} <span class="bms24-comm-badge bms24-comm-badge--blue">{{unread}}</span>{{/unread}}</h2>
 {{#onlyunread}}<a class="bms24-comm-chip{{#active}} is-active{{/active}}" href="{{url}}"{{#active}} aria-current="true"{{/active}}>{{label}}</a>{{/onlyunread}}
-{{#markall}}<form method="post" class="bms24-comm-inline">{{#hidden}}<input type="hidden" name="{{name}}" value="{{value}}">{{/hidden}}<button type="submit" class="bms24-comm-btn">{{label}}</button></form>{{/markall}}
 {{#settings}}<a class="bms24-comm-btn bms24-comm-btn--ghost" href="{{url}}">{{label}}</a>{{/settings}}
 </div>
 <main class="bms24-comm-nlist bms-comm2-panel bms-comm2-feed" aria-label="{{feedlabel}}">

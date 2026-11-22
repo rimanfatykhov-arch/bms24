@@ -552,8 +552,8 @@ class communication_center_ui_service {
             'title' => self::tr('communicationcenter_tab_notifications'), 'unread' => $unread ?: null,
             'onlyunread' => ['active' => $onlyunread, 'label' => self::tr('communicationux2_only_unread'),
                 'url' => self::url($company, ['tab' => 'notifications', 'filter' => $onlyunread ? 'all' : 'unread'])->out(false)],
-            'markall' => $unread > 0 ? ['hidden' => self::post_base($company, 'readallnotifications'),
-                'label' => self::tr('communicationux2_mark_all')] : null,
+            // mark-all-read is withheld from this candidate: the prototype only proposed it and the
+            // owner has not approved a bulk action. The POST endpoint is left intact for a later decision.
             'settings' => ['url' => (new \moodle_url('/local/kbacompany/calendar_notifications.php', ['uuid' => $company]))->out(false),
                 'label' => self::tr('communicationux2_notification_settings')],
             'groups' => $out,
