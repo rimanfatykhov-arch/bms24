@@ -6,16 +6,21 @@ defined('MOODLE_INTERNAL') || die();
 /**
  * ADR-0009 R2: review of saved daily reports.
  *
- * Only the reviewer stored on the current version decides, never the author (no self review). A decision is bound
+ * Only the reviewer stored on the current version decides. The author decides only a version stored with
+ * reviewersource 'self_top' (ADR-0010 D3: nobody above the author in the organisation chart). A decision is bound
  * to one version: accept with a rating (positive / negative / without rating, owner decision В3) or return with a
  * reason. Rating changes and revoked acceptance are new append-only rows that supersede the previous one. A company
- * administrator (people management in this company) reads everything read-only and may reassign a pending report,
- * which is journaled. Accepting a report never accepts or closes tasks. Company scope is applied in SQL.
+ * administrator (people management in this company) and a manager (ADR-0010 D4) read every report of the company
+ * read-only, their own included; a copy recipient reads the versions copied to them (D5). Only an administrator
+ * reassigns a pending report, which is journaled. Accepting a report never accepts or closes tasks. Company scope is
+ * applied in SQL.
  */
 final class daily_report_review_service {
     public const RATINGS = ['positive', 'negative', 'none'];
     public const PAGE_SIZE = 25;
     public const QUEUES = ['pending', 'returned', 'accepted'];
+    /** Read-only lists: copies addressed to me; every report of the company (administrators and managers). */
+    public const READ_QUEUES = ['copies', 'company'];
 
     public static function is_admin(string $companyuuid, int $actor): bool {
         return permission_service::can_manage_people($companyuuid, $actor);
@@ -47,25 +52,46 @@ final class daily_report_review_service {
         return $companyuuid;
     }
 
+    /** ADR-0010 D4: administrators and managers read every report of the company (read-only unless reviewer). */
+    public static function can_read_all(string $companyuuid, int $actor): bool {
+        return self::is_admin($companyuuid, $actor) || daily_report_reviewer_service::is_manager($companyuuid, $actor);
+    }
+
     /**
-     * Submitted versions this actor may read (В6, accepted): a company administrator reads every non-draft version
-     * read-only; a reviewer reads only the versions on which they are the stored reviewer (snapshot on the version).
-     * A new reviewer therefore sees history from their assignment on, and an earlier reviewer never receives later
-     * versions assigned to someone else. Filtered in SQL, newest first.
+     * Submitted versions this actor may read (В6, ADR-0010 D4/D5): an administrator or a manager reads every non-draft
+     * version read-only; a reviewer reads the versions on which they are the stored reviewer (snapshot on the version);
+     * a copy recipient reads the versions copied to them. A new reviewer therefore sees history from their assignment on,
+     * and an earlier reviewer never receives later versions assigned to someone else. Filtered in SQL, newest first.
      */
-    private static function readable_versions(string $companyuuid, \stdClass $report, int $actor, bool $admin): array {
+    private static function readable_versions(string $companyuuid, \stdClass $report, int $actor, bool $readall): array {
         global $DB;
         $where = 'companyuuid = :c AND reportuuid = :r AND state <> :draft';
         $params = ['c' => $companyuuid, 'r' => $report->uuid, 'draft' => 'draft'];
-        if (!$admin) {
-            $where .= ' AND reviewerid = :actor';
+        if (!$readall) {
+            $where .= ' AND (reviewerid = :actor OR EXISTS (SELECT 1 FROM {local_kbacompany_dreportcc} cc
+                WHERE cc.companyuuid = {local_kbacompany_dreportver}.companyuuid
+                  AND cc.versionuuid = {local_kbacompany_dreportver}.uuid AND cc.userid = :ccuser))';
             $params['actor'] = $actor;
+            $params['ccuser'] = $actor;
         }
         return $actor > 0 ? array_values($DB->get_records_select('local_kbacompany_dreportver', $where, $params,
             'versionno DESC')) : [];
     }
 
-    /** Reviewer queue (own versions) or, for an administrator, the "without reviewer" list. */
+    /** Queues this actor may open: reviewer queues, copies, the company list (D4) and "without reviewer" (admin). */
+    public static function queues(string $companyuuid, int $actor): array {
+        $companyuuid = self::member($companyuuid, $actor);
+        $out = array_merge(self::QUEUES, ['copies']);
+        if (self::can_read_all($companyuuid, $actor)) {
+            $out[] = 'company';
+        }
+        if (self::is_admin($companyuuid, $actor)) {
+            $out[] = 'unassigned';
+        }
+        return $out;
+    }
+
+    /** Reviewer queue (own versions), copies, the company list or, for an administrator, "without reviewer". */
     public static function queue(string $companyuuid, int $actor, string $queue, int $page = 0): array {
         global $DB;
         $companyuuid = self::member($companyuuid, $actor);
@@ -78,6 +104,15 @@ final class daily_report_review_service {
                 throw new \moodle_exception('dailyreports_notavailable', 'local_kbacompany');
             }
             $where = "r.status = 'submitted' AND v.reviewerid = 0";
+        } else if ($queue === 'company') {
+            if (!self::can_read_all($companyuuid, $actor)) {
+                throw new \moodle_exception('dailyreports_notavailable', 'local_kbacompany');
+            }
+            $where = '1 = 1';
+        } else if ($queue === 'copies') {
+            $where = 'EXISTS (SELECT 1 FROM {local_kbacompany_dreportcc} cc WHERE cc.companyuuid = v.companyuuid
+                AND cc.versionuuid = v.uuid AND cc.userid = :ccuser)';
+            $params['ccuser'] = $actor;
         } else if (in_array($queue, self::QUEUES, true)) {
             $status = ['pending' => "r.status = 'submitted'", 'returned' => "(r.status = 'returned' OR
                 (r.status = 'draft' AND r.currentversionuuid <> ''))", 'accepted' => "r.status = 'accepted'"][$queue];
@@ -91,30 +126,40 @@ final class daily_report_review_service {
             WHERE r.companyuuid = :c AND " . $where . ' AND ' .
             membership_access_service::canonical_sql('r.companyuuid', $actor);
         $total = $DB->count_records_sql("SELECT COUNT(r.id) {$from}", $params);
+        $order = $queue === 'company' || $queue === 'copies' ? 'r.reportday DESC, r.id DESC' : 'v.submittedat ASC, r.id ASC';
         $rows = $DB->get_records_sql("SELECT r.id, r.uuid, r.userid, r.reportday, r.status, v.uuid AS versionuuid,
-                v.versionno, v.submittedat, v.reviewerid {$from} ORDER BY v.submittedat ASC, r.id ASC",
+                v.versionno, v.submittedat, v.reviewerid, v.reviewersource {$from} ORDER BY {$order}",
             $params, $page * self::PAGE_SIZE, self::PAGE_SIZE);
         return ['total' => (int)$total, 'page' => $page, 'queue' => $queue, 'items' => array_values($rows)];
     }
 
     /**
-     * Report card limited to the versions this actor may read (readable_versions), with links and decisions of those
-     * versions only. Administrators read everything read-only; authors use their own view (no self review).
+     * Report card limited to the versions this actor may read (readable_versions), with links, copies and decisions of
+     * those versions only. Administrators and managers read everything read-only, their own reports included (fixes the
+     * administrator-author dead end of "without reviewer"); an ordinary author opens the card only for a self review.
      */
     public static function card(string $companyuuid, int $actor, string $reportuuid): array {
         global $DB;
         $companyuuid = self::member($companyuuid, $actor);
         $report = self::report($companyuuid, $reportuuid);
         $admin = self::is_admin($companyuuid, $actor);
-        $versions = (int)$report->userid === $actor ? [] : self::readable_versions($companyuuid, $report, $actor, $admin);
+        $readall = $admin || daily_report_reviewer_service::is_manager($companyuuid, $actor);
+        $versions = self::readable_versions($companyuuid, $report, $actor, $readall);
+        if ((int)$report->userid === $actor && !$readall) {
+            // An ordinary author reads own report in the personal view; the card only serves a self review at the top.
+            $versions = array_values(array_filter($versions, static function($version): bool {
+                return (string)$version->reviewersource === 'self_top';
+            }));
+        }
         if (!$versions) {
             throw new \moodle_exception('dailyreports_notavailable', 'local_kbacompany');
         }
-        $links = []; $reviews = [];
+        $links = []; $reviews = []; $copies = [];
         $uuids = array_map(static function($version) { return (string)$version->uuid; }, $versions);
         foreach ($versions as $version) {
             $links[$version->uuid] = array_values($DB->get_records('local_kbacompany_dreportlink',
                 ['companyuuid' => $companyuuid, 'versionuuid' => $version->uuid], 'id ASC'));
+            $copies[$version->uuid] = daily_report_reviewer_service::copies($companyuuid, $version->uuid);
         }
         [$in, $inparams] = $DB->get_in_or_equal($uuids, SQL_PARAMS_NAMED, 'rv');
         foreach ($DB->get_records_select('local_kbacompany_dreportrev', "companyuuid = :c AND reportuuid = :r AND versionuuid {$in}",
@@ -126,22 +171,42 @@ final class daily_report_review_service {
         foreach ($versions as $version) {
             if ($version->uuid === $report->currentversionuuid) { $current = $version; }
         }
-        $isreviewer = $current && (int)$current->reviewerid === $actor && (int)$report->userid !== $actor;
+        $isreviewer = $current && self::may_decide($report, $current, $actor);
         $last = $current ? self::last_decision($companyuuid, $current->uuid) : null;
+        $copied = false;
+        foreach ($copies as $rows) {
+            foreach ($rows as $copy) {
+                $copied = $copied || (int)$copy->userid === $actor;
+            }
+        }
         return ['report' => $report, 'versions' => $versions, 'links' => $links, 'reviews' => $reviews,
-            'author' => \core_user::get_user((int)$report->userid), 'admin' => $admin,
+            'copies' => $copies, 'author' => \core_user::get_user((int)$report->userid), 'admin' => $admin,
+            'manager' => $readall && !$admin, 'copy' => $copied && !$isreviewer,
+            'selfreview' => $current && (string)$current->reviewersource === 'self_top',
             'can_decide' => $isreviewer && $report->status === 'submitted',
             'can_change' => $isreviewer && $report->status === 'accepted' && $last &&
                 (int)$last->reviewerid === $actor,
             'can_reassign' => $admin && $report->status === 'submitted'];
     }
 
-    /** The reviewer tab is shown to stored reviewers and to company administrators only. */
+    /**
+     * The stored reviewer decides; the author only on a 'self_top' version (ADR-0010 D3). Everyone else, managers and
+     * copy recipients included, reads only.
+     */
+    private static function may_decide(\stdClass $report, \stdClass $version, int $actor): bool {
+        if ($actor <= 0 || (int)$version->reviewerid !== $actor) {
+            return false;
+        }
+        return (int)$report->userid !== $actor || (string)$version->reviewersource === 'self_top';
+    }
+
+    /** The reviewer tab: administrators, managers (D4), stored reviewers (self review included) and copy recipients. */
     public static function has_review_access(string $companyuuid, int $actor): bool {
         global $DB;
         $companyuuid = self::member($companyuuid, $actor);
-        return self::is_admin($companyuuid, $actor) || $DB->record_exists_select('local_kbacompany_dreportver',
-            'companyuuid = :c AND reviewerid = :u AND state <> :draft', ['c' => $companyuuid, 'u' => $actor, 'draft' => 'draft']);
+        return self::can_read_all($companyuuid, $actor) || $DB->record_exists_select('local_kbacompany_dreportver',
+            'companyuuid = :c AND reviewerid = :u AND state <> :draft', ['c' => $companyuuid, 'u' => $actor, 'draft' => 'draft'])
+            || $DB->record_exists('local_kbacompany_dreportcc', ['companyuuid' => $companyuuid, 'userid' => $actor]);
     }
 
     /** Eligible reviewers an administrator may pick: other active, non-revoked members of this company. */
@@ -231,9 +296,10 @@ final class daily_report_review_service {
             }
             $report = self::report($companyuuid, $reportuuid);
             $version = self::version($companyuuid, $report, $versionuuid);
-            if ((int)$report->userid === $actor || (int)$version->reviewerid !== $actor) {
+            if (!self::may_decide($report, $version, $actor)) {
                 throw new \moodle_exception('dailyreports_notreviewer', 'local_kbacompany');
             }
+            $selfreview = (int)$report->userid === $actor;
             if ($report->currentversionuuid !== $version->uuid || $version->state !== 'submitted') {
                 throw new \moodle_exception('dailyreports_staleversion', 'local_kbacompany');
             }
@@ -260,7 +326,7 @@ final class daily_report_review_service {
                 $report->timemodified = time();
                 $DB->update_record('local_kbacompany_dreport', $report);
                 self::log($companyuuid, $report->uuid, $version->uuid, $actor, $supersedes === '' ? 'decided' : 'decision_changed',
-                    ['decision' => $decision, 'rating' => $rating, 'supersedes' => $supersedes]);
+                    ['decision' => $decision, 'rating' => $rating, 'supersedes' => $supersedes, 'selfreview' => $selfreview]);
                 $tx->allow_commit();
             } catch (\Throwable $e) {
                 $tx->rollback($e);
@@ -268,7 +334,8 @@ final class daily_report_review_service {
         } finally {
             $lock->release();
         }
-        self::notify($companyuuid, (int)$report->userid, 'dailyreport_decision', [$row->uuid],
+        // A self review is the author's own decision: nobody to notify.
+        self::notify($companyuuid, $selfreview ? 0 : (int)$report->userid, 'dailyreport_decision', [$row->uuid],
             get_string('dailyreports_notify_decision_' . $decision, 'local_kbacompany', $report->reportday),
             daily_report_ui_service::url($companyuuid, ['day' => $report->reportday]));
         return ['uuid' => $row->uuid, 'replayed' => false];
@@ -299,7 +366,7 @@ final class daily_report_review_service {
                 $DB->update_record('local_kbacompany_dreportver', (object)['id' => $version->id,
                     'reviewerid' => $reviewerid, 'reviewersource' => 'admin', 'timemodified' => time()]);
                 self::log($companyuuid, $report->uuid, $version->uuid, $actor, 'reviewer_reassigned',
-                    ['from' => $old, 'to' => $reviewerid]);
+                    ['from' => $old, 'fromsource' => (string)$version->reviewersource, 'to' => $reviewerid]);
                 $tx->allow_commit();
             } catch (\Throwable $e) {
                 $tx->rollback($e);

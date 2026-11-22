@@ -3726,5 +3726,36 @@
         <KEYS><KEY NAME="primary" TYPE="primary" FIELDS="id" /></KEYS>
         <INDEXES><INDEX NAME="company_report_ix" UNIQUE="false" FIELDS="companyuuid,reportuuid" /></INDEXES>
       </TABLE>
+        <TABLE NAME="local_kbacompany_dreportcc" COMMENT="ADR-0010 copy recipients of a daily report version, frozen at submission">
+        <FIELDS>
+          <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true" />
+          <FIELD NAME="companyuuid" TYPE="char" LENGTH="36" NOTNULL="true" />
+          <FIELD NAME="reportuuid" TYPE="char" LENGTH="36" NOTNULL="true" />
+          <FIELD NAME="versionuuid" TYPE="char" LENGTH="36" NOTNULL="true" />
+          <FIELD NAME="userid" TYPE="int" LENGTH="10" NOTNULL="true" />
+          <FIELD NAME="source" TYPE="char" LENGTH="20" NOTNULL="true" DEFAULT="manual" />
+          <FIELD NAME="timecreated" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" />
+        </FIELDS>
+        <KEYS><KEY NAME="primary" TYPE="primary" FIELDS="id" /></KEYS>
+        <INDEXES>
+          <INDEX NAME="version_user_uix" UNIQUE="true" FIELDS="companyuuid,versionuuid,userid" />
+          <INDEX NAME="company_user_ix" UNIQUE="false" FIELDS="companyuuid,userid" />
+        </INDEXES>
+      </TABLE>
+        <TABLE NAME="local_kbacompany_dreportset" COMMENT="ADR-0010 per-company daily report review rules">
+        <FIELDS>
+          <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true" />
+          <FIELD NAME="companyuuid" TYPE="char" LENGTH="36" NOTNULL="true" />
+          <FIELD NAME="toppolicy" TYPE="char" LENGTH="20" NOTNULL="true" DEFAULT="self" />
+          <FIELD NAME="topreviewerid" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" />
+          <FIELD NAME="ccpolicy" TYPE="char" LENGTH="20" NOTNULL="true" DEFAULT="none" />
+          <FIELD NAME="revision" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="1" />
+          <FIELD NAME="modifiedby" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" />
+          <FIELD NAME="timecreated" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" />
+          <FIELD NAME="timemodified" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" />
+        </FIELDS>
+        <KEYS><KEY NAME="primary" TYPE="primary" FIELDS="id" /></KEYS>
+        <INDEXES><INDEX NAME="company_uix" UNIQUE="true" FIELDS="companyuuid" /></INDEXES>
+      </TABLE>
   </TABLES>
 </XMLDB>
