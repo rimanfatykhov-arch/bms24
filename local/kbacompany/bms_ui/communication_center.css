@@ -1736,16 +1736,25 @@ body.bms-comm-page #bms24-comm-root .bms24-comm-nempty {
         flex-basis: 100%;
     }
 
-    /* Section labels stay whole: the counter moves under the label instead of truncating the label. */
+    /* Size each tab to its label and start a new row when the tabs cannot all fit. */
+    body.bms-comm-page #bms24-comm-root .bms24-comm-tabs {
+        flex-wrap: wrap;
+    }
+
     body.bms-comm-page #bms24-comm-root .bms24-comm-tab {
+        flex-basis: auto;
         flex-direction: column;
         gap: 2px;
+        min-height: 44px;
         padding: 5px 2px;
         font-size: 12.5px;
     }
 
     body.bms-comm-page #bms24-comm-root .bms24-comm-tab > span:first-child {
+        max-width: 100%;
         overflow: visible;
-        text-overflow: clip;
+        white-space: normal;
+        overflow-wrap: anywhere;
+        text-align: center;
     }
 }
