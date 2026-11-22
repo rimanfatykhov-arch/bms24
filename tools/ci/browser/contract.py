@@ -1355,7 +1355,55 @@ def communication_ux_checks(obs, exitcode=None):
             for pair in colors:
                 a, b = luminance(pair['foreground']), luminance(pair['background'])
                 require((max(a, b) + 0.05) / (min(a, b) + 0.05) >= 4.5, 'chip contrast below4.5')
-    return {'communication_ux1_layout_and_navigation': verify}
+
+    def geometry():
+        """#145/#152: rendered geometry, not DOM presence. The 'New conversation' primary action is a full labelled button
+        in the card header of every section (the old 32/34px trigger clipped its label and covered the section tabs);
+        no visible control label is clipped; the list search is wide; the Center stylesheet is applied."""
+        require(exitcode == 0 and isinstance(obs, dict) and obs.get('status') == 'PASS'
+                and not obs.get('error'), 'UX browser run missing/failed')
+        rows = obs.get('cases')
+        require(isinstance(rows, list) and len(rows) == 10, 'UX matrix incomplete')
+
+        def number(value, what):
+            require(isinstance(value, (int, float)) and not isinstance(value, bool), 'geometry %s missing' % what)
+            return value
+        for row in rows:
+            width = row.get('width')
+            sections = row.get('geometry')
+            require(isinstance(sections, dict) and set(sections) == {'messages', 'discussions', 'notifications'},
+                    'geometry for all three sections missing (%r/%r)' % (row.get('shell'), width))
+            for section, g in sections.items():
+                where = '%s/%s/%s' % (row.get('shell'), width, section)
+                require(isinstance(g, dict) and g.get('root') is True, 'Center root missing: ' + where)
+                require(g.get('css') is True, 'Communication Center stylesheet not applied: ' + where)
+                require(g.get('overflow') is False, 'horizontal overflow: ' + where)
+                require(g.get('clipped') == [], 'clipped control label %r: %s' % (g.get('clipped'), where))
+                a = g.get('action')
+                require(isinstance(a, dict), '"New conversation" action not visible: ' + where)
+                require(a.get('count') == 1, 'exactly one "New conversation" action expected: ' + where)
+                label = a.get('label')
+                require(isinstance(label, str) and len(label.replace('+', '').strip()) >= 4,
+                        '"New conversation" has no readable label: ' + where)
+                require(number(a.get('width'), 'width') >= 96 and number(a.get('height'), 'height') >= 32,
+                        '"New conversation" is not a full button (%rx%r): %s' % (a.get('width'), a.get('height'), where))
+                require(number(a.get('scroll_width'), 'scroll width') <= number(a.get('client_width'), 'client width') + 1,
+                        '"New conversation" label clipped: ' + where)
+                require(a.get('in_header') is True, '"New conversation" outside the card header: ' + where)
+                require(a.get('overlaps_tabs') is False, '"New conversation" overlaps the section tabs: ' + where)
+                require(a.get('in_form') is True, '"New conversation" lost its POST/sesskey form: ' + where)
+                search = g.get('search')
+                if section == 'notifications':
+                    require(search is None, 'notifications must not show the list search: ' + where)
+                    continue
+                require(search is not None or width < 900, 'list search not visible on a wide screen: ' + where)
+                if search is not None:
+                    require(isinstance(search, dict), 'search geometry malformed: ' + where)
+                    box, side = number(search.get('width'), 'search width'), number(search.get('side_width'), 'side width')
+                    field = number(search.get('input_width'), 'search input width')
+                    require(box >= 200 and box >= 0.85 * side and field >= box - 64,
+                            'list search too narrow (%r of %r, input %r): %s' % (box, side, field, where))
+    return {'communication_ux1_layout_and_navigation': verify, 'communication_ux2_primary_action_geometry': geometry}
 
 
 def required_check_names():

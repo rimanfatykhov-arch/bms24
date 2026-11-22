@@ -87,7 +87,7 @@ class communication_center_ui_service {
             'contenthtml' => \html_writer::div($OUTPUT->render_from_template('local_kbacompany/bms24_comm_body', $model),
                 'bms24-comm-cardbody'),
         ]);
-        return \html_writer::div($card, 'bms24-comm', ['data-section' => $model['section']]);
+        return \html_writer::div($card, 'bms24-comm', ['id' => 'bms24-comm-root', 'data-section' => $model['section']]);
     }
 
     /** Mustache looks a missing or null key up in the parent context; absent optional values are false instead. */
