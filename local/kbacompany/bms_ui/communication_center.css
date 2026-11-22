@@ -1,0 +1,728 @@
+/*
+ * Communication Center (#145) — styling for the design-system classes that the templates emit.
+ *
+ * Why this file exists: the centre renders bms24-* markup (card, tabs, buttons, list rows, bubbles),
+ * but ui_kit.css and styles.css contain no rules for any bms24-* component, so the page fell back to
+ * browser defaults. The legacy bms-comm2_* rules cover a different structure and cannot style it.
+ *
+ * Scope: everything is nested under body.bms-comm-page so nothing leaks into other BMS24 pages.
+ * Colours follow the BMOS palette in AGENTS.md. Presentation only — no behavioural rules here.
+ */
+
+body.bms-comm-page .bms24-comm {
+    --comm-ink: #0b2b41;
+    --comm-muted: #607681;
+    --comm-line: #e3ecef;
+    --comm-accent: #0c6c52;
+    --comm-accent-soft: #ecf7f3;
+    --comm-sky: #e4f2fb;
+    color: var(--comm-ink);
+}
+
+/* ---------- card ---------- */
+
+body.bms-comm-page .bms24-comm .bms24-card {
+    background: #fff;
+    border: 1px solid var(--comm-line);
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+body.bms-comm-page .bms24-comm .bms24-cardheadrow {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+body.bms-comm-page .bms24-comm .bms24-cardheader {
+    padding: 1.1rem 1.4rem;
+    border-bottom: 1px solid var(--comm-line);
+}
+
+body.bms-comm-page .bms24-comm .bms24-cardheader h2 {
+    margin: 0;
+    font-size: 1.35rem;
+    font-weight: 700;
+    color: var(--comm-ink);
+}
+
+body.bms-comm-page .bms24-comm .bms24-cardactions {
+    display: flex;
+    align-items: center;
+    gap: .6rem;
+    flex-wrap: wrap;
+}
+
+body.bms-comm-page .bms24-comm .bms24-cardbody {
+    padding: 0;
+}
+
+/* ---------- segmented tabs ---------- */
+
+body.bms-comm-page .bms24-comm .bms24-comm-tabs {
+    display: inline-flex;
+    align-items: center;
+    gap: .25rem;
+    padding: .25rem;
+    background: #eef4f7;
+    border-radius: 10px;
+    margin: 0;
+}
+
+body.bms-comm-page .bms24-comm .bms24-comm-tab {
+    display: inline-flex;
+    align-items: center;
+    gap: .45rem;
+    padding: .5rem .9rem;
+    border-radius: 8px;
+    font-size: .92rem;
+    font-weight: 600;
+    color: #33505f;
+    text-decoration: none;
+    white-space: nowrap;
+}
+
+body.bms-comm-page .bms24-comm .bms24-comm-tab:hover {
+    background: #fff;
+    color: var(--comm-ink);
+    text-decoration: none;
+}
+
+body.bms-comm-page .bms24-comm .bms24-comm-tab.is-active {
+    background: #fff;
+    color: var(--comm-ink);
+    box-shadow: 0 1px 2px rgba(11, 43, 65, .14);
+}
+
+/* ---------- buttons ---------- */
+
+body.bms-comm-page .bms24-comm .bms24-comm-btn,
+body.bms-comm-page .bms24-comm .bms-comm2-new summary {
+    display: inline-flex;
+    align-items: center;
+    gap: .4rem;
+    padding: .5rem .9rem;
+    border: 1px solid var(--comm-line);
+    border-radius: 8px;
+    background: #fff;
+    color: var(--comm-ink);
+    font-size: .9rem;
+    font-weight: 600;
+    line-height: 1.2;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+body.bms-comm-page .bms24-comm .bms24-comm-btn:hover {
+    background: #f4f9fa;
+    text-decoration: none;
+}
+
+body.bms-comm-page .bms24-comm .bms24-comm-btn--primary,
+body.bms-comm-page .bms24-comm .bms-comm2-new summary {
+    background: var(--comm-accent);
+    border-color: var(--comm-accent);
+    color: #fff;
+}
+
+body.bms-comm-page .bms24-comm .bms24-comm-btn--primary:hover,
+body.bms-comm-page .bms24-comm .bms-comm2-new summary:hover {
+    background: #0a5a45;
+    color: #fff;
+}
+
+body.bms-comm-page .bms24-comm .bms24-comm-btn--ghost {
+    background: transparent;
+    border-color: transparent;
+    color: #33505f;
+}
+
+body.bms-comm-page .bms24-comm .bms24-comm-btn--danger {
+    background: #b3261e;
+    border-color: #b3261e;
+    color: #fff;
+}
+
+body.bms-comm-page .bms24-comm .bms24-comm-btn--small {
+    padding: .25rem .55rem;
+    font-size: .8rem;
+}
+
+body.bms-comm-page .bms24-comm .bms24-comm-iconbtn {
+    padding: .35rem;
+    border-radius: 8px;
+}
+
+/* "New conversation" disclosure: closed it is just the button, open it becomes a panel. */
+body.bms-comm-page .bms24-comm .bms24-comm-new {
+    position: relative;
+}
+
+body.bms-comm-page .bms24-comm .bms24-comm-new summary {
+    list-style: none;
+}
+
+body.bms-comm-page .bms24-comm .bms24-comm-new summary::-webkit-details-marker {
+    display: none;
+}
+
+body.bms-comm-page .bms24-comm .bms24-comm-new[open] .bms24-comm-newform {
+    position: absolute;
+    right: 0;
+    top: calc(100% + .5rem);
+    z-index: 30;
+    width: min(420px, 90vw);
+    display: grid;
+    gap: .5rem;
+    padding: 1rem;
+    background: #fff;
+    border: 1px solid var(--comm-line);
+    border-radius: 12px;
+    box-shadow: 0 12px 32px rgba(11, 43, 65, .18);
+}
+
+/* ---------- layout ---------- */
+
+body.bms-comm-page .bms24-comm .bms24-comm-layout {
+    display: grid;
+    grid-template-columns: minmax(260px, 340px) minmax(0, 1fr);
+    gap: 0;
+    min-height: 520px;
+}
+
+body.bms-comm-page .bms24-comm .bms24-comm-layout[data-has-thread="1"] .bms24-comm-side {
+    border-right: 1px solid var(--comm-line);
+}
+
+body.bms-comm-page .bms24-comm .bms24-comm-side {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    border-right: 1px solid var(--comm-line);
+}
+
+body.bms-comm-page .bms24-comm .bms24-comm-sidehead {
+    display: grid;
+    gap: .6rem;
+    padding: 1rem 1rem .5rem;
+}
+
+/* ---------- search and filters ---------- */
+
+body.bms-comm-page .bms24-comm .bms24-comm-search {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: .4rem;
+    margin: 0;
+}
+
+body.bms-comm-page .bms24-comm .bms24-comm-search input[type="text"],
+body.bms-comm-page .bms24-comm .bms24-comm-search input[type="search"] {
+    width: 100%;
+    padding: .55rem .75rem .55rem 2rem;
+    border: 1px solid var(--comm-line);
+    border-radius: 8px;
+    font-size: .9rem;
+    background: #fff;
+}
+
+body.bms-comm-page .bms24-comm .bms24-comm-searchicon {
+    position: absolute;
+    left: .55rem;
+    color: var(--comm-muted);
+    pointer-events: none;
+}
+
+body.bms-comm-page .bms24-comm .bms24-comm-chips {
+    display: flex;
+    gap: .4rem;
+    flex-wrap: wrap;
+    margin: 0;
+}
+
+body.bms-comm-page .bms24-comm .bms24-comm-chip {
+    display: inline-flex;
+    align-items: center;
+    padding: .35rem .7rem;
+    border-radius: 999px;
+    border: 1px solid var(--comm-line);
+    background: #fff;
+    font-size: .85rem;
+    color: #33505f;
+    text-decoration: none;
+}
+
+body.bms-comm-page .bms24-comm .bms24-comm-chip.is-active {
+    background: var(--comm-ink);
+    border-color: var(--comm-ink);
+    color: #fff;
+}
+
+/* ---------- list rows ---------- */
+
+body.bms-comm-page .bms24-comm .bms24-comm-list {
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+    max-height: 68vh;
+}
+
+body.bms-comm-page .bms24-comm .bms24-comm-item {
+    display: grid;
+    grid-template-columns: 36px minmax(0, 1fr) auto;
+    gap: .6rem;
+    align-items: start;
+    padding: .8rem 1rem;
+    border-bottom: 1px solid #f0f4f5;
+    text-decoration: none;
+    color: inherit;
+}
+
+body.bms-comm-page .bms24-comm .bms24-comm-item:hover,
+body.bms-comm-page .bms24-comm .bms24-comm-item.is-active {
+    background: var(--comm-accent-soft);
+    text-decoration: none;
+}
+
+body.bms-comm-page .bms24-comm .bms24-comm-ava {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: #dbe9ef;
+    color: #33505f;
+    font-size: .78rem;
+    font-weight: 700;
+    text-transform: uppercase;
+}
+
+body.bms-comm-page .bms24-comm .bms24-comm-ava--small {
+    width: 26px;
+    height: 26px;
+    font-size: .68rem;
+}
+
+body.bms-comm-page .bms24-comm .bms24-comm-itembody {
+    display: grid;
+    gap: .15rem;
+    min-width: 0;
+}
+
+body.bms-comm-page .bms24-comm .bms24-comm-itemtitle {
+    display: block;
+    font-weight: 600;
+    font-size: .93rem;
+    color: var(--comm-ink);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+body.bms-comm-page .bms24-comm .bms24-comm-itemkind {
+    display: block;
+    font-size: .78rem;
+    color: var(--comm-muted);
+}
+
+body.bms-comm-page .bms24-comm .bms24-comm-itempreview {
+    display: block;
+    font-size: .84rem;
+    color: var(--comm-muted);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+body.bms-comm-page .bms24-comm .bms24-comm-itemmeta {
+    display: grid;
+    justify-items: end;
+    gap: .3rem;
+    font-size: .76rem;
+    color: var(--comm-muted);
+    white-space: nowrap;
+}
+
+body.bms-comm-page .bms24-comm .bms24-comm-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 1.35rem;
+    height: 1.35rem;
+    padding: 0 .35rem;
+    border-radius: 999px;
+    font-size: .72rem;
+    font-weight: 700;
+    color: #fff;
+    background: var(--comm-accent);
+}
+
+body.bms-comm-page .bms24-comm .bms24-comm-badge--blue {
+    background: #1777b5;
+}
+
+body.bms-comm-page .bms24-comm .bms24-comm-pill {
+    display: inline-flex;
+    align-items: center;
+    padding: .1rem .45rem;
+    border-radius: 999px;
+    font-size: .72rem;
+    font-weight: 600;
+    background: var(--comm-sky);
+    color: #1777b5;
+}
+
+body.bms-comm-page .bms24-comm .bms24-comm-pill--mint {
+    background: var(--comm-accent-soft);
+    color: var(--comm-accent);
+}
+
+body.bms-comm-page .bms24-comm .bms24-comm-pill--sand {
+    background: #fdf6ed;
+    color: #8a6d3b;
+}
+
+/* ---------- conversation ---------- */
+
+body.bms-comm-page .bms24-comm .bms24-comm-conv {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+
+body.bms-comm-page .bms24-comm .bms24-comm-convhead {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: .75rem;
+    flex-wrap: wrap;
+    padding: .9rem 1.1rem;
+    border-bottom: 1px solid var(--comm-line);
+}
+
+body.bms-comm-page .bms24-comm .bms24-comm-convtitle h2 {
+    margin: 0;
+    font-size: 1.05rem;
+    font-weight: 700;
+}
+
+body.bms-comm-page .bms24-comm .bms24-comm-tools,
+body.bms-comm-page .bms24-comm .bms24-comm-convactions {
+    display: flex;
+    align-items: center;
+    gap: .4rem;
+    flex-wrap: wrap;
+}
+
+body.bms-comm-page .bms24-comm .bms24-comm-feed {
+    display: flex;
+    flex-direction: column;
+    gap: .55rem;
+    padding: 1rem 1.1rem;
+    overflow-y: auto;
+    max-height: 60vh;
+}
+
+body.bms-comm-page .bms24-comm .bms24-comm-msg {
+    max-width: 78%;
+    padding: .6rem .8rem;
+    border: 1px solid var(--comm-line);
+    border-radius: 12px;
+    background: #fff;
+}
+
+body.bms-comm-page .bms24-comm .bms24-comm-msg.is-own {
+    align-self: flex-end;
+    background: var(--comm-accent-soft);
+    border-color: #d3e9e0;
+}
+
+body.bms-comm-page .bms24-comm .bms24-comm-who {
+    display: flex;
+    align-items: baseline;
+    gap: .4rem;
+    font-size: .8rem;
+    color: var(--comm-muted);
+    margin-bottom: .2rem;
+}
+
+body.bms-comm-page .bms24-comm .bms24-comm-who b {
+    color: var(--comm-ink);
+    font-size: .86rem;
+}
+
+body.bms-comm-page .bms24-comm .bms24-comm-body {
+    font-size: .92rem;
+    line-height: 1.45;
+    overflow-wrap: anywhere;
+}
+
+body.bms-comm-page .bms24-comm .bms24-comm-quote {
+    margin: .2rem 0 .4rem;
+    padding: .35rem .6rem;
+    border-left: 3px solid var(--comm-accent);
+    background: #f7fbfa;
+    font-size: .84rem;
+    color: var(--comm-muted);
+}
+
+body.bms-comm-page .bms24-comm .bms24-comm-files {
+    display: grid;
+    gap: .25rem;
+    margin-top: .4rem;
+}
+
+body.bms-comm-page .bms24-comm .bms24-comm-file {
+    display: inline-flex;
+    align-items: center;
+    gap: .35rem;
+    padding: .25rem .5rem;
+    border: 1px solid var(--comm-line);
+    border-radius: 6px;
+    background: #fff;
+    font-size: .84rem;
+    color: var(--comm-ink);
+    text-decoration: none;
+}
+
+body.bms-comm-page .bms24-comm .bms24-comm-filesz {
+    color: var(--comm-muted);
+    font-size: .78rem;
+}
+
+body.bms-comm-page .bms24-comm .bms24-comm-acts {
+    display: flex;
+    gap: .5rem;
+    flex-wrap: wrap;
+    margin-top: .35rem;
+    font-size: .8rem;
+}
+
+body.bms-comm-page .bms24-comm .bms24-comm-acts a,
+body.bms-comm-page .bms24-comm .bms24-comm-acts button {
+    background: none;
+    border: 0;
+    padding: 0;
+    color: #1777b5;
+    font-size: .8rem;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+body.bms-comm-page .bms24-comm .bms24-comm-day,
+body.bms-comm-page .bms24-comm .bms24-comm-newline {
+    align-self: center;
+    font-size: .78rem;
+    color: var(--comm-muted);
+    background: #f2f7f8;
+    border-radius: 999px;
+    padding: .15rem .7rem;
+}
+
+body.bms-comm-page .bms24-comm .bms24-comm-newline {
+    width: 100%;
+    text-align: center;
+    color: #1777b5;
+    background: none;
+    border-top: 1px solid #cfe3f2;
+    border-radius: 0;
+    padding-top: .35rem;
+}
+
+body.bms-comm-page .bms24-comm .bms24-comm-event {
+    align-self: center;
+    font-size: .78rem;
+    color: var(--comm-muted);
+}
+
+/* ---------- composer ---------- */
+
+body.bms-comm-page .bms24-comm .bms24-comm-compose {
+    display: grid;
+    gap: .4rem;
+    padding: .8rem 1.1rem;
+    border-top: 1px solid var(--comm-line);
+}
+
+body.bms-comm-page .bms24-comm .bms24-comm-compose textarea {
+    width: 100%;
+    min-height: 3.2rem;
+    padding: .6rem .7rem;
+    border: 1px solid var(--comm-line);
+    border-radius: 8px;
+    font-size: .92rem;
+    resize: vertical;
+}
+
+body.bms-comm-page .bms24-comm .bms24-comm-sendwrap {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: .6rem;
+}
+
+/* ---------- details drawer ---------- */
+
+body.bms-comm-page .bms24-comm .bms24-comm-drawerwrap {
+    border-left: 1px solid var(--comm-line);
+    min-width: 0;
+}
+
+body.bms-comm-page .bms24-comm .bms24-comm-drawerhead {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: .5rem;
+    padding: .8rem 1rem;
+    border-bottom: 1px solid var(--comm-line);
+}
+
+body.bms-comm-page .bms24-comm .bms24-comm-drawerhead h2 {
+    margin: 0;
+    font-size: .98rem;
+}
+
+body.bms-comm-page .bms24-comm .bms24-comm-drawerbody {
+    padding: .8rem 1rem;
+    display: grid;
+    gap: .6rem;
+}
+
+body.bms-comm-page .bms24-comm .bms24-comm-kv {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: .25rem .6rem;
+    margin: 0;
+    font-size: .85rem;
+}
+
+body.bms-comm-page .bms24-comm .bms24-comm-kv dt {
+    color: var(--comm-muted);
+    font-weight: 500;
+}
+
+body.bms-comm-page .bms24-comm .bms24-comm-people {
+    display: grid;
+    gap: .35rem;
+}
+
+body.bms-comm-page .bms24-comm .bms24-comm-person {
+    display: flex;
+    align-items: center;
+    gap: .45rem;
+    font-size: .86rem;
+}
+
+/* ---------- notifications ---------- */
+
+body.bms-comm-page .bms24-comm .bms24-comm-notifs {
+    padding: 1rem 1.4rem 1.4rem;
+}
+
+body.bms-comm-page .bms24-comm .bms24-comm-ntools {
+    display: flex;
+    align-items: center;
+    gap: .6rem;
+    flex-wrap: wrap;
+    margin-bottom: .8rem;
+}
+
+body.bms-comm-page .bms24-comm .bms24-comm-ntitle {
+    margin: 0 0 .35rem;
+    font-size: 1.1rem;
+    font-weight: 700;
+}
+
+body.bms-comm-page .bms24-comm .bms24-comm-nday {
+    margin: .9rem 0 .4rem;
+    font-size: .78rem;
+    font-weight: 700;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+    color: var(--comm-muted);
+}
+
+body.bms-comm-page .bms24-comm .bms24-comm-nrow {
+    display: grid;
+    grid-template-columns: 34px minmax(0, 1fr) auto;
+    gap: .7rem;
+    align-items: start;
+    padding: .7rem .9rem;
+    border: 1px solid var(--comm-line);
+    border-radius: 10px;
+    background: #fff;
+    margin-bottom: .45rem;
+}
+
+body.bms-comm-page .bms24-comm .bms24-comm-nrow.is-unread {
+    background: #f7fcfb;
+    border-color: #d3e9e0;
+}
+
+body.bms-comm-page .bms24-comm .bms24-comm-nic {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    background: var(--comm-sky);
+    color: #1777b5;
+    font-size: .85rem;
+}
+
+body.bms-comm-page .bms24-comm .bms24-comm-ns {
+    font-size: .82rem;
+    color: var(--comm-muted);
+}
+
+body.bms-comm-page .bms24-comm .bms24-comm-ntx {
+    font-size: .92rem;
+    color: var(--comm-ink);
+}
+
+body.bms-comm-page .bms24-comm .bms24-comm-nrt {
+    display: grid;
+    justify-items: end;
+    gap: .3rem;
+    font-size: .76rem;
+    color: var(--comm-muted);
+    white-space: nowrap;
+}
+
+/* ---------- responsive ---------- */
+
+@media (max-width: 900px) {
+    body.bms-comm-page .bms24-comm .bms24-comm-layout {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    body.bms-comm-page .bms24-comm .bms24-comm-layout[data-has-thread="1"] .bms24-comm-side {
+        border-right: 0;
+        border-bottom: 1px solid var(--comm-line);
+    }
+
+    body.bms-comm-page .bms24-comm .bms24-comm-msg {
+        max-width: 92%;
+    }
+
+    body.bms-comm-page .bms24-comm .bms24-cardactions {
+        width: 100%;
+    }
+
+    body.bms-comm-page .bms24-comm .bms24-comm-tabs {
+        width: 100%;
+        justify-content: space-between;
+    }
+
+    body.bms-comm-page .bms24-comm .bms24-comm-tab {
+        flex: 1 1 auto;
+        justify-content: center;
+        padding: .5rem .5rem;
+        font-size: .85rem;
+    }
+}
