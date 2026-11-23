@@ -35,7 +35,8 @@ BELL_KEYS=[b'notificationbell_title',b'notificationbell_label',b'notificationbel
            b'notificationbell_empty',b'notificationbell_error',b'notificationbell_unavailable',b'notificationbell_retry',
            b'notificationbell_readonly_hint',b'notificationbell_sound',b'notificationbell_sound_off',b'notificationbell_sound_on',
            b'notificationbell_sound_blocked',b'notificationbell_sound_enable',b'notificationbell_sound_test',
-           b'notificationbell_sound_disable',b'privacy:metadata:preference:notificationsound']
+           b'notificationbell_sound_disable',b'privacy:metadata:preference:notificationsound',
+           b'privacy:metadata:preference:notificationsoundmark']
 _C145=json.loads((ROOT/'docs/reconcile/communication-center-145-source-preservation.json').read_text(encoding='utf-8'))
 C145_AFTER={lang:next(r['after_sha256_lf'] for r in _C145['files'] if r['path']==f'local/kbacompany/lang/{lang}/local_kbacompany.php')
             for lang in ('en','ru')}

@@ -7,6 +7,7 @@ use local_kbacompany\local\communication_center_service;
 use local_kbacompany\local\communication_center_ui_service;
 use local_kbacompany\local\communication_service;
 use local_kbacompany\local\identity_registry;
+use local_kbacompany\local\notification_bell_service;
 use local_kbacorporate\local\repository;
 
 /**
@@ -78,20 +79,45 @@ final class notification_bell_test extends \advanced_testcase {
         $f = $this->fixture();
         $thread = communication_service::create_thread($f['a'], $f['admin'], [
             'threadtype' => 'group', 'title' => 'Private plan', 'participants' => [$f['employee']]]);
-        communication_service::send_message($f['a'], $f['admin'], $thread, 'Secret');
+        $message = communication_service::send_message($f['a'], $f['admin'], $thread, 'Secret');
+        // Exact fixture: create_thread() invites the employee (thread_invite) and send_message() notifies it
+        // (message); both rows are bound to this thread. The employee has no other notification in company A.
+        $rows = $DB->get_records('local_kbacompany_commnotif', ['companyuuid' => $f['a'], 'userid' => $f['employee']], 'id ASC');
+        $this->assertSame(['thread_invite', 'message'], array_values(array_map(function($r) { return (string)$r->kind; }, $rows)));
+        foreach ($rows as $row) {
+            $this->assertSame($thread, (string)$row->threaduuid);
+            $this->assertSame(0, (int)$row->isread);
+        }
+        $this->assertSame($message, (string)end($rows)->messageuuid);
         $this->setUser($f['employee']);
-        $this->assertSame(1, communication_service::notification_feed($f['a'], $f['employee'])['unread']);
+        $before = communication_service::notification_feed($f['a'], $f['employee']);
+        $this->assertSame(2, $before['unread']);
+        $this->assertSame(array_values(array_reverse(array_map(function($r) { return (string)$r->uuid; }, $rows))),
+            array_column($before['items'], 'uuid'));
+        $history = [
+            'notif' => $DB->get_records('local_kbacompany_commnotif', ['threaduuid' => $thread], 'id ASC'),
+            'msg' => $DB->get_records('local_kbacompany_commmsg', ['threaduuid' => $thread], 'id ASC'),
+        ];
 
-        $DB->set_field('local_kbacompany_commpart', 'active', 0,
-            ['companyuuid' => $f['a'], 'threaduuid' => $thread, 'userid' => $f['employee']]);
+        // Participation revoked through the canonical owner action.
+        $this->setAdminUser();
+        communication_service::remove_participant($f['a'], $f['admin'], $thread, $f['employee']);
+        $this->assertSame(0, (int)$DB->get_field('local_kbacompany_commpart', 'active',
+            ['companyuuid' => $f['a'], 'threaduuid' => $thread, 'userid' => $f['employee']]));
+        $this->setUser($f['employee']);
         $feed = communication_service::notification_feed($f['a'], $f['employee']);
-        $this->assertSame(0, $feed['unread']);
-        $this->assertSame([], array_filter($feed['items'], function($item) use ($thread) {
-            return $item['thread_uuid'] === $thread;
-        }));
+        $this->assertSame(0, $feed['unread'], 'no unread visible notification after revocation');
+        $this->assertSame(0, communication_service::visible_unread_notification_count($f['a'], $f['employee']));
+        $this->assertSame([], $feed['items'], 'the closed conversation is absent from the feed');
         $payload = json_encode(communication_center_ui_service::bell_feed($f['a'], $f['employee'], $feed));
         $this->assertStringNotContainsString('Private plan', $payload);
         $this->assertStringNotContainsString($thread, $payload);
+        foreach ($rows as $row) {
+            $this->assertStringNotContainsString((string)$row->uuid, $payload);
+        }
+        // History is preserved: the notification and message rows are untouched (still unread, same content).
+        $this->assertEquals($history['notif'], $DB->get_records('local_kbacompany_commnotif', ['threaduuid' => $thread], 'id ASC'));
+        $this->assertEquals($history['msg'], $DB->get_records('local_kbacompany_commmsg', ['threaduuid' => $thread], 'id ASC'));
     }
 
     public function test_foreign_company_feed_is_refused(): void {
@@ -102,6 +128,62 @@ final class notification_bell_test extends \advanced_testcase {
         $this->assertSame(0, communication_service::notification_feed($f['b'], $f['outsider'])['unread']);
         $this->expectException(\moodle_exception::class);
         communication_service::notification_feed($f['a'], $f['outsider']);
+    }
+
+    public function test_signal_claim_is_granted_once_per_new_batch(): void {
+        global $DB;
+        $f = $this->fixture();
+        $n1 = $this->system_notification($f['a'], $f['employee'], 'claim-1');
+        $this->setUser($f['employee']);
+        // Sound off: never granted.
+        $this->assertFalse(notification_bell_service::claim_signal($f['a'], $f['employee'], [$n1]));
+        set_user_preference(communication_center_ui_service::SOUND_PREFERENCE, '1', $f['employee']);
+        // First tab wins, a second tab (or a repeated poll) with the same batch does not.
+        $this->assertTrue(notification_bell_service::claim_signal($f['a'], $f['employee'], [$n1]));
+        $this->assertFalse(notification_bell_service::claim_signal($f['a'], $f['employee'], [$n1]));
+        // A new notification is a new batch; claiming it together with the old one still plays once.
+        $n2 = $this->system_notification($f['a'], $f['employee'], 'claim-2');
+        $n3 = $this->system_notification($f['a'], $f['employee'], 'claim-3');
+        $this->assertTrue(notification_bell_service::claim_signal($f['a'], $f['employee'], [$n1, $n2, $n3]));
+        $this->assertFalse(notification_bell_service::claim_signal($f['a'], $f['employee'], [$n3]));
+        // Read, stale, malformed, another user's or another company's rows are never granted.
+        $n4 = $this->system_notification($f['a'], $f['employee'], 'claim-4');
+        $DB->set_field('local_kbacompany_commnotif', 'isread', 1, ['uuid' => $n4]);
+        $this->assertFalse(notification_bell_service::claim_signal($f['a'], $f['employee'], [$n4]));
+        $n5 = $this->system_notification($f['a'], $f['employee'], 'claim-5');
+        $DB->set_field('local_kbacompany_commnotif', 'timecreated', time() - 3600, ['uuid' => $n5]);
+        $this->assertFalse(notification_bell_service::claim_signal($f['a'], $f['employee'], [$n5]));
+        $this->assertFalse(notification_bell_service::claim_signal($f['a'], $f['employee'], ['not-a-uuid', '']));
+        $peer = $this->system_notification($f['a'], $f['peer'], 'claim-peer');
+        $this->assertFalse(notification_bell_service::claim_signal($f['a'], $f['employee'], [$peer]));
+        $this->assertSame(0, (int)$DB->get_field('local_kbacompany_commnotif', 'isread', ['uuid' => $n1]),
+            'claiming never marks read');
+        $this->setUser($f['outsider']);
+        set_user_preference(communication_center_ui_service::SOUND_PREFERENCE, '1', $f['outsider']);
+        $this->expectException(\moodle_exception::class);
+        notification_bell_service::claim_signal($f['a'], $f['outsider'], [$n1]);
+    }
+
+    public function test_signal_claim_ignores_revoked_thread(): void {
+        global $DB;
+        $f = $this->fixture();
+        $thread = communication_service::create_thread($f['a'], $f['admin'], [
+            'threadtype' => 'group', 'title' => 'Claim thread', 'participants' => [$f['employee']]]);
+        communication_service::send_message($f['a'], $f['admin'], $thread, 'Hi');
+        $ids = $DB->get_fieldset_select('local_kbacompany_commnotif', 'uuid', 'threaduuid = ? AND userid = ?',
+            [$thread, $f['employee']]);
+        $this->assertCount(2, $ids);
+        communication_service::remove_participant($f['a'], $f['admin'], $thread, $f['employee']);
+        set_user_preference(communication_center_ui_service::SOUND_PREFERENCE, '1', $f['employee']);
+        $this->setUser($f['employee']);
+        $this->assertFalse(notification_bell_service::claim_signal($f['a'], $f['employee'], $ids));
+    }
+
+    private function system_notification(string $company, int $userid, string $tag): string {
+        global $DB;
+        communication_service::ensure_system_notification($company, $userid, 'calendar_day', hash('sha256', $tag), 'Bell ' . $tag);
+        return (string)$DB->get_field('local_kbacompany_commnotif', 'uuid',
+            ['companyuuid' => $company, 'userid' => $userid, 'title' => 'Bell ' . $tag], MUST_EXIST);
     }
 
     public function test_sound_preference_is_per_account_and_off_by_default(): void {

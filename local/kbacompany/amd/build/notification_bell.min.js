@@ -7,34 +7,16 @@
  *   (60 s .. 5 min) after errors; one request in flight at most.
  * - Sound: only when the account opted in, only for notification ids that were not present when observation
  *   started, are unread and were created after observation started (server clock) and within the last 10 minutes.
- *   One signal per batch, one signal across tabs (localStorage claim), no queued signals after reconnect.
+ *   One signal per batch and across tabs: the tab asks the server (POST action=claim with sesskey), which grants
+ *   "play" to exactly one claim of a newer visible unread notification of the account. No browser storage is used,
+ *   so private mode or blocked site data cannot duplicate the signal. No queued signals after reconnect.
  */
 define([], function() {
     'use strict';
 
     var POLL_MS = 30000;
     var MAX_BACKOFF_MS = 300000;
-    var CLAIM_WAIT_MS = 150;
-    var SOUND_GAP_MS = 5000;
     var FRESH_SECONDS = 600;
-    var KEEP_IDS = 200;
-
-    function storageGet(key) {
-        try {
-            return JSON.parse(window.localStorage.getItem(key) || 'null');
-        } catch (e) {
-            return null;
-        }
-    }
-
-    function storageSet(key, value) {
-        try {
-            window.localStorage.setItem(key, JSON.stringify(value));
-            return true;
-        } catch (e) {
-            return false;
-        }
-    }
 
     /** A short two-tone WAV built in memory: no file, no external request. */
     function toneUrl() {
@@ -78,7 +60,6 @@ define([], function() {
         this.panel = root.querySelector('[data-bms24-bell-panel]');
         this.list = root.querySelector('[data-bms24-bell-list]');
         this.count = root.querySelector('[data-bms24-bell-count]');
-        this.key = 'bms24-bell-sound:' + this.user + ':' + this.company;
         this.seen = {};
         this.started = false;
         this.since = 0;
@@ -188,7 +169,7 @@ define([], function() {
             // The Moodle session now belongs to another account or the answer is for another company.
             this.stopped = true;
             this.unavailable();
-            return;
+            return null;
         }
         this.loaded = true;
         this.sound = !!data.sound;
@@ -210,43 +191,32 @@ define([], function() {
             // Start of observation: everything present now is the baseline and never sounds (initial load, reload).
             this.started = true;
             this.since = data.now;
-            return;
+            return null;
         }
-        if (fresh.length && this.sound) {
-            this.announce(fresh);
-        }
+        return fresh.length && this.sound ? this.announce(fresh) : null;
     };
 
-    /** One signal per batch and across tabs of this account and company. */
+    /** One signal per batch and across tabs: the server grants "play" to exactly one claim. Returns a promise. */
     Bell.prototype.announce = function(ids) {
         var self = this;
-        var state = storageGet(this.key);
-        if (state === null && !storageSet(this.key, {ids: [], at: 0})) {
-            // No shared storage (private mode or blocked): this tab cannot coordinate, signal once for the batch.
-            this.play();
-            return;
-        }
-        state = state || {ids: [], at: 0};
-        var known = Array.isArray(state.ids) ? state.ids : [];
-        var pending = ids.filter(function(id) {
-            return known.indexOf(id) === -1;
-        });
-        if (!pending.length) {
-            return;
-        }
-        var token = Math.random().toString(36).slice(2) + Date.now().toString(36);
-        storageSet(this.key, {ids: known.concat(pending).slice(-KEEP_IDS), at: state.at || 0, claim: token});
-        window.setTimeout(function() {
-            var now = storageGet(self.key) || {};
-            if (now.claim !== token) {
-                return; // Another tab claimed this batch.
-            }
-            var recent = Date.now() - (now.at || 0) < SOUND_GAP_MS;
-            storageSet(self.key, {ids: now.ids || [], at: recent ? now.at : Date.now(), claim: null});
-            if (!recent && !self.stopped) {
-                self.play();
-            }
-        }, CLAIM_WAIT_MS);
+        var body = new URLSearchParams();
+        body.set('uuid', this.company);
+        body.set('action', 'claim');
+        body.set('ids', ids.slice(0, 20).join(','));
+        body.set('sesskey', (window.M && window.M.cfg && window.M.cfg.sesskey) || '');
+        return fetch(this.endpoint, {method: 'POST', credentials: 'same-origin', cache: 'no-store', body: body,
+                headers: {'Accept': 'application/json'}})
+            .then(function(response) {
+                return response.ok ? response.json() : {ok: false};
+            })
+            .then(function(data) {
+                if (data && data.ok === true && data.play === true && String(data.user) === self.user && !self.stopped) {
+                    self.play();
+                }
+            })
+            .catch(function() {
+                // No answer: stay silent rather than risk a duplicate signal.
+            });
     };
 
     Bell.prototype.play = function() {
@@ -342,9 +312,11 @@ define([], function() {
                     return;
                 }
                 self.failures = 0;
-                self.apply(data);
-                self.done();
-                self.schedule(POLL_MS);
+                // The poll counts as done only after a possible signal claim was answered.
+                return Promise.resolve(self.apply(data)).then(function() {
+                    self.done();
+                    self.schedule(POLL_MS);
+                });
             })
             .catch(function() {
                 self.inflight = false;

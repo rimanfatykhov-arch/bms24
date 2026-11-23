@@ -7,9 +7,9 @@
 
 | Файл | Изменение |
 |---|---|
-| `local/kbacompany/classes/local/communication_service.php` | Добавлены `notification_source_visible()`, `visible_unread_notification_count()` и `notification_feed()` (только чтение). `context()` считает непрочитанные через общую функцию; правило видимости то же: компания → активный участник → текущий доступ к объекту. |
-| `local/kbacompany/lang/en/local_kbacompany.php` | 17 строк `notificationbell_*` и `privacy:metadata:preference:notificationsound` добавлены в самый конец, после блока #145 |
-| `local/kbacompany/lang/ru/local_kbacompany.php` | те же 17 ключей, в конец |
+| `local/kbacompany/classes/local/communication_service.php` | Добавлены `notification_source_visible()` (public: им же пользуется `notification_bell_service::claim_signal`), `visible_unread_notification_count()` и `notification_feed()` (только чтение). `context()` считает непрочитанные через общую функцию; правило видимости то же: компания → активный участник → текущий доступ к объекту. |
+| `local/kbacompany/lang/en/local_kbacompany.php` | 18 строк: `notificationbell_*`, `privacy:metadata:preference:notificationsound` и `privacy:metadata:preference:notificationsoundmark` добавлены в самый конец, после блока #145 |
+| `local/kbacompany/lang/ru/local_kbacompany.php` | те же 18 ключей, в конец |
 
 Цепочка хэшей (LF) записана в `docs/reconcile/topbar-notification-bell-source-preservation.json`:
 `before` каждого файла совпадает с последним закреплённым `after` (E2 для `communication_service.php`, #145 для языков).

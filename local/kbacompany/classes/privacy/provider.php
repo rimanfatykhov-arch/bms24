@@ -467,16 +467,24 @@ class provider implements
         ], 'privacy:metadata:dailyreports');
         $collection->add_user_preference(\local_kbacompany\local\communication_center_ui_service::SOUND_PREFERENCE,
             'privacy:metadata:preference:notificationsound');
+        $collection->add_user_preference(\local_kbacompany\local\notification_bell_service::MARK_PREFERENCE,
+            'privacy:metadata:preference:notificationsoundmark');
         return $collection;
     }
 
-    /** The opt-in notification sound is the only BMS24 user preference; it belongs to the account. */
+    /** The opt-in notification sound and its last-signal mark are the BMS24 user preferences; both belong to the account. */
     public static function export_user_preferences(int $userid): void {
         $name = \local_kbacompany\local\communication_center_ui_service::SOUND_PREFERENCE;
         $value = get_user_preferences($name, null, $userid);
         if ($value !== null) {
             writer::export_user_preference('local_kbacompany', $name, transform::yesno((string)$value === '1'),
                 get_string('privacy:metadata:preference:notificationsound', 'local_kbacompany'));
+        }
+        $mark = \local_kbacompany\local\notification_bell_service::MARK_PREFERENCE;
+        $value = get_user_preferences($mark, null, $userid);
+        if ($value !== null) {
+            writer::export_user_preference('local_kbacompany', $mark, (string)(int)$value,
+                get_string('privacy:metadata:preference:notificationsoundmark', 'local_kbacompany'));
         }
     }
 

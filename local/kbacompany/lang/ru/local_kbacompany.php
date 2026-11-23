@@ -9923,3 +9923,4 @@ $string['notificationbell_sound_enable'] = 'Включить звук';
 $string['notificationbell_sound_test'] = 'Проверить звук';
 $string['notificationbell_sound_disable'] = 'Выключить звук';
 $string['privacy:metadata:preference:notificationsound'] = 'Включил ли пользователь звуковой сигнал о новых уведомлениях BMS24.';
+$string['privacy:metadata:preference:notificationsoundmark'] = 'Служебный номер последнего уведомления BMS24, по которому уже прозвучал сигнал, чтобы другие вкладки его не повторяли.';

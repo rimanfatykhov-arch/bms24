@@ -689,8 +689,9 @@ class communication_service {
      * A notification is visible only while its source stays visible: no thread, or an existing thread in the same company
      * with the actor as an active participant and, for object discussions, the actor's CURRENT object access.
      * Same rule as context(); $cache holds per-thread verdicts within one request only.
+     * Public for notification_bell_service (signal claim); it reads only and grants nothing.
      */
-    private static function notification_source_visible(string $companyuuid, int $actor, string $threaduuid,
+    public static function notification_source_visible(string $companyuuid, int $actor, string $threaduuid,
             array &$cache): bool {
         global $DB;
         if ($threaduuid === '') { return true; }

@@ -28,6 +28,20 @@ base = 'http://127.0.0.1:8080'
 FEED = '/local/kbacompany/communication_notifications_feed.php'
 PAGE = '/local/kbacompany/calendar_notifications.php'
 WIDTHS = [(1440, 900), (768, 1024), (320, 640)]
+# Blocked site data: every localStorage access throws (as with blocked cookies/storage); sessionStorage stays usable
+# so Moodle core keeps working. The bell itself must not depend on browser storage at all.
+NO_STORAGE = '''(() => {
+  const ls = window.localStorage;
+  for (const m of ['getItem', 'setItem', 'removeItem', 'clear', 'key']) {
+    const orig = Storage.prototype[m];
+    Storage.prototype[m] = function(...a) {
+      if (this === ls) throw new DOMException('localStorage blocked by the test', 'SecurityError');
+      return orig.apply(this, a);
+    };
+  }
+})();'''
+STORAGE_PROBE = '''() => { try { localStorage.setItem('bms24-probe', '1'); localStorage.removeItem('bms24-probe');
+  return 'available'; } catch (e) { return e.name; } }'''
 PLAY_STUB = '''(() => {
   window.__bellPlays = 0; window.__bellPlayMode = 'ok';
   HTMLMediaElement.prototype.play = function() {
@@ -69,10 +83,12 @@ def page_url(company, path=PAGE, **params):
     return local_url(base + path + '?' + urlencode({'uuid': company, **params}))
 
 
-def context(browser, width=1440, height=900):
+def context(browser, width=1440, height=900, nostorage=False):
     ctx = browser.new_context(viewport={'width': width, 'height': height})
     rec = Recorder().install(ctx)
     recorders.append(rec)
+    if nostorage:
+        ctx.add_init_script(NO_STORAGE)
     ctx.add_init_script(PLAY_STUB)
     ctx.clock.install()
     return ctx
@@ -116,12 +132,14 @@ def tick(ctx, pages, ms=31000):
 
 
 def open_bell(page, company=A):
-    before = polls(page)
-    page.goto(page_url(company), wait_until='networkidle')
-    page.wait_for_function('() => +(document.querySelector("[data-bms24-bell]")||{dataset:{}}).dataset.polls > 0',
-                           timeout=15000)
+    """Navigate first, then require the bell to exist and to have finished its first poll (baseline).
+
+    A missing bell is a failure (wait_for_selector raises), never an acceptable "0 polls"."""
+    response = page.goto(page_url(company), wait_until='networkidle')
+    require(response is not None and response.status == 200, 'BMS page HTTP %r' % (response and response.status))
+    page.wait_for_selector('[data-bms24-bell]', state='attached', timeout=15000)
+    page.wait_for_function('() => +document.querySelector("[data-bms24-bell]").dataset.polls > 0', timeout=15000)
     page.wait_for_timeout(200)
-    return before
 
 
 def plays(page):
@@ -146,6 +164,7 @@ def bell(page):
               state: r.dataset.state, sound: r.dataset.soundState, unread: r.dataset.unread,
               text: r.innerText, plays: window.__bellPlays,
               bells: document.querySelectorAll('[data-bms24-bell]').length,
+              headings: r.querySelectorAll('h1,h2,h3,h4,h5,h6').length,
               moodlebells: document.querySelectorAll('.popover-region-notifications,[data-region="popover-region-notifications"]').length};
     }''')
 
@@ -268,8 +287,29 @@ with sync_playwright() as p:
         reset_plays(page, tab2)
         n5 = notify(A, EA, 'n5')
         tick(ctx, [page, tab2])
-        steps['tabs'] = {'n5': n5, 'plays': [plays(page), plays(tab2)], 'bells': [bell(page), bell(tab2)]}
+        steps['tabs'] = {'n5': n5, 'plays': [plays(page), plays(tab2)], 'bells': [bell(page), bell(tab2)],
+                         'storage': [page.evaluate(STORAGE_PROBE), tab2.evaluate(STORAGE_PROBE)]}
         tab2.close()
+
+        # 8b. Same, with localStorage unavailable in both tabs (separate browser context, same account): the two tabs
+        #     receive the same new notification on the same clock tick; the server grants one signal in total.
+        ctxn = context(browser, nostorage=True)
+        try:
+            ns1 = login(ctxn, EA)
+            ns2 = watch(ctxn.new_page())
+            open_bell(ns1)
+            open_bell(ns2)
+            reset_plays(ns1, ns2)
+            n6 = notify(A, EA, 'n6')
+            tick(ctxn, [ns1, ns2])
+            steps['tabs_nostorage'] = {'n6': n6, 'plays': [plays(ns1), plays(ns2)], 'bells': [bell(ns1), bell(ns2)],
+                                       'storage': [ns1.evaluate(STORAGE_PROBE), ns2.evaluate(STORAGE_PROBE)]}
+            # The first context's tab saw the same row afterwards: still no extra signal there.
+            reset_plays(page)
+            tick(ctx, [page])
+            steps['tabs_nostorage']['other_context'] = bell(page)
+        finally:
+            ctxn.close()
 
         # 9. Reload: baseline again, silent.
         open_bell(page)
@@ -363,7 +403,7 @@ with sync_playwright() as p:
         manager = pm.request.get(local_url(base + FEED + '?' + urlencode({'uuid': A})))
         steps['isolation'] = {'eb_bell': bell(pb), 'eb_server': state(B, EB), 'foreign_http': foreign.status,
                               'foreign': foreign.json(), 'ma_http': manager.status, 'ma': manager.json(),
-                              'ma_bell': bell(pm), 'ea_ids': steps['initial']['bell']['ids'] + [n1, n5, n9, n11] + batch,
+                              'ma_bell': bell(pm), 'ea_ids': steps['initial']['bell']['ids'] + [n1, n5, n6, n9, n11] + batch,
                               'ea_bell': bell(page), 'nb': nb}
         ctxb.close()
         ctxm.close()

@@ -6,17 +6,17 @@
     {
       "path": "local/kbacompany/classes/local/communication_service.php",
       "before_sha256_lf": "7433c0f6d21133e38de79f05da131daafda7bc245769225d973b8bdf69bf177a",
-      "after_sha256_lf": "6782e65bbcf1fec904102de9537b172677ea22b24cf8ece8b7e35744caae22e0"
+      "after_sha256_lf": "5199aac3569343b3807b962e19e82a62ee5c1959401242346c785bbcf5a41b5f"
     },
     {
       "path": "local/kbacompany/lang/en/local_kbacompany.php",
       "before_sha256_lf": "ffa8c3cc82b19e1e15fdc12f5ec901a6621a7a92abed5f2097ec6e97f71bf348",
-      "after_sha256_lf": "f5759fbac49e3e07189c4c47f0a731eeb062511a38bf2ea9450ba52bfe53b806"
+      "after_sha256_lf": "bdc13625e4ffd6cdef9f0c0a3da0849ba55b92d88df3c1f5405b0b070132e8c0"
     },
     {
       "path": "local/kbacompany/lang/ru/local_kbacompany.php",
       "before_sha256_lf": "0ff5746d50f5cfc84b13d582f210e6262549973ebd7d08f4667262edaf2cb46b",
-      "after_sha256_lf": "f18861dc19d0ea3b29a0495e5faf01f75d79980551a42eb2be27676a65688607"
+      "after_sha256_lf": "f0f4c1ed1b8975da5b2e93269df5f642238c1521e083479ab4b3875e0410a4fd"
     }
   ]
 }

@@ -1473,6 +1473,18 @@ def notification_bell_checks(obs, exitcode=None):
         t = step('tabs')
         require(all(t['n5'] in shown(x)['ids'] for x in t['bells']), 'second tab missed the row')
         require(isinstance(t.get('plays'), list) and len(t['plays']) == 2 and sum(t['plays']) == 1, 'two tabs: %r signals' % t.get('plays'))
+        require(t.get('storage') == ['available', 'available'], 'two tabs: normal storage not confirmed %r' % t.get('storage'))
+        n = step('tabs_nostorage')
+        require(n.get('storage') == ['SecurityError', 'SecurityError'],
+                'no-storage tabs: localStorage was not actually unavailable %r' % n.get('storage'))
+        require(isinstance(n.get('bells'), list) and len(n['bells']) == 2
+                and all(n['n6'] in shown(x)['ids'] and x.get('state') != 'unavailable' for x in n['bells']),
+                'no-storage tabs: row missing or bell unavailable')
+        require(isinstance(n.get('plays'), list) and len(n['plays']) == 2 and sum(n['plays']) == 1,
+                'no-storage tabs: %r signals' % n.get('plays'))
+        oc = shown(n.get('other_context'))
+        require(n['n6'] in oc['ids'], 'other browser context missed the row')
+        plays(oc, 0, 'same row in another browser context')
         plays(step('reload')['bell'], 0, 'reload')
         r = step('reconnect')
         require(r.get('polls_while_offline') == 0, 'polled while offline')
@@ -1532,6 +1544,8 @@ def notification_bell_checks(obs, exitcode=None):
         for name in ('initial', 'reload'):
             b = shown(step(name)['bell'])
             require(b.get('bells') == 1 and b.get('moodlebells') == 0, '%s: expected exactly one bell' % name)
+            # The hidden panel must not contribute page headings (it hid the page title for h1/h2 lookups).
+            require(b.get('headings') == 0, '%s: bell contains %r h1-h6 headings' % (name, b.get('headings')))
         require(step('legacy').get('bells') == 0, 'legacy shell got a second (BMS) bell')
 
     def no_browser_errors():

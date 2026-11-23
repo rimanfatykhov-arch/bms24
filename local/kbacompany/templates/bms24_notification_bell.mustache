@@ -3,7 +3,8 @@
 
     BMS24 top bar bell (owned shell). Render-only: counts and rows are loaded by local_kbacompany/notification_bell
     from the read-only feed, which applies company, participant and object access on the server.
-    Opening the panel marks nothing read.
+    Opening the panel marks nothing read. The hidden panel uses no h1-h6: the top bar precedes the page heading,
+    so a heading here would become the first heading of every BMS page.
 
     Example context (json):
     {"company": "c1", "userid": 2, "endpoint": "/feed.php", "sound": false, "label": "Notifications",
@@ -24,7 +25,7 @@
   <div class="bms24-bell-panel" id="bms24-bell-panel" data-bms24-bell-panel role="dialog" aria-modal="false"
        aria-labelledby="bms24-bell-heading" tabindex="-1" hidden>
     <div class="bms24-bell-head">
-      <h2 class="bms24-bell-heading" id="bms24-bell-heading">{{title}}</h2>
+      <p class="bms24-bell-heading" id="bms24-bell-heading">{{title}}</p>
       <span class="bms24-bell-count" data-bms24-bell-count></span>
     </div>
     <p class="bms24-bell-hint">{{readonlyhint}}</p>
@@ -39,7 +40,7 @@
     </div>
     <ul class="bms24-bell-list" data-bms24-bell-list></ul>
     <section class="bms24-bell-sound" aria-labelledby="bms24-bell-sound-heading">
-      <h3 class="bms24-bell-subheading" id="bms24-bell-sound-heading">{{soundtitle}}</h3>
+      <p class="bms24-bell-subheading" id="bms24-bell-sound-heading">{{soundtitle}}</p>
       <p class="bms24-bell-soundstate" data-bms24-bell-soundstate aria-live="polite">
         <span data-sound-state="off">{{soundoff}}</span>
         <span data-sound-state="on" hidden>{{soundon}}</span>

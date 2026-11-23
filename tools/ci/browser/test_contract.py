@@ -1120,7 +1120,7 @@ class ContractTest(unittest.TestCase):
             return {'ids': list(ids), 'read': read or {i: '0' for i in ids}, 'links': {}, 'badge': str(unread) if unread else '',
                     'unread': str(unread), 'label': 'Unread notifications: %d' % unread if unread else 'Notifications',
                     'title': 'Unread notifications: %d' % unread if unread else 'Notifications', 'state': state,
-                    'sound': sound, 'text': text, 'plays': plays, 'bells': bells, 'moodlebells': 0}
+                    'sound': sound, 'text': text, 'plays': plays, 'bells': bells, 'moodlebells': 0, 'headings': 0}
 
         def srv(unread, pref='0', **read):
             return {'unread': unread, 'read': dict({'n0': 0}, **read), 'pref': pref}
@@ -1136,7 +1136,7 @@ class ContractTest(unittest.TestCase):
             return {'width': w, 'toggle_visible': True, 'closed': metrics(False), 'open_keyboard': metrics(True, 'panel'),
                     'tab_inside': 'inside', 'after_escape': metrics(False, 'toggle'), 'focus_outline': ['solid', 3.0],
                     'open_click': metrics(True), 'after_outside': metrics(False)}
-        a_ids = ['n0', 'n1', 'n5', 'n9', 'n11', 'b0', 'b1', 'b2']
+        a_ids = ['n0', 'n1', 'n5', 'n6', 'n9', 'n11', 'b0', 'b1', 'b2']
         steps = {
             'initial': {'bell': bell(['n0'], 1), 'server': srv(1), 'server_before': srv(1), 'n0': 'n0', 'nb': 'nb'},
             'panel': {'metrics': metrics(True, 'panel'), 'bell': bell(['n0'], 1), 'server': srv(1)},
@@ -1147,7 +1147,10 @@ class ContractTest(unittest.TestCase):
             'center_lists_new': {'n1_form': 1, 'title_shown': 1},
             'count_only': {'bell': bell(['n1', 'n0'], 1, 0, 'on', {'n1': '1', 'n0': '0'}), 'server': srv(1, '1', n1=1), 'n1': 'n1'},
             'batch': {'ids': ['b0', 'b1', 'b2'], 'bell': bell(['b2', 'b1', 'b0', 'n1', 'n0'], 4, 1, 'on'), 'server': srv(4, '1')},
-            'tabs': {'n5': 'n5', 'plays': [1, 0], 'bells': [bell(['n5'], 5, 1, 'on'), bell(['n5'], 5, 0, 'on')]},
+            'tabs': {'n5': 'n5', 'plays': [1, 0], 'bells': [bell(['n5'], 5, 1, 'on'), bell(['n5'], 5, 0, 'on')],
+                     'storage': ['available', 'available']},
+            'tabs_nostorage': {'n6': 'n6', 'plays': [0, 1], 'bells': [bell(['n6', 'n5'], 6, 0, 'on'), bell(['n6', 'n5'], 6, 1, 'on')],
+                               'storage': ['SecurityError', 'SecurityError'], 'other_context': bell(['n6', 'n5'], 6, 0, 'on')},
             'reload': {'bell': bell(['n5'], 5, 0, 'on')},
             'reconnect': {'ids': ['o0', 'o1'], 'polls_while_offline': 0, 'bell': bell(['o1', 'o0', 'n5'], 7, 1, 'on')},
             'autoplay_refused': {'n8': 'n8', 'blocked': bell(['n8'], 8, 1, 'blocked'), 'after_test': bell(['n8'], 8, 2, 'on')},
@@ -1219,6 +1222,14 @@ class ContractTest(unittest.TestCase):
         fails(snd, lambda o: st(o, 'batch')['bell'].update(plays=3))
         fails(snd, lambda o: st(o, 'batch')['bell'].update(plays=0))
         fails(snd, lambda o: st(o, 'tabs').update(plays=[1, 1]))
+        fails(snd, lambda o: st(o, 'tabs').update(storage=['SecurityError', 'available']))
+        fails(snd, lambda o: o['steps'].pop('tabs_nostorage'))
+        fails(snd, lambda o: st(o, 'tabs_nostorage').update(plays=[1, 1]))           # duplicate without storage (finding C)
+        fails(snd, lambda o: st(o, 'tabs_nostorage').update(plays=[0, 0]))           # silenced instead of one signal
+        fails(snd, lambda o: st(o, 'tabs_nostorage').update(storage=['available', 'SecurityError']))  # storage not blocked
+        fails(snd, lambda o: st(o, 'tabs_nostorage')['bells'][1].update(state='unavailable'))
+        fails(snd, lambda o: st(o, 'tabs_nostorage')['bells'][0]['ids'].remove('n6'))
+        fails(snd, lambda o: st(o, 'tabs_nostorage')['other_context'].update(plays=1))
         fails(snd, lambda o: st(o, 'reload')['bell'].update(plays=1))
         fails(snd, lambda o: st(o, 'reconnect').update(polls_while_offline=1))
         fails(snd, lambda o: st(o, 'reconnect')['bell'].update(plays=2))
@@ -1249,6 +1260,8 @@ class ContractTest(unittest.TestCase):
         fails(one, lambda o: st(o, 'initial')['bell'].update(bells=2))
         fails(one, lambda o: st(o, 'reload')['bell'].update(moodlebells=1))
         fails(one, lambda o: st(o, 'legacy').update(bells=1))
+        fails(one, lambda o: st(o, 'initial')['bell'].update(headings=1))           # hidden h2 shadows the page title
+        fails(one, lambda o: st(o, 'reload')['bell'].pop('headings'))
         be = 'notification_bell_no_browser_errors'
         fails(be, lambda o: o['browser_events'].append({'source': 'pageerror', 'name': 'Error', 'message': 'x'}))
         fails(be, lambda o: o['browser_events'].append({'source': 'console', 'type': 'error', 'text': 'Failed to load resource: 403',

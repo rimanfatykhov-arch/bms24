@@ -91,9 +91,9 @@ def check(root=ROOT):
     # (same ACL as context(); no generation, read-rule or schema change) and RU/EN strings appended at the end.
     # See docs/reconcile/TOPBAR_NOTIFICATION_BELL_SOURCE_PRESERVATION.md.
     reviewed_followup.update({
-        'local/kbacompany/classes/local/communication_service.php': '6782e65bbcf1fec904102de9537b172677ea22b24cf8ece8b7e35744caae22e0',
-        'local/kbacompany/lang/en/local_kbacompany.php': 'f5759fbac49e3e07189c4c47f0a731eeb062511a38bf2ea9450ba52bfe53b806',
-        'local/kbacompany/lang/ru/local_kbacompany.php': 'f18861dc19d0ea3b29a0495e5faf01f75d79980551a42eb2be27676a65688607',
+        'local/kbacompany/classes/local/communication_service.php': '5199aac3569343b3807b962e19e82a62ee5c1959401242346c785bbcf5a41b5f',
+        'local/kbacompany/lang/en/local_kbacompany.php': 'bdc13625e4ffd6cdef9f0c0a3da0849ba55b92d88df3c1f5405b0b070132e8c0',
+        'local/kbacompany/lang/ru/local_kbacompany.php': 'f0f4c1ed1b8975da5b2e93269df5f642238c1521e083479ab4b3875e0410a4fd',
     })
     for row in plan['rows']:
         path=root/row['path']

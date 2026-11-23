@@ -5,6 +5,8 @@
  * GET  uuid=<company>                                 -> read-only JSON feed of the current user's visible notifications
  *                                                         in that company. Marks nothing read.
  * POST uuid=<company>&action=sound&enabled=0|1&sesskey -> stores the opt-in sound as the user's own Moodle preference.
+ * POST uuid=<company>&action=claim&ids=<uuid,...>&sesskey -> {"play":true} for exactly one claim of a newer visible
+ *                                                         unread notification of this account (all tabs, all browsers).
  *
  * Company membership, thread participation and current object access are enforced by
  * communication_service::notification_feed(); nothing is filtered in the browser. A refused company answers with the
@@ -39,7 +41,15 @@ $ispost = ($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST';
 try {
     if ($ispost) {
         require_sesskey();
-        if (required_param('action', PARAM_ALPHA) !== 'sound') {
+        $action = required_param('action', PARAM_ALPHA);
+        if ($action === 'claim') {
+            // One signal per new batch across all tabs of the account; the server decides (see notification_bell_service).
+            $ids = explode(',', required_param('ids', PARAM_RAW_TRIMMED));
+            $play = \local_kbacompany\local\notification_bell_service::claim_signal($companyuuid, $actor, $ids);
+            echo json_encode(['ok' => true, 'user' => $actor, 'play' => $play], JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR);
+            exit;
+        }
+        if ($action !== 'sound') {
             throw new moodle_exception('communication_invalid', 'local_kbacompany');
         }
         $enabled = required_param('enabled', PARAM_INT);
