@@ -4,6 +4,10 @@ from pathlib import Path
 repo=Path(__file__).resolve().parents[3];out=Path(sys.argv[1]).resolve()
 if os.environ.get('GITHUB_ACTIONS')!='true':raise SystemExit('CI packaging only')
 def git(*args):return subprocess.check_output(['git','-C',str(repo),*args],text=True).strip()
+checkout_sha = git('rev-parse', 'HEAD')
+pr_head = os.environ['PR_HEAD_SHA']
+if checkout_sha != pr_head:
+    raise SystemExit('Release packaging requires a checkout of the exact PR head')
 def version(component):
     s=(repo/component/'version.php').read_text()
     return {'version':int(re.search(r'\$plugin->version\s*=\s*(\d+)',s)[1]),'release':re.search(r"\$plugin->release\s*=\s*'([^']+)'",s)[1],
@@ -11,7 +15,7 @@ def version(component):
 out.mkdir(parents=True,exist_ok=True)
 subprocess.run([sys.executable,str(repo/'tools/build_install.py'),'--source',str(repo/'local/kbacompany'),'--output',str(out/'candidate-install.zip'),'--manifest',str(out/'manifest.json')],check=True)
 m=json.loads((out/'manifest.json').read_text())
-m['source']={'checkout_sha':git('rev-parse','HEAD'),'tree':git('rev-parse','HEAD^{tree}'),'pr_head':os.environ['PR_HEAD_SHA'],'base':os.environ['PR_BASE_SHA'],
+m['source']={'checkout_sha':checkout_sha,'tree':git('rev-parse','HEAD^{tree}'),'pr_head':pr_head,'base':os.environ['PR_BASE_SHA'],
              'run_id':os.environ['GITHUB_RUN_ID'],'run_attempt':os.environ['GITHUB_RUN_ATTEMPT']}
 m['components']={p:version(p) for p in ['local/kbacompany','local/kbacorporate']}
 m['runtime_target']={'moodle_tag_object':'b27f0816159a7555a0b3ad9ff2f8f8ef701a29fa','moodle_git':'df1157bb845eabedd31989d6a1a6e18f638ff890','moodle':'4.1.22','php':'8.1','mariadb':'10.11.19','percona':'8.0.46-37','playwright':'1.49.1'}

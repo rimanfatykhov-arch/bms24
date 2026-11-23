@@ -7,13 +7,14 @@ permissions:
   contents: read
 jobs:
   package:
-    # Release rehearsal is separate from the existing risk-selected merge checks.
-    if: startsWith(github.head_ref, 'release/')
     runs-on: ubuntu-22.04
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
-        with: {fetch-depth: 0, persist-credentials: false}
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+          persist-credentials: false
       - uses: actions/setup-python@v5
         with: {python-version: '3.12'}
       - name: Verify baseline policy and task viewport fallback
@@ -34,6 +35,8 @@ jobs:
           if-no-files-found: error
           retention-days: 30
   rehearsal:
+    # A feature PR can provide the install ZIP while release branches keep the full rehearsal.
+    if: startsWith(github.head_ref, 'release/')
     needs: package
     runs-on: ubuntu-22.04
     # Candidate/reinstall each exercise all ten widths in both shells, in addition to existing gates.
@@ -54,7 +57,11 @@ jobs:
           --health-interval=5s --health-timeout=5s --health-retries=30
     steps:
       - uses: actions/checkout@v4
-        with: {path: candidate, fetch-depth: 0, persist-credentials: false}
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          path: candidate
+          fetch-depth: 0
+          persist-credentials: false
       - uses: actions/checkout@v4
         with: {repository: moodle/moodle, ref: b27f0816159a7555a0b3ad9ff2f8f8ef701a29fa, path: moodle-core, persist-credentials: false}
       - uses: shivammathur/setup-php@v2
