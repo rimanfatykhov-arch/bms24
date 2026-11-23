@@ -3,6 +3,7 @@ require_once(__DIR__ . '/../../config.php');
 
 use local_kbacompany\local\business_date_service;
 use local_kbacompany\local\daily_report_service;
+use local_kbacompany\local\daily_report_feed_service as feed;
 use local_kbacompany\local\daily_report_store_service as store;
 use local_kbacompany\local\daily_report_ui_service as reportui;
 use local_kbacompany\local\daily_report_review_service as review;
@@ -39,7 +40,10 @@ $knownerrors = ['dailyreports_conflict', 'dailyreports_donerequired', 'dailyrepo
     'dailyreports_settingsinvalid'];
 if ($enabled && $tab === 'my' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     require_sesskey();
-    $action = required_param('action', PARAM_ALPHA);
+    // Day feed -> report draft: "Add to report" posts the id of one own submit event (never its text).
+    $addevent = optional_param('addevent', 0, PARAM_INT);
+    $fromfeed = optional_param('source', '', PARAM_ALPHA) === 'feed';
+    $action = $addevent > 0 ? 'addresult' : required_param('action', PARAM_ALPHA);
     $values = [];
     foreach (store::FIELDS as $field) {
         $values[$field] = optional_param($field, '', PARAM_RAW);
@@ -55,6 +59,13 @@ if ($enabled && $tab === 'my' && $_SERVER['REQUEST_METHOD'] === 'POST') {
             store::submit($uuid, $actor, $day, required_param('requestkey', PARAM_ALPHANUMEXT), $revision, $values, $links,
                 $ccusers);
             redirect(reportui::url($uuid, ['day' => $day, 'notice' => 'submitted']));
+        } else if ($action === 'addresult') {
+            // From the feed the stored draft is used; from the open form its unsaved text is kept.
+            $added = feed::add($uuid, $actor, $day, $addevent, $fromfeed ? null :
+                ['values' => $values, 'links' => $links, 'cc' => $ccusers, 'revision' => $revision]);
+            $target = reportui::url($uuid, ['day' => $day, 'notice' => $added['added'] ? 'resultadded' : 'resultexists']);
+            $target->set_anchor('dailyreport-done');
+            redirect($target);
         } else if ($action === 'rework' || $action === 'correct') {
             store::start_revision($uuid, $actor, $day,
                 $action === 'correct' ? optional_param('correctionnote', '', PARAM_RAW) : '');
@@ -66,9 +77,10 @@ if ($enabled && $tab === 'my' && $_SERVER['REQUEST_METHOD'] === 'POST') {
             throw $e;
         }
         // Keep the employee's text in the form; show the saved text next to it after a conflict.
-        $posted = ['values' => $values, 'links' => $links, 'cc' => $ccusers];
+        // A feed request carries no form text: the stored draft stays on screen.
+        $posted = $action === 'addresult' && $fromfeed ? null : ['values' => $values, 'links' => $links, 'cc' => $ccusers];
         $error = get_string($e->errorcode, 'local_kbacompany');
-        $conflict = $e->errorcode === 'dailyreports_conflict';
+        $conflict = $posted !== null && $e->errorcode === 'dailyreports_conflict';
     }
 }
 
@@ -197,7 +209,7 @@ echo html_writer::end_tag('form');
 if ($enabled) {
     // ---- the saved report of this day (draft form or frozen versions)
     $notice = optional_param('notice', '', PARAM_ALPHA);
-    if ($error === '' && in_array($notice, ['saved', 'submitted', 'revision'], true)) {
+    if ($error === '' && in_array($notice, ['saved', 'submitted', 'revision', 'resultadded', 'resultexists'], true)) {
         echo html_writer::div(s(get_string('dailyreports_' . $notice, 'local_kbacompany')), 'alert alert-success',
             ['role' => 'status']);
     }
@@ -210,9 +222,11 @@ if ($enabled) {
     if ($error !== '') {
         echo html_writer::div(s($error), 'alert alert-danger', ['role' => 'alert']);
     }
+    $formopen = false;
     if ($future) {
         echo html_writer::tag('p', s(get_string('dailyreports_futureday', 'local_kbacompany')));
     } else if (!$report || $view['draft']) {
+        $formopen = true;
         $draft = $view['draft'];
         if ($conflict && $draft) {
             echo reportui::conflict($draft, $posted['values']);
@@ -281,6 +295,12 @@ foreach ($data['results'] as $event) {
     echo html_writer::tag('h3', $link($event->taskuuid, $event->title), ['class' => 'h5']);
     echo html_writer::tag('p', s(userdate($event->timecreated) . ' · ' . $str('submittedstatus') . ': ' . $status($event->newstatus)));
     echo html_writer::tag('p', nl2br(s($event->result !== '' ? $event->result : $str('missingresult'))));
+    if ($enabled && !empty($formopen)) {
+        // Submits the open report form with this event id: unsaved text is kept, the server adds the result once.
+        echo html_writer::tag('button', s(get_string('dailyreports_feed_add', 'local_kbacompany')), ['type' => 'submit',
+            'form' => 'dailyreport-form', 'name' => 'addevent', 'value' => (int)$event->id, 'formnovalidate' => 'formnovalidate',
+            'class' => 'btn btn-outline-primary btn-sm', 'data-dailyreport-add' => (int)$event->id]);
+    }
     echo html_writer::end_tag('article');
 }
 echo $pager('result', $data['resultpage'], $data['resulttotal']);

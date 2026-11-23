@@ -31,6 +31,15 @@ UX_KEYS=[b'communicationux_conversations', b'communicationux_notification_count'
 C145_MARKER=b'\n// ADR-0009 / #145: strings for the templated communication centre.\n'
 C145_KEYS=[b'communicationux2_badge_total',b'communicationux2_badge_unread',b'communicationux2_audience_object',b'communicationux2_compose_placeholder',b'communicationux2_direct',b'communicationux2_due',b'communicationux2_edit',b'communicationux2_empty_search_text',b'communicationux2_empty_search_title',b'communicationux2_files',b'communicationux2_group_members',b'communicationux2_group_people',b'communicationux2_kv_due',b'communicationux2_kv_status',b'communicationux2_kv_type',b'communicationux2_mark_all',b'communicationux2_mark_read',b'communicationux2_new_messages',b'communicationux2_newconversation',b'communicationux2_notification_settings',b'communicationux2_only_unread',b'communicationux2_open_calendar',b'communicationux2_open_conversation',b'communicationux2_reset_search',b'communicationux2_select_text',b'communicationux2_select_title',b'communicationux2_show_all',b'communicationux2_you',b'communicationux2_chip_mentions',b'communicationux2_details',b'communicationux2_empty_discussions_title',b'communicationux2_empty_discussions_text',b'communicationux2_empty_mentions_title',b'communicationux2_empty_mentions_text',b'communicationux2_empty_messages_title',b'communicationux2_empty_messages_text',b'communicationux2_empty_unread_title',b'communicationux2_empty_unread_text',b'communicationux2_goto_discussions',b'communicationux2_goto_messages',b'communicationux2_group_earlier',b'communicationux2_group_today',b'communicationux2_no_unread_notifications',b'communicationux2_search_objects',b'communicationux2_search_people',b'communicationux2_type_dailyreport',b'communicationux2_type_dayplan',b'communicationux2_type_meeting',b'communicationux2_type_mention',b'communicationux2_type_message',b'communicationux2_type_other',b'communicationux2_type_task']
 A10_MARKER=b'\n// ADR-0010: reviewer by organisation chart, self review at the top, manager visibility and report copies.\n'
+DF_MARKER=b'\n// Day feed -> report draft (2026-11-23): own submitted task results into the Done field of the own draft.\n'
+DF_KEYS=[b'dailyreports_feed_tab',b'dailyreports_feed_title',b'dailyreports_feed_intro',b'dailyreports_feed_day',
+         b'dailyreports_feed_show',b'dailyreports_feed_today',b'dailyreports_feed_submitted',b'dailyreports_feed_now',
+         b'dailyreports_feed_add',b'dailyreports_feed_open_task',b'dailyreports_feed_open_report',
+         b'dailyreports_feed_empty_title',b'dailyreports_feed_empty_text',b'dailyreports_feed_sent',b'dailyreports_feed_pages',
+         b'dailyreports_feed_prev',b'dailyreports_feed_next',b'dailyreports_resultadded',b'dailyreports_resultexists']
+_DF=json.loads((ROOT/'docs/reconcile/day-feed-report-draft-source-preservation.json').read_text(encoding='utf-8'))
+DF_BEFORE={lang:next(r['before_sha256_lf'] for r in _DF['files'] if r['path']==f'local/kbacompany/lang/{lang}/local_kbacompany.php')
+           for lang in ('en','ru')}
 _A10=json.loads((ROOT/'docs/reconcile/daily-reports-adr0010-source-preservation.json').read_text(encoding='utf-8'))
 A10_BEFORE={lang:next(r['before_sha256_lf'] for r in _A10['files'] if r['path']==f'local/kbacompany/lang/{lang}/local_kbacompany.php')
             for lang in ('en','ru')}
@@ -96,6 +105,12 @@ class Preservation(unittest.TestCase):
                         # The #145 file is byte-identical up to the ADR-0010 marker; ADR-0010 keys are new.
                         c145,a10=c145.split(A10_MARKER)
                         self.assertEqual(A10_BEFORE[lang],hashlib.sha256(data.split(A10_MARKER)[0]).hexdigest())
+                        if DF_MARKER in a10:
+                            # The ADR-0010 file is byte-identical up to the day feed marker; day feed keys are new.
+                            a10,df=a10.split(DF_MARKER)
+                            self.assertEqual(DF_BEFORE[lang],hashlib.sha256(data.split(DF_MARKER)[0]).hexdigest())
+                            self.assertEqual(DF_KEYS,keys(df))
+                            self.assertFalse(set(DF_KEYS)&set(keys(data.split(DF_MARKER)[0])))
                         a10keys=keys(a10)
                         self.assertEqual(41,len(a10keys));self.assertEqual(len(a10keys),len(set(a10keys)))
                         self.assertTrue(all(k.startswith((b'dailyreports_',b'messageprovider:dailyreport_',

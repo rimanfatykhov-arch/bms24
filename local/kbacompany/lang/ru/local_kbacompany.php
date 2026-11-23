@@ -9947,3 +9947,24 @@ $string['dailyreports_cc_max'] = 'Ежедневные отчёты: получ�
 $string['dailyreports_cc_max_help'] = 'Сколько человек автор может поставить в копию одного отчёта (1–50).';
 $string['messageprovider:dailyreport_copy'] = 'Копия ежедневного отчёта';
 $string['communication_notification_dailyreport_copy'] = 'Копия ежедневного отчёта';
+
+// Day feed -> report draft (2026-11-23): own submitted task results into the Done field of the own draft.
+$string['dailyreports_feed_tab'] = 'Лента дня';
+$string['dailyreports_feed_title'] = 'Мои сданные результаты';
+$string['dailyreports_feed_intro'] = 'Результаты задач, которые вы сдали в выбранный день. «Добавить в отчёт» переносит результат в поле «Сделано» вашего черновика за этот день; уже написанный текст сохраняется. Отчёт вы проверяете и отправляете сами.';
+$string['dailyreports_feed_day'] = 'День';
+$string['dailyreports_feed_show'] = 'Показать';
+$string['dailyreports_feed_today'] = 'Сегодня';
+$string['dailyreports_feed_submitted'] = 'Результат сдан';
+$string['dailyreports_feed_now'] = 'Сейчас: {$a}';
+$string['dailyreports_feed_add'] = 'Добавить в отчёт';
+$string['dailyreports_feed_open_task'] = 'Открыть задачу';
+$string['dailyreports_feed_open_report'] = 'Открыть отчёт за день';
+$string['dailyreports_feed_empty_title'] = 'В этот день нет сданных результатов';
+$string['dailyreports_feed_empty_text'] = 'Здесь появляются результаты, которые вы сдаёте по своим задачам. Выберите другой день или откройте задачи.';
+$string['dailyreports_feed_sent'] = 'Отчёт за этот день уже отправлен. Добавить результат можно, когда отчёт снова станет черновиком (доработка или исправление).';
+$string['dailyreports_feed_pages'] = 'Страницы результатов';
+$string['dailyreports_feed_prev'] = 'Предыдущие';
+$string['dailyreports_feed_next'] = 'Следующие';
+$string['dailyreports_resultadded'] = 'Результат добавлен в поле «Сделано» черновика. Проверьте текст и отправьте отчёт.';
+$string['dailyreports_resultexists'] = 'Этот результат уже есть в поле «Сделано»; повторно он не добавлен.';

@@ -63,7 +63,7 @@ final class daily_report_ui_service {
     public static function form(string $uuid, string $day, array $values, array $links, array $candidates,
             int $revision, string $requestkey, array $review = []): string {
         $out = html_writer::start_tag('form', ['method' => 'post', 'action' => self::url($uuid, ['day' => $day])->out(false),
-            'class' => 'bms-dailyreport-form mb-4', 'data-dailyreport-form' => '1']);
+            'class' => 'bms-dailyreport-form mb-4', 'data-dailyreport-form' => '1', 'id' => 'dailyreport-form']);
         foreach (['uuid' => $uuid, 'day' => $day, 'sesskey' => sesskey(), 'revision' => (string)$revision,
                 'requestkey' => $requestkey] as $name => $value) {
             $out .= html_writer::empty_tag('input', ['type' => 'hidden', 'name' => $name, 'value' => $value]);

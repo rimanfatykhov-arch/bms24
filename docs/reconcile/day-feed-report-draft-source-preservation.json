@@ -1,0 +1,20 @@
+{
+ "scope": "exact intentional source updates; not runtime or release acceptance",
+ "base_sha": "6275795ee24ecbf4f450ad92c1dc827d54e06840",
+ "normalization": "CRLF to LF only",
+ "previous_evidence": "docs/reconcile/daily-reports-adr0010-source-preservation.json (ADR-0010 language block)",
+ "decision": "docs/reconcile/DAY_FEED_REPORT_DRAFT.md (owner task 2026-11-23: first scenario Day feed -> report draft, task results only)",
+ "change": "Append the day feed block (19 keys, dailyreports_feed_* and dailyreports_result*) after the ADR-0010 block in both languages. No schema, no version, no capability or notification kind change.",
+ "files": [
+  {
+   "path": "local/kbacompany/lang/en/local_kbacompany.php",
+   "before_sha256_lf": "8ca0f2edf94a7675402634d986f75fa6968ac557e9c68e43d7864ba3e94b9bae",
+   "after_sha256_lf": "07f9ed6af27a2030cff81ddd90c70995d667598ff4625c24c6ebd0dcad6a782f"
+  },
+  {
+   "path": "local/kbacompany/lang/ru/local_kbacompany.php",
+   "before_sha256_lf": "0698c4976b6364b07fb124700624ff30023df5356f7260dab0260f60641320ac",
+   "after_sha256_lf": "d456cdb1ccfcb2910d3fef22a72b12304121bd2246ea871e5508e8890daf82bb"
+  }
+ ]
+}

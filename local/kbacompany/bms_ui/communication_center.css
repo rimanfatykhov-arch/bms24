@@ -1758,3 +1758,160 @@ body.bms-comm-page #bms24-comm-root .bms24-comm-nempty {
         text-align: center;
     }
 }
+
+/* ---------- day feed -> report draft (own submitted task results of one day) ---------- */
+
+body.bms-comm-page #bms24-comm-root .bms24-comm-dayfeedwrap {
+    display: block;
+    width: 100%;
+    margin: 0;
+    padding: 0;
+}
+
+body.bms-comm-page #bms24-comm-root .bms24-comm-dfdate {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+    margin: 0;
+}
+
+body.bms-comm-page #bms24-comm-root .bms24-comm-dfdate label {
+    margin: 0;
+    color: var(--cc-muted);
+    font-size: 13px;
+    font-weight: 600;
+}
+
+body.bms-comm-page #bms24-comm-root .bms24-comm-dfdate input[type="date"] {
+    width: auto;
+    min-width: 0;
+    min-height: 34px;
+    padding: 4px 8px;
+    border: 1px solid var(--cc-border);
+    border-radius: var(--cc-radius-ctl);
+    font-family: inherit;
+    font-size: 14px;
+}
+
+body.bms-comm-page #bms24-comm-root .bms24-comm-dfbody p {
+    margin: 0;
+}
+
+body.bms-comm-page #bms24-comm-root .bms24-comm-dfintro {
+    margin: 0;
+    padding: 10px 16px 0;
+    font-size: 13px;
+}
+
+body.bms-comm-page #bms24-comm-root .bms24-comm-dayfeed > .bms24-comm-alert {
+    margin: 10px 16px 0;
+}
+
+body.bms-comm-page #bms24-comm-root .bms24-comm-dflist {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin: 0;
+    padding: 12px 16px 16px;
+}
+
+body.bms-comm-page #bms24-comm-root .bms24-comm-dfrow {
+    display: grid;
+    grid-template-columns: 52px minmax(0, 1fr);
+    gap: 10px;
+    margin: 0;
+    padding: 10px 12px;
+    border: 1px solid var(--cc-line);
+    border-radius: 12px;
+    background: #fff;
+}
+
+body.bms-comm-page #bms24-comm-root .bms24-comm-dftime {
+    padding-top: 2px;
+    color: var(--cc-muted);
+    font-size: 13px;
+    font-variant-numeric: tabular-nums;
+}
+
+body.bms-comm-page #bms24-comm-root .bms24-comm-dfbody {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    min-width: 0;
+}
+
+body.bms-comm-page #bms24-comm-root .bms24-comm-dftitle {
+    margin: 0;
+    font-size: 15px;
+    font-weight: 700;
+    line-height: 1.35;
+    overflow-wrap: anywhere;
+}
+
+body.bms-comm-page #bms24-comm-root .bms24-comm-dftitle a {
+    color: var(--cc-navy);
+    text-decoration: none;
+}
+
+body.bms-comm-page #bms24-comm-root .bms24-comm-dftitle a:hover {
+    color: var(--cc-blue);
+    text-decoration: underline;
+}
+
+body.bms-comm-page #bms24-comm-root .bms24-comm-dfstate {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+body.bms-comm-page #bms24-comm-root .bms24-comm-dfresult {
+    margin: 0;
+    color: var(--cc-text);
+    font-size: 14px;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+}
+
+body.bms-comm-page #bms24-comm-root .bms24-comm-dfacts {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+}
+
+body.bms-comm-page #bms24-comm-root .bms24-comm-dayfeed .bms24-empty {
+    margin: 8px 0;
+}
+
+body.bms-comm-page #bms24-comm-root .bms24-comm-dayfeed .bms24-comm-pager {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 0 16px 16px;
+}
+
+@media (max-width: 600px) {
+    body.bms-comm-page #bms24-comm-root .bms24-comm-dfrow {
+        grid-template-columns: minmax(0, 1fr);
+        gap: 4px;
+    }
+
+    body.bms-comm-page #bms24-comm-root .bms24-comm-dfdate {
+        flex: 1 1 100%;
+    }
+
+    body.bms-comm-page #bms24-comm-root .bms24-comm-dfdate input[type="date"] {
+        flex: 1 1 140px;
+    }
+
+    body.bms-comm-page #bms24-comm-root .bms24-comm-dfacts .bms24-comm-btn,
+    body.bms-comm-page #bms24-comm-root .bms24-comm-dfacts form {
+        flex: 1 1 auto;
+    }
+
+    body.bms-comm-page #bms24-comm-root .bms24-comm-dfacts form .bms24-comm-btn {
+        width: 100%;
+    }
+}

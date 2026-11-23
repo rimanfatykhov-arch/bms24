@@ -96,6 +96,12 @@ def check(root=ROOT):
         'local/kbacompany/lang/ru/local_kbacompany.php': '0698c4976b6364b07fb124700624ff30023df5356f7260dab0260f60641320ac',
         'local/kbacompany/classes/local/communication_service.php': '6a5de10a764edc99864aee634ec4b9ecbe432c7a76e4dfcbc5d60b81b6874b40',
     })
+    # Day feed -> report draft (owner task 2026-11-23, first scenario: task results only). RU/EN block appended after
+    # ADR-0010; no schema, version, capability or notification change. See docs/reconcile/DAY_FEED_REPORT_DRAFT.md.
+    reviewed_followup.update({
+        'local/kbacompany/lang/en/local_kbacompany.php': '07f9ed6af27a2030cff81ddd90c70995d667598ff4625c24c6ebd0dcad6a782f',
+        'local/kbacompany/lang/ru/local_kbacompany.php': 'd456cdb1ccfcb2910d3fef22a72b12304121bd2246ea871e5508e8890daf82bb',
+    })
     for row in plan['rows']:
         path=root/row['path']
         if not path.is_file() or path.is_symlink():
