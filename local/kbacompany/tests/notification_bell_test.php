@@ -36,7 +36,7 @@ final class notification_bell_test extends \advanced_testcase {
                 'timecreated' => $now, 'timemodified' => $now,
             ]);
         }
-        return ['admin' => $admin, 'a' => $companies['A']['uuid'], 'b' => $companies['B']['uuid'],
+        return ['admin' => $admin, 'a' => $companies['A']['uuid'], 'b' => $companies['B']['uuid'], 'bid' => $companies['B']['id'],
             'employee' => (int)$employee->id, 'peer' => (int)$peer->id, 'outsider' => (int)$outsider->id];
     }
 
@@ -162,6 +162,74 @@ final class notification_bell_test extends \advanced_testcase {
         set_user_preference(communication_center_ui_service::SOUND_PREFERENCE, '1', $f['outsider']);
         $this->expectException(\moodle_exception::class);
         notification_bell_service::claim_signal($f['a'], $f['outsider'], [$n1]);
+    }
+
+    public function test_signal_claim_never_suppresses_an_older_unsignalled_id(): void {
+        global $DB;
+        $f = $this->fixture();
+        set_user_preference(communication_center_ui_service::SOUND_PREFERENCE, '1', $f['employee']);
+        $this->setUser($f['employee']);
+        // Same company, claimed out of creation order: id(c1) < id(c2), c2 sounds first, c1 must still sound once.
+        $c1 = $this->system_notification($f['a'], $f['employee'], 'order-1');
+        $c2 = $this->system_notification($f['a'], $f['employee'], 'order-2');
+        $this->assertLessThan($this->notification_id($c2), $this->notification_id($c1));
+        $this->assertTrue(notification_bell_service::claim_signal($f['a'], $f['employee'], [$c2]));
+        $this->assertTrue(notification_bell_service::claim_signal($f['a'], $f['employee'], [$c1]), 'older id suppressed');
+        $this->assertFalse(notification_bell_service::claim_signal($f['a'], $f['employee'], [$c1]));
+        $this->assertFalse(notification_bell_service::claim_signal($f['a'], $f['employee'], [$c2, $c1]));
+
+        // Two companies of the same account: the newer company B row sounds first, the older company A row still sounds.
+        $now = time();
+        $DB->insert_record('local_kbacorp_member', (object)[
+            'companyid' => $f['bid'],
+            'userid' => $f['employee'], 'membertype' => 'employee', 'isemployee' => 1, 'ismanager' => 0,
+            'isdepartmentmanager' => 0, 'ishr' => 0, 'timecreated' => $now, 'timemodified' => $now,
+        ]);
+        $this->assertTrue($this->member_of($f['b'], $f['employee']), 'fixture: employee also belongs to company B');
+        $a1 = $this->system_notification($f['a'], $f['employee'], 'cross-a');
+        $b2 = $this->system_notification($f['b'], $f['employee'], 'cross-b');
+        $this->assertLessThan($this->notification_id($b2), $this->notification_id($a1));
+        $this->assertTrue(notification_bell_service::claim_signal($f['b'], $f['employee'], [$b2]));
+        $this->assertTrue(notification_bell_service::claim_signal($f['a'], $f['employee'], [$a1]), 'company A row suppressed by company B');
+        $this->assertFalse(notification_bell_service::claim_signal($f['a'], $f['employee'], [$a1]));
+        $this->assertFalse(notification_bell_service::claim_signal($f['b'], $f['employee'], [$b2]));
+        // A row is only claimable in its own company context.
+        $a3 = $this->system_notification($f['a'], $f['employee'], 'cross-a3');
+        $this->assertFalse(notification_bell_service::claim_signal($f['b'], $f['employee'], [$a3]));
+        $this->assertTrue(notification_bell_service::claim_signal($f['a'], $f['employee'], [$a3]));
+    }
+
+    public function test_signal_set_is_pruned_to_claimable_rows(): void {
+        global $DB;
+        $f = $this->fixture();
+        set_user_preference(communication_center_ui_service::SOUND_PREFERENCE, '1', $f['employee']);
+        $this->setUser($f['employee']);
+        $old = $this->system_notification($f['a'], $f['employee'], 'prune-old');
+        $this->assertTrue(notification_bell_service::claim_signal($f['a'], $f['employee'], [$old]));
+        $DB->set_field('local_kbacompany_commnotif', 'timecreated', time() - 3600, ['uuid' => $old]);
+        $new = $this->system_notification($f['a'], $f['employee'], 'prune-new');
+        $this->assertTrue(notification_bell_service::claim_signal($f['a'], $f['employee'], [$new]));
+        $stored = explode(',', (string)$DB->get_field('user_preferences', 'value',
+            ['userid' => $f['employee'], 'name' => notification_bell_service::SIGNALLED_PREFERENCE]));
+        $this->assertSame([(string)$this->notification_id($new)], $stored, 'stale ids are pruned, new id kept');
+        // An unreadable stored value is treated as an empty set (the row may sound once more), never as an error.
+        set_user_preference(notification_bell_service::SIGNALLED_PREFERENCE, 'x,,-5,abc', $f['employee']);
+        $this->assertTrue(notification_bell_service::claim_signal($f['a'], $f['employee'], [$new]));
+        $this->assertFalse(notification_bell_service::claim_signal($f['a'], $f['employee'], [$new]));
+    }
+
+    private function notification_id(string $uuid): int {
+        global $DB;
+        return (int)$DB->get_field('local_kbacompany_commnotif', 'id', ['uuid' => $uuid], MUST_EXIST);
+    }
+
+    private function member_of(string $company, int $userid): bool {
+        try {
+            \local_kbacompany\local\company_context_service::context($company, $userid);
+            return true;
+        } catch (\moodle_exception $e) {
+            return false;
+        }
     }
 
     public function test_signal_claim_ignores_revoked_thread(): void {

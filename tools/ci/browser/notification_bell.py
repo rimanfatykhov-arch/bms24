@@ -75,6 +75,81 @@ def notify(company, actor, tag):
     return php('notify', company, actor['userid'], '%s-%s' % (nonce, tag))['uuid']
 
 
+def notify_uid(company, userid, tag):
+    return php('notify', company, userid, '%s-%s' % (nonce, tag))
+
+
+def claims(jobs, lead=3.0):
+    """Run claim_signal in separate PHP processes (separate DB connections, no shared session) that all start at the
+    same wall-clock instant; sequential requests of one browser session would not prove anything about concurrency."""
+    startat = time.time() + lead
+    procs = [subprocess.Popen(['php', str(here / 'ci_notification_bell.php'), core, 'claim', company, str(userid),
+                               '%.6f' % startat, ','.join(ids)], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+             for company, userid, ids in jobs]
+    out = []
+    for proc in procs:
+        stdout, stderr = proc.communicate(timeout=120)
+        require(proc.returncode == 0, 'claim process failed: %s' % stderr[-300:])
+        row = json.loads(stdout.strip().splitlines()[-1])
+        row['late'] = round(row['t0'] - startat, 4)
+        out.append(row)
+    first_end = min(r['t1'] for r in out)
+    return {'results': out, 'plays': [r['play'] for r in out], 'inflight_at_first_end': sum(r['t0'] < first_end for r in out)}
+
+
+def signal_counts(page):
+    return page.evaluate("""() => { const d = document.querySelector('[data-bms24-bell]').dataset;
+      return {signals: +(d.signals || 0), confirms: +(d.confirms || 0), plays: window.__bellPlays, sound: d.sound,
+              epoch: +(d.epoch || 0)}; }""")
+
+
+def set_sound(page, on):
+    """Explicit user action through the panel; waits for the stored state."""
+    if page.locator('[data-bms24-bell-panel]').is_hidden():
+        page.locator('[data-bms24-bell-toggle]').click()
+    page.locator('[data-bms24-bell-sound-%s]' % ('enable' if on else 'disable')).click()
+    page.wait_for_function('v => document.querySelector("[data-bms24-bell]").dataset.sound === v', arg='1' if on else '0',
+                           timeout=15000)
+    page.keyboard.press('Escape')
+
+
+class HeldClaims:
+    """Delays the answer of claim requests: the claim reaches the real server (which decides play=true/false), but
+    the browser receives that real answer only when release() is called."""
+    def __init__(self, page):
+        self.page, self.held = page, []
+        page.route('**' + FEED + '*', self.handle)
+
+    def handle(self, route):
+        req = route.request
+        if req.method == 'POST' and 'action=claim' in (req.post_data or ''):
+            response = route.fetch()
+            self.held.append((route, response, response.json()))
+        else:
+            route.fallback()
+
+    def wait(self, n=1, timeout=15.0):
+        end = time.time() + timeout
+        while len(self.held) < n and time.time() < end:
+            self.page.wait_for_timeout(100)
+        require(len(self.held) >= n, 'claim request was not sent')
+
+    def release(self):
+        answers = []
+        before = polls(self.page)
+        for route, response, body in self.held:
+            route.fulfill(response=response)
+            answers.append(body)
+        self.held = []
+        self.page.wait_for_function('n => +document.querySelector("[data-bms24-bell]").dataset.polls > n', arg=before,
+                                   timeout=15000)
+        self.page.wait_for_timeout(500)
+        return answers
+
+    def close(self):
+        self.page.unroute('**' + FEED + '*', self.handle)
+
+
 def state(company, actor):
     return php('state', company, actor['userid'])
 
@@ -86,9 +161,13 @@ def page_url(company, path=PAGE, **params):
 def context(browser, width=1440, height=900, nostorage=False):
     ctx = browser.new_context(viewport={'width': width, 'height': height})
     rec = Recorder().install(ctx)
-    recorders.append(rec)
     if nostorage:
+        # Kept apart: this context plants a localStorage fault on purpose; contract.notification_bell_checks() accepts
+        # in it nothing but the exact echo of that planted fault (no page error, no failed request, no other message).
+        ctx.bms_nostorage_events = rec.events
         ctx.add_init_script(NO_STORAGE)
+    else:
+        recorders.append(rec)
     ctx.add_init_script(PLAY_STUB)
     ctx.clock.install()
     return ctx
@@ -309,6 +388,7 @@ with sync_playwright() as p:
             tick(ctx, [page])
             steps['tabs_nostorage']['other_context'] = bell(page)
         finally:
+            steps.setdefault('tabs_nostorage', {})['events'] = list(ctxn.bms_nostorage_events)
             ctxn.close()
 
         # 9. Reload: baseline again, silent.
@@ -355,6 +435,39 @@ with sync_playwright() as p:
         n9 = notify(A, EA, 'n9')
         tick(ctx, [page])
         steps['disable'] = {'n9': n9, 'bell': bell(page), 'pref': state(A, EA)['pref']}
+
+        # 13b. Late claim answer (review finding 1). The claim reaches the server while the sound is on (the server
+        #      answers play=true); the answer is held; the user turns the sound off (second case: off and on again)
+        #      before it arrives. The late answer must not produce an automatic signal; a later new notification sounds.
+        set_sound(page, True)
+        race = {}
+        held = HeldClaims(page)
+        try:
+            reset_plays(page)
+            base = signal_counts(page)
+            r1 = notify(A, EA, 'race1')
+            ctx.clock.fast_forward(31000)
+            held.wait()
+            set_sound(page, False)
+            race['off'] = {'id': r1, 'pref_before_release': state(A, EA)['pref'], 'answers': held.release(),
+                           'before': base, 'after': signal_counts(page), 'bell': bell(page)}
+            set_sound(page, True)
+            base = signal_counts(page)
+            r2 = notify(A, EA, 'race2')
+            ctx.clock.fast_forward(31000)
+            held.wait()
+            set_sound(page, False)
+            set_sound(page, True)
+            race['off_on'] = {'id': r2, 'pref_before_release': state(A, EA)['pref'], 'answers': held.release(),
+                              'before': base, 'after': signal_counts(page), 'bell': bell(page)}
+        finally:
+            held.close()
+        base = signal_counts(page)
+        r3 = notify(A, EA, 'race3')
+        tick(ctx, [page])
+        race['normal'] = {'id': r3, 'before': base, 'after': signal_counts(page), 'bell': bell(page)}
+        steps['late_claim'] = race
+        set_sound(page, False)
 
         # 14. Thread notification: appears, sounds once, opens its conversation; participation revoked -> row,
         #     count and title disappear, silent.
@@ -434,6 +547,27 @@ with sync_playwright() as p:
                                    'ra_bell_count': other.goto(page_url(A), wait_until='networkidle') and
                                    other.locator('[data-bms24-bell]').count()}
         ctx.close()
+
+        # 18b. Server deduplication by notification identity (review finding 2): real Moodle + DB, separate processes.
+        dual = php('dual', f['companies']['A']['id'], A, f['companies']['B']['id'], B, nonce)
+        D = dual['userid']
+        cl = {'dual': dual}
+        a1, b2 = notify_uid(A, D, 'xa'), notify_uid(B, D, 'xb')
+        cl['cross'] = {'a': a1, 'b': b2, 'first_b': claims([(B, D, [b2['uuid']])], 1.0),
+                       'then_a': claims([(A, D, [a1['uuid']])], 1.0), 'again_a': claims([(A, D, [a1['uuid']])], 1.0),
+                       'a_in_b': claims([(B, D, [a1['uuid']])], 1.0)}
+        c1, c2 = notify_uid(A, D, 'o1'), notify_uid(A, D, 'o2')
+        cl['order'] = {'c1': c1, 'c2': c2, 'first_c2': claims([(A, D, [c2['uuid']])], 1.0),
+                       'then_c1': claims([(A, D, [c1['uuid']])], 1.0)}
+        p1 = notify_uid(A, D, 'p1')
+        cl['parallel_same'] = dict(claims([(A, D, [p1['uuid']])] * 8), id=p1)
+        q1, q2 = notify_uid(A, D, 'q1'), notify_uid(B, D, 'q2')
+        cl['parallel_companies'] = dict(claims([(A, D, [q1['uuid']])] * 4 + [(B, D, [q2['uuid']])] * 4), a=q1, b=q2)
+        batch3 = [notify_uid(A, D, 'r%d' % i) for i in range(3)]
+        ids3 = [x['uuid'] for x in batch3]
+        cl['batch'] = {'ids': ids3, 'first': claims([(A, D, ids3)], 1.0),
+                       'repeat': claims([(A, D, [ids3[1]]), (A, D, [ids3[2], ids3[0]]), (A, D, ids3), (A, D, ids3)])}
+        steps['claims'] = cl
 
         # 19. Geometry, keyboard and focus at 1440/768/320.
         for _ in range(9):

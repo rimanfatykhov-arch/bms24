@@ -11,12 +11,12 @@
     {
       "path": "local/kbacompany/lang/en/local_kbacompany.php",
       "before_sha256_lf": "ffa8c3cc82b19e1e15fdc12f5ec901a6621a7a92abed5f2097ec6e97f71bf348",
-      "after_sha256_lf": "bdc13625e4ffd6cdef9f0c0a3da0849ba55b92d88df3c1f5405b0b070132e8c0"
+      "after_sha256_lf": "1867be01b8e6afcab83b1425dac05657306ad6f26fae60f5978fbe076933d755"
     },
     {
       "path": "local/kbacompany/lang/ru/local_kbacompany.php",
       "before_sha256_lf": "0ff5746d50f5cfc84b13d582f210e6262549973ebd7d08f4667262edaf2cb46b",
-      "after_sha256_lf": "f0f4c1ed1b8975da5b2e93269df5f642238c1521e083479ab4b3875e0410a4fd"
+      "after_sha256_lf": "b1af4e0bf94d7160cfac2743113f0f75928e57eb33b7adc697f6e90c2d3cd6c4"
     }
   ]
 }

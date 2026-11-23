@@ -1132,6 +1132,14 @@ class ContractTest(unittest.TestCase):
             m.update(kw)
             return m
 
+        def cnt(signals, confirms, plays):
+            return {'signals': signals, 'confirms': confirms, 'plays': plays, 'sound': '1', 'epoch': 7}
+
+        def run(*plays):
+            rows = [{'play': x, 't0': 10.0 + i * 0.001, 't1': 10.05 + i * 0.01, 'pid': 1000 + i, 'late': 0.001}
+                    for i, x in enumerate(plays)]
+            return {'results': rows, 'plays': list(plays), 'inflight_at_first_end': len(plays)}
+
         def width(w):
             return {'width': w, 'toggle_visible': True, 'closed': metrics(False), 'open_keyboard': metrics(True, 'panel'),
                     'tab_inside': 'inside', 'after_escape': metrics(False, 'toggle'), 'focus_outline': ['solid', 3.0],
@@ -1150,7 +1158,22 @@ class ContractTest(unittest.TestCase):
             'tabs': {'n5': 'n5', 'plays': [1, 0], 'bells': [bell(['n5'], 5, 1, 'on'), bell(['n5'], 5, 0, 'on')],
                      'storage': ['available', 'available']},
             'tabs_nostorage': {'n6': 'n6', 'plays': [0, 1], 'bells': [bell(['n6', 'n5'], 6, 0, 'on'), bell(['n6', 'n5'], 6, 1, 'on')],
-                               'storage': ['SecurityError', 'SecurityError'], 'other_context': bell(['n6', 'n5'], 6, 0, 'on')},
+                               'storage': ['SecurityError', 'SecurityError'], 'other_context': bell(['n6', 'n5'], 6, 0, 'on'),
+                               'events': [{'source': 'console', 'type': 'error', 'text': c.BELL_PLANTED_STORAGE_ECHO, 'url': ''}] * 2},
+            'late_claim': {
+                'off': {'id': 'r1', 'pref_before_release': '0', 'answers': [{'ok': True, 'user': 5, 'play': True}],
+                        'before': cnt(3, 2, 0), 'after': cnt(3, 2, 0), 'bell': bell(['r1'], 9, 0, 'off')},
+                'off_on': {'id': 'r2', 'pref_before_release': '1', 'answers': [{'ok': True, 'user': 5, 'play': True}],
+                           'before': cnt(3, 3, 1), 'after': cnt(3, 4, 2), 'bell': bell(['r2', 'r1'], 10, 2, 'on')},
+                'normal': {'id': 'r3', 'before': cnt(3, 4, 2), 'after': cnt(4, 4, 3), 'bell': bell(['r3', 'r2'], 11, 3, 'on')}},
+            'claims': {
+                'dual': {'userid': 99, 'companies': ['A', 'B']},
+                'cross': {'a': {'uuid': 'xa', 'id': 101}, 'b': {'uuid': 'xb', 'id': 102}, 'first_b': run(True),
+                          'then_a': run(True), 'again_a': run(False), 'a_in_b': run(False)},
+                'order': {'c1': {'uuid': 'o1', 'id': 201}, 'c2': {'uuid': 'o2', 'id': 202}, 'first_c2': run(True), 'then_c1': run(True)},
+                'parallel_same': dict(run(True, *[False] * 7), id={'uuid': 'p1', 'id': 301}),
+                'parallel_companies': dict(run(False, True, False, False, False, False, True, False), a={'id': 401}, b={'id': 402}),
+                'batch': {'ids': ['b1', 'b2', 'b3'], 'first': run(True), 'repeat': run(False, False, False, False)}},
             'reload': {'bell': bell(['n5'], 5, 0, 'on')},
             'reconnect': {'ids': ['o0', 'o1'], 'polls_while_offline': 0, 'bell': bell(['o1', 'o0', 'n5'], 7, 1, 'on')},
             'autoplay_refused': {'n8': 'n8', 'blocked': bell(['n8'], 8, 1, 'blocked'), 'after_test': bell(['n8'], 8, 2, 'on')},
@@ -1174,6 +1197,11 @@ class ContractTest(unittest.TestCase):
         }
         return {'status': 'PASS', 'companyuuid': 'A', 'companyb': 'B', 'steps': steps,
                 'widths': [width(w) for w in c.BELL_WIDTHS], 'browser_events': list(ABORTED), 'server_errors': []}
+
+    @staticmethod
+    def run_(*plays):
+        rows = [{'play': x, 't0': 10.0, 't1': 10.05, 'pid': 2000 + i, 'late': 0.0} for i, x in enumerate(plays)]
+        return {'results': rows, 'plays': list(plays), 'inflight_at_first_end': len(plays)}
 
     def test_notification_bell_valid_passes_and_mutations_fail(self):
         obs = self.bell_obs()
@@ -1230,6 +1258,29 @@ class ContractTest(unittest.TestCase):
         fails(snd, lambda o: st(o, 'tabs_nostorage')['bells'][1].update(state='unavailable'))
         fails(snd, lambda o: st(o, 'tabs_nostorage')['bells'][0]['ids'].remove('n6'))
         fails(snd, lambda o: st(o, 'tabs_nostorage')['other_context'].update(plays=1))
+        # Review finding 1: a late claim answer after the sound was turned off (or off and on).
+        fails(snd, lambda o: st(o, 'late_claim')['off']['after'].update(signals=4, plays=1))
+        fails(snd, lambda o: st(o, 'late_claim')['off_on']['after'].update(signals=4, plays=3))
+        fails(snd, lambda o: st(o, 'late_claim')['off']['after'].update(plays=1))              # unexplained play()
+        fails(snd, lambda o: st(o, 'late_claim')['off']['answers'][0].update(play=False))      # race not reproduced
+        fails(snd, lambda o: st(o, 'late_claim')['off'].update(answers=[]))
+        fails(snd, lambda o: st(o, 'late_claim')['off'].update(pref_before_release='1'))      # not turned off in time
+        fails(snd, lambda o: st(o, 'late_claim')['normal']['after'].update(signals=3, plays=2))  # normal signal lost
+        fails(snd, lambda o: st(o, 'late_claim').pop('off_on'))
+        # Review finding 2: dedup by identity, real concurrency.
+        fails(snd, lambda o: st(o, 'claims')['cross'].update(then_a=self.run_(False)))
+        fails(snd, lambda o: st(o, 'claims')['order'].update(then_c1=self.run_(False)))
+        fails(snd, lambda o: st(o, 'claims')['cross'].update(again_a=self.run_(True)))
+        fails(snd, lambda o: st(o, 'claims')['cross'].update(a_in_b=self.run_(True)))
+        fails(snd, lambda o: st(o, 'claims')['cross']['a'].update(id=103))                     # fixture order not proven
+        fails(snd, lambda o: st(o, 'claims')['parallel_same']['plays'].__setitem__(1, True))
+        fails(snd, lambda o: st(o, 'claims')['parallel_same'].update(inflight_at_first_end=1))  # sequential, not parallel
+        fails(snd, lambda o: [r.update(pid=1) for r in st(o, 'claims')['parallel_same']['results']])
+        fails(snd, lambda o: st(o, 'claims')['parallel_companies']['plays'].__setitem__(6, False))
+        fails(snd, lambda o: st(o, 'claims')['parallel_same']['plays'].pop())
+        fails(snd, lambda o: st(o, 'claims')['batch']['repeat']['plays'].__setitem__(2, True))
+        fails(snd, lambda o: st(o, 'claims')['dual'].update(companies=['A']))
+        fails(snd, lambda o: o['steps'].pop('claims'))
         fails(snd, lambda o: st(o, 'reload')['bell'].update(plays=1))
         fails(snd, lambda o: st(o, 'reconnect').update(polls_while_offline=1))
         fails(snd, lambda o: st(o, 'reconnect')['bell'].update(plays=2))
@@ -1268,6 +1319,10 @@ class ContractTest(unittest.TestCase):
                                                         'url': 'http://127.0.0.1:8080' + c.FEED_PATH}))
         fails(be, lambda o: o.update(server_errors=[{'status': 500}]))
         fails(be, lambda o: o.pop('browser_events'))
+        fails(be, lambda o: st(o, 'tabs_nostorage')['events'].append({'source': 'pageerror', 'name': 'Error', 'message': 'x'}))
+        fails(be, lambda o: st(o, 'tabs_nostorage')['events'].append({'source': 'console', 'type': 'error', 'text': 'TypeError: x'}))
+        fails(be, lambda o: st(o, 'tabs_nostorage')['events'].append({'source': 'requestfailed', 'url': 'http://127.0.0.1:8080/x'}))
+        fails(be, lambda o: st(o, 'tabs_nostorage').pop('events'))
         for mutate, code in ((lambda o: o.update(error='boom'), 0), (lambda o: o.update(status='FAIL'), 0),
                              (lambda o: o.update(cleanup_error='x'), 0), (lambda o: None, 1)):
             o = copy.deepcopy(obs); mutate(o)

@@ -1362,6 +1362,11 @@ BELL_WIDTHS = (1440, 768, 320)
 FEED_PATH = '/local/kbacompany/communication_notifications_feed.php'
 
 
+# The no-storage tabs plant this fault on purpose (notification_bell.py NO_STORAGE); its echo is the only event
+# accepted from that context.
+BELL_PLANTED_STORAGE_ECHO = 'SecurityError: localStorage blocked by the test'
+
+
 def notification_bell_checks(obs, exitcode=None):
     """Top bar bell + opt-in sound (fail closed). Evidence: notification_bell.py. A counted play() call is a request for a
     signal, not proof of audible sound; the owner's manual listening check is outside this contract."""
@@ -1460,7 +1465,65 @@ def notification_bell_checks(obs, exitcode=None):
         require(a.get('more_polls') == 0, 'stopped bell kept polling for another account')
         require(a.get('ra_bell_count') == 1, 'new account page has no bell')
 
+    def claim_identity_and_concurrency():
+        """Server claims (separate PHP processes on the real Moodle DB): dedup by notification identity, not max id."""
+        cl = step('claims')
+        companies = sorted((cl.get('dual') or {}).get('companies') or [])
+        require(companies == sorted([obs.get('companyuuid'), obs.get('companyb')]), 'claims: dual-company account not in A and B')
+
+        def outcome(run, n):
+            require(isinstance(run, dict) and isinstance(run.get('plays'), list) and len(run['plays']) == n
+                    and all(isinstance(x, bool) for x in run['plays']), 'claims: run evidence missing')
+            return run['plays']
+        x = cl.get('cross') or {}
+        require(int(x['a']['id']) < int(x['b']['id']), 'claims: fixture order wrong (company A row must have the lower id)')
+        require(outcome(x.get('first_b'), 1) == [True], 'claims: first company B claim did not play')
+        require(outcome(x.get('then_a'), 1) == [True], 'older fresh notification suppressed (other company)')
+        require(outcome(x.get('again_a'), 1) == [False], 'claims: the same notification played twice')
+        require(outcome(x.get('a_in_b'), 1) == [False], 'claims: a row was claimable outside its company')
+        o = cl.get('order') or {}
+        require(int(o['c1']['id']) < int(o['c2']['id']), 'claims: fixture order wrong (same company)')
+        require(outcome(o.get('first_c2'), 1) == [True], 'claims: newer row did not play')
+        require(outcome(o.get('then_c1'), 1) == [True], 'older fresh notification suppressed (same company)')
+        ps = cl.get('parallel_same') or {}
+        require(outcome(ps, 8).count(True) == 1, 'concurrent claims of one notification: %r signals' % ps.get('plays'))
+        pc = cl.get('parallel_companies') or {}
+        pcp = outcome(pc, 8)
+        require(pcp[:4].count(True) == 1 and pcp[4:].count(True) == 1,
+                'concurrent claims in two companies: %r (expected one per notification)' % pcp)
+        for name, run in (('parallel_same', ps), ('parallel_companies', pc)):
+            rows = run.get('results') or []
+            require(len({r.get('pid') for r in rows}) == len(rows), '%s: claims did not run in separate processes' % name)
+            require(isinstance(run.get('inflight_at_first_end'), int) and run['inflight_at_first_end'] >= 2,
+                    '%s: concurrency not demonstrated (claims did not overlap)' % name)
+        b = cl.get('batch') or {}
+        require(outcome(b.get('first'), 1) == [True], 'claims: batch did not play')
+        require(outcome(b.get('repeat'), 4) == [False] * 4, 'claims: a claimed batch played again %r' % b['repeat']['plays'])
+
+    def late_claim():
+        """Review finding 1: a late claim answer must not play after the sound was turned off (or off and on)."""
+        lc = step('late_claim')
+        for key, pref, confirms in (('off', '0', 0), ('off_on', '1', 1)):
+            r = lc.get(key) or {}
+            ans = r.get('answers') or []
+            require(len(ans) == 1 and ans[0].get('ok') is True and ans[0].get('play') is True,
+                    'late claim %s: precondition missing (server did not grant play to the held claim)' % key)
+            require(r.get('pref_before_release') == pref, 'late claim %s: stored preference %r' % (key, r.get('pref_before_release')))
+            bf, af = r.get('before') or {}, r.get('after') or {}
+            require(all(isinstance(d.get(k), int) for d in (bf, af) for k in ('signals', 'confirms', 'plays')),
+                    'late claim %s: counters missing' % key)
+            require(af['signals'] == bf['signals'], 'stale claim played after disable (%s)' % key)
+            require(af['confirms'] - bf['confirms'] == confirms and af['plays'] - bf['plays'] == confirms,
+                    'stale claim played after disable (%s): play() calls not explained by button confirmations' % key)
+            require(r.get('id') in shown(r.get('bell'))['ids'], 'late claim %s: row missing from the bell' % key)
+        n = lc.get('normal') or {}
+        bf, af = n.get('before') or {}, n.get('after') or {}
+        require(isinstance(bf.get('signals'), int) and af.get('signals') == bf['signals'] + 1 and af.get('plays') == bf.get('plays', 0) + 1
+                and af.get('confirms') == bf.get('confirms'), 'new notification with sound on no longer signals after a late claim')
+
     def sound_signal_rules():
+        claim_identity_and_concurrency()
+        late_claim()
         plays(step('initial')['bell'], 0, 'initial load')
         plays(step('new_sound_off')['bell'], 0, 'sound off')
         plays(step('repeat_poll')['bell'], 0, 'repeated polling')
@@ -1552,6 +1615,11 @@ def notification_bell_checks(obs, exitcode=None):
         run()
         require(obs.get('server_errors') == [], 'server errors: %r' % (obs.get('server_errors') or [])[:3])
         page_error_check(obs, 'notification bell')()
+        ev = (step('tabs_nostorage') or {}).get('events')
+        require(isinstance(ev, list), 'no-storage context events not recorded')
+        other = [e for e in ev if not (e.get('source') == 'console' and e.get('type') == 'error'
+                                       and e.get('text') == BELL_PLANTED_STORAGE_ECHO)]
+        require(not other, 'no-storage context: unexpected browser events %r' % other[:3])
 
     return {'notification_bell_new_event_center_and_bell': new_event_center_and_bell,
             'notification_bell_read_rules_unchanged': read_rules_unchanged,

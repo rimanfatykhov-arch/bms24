@@ -9921,4 +9921,4 @@ $string['notificationbell_sound_enable'] = 'Turn on sound';
 $string['notificationbell_sound_test'] = 'Test sound';
 $string['notificationbell_sound_disable'] = 'Turn off sound';
 $string['privacy:metadata:preference:notificationsound'] = 'Whether the user turned on the sound signal for new BMS24 notifications.';
-$string['privacy:metadata:preference:notificationsoundmark'] = 'Internal number of the latest BMS24 notification that already produced a sound signal, so other tabs do not repeat it.';
+$string['privacy:metadata:preference:notificationsoundsignalled'] = 'Internal numbers of recent BMS24 notifications that already produced a sound signal, so other tabs do not repeat it.';

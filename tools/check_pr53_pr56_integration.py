@@ -92,8 +92,8 @@ def check(root=ROOT):
     # See docs/reconcile/TOPBAR_NOTIFICATION_BELL_SOURCE_PRESERVATION.md.
     reviewed_followup.update({
         'local/kbacompany/classes/local/communication_service.php': '5199aac3569343b3807b962e19e82a62ee5c1959401242346c785bbcf5a41b5f',
-        'local/kbacompany/lang/en/local_kbacompany.php': 'bdc13625e4ffd6cdef9f0c0a3da0849ba55b92d88df3c1f5405b0b070132e8c0',
-        'local/kbacompany/lang/ru/local_kbacompany.php': 'f0f4c1ed1b8975da5b2e93269df5f642238c1521e083479ab4b3875e0410a4fd',
+        'local/kbacompany/lang/en/local_kbacompany.php': '1867be01b8e6afcab83b1425dac05657306ad6f26fae60f5978fbe076933d755',
+        'local/kbacompany/lang/ru/local_kbacompany.php': 'b1af4e0bf94d7160cfac2743113f0f75928e57eb33b7adc697f6e90c2d3cd6c4',
     })
     for row in plan['rows']:
         path=root/row['path']

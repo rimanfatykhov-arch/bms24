@@ -1,0 +1,28 @@
+diff --git a/local/kbacompany/amd/src/notification_bell.js b/local/kbacompany/amd/src/notification_bell.js
+--- a/local/kbacompany/amd/src/notification_bell.js
++++ b/local/kbacompany/amd/src/notification_bell.js
+@@ -230,8 +230,8 @@ define([], function() {
+             .then(function(data) {
+                 // A late answer is void if the sound was toggled, the account or access changed, or the bell stopped
+                 // while the claim was in flight (the epoch moved on).
+-                if (data && data.ok === true && data.play === true && String(data.user) === self.user && !self.stopped
+-                        && self.sound && epoch === self.epoch) {
++                // NEGATIVE CONTROL (CI only): the late-answer guard removed on purpose (original #156 code).
++                if (data && data.ok === true && data.play === true && String(data.user) === self.user && !self.stopped) {
+                     self.signal();
+                 }
+             })
+diff --git a/local/kbacompany/amd/build/notification_bell.min.js b/local/kbacompany/amd/build/notification_bell.min.js
+--- a/local/kbacompany/amd/build/notification_bell.min.js
++++ b/local/kbacompany/amd/build/notification_bell.min.js
+@@ -230,8 +230,8 @@ define([], function() {
+             .then(function(data) {
+                 // A late answer is void if the sound was toggled, the account or access changed, or the bell stopped
+                 // while the claim was in flight (the epoch moved on).
+-                if (data && data.ok === true && data.play === true && String(data.user) === self.user && !self.stopped
+-                        && self.sound && epoch === self.epoch) {
++                // NEGATIVE CONTROL (CI only): the late-answer guard removed on purpose (original #156 code).
++                if (data && data.ok === true && data.play === true && String(data.user) === self.user && !self.stopped) {
+                     self.signal();
+                 }
+             })

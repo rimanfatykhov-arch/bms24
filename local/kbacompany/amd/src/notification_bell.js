@@ -10,6 +10,9 @@
  *   One signal per batch and across tabs: the tab asks the server (POST action=claim with sesskey), which grants
  *   "play" to exactly one claim of a newer visible unread notification of the account. No browser storage is used,
  *   so private mode or blocked site data cannot duplicate the signal. No queued signals after reconnect.
+ * - A late claim or feed answer never plays after the sound was turned off (or off and on again), the account or
+ *   access changed or the bell stopped: every such change moves the sound epoch, and answers of an older epoch are void.
+ * - The automatic signal (signal()) and the confirmation/test tone of a button press (confirm()) are separate paths.
  */
 define([], function() {
     'use strict';
@@ -71,7 +74,17 @@ define([], function() {
         this.stopped = false;
         this.blocked = false;
         this.audio = null;
+        // Sound epoch: bumped by every sound toggle, stop or loss of access. An answer (feed or claim) that was
+        // requested under an older epoch never plays and never overrides the local sound state.
+        this.epoch = 0;
+        this.signals = 0;
+        this.confirms = 0;
     }
+
+    Bell.prototype.bump = function() {
+        this.epoch++;
+        this.root.dataset.epoch = String(this.epoch);
+    };
 
     Bell.prototype.setState = function(state) {
         this.root.dataset.state = state;
@@ -151,6 +164,7 @@ define([], function() {
 
     /** Stop observing: another account or no access. Clears everything shown; never plays a sound. */
     Bell.prototype.unavailable = function() {
+        this.bump();
         this.setBadge(0, null);
         this.renderItems([]);
         this.setState('unavailable');
@@ -164,7 +178,7 @@ define([], function() {
         this.root.dataset.polls = String(this.polls);
     };
 
-    Bell.prototype.apply = function(data) {
+    Bell.prototype.apply = function(data, epoch) {
         if (String(data.user) !== this.user || String(data.company) !== this.company) {
             // The Moodle session now belongs to another account or the answer is for another company.
             this.stopped = true;
@@ -172,7 +186,11 @@ define([], function() {
             return null;
         }
         this.loaded = true;
-        this.sound = !!data.sound;
+        var current = epoch === this.epoch;
+        if (current) {
+            // A feed answer requested before a sound toggle must not undo that toggle.
+            this.sound = !!data.sound;
+        }
         this.setBadge(data.unread, data.label);
         this.renderItems(data.items || []);
         this.setState((data.items || []).length ? 'ready' : 'empty');
@@ -193,11 +211,11 @@ define([], function() {
             this.since = data.now;
             return null;
         }
-        return fresh.length && this.sound ? this.announce(fresh) : null;
+        return fresh.length && this.sound && current ? this.announce(fresh, epoch) : null;
     };
 
     /** One signal per batch and across tabs: the server grants "play" to exactly one claim. Returns a promise. */
-    Bell.prototype.announce = function(ids) {
+    Bell.prototype.announce = function(ids, epoch) {
         var self = this;
         var body = new URLSearchParams();
         body.set('uuid', this.company);
@@ -210,13 +228,30 @@ define([], function() {
                 return response.ok ? response.json() : {ok: false};
             })
             .then(function(data) {
-                if (data && data.ok === true && data.play === true && String(data.user) === self.user && !self.stopped) {
-                    self.play();
+                // A late answer is void if the sound was toggled, the account or access changed, or the bell stopped
+                // while the claim was in flight (the epoch moved on).
+                if (data && data.ok === true && data.play === true && String(data.user) === self.user && !self.stopped
+                        && self.sound && epoch === self.epoch) {
+                    self.signal();
                 }
             })
             .catch(function() {
                 // No answer: stay silent rather than risk a duplicate signal.
             });
+    };
+
+    /** Automatic signal for new notifications (granted by the server claim). */
+    Bell.prototype.signal = function() {
+        this.signals++;
+        this.root.dataset.signals = String(this.signals);
+        this.play();
+    };
+
+    /** Confirmation/test tone of an explicit button press; never a notification signal. */
+    Bell.prototype.confirm = function() {
+        this.confirms++;
+        this.root.dataset.confirms = String(this.confirms);
+        this.play();
     };
 
     Bell.prototype.play = function() {
@@ -244,6 +279,11 @@ define([], function() {
 
     Bell.prototype.saveSound = function(enabled) {
         var self = this;
+        // Local state follows the click at once (turning off is immediate); pending claims become void.
+        this.bump();
+        if (!enabled) {
+            this.sound = false;
+        }
         var body = new URLSearchParams();
         body.set('uuid', this.company);
         body.set('action', 'sound');
@@ -258,9 +298,11 @@ define([], function() {
                 if (data && data.ok && String(data.user) === self.user) {
                     self.sound = !!data.sound;
                 }
+                self.bump();
                 self.renderSound();
             })
             .catch(function() {
+                self.bump();
                 self.renderSound();
             });
     };
@@ -291,6 +333,7 @@ define([], function() {
         }
         this.inflight = true;
         this.lastpoll = Date.now();
+        var epoch = this.epoch;
         var url = this.endpoint + '?uuid=' + encodeURIComponent(this.company);
         fetch(url, {credentials: 'same-origin', cache: 'no-store', headers: {'Accept': 'application/json'}})
             .then(function(response) {
@@ -313,7 +356,7 @@ define([], function() {
                 }
                 self.failures = 0;
                 // The poll counts as done only after a possible signal claim was answered.
-                return Promise.resolve(self.apply(data)).then(function() {
+                return Promise.resolve(self.apply(data, epoch)).then(function() {
                     self.done();
                     self.schedule(POLL_MS);
                 });
@@ -401,7 +444,7 @@ define([], function() {
         });
         this.root.querySelector('[data-bms24-bell-sound-enable]').addEventListener('click', function() {
             // The click is the explicit user action: unlock and confirm playback now, then store the preference.
-            self.play();
+            self.confirm();
             self.saveSound(true).then(function() {
                 if (self.sound) {
                     self.root.querySelector('[data-bms24-bell-sound-disable]').focus();
@@ -409,7 +452,7 @@ define([], function() {
             });
         });
         this.root.querySelector('[data-bms24-bell-sound-test]').addEventListener('click', function() {
-            self.play();
+            self.confirm();
         });
         this.root.querySelector('[data-bms24-bell-sound-disable]').addEventListener('click', function() {
             self.blocked = false;
