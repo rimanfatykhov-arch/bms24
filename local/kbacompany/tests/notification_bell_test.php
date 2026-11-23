@@ -223,6 +223,30 @@ final class notification_bell_test extends \advanced_testcase {
         return (int)$DB->get_field('local_kbacompany_commnotif', 'id', ['uuid' => $uuid], MUST_EXIST);
     }
 
+    public function test_large_signal_set_preserves_unclaimed_ids_and_prunes_expired_chunks(): void {
+        global $DB;
+        $f = $this->fixture();
+        set_user_preference(communication_center_ui_service::SOUND_PREFERENCE, '1', $f['employee']);
+        $this->setUser($f['employee']);
+        $unclaimed = $this->system_notification($f['a'], $f['employee'], 'large-unclaimed');
+        $claimed = [];
+        for ($i = 0; $i < 400; $i++) {
+            $claimed[] = $this->system_notification($f['a'], $f['employee'], 'large-' . $i);
+        }
+        foreach (array_chunk($claimed, notification_bell_service::MAX_CLAIM) as $chunk) {
+            $this->assertTrue(notification_bell_service::claim_signal($f['a'], $f['employee'], $chunk));
+        }
+        $stored = notification_bell_service::signal_preferences($f['employee']);
+        $this->assertGreaterThan(1300, strlen(implode(',', $stored)));
+        $this->assertTrue(notification_bell_service::claim_signal($f['a'], $f['employee'], [$unclaimed]));
+        $this->assertFalse(notification_bell_service::claim_signal($f['a'], $f['employee'], [$unclaimed, end($claimed)]));
+        $DB->set_field('local_kbacompany_commnotif', 'timecreated', time() - 3600, ['userid' => $f['employee']]);
+        $fresh = $this->system_notification($f['a'], $f['employee'], 'large-fresh');
+        $this->assertTrue(notification_bell_service::claim_signal($f['a'], $f['employee'], [$fresh]));
+        $this->assertSame([notification_bell_service::SIGNALLED_PREFERENCE => (string)$this->notification_id($fresh)],
+            notification_bell_service::signal_preferences($f['employee']));
+    }
+
     private function member_of(string $company, int $userid): bool {
         try {
             \local_kbacompany\local\company_context_service::context($company, $userid);
