@@ -108,6 +108,9 @@ def check(root=ROOT):
         'local/kbacompany/lang/en/local_kbacompany.php': '2d2686ca949a0e25b586d30bf639ccbadd4979c0d341d2ba34258f5136a9b2fb',
         'local/kbacompany/lang/ru/local_kbacompany.php': 'ecb4d6bbaf07e37e750532287a75827e3f705667cb3dfd22a74f6d915808c3d8',
     })
+    # #128: append the adaptive navigation labels after the integrated bell.
+    reviewed_followup['local/kbacompany/lang/en/local_kbacompany.php'] = '796443e2f78e013e5a45d4782a2cba51c89193d87f17d2104fb684228560a14b'
+    reviewed_followup['local/kbacompany/lang/ru/local_kbacompany.php'] = 'c6f620c5aa0410fdaf067a6750d8e4cc4e847c2cdfd145b023a6fff975ad5dde'
     for row in plan['rows']:
         path=root/row['path']
         if not path.is_file() or path.is_symlink():

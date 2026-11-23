@@ -1198,6 +1198,191 @@ class ContractTest(unittest.TestCase):
             r = c.evaluate(c.plan_discussion_checks(o, code))
             self.assertTrue(all(x['status'] == 'FAIL' for x in r.values()), r)
         self.assertTrue(all(x['status'] == 'FAIL' for x in c.evaluate(c.plan_discussion_checks(None, None)).values()))
+    # ---- adaptive navigation (adaptive_nav.py)
+    def nav_obs(self):
+        def box(x, y, w, h):
+            return {'x': x, 'y': y, 'w': w, 'h': h, 'r': x + w, 'b': y + h}
+
+        def groups(open_all=False, items=(1, 6, 3)):
+            labels = ('Главное', 'Рабочее пространство', 'Управление')
+            return [{'label': l, 'open': open_all or i < 2, 'summary': box(12, 60 + i * 50, 300, 44), 'items': n,
+                     'visible': n if (open_all or i < 2) else 0, 'current': i == 1} for i, (l, n) in enumerate(zip(labels, items))]
+
+        def labels():
+            return [{'text': t, 'broken': [], 'count': None} for t in ('Задачи', 'Отчёты', 'Боевой план', 'Календарь')] + \
+                [{'text': 'Коммуникационный центр 3', 'broken': [], 'count': {'visible': True, 'text': '3', 'clipped': False, 'inside': True}}]
+
+        def targets(n=6):
+            return [dict(box(12, 60 + i * 48, 280, 44), text='item %d' % i) for i in range(n)]
+
+        def layout(r, open_=False):
+            narrow = r['shell'] == 'owned' and r['js'] and r['width'] <= c.ADAPTIVE_NAV_BREAKPOINT
+            owned = r['shell'] == 'owned'
+            wide_owned = owned and not narrow
+            lay = {'owned': owned, 'inner': r['width'], 'innerh': r['height'], 'client': r['width'], 'scroll': r['width'], 'scrolly': 400,
+                   'main': box(0, 74, r['width'], 2000) if narrow else box(258, 74, r['width'] - 258, 2000),
+                   'sidebar_visible': wide_owned, 'summary_visible': False, 'drawer_visible': open_, 'drawer_focusables': 9 if open_ else 0,
+                   'menu_roles': 0, 'button': None, 'html_overflow': 'hidden' if open_ else 'visible', 'body_overflow': 'visible',
+                   'main_inert': open_, 'backdrop_visible': open_, 'active': 'menubutton' if narrow else 'BODY', 'sidebar': None}
+            if owned:
+                lay['button'] = {'tag': 'BUTTON', 'type': 'button', 'visible': narrow, 'w': 92 if narrow else 0, 'h': 44 if narrow else 0,
+                                 'x': 10, 'y': 15, 'r': 102, 'b': 59, 'expanded': 'true' if open_ else 'false', 'controls': 'bms24-drawer',
+                                 'controls_exists': True, 'name': 'Меню', 'hidden_attr': not r['js']}
+            if wide_owned:
+                lay['sidebar'] = {'groups': groups(), 'labels': labels(), 'targets': targets(), 'outside': [], 'current_visible': True}
+            return lay
+
+        def drawer(r, open_all=False):
+            w = r['width'] if r['width'] < 360 else min(360, r['width'] - 48)
+            return {'visible': True, 'box': box(0, 0, w, r['height']), 'inner': r['width'], 'innerh': r['height'], 'role': 'dialog',
+                    'modal': 'true', 'name': 'Навигация BMS24', 'id': 'bms24-drawer',
+                    'backdrop': dict(box(0, 0, r['width'], r['height']), visible=True),
+                    'close': dict(box(w - 54, 10, 44, 44), visible=True, name='Закрыть меню', tag='BUTTON'),
+                    'focus_inside': True, 'expanded': 'true', 'current': {'visible': True, 'open': True, 'path': 'tasks.php'},
+                    'groups': groups(open_all), 'labels': labels(), 'targets': targets(), 'outside': [],
+                    'scrollers': [{'cls': 'bms24-drawerbody', 'sw': w - 24, 'cw': w - 24, 'sh': 900, 'ch': r['height'] - 70,
+                                   'ox': 'hidden', 'oy': 'auto'}],
+                    'doc_scroll': r['width'], 'client': r['width'], 'html_overflow': 'hidden',
+                    'main': box(0, 74, r['width'], 2000), 'main_inert': True, 'sidebar_inert': True, 'focusables': 9, 'menu_roles': 0}
+
+        def closed(r, method):
+            return {'method': method, 'drawer_visible': False, 'backdrop_visible': False, 'expanded': 'false', 'active': 'menubutton',
+                    'scrolly': 400, 'expected_scrolly': 400, 'html_overflow': 'visible', 'main_inert': False,
+                    'field': c.ADAPTIVE_NAV_MARKER, 'drawer_focusables': 0}
+
+        cases = []
+        for cid, shell, actor, lang, width, height, dpr, js in c.ADAPTIVE_NAV_CASES:
+            r = {'id': cid, 'shell': shell, 'actor': actor, 'lang': lang, 'width': width, 'height': height, 'dpr': dpr, 'js': js,
+                 'language_installed': True, 'http': 200, 'browser_events': []}
+            r['layout'] = layout(r)
+            if js:
+                r['server_errors'] = []
+            narrow = shell == 'owned' and js and width <= c.ADAPTIVE_NAV_BREAKPOINT
+            if narrow:
+                d = drawer(r)
+                r.update({'field_present': True, 'before_open': layout(r), 'open_method': 'button', 'drawer': d,
+                          'stress': {'done': True, 'outside': [], 'box': box(12, 300, d['box']['w'] - 24, 66), 'drawer': d['box'],
+                                     'report': {'text': c.ADAPTIVE_NAV_STRESS['label'] + ' 9999', 'broken': [],
+                                                'count': {'visible': True, 'text': '9999', 'clipped': False, 'inside': True}}},
+                          'tab_forward': [True] * 12, 'tab_backward': [True] * 4, 'wheel': {'before': 400, 'after': 400},
+                          'groups_all_open': groups(True, (1, 6, 3) if actor == 'MA' else (1, 4, 1)),
+                          'last_item': {'found': True, 'text': 'Настройки', 'top': height - 60, 'bottom': height - 16, 'innerh': height,
+                                        'hit': True, 'doc_scroll': width, 'client': width},
+                          'close_escape': closed(r, 'escape'), 'close_button': closed(r, 'button'),
+                          'backdrop_exposed': width >= 360, 'after_close': layout(r)})
+                if width >= 360:
+                    r['close_backdrop'] = closed(r, 'backdrop')
+            if cid in ('owned-375-ru', 'owned-861-ru'):
+                nw, ww = (375, 1440) if cid == 'owned-375-ru' else (860, 861)
+                wide = dict(r, width=ww, shell='owned'); nar = dict(r, width=nw)
+                r['resize'] = {'opened': 'button', 'open': True, 'to_wide': layout(wide), 'back_narrow': layout(nar), 'reopen': 'button',
+                               'reopen_visible': True, 'reclosed': layout(nar)}
+            if cid == 'owned-375-ru':
+                r['bell_handoff'] = {'open_before_menu': True, 'closed_after_menu': True}
+                r['routes'] = [{'target': t, 'opened': 'button', 'links': 1, 'visible': True, 'http': 200, 'path': t, 'opened_after': 'button',
+                                'current': {'visible': True, 'open': True, 'path': t}, 'doc_scroll': 375, 'client': 375}
+                               for t in c.ADAPTIVE_NAV_ROUTES]
+            if not js:
+                if width < 861:
+                    d = drawer(r)
+                    d.update(role=None, modal=None, backdrop=None, close=None, box=box(10, 74, 355, 600))
+                    r.update(summary_visible=True, drawer=d, last_item={'found': True, 'hit': True, 'top': 600, 'bottom': 644})
+                    r['layout']['summary_visible'] = True
+            cases.append(r)
+        return {'status': 'PASS', 'company': 'a1b2c3d4-0000-4000-8000-00000000000a', 'cases': cases}
+
+    def nav_case(self, obs, cid):
+        return next(r for r in obs['cases'] if r['id'] == cid)
+
+    def test_adaptive_nav_genuine_run_passes(self):
+        res = c.evaluate(c.adaptive_nav_checks(self.nav_obs(), 0))
+        self.assertEqual({k: 'PASS' for k in res}, {k: v['status'] for k, v in res.items()})
+        self.assertEqual(16, len(res))
+        for k in res:
+            self.assertIn(k, c.required_check_names())
+
+    def test_adaptive_nav_regressions_fail(self):
+        n = self.nav_case
+
+        def set_(cid, path, value):
+            def go(o):
+                t = n(o, cid)
+                for key in path[:-1]:
+                    t = t[key]
+                t[path[-1]] = value
+            return go
+
+        def stress(o):
+            n(o, 'owned-390-en')['stress']['report']['broken'] = ['подразделениями']
+        cases = [
+            # The pre-fix markup: no button, the old <details> summary used to open the menu.
+            ('adaptive_nav_menu_button_accessible', set_('owned-375-ru', ['before_open', 'button'], None)),
+            ('adaptive_nav_menu_button_accessible', set_('owned-375-ru', ['open_method'], 'summary')),
+            ('adaptive_nav_menu_button_accessible', set_('owned-768-ru', ['before_open', 'button', 'controls'], None)),
+            ('adaptive_nav_menu_button_accessible', set_('owned-320-ru', ['before_open', 'button', 'h'], 40)),
+            ('adaptive_nav_menu_button_accessible', set_('owned-1440-en', ['layout', 'menu_roles'], 1)),
+            ('adaptive_nav_desktop_sidebar_unchanged', set_('owned-1024-ru', ['layout', 'drawer_focusables'], 3)),
+            ('adaptive_nav_desktop_sidebar_unchanged', set_('owned-861-ru', ['layout', 'sidebar_visible'], False)),
+            ('adaptive_nav_drawer_modal_and_focus_trap', set_('owned-375-ru', ['drawer', 'role'], None)),
+            ('adaptive_nav_drawer_modal_and_focus_trap', set_('owned-375-ru', ['bell_handoff', 'closed_after_menu'], False)),
+            ('adaptive_nav_drawer_modal_and_focus_trap', set_('owned-860-ru', ['tab_forward'], [True, True, False, True])),
+            ('adaptive_nav_drawer_modal_and_focus_trap', set_('owned-390x480-ru', ['drawer', 'box', 'b'], 300)),
+            ('adaptive_nav_drawer_modal_and_focus_trap', set_('owned-844x390-ru', ['drawer', 'main_inert'], False)),
+            ('adaptive_nav_drawer_modal_and_focus_trap', set_('owned-zoom200-ru', ['drawer', 'close'], None)),
+            ('adaptive_nav_no_horizontal_overflow', set_('owned-320-ru', ['drawer', 'scrollers'], [{'sw': 340, 'cw': 296}])),
+            ('adaptive_nav_no_horizontal_overflow', set_('owned-375-ru', ['layout', 'scroll'], 391)),
+            ('adaptive_nav_no_horizontal_overflow', set_('owned-768-ru', ['drawer', 'outside'], ['bms24-count'])),
+            ('adaptive_nav_no_horizontal_overflow', set_('owned-390-en', ['stress', 'outside'], ['bms24-navlabel'])),
+            ('adaptive_nav_no_horizontal_overflow', set_('legacy-375-ru', ['layout', 'scroll'], 420)),
+            ('adaptive_nav_groups_open_and_current', set_('owned-375-ru', ['drawer', 'current', 'open'], False)),
+            ('adaptive_nav_groups_open_and_current', set_('owned-768-ru', ['drawer', 'groups', 1, 'visible'], 0)),
+            ('adaptive_nav_groups_open_and_current', set_('owned-860-ru', ['groups_all_open', 2, 'visible'], 1)),
+            ('adaptive_nav_labels_wrap_and_counters', stress),
+            ('adaptive_nav_labels_wrap_and_counters', set_('owned-375-ru', ['drawer', 'labels', 4, 'count', 'clipped'], True)),
+            ('adaptive_nav_labels_wrap_and_counters', set_('owned-1440-en', ['layout', 'sidebar', 'labels', 0, 'broken'], ['Задачи'])),
+            ('adaptive_nav_tap_targets_44', set_('owned-375-ru', ['drawer', 'targets', 2, 'h'], 40)),
+            ('adaptive_nav_tap_targets_44', set_('owned-1440-en', ['layout', 'sidebar', 'targets', 0, 'h'], 37)),
+            ('adaptive_nav_scroll_lock_page_stable', set_('owned-375-ru', ['wheel', 'after'], 1000)),
+            ('adaptive_nav_scroll_lock_page_stable', set_('owned-768-ru', ['drawer', 'html_overflow'], 'auto')),
+            ('adaptive_nav_scroll_lock_page_stable', set_('owned-860-ru', ['drawer', 'client'], 845)),
+            ('adaptive_nav_close_escape_button_backdrop', set_('owned-375-ru', ['close_escape', 'active'], 'BODY')),
+            ('adaptive_nav_close_escape_button_backdrop', set_('owned-390-en', ['close_button', 'scrolly'], 0)),
+            ('adaptive_nav_close_escape_button_backdrop', set_('owned-768-ru', ['close_backdrop', 'backdrop_visible'], True)),
+            ('adaptive_nav_close_escape_button_backdrop', set_('owned-320-ru', ['close_escape', 'field'], '')),
+            ('adaptive_nav_close_escape_button_backdrop', set_('owned-860-ru', ['backdrop_exposed'], False)),
+            ('adaptive_nav_close_escape_button_backdrop', set_('owned-390-en', ['close_button', 'html_overflow'], 'hidden')),
+            ('adaptive_nav_last_item_reachable', set_('owned-390x480-ru', ['last_item', 'hit'], False)),
+            ('adaptive_nav_last_item_reachable', set_('owned-844x390-ru', ['last_item', 'bottom'], 420)),
+            ('adaptive_nav_resize_no_stale_overlay', set_('owned-375-ru', ['resize', 'to_wide', 'backdrop_visible'], True)),
+            ('adaptive_nav_resize_no_stale_overlay', set_('owned-375-ru', ['resize', 'to_wide', 'html_overflow'], 'hidden')),
+            ('adaptive_nav_resize_no_stale_overlay', set_('owned-861-ru', ['resize', 'back_narrow', 'button', 'expanded'], 'true')),
+            ('adaptive_nav_route_transitions', set_('owned-375-ru', ['routes', 2, 'path'], 'tasks.php')),
+            ('adaptive_nav_route_transitions', set_('owned-375-ru', ['routes', 1, 'current', 'path'], 'tasks.php')),
+            ('adaptive_nav_shorter_employee_menu', set_('owned-375-employee-ru', ['groups_all_open'], [])),
+            ('adaptive_nav_no_js_fallback', set_('nojs-375-ru', ['summary_visible'], False)),
+            ('adaptive_nav_no_js_fallback', set_('nojs-375-ru', ['drawer', 'scrollers'], [{'sw': 500, 'cw': 355}])),
+            ('adaptive_nav_no_js_fallback', set_('nojs-1440-en', ['layout', 'sidebar_visible'], False)),
+            ('adaptive_nav_legacy_shell_unchanged', set_('legacy-375-ru', ['layout', 'html_overflow'], 'hidden')),
+            ('adaptive_nav_no_browser_errors', set_('owned-768-ru', ['browser_events'], [{'source': 'pageerror', 'name': 'Error', 'message': 'x'}])),
+            ('adaptive_nav_no_browser_errors', set_('owned-1024-ru', ['server_errors'], [{'url': 'x', 'status': 500}])),
+        ]
+        for name, mutate in cases:
+            with self.subTest(check=name):
+                obs = self.nav_obs(); mutate(obs)
+                self.assertIn(name, failed(c.evaluate(c.adaptive_nav_checks(obs, 0))))
+
+    def test_adaptive_nav_incomplete_runs_fail_every_check(self):
+        base = self.nav_obs()
+        for mutate, code in ((lambda o: None, 1), (lambda o: None, None), (lambda o: o.update(status='FAIL'), 0),
+                             (lambda o: o.update(error='boom'), 0), (lambda o: o['cases'].pop(), 0),
+                             (lambda o: o['cases'][3].update(error='TimeoutError'), 0),
+                             (lambda o: o['cases'][0].update(language_installed=False), 0),
+                             (lambda o: o['cases'][5]['layout'].update(owned=False), 0),
+                             (lambda o: o['cases'].reverse(), 0)):
+            o = copy.deepcopy(base); mutate(o)
+            r = c.evaluate(c.adaptive_nav_checks(o, code))
+            self.assertTrue(all(v['status'] == 'FAIL' for v in r.values()), r)
+        self.assertTrue(all(v['status'] == 'FAIL' for v in c.evaluate(c.adaptive_nav_checks(None, None)).values()))
 
     @staticmethod
     def bell_obs():

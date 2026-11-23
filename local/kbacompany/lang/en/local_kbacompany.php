@@ -9986,3 +9986,7 @@ $string['notificationbell_sound_test'] = 'Test sound';
 $string['notificationbell_sound_disable'] = 'Turn off sound';
 $string['privacy:metadata:preference:notificationsound'] = 'Whether the user turned on the sound signal for new BMS24 notifications.';
 $string['privacy:metadata:preference:notificationsoundsignalled'] = 'Internal numbers of recent BMS24 notifications that already produced a sound signal, so other tabs do not repeat it.';
+
+// Adaptive BMS24 navigation (2026-11-18): narrow-window menu button and drawer close label.
+$string['bms24_menu_button'] = 'Menu';
+$string['bms24_menu_close'] = 'Close menu';

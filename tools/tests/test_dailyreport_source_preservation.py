@@ -55,9 +55,14 @@ DF_AFTER={lang:next(r['after_sha256_lf'] for r in _DF['files']
           for lang in ('en','ru')}
 E2_KEYS=[b'bpu_tab_discussion',b'bpu_discussion_empty',b'bpu_discussion_readonly',b'bpu_discussion_reader',
          b'communication_object_battleplan',b'communicationcenter_openplan']
+NAV_MARKER=b'\n// Adaptive BMS24 navigation (2026-11-18): narrow-window menu button and drawer close label.\n'
+NAV_KEYS=[b'bms24_menu_button',b'bms24_menu_close']
 _R2=json.loads((ROOT/'docs/reconcile/daily-reports-r2-source-preservation.json').read_text(encoding='utf-8'))
 R2_AFTER={lang:next(r['after_sha256_lf'] for r in _R2['files'] if r['path']==f'local/kbacompany/lang/{lang}/local_kbacompany.php')
           for lang in ('en','ru')}
+_NAV=json.loads((ROOT/'docs/reconcile/adaptive-navigation-source-preservation.json').read_text(encoding='utf-8'))
+NAV_BEFORE={lang:next(r['before_sha256_lf'] for r in _NAV['files'] if r['path']==f'local/kbacompany/lang/{lang}/local_kbacompany.php')
+            for lang in ('en','ru')}
 _COMM=json.loads((ROOT/'docs/reconcile/communication-center-cleanup-source-preservation.json').read_text(encoding='utf-8'))
 COMM_AFTER={lang:next(r['after_sha256_lf'] for r in _COMM['files'] if r['path']==f'local/kbacompany/lang/{lang}/local_kbacompany.php')
             for lang in PUBLISHED}
@@ -111,6 +116,12 @@ class Preservation(unittest.TestCase):
                 e2,ux=e2.split(UX_MARKER)
                 if C145_MARKER in ux:
                     ux,c145=ux.split(C145_MARKER)
+                    if NAV_MARKER in c145:
+                        c145,nav=c145.split(NAV_MARKER)
+                        # The integrated Day Feed and bell are byte-identical up to the adaptive navigation marker.
+                        self.assertEqual(NAV_BEFORE[lang],hashlib.sha256(data.split(NAV_MARKER)[0]).hexdigest())
+                        self.assertEqual(NAV_KEYS,keys(nav))
+                        self.assertFalse(set(NAV_KEYS)&set(keys(data.split(NAV_MARKER)[0])))
                     if BELL_MARKER in c145:
                         c145,bell=c145.split(BELL_MARKER)
                         prefix_before_bell=data.split(BELL_MARKER)[0]
@@ -161,7 +172,8 @@ class Preservation(unittest.TestCase):
             for mutation in [lambda b:b+b'\n// unexpected',lambda b:b.replace(b'dailyreport_title',b'overridden_key',1),
                              lambda b:b.replace(b'communication_reply',b'overridden_key',1),
                              lambda b:b.replace(b'dailyreports_button',b'dailyreports_other',1),
-                             lambda b:b.replace(b'communicationcenter_openplan',b'overridden_key',1)]:
+                             lambda b:b.replace(b'communicationcenter_openplan',b'overridden_key',1),
+                             lambda b:b.replace(b'bms24_menu_close',b'overridden_key',1)]:
                 changed=hashlib.sha256(mutation(path.read_bytes().replace(b'\r\n',b'\n'))).hexdigest()
                 with patch.object(gate,'digest',side_effect=lambda p: changed if p==path else original(p)):
                     self.assertIn('parent source lost: '+path.relative_to(ROOT).as_posix(),gate.check(ROOT))
