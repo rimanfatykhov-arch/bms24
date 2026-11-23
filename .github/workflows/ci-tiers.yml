@@ -64,7 +64,28 @@ jobs:
                            'browser_fail': ['attachments_no_browser_errors', 'oversize_no_browser_errors'],
                            'browser_fail_reason': 'failed request %r' % 'http://127.0.0.1:8080/local/kbacompany/ci_negative_failed_request.php',
                            'browser_pass': ['moodle_install', 'download_participant_allowed', 'csrf_invalid_sesskey_rejected', 'access_no_browser_errors',
-                                            'task_tab_desktop_no_browser_errors', 'task_tab_mobile_no_browser_errors']}]
+                                            'task_tab_desktop_no_browser_errors', 'task_tab_mobile_no_browser_errors']},
+                          # BROWSER negative control (top bar bell): notification source visibility removed in the runner.
+                          # The bell must still show a notification of a conversation the user was removed from -> FAIL.
+                          {'name': 'negative-browser-bell-acl', 'base': head, 'head': head, 'patch': 'tools/ci/negative/browser_bell_acl_regression.patch',
+                           'expect': {'fast': 'pass', 'standard': 'na', 'browser': 'fail'},
+                           'browser_fail': ['notification_bell_isolation_roles_and_revocation'],
+                           'browser_fail_reason': 'revoked thread still shown',
+                           'browser_pass': ['moodle_install', 'notification_bell_single_bell', 'notification_bell_panel_layout_keyboard']},
+                          # BROWSER negative control (#156 review, finding 1): the late claim answer guard removed (src and build).
+                          # A claim answered after the user turned the sound off must be reported as a stale signal.
+                          {'name': 'negative-browser-bell-stale-claim', 'base': head, 'head': head, 'patch': 'tools/ci/negative/browser_bell_stale_claim_regression.patch',
+                           'expect': {'fast': 'pass', 'standard': 'na', 'browser': 'fail'},
+                           'browser_fail': ['notification_bell_sound_signal_rules'],
+                           'browser_fail_reason': 'stale claim played after disable',
+                           'browser_pass': ['moodle_install', 'notification_bell_isolation_roles_and_revocation', 'notification_bell_single_bell']},
+                          # BROWSER negative control (#156 review, finding 2): server dedup by highest id instead of identity.
+                          # An older fresh notification of another company must be reported as suppressed.
+                          {'name': 'negative-browser-bell-watermark', 'base': head, 'head': head, 'patch': 'tools/ci/negative/browser_bell_watermark_regression.patch',
+                           'expect': {'fast': 'pass', 'standard': 'na', 'browser': 'fail'},
+                           'browser_fail': ['notification_bell_sound_signal_rules'],
+                           'browser_fail_reason': 'older fresh notification suppressed',
+                           'browser_pass': ['moodle_install', 'notification_bell_isolation_roles_and_revocation', 'notification_bell_single_bell']}]
           # Roles (merge_gate.py): 'this-pr' = the candidate (required); 'negative-*' = required when planned (their job succeeds
           # only if the planted defect is detected); 'replay-*' = information only, never part of the candidate verdict.
           with open(os.environ['GITHUB_OUTPUT'], 'a') as out:
@@ -116,6 +137,7 @@ jobs:
         run: |
           python3 tools/ci/browser/test_contract.py
           python3 -O tools/ci/browser/test_contract.py
+          (cd tools/ci/browser && python3 test_communication_ux_contract.py && python3 -O test_communication_ux_contract.py)
       - name: FAST checks (lint, JS, AMD, lang parity, CSS contract, package + source identity)
         continue-on-error: ${{ matrix.target.expect.fast == 'fail' }}
         run: |

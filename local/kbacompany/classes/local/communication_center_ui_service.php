@@ -87,7 +87,7 @@ class communication_center_ui_service {
             'contenthtml' => \html_writer::div($OUTPUT->render_from_template('local_kbacompany/bms24_comm_body', $model),
                 'bms24-comm-cardbody'),
         ]);
-        return \html_writer::div($card, 'bms24-comm', ['data-section' => $model['section']]);
+        return \html_writer::div($card, 'bms24-comm', ['id' => 'bms24-comm-root', 'data-section' => $model['section']]);
     }
 
     /** Mustache looks a missing or null key up in the parent context; absent optional values are false instead. */
@@ -104,14 +104,22 @@ class communication_center_ui_service {
         global $USER;
         $actor = (int)$USER->id;
         $tab = (string)$data['tab'];
-        $section = $tab === 'notifications' ? 'notifications' : ($tab === 'discussions' ? 'discussions' : 'messages');
+        $section = in_array($tab, ['notifications', 'dayfeed'], true) ? $tab :
+            ($tab === 'discussions' ? 'discussions' : 'messages');
+        $sectionkeys = ['messages', 'discussions', 'notifications'];
+        if (!empty($data['dayfeed_enabled'])) {
+            $sectionkeys[] = 'dayfeed';
+        }
         $sections = $data['sections'] ?? ['messages' => ['total' => 0, 'unread' => 0],
             'discussions' => ['total' => 0, 'unread' => 0]];
         $tabs = [];
-        foreach (['messages', 'discussions', 'notifications'] as $key) {
-            $label = self::tr($key === 'messages' ? 'communicationux_conversations' : 'communicationcenter_tab_' . $key);
+        foreach ($sectionkeys as $key) {
+            $label = self::tr($key === 'messages' ? 'communicationux_conversations' :
+                ($key === 'dayfeed' ? 'dailyreports_feed_tab' : 'communicationcenter_tab_' . $key));
             $badge = null;
-            if ($key === 'notifications') {
+            if ($key === 'dayfeed') {
+                $badge = null;
+            } else if ($key === 'notifications') {
                 $n = (int)($data['counts']['unread_notifications'] ?? 0);
                 if ($n > 0) {
                     $badge = ['value' => $n, 'variant' => 'blue', 'title' => self::tr('communicationux_notification_count')];
@@ -133,8 +141,13 @@ class communication_center_ui_service {
             'sectionslabel' => self::tr('communicationcenter_title'),
             'tabs' => $tabs, 'section' => $section,
             'isnotifications' => $section === 'notifications',
+            'isdayfeed' => $section === 'dayfeed',
             'newconversation' => self::new_conversation($company, $data['employees'], $actor),
         ];
+        if ($section === 'dayfeed') {
+            $model['dayfeed'] = self::day_feed($company, $data['dayfeed']);
+            return self::falsify($model);
+        }
         if ($section === 'notifications') {
             $model['notifications'] = self::notifications($company, $data);
             return self::falsify($model);
@@ -486,7 +499,7 @@ class communication_center_ui_service {
      * @return array|null [moodle_url, string key] or null for other kinds
      */
     public static function daily_report_target(string $company, string $kind): ?array {
-        if ($kind === 'dailyreport_submitted') {
+        if ($kind === 'dailyreport_submitted' || $kind === 'dailyreport_copy') {
             return [daily_report_ui_service::url($company, ['tab' => 'review']), 'dailyreports_tab_review'];
         }
         if ($kind === 'dailyreport_decision') {
@@ -506,6 +519,98 @@ class communication_center_ui_service {
         return ['communicationux2_type_other', 'sky', '•'];
     }
 
+    /**
+     * Object links of an already ACL-filtered notification (thread_uuid is only set when the source is visible).
+     * Each target page re-checks company and object access; a link grants nothing.
+     * @return array[] url/label pairs
+     */
+    public static function notification_links(string $company, array $notification): array {
+        $links = [];
+        if ((string)($notification['thread_uuid'] ?? '') !== '') {
+            $links[] = ['url' => self::url($company, ['thread' => $notification['thread_uuid']])->out(false),
+                'label' => self::tr('communicationux2_open_conversation')];
+        }
+        $target = self::daily_report_target($company, (string)$notification['kind']);
+        if ($target) { $links[] = ['url' => $target[0]->out(false), 'label' => self::tr($target[1])]; }
+        if (strpos((string)$notification['kind'], 'calendar_') === 0) {
+            $links[] = ['url' => (new \moodle_url('/local/kbacompany/calendar.php', ['uuid' => $company]))->out(false),
+                'label' => self::tr('communicationux2_open_calendar')];
+        }
+        return $links;
+    }
+
+    /** Moodle user preference holding the opt-in notification sound; per account, default off. */
+    public const SOUND_PREFERENCE = 'local_kbacompany_notification_sound';
+
+    public static function sound_enabled(int $userid): bool {
+        return (string)get_user_preferences(self::SOUND_PREFERENCE, '0', $userid) === '1';
+    }
+
+    /** Badge label with the counted unit, e.g. "Unread notifications: 3". */
+    public static function bell_label(int $unread): string {
+        return self::tr('notificationbell_label', $unread);
+    }
+
+    /**
+     * Top bar bell (owned shell): render-only model. Counts and items are loaded by notification_bell.js from
+     * communication_notifications_feed.php so that ordinary page rendering does not run the notification ACL.
+     */
+    public static function bell(string $company, int $userid): array {
+        return [
+            'company' => $company, 'userid' => $userid,
+            'endpoint' => (new \moodle_url('/local/kbacompany/communication_notifications_feed.php'))->out(false),
+            'sound' => self::sound_enabled($userid),
+            'label' => self::tr('notificationbell_title'),
+            'title' => self::tr('notificationbell_title'),
+            'allurl' => self::url($company, ['tab' => 'notifications'])->out(false),
+            'alllabel' => self::tr('notificationbell_all'),
+            'loading' => self::tr('notificationbell_loading'),
+            'empty' => self::tr('notificationbell_empty'),
+            'error' => self::tr('notificationbell_error'),
+            'unavailable' => self::tr('notificationbell_unavailable'),
+            'retry' => self::tr('notificationbell_retry'),
+            'soundtitle' => self::tr('notificationbell_sound'),
+            'soundoff' => self::tr('notificationbell_sound_off'),
+            'soundon' => self::tr('notificationbell_sound_on'),
+            'soundblocked' => self::tr('notificationbell_sound_blocked'),
+            'soundenable' => self::tr('notificationbell_sound_enable'),
+            'soundtest' => self::tr('notificationbell_sound_test'),
+            'sounddisable' => self::tr('notificationbell_sound_disable'),
+            'readonlyhint' => self::tr('notificationbell_readonly_hint'),
+        ];
+    }
+
+    /**
+     * JSON payload of the bell: localized presentation of communication_service::notification_feed().
+     * Contains only rows that already passed the server-side company, participant and object checks.
+     */
+    public static function bell_feed(string $company, int $userid, array $feed): array {
+        $items = [];
+        $today = business_date_service::day(time());
+        foreach ($feed['items'] as $notification) {
+            $key = 'communication_notification_' . $notification['kind'];
+            $title = get_string_manager()->string_exists($key, 'local_kbacompany') ? self::tr($key) :
+                self::tr('communication_notification');
+            [$typekey, $variant, $icon] = self::notification_type((string)$notification['kind']);
+            $links = self::notification_links($company, $notification);
+            $time = (int)$notification['time_created'];
+            $items[] = [
+                'id' => (string)$notification['uuid'], 'read' => !empty($notification['is_read']),
+                'type' => self::tr($typekey), 'variant' => $variant, 'icon' => $icon,
+                'title' => $title, 'subtitle' => (string)$notification['title'],
+                'time' => business_date_service::day($time) === $today ? userdate($time, '%H:%M') :
+                    userdate($time, '%d.%m.%Y, %H:%M'),
+                'created' => $time,
+                'url' => $links ? $links[0]['url'] : self::url($company, ['tab' => 'notifications'])->out(false),
+                'linklabel' => $links ? $links[0]['label'] : self::tr('notificationbell_all'),
+            ];
+        }
+        $unread = (int)$feed['unread'];
+        return ['ok' => true, 'company' => $company, 'user' => $userid, 'now' => time(),
+            'unread' => $unread, 'label' => self::bell_label($unread), 'items' => $items,
+            'sound' => self::sound_enabled($userid)];
+    }
+
     private static function notifications(string $company, array $data): array {
         $onlyunread = ($data['filter'] ?? 'all') === 'unread';
         $groups = ['today' => [], 'earlier' => []];
@@ -518,17 +623,7 @@ class communication_center_ui_service {
             $title = get_string_manager()->string_exists($key, 'local_kbacompany') ? self::tr($key) :
                 self::tr('communication_notification');
             [$typekey, $variant, $icon] = self::notification_type((string)$notification['kind']);
-            $links = [];
-            if ($notification['thread_uuid'] !== '') {
-                $links[] = ['url' => self::url($company, ['thread' => $notification['thread_uuid']])->out(false),
-                    'label' => self::tr('communicationux2_open_conversation')];
-            }
-            $target = self::daily_report_target($company, (string)$notification['kind']);
-            if ($target) { $links[] = ['url' => $target[0]->out(false), 'label' => self::tr($target[1])]; }
-            if (strpos((string)$notification['kind'], 'calendar_') === 0) {
-                $links[] = ['url' => (new \moodle_url('/local/kbacompany/calendar.php', ['uuid' => $company]))->out(false),
-                    'label' => self::tr('communicationux2_open_calendar')];
-            }
+            $links = self::notification_links($company, $notification);
             $time = (int)$notification['time_created'];
             $istoday = business_date_service::day($time) === $today;
             $groups[$istoday ? 'today' : 'earlier'][] = [
@@ -552,14 +647,77 @@ class communication_center_ui_service {
             'title' => self::tr('communicationcenter_tab_notifications'), 'unread' => $unread ?: null,
             'onlyunread' => ['active' => $onlyunread, 'label' => self::tr('communicationux2_only_unread'),
                 'url' => self::url($company, ['tab' => 'notifications', 'filter' => $onlyunread ? 'all' : 'unread'])->out(false)],
-            'markall' => $unread > 0 ? ['hidden' => self::post_base($company, 'readallnotifications'),
-                'label' => self::tr('communicationux2_mark_all')] : null,
+            // mark-all-read is withheld from this candidate: the prototype only proposed it and the
+            // owner has not approved a bulk action. The POST endpoint is left intact for a later decision.
             'settings' => ['url' => (new \moodle_url('/local/kbacompany/calendar_notifications.php', ['uuid' => $company]))->out(false),
                 'label' => self::tr('communicationux2_notification_settings')],
             'groups' => $out,
             'empty' => $out ? '' : self::tr($onlyunread ? 'communicationux2_no_unread_notifications' :
                 'communication_nonotifications'),
             'feedlabel' => self::tr('communication_notifications'),
+        ];
+    }
+
+    /**
+     * Day feed -> report draft: own submitted task results of one day. The "Add to report" form posts only the event id
+     * (with sesskey) to the report page, which re-reads the result on the server. No button for a sent report or a
+     * future day (both decided by the page from the store); the result text is shown as stored in the submit event.
+     */
+    private static function day_feed(string $company, array $feed): array {
+        $day = (string)$feed['day'];
+        $today = (string)$feed['today'];
+        $sent = !empty($feed['sent']);
+        $canadd = !empty($feed['canadd']);
+        $reporturl = new \moodle_url('/local/kbacompany/daily_report.php', ['uuid' => $company, 'day' => $day]);
+        $items = [];
+        foreach ($feed['results'] as $event) {
+            $status = (string)$event->currentstatus;
+            $statuskey = 'taskcenter_status_' . $status;
+            $statuslabel = get_string_manager()->string_exists($statuskey, 'local_kbacompany') ? self::tr($statuskey) : $status;
+            $result = (string)$event->result;
+            $items[] = [
+                'id' => (int)$event->id,
+                'time' => userdate((int)$event->timecreated, '%H:%M'),
+                'fulltime' => userdate((int)$event->timecreated),
+                'title' => (string)$event->title,
+                'taskurl' => (new \moodle_url('/local/kbacompany/tasks.php',
+                    ['uuid' => $company, 'task' => (string)$event->taskuuid]))->out(false),
+                'opentask' => self::tr('dailyreports_feed_open_task'),
+                'result' => $result,
+                'noresult' => $result === '' ? self::tr('dailyreport_missingresult') : '',
+                'submitted' => self::tr('dailyreports_feed_submitted'),
+                'now' => self::tr('dailyreports_feed_now', $statuslabel),
+                'nowvariant' => $status === 'done' ? 'mint' : ($status === 'returned' ? 'sand' : 'sky'),
+                'addform' => $canadd ? ['url' => (new \moodle_url('/local/kbacompany/daily_report.php'))->out(false),
+                    'hidden' => self::hidden(['sesskey' => sesskey(), 'uuid' => $company, 'day' => $day, 'source' => 'feed',
+                        'addevent' => (string)(int)$event->id]),
+                    'label' => self::tr('dailyreports_feed_add')] : null,
+            ];
+        }
+        $page = (int)$feed['page'];
+        $pages = (int)ceil((int)$feed['total'] / daily_report_service::PAGE_SIZE);
+        $pageurl = static function(int $p) use ($company, $day): string {
+            return self::url($company, ['tab' => 'dayfeed', 'day' => $day, 'fpage' => $p])->out(false);
+        };
+        return [
+            'title' => self::tr('dailyreports_feed_title'),
+            'intro' => self::tr('dailyreports_feed_intro'),
+            'total' => (int)$feed['total'] ?: null,
+            'form' => ['url' => self::url($company)->out(false), 'hidden' => self::hidden(['uuid' => $company, 'tab' => 'dayfeed']),
+                'label' => self::tr('dailyreports_feed_day'), 'value' => $day, 'max' => $today,
+                'show' => self::tr('dailyreports_feed_show'),
+                'today' => $day !== $today ? ['url' => self::url($company, ['tab' => 'dayfeed'])->out(false),
+                    'label' => self::tr('dailyreports_feed_today')] : null],
+            'timezone' => self::tr('dailyreport_timezone') . ': ' . (string)$feed['timezone'],
+            'report' => ['url' => $reporturl->out(false), 'label' => self::tr('dailyreports_feed_open_report')],
+            'sent' => $sent && $items ? self::tr('dailyreports_feed_sent') : '',
+            'items' => $items,
+            'empty' => $items ? null : ['title' => self::tr('dailyreports_feed_empty_title'),
+                'text' => self::tr('dailyreports_feed_empty_text'), 'action' => null],
+            'pager' => $pages > 1 ? ['label' => self::tr('dailyreports_feed_pages'),
+                'prev' => $page > 0 ? ['url' => $pageurl($page - 1), 'label' => self::tr('dailyreports_feed_prev')] : null,
+                'next' => $page + 1 < $pages ? ['url' => $pageurl($page + 1), 'label' => self::tr('dailyreports_feed_next')] : null,
+                'text' => ($page + 1) . ' / ' . $pages] : null,
         ];
     }
 

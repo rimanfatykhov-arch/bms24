@@ -1,0 +1,35 @@
+{{!
+    Day feed (first scenario: task results only). The employee's own submitted task results of one day, a date
+    picker (GET), and per result "Add to report": a POST of the event id and sesskey to the report page, which re-reads
+    the result on the server and writes the own draft. Render-only. Uses no live-update classes.
+}}
+<div class="bms24-comm-dayfeed" data-section="dayfeed">
+<div class="bms24-comm-ntools bms24-comm-dftools">
+<h2 class="bms24-comm-ntitle">{{title}}{{#total}} <span class="bms24-comm-badge bms24-badge-soft">{{total}}</span>{{/total}}</h2>
+{{#form}}<form method="get" action="{{url}}" class="bms24-comm-dfdate" data-dayfeed-date="1">{{#hidden}}<input type="hidden" name="{{name}}" value="{{value}}">{{/hidden}}
+<label for="bms24-dayfeed-day">{{label}}</label>
+<input type="date" id="bms24-dayfeed-day" name="day" value="{{value}}" max="{{max}}" required class="form-control">
+<button type="submit" class="bms24-comm-btn">{{show}}</button>
+{{#today}}<a class="bms24-comm-btn bms24-comm-btn--ghost" href="{{url}}">{{label}}</a>{{/today}}
+</form>{{/form}}
+{{#report}}<a class="bms24-comm-btn bms24-comm-btn--ghost bms24-comm-dfreport" href="{{url}}">{{label}}</a>{{/report}}
+</div>
+<p class="bms24-comm-muted bms24-comm-dfintro">{{intro}} {{timezone}}</p>
+{{#sent}}<p class="bms24-comm-alert bms24-comm-alert--info" role="note">{{sent}}</p>{{/sent}}
+<div class="bms24-comm-dflist" aria-label="{{title}}">
+{{#items}}<article class="bms24-comm-dfrow" data-dayfeed-event="{{id}}">
+<time class="bms24-comm-dftime" title="{{fulltime}}">{{time}}</time>
+<div class="bms24-comm-dfbody">
+<h3 class="bms24-comm-dftitle"><a href="{{taskurl}}">{{title}}</a></h3>
+<div class="bms24-comm-dfstate"><span class="bms24-comm-pill bms24-comm-pill--mint">{{submitted}}</span> <span class="bms24-comm-pill bms24-comm-pill--{{nowvariant}}">{{now}}</span></div>
+{{#result}}<p class="bms24-comm-dfresult">{{result}}</p>{{/result}}{{#noresult}}<p class="bms24-comm-muted">{{noresult}}</p>{{/noresult}}
+<div class="bms24-comm-dfacts">
+{{#addform}}<form method="post" action="{{url}}" class="bms24-comm-inline" data-dayfeed-add="1">{{#hidden}}<input type="hidden" name="{{name}}" value="{{value}}">{{/hidden}}<button type="submit" class="bms24-comm-btn bms24-comm-btn--primary bms24-comm-btn--small">{{label}}</button></form>{{/addform}}
+<a class="bms24-comm-btn bms24-comm-btn--small" href="{{taskurl}}">{{opentask}}</a>
+</div>
+</div>
+</article>{{/items}}
+{{#empty}}{{> local_kbacompany/bms24_empty_state}}{{/empty}}
+</div>
+{{#pager}}<nav class="bms24-comm-pager" aria-label="{{label}}">{{#prev}}<a class="bms24-comm-btn" href="{{url}}">{{label}}</a>{{/prev}}<span>{{text}}</span>{{#next}}<a class="bms24-comm-btn" href="{{url}}">{{label}}</a>{{/next}}</nav>{{/pager}}
+</div>

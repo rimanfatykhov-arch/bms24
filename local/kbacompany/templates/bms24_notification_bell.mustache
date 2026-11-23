@@ -1,0 +1,57 @@
+{{!
+    @template local_kbacompany/bms24_notification_bell
+
+    BMS24 top bar bell (owned shell). Render-only: counts and rows are loaded by local_kbacompany/notification_bell
+    from the read-only feed, which applies company, participant and object access on the server.
+    Opening the panel marks nothing read. The hidden panel uses no h1-h6: the top bar precedes the page heading,
+    so a heading here would become the first heading of every BMS page.
+
+    Example context (json):
+    {"company": "c1", "userid": 2, "endpoint": "/feed.php", "sound": false, "label": "Notifications",
+     "title": "Notifications", "allurl": "/center.php?tab=notifications", "alllabel": "All notifications",
+     "loading": "Loading", "empty": "No notifications", "error": "Error", "unavailable": "Unavailable", "retry": "Retry",
+     "soundtitle": "Sound", "soundoff": "Off", "soundon": "On", "soundblocked": "Blocked", "soundenable": "Enable",
+     "soundtest": "Test", "sounddisable": "Disable", "readonlyhint": "Opening this list marks nothing as read."}
+}}
+<div class="bms24-bell" data-bms24-bell data-endpoint="{{endpoint}}" data-company="{{company}}" data-user="{{userid}}"
+     data-sound="{{#sound}}1{{/sound}}{{^sound}}0{{/sound}}" data-state="loading">
+  <button type="button" class="bms24-bell-button" data-bms24-bell-toggle aria-expanded="false"
+          aria-controls="bms24-bell-panel" aria-haspopup="dialog" aria-label="{{label}}" title="{{label}}">
+    <svg class="bms24-bell-icon" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" focusable="false">
+      <path fill="currentColor" d="M12 22a2.5 2.5 0 0 0 2.45-2h-4.9A2.5 2.5 0 0 0 12 22Zm7-6V11a7 7 0 0 0-5.5-6.84V3.5a1.5 1.5 0 0 0-3 0v.66A7 7 0 0 0 5 11v5l-2 2v1h18v-1l-2-2Z"/>
+    </svg>
+    <span class="bms24-bell-badge" data-bms24-bell-badge aria-hidden="true" hidden></span>
+  </button>
+  <div class="bms24-bell-panel" id="bms24-bell-panel" data-bms24-bell-panel role="dialog" aria-modal="false"
+       aria-labelledby="bms24-bell-heading" tabindex="-1" hidden>
+    <div class="bms24-bell-head">
+      <p class="bms24-bell-heading" id="bms24-bell-heading">{{title}}</p>
+      <span class="bms24-bell-count" data-bms24-bell-count></span>
+    </div>
+    <p class="bms24-bell-hint">{{readonlyhint}}</p>
+    <div class="bms24-bell-status" role="status" aria-live="polite">
+      <p class="bms24-bell-state" data-bms24-bell-state="loading">{{loading}}</p>
+      <p class="bms24-bell-state" data-bms24-bell-state="empty" hidden>{{empty}}</p>
+      <p class="bms24-bell-state" data-bms24-bell-state="unavailable" hidden>{{unavailable}}</p>
+      <div class="bms24-bell-state" data-bms24-bell-state="error" hidden>
+        <p>{{error}}</p>
+        <button type="button" class="bms24-bell-action" data-bms24-bell-retry>{{retry}}</button>
+      </div>
+    </div>
+    <ul class="bms24-bell-list" data-bms24-bell-list></ul>
+    <section class="bms24-bell-sound" aria-labelledby="bms24-bell-sound-heading">
+      <p class="bms24-bell-subheading" id="bms24-bell-sound-heading">{{soundtitle}}</p>
+      <p class="bms24-bell-soundstate" data-bms24-bell-soundstate aria-live="polite">
+        <span data-sound-state="off">{{soundoff}}</span>
+        <span data-sound-state="on" hidden>{{soundon}}</span>
+        <span data-sound-state="blocked" hidden>{{soundblocked}}</span>
+      </p>
+      <div class="bms24-bell-soundactions">
+        <button type="button" class="bms24-bell-action bms24-bell-action-primary" data-bms24-bell-sound-enable>{{soundenable}}</button>
+        <button type="button" class="bms24-bell-action" data-bms24-bell-sound-test>{{soundtest}}</button>
+        <button type="button" class="bms24-bell-action" data-bms24-bell-sound-disable hidden>{{sounddisable}}</button>
+      </div>
+    </section>
+    <a class="bms24-bell-all" href="{{allurl}}" data-bms24-bell-all>{{alllabel}}</a>
+  </div>
+</div>

@@ -1122,6 +1122,95 @@ def daily_reports_flow_checks(obs, exitcode=None):
             'daily_report_foreign_and_nonreviewer_denied': negatives, 'daily_report_layout_and_browser_errors': layout_and_events}
 
 
+DAY_FEED_CASES = [('owned', 1440), ('legacy', 375)]
+
+
+def day_feed_checks(obs, exitcode=None):
+    """Day feed -> report draft (day_feed.py). Verdicts come from the draft state read after each step; the producer's
+    PASS alone is never sufficient."""
+    def run():
+        require(exitcode == 0, 'day feed browser process failed or was not run')
+        require(isinstance(obs, dict) and obs.get('status') == 'PASS' and not obs.get('error'), 'day feed run incomplete')
+        rows = obs.get('cases')
+        require(isinstance(rows, list) and [(r.get('shell'), r.get('width')) for r in rows] == DAY_FEED_CASES,
+                'owned 1440 / legacy 375 cases required')
+        for r in rows:
+            tasks = r.get('tasks')
+            require(isinstance(tasks, list) and len(tasks) == 2 and all(isinstance(t, dict) and isinstance(t.get('event'), int)
+                    and t.get('title') and t.get('result') for t in tasks), 'synthetic results missing')
+            require(isinstance(r.get('pre'), str) and r['pre'] and isinstance(r.get('edit'), str) and r['edit'], 'case texts missing')
+        return rows
+
+    def block(t):
+        return '«%s»: %s' % (t['title'], t['result'])
+
+    def draft(st):
+        d = (st or {}).get('draft')
+        require(isinstance(d, dict) and isinstance(d.get('done'), str) and isinstance(d.get('revision'), int), 'draft missing')
+        return d
+
+    def view():
+        for r in run():
+            require(r.get('default_day') == r.get('today'), 'feed did not open on today: %r' % (r.get('default_day'),))
+            require(r.get('tab_active') == 1, 'day feed section not active')
+            items = r.get('items') or []
+            require([i.get('id') for i in items] == [t['event'] for t in r['tasks']], 'feed does not show exactly the two results')
+            for item, t in zip(items, r['tasks']):
+                require(t['result'] in (item.get('text') or '') and t['title'] in (item.get('title') or ''), 'result or task missing')
+                require('task=' + t['task'] in (item.get('task_href') or ''), 'task link missing')
+                require(isinstance(item.get('time'), str) and len(item['time'].strip()) == 5, 'time missing')
+                require(item.get('add') == 1, '"Add to report" missing')
+            require(r.get('empty') == {'items': 0, 'state': 1}, 'empty day not shown as empty: %r' % (r.get('empty'),))
+
+    def add():
+        for r in run():
+            t1, t2 = r['tasks']
+            first = r['pre'] + '\n' + block(t1)
+            require(draft(r.get('after_add'))['done'] == first, 'result not appended after the existing text')
+            require(t1['task'] in draft(r['after_add']).get('links', []), 'task not linked to the draft')
+            landing = r.get('landing') or {}
+            require('/local/kbacompany/daily_report.php' in (landing.get('url') or '') and 'day=' + r['day'] in landing['url']
+                    and landing.get('done') == first and landing.get('notice') == 1, 'report not opened with the added text')
+            second = draft(r.get('after_second'))['done']
+            require(second == first + '\n' + r['edit'] + '\n' + block(t2), 'second result or the unsaved edit lost: %r' % second)
+
+    def no_duplicate():
+        for r in run():
+            t1 = r['tasks'][0]
+            for key in ('after_repeat_form', 'after_second', 'after_repeat_feed'):
+                require(draft(r.get(key))['done'].count(t1['result']) == 1, 'result duplicated after %s' % key)
+            require(r['edit'] in draft(r['after_repeat_form'])['done'], 'unsaved edit lost on the repeated click')
+            require(draft(r['after_repeat_feed']) == draft(r['after_second']), 'repeated click in the feed wrote the draft')
+            events = [t['event'] for t in r['tasks']]
+            require((r['after_add'] or {}).get('added_events') == events[:1]
+                    and all((r.get(k) or {}).get('added_events') == events for k in ('after_second', 'after_repeat_feed')),
+                    'repeat not keyed by the submit event id')
+
+    def isolation():
+        for r in run():
+            http = [r.get('forged_http')] + list((r.get('foreign_http') or {}).values())
+            require(len(http) == 3 and all(isinstance(x, int) and x != 303 and x < 500 for x in http),
+                    'forged or foreign request redirected as a success or failed with 5xx: %r' % (http,))
+            require(r.get('foreign_feed_items') == 0, 'company B feed shows company A results')
+            require(draft(r.get('after_negatives')) == draft(r.get('after_repeat_feed')), 'forged or foreign request changed the draft')
+
+    def submit_and_layout():
+        for r in run():
+            st = r.get('after_submit') or {}
+            sent = st.get('sent') or []
+            require((st.get('report') or {}).get('status') == 'submitted' and st.get('draft') is None and len(sent) == 1
+                    and sent[0].get('done') == draft(r['after_negatives'])['done'], 'report not sent with the edited text')
+            require(r.get('after_submit_feed') == {'add': 0, 'items': 2, 'sent_note': 1}, 'feed still offers "Add" for a sent report')
+            require(r.get('hscroll_feed') is True and r.get('hscroll_report') is True, 'horizontal scroll at %s px' % r.get('width'))
+            violations = browser_event_violations(r.get('browser_events'))
+            require(not violations, 'browser errors: %r' % violations[:3])
+            require(r.get('server_errors') == [], 'HTTP 5xx: %r' % (r.get('server_errors'),))
+
+    return {'day_feed_today_date_and_empty_day': view, 'day_feed_add_keeps_text_and_links_task': add,
+            'day_feed_repeated_click_adds_nothing': no_duplicate, 'day_feed_foreign_and_forged_denied': isolation,
+            'day_feed_send_layout_and_browser_errors': submit_and_layout}
+
+
 PLAN_CASES = [('owned', 1440, 'click'), ('legacy', 320, 'keyboard')]
 
 
@@ -1355,8 +1444,619 @@ def communication_ux_checks(obs, exitcode=None):
             for pair in colors:
                 a, b = luminance(pair['foreground']), luminance(pair['background'])
                 require((max(a, b) + 0.05) / (min(a, b) + 0.05) >= 4.5, 'chip contrast below4.5')
-    return {'communication_ux1_layout_and_navigation': verify}
 
+    def geometry():
+        """#145/#152: rendered geometry, not DOM presence. The 'New conversation' primary action is a full labelled button
+        in the card header of every section (the old 32/34px trigger clipped its label and covered the section tabs);
+        no visible control label is clipped; the list search is wide; the Center stylesheet is applied."""
+        require(exitcode == 0 and isinstance(obs, dict) and obs.get('status') == 'PASS'
+                and not obs.get('error'), 'UX browser run missing/failed')
+        rows = obs.get('cases')
+        require(isinstance(rows, list) and len(rows) == 10, 'UX matrix incomplete')
+
+        def number(value, what):
+            require(isinstance(value, (int, float)) and not isinstance(value, bool), 'geometry %s missing' % what)
+            return value
+        for row in rows:
+            width = row.get('width')
+            sections = row.get('geometry')
+            require(isinstance(sections, dict) and set(sections) == {'messages', 'discussions', 'notifications'},
+                    'geometry for all three sections missing (%r/%r)' % (row.get('shell'), width))
+            for section, g in sections.items():
+                where = '%s/%s/%s' % (row.get('shell'), width, section)
+                require(isinstance(g, dict) and g.get('root') is True, 'Center root missing: ' + where)
+                require(g.get('css') is True, 'Communication Center stylesheet not applied: ' + where)
+                require(g.get('overflow') is False, 'horizontal overflow: ' + where)
+                require(g.get('clipped') == [], 'clipped control label %r: %s' % (g.get('clipped'), where))
+                a = g.get('action')
+                require(isinstance(a, dict), '"New conversation" action not visible: ' + where)
+                require(a.get('count') == 1, 'exactly one "New conversation" action expected: ' + where)
+                label = a.get('label')
+                require(isinstance(label, str) and len(label.replace('+', '').strip()) >= 4,
+                        '"New conversation" has no readable label: ' + where)
+                require(number(a.get('width'), 'width') >= 96 and number(a.get('height'), 'height') >= 32,
+                        '"New conversation" is not a full button (%rx%r): %s' % (a.get('width'), a.get('height'), where))
+                require(number(a.get('scroll_width'), 'scroll width') <= number(a.get('client_width'), 'client width') + 1,
+                        '"New conversation" label clipped: ' + where)
+                require(a.get('in_header') is True, '"New conversation" outside the card header: ' + where)
+                require(a.get('overlaps_tabs') is False, '"New conversation" overlaps the section tabs: ' + where)
+                require(a.get('in_form') is True, '"New conversation" lost its POST/sesskey form: ' + where)
+                search = g.get('search')
+                if section == 'notifications':
+                    require(search is None, 'notifications must not show the list search: ' + where)
+                    continue
+                require(search is not None or width < 900, 'list search not visible on a wide screen: ' + where)
+                if search is not None:
+                    require(isinstance(search, dict), 'search geometry malformed: ' + where)
+                    box, side = number(search.get('width'), 'search width'), number(search.get('side_width'), 'side width')
+                    field = number(search.get('input_width'), 'search input width')
+                    require(box >= 200 and box >= 0.85 * side and field >= box - 64,
+                            'list search too narrow (%r of %r, input %r): %s' % (box, side, field, where))
+    return {'communication_ux1_layout_and_navigation': verify, 'communication_ux2_primary_action_geometry': geometry}
+
+
+BELL_WIDTHS = (1440, 768, 320)
+FEED_PATH = '/local/kbacompany/communication_notifications_feed.php'
+
+
+# The no-storage tabs plant this fault on purpose (notification_bell.py NO_STORAGE); its echo is the only event
+# accepted from that context.
+BELL_PLANTED_STORAGE_ECHO = 'SecurityError: localStorage blocked by the test'
+
+
+def notification_bell_checks(obs, exitcode=None):
+    """Top bar bell + opt-in sound (fail closed). Evidence: notification_bell.py. A counted play() call is a request for a
+    signal, not proof of audible sound; the owner's manual listening check is outside this contract."""
+    def run():
+        require(exitcode == 0 and isinstance(obs, dict) and obs.get('status') == 'PASS' and not obs.get('error')
+                and not obs.get('cleanup_error'), 'bell browser run missing/failed')
+        return obs
+
+    def step(name):
+        run()
+        s = (obs.get('steps') or {}).get(name)
+        require(isinstance(s, dict) and s, 'missing bell observation: ' + name)
+        return s
+
+    def shown(b):
+        require(isinstance(b, dict) and isinstance(b.get('ids'), list), 'bell state not recorded')
+        return b
+
+    def badge_matches(b, server, label=''):
+        b = shown(b)
+        unread = (server or {}).get('unread')
+        require(isinstance(unread, int) and unread >= 0, '%s: server count missing' % label)
+        require(b.get('unread') == str(unread), '%s: badge %r != server %r' % (label, b.get('unread'), unread))
+        require(b.get('badge') == ('' if unread == 0 else (str(unread) if unread <= 99 else '99+')),
+                '%s: visible badge %r wrong' % (label, b.get('badge')))
+        if unread:
+            require(isinstance(b.get('label'), str) and str(unread) in b['label'] and b.get('title') == b['label'],
+                    '%s: tooltip/label lacks the counted unit' % label)
+
+    def plays(b, n, label):
+        require(shown(b).get('plays') == n, '%s: %r play() calls, expected %d' % (label, b.get('plays'), n))
+
+    def new_event_center_and_bell():
+        i, p, s, c = step('initial'), step('panel'), step('new_sound_off'), step('center_lists_new')
+        require(i['n0'] in shown(i['bell'])['ids'], 'existing notification missing from the bell')
+        badge_matches(i['bell'], i['server'], 'initial')
+        require(s['n1'] in shown(s['bell'])['ids'] and s['bell']['ids'][0] == s['n1'], 'new notification not first in bell')
+        badge_matches(s['bell'], s['server'], 'after new')
+        require(s['server']['unread'] == i['server']['unread'] + 1, 'server count did not grow by exactly one')
+        require(c.get('n1_form') == 1 and c.get('title_shown', 0) >= 1, 'new notification missing in the Center')
+        m = p.get('metrics') or {}
+        exact_center_link(m.get('allhref'), {'uuid': obs.get('companyuuid'), 'tab': 'notifications'})
+        t = step('thread_open')
+        require(t['uuid'] in shown(t['bell'])['ids'], 'thread notification missing from the bell')
+        exact_center_link(t.get('href'), {'uuid': obs.get('companyuuid'), 'thread': t.get('thread')})
+        require(t.get('http') == 200, 'opening the notification object: HTTP %r' % t.get('http'))
+        landed = urlparse(local_url(t.get('landed') or ''))
+        q = dict(parse_qsl(landed.query))
+        require(landed.path == CENTER_PATH and q.get('uuid') == obs.get('companyuuid') and q.get('thread') == t.get('thread'),
+                'bell link did not land on its conversation: %r' % t.get('landed'))
+
+    def read_rules_unchanged():
+        i, p, c = step('initial'), step('panel'), step('count_only')
+        before, after = i['server_before'].get('read'), i['server'].get('read')
+        require(isinstance(before, dict) and before and before == after, 'loading the bell changed read state')
+        require(p['server'].get('read') == after, 'opening the panel changed read state')
+        require(after.get(i['n0']) == 0, 'fixture notification not unread at start')
+        require(c['server']['read'].get(c['n1']) == 1, 'Center "mark as read" no longer works')
+        require(shown(c['bell'])['read'].get(c['n1']) == '1', 'bell does not reflect the read state')
+        badge_matches(c['bell'], c['server'], 'after read in Center')
+
+    def isolation_roles_and_revocation():
+        s = step('isolation')
+        eb, ma, ea = shown(s['eb_bell']), shown(s['ma_bell']), shown(s['ea_bell'])
+        a_ids = set(s.get('ea_ids') or [])
+        require(len(a_ids) >= 8, 'company A id set incomplete')
+        require(s['nb'] in eb['ids'] and not (set(eb['ids']) & a_ids), 'company B bell shows A rows or misses its own')
+        badge_matches(eb, s['eb_server'], 'company B')
+        require(s['nb'] not in ea['ids'], 'company A bell shows a company B row')
+        require(s.get('foreign_http') == 200 and s.get('foreign', {}).get('ok') is False
+                and set(s['foreign']) <= {'ok', 'state', 'user'}, 'foreign company feed not refused neutrally')
+        require(not (set(ma['ids']) & a_ids), "manager sees another user's notifications")
+        require(s.get('ma_http') == 200 and s.get('ma', {}).get('ok') is True
+                and not ({x.get('id') for x in s['ma'].get('items', [])} & a_ids), "manager API returns another user's rows")
+        t = step('thread_revoked')
+        require(t.get('active') == 0, 'participation not revoked')
+        tb = shown(t['bell'])
+        require(t['uuid'] not in tb['ids'] and t['thread'] not in (tb.get('text') or '') and t['title'] not in (tb.get('text') or ''),
+                'revoked thread still shown')
+        badge_matches(tb, t['server'], 'after thread revocation')
+        plays(tb, 0, 'thread revocation')
+        r = step('company_revoked')
+        rv = shown(r['revoked'])
+        require(r['revoked_server'].get('unread') is None, 'company access not revoked')
+        require(rv['ids'] == [] and rv['badge'] == '' and rv['state'] == 'unavailable' and r['n11'] not in (rv.get('text') or ''),
+                'bell still shows rows after company revocation')
+        plays(rv, 0, 'company revocation')
+        rs = shown(r['restored'])
+        require(r['n11'] in rs['ids'], 'rows not back after reopen')
+        badge_matches(rs, r['server'], 'after reopen')
+        plays(rs, 0, 'reopen (new observation)')
+        a = step('account_switch')
+        ab = shown(a['bell'])
+        require(ab['ids'] == [] and ab['badge'] == '' and ab['state'] == 'unavailable', 'open tab kept the previous account')
+        plays(ab, 0, 'account switch')
+        require(a.get('more_polls') == 0, 'stopped bell kept polling for another account')
+        require(a.get('ra_bell_count') == 1, 'new account page has no bell')
+
+    def claim_identity_and_concurrency():
+        """Server claims (separate PHP processes on the real Moodle DB): dedup by notification identity, not max id."""
+        cl = step('claims')
+        companies = sorted((cl.get('dual') or {}).get('companies') or [])
+        require(companies == sorted([obs.get('companyuuid'), obs.get('companyb')]), 'claims: dual-company account not in A and B')
+
+        def outcome(run, n):
+            require(isinstance(run, dict) and isinstance(run.get('plays'), list) and len(run['plays']) == n
+                    and all(isinstance(x, bool) for x in run['plays']), 'claims: run evidence missing')
+            return run['plays']
+        x = cl.get('cross') or {}
+        require(int(x['a']['id']) < int(x['b']['id']), 'claims: fixture order wrong (company A row must have the lower id)')
+        require(outcome(x.get('first_b'), 1) == [True], 'claims: first company B claim did not play')
+        require(outcome(x.get('then_a'), 1) == [True], 'older fresh notification suppressed (other company)')
+        require(outcome(x.get('again_a'), 1) == [False], 'claims: the same notification played twice')
+        require(outcome(x.get('a_in_b'), 1) == [False], 'claims: a row was claimable outside its company')
+        o = cl.get('order') or {}
+        require(int(o['c1']['id']) < int(o['c2']['id']), 'claims: fixture order wrong (same company)')
+        require(outcome(o.get('first_c2'), 1) == [True], 'claims: newer row did not play')
+        require(outcome(o.get('then_c1'), 1) == [True], 'older fresh notification suppressed (same company)')
+        ps = cl.get('parallel_same') or {}
+        require(outcome(ps, 8).count(True) == 1, 'concurrent claims of one notification: %r signals' % ps.get('plays'))
+        pc = cl.get('parallel_companies') or {}
+        pcp = outcome(pc, 8)
+        require(pcp[:4].count(True) == 1 and pcp[4:].count(True) == 1,
+                'concurrent claims in two companies: %r (expected one per notification)' % pcp)
+        for name, run in (('parallel_same', ps), ('parallel_companies', pc)):
+            rows = run.get('results') or []
+            require(len({r.get('pid') for r in rows}) == len(rows), '%s: claims did not run in separate processes' % name)
+            require(isinstance(run.get('inflight_at_first_end'), int) and run['inflight_at_first_end'] >= 2,
+                    '%s: concurrency not demonstrated (claims did not overlap)' % name)
+        b = cl.get('batch') or {}
+        require(outcome(b.get('first'), 1) == [True], 'claims: batch did not play')
+        require(outcome(b.get('repeat'), 4) == [False] * 4, 'claims: a claimed batch played again %r' % b['repeat']['plays'])
+
+    def late_claim():
+        """Review finding 1: a late claim answer must not play after the sound was turned off (or off and on)."""
+        lc = step('late_claim')
+        for key, pref, confirms in (('off', '0', 0), ('off_on', '1', 1)):
+            r = lc.get(key) or {}
+            ans = r.get('answers') or []
+            require(len(ans) == 1 and ans[0].get('ok') is True and ans[0].get('play') is True,
+                    'late claim %s: precondition missing (server did not grant play to the held claim)' % key)
+            require(r.get('pref_before_release') == pref, 'late claim %s: stored preference %r' % (key, r.get('pref_before_release')))
+            bf, af = r.get('before') or {}, r.get('after') or {}
+            require(all(isinstance(d.get(k), int) for d in (bf, af) for k in ('signals', 'confirms', 'plays')),
+                    'late claim %s: counters missing' % key)
+            require(af['signals'] == bf['signals'], 'stale claim played after disable (%s)' % key)
+            require(af['confirms'] - bf['confirms'] == confirms and af['plays'] - bf['plays'] == confirms,
+                    'stale claim played after disable (%s): play() calls not explained by button confirmations' % key)
+            require(r.get('id') in shown(r.get('bell'))['ids'], 'late claim %s: row missing from the bell' % key)
+        n = lc.get('normal') or {}
+        bf, af = n.get('before') or {}, n.get('after') or {}
+        require(isinstance(bf.get('signals'), int) and af.get('signals') == bf['signals'] + 1 and af.get('plays') == bf.get('plays', 0) + 1
+                and af.get('confirms') == bf.get('confirms'), 'new notification with sound on no longer signals after a late claim')
+
+    def sound_signal_rules():
+        claim_identity_and_concurrency()
+        late_claim()
+        plays(step('initial')['bell'], 0, 'initial load')
+        plays(step('new_sound_off')['bell'], 0, 'sound off')
+        plays(step('repeat_poll')['bell'], 0, 'repeated polling')
+        c = step('count_only')
+        plays(c['bell'], 0, 'count-only change')
+        b = step('batch')
+        require(set(b['ids']) <= set(shown(b['bell'])['ids']), 'batch rows missing')
+        badge_matches(b['bell'], b['server'], 'batch')
+        plays(b['bell'], 1, 'batch of three')
+        t = step('tabs')
+        require(all(t['n5'] in shown(x)['ids'] for x in t['bells']), 'second tab missed the row')
+        require(isinstance(t.get('plays'), list) and len(t['plays']) == 2 and sum(t['plays']) == 1, 'two tabs: %r signals' % t.get('plays'))
+        require(t.get('storage') == ['available', 'available'], 'two tabs: normal storage not confirmed %r' % t.get('storage'))
+        n = step('tabs_nostorage')
+        require(n.get('storage') == ['SecurityError', 'SecurityError'],
+                'no-storage tabs: localStorage was not actually unavailable %r' % n.get('storage'))
+        require(isinstance(n.get('bells'), list) and len(n['bells']) == 2
+                and all(n['n6'] in shown(x)['ids'] and x.get('state') != 'unavailable' for x in n['bells']),
+                'no-storage tabs: row missing or bell unavailable')
+        require(isinstance(n.get('plays'), list) and len(n['plays']) == 2 and sum(n['plays']) == 1,
+                'no-storage tabs: %r signals' % n.get('plays'))
+        oc = shown(n.get('other_context'))
+        require(n['n6'] in oc['ids'], 'other browser context missed the row')
+        plays(oc, 0, 'same row in another browser context')
+        plays(step('reload')['bell'], 0, 'reload')
+        r = step('reconnect')
+        require(r.get('polls_while_offline') == 0, 'polled while offline')
+        require(set(r['ids']) <= set(shown(r['bell'])['ids']), 'rows after reconnect missing')
+        plays(r['bell'], 1, 'reconnect')
+        d = step('disable')
+        plays(d['bell'], 0, 'after disable')
+        require(d['n9'] in shown(d['bell'])['ids'], 'row missing after disable')
+        th = step('thread_open')
+        plays(th['bell'], 1, 'new thread notification')
+
+    def sound_preference():
+        e = step('enable')
+        require(step('initial')['server'].get('pref') in ('0', ''), 'sound not off by default')
+        require(step('initial')['bell'].get('sound') == 'off', 'bell did not start with sound off')
+        require(e.get('plays_after_enable') == 1 and e.get('plays_after_test') == 2, 'enable/test did not request playback')
+        require(e['server'].get('pref') == '1' and e['bell'].get('sound') == 'on', 'enable not stored or not shown')
+        require(e.get('other_account_pref') in ('0', ''), 'preference leaked to another account')
+        a = step('autoplay_refused')
+        plays(a['blocked'], 1, 'refused playback attempt')
+        require(a['blocked'].get('sound') == 'blocked' and a['after_test'].get('sound') == 'on', 'autoplay refusal not handled')
+        c = step('csrf')
+        require(c.get('wrong_http') == 200 and c.get('wrong', {}).get('ok') is False and c['wrong'].get('state') == 'sesskey',
+                'wrong sesskey not refused')
+        require(c.get('get_http') == 200 and c.get('get_ok') is True and c.get('pref') == '1', 'preference changed without POST+sesskey')
+        d = step('disable')
+        require(d.get('pref') == '0' and d['bell'].get('sound') == 'off', 'disable not stored or not shown')
+
+    def panel_layout_keyboard():
+        run()
+        rows = obs.get('widths')
+        require(isinstance(rows, list) and [r.get('width') for r in rows] == list(BELL_WIDTHS), 'bell width matrix incomplete')
+        for r in rows:
+            w = r['width']
+            require(r.get('toggle_visible') is True, '%d: bell not visible' % w)
+            closed = r.get('closed') or {}
+            require(closed.get('open') is False and closed.get('hscroll') is False, '%d: closed state wrong/overflow' % w)
+            for key in ('open_keyboard', 'open_click'):
+                m = r.get(key) or {}
+                require(m.get('open') is True and m.get('expanded') == 'true', '%d: %s did not open' % (w, key))
+                require(m.get('position') == 'fixed' and m.get('overflowy') in ('auto', 'scroll'), '%d: panel not floating/scrollable' % w)
+                require(0 <= m['left'] and m['right'] <= m['vw'] and 0 <= m['top'] and m['bottom'] <= m['vh'],
+                        '%d: panel outside the viewport %r' % (w, m))
+                require(m.get('hscroll') is False, '%d: horizontal overflow with panel open' % w)
+                require(m.get('maintop') == closed.get('maintop') and m.get('docheight') == closed.get('docheight'),
+                        '%d: opening the panel shifted the page' % w)
+            require(r['open_keyboard'].get('active') == 'panel', '%d: focus not moved into the panel' % w)
+            require(r.get('tab_inside') == 'inside', '%d: Tab left the panel' % w)
+            esc = r.get('after_escape') or {}
+            require(esc.get('open') is False and esc.get('active') == 'toggle', '%d: Escape did not close/restore focus' % w)
+            outline = r.get('focus_outline')
+            require(isinstance(outline, list) and outline[0] != 'none' and outline[1] >= 2, '%d: focus ring missing' % w)
+            out = r.get('after_outside') or {}
+            require(out.get('open') is False and out.get('expanded') == 'false', '%d: outside click did not close' % w)
+
+    def single_bell():
+        for name in ('initial', 'reload'):
+            b = shown(step(name)['bell'])
+            require(b.get('bells') == 1 and b.get('moodlebells') == 0, '%s: expected exactly one bell' % name)
+            # The hidden panel must not contribute page headings (it hid the page title for h1/h2 lookups).
+            require(b.get('headings') == 0, '%s: bell contains %r h1-h6 headings' % (name, b.get('headings')))
+        require(step('legacy').get('bells') == 0, 'legacy shell got a second (BMS) bell')
+
+    def no_browser_errors():
+        run()
+        require(obs.get('server_errors') == [], 'server errors: %r' % (obs.get('server_errors') or [])[:3])
+        page_error_check(obs, 'notification bell')()
+        ev = (step('tabs_nostorage') or {}).get('events')
+        require(isinstance(ev, list), 'no-storage context events not recorded')
+        events = [e for e in ev if not (isinstance(e, dict) and e.get('source') == 'console' and e.get('type') == 'error'
+                                        and e.get('text') == BELL_PLANTED_STORAGE_ECHO)]
+        violations = browser_event_violations(events)
+        require(not violations, 'no-storage context: unexpected browser events %r' % violations[:3])
+
+    return {'notification_bell_new_event_center_and_bell': new_event_center_and_bell,
+            'notification_bell_read_rules_unchanged': read_rules_unchanged,
+            'notification_bell_isolation_roles_and_revocation': isolation_roles_and_revocation,
+            'notification_bell_sound_signal_rules': sound_signal_rules,
+            'notification_bell_sound_preference': sound_preference,
+            'notification_bell_panel_layout_keyboard': panel_layout_keyboard,
+            'notification_bell_single_bell': single_bell,
+            'notification_bell_no_browser_errors': no_browser_errors}
+
+
+# ---- Adaptive BMS24 navigation (docs/ui/ADAPTIVE_NAVIGATION.md): owned drawer <= 860 px, sidebar >= 861 px.
+ADAPTIVE_NAV_BREAKPOINT = 860
+# (id, shell, actor, lang, width, height, device scale factor, JavaScript)
+ADAPTIVE_NAV_CASES = [
+    ('owned-320-ru', 'owned', 'MA', 'ru', 320, 640, 1, True), ('owned-375-ru', 'owned', 'MA', 'ru', 375, 812, 1, True),
+    ('owned-390-en', 'owned', 'MA', 'en', 390, 844, 1, True), ('owned-768-ru', 'owned', 'MA', 'ru', 768, 1024, 1, True),
+    ('owned-860-ru', 'owned', 'MA', 'ru', 860, 900, 1, True), ('owned-861-ru', 'owned', 'MA', 'ru', 861, 900, 1, True),
+    ('owned-1024-ru', 'owned', 'MA', 'ru', 1024, 768, 1, True), ('owned-1440-en', 'owned', 'MA', 'en', 1440, 900, 1, True),
+    ('owned-390x480-ru', 'owned', 'MA', 'ru', 390, 480, 1, True), ('owned-844x390-ru', 'owned', 'MA', 'ru', 844, 390, 1, True),
+    ('owned-zoom200-ru', 'owned', 'MA', 'ru', 720, 450, 2, True), ('owned-375-employee-ru', 'owned', 'EA', 'ru', 375, 812, 1, True),
+    ('legacy-375-ru', 'legacy', 'MA', 'ru', 375, 812, 1, True), ('legacy-1440-en', 'legacy', 'MA', 'en', 1440, 900, 1, True),
+    ('nojs-375-ru', 'owned', 'MA', 'ru', 375, 812, 1, False), ('nojs-1440-en', 'owned', 'MA', 'en', 1440, 900, 1, False),
+]
+ADAPTIVE_NAV_ROUTES = ['communication_center.php', 'daily_report.php', 'battle_plan.php', 'tasks.php']
+ADAPTIVE_NAV_STRESS = {'label': 'Согласование очень длинного названия раздела управления подразделениями', 'count': '9999'}
+ADAPTIVE_NAV_MIN_TARGET = 44
+ADAPTIVE_NAV_MARKER = 'BMS24 adaptive navigation draft'
+
+
+def adaptive_nav_checks(obs, exitcode=None):
+    """Adaptive navigation (adaptive_nav.py). Every verdict is recomputed from geometry/state observations; the producer's
+    PASS only means the run completed. Narrow = owned shell with JavaScript at <= 860 CSS px."""
+    def run():
+        require(exitcode == 0, 'adaptive navigation browser process failed or was not run')
+        require(isinstance(obs, dict) and obs.get('status') == 'PASS' and not obs.get('error'), 'adaptive navigation run incomplete')
+        rows = obs.get('cases')
+        require(isinstance(rows, list) and [(r.get('id'), r.get('shell'), r.get('actor'), r.get('lang'), r.get('width'), r.get('height'),
+                                             r.get('dpr'), r.get('js')) for r in rows] == [tuple(c) for c in ADAPTIVE_NAV_CASES],
+                'adaptive navigation case list differs')
+        for r in rows:
+            require(not r.get('error'), '%s: %s' % (r['id'], r.get('error')))
+            require(r.get('language_installed') is True and r.get('http') == 200, '%s: page or language not served' % r['id'])
+            lay = r.get('layout') or {}
+            require(lay.get('owned') is (r['shell'] == 'owned') and lay.get('inner') == r['width'],
+                    '%s: shell mode or viewport not active: %r' % (r['id'], (lay.get('owned'), lay.get('inner'))))
+        return rows
+
+    def narrow_rows():
+        rows = [r for r in run() if r['shell'] == 'owned' and r['js'] and r['width'] <= ADAPTIVE_NAV_BREAKPOINT]
+        require(len(rows) == 9, 'narrow owned cases missing')
+        return rows
+
+    def wide_rows():
+        rows = [r for r in run() if r['shell'] == 'owned' and r['js'] and r['width'] > ADAPTIVE_NAV_BREAKPOINT]
+        require(len(rows) == 3, 'wide owned cases missing')
+        return rows
+
+    def fits(box, width, height=None):
+        return (isinstance(box, dict) and all(isinstance(box.get(k), int) for k in ('x', 'y', 'r', 'b'))
+                and box['x'] >= 0 and box['r'] <= width and (height is None or (box['y'] >= 0 and box['b'] <= height + 1)))
+
+    def no_hscroll(scroll, client, width, where):
+        require(isinstance(scroll, int) and isinstance(client, int) and 0 < client <= width and scroll <= client,
+                '%s scrolls horizontally: scrollWidth %r > clientWidth %r' % (where, scroll, client))
+
+    def desktop():
+        for r in wide_rows():
+            lay = r['layout']; side = lay.get('sidebar') or {}
+            require(lay.get('sidebar_visible') is True and side.get('current_visible') is True, '%s: sidebar or current item hidden' % r['id'])
+            require((lay.get('button') or {}).get('visible') is False and lay.get('summary_visible') is False
+                    and lay.get('drawer_visible') is False and lay.get('drawer_focusables') == 0,
+                    '%s: hidden mobile menu is rendered or focusable' % r['id'])
+            cur = [g for g in side.get('groups') or [] if g.get('current')]
+            require(cur and all(g.get('open') and g.get('visible') == g.get('items') for g in cur),
+                    '%s: group of the current page not open with its items: %r' % (r['id'], cur))
+
+    def button():
+        for r in narrow_rows():
+            b = (r.get('before_open') or {}).get('button') or {}
+            require(b.get('tag') == 'BUTTON' and b.get('type') == 'button' and b.get('visible') is True and b.get('hidden_attr') is False,
+                    '%s: menu button missing or not a visible <button>: %r' % (r['id'], b))
+            require(b.get('w', 0) >= ADAPTIVE_NAV_MIN_TARGET and b.get('h', 0) >= ADAPTIVE_NAV_MIN_TARGET, '%s: menu button below 44x44' % r['id'])
+            require(b.get('expanded') == 'false' and b.get('controls') == 'bms24-drawer' and b.get('controls_exists') is True
+                    and isinstance(b.get('name'), str) and len(b['name']) >= 3, '%s: aria-expanded/aria-controls/name wrong: %r' % (r['id'], b))
+            require(r.get('open_method') == 'button' and (r.get('drawer') or {}).get('expanded') == 'true',
+                    '%s: menu not opened by the button or aria-expanded not true' % r['id'])
+            require((r.get('before_open') or {}).get('summary_visible') is False, '%s: no-JS summary still shown with JS' % r['id'])
+        for r in run():
+            require((r.get('layout') or {}).get('menu_roles') == 0 and (r.get('drawer') or {}).get('menu_roles', 0) == 0,
+                    '%s: role=menu used for site navigation' % r['id'])
+
+    def modal():
+        for r in narrow_rows():
+            d = r.get('drawer') or {}
+            require(d.get('visible') is True and d.get('role') == 'dialog' and d.get('modal') == 'true' and len(d.get('name') or '') >= 3
+                    and d.get('id') == 'bms24-drawer',
+                    '%s: drawer is not a named modal dialog: %r' % (r['id'], {k: d.get(k) for k in ('role', 'modal', 'name', 'id')}))
+            require(fits(d.get('box'), r['width'], r['height']) and d['box']['y'] == 0 and d['box']['b'] >= r['height'] - 1,
+                    '%s: drawer not within the viewport at full height: %r' % (r['id'], d.get('box')))
+            bd = d.get('backdrop') or {}
+            require(bd.get('visible') is True and bd.get('x') == 0 and bd.get('y') == 0 and bd.get('w', 0) >= r['width'] - 1
+                    and bd.get('h', 0) >= r['height'] - 1, '%s: backdrop does not cover the viewport: %r' % (r['id'], bd))
+            require(d.get('focus_inside') is True, '%s: focus not moved into the drawer' % r['id'])
+            fw, bw = r.get('tab_forward') or [], r.get('tab_backward') or []
+            require(len(fw) >= 4 and all(x is True for x in fw) and len(bw) == 4 and all(x is True for x in bw),
+                    '%s: Tab/Shift+Tab left the open drawer: %r %r' % (r['id'], fw, bw))
+            require(d.get('main_inert') is True and d.get('sidebar_inert') is True, '%s: page behind the drawer is not inert' % r['id'])
+            if r['id'] == 'owned-375-ru':
+                require(r.get('bell_handoff') == {'open_before_menu': True, 'closed_after_menu': True},
+                        'opening the navigation drawer must close the visible bell panel')
+            cl = d.get('close') or {}
+            require(cl.get('tag') == 'BUTTON' and cl.get('visible') is True and len(cl.get('name') or '') >= 3
+                    and cl.get('w', 0) >= ADAPTIVE_NAV_MIN_TARGET and cl.get('h', 0) >= ADAPTIVE_NAV_MIN_TARGET,
+                    '%s: explicit 44x44 close button missing: %r' % (r['id'], cl))
+
+    def overflow():
+        for r in run():
+            lay = r.get('layout') or {}
+            no_hscroll(lay.get('scroll'), lay.get('client'), r['width'], '%s page' % r['id'])
+        for r in narrow_rows():
+            d = r.get('drawer') or {}
+            no_hscroll(d.get('doc_scroll'), d.get('client'), r['width'], '%s page with open drawer' % r['id'])
+            require(d.get('outside') == [], '%s: menu content sticks out of the drawer: %r' % (r['id'], d.get('outside')))
+            sc = d.get('scrollers')
+            require(isinstance(sc, list) and sc, '%s: drawer scroll container not recorded' % r['id'])
+            for s in sc:
+                require(isinstance(s.get('sw'), int) and isinstance(s.get('cw'), int) and s['sw'] <= s['cw'] + 1,
+                        '%s: drawer scrolls horizontally: %r' % (r['id'], s))
+            st = r.get('stress') or {}
+            require(st.get('done') is True and st.get('outside') == [] and fits(st.get('box'), r['width']),
+                    '%s: long label/large counter overflows the drawer: %r' % (r['id'], st))
+            last = r.get('last_item') or {}
+            no_hscroll(last.get('doc_scroll'), last.get('client'), r['width'], '%s page with all groups open' % r['id'])
+        for r in wide_rows():
+            require((r['layout'].get('sidebar') or {}).get('outside') == [], '%s: sidebar content sticks out' % r['id'])
+
+    def groups_current():
+        for r in narrow_rows():
+            d = r.get('drawer') or {}
+            cur = d.get('current') or {}
+            require(cur.get('visible') is True and cur.get('open') is True and cur.get('path') == 'tasks.php',
+                    '%s: current page item not visible in an open group: %r' % (r['id'], cur))
+            gs = d.get('groups') or []
+            require(gs and all(g.get('visible') == g.get('items') for g in gs if g.get('open')),
+                    '%s: an open group hides its items: %r' % (r['id'], [g for g in gs if g.get('open')]))
+            alls = r.get('groups_all_open') or []
+            require(alls and len(alls) == len(gs) and all(g.get('open') and g.get('items', 0) >= 1 and g.get('visible') == g.get('items')
+                                                          for g in alls),
+                    '%s: a group cannot be opened or shows no items: %r' % (r['id'], alls))
+
+    def labels_counts():
+        for r in narrow_rows():
+            reps = list((r.get('drawer') or {}).get('labels') or [])
+            require(len(reps) >= 4, '%s: menu labels not recorded' % r['id'])
+            st = ((r.get('stress') or {}).get('report')) or {}
+            require((st.get('text') or '').startswith(ADAPTIVE_NAV_STRESS['label'].split()[0])
+                    and (st.get('count') or {}).get('text') == ADAPTIVE_NAV_STRESS['count'] and (st.get('count') or {}).get('visible') is True,
+                    '%s: stress label not measured: %r' % (r['id'], st))
+            reps.append(st)
+            for x in reps:
+                require(x.get('broken') == [], '%s: word broken across lines in %r: %r' % (r['id'], x.get('text'), x.get('broken')))
+                cnt = x.get('count')
+                if cnt and cnt.get('visible'):
+                    require(cnt.get('clipped') is False and cnt.get('inside') is True, '%s: counter clipped in %r' % (r['id'], x.get('text')))
+        for r in wide_rows():
+            reps = (r['layout'].get('sidebar') or {}).get('labels') or []
+            require(len(reps) >= 4, '%s: sidebar labels not recorded' % r['id'])
+            for x in reps:
+                require(x.get('broken') == [], '%s: sidebar word broken in %r' % (r['id'], x.get('text')))
+
+    def tap_targets():
+        for r in narrow_rows():
+            ts = (r.get('drawer') or {}).get('targets') or []
+            require(len(ts) >= 4, '%s: drawer targets not recorded' % r['id'])
+            small = [t for t in ts if t.get('w', 0) < ADAPTIVE_NAV_MIN_TARGET or t.get('h', 0) < ADAPTIVE_NAV_MIN_TARGET]
+            require(not small, '%s: tap targets below 44x44: %r' % (r['id'], small[:4]))
+        for r in wide_rows():
+            ts = [t for t in (r['layout'].get('sidebar') or {}).get('targets') or [] if t.get('text')]
+            small = [t for t in ts if t.get('h', 0) < ADAPTIVE_NAV_MIN_TARGET or t.get('w', 0) < ADAPTIVE_NAV_MIN_TARGET]
+            require(len(ts) >= 4 and not small, '%s: sidebar menu items/group headers below 44 px: %r' % (r['id'], small[:4]))
+
+    def scroll_lock():
+        for r in narrow_rows():
+            d, before = r.get('drawer') or {}, r.get('before_open') or {}
+            require(d.get('html_overflow') == 'hidden', '%s: page behind the drawer is still scrollable' % r['id'])
+            w = r.get('wheel') or {}
+            require(isinstance(w.get('before'), int) and w.get('after') == w['before'], '%s: page scrolled under the drawer: %r' % (r['id'], w))
+            require(isinstance(before.get('main'), dict) and d.get('main') == before.get('main') and d.get('client') == before.get('client'),
+                    '%s: opening the drawer moved or resized the page: %r -> %r' % (r['id'], before.get('main'), d.get('main')))
+
+    def closing(state, r, label):
+        require(isinstance(state, dict), '%s: %s close not performed' % (r['id'], label))
+        require(state.get('drawer_visible') is False and state.get('backdrop_visible') is False and state.get('drawer_focusables') == 0,
+                '%s: drawer/backdrop left after %s close' % (r['id'], label))
+        require(state.get('expanded') == 'false' and state.get('active') == 'menubutton',
+                '%s: focus/aria-expanded not restored after %s: %r' % (r['id'], label, (state.get('expanded'), state.get('active'))))
+        require(isinstance(state.get('scrolly'), int) and state.get('scrolly') == state.get('expected_scrolly')
+                and state.get('html_overflow') != 'hidden' and state.get('main_inert') is False,
+                '%s: scroll position or scroll lock not restored after %s: %r' % (r['id'], label, state))
+        require(state.get('field') == ADAPTIVE_NAV_MARKER, '%s: typed page data lost after %s' % (r['id'], label))
+
+    def close_methods():
+        exposed = 0
+        for r in narrow_rows():
+            require(r.get('field_present') is True, '%s: page field for the data check missing' % r['id'])
+            closing(r.get('close_escape'), r, 'Escape')
+            closing(r.get('close_button'), r, 'close button')
+            if r.get('backdrop_exposed') is True:
+                exposed += 1
+                closing(r.get('close_backdrop'), r, 'backdrop')
+            else:
+                require(r.get('backdrop_exposed') is False and r['width'] < 360,
+                        '%s: drawer must leave the backdrop exposed above 359 px' % r['id'])
+        require(exposed >= 8, 'backdrop close exercised in too few cases: %d' % exposed)
+
+    def last_item():
+        for r in narrow_rows():
+            last = r.get('last_item') or {}
+            require(last.get('found') is True and last.get('hit') is True and isinstance(last.get('top'), int) and last['top'] >= 0
+                    and isinstance(last.get('bottom'), int) and last['bottom'] <= r['height'],
+                    '%s: last menu item not reachable by vertical scrolling: %r' % (r['id'], last))
+
+    def resize():
+        rows = {r['id']: r for r in run()}
+        for cid, wide in (('owned-375-ru', 1440), ('owned-861-ru', 861)):
+            z = rows[cid].get('resize') or {}
+            require(z.get('opened') == 'button' and z.get('open') is True, '%s: drawer not opened before resizing' % cid)
+            tw = z.get('to_wide') or {}
+            require(tw.get('inner') == wide and tw.get('drawer_visible') is False and tw.get('backdrop_visible') is False
+                    and tw.get('html_overflow') != 'hidden' and tw.get('main_inert') is False and tw.get('sidebar_visible') is True
+                    and tw.get('drawer_focusables') == 0 and isinstance(tw.get('scroll'), int) and tw['scroll'] <= wide,
+                    '%s: overlay or scroll lock left after widening: %r' % (cid, tw))
+            bn = z.get('back_narrow') or {}
+            require(bn.get('drawer_visible') is False and (bn.get('button') or {}).get('visible') is True
+                    and (bn.get('button') or {}).get('expanded') == 'false' and bn.get('html_overflow') != 'hidden'
+                    and bn.get('backdrop_visible') is False, '%s: menu state wrong after narrowing again: %r' % (cid, bn))
+            require(z.get('reopen') == 'button' and z.get('reopen_visible') is True and (z.get('reclosed') or {}).get('drawer_visible') is False,
+                    '%s: drawer cannot be reopened/closed after resizing' % cid)
+
+    def routes():
+        r = next(x for x in run() if x['id'] == 'owned-375-ru')
+        steps = r.get('routes') or []
+        require([s.get('target') for s in steps] == ADAPTIVE_NAV_ROUTES, 'route transitions not recorded')
+        for s in steps:
+            require(s.get('opened') == 'button' and s.get('links', 0) >= 1 and s.get('visible') is True and s.get('http') == 200
+                    and s.get('path') == s['target'], 'menu link to %s did not open it: %r' % (s['target'], s))
+            cur = s.get('current') or {}
+            require(s.get('opened_after') == 'button' and cur.get('path') == s['target'] and cur.get('visible') is True and cur.get('open') is True,
+                    'after opening %s the menu does not show it as current in an open group: %r' % (s['target'], cur))
+            no_hscroll(s.get('doc_scroll'), s.get('client'), 375, '%s with open drawer' % s['target'])
+
+    def employee():
+        rows = {r['id']: r for r in run()}
+        ma, ea = rows['owned-375-ru'], rows['owned-375-employee-ru']
+        count = lambda r: sum(g.get('items', 0) for g in (r.get('groups_all_open') or []))
+        require(0 < count(ea) <= count(ma), 'employee menu not rendered or larger than the manager menu: %r/%r' % (count(ea), count(ma)))
+
+    def nojs():
+        rows = {r['id']: r for r in run()}
+        n, w = rows['nojs-375-ru'], rows['nojs-1440-en']
+        require((n['layout'].get('button') or {}).get('visible') is False and n.get('summary_visible') is True,
+                'no-JS phone: the summary fallback must be shown and the JS button hidden')
+        d = n.get('drawer') or {}
+        require(d.get('visible') is True and fits(d.get('box'), 375) and len(d.get('labels') or []) >= 4 and d.get('outside') == [],
+                'no-JS phone: menu links not usable: %r' % {k: d.get(k) for k in ('visible', 'box', 'outside')})
+        sc = d.get('scrollers')
+        require(isinstance(sc, list) and sc and all(isinstance(s.get('sw'), int) and s['sw'] <= s.get('cw', -1) + 1 for s in sc),
+                'no-JS phone: menu scrolls horizontally: %r' % (sc,))
+        no_hscroll(d.get('doc_scroll'), d.get('client'), 375, 'no-JS phone page with menu')
+        last = n.get('last_item') or {}
+        require(last.get('found') is True and last.get('hit') is True, 'no-JS phone: last menu item not reachable: %r' % (last,))
+        require(w['layout'].get('sidebar_visible') is True and (w['layout'].get('sidebar') or {}).get('current_visible') is True,
+                'no-JS desktop: sidebar not usable')
+
+    def legacy():
+        for r in run():
+            if r['shell'] != 'legacy':
+                continue
+            lay = r['layout']
+            require(lay.get('owned') is False and lay.get('button') is None and lay.get('drawer_visible') is False
+                    and lay.get('html_overflow') != 'hidden' and lay.get('main_inert') is False,
+                    '%s: owned drawer leaked into the legacy shell' % r['id'])
+
+    def events():
+        for r in run():
+            violations = browser_event_violations(r.get('browser_events'))
+            require(not violations, '%s: browser errors: %r' % (r['id'], violations[:3]))
+            if r['js']:
+                require(r.get('server_errors') == [], '%s: HTTP 5xx: %r' % (r['id'], r.get('server_errors')))
+
+    return {'adaptive_nav_desktop_sidebar_unchanged': desktop, 'adaptive_nav_menu_button_accessible': button,
+            'adaptive_nav_drawer_modal_and_focus_trap': modal, 'adaptive_nav_no_horizontal_overflow': overflow,
+            'adaptive_nav_groups_open_and_current': groups_current, 'adaptive_nav_labels_wrap_and_counters': labels_counts,
+            'adaptive_nav_tap_targets_44': tap_targets, 'adaptive_nav_scroll_lock_page_stable': scroll_lock,
+            'adaptive_nav_close_escape_button_backdrop': close_methods, 'adaptive_nav_last_item_reachable': last_item,
+            'adaptive_nav_resize_no_stale_overlay': resize, 'adaptive_nav_route_transitions': routes,
+            'adaptive_nav_shorter_employee_menu': employee, 'adaptive_nav_no_js_fallback': nojs,
+            'adaptive_nav_legacy_shell_unchanged': legacy, 'adaptive_nav_no_browser_errors': events}
 
 def required_check_names():
     """Every check a complete BROWSER report must contain (used by browser_acceptance.py and merge_gate.py)."""
@@ -1364,7 +2064,10 @@ def required_check_names():
             + list(access_checks({})) + list(oversize_checks({}, {})) + list(multiattachment_checks({}))
             + list(message_action_checks({})) + list(task_open_checks({}))
             + list(communication_center_checks({})) + list(daily_reports_nav_checks({}))
-            + list(daily_reports_flow_checks({})) + list(plan_discussion_checks({})) + list(communication_ux_checks({})))
+            + list(daily_reports_flow_checks({})) + list(plan_discussion_checks({})) + list(communication_ux_checks({}))
+            + list(day_feed_checks({}))
+            + list(notification_bell_checks({}))
+            + list(adaptive_nav_checks({})))
 
 
 def evaluate(checks):

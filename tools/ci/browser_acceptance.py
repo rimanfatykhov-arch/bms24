@@ -167,12 +167,21 @@ try:
     record(contract.evaluate(contract.plan_discussion_checks(load('plan-discussion-result.json'), plan_exit)))
     ux_exit = timed('communication_ux', lambda: browser('communication_ux.py', 'verify'))
     record(contract.evaluate(contract.communication_ux_checks(load('communication-ux-result.json'), ux_exit)))
+    # Top bar bell + opt-in sound: new rows, read rules, A/B + roles, revocation, polling/reconnect, tabs, widths.
+    bell_exit = timed('notification_bell', lambda: browser('notification_bell.py', 'verify'))
+    record(contract.evaluate(contract.notification_bell_checks(load('notification-bell-result.json'), bell_exit)))
     # Daily reports R0 entry (ADR-0009): menu order/active state, tab, button, short phone labels, owned+legacy, 1440+375.
     daily_exit = timed('daily_reports_nav', lambda: browser('daily_reports_nav.py', 'verify'))
     record(contract.evaluate(contract.daily_reports_nav_checks(load('daily-reports-nav-result.json'), daily_exit)))
     # Saved daily reports R1/R2: draft, conflict, concurrent submit/decisions, CSRF, snapshot, review cycle, notifications.
     flow_exit = timed('daily_reports_flow', lambda: browser('daily_reports_flow.py', 'verify'))
     record(contract.evaluate(contract.daily_reports_flow_checks(load('daily-reports-flow-result.json'), flow_exit)))
+    # Day feed -> report draft: feed of own results, add into a filled draft once, unsaved text kept, isolation, sending.
+    feed_exit = timed('day_feed', lambda: browser('day_feed.py', 'verify'))
+    record(contract.evaluate(contract.day_feed_checks(load('day-feed-result.json'), feed_exit)))
+    # Adaptive navigation (docs/ui/ADAPTIVE_NAVIGATION.md): owned drawer <= 860 px / sidebar, legacy, no-JS, 16 cases.
+    nav_exit = timed('adaptive_nav', lambda: browser('adaptive_nav.py', 'verify'))
+    record(contract.evaluate(contract.adaptive_nav_checks(load('adaptive-nav-result.json'), nav_exit)))
     timed('server_restart_64k', lambda: start_server(['-d', 'upload_max_filesize=64K', '-d', 'post_max_size=8M']))
     timed('oversize', lambda: browser('attachments.py', 'oversize'))
     timed('db_state_oversize', lambda: php_state('oversize'))

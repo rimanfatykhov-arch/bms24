@@ -22,5 +22,19 @@ if ($hassiteconfig) {
         get_string('dailyreports_enabled_help', 'local_kbacompany'),
         0
     ));
+    // ADR-0010 (owner decision 21.11.2026): self review only at the top of the organisation chart; on by decision.
+    $settings->add(new admin_setting_configcheckbox(
+        'local_kbacompany/dailyreports_selftop',
+        get_string('dailyreports_selftop', 'local_kbacompany'),
+        get_string('dailyreports_selftop_help', 'local_kbacompany'),
+        1
+    ));
+    $settings->add(new admin_setting_configtext(
+        'local_kbacompany/dailyreports_cc_max',
+        get_string('dailyreports_cc_max', 'local_kbacompany'),
+        get_string('dailyreports_cc_max_help', 'local_kbacompany'),
+        5,
+        PARAM_INT
+    ));
     $ADMIN->add('localplugins', $settings);
 }

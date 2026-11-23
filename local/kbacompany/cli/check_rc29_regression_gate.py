@@ -39,6 +39,18 @@ checks={
  'release runner validates XML': 'validate_xml()' in runner,
  'release runner validates ZIP integrity': 'zf.testzip()' in runner,
 }
+# Every communicationux2_* key the plugin can request must exist in both languages.
+# Names ending with an underscore are runtime concatenation fragments; their expanded
+# forms are literal in the code and are covered by the same scan.
+langru=(ROOT/'lang/ru/local_kbacompany.php').read_text(encoding='utf-8')
+langen=(ROOT/'lang/en/local_kbacompany.php').read_text(encoding='utf-8')
+ux2keys=set()
+for src in list(ROOT.rglob('*.php'))+list(ROOT.rglob('*.mustache')):
+    ux2keys.update(re.findall(r'communicationux2_[a-z0-9_]+', src.read_text(encoding='utf-8', errors='replace')))
+ux2keys={k for k in ux2keys if not k.endswith('_')}
+missingux2=sorted(k for k in ux2keys if "['"+k+"']" not in langru or "['"+k+"']" not in langen)
+if missingux2: print('MISSING communicationux2 keys:', ', '.join(missingux2))
+checks['communicationux2 keys exist in RU and EN']=not missingux2
 for title,ok in checks.items():print(('PASS' if ok else 'FAIL')+' '+title)
 print('RC29 STATIC GATE:',sum(checks.values()),'/',len(checks))
 if not all(checks.values()):sys.exit(2)

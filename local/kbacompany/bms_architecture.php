@@ -319,7 +319,8 @@ $shell = [
             ['class' => 'kba-bms-button']),
         'planhtml' => html_writer::link($planurl, get_string('bms_plan_title', 'local_kbacompany'),
             ['class' => 'kba-bms-button kba-bms-button--plan']),
-        'notificationshtml' => '',
+        'notificationshtml' => $useowned
+            ? \local_kbacompany\local\bms24_shell_service::notification_bell($uuid, (int)$USER->id) : '',
         'usermenuhtml' => $OUTPUT->user_menu(),
     ],
     'header' => [

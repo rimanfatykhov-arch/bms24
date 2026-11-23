@@ -156,7 +156,8 @@ class bms_page_shell_service {
                 'quickactionhtml' => $quickactions,
                 'planhtml' => \html_writer::link($planurl, get_string('bms_plan_title', 'local_kbacompany'),
                     ['class' => 'kba-bms-button kba-bms-button--plan']),
-                'notificationshtml' => '',
+                'notificationshtml' => !empty($state['owned_supported'])
+                    ? bms24_shell_service::notification_bell((string)$state['companyuuid'], (int)$state['userid']) : '',
                 'usermenuhtml' => $OUTPUT->user_menu(),
             ],
             // Ordinary pages already own their semantic H1/intro/actions. Avoid
