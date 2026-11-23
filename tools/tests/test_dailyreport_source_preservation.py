@@ -34,6 +34,15 @@ A10_MARKER=b'\n// ADR-0010: reviewer by organisation chart, self review at the t
 _A10=json.loads((ROOT/'docs/reconcile/daily-reports-adr0010-source-preservation.json').read_text(encoding='utf-8'))
 A10_BEFORE={lang:next(r['before_sha256_lf'] for r in _A10['files'] if r['path']==f'local/kbacompany/lang/{lang}/local_kbacompany.php')
             for lang in ('en','ru')}
+A10_AFTER={lang:next(r['after_sha256_lf'] for r in _A10['files'] if r['path']==f'local/kbacompany/lang/{lang}/local_kbacompany.php')
+           for lang in ('en','ru')}
+BELL_MARKER=b'\n// Top bar bell and opt-in notification sound (owned shell).\n'
+BELL_KEYS=[b'notificationbell_title',b'notificationbell_label',b'notificationbell_all',b'notificationbell_loading',
+           b'notificationbell_empty',b'notificationbell_error',b'notificationbell_unavailable',b'notificationbell_retry',
+           b'notificationbell_readonly_hint',b'notificationbell_sound',b'notificationbell_sound_off',b'notificationbell_sound_on',
+           b'notificationbell_sound_blocked',b'notificationbell_sound_enable',b'notificationbell_sound_test',
+           b'notificationbell_sound_disable',b'privacy:metadata:preference:notificationsound',
+           b'privacy:metadata:preference:notificationsoundsignalled']
 E2_KEYS=[b'bpu_tab_discussion',b'bpu_discussion_empty',b'bpu_discussion_readonly',b'bpu_discussion_reader',
          b'communication_object_battleplan',b'communicationcenter_openplan']
 _R2=json.loads((ROOT/'docs/reconcile/daily-reports-r2-source-preservation.json').read_text(encoding='utf-8'))
@@ -92,6 +101,12 @@ class Preservation(unittest.TestCase):
                 e2,ux=e2.split(UX_MARKER)
                 if C145_MARKER in ux:
                     ux,c145=ux.split(C145_MARKER)
+                    if BELL_MARKER in c145:
+                        # The combined release appends the bell to the exact ADR-0010 strings.
+                        c145,bell=c145.split(BELL_MARKER)
+                        self.assertEqual(BELL_KEYS,keys(bell))
+                        self.assertFalse(set(BELL_KEYS)&set(keys(data.split(BELL_MARKER)[0])))
+                        self.assertEqual(A10_AFTER[lang],hashlib.sha256(data.split(BELL_MARKER)[0]).hexdigest())
                     if A10_MARKER in c145:
                         # The #145 file is byte-identical up to the ADR-0010 marker; ADR-0010 keys are new.
                         c145,a10=c145.split(A10_MARKER)

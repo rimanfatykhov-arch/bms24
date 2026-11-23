@@ -96,6 +96,12 @@ def check(root=ROOT):
         'local/kbacompany/lang/ru/local_kbacompany.php': '0698c4976b6364b07fb124700624ff30023df5356f7260dab0260f60641320ac',
         'local/kbacompany/classes/local/communication_service.php': '6a5de10a764edc99864aee634ec4b9ecbe432c7a76e4dfcbc5d60b81b6874b40',
     })
+    # Notification bell on top of ADR-0010. The reviewed source chain retains both changes.
+    reviewed_followup.update({
+        'local/kbacompany/classes/local/communication_service.php': 'f3c7ab27e4da9001673e6c60a72b18b8e5af604068b15b349c5c01a45de3ad05',
+        'local/kbacompany/lang/en/local_kbacompany.php': '5627a2459e4b00188f824f85fe521c0a04a1c999df1bc4c3072649550bff2c1e',
+        'local/kbacompany/lang/ru/local_kbacompany.php': '353a6d98ad7cecc34354013bd9496668d75ffe35c80ead0d3ee18da64d447462',
+    })
     for row in plan['rows']:
         path=root/row['path']
         if not path.is_file() or path.is_symlink():

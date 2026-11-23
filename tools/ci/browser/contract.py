@@ -1406,13 +1406,287 @@ def communication_ux_checks(obs, exitcode=None):
     return {'communication_ux1_layout_and_navigation': verify, 'communication_ux2_primary_action_geometry': geometry}
 
 
+BELL_WIDTHS = (1440, 768, 320)
+FEED_PATH = '/local/kbacompany/communication_notifications_feed.php'
+
+
+# The no-storage tabs plant this fault on purpose (notification_bell.py NO_STORAGE); its echo is the only event
+# accepted from that context.
+BELL_PLANTED_STORAGE_ECHO = 'SecurityError: localStorage blocked by the test'
+
+
+def notification_bell_checks(obs, exitcode=None):
+    """Top bar bell + opt-in sound (fail closed). Evidence: notification_bell.py. A counted play() call is a request for a
+    signal, not proof of audible sound; the owner's manual listening check is outside this contract."""
+    def run():
+        require(exitcode == 0 and isinstance(obs, dict) and obs.get('status') == 'PASS' and not obs.get('error')
+                and not obs.get('cleanup_error'), 'bell browser run missing/failed')
+        return obs
+
+    def step(name):
+        run()
+        s = (obs.get('steps') or {}).get(name)
+        require(isinstance(s, dict) and s, 'missing bell observation: ' + name)
+        return s
+
+    def shown(b):
+        require(isinstance(b, dict) and isinstance(b.get('ids'), list), 'bell state not recorded')
+        return b
+
+    def badge_matches(b, server, label=''):
+        b = shown(b)
+        unread = (server or {}).get('unread')
+        require(isinstance(unread, int) and unread >= 0, '%s: server count missing' % label)
+        require(b.get('unread') == str(unread), '%s: badge %r != server %r' % (label, b.get('unread'), unread))
+        require(b.get('badge') == ('' if unread == 0 else (str(unread) if unread <= 99 else '99+')),
+                '%s: visible badge %r wrong' % (label, b.get('badge')))
+        if unread:
+            require(isinstance(b.get('label'), str) and str(unread) in b['label'] and b.get('title') == b['label'],
+                    '%s: tooltip/label lacks the counted unit' % label)
+
+    def plays(b, n, label):
+        require(shown(b).get('plays') == n, '%s: %r play() calls, expected %d' % (label, b.get('plays'), n))
+
+    def new_event_center_and_bell():
+        i, p, s, c = step('initial'), step('panel'), step('new_sound_off'), step('center_lists_new')
+        require(i['n0'] in shown(i['bell'])['ids'], 'existing notification missing from the bell')
+        badge_matches(i['bell'], i['server'], 'initial')
+        require(s['n1'] in shown(s['bell'])['ids'] and s['bell']['ids'][0] == s['n1'], 'new notification not first in bell')
+        badge_matches(s['bell'], s['server'], 'after new')
+        require(s['server']['unread'] == i['server']['unread'] + 1, 'server count did not grow by exactly one')
+        require(c.get('n1_form') == 1 and c.get('title_shown', 0) >= 1, 'new notification missing in the Center')
+        m = p.get('metrics') or {}
+        exact_center_link(m.get('allhref'), {'uuid': obs.get('companyuuid'), 'tab': 'notifications'})
+        t = step('thread_open')
+        require(t['uuid'] in shown(t['bell'])['ids'], 'thread notification missing from the bell')
+        exact_center_link(t.get('href'), {'uuid': obs.get('companyuuid'), 'thread': t.get('thread')})
+        require(t.get('http') == 200, 'opening the notification object: HTTP %r' % t.get('http'))
+        landed = urlparse(local_url(t.get('landed') or ''))
+        q = dict(parse_qsl(landed.query))
+        require(landed.path == CENTER_PATH and q.get('uuid') == obs.get('companyuuid') and q.get('thread') == t.get('thread'),
+                'bell link did not land on its conversation: %r' % t.get('landed'))
+
+    def read_rules_unchanged():
+        i, p, c = step('initial'), step('panel'), step('count_only')
+        before, after = i['server_before'].get('read'), i['server'].get('read')
+        require(isinstance(before, dict) and before and before == after, 'loading the bell changed read state')
+        require(p['server'].get('read') == after, 'opening the panel changed read state')
+        require(after.get(i['n0']) == 0, 'fixture notification not unread at start')
+        require(c['server']['read'].get(c['n1']) == 1, 'Center "mark as read" no longer works')
+        require(shown(c['bell'])['read'].get(c['n1']) == '1', 'bell does not reflect the read state')
+        badge_matches(c['bell'], c['server'], 'after read in Center')
+
+    def isolation_roles_and_revocation():
+        s = step('isolation')
+        eb, ma, ea = shown(s['eb_bell']), shown(s['ma_bell']), shown(s['ea_bell'])
+        a_ids = set(s.get('ea_ids') or [])
+        require(len(a_ids) >= 8, 'company A id set incomplete')
+        require(s['nb'] in eb['ids'] and not (set(eb['ids']) & a_ids), 'company B bell shows A rows or misses its own')
+        badge_matches(eb, s['eb_server'], 'company B')
+        require(s['nb'] not in ea['ids'], 'company A bell shows a company B row')
+        require(s.get('foreign_http') == 200 and s.get('foreign', {}).get('ok') is False
+                and set(s['foreign']) <= {'ok', 'state', 'user'}, 'foreign company feed not refused neutrally')
+        require(not (set(ma['ids']) & a_ids), "manager sees another user's notifications")
+        require(s.get('ma_http') == 200 and s.get('ma', {}).get('ok') is True
+                and not ({x.get('id') for x in s['ma'].get('items', [])} & a_ids), "manager API returns another user's rows")
+        t = step('thread_revoked')
+        require(t.get('active') == 0, 'participation not revoked')
+        tb = shown(t['bell'])
+        require(t['uuid'] not in tb['ids'] and t['thread'] not in (tb.get('text') or '') and t['title'] not in (tb.get('text') or ''),
+                'revoked thread still shown')
+        badge_matches(tb, t['server'], 'after thread revocation')
+        plays(tb, 0, 'thread revocation')
+        r = step('company_revoked')
+        rv = shown(r['revoked'])
+        require(r['revoked_server'].get('unread') is None, 'company access not revoked')
+        require(rv['ids'] == [] and rv['badge'] == '' and rv['state'] == 'unavailable' and r['n11'] not in (rv.get('text') or ''),
+                'bell still shows rows after company revocation')
+        plays(rv, 0, 'company revocation')
+        rs = shown(r['restored'])
+        require(r['n11'] in rs['ids'], 'rows not back after reopen')
+        badge_matches(rs, r['server'], 'after reopen')
+        plays(rs, 0, 'reopen (new observation)')
+        a = step('account_switch')
+        ab = shown(a['bell'])
+        require(ab['ids'] == [] and ab['badge'] == '' and ab['state'] == 'unavailable', 'open tab kept the previous account')
+        plays(ab, 0, 'account switch')
+        require(a.get('more_polls') == 0, 'stopped bell kept polling for another account')
+        require(a.get('ra_bell_count') == 1, 'new account page has no bell')
+
+    def claim_identity_and_concurrency():
+        """Server claims (separate PHP processes on the real Moodle DB): dedup by notification identity, not max id."""
+        cl = step('claims')
+        companies = sorted((cl.get('dual') or {}).get('companies') or [])
+        require(companies == sorted([obs.get('companyuuid'), obs.get('companyb')]), 'claims: dual-company account not in A and B')
+
+        def outcome(run, n):
+            require(isinstance(run, dict) and isinstance(run.get('plays'), list) and len(run['plays']) == n
+                    and all(isinstance(x, bool) for x in run['plays']), 'claims: run evidence missing')
+            return run['plays']
+        x = cl.get('cross') or {}
+        require(int(x['a']['id']) < int(x['b']['id']), 'claims: fixture order wrong (company A row must have the lower id)')
+        require(outcome(x.get('first_b'), 1) == [True], 'claims: first company B claim did not play')
+        require(outcome(x.get('then_a'), 1) == [True], 'older fresh notification suppressed (other company)')
+        require(outcome(x.get('again_a'), 1) == [False], 'claims: the same notification played twice')
+        require(outcome(x.get('a_in_b'), 1) == [False], 'claims: a row was claimable outside its company')
+        o = cl.get('order') or {}
+        require(int(o['c1']['id']) < int(o['c2']['id']), 'claims: fixture order wrong (same company)')
+        require(outcome(o.get('first_c2'), 1) == [True], 'claims: newer row did not play')
+        require(outcome(o.get('then_c1'), 1) == [True], 'older fresh notification suppressed (same company)')
+        ps = cl.get('parallel_same') or {}
+        require(outcome(ps, 8).count(True) == 1, 'concurrent claims of one notification: %r signals' % ps.get('plays'))
+        pc = cl.get('parallel_companies') or {}
+        pcp = outcome(pc, 8)
+        require(pcp[:4].count(True) == 1 and pcp[4:].count(True) == 1,
+                'concurrent claims in two companies: %r (expected one per notification)' % pcp)
+        for name, run in (('parallel_same', ps), ('parallel_companies', pc)):
+            rows = run.get('results') or []
+            require(len({r.get('pid') for r in rows}) == len(rows), '%s: claims did not run in separate processes' % name)
+            require(isinstance(run.get('inflight_at_first_end'), int) and run['inflight_at_first_end'] >= 2,
+                    '%s: concurrency not demonstrated (claims did not overlap)' % name)
+        b = cl.get('batch') or {}
+        require(outcome(b.get('first'), 1) == [True], 'claims: batch did not play')
+        require(outcome(b.get('repeat'), 4) == [False] * 4, 'claims: a claimed batch played again %r' % b['repeat']['plays'])
+
+    def late_claim():
+        """Review finding 1: a late claim answer must not play after the sound was turned off (or off and on)."""
+        lc = step('late_claim')
+        for key, pref, confirms in (('off', '0', 0), ('off_on', '1', 1)):
+            r = lc.get(key) or {}
+            ans = r.get('answers') or []
+            require(len(ans) == 1 and ans[0].get('ok') is True and ans[0].get('play') is True,
+                    'late claim %s: precondition missing (server did not grant play to the held claim)' % key)
+            require(r.get('pref_before_release') == pref, 'late claim %s: stored preference %r' % (key, r.get('pref_before_release')))
+            bf, af = r.get('before') or {}, r.get('after') or {}
+            require(all(isinstance(d.get(k), int) for d in (bf, af) for k in ('signals', 'confirms', 'plays')),
+                    'late claim %s: counters missing' % key)
+            require(af['signals'] == bf['signals'], 'stale claim played after disable (%s)' % key)
+            require(af['confirms'] - bf['confirms'] == confirms and af['plays'] - bf['plays'] == confirms,
+                    'stale claim played after disable (%s): play() calls not explained by button confirmations' % key)
+            require(r.get('id') in shown(r.get('bell'))['ids'], 'late claim %s: row missing from the bell' % key)
+        n = lc.get('normal') or {}
+        bf, af = n.get('before') or {}, n.get('after') or {}
+        require(isinstance(bf.get('signals'), int) and af.get('signals') == bf['signals'] + 1 and af.get('plays') == bf.get('plays', 0) + 1
+                and af.get('confirms') == bf.get('confirms'), 'new notification with sound on no longer signals after a late claim')
+
+    def sound_signal_rules():
+        claim_identity_and_concurrency()
+        late_claim()
+        plays(step('initial')['bell'], 0, 'initial load')
+        plays(step('new_sound_off')['bell'], 0, 'sound off')
+        plays(step('repeat_poll')['bell'], 0, 'repeated polling')
+        c = step('count_only')
+        plays(c['bell'], 0, 'count-only change')
+        b = step('batch')
+        require(set(b['ids']) <= set(shown(b['bell'])['ids']), 'batch rows missing')
+        badge_matches(b['bell'], b['server'], 'batch')
+        plays(b['bell'], 1, 'batch of three')
+        t = step('tabs')
+        require(all(t['n5'] in shown(x)['ids'] for x in t['bells']), 'second tab missed the row')
+        require(isinstance(t.get('plays'), list) and len(t['plays']) == 2 and sum(t['plays']) == 1, 'two tabs: %r signals' % t.get('plays'))
+        require(t.get('storage') == ['available', 'available'], 'two tabs: normal storage not confirmed %r' % t.get('storage'))
+        n = step('tabs_nostorage')
+        require(n.get('storage') == ['SecurityError', 'SecurityError'],
+                'no-storage tabs: localStorage was not actually unavailable %r' % n.get('storage'))
+        require(isinstance(n.get('bells'), list) and len(n['bells']) == 2
+                and all(n['n6'] in shown(x)['ids'] and x.get('state') != 'unavailable' for x in n['bells']),
+                'no-storage tabs: row missing or bell unavailable')
+        require(isinstance(n.get('plays'), list) and len(n['plays']) == 2 and sum(n['plays']) == 1,
+                'no-storage tabs: %r signals' % n.get('plays'))
+        oc = shown(n.get('other_context'))
+        require(n['n6'] in oc['ids'], 'other browser context missed the row')
+        plays(oc, 0, 'same row in another browser context')
+        plays(step('reload')['bell'], 0, 'reload')
+        r = step('reconnect')
+        require(r.get('polls_while_offline') == 0, 'polled while offline')
+        require(set(r['ids']) <= set(shown(r['bell'])['ids']), 'rows after reconnect missing')
+        plays(r['bell'], 1, 'reconnect')
+        d = step('disable')
+        plays(d['bell'], 0, 'after disable')
+        require(d['n9'] in shown(d['bell'])['ids'], 'row missing after disable')
+        th = step('thread_open')
+        plays(th['bell'], 1, 'new thread notification')
+
+    def sound_preference():
+        e = step('enable')
+        require(step('initial')['server'].get('pref') in ('0', ''), 'sound not off by default')
+        require(step('initial')['bell'].get('sound') == 'off', 'bell did not start with sound off')
+        require(e.get('plays_after_enable') == 1 and e.get('plays_after_test') == 2, 'enable/test did not request playback')
+        require(e['server'].get('pref') == '1' and e['bell'].get('sound') == 'on', 'enable not stored or not shown')
+        require(e.get('other_account_pref') in ('0', ''), 'preference leaked to another account')
+        a = step('autoplay_refused')
+        plays(a['blocked'], 1, 'refused playback attempt')
+        require(a['blocked'].get('sound') == 'blocked' and a['after_test'].get('sound') == 'on', 'autoplay refusal not handled')
+        c = step('csrf')
+        require(c.get('wrong_http') == 200 and c.get('wrong', {}).get('ok') is False and c['wrong'].get('state') == 'sesskey',
+                'wrong sesskey not refused')
+        require(c.get('get_http') == 200 and c.get('get_ok') is True and c.get('pref') == '1', 'preference changed without POST+sesskey')
+        d = step('disable')
+        require(d.get('pref') == '0' and d['bell'].get('sound') == 'off', 'disable not stored or not shown')
+
+    def panel_layout_keyboard():
+        run()
+        rows = obs.get('widths')
+        require(isinstance(rows, list) and [r.get('width') for r in rows] == list(BELL_WIDTHS), 'bell width matrix incomplete')
+        for r in rows:
+            w = r['width']
+            require(r.get('toggle_visible') is True, '%d: bell not visible' % w)
+            closed = r.get('closed') or {}
+            require(closed.get('open') is False and closed.get('hscroll') is False, '%d: closed state wrong/overflow' % w)
+            for key in ('open_keyboard', 'open_click'):
+                m = r.get(key) or {}
+                require(m.get('open') is True and m.get('expanded') == 'true', '%d: %s did not open' % (w, key))
+                require(m.get('position') == 'fixed' and m.get('overflowy') in ('auto', 'scroll'), '%d: panel not floating/scrollable' % w)
+                require(0 <= m['left'] and m['right'] <= m['vw'] and 0 <= m['top'] and m['bottom'] <= m['vh'],
+                        '%d: panel outside the viewport %r' % (w, m))
+                require(m.get('hscroll') is False, '%d: horizontal overflow with panel open' % w)
+                require(m.get('maintop') == closed.get('maintop') and m.get('docheight') == closed.get('docheight'),
+                        '%d: opening the panel shifted the page' % w)
+            require(r['open_keyboard'].get('active') == 'panel', '%d: focus not moved into the panel' % w)
+            require(r.get('tab_inside') == 'inside', '%d: Tab left the panel' % w)
+            esc = r.get('after_escape') or {}
+            require(esc.get('open') is False and esc.get('active') == 'toggle', '%d: Escape did not close/restore focus' % w)
+            outline = r.get('focus_outline')
+            require(isinstance(outline, list) and outline[0] != 'none' and outline[1] >= 2, '%d: focus ring missing' % w)
+            out = r.get('after_outside') or {}
+            require(out.get('open') is False and out.get('expanded') == 'false', '%d: outside click did not close' % w)
+
+    def single_bell():
+        for name in ('initial', 'reload'):
+            b = shown(step(name)['bell'])
+            require(b.get('bells') == 1 and b.get('moodlebells') == 0, '%s: expected exactly one bell' % name)
+            # The hidden panel must not contribute page headings (it hid the page title for h1/h2 lookups).
+            require(b.get('headings') == 0, '%s: bell contains %r h1-h6 headings' % (name, b.get('headings')))
+        require(step('legacy').get('bells') == 0, 'legacy shell got a second (BMS) bell')
+
+    def no_browser_errors():
+        run()
+        require(obs.get('server_errors') == [], 'server errors: %r' % (obs.get('server_errors') or [])[:3])
+        page_error_check(obs, 'notification bell')()
+        ev = (step('tabs_nostorage') or {}).get('events')
+        require(isinstance(ev, list), 'no-storage context events not recorded')
+        other = [e for e in ev if not (e.get('source') == 'console' and e.get('type') == 'error'
+                                       and e.get('text') == BELL_PLANTED_STORAGE_ECHO)]
+        require(not other, 'no-storage context: unexpected browser events %r' % other[:3])
+
+    return {'notification_bell_new_event_center_and_bell': new_event_center_and_bell,
+            'notification_bell_read_rules_unchanged': read_rules_unchanged,
+            'notification_bell_isolation_roles_and_revocation': isolation_roles_and_revocation,
+            'notification_bell_sound_signal_rules': sound_signal_rules,
+            'notification_bell_sound_preference': sound_preference,
+            'notification_bell_panel_layout_keyboard': panel_layout_keyboard,
+            'notification_bell_single_bell': single_bell,
+            'notification_bell_no_browser_errors': no_browser_errors}
+
+
 def required_check_names():
     """Every check a complete BROWSER report must contain (used by browser_acceptance.py and merge_gate.py)."""
     return (['moodle_install', 'fixtures_companies_A_B'] + list(task_tab_checks({})) + list(attachments_checks({}, {}))
             + list(access_checks({})) + list(oversize_checks({}, {})) + list(multiattachment_checks({}))
             + list(message_action_checks({})) + list(task_open_checks({}))
             + list(communication_center_checks({})) + list(daily_reports_nav_checks({}))
-            + list(daily_reports_flow_checks({})) + list(plan_discussion_checks({})) + list(communication_ux_checks({})))
+            + list(daily_reports_flow_checks({})) + list(plan_discussion_checks({})) + list(communication_ux_checks({}))
+            + list(notification_bell_checks({})))
 
 
 def evaluate(checks):

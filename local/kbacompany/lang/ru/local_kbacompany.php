@@ -9947,3 +9947,23 @@ $string['dailyreports_cc_max'] = 'Ежедневные отчёты: получ�
 $string['dailyreports_cc_max_help'] = 'Сколько человек автор может поставить в копию одного отчёта (1–50).';
 $string['messageprovider:dailyreport_copy'] = 'Копия ежедневного отчёта';
 $string['communication_notification_dailyreport_copy'] = 'Копия ежедневного отчёта';
+
+// Top bar bell and opt-in notification sound (owned shell).
+$string['notificationbell_title'] = 'Уведомления';
+$string['notificationbell_label'] = 'Непрочитанные уведомления: {$a}';
+$string['notificationbell_all'] = 'Все уведомления';
+$string['notificationbell_loading'] = 'Загружаем уведомления…';
+$string['notificationbell_empty'] = 'Уведомлений пока нет.';
+$string['notificationbell_error'] = 'Не удалось загрузить уведомления. Проверьте связь и повторите.';
+$string['notificationbell_unavailable'] = 'Уведомления этой компании недоступны. Обновите страницу.';
+$string['notificationbell_retry'] = 'Повторить';
+$string['notificationbell_readonly_hint'] = 'Открытие списка не отмечает уведомления прочитанными.';
+$string['notificationbell_sound'] = 'Звук уведомлений';
+$string['notificationbell_sound_off'] = 'Звук выключен.';
+$string['notificationbell_sound_on'] = 'Звук включён: короткий сигнал, когда приходит новое уведомление.';
+$string['notificationbell_sound_blocked'] = 'Браузер заблокировал звук. Нажмите «Проверить звук», чтобы разрешить.';
+$string['notificationbell_sound_enable'] = 'Включить звук';
+$string['notificationbell_sound_test'] = 'Проверить звук';
+$string['notificationbell_sound_disable'] = 'Выключить звук';
+$string['privacy:metadata:preference:notificationsound'] = 'Включил ли пользователь звуковой сигнал о новых уведомлениях BMS24.';
+$string['privacy:metadata:preference:notificationsoundsignalled'] = 'Служебные номера недавних уведомлений BMS24, по которым уже прозвучал сигнал, чтобы другие вкладки его не повторяли.';

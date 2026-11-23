@@ -1111,6 +1111,225 @@ class ContractTest(unittest.TestCase):
             self.assertTrue(all(x['status'] == 'FAIL' for x in r.values()), r)
         self.assertTrue(all(x['status'] == 'FAIL' for x in c.evaluate(c.plan_discussion_checks(None, None)).values()))
 
+    @staticmethod
+    def bell_obs():
+        """A genuine-looking notification_bell.py result: every bell check must PASS on it."""
+        center = 'http://127.0.0.1:8080/local/kbacompany/communication_center.php'
+
+        def bell(ids, unread, plays=0, sound='off', read=None, state='ready', text='', bells=1):
+            return {'ids': list(ids), 'read': read or {i: '0' for i in ids}, 'links': {}, 'badge': str(unread) if unread else '',
+                    'unread': str(unread), 'label': 'Unread notifications: %d' % unread if unread else 'Notifications',
+                    'title': 'Unread notifications: %d' % unread if unread else 'Notifications', 'state': state,
+                    'sound': sound, 'text': text, 'plays': plays, 'bells': bells, 'moodlebells': 0, 'headings': 0}
+
+        def srv(unread, pref='0', **read):
+            return {'unread': unread, 'read': dict({'n0': 0}, **read), 'pref': pref}
+
+        def metrics(open_, active='other', **kw):
+            m = {'open': open_, 'expanded': 'true' if open_ else 'false', 'left': 8, 'right': 312, 'top': 120, 'bottom': 600,
+                 'vw': 320, 'vh': 640, 'overflowy': 'auto', 'position': 'fixed', 'scroll': 900, 'client': 480, 'maintop': 160,
+                 'docheight': 1400, 'hscroll': False, 'active': active, 'allhref': center + '?uuid=A&tab=notifications'}
+            m.update(kw)
+            return m
+
+        def cnt(signals, confirms, plays):
+            return {'signals': signals, 'confirms': confirms, 'plays': plays, 'sound': '1', 'epoch': 7}
+
+        def run(*plays):
+            rows = [{'play': x, 't0': 10.0 + i * 0.001, 't1': 10.05 + i * 0.01, 'pid': 1000 + i, 'late': 0.001}
+                    for i, x in enumerate(plays)]
+            return {'results': rows, 'plays': list(plays), 'inflight_at_first_end': len(plays)}
+
+        def width(w):
+            return {'width': w, 'toggle_visible': True, 'closed': metrics(False), 'open_keyboard': metrics(True, 'panel'),
+                    'tab_inside': 'inside', 'after_escape': metrics(False, 'toggle'), 'focus_outline': ['solid', 3.0],
+                    'open_click': metrics(True), 'after_outside': metrics(False)}
+        a_ids = ['n0', 'n1', 'n5', 'n6', 'n9', 'n11', 'b0', 'b1', 'b2']
+        steps = {
+            'initial': {'bell': bell(['n0'], 1), 'server': srv(1), 'server_before': srv(1), 'n0': 'n0', 'nb': 'nb'},
+            'panel': {'metrics': metrics(True, 'panel'), 'bell': bell(['n0'], 1), 'server': srv(1)},
+            'new_sound_off': {'n1': 'n1', 'bell': bell(['n1', 'n0'], 2), 'server': srv(2, n1=0)},
+            'enable': {'plays_after_enable': 1, 'plays_after_test': 2, 'bell': bell(['n1', 'n0'], 2, 2, 'on'),
+                       'server': srv(2, '1', n1=0), 'other_account_pref': '0'},
+            'repeat_poll': {'bell': bell(['n1', 'n0'], 2, 0, 'on')},
+            'center_lists_new': {'n1_form': 1, 'title_shown': 1},
+            'count_only': {'bell': bell(['n1', 'n0'], 1, 0, 'on', {'n1': '1', 'n0': '0'}), 'server': srv(1, '1', n1=1), 'n1': 'n1'},
+            'batch': {'ids': ['b0', 'b1', 'b2'], 'bell': bell(['b2', 'b1', 'b0', 'n1', 'n0'], 4, 1, 'on'), 'server': srv(4, '1')},
+            'tabs': {'n5': 'n5', 'plays': [1, 0], 'bells': [bell(['n5'], 5, 1, 'on'), bell(['n5'], 5, 0, 'on')],
+                     'storage': ['available', 'available']},
+            'tabs_nostorage': {'n6': 'n6', 'plays': [0, 1], 'bells': [bell(['n6', 'n5'], 6, 0, 'on'), bell(['n6', 'n5'], 6, 1, 'on')],
+                               'storage': ['SecurityError', 'SecurityError'], 'other_context': bell(['n6', 'n5'], 6, 0, 'on'),
+                               'events': [{'source': 'console', 'type': 'error', 'text': c.BELL_PLANTED_STORAGE_ECHO, 'url': ''}] * 2},
+            'late_claim': {
+                'off': {'id': 'r1', 'pref_before_release': '0', 'answers': [{'ok': True, 'user': 5, 'play': True}],
+                        'before': cnt(3, 2, 0), 'after': cnt(3, 2, 0), 'bell': bell(['r1'], 9, 0, 'off')},
+                'off_on': {'id': 'r2', 'pref_before_release': '1', 'answers': [{'ok': True, 'user': 5, 'play': True}],
+                           'before': cnt(3, 3, 1), 'after': cnt(3, 4, 2), 'bell': bell(['r2', 'r1'], 10, 2, 'on')},
+                'normal': {'id': 'r3', 'before': cnt(3, 4, 2), 'after': cnt(4, 4, 3), 'bell': bell(['r3', 'r2'], 11, 3, 'on')}},
+            'claims': {
+                'dual': {'userid': 99, 'companies': ['A', 'B']},
+                'cross': {'a': {'uuid': 'xa', 'id': 101}, 'b': {'uuid': 'xb', 'id': 102}, 'first_b': run(True),
+                          'then_a': run(True), 'again_a': run(False), 'a_in_b': run(False)},
+                'order': {'c1': {'uuid': 'o1', 'id': 201}, 'c2': {'uuid': 'o2', 'id': 202}, 'first_c2': run(True), 'then_c1': run(True)},
+                'parallel_same': dict(run(True, *[False] * 7), id={'uuid': 'p1', 'id': 301}),
+                'parallel_companies': dict(run(False, True, False, False, False, False, True, False), a={'id': 401}, b={'id': 402}),
+                'batch': {'ids': ['b1', 'b2', 'b3'], 'first': run(True), 'repeat': run(False, False, False, False)}},
+            'reload': {'bell': bell(['n5'], 5, 0, 'on')},
+            'reconnect': {'ids': ['o0', 'o1'], 'polls_while_offline': 0, 'bell': bell(['o1', 'o0', 'n5'], 7, 1, 'on')},
+            'autoplay_refused': {'n8': 'n8', 'blocked': bell(['n8'], 8, 1, 'blocked'), 'after_test': bell(['n8'], 8, 2, 'on')},
+            'csrf': {'wrong_http': 200, 'wrong': {'ok': False, 'state': 'sesskey', 'user': 5}, 'get_http': 200, 'get_ok': True,
+                     'pref': '1'},
+            'disable': {'n9': 'n9', 'bell': bell(['n9', 'n8'], 9, 0, 'off'), 'pref': '0'},
+            'thread_open': {'uuid': 'tn', 'thread': 'T', 'bell': bell(['tn', 'n9'], 10, 1, 'on'),
+                            'href': center + '?uuid=A&thread=T', 'http': 200, 'landed': center + '?uuid=A&thread=T'},
+            'thread_revoked': {'uuid': 'tn', 'thread': 'T', 'active': 0, 'bell': bell(['n9'], 9, 0, 'on', text='Notifications'),
+                               'server': srv(9, '1'), 'title': 'BMS bell private x-t'},
+            'company_revoked': {'n11': 'n11', 'revoked': bell([], 0, 0, 'on', state='unavailable'),
+                                'revoked_server': {'unread': None, 'read': {}, 'pref': '1'},
+                                'restored': bell(['n11', 'n9'], 10, 0, 'on'), 'server': srv(10, '1')},
+            'isolation': {'eb_bell': bell(['nb'], 1), 'eb_server': {'unread': 1, 'read': {'nb': 0}, 'pref': '0'},
+                          'foreign_http': 200, 'foreign': {'ok': False, 'state': 'unavailable', 'user': 7},
+                          'ma_http': 200, 'ma': {'ok': True, 'items': [{'id': 'm1'}]}, 'ma_bell': bell(['m1'], 1),
+                          'ea_ids': a_ids, 'ea_bell': bell(['n11', 'n9'], 10, 0, 'on'), 'nb': 'nb'},
+            'legacy': {'bells': 0},
+            'account_switch': {'bell': bell([], 0, 0, 'on', state='unavailable'), 'n12': 'n12', 'more_polls': 0,
+                               'ra_bell_count': 1},
+        }
+        return {'status': 'PASS', 'companyuuid': 'A', 'companyb': 'B', 'steps': steps,
+                'widths': [width(w) for w in c.BELL_WIDTHS], 'browser_events': list(ABORTED), 'server_errors': []}
+
+    @staticmethod
+    def run_(*plays):
+        rows = [{'play': x, 't0': 10.0, 't1': 10.05, 'pid': 2000 + i, 'late': 0.0} for i, x in enumerate(plays)]
+        return {'results': rows, 'plays': list(plays), 'inflight_at_first_end': len(plays)}
+
+    def test_notification_bell_valid_passes_and_mutations_fail(self):
+        obs = self.bell_obs()
+        res = c.evaluate(c.notification_bell_checks(obs, 0))
+        self.assertEqual({k: 'PASS' for k in res}, {k: v['status'] for k, v in res.items()}, res)
+
+        def fails(check, mutate):
+            o = copy.deepcopy(obs); mutate(o)
+            r = c.evaluate(c.notification_bell_checks(o, 0))
+            self.assertEqual('FAIL', r[check]['status'], (check, r[check]))
+        st = lambda o, name: o['steps'][name]  # noqa: E731
+        ne = 'notification_bell_new_event_center_and_bell'
+        fails(ne, lambda o: st(o, 'new_sound_off')['bell']['ids'].remove('n1'))
+        fails(ne, lambda o: st(o, 'new_sound_off')['bell'].update(unread='1'))        # badge != server count
+        fails(ne, lambda o: st(o, 'new_sound_off')['bell'].update(label='3'))         # tooltip without unit/count
+        fails(ne, lambda o: st(o, 'center_lists_new').update(n1_form=0))
+        fails(ne, lambda o: st(o, 'panel')['metrics'].update(allhref='http://127.0.0.1:8080/local/kbacompany/communication_center.php?uuid=A'))
+        fails(ne, lambda o: st(o, 'thread_open').update(href='https://example.invalid/local/kbacompany/communication_center.php?uuid=A&thread=T'))
+        fails(ne, lambda o: st(o, 'thread_open').update(http=500))
+        fails(ne, lambda o: st(o, 'thread_open').update(landed='http://127.0.0.1:8080/login/index.php'))
+        rr = 'notification_bell_read_rules_unchanged'
+        fails(rr, lambda o: st(o, 'initial')['server'].update(read={'n0': 1}))      # loading marked read
+        fails(rr, lambda o: st(o, 'panel')['server'].update(read={'n0': 1}))        # opening marked read
+        fails(rr, lambda o: st(o, 'count_only')['server']['read'].update(n1=0))     # Center mark-read broken
+        fails(rr, lambda o: st(o, 'count_only')['bell']['read'].update(n1='0'))
+        iso = 'notification_bell_isolation_roles_and_revocation'
+        fails(iso, lambda o: st(o, 'isolation')['eb_bell']['ids'].append('n1'))       # A row in B
+        fails(iso, lambda o: st(o, 'isolation')['ea_bell']['ids'].append('nb'))       # B row in A
+        fails(iso, lambda o: st(o, 'isolation').update(foreign={'ok': True, 'items': []}))
+        fails(iso, lambda o: st(o, 'isolation')['foreign'].update(unread=3))          # count leaked in refusal
+        fails(iso, lambda o: st(o, 'isolation')['ma']['items'].append({'id': 'n0'}))  # manager reads EA's row
+        fails(iso, lambda o: st(o, 'thread_revoked')['bell']['ids'].append('tn'))
+        fails(iso, lambda o: st(o, 'thread_revoked')['bell'].update(text='BMS bell private x-t'))
+        fails(iso, lambda o: st(o, 'thread_revoked')['bell'].update(unread='10', badge='10'))
+        fails(iso, lambda o: st(o, 'company_revoked')['revoked']['ids'].append('n11'))
+        fails(iso, lambda o: st(o, 'company_revoked')['revoked'].update(badge='3'))
+        fails(iso, lambda o: st(o, 'company_revoked')['revoked'].update(plays=1))
+        fails(iso, lambda o: st(o, 'company_revoked')['restored'].update(plays=1))
+        fails(iso, lambda o: st(o, 'account_switch')['bell']['ids'].append('n12'))
+        fails(iso, lambda o: st(o, 'account_switch').update(more_polls=2))
+        snd = 'notification_bell_sound_signal_rules'
+        fails(snd, lambda o: st(o, 'initial')['bell'].update(plays=1))
+        fails(snd, lambda o: st(o, 'new_sound_off')['bell'].update(plays=1))
+        fails(snd, lambda o: st(o, 'repeat_poll')['bell'].update(plays=1))
+        fails(snd, lambda o: st(o, 'count_only')['bell'].update(plays=1))
+        fails(snd, lambda o: st(o, 'batch')['bell'].update(plays=3))
+        fails(snd, lambda o: st(o, 'batch')['bell'].update(plays=0))
+        fails(snd, lambda o: st(o, 'tabs').update(plays=[1, 1]))
+        fails(snd, lambda o: st(o, 'tabs').update(storage=['SecurityError', 'available']))
+        fails(snd, lambda o: o['steps'].pop('tabs_nostorage'))
+        fails(snd, lambda o: st(o, 'tabs_nostorage').update(plays=[1, 1]))           # duplicate without storage (finding C)
+        fails(snd, lambda o: st(o, 'tabs_nostorage').update(plays=[0, 0]))           # silenced instead of one signal
+        fails(snd, lambda o: st(o, 'tabs_nostorage').update(storage=['available', 'SecurityError']))  # storage not blocked
+        fails(snd, lambda o: st(o, 'tabs_nostorage')['bells'][1].update(state='unavailable'))
+        fails(snd, lambda o: st(o, 'tabs_nostorage')['bells'][0]['ids'].remove('n6'))
+        fails(snd, lambda o: st(o, 'tabs_nostorage')['other_context'].update(plays=1))
+        # Review finding 1: a late claim answer after the sound was turned off (or off and on).
+        fails(snd, lambda o: st(o, 'late_claim')['off']['after'].update(signals=4, plays=1))
+        fails(snd, lambda o: st(o, 'late_claim')['off_on']['after'].update(signals=4, plays=3))
+        fails(snd, lambda o: st(o, 'late_claim')['off']['after'].update(plays=1))              # unexplained play()
+        fails(snd, lambda o: st(o, 'late_claim')['off']['answers'][0].update(play=False))      # race not reproduced
+        fails(snd, lambda o: st(o, 'late_claim')['off'].update(answers=[]))
+        fails(snd, lambda o: st(o, 'late_claim')['off'].update(pref_before_release='1'))      # not turned off in time
+        fails(snd, lambda o: st(o, 'late_claim')['normal']['after'].update(signals=3, plays=2))  # normal signal lost
+        fails(snd, lambda o: st(o, 'late_claim').pop('off_on'))
+        # Review finding 2: dedup by identity, real concurrency.
+        fails(snd, lambda o: st(o, 'claims')['cross'].update(then_a=self.run_(False)))
+        fails(snd, lambda o: st(o, 'claims')['order'].update(then_c1=self.run_(False)))
+        fails(snd, lambda o: st(o, 'claims')['cross'].update(again_a=self.run_(True)))
+        fails(snd, lambda o: st(o, 'claims')['cross'].update(a_in_b=self.run_(True)))
+        fails(snd, lambda o: st(o, 'claims')['cross']['a'].update(id=103))                     # fixture order not proven
+        fails(snd, lambda o: st(o, 'claims')['parallel_same']['plays'].__setitem__(1, True))
+        fails(snd, lambda o: st(o, 'claims')['parallel_same'].update(inflight_at_first_end=1))  # sequential, not parallel
+        fails(snd, lambda o: [r.update(pid=1) for r in st(o, 'claims')['parallel_same']['results']])
+        fails(snd, lambda o: st(o, 'claims')['parallel_companies']['plays'].__setitem__(6, False))
+        fails(snd, lambda o: st(o, 'claims')['parallel_same']['plays'].pop())
+        fails(snd, lambda o: st(o, 'claims')['batch']['repeat']['plays'].__setitem__(2, True))
+        fails(snd, lambda o: st(o, 'claims')['dual'].update(companies=['A']))
+        fails(snd, lambda o: o['steps'].pop('claims'))
+        fails(snd, lambda o: st(o, 'reload')['bell'].update(plays=1))
+        fails(snd, lambda o: st(o, 'reconnect').update(polls_while_offline=1))
+        fails(snd, lambda o: st(o, 'reconnect')['bell'].update(plays=2))
+        fails(snd, lambda o: st(o, 'disable')['bell'].update(plays=1))
+        pref = 'notification_bell_sound_preference'
+        fails(pref, lambda o: st(o, 'initial')['bell'].update(sound='on'))
+        fails(pref, lambda o: st(o, 'initial')['server'].update(pref='1'))
+        fails(pref, lambda o: st(o, 'enable').update(plays_after_enable=0))
+        fails(pref, lambda o: st(o, 'enable')['server'].update(pref='0'))
+        fails(pref, lambda o: st(o, 'enable').update(other_account_pref='1'))
+        fails(pref, lambda o: st(o, 'autoplay_refused')['blocked'].update(sound='on'))
+        fails(pref, lambda o: st(o, 'csrf').update(pref='0'))
+        fails(pref, lambda o: st(o, 'csrf')['wrong'].update(ok=True))
+        fails(pref, lambda o: st(o, 'disable').update(pref='1'))
+        lay = 'notification_bell_panel_layout_keyboard'
+        fails(lay, lambda o: o['widths'].pop())
+        fails(lay, lambda o: o['widths'][2]['open_click'].update(right=330))
+        fails(lay, lambda o: o['widths'][2]['open_click'].update(bottom=700))
+        fails(lay, lambda o: o['widths'][1]['open_click'].update(maintop=300))     # panel pushed the page
+        fails(lay, lambda o: o['widths'][0]['open_click'].update(position='static'))
+        fails(lay, lambda o: o['widths'][0]['open_click'].update(overflowy='visible'))
+        fails(lay, lambda o: o['widths'][2]['open_keyboard'].update(hscroll=True))
+        fails(lay, lambda o: o['widths'][0]['open_keyboard'].update(active='other'))
+        fails(lay, lambda o: o['widths'][0]['after_escape'].update(active='other'))
+        fails(lay, lambda o: o['widths'][1]['after_outside'].update(open=True))
+        fails(lay, lambda o: o['widths'][1].update(focus_outline=['none', 0]))
+        one = 'notification_bell_single_bell'
+        fails(one, lambda o: st(o, 'initial')['bell'].update(bells=2))
+        fails(one, lambda o: st(o, 'reload')['bell'].update(moodlebells=1))
+        fails(one, lambda o: st(o, 'legacy').update(bells=1))
+        fails(one, lambda o: st(o, 'initial')['bell'].update(headings=1))           # hidden h2 shadows the page title
+        fails(one, lambda o: st(o, 'reload')['bell'].pop('headings'))
+        be = 'notification_bell_no_browser_errors'
+        fails(be, lambda o: o['browser_events'].append({'source': 'pageerror', 'name': 'Error', 'message': 'x'}))
+        fails(be, lambda o: o['browser_events'].append({'source': 'console', 'type': 'error', 'text': 'Failed to load resource: 403',
+                                                        'url': 'http://127.0.0.1:8080' + c.FEED_PATH}))
+        fails(be, lambda o: o.update(server_errors=[{'status': 500}]))
+        fails(be, lambda o: o.pop('browser_events'))
+        fails(be, lambda o: st(o, 'tabs_nostorage')['events'].append({'source': 'pageerror', 'name': 'Error', 'message': 'x'}))
+        fails(be, lambda o: st(o, 'tabs_nostorage')['events'].append({'source': 'console', 'type': 'error', 'text': 'TypeError: x'}))
+        fails(be, lambda o: st(o, 'tabs_nostorage')['events'].append({'source': 'requestfailed', 'url': 'http://127.0.0.1:8080/x'}))
+        fails(be, lambda o: st(o, 'tabs_nostorage').pop('events'))
+        for mutate, code in ((lambda o: o.update(error='boom'), 0), (lambda o: o.update(status='FAIL'), 0),
+                             (lambda o: o.update(cleanup_error='x'), 0), (lambda o: None, 1)):
+            o = copy.deepcopy(obs); mutate(o)
+            r = c.evaluate(c.notification_bell_checks(o, code))
+            self.assertTrue(all(x['status'] == 'FAIL' for x in r.values()), r)
+        self.assertTrue(all(x['status'] == 'FAIL' for x in c.evaluate(c.notification_bell_checks(None, None)).values()))
+
     def test_required_check_names_complete(self):
         names = c.required_check_names()
         self.assertEqual(len(names), len(set(names)))

@@ -506,6 +506,98 @@ class communication_center_ui_service {
         return ['communicationux2_type_other', 'sky', '•'];
     }
 
+    /**
+     * Object links of an already ACL-filtered notification (thread_uuid is only set when the source is visible).
+     * Each target page re-checks company and object access; a link grants nothing.
+     * @return array[] url/label pairs
+     */
+    public static function notification_links(string $company, array $notification): array {
+        $links = [];
+        if ((string)($notification['thread_uuid'] ?? '') !== '') {
+            $links[] = ['url' => self::url($company, ['thread' => $notification['thread_uuid']])->out(false),
+                'label' => self::tr('communicationux2_open_conversation')];
+        }
+        $target = self::daily_report_target($company, (string)$notification['kind']);
+        if ($target) { $links[] = ['url' => $target[0]->out(false), 'label' => self::tr($target[1])]; }
+        if (strpos((string)$notification['kind'], 'calendar_') === 0) {
+            $links[] = ['url' => (new \moodle_url('/local/kbacompany/calendar.php', ['uuid' => $company]))->out(false),
+                'label' => self::tr('communicationux2_open_calendar')];
+        }
+        return $links;
+    }
+
+    /** Moodle user preference holding the opt-in notification sound; per account, default off. */
+    public const SOUND_PREFERENCE = 'local_kbacompany_notification_sound';
+
+    public static function sound_enabled(int $userid): bool {
+        return (string)get_user_preferences(self::SOUND_PREFERENCE, '0', $userid) === '1';
+    }
+
+    /** Badge label with the counted unit, e.g. "Unread notifications: 3". */
+    public static function bell_label(int $unread): string {
+        return self::tr('notificationbell_label', $unread);
+    }
+
+    /**
+     * Top bar bell (owned shell): render-only model. Counts and items are loaded by notification_bell.js from
+     * communication_notifications_feed.php so that ordinary page rendering does not run the notification ACL.
+     */
+    public static function bell(string $company, int $userid): array {
+        return [
+            'company' => $company, 'userid' => $userid,
+            'endpoint' => (new \moodle_url('/local/kbacompany/communication_notifications_feed.php'))->out(false),
+            'sound' => self::sound_enabled($userid),
+            'label' => self::tr('notificationbell_title'),
+            'title' => self::tr('notificationbell_title'),
+            'allurl' => self::url($company, ['tab' => 'notifications'])->out(false),
+            'alllabel' => self::tr('notificationbell_all'),
+            'loading' => self::tr('notificationbell_loading'),
+            'empty' => self::tr('notificationbell_empty'),
+            'error' => self::tr('notificationbell_error'),
+            'unavailable' => self::tr('notificationbell_unavailable'),
+            'retry' => self::tr('notificationbell_retry'),
+            'soundtitle' => self::tr('notificationbell_sound'),
+            'soundoff' => self::tr('notificationbell_sound_off'),
+            'soundon' => self::tr('notificationbell_sound_on'),
+            'soundblocked' => self::tr('notificationbell_sound_blocked'),
+            'soundenable' => self::tr('notificationbell_sound_enable'),
+            'soundtest' => self::tr('notificationbell_sound_test'),
+            'sounddisable' => self::tr('notificationbell_sound_disable'),
+            'readonlyhint' => self::tr('notificationbell_readonly_hint'),
+        ];
+    }
+
+    /**
+     * JSON payload of the bell: localized presentation of communication_service::notification_feed().
+     * Contains only rows that already passed the server-side company, participant and object checks.
+     */
+    public static function bell_feed(string $company, int $userid, array $feed): array {
+        $items = [];
+        $today = business_date_service::day(time());
+        foreach ($feed['items'] as $notification) {
+            $key = 'communication_notification_' . $notification['kind'];
+            $title = get_string_manager()->string_exists($key, 'local_kbacompany') ? self::tr($key) :
+                self::tr('communication_notification');
+            [$typekey, $variant, $icon] = self::notification_type((string)$notification['kind']);
+            $links = self::notification_links($company, $notification);
+            $time = (int)$notification['time_created'];
+            $items[] = [
+                'id' => (string)$notification['uuid'], 'read' => !empty($notification['is_read']),
+                'type' => self::tr($typekey), 'variant' => $variant, 'icon' => $icon,
+                'title' => $title, 'subtitle' => (string)$notification['title'],
+                'time' => business_date_service::day($time) === $today ? userdate($time, '%H:%M') :
+                    userdate($time, '%d.%m.%Y, %H:%M'),
+                'created' => $time,
+                'url' => $links ? $links[0]['url'] : self::url($company, ['tab' => 'notifications'])->out(false),
+                'linklabel' => $links ? $links[0]['label'] : self::tr('notificationbell_all'),
+            ];
+        }
+        $unread = (int)$feed['unread'];
+        return ['ok' => true, 'company' => $company, 'user' => $userid, 'now' => time(),
+            'unread' => $unread, 'label' => self::bell_label($unread), 'items' => $items,
+            'sound' => self::sound_enabled($userid)];
+    }
+
     private static function notifications(string $company, array $data): array {
         $onlyunread = ($data['filter'] ?? 'all') === 'unread';
         $groups = ['today' => [], 'earlier' => []];
@@ -518,17 +610,7 @@ class communication_center_ui_service {
             $title = get_string_manager()->string_exists($key, 'local_kbacompany') ? self::tr($key) :
                 self::tr('communication_notification');
             [$typekey, $variant, $icon] = self::notification_type((string)$notification['kind']);
-            $links = [];
-            if ($notification['thread_uuid'] !== '') {
-                $links[] = ['url' => self::url($company, ['thread' => $notification['thread_uuid']])->out(false),
-                    'label' => self::tr('communicationux2_open_conversation')];
-            }
-            $target = self::daily_report_target($company, (string)$notification['kind']);
-            if ($target) { $links[] = ['url' => $target[0]->out(false), 'label' => self::tr($target[1])]; }
-            if (strpos((string)$notification['kind'], 'calendar_') === 0) {
-                $links[] = ['url' => (new \moodle_url('/local/kbacompany/calendar.php', ['uuid' => $company]))->out(false),
-                    'label' => self::tr('communicationux2_open_calendar')];
-            }
+            $links = self::notification_links($company, $notification);
             $time = (int)$notification['time_created'];
             $istoday = business_date_service::day($time) === $today;
             $groups[$istoday ? 'today' : 'earlier'][] = [

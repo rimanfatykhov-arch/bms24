@@ -9945,3 +9945,23 @@ $string['dailyreports_cc_max'] = 'Daily reports: copy recipients';
 $string['dailyreports_cc_max_help'] = 'Maximum number of people an author can put in copy of one report (1–50).';
 $string['messageprovider:dailyreport_copy'] = 'Copy of a daily report';
 $string['communication_notification_dailyreport_copy'] = 'Copy of a daily report';
+
+// Top bar bell and opt-in notification sound (owned shell).
+$string['notificationbell_title'] = 'Notifications';
+$string['notificationbell_label'] = 'Unread notifications: {$a}';
+$string['notificationbell_all'] = 'All notifications';
+$string['notificationbell_loading'] = 'Loading notifications…';
+$string['notificationbell_empty'] = 'No notifications yet.';
+$string['notificationbell_error'] = 'Could not load notifications. Check the connection and try again.';
+$string['notificationbell_unavailable'] = 'Notifications of this company are not available. Reload the page.';
+$string['notificationbell_retry'] = 'Try again';
+$string['notificationbell_readonly_hint'] = 'Opening this list does not mark notifications as read.';
+$string['notificationbell_sound'] = 'Notification sound';
+$string['notificationbell_sound_off'] = 'Sound is off.';
+$string['notificationbell_sound_on'] = 'Sound is on: one short signal when a new notification arrives.';
+$string['notificationbell_sound_blocked'] = 'The browser blocked the sound. Press “Test sound” to allow it.';
+$string['notificationbell_sound_enable'] = 'Turn on sound';
+$string['notificationbell_sound_test'] = 'Test sound';
+$string['notificationbell_sound_disable'] = 'Turn off sound';
+$string['privacy:metadata:preference:notificationsound'] = 'Whether the user turned on the sound signal for new BMS24 notifications.';
+$string['privacy:metadata:preference:notificationsoundsignalled'] = 'Internal numbers of recent BMS24 notifications that already produced a sound signal, so other tabs do not repeat it.';

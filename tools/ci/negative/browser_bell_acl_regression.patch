@@ -1,0 +1,13 @@
+diff --git a/local/kbacompany/classes/local/communication_service.php b/local/kbacompany/classes/local/communication_service.php
+index 6af451f..a8389cc 100644
+--- a/local/kbacompany/classes/local/communication_service.php
++++ b/local/kbacompany/classes/local/communication_service.php
+@@ -694,6 +694,8 @@ class communication_service {
+     public static function notification_source_visible(string $companyuuid, int $actor, string $threaduuid,
+             array &$cache): bool {
+         global $DB;
++        // NEGATIVE CONTROL (CI only): notification source visibility removed on purpose.
++        return true;
+         if ($threaduuid === '') { return true; }
+         if (array_key_exists($threaduuid, $cache)) { return $cache[$threaduuid]; }
+         $thread = $DB->get_record('local_kbacompany_commthread', ['companyuuid' => $companyuuid, 'uuid' => $threaduuid]);
