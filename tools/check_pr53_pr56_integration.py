@@ -87,6 +87,14 @@ def check(root=ROOT):
         'local/kbacompany/lang/ru/local_kbacompany.php': '0ff5746d50f5cfc84b13d582f210e6262549973ebd7d08f4667262edaf2cb46b',
         'local/kbacompany/styles.css': '95563c9160349cb2f40047f092e78e77c446ee6113d48d13456250dfef271417',
     })
+    # Top bar notification bell (after #145): one shared read-only notification feed/count in communication_service
+    # (same ACL as context(); no generation, read-rule or schema change) and RU/EN strings appended at the end.
+    # See docs/reconcile/TOPBAR_NOTIFICATION_BELL_SOURCE_PRESERVATION.md.
+    reviewed_followup.update({
+        'local/kbacompany/classes/local/communication_service.php': '6782e65bbcf1fec904102de9537b172677ea22b24cf8ece8b7e35744caae22e0',
+        'local/kbacompany/lang/en/local_kbacompany.php': 'f5759fbac49e3e07189c4c47f0a731eeb062511a38bf2ea9450ba52bfe53b806',
+        'local/kbacompany/lang/ru/local_kbacompany.php': 'f18861dc19d0ea3b29a0495e5faf01f75d79980551a42eb2be27676a65688607',
+    })
     for row in plan['rows']:
         path=root/row['path']
         if not path.is_file() or path.is_symlink():

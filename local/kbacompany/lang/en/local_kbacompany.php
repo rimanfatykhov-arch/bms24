@@ -9902,3 +9902,22 @@ $string['communicationux2_type_mention'] = 'Mention';
 $string['communicationux2_type_message'] = 'Message';
 $string['communicationux2_type_other'] = 'Notification';
 $string['communicationux2_type_task'] = 'Task';
+
+// Top bar bell and opt-in notification sound (owned shell).
+$string['notificationbell_title'] = 'Notifications';
+$string['notificationbell_label'] = 'Unread notifications: {$a}';
+$string['notificationbell_all'] = 'All notifications';
+$string['notificationbell_loading'] = 'Loading notifications…';
+$string['notificationbell_empty'] = 'No notifications yet.';
+$string['notificationbell_error'] = 'Could not load notifications. Check the connection and try again.';
+$string['notificationbell_unavailable'] = 'Notifications of this company are not available. Reload the page.';
+$string['notificationbell_retry'] = 'Try again';
+$string['notificationbell_readonly_hint'] = 'Opening this list does not mark notifications as read.';
+$string['notificationbell_sound'] = 'Notification sound';
+$string['notificationbell_sound_off'] = 'Sound is off.';
+$string['notificationbell_sound_on'] = 'Sound is on: one short signal when a new notification arrives.';
+$string['notificationbell_sound_blocked'] = 'The browser blocked the sound. Press “Test sound” to allow it.';
+$string['notificationbell_sound_enable'] = 'Turn on sound';
+$string['notificationbell_sound_test'] = 'Test sound';
+$string['notificationbell_sound_disable'] = 'Turn off sound';
+$string['privacy:metadata:preference:notificationsound'] = 'Whether the user turned on the sound signal for new BMS24 notifications.';

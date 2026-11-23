@@ -29,6 +29,18 @@ final class bms24_shell_service {
         $PAGE->requires->css(new \moodle_url('/local/kbacompany/bms_ui/owned_shell.css'));
         $PAGE->requires->css(new \moodle_url('/local/kbacompany/bms_ui/ui_kit.css'));
         $PAGE->requires->css(new \moodle_url('/local/kbacompany/bms_ui/task_center.css'));
+        $PAGE->requires->css(new \moodle_url('/local/kbacompany/bms_ui/notification_bell.css'));
+        $PAGE->requires->js_call_amd('local_kbacompany/notification_bell', 'init');
+    }
+
+    /**
+     * Top bar bell of the owned shell. Owned pages use the 'embedded' layout without the Moodle navbar bell,
+     * so there is exactly one bell. Legacy/KBA theme pages keep the Moodle bell and get no BMS bell.
+     */
+    public static function notification_bell(string $companyuuid, int $userid): string {
+        global $OUTPUT;
+        return $OUTPUT->render_from_template('local_kbacompany/bms24_notification_bell',
+            communication_center_ui_service::bell($companyuuid, $userid));
     }
 
     public static function render(array $model): string {

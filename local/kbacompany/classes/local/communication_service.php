@@ -685,6 +685,73 @@ class communication_service {
         }
     }
 
+    /**
+     * A notification is visible only while its source stays visible: no thread, or an existing thread in the same company
+     * with the actor as an active participant and, for object discussions, the actor's CURRENT object access.
+     * Same rule as context(); $cache holds per-thread verdicts within one request only.
+     */
+    private static function notification_source_visible(string $companyuuid, int $actor, string $threaduuid,
+            array &$cache): bool {
+        global $DB;
+        if ($threaduuid === '') { return true; }
+        if (array_key_exists($threaduuid, $cache)) { return $cache[$threaduuid]; }
+        $thread = $DB->get_record('local_kbacompany_commthread', ['companyuuid' => $companyuuid, 'uuid' => $threaduuid]);
+        $allowed = $thread && self::participant($companyuuid, $threaduuid, $actor);
+        if ($allowed && (string)$thread->threadtype === 'object') {
+            try { self::context_descriptor($companyuuid, $actor, $thread); }
+            catch (\moodle_exception $e) { $allowed = false; }
+        }
+        return $cache[$threaduuid] = (bool)$allowed;
+    }
+
+    /** Unread notifications of the actor in the company whose source is still visible (one ACL check per thread). */
+    public static function visible_unread_notification_count(string $companyuuid, int $actor): int {
+        global $DB;
+        company_context_service::context($companyuuid, $actor);
+        $count = $DB->count_records('local_kbacompany_commnotif', [
+            'companyuuid' => $companyuuid, 'userid' => $actor, 'isread' => 0, 'threaduuid' => '']);
+        $rows = $DB->get_records_sql("SELECT n.threaduuid, COUNT(n.id) AS unread
+              FROM {local_kbacompany_commnotif} n
+             WHERE n.companyuuid=:nccompany AND n.userid=:ncactor AND n.isread=0 AND n.threaduuid<>:ncempty
+          GROUP BY n.threaduuid", ['nccompany' => $companyuuid, 'ncactor' => $actor, 'ncempty' => '']);
+        $cache = [];
+        foreach ($rows as $row) {
+            if (self::notification_source_visible($companyuuid, $actor, (string)$row->threaduuid, $cache)) {
+                $count += (int)$row->unread;
+            }
+        }
+        return (int)$count;
+    }
+
+    /**
+     * Read-only feed for the BMS24 top bar bell: the newest visible notifications of the actor in this company and the
+     * unread count under the same rule. Never marks anything read and never returns another user's or company's rows.
+     */
+    public static function notification_feed(string $companyuuid, int $actor, int $limit = 8): array {
+        global $DB;
+        company_context_service::context($companyuuid, $actor);
+        $limit = max(1, min(20, $limit));
+        $items = [];
+        $cache = [];
+        $batch = 40;
+        // Bounded scan: at most 200 newest rows are inspected to fill the panel.
+        for ($offset = 0; count($items) < $limit && $offset < 200; $offset += $batch) {
+            $rows = $DB->get_records('local_kbacompany_commnotif', ['companyuuid' => $companyuuid, 'userid' => $actor],
+                'id DESC', 'id,uuid,kind,threaduuid,title,isread,timecreated', $offset, $batch);
+            foreach ($rows as $row) {
+                if (!self::notification_source_visible($companyuuid, $actor, (string)$row->threaduuid, $cache)) {
+                    continue;
+                }
+                $items[] = ['uuid' => (string)$row->uuid, 'kind' => (string)$row->kind,
+                    'thread_uuid' => (string)$row->threaduuid, 'title' => (string)$row->title,
+                    'is_read' => !empty($row->isread), 'time_created' => (int)$row->timecreated];
+                if (count($items) >= $limit) { break; }
+            }
+            if (count($rows) < $batch) { break; }
+        }
+        return ['items' => $items, 'unread' => self::visible_unread_notification_count($companyuuid, $actor)];
+    }
+
     public static function mark_notification_read(string $companyuuid, int $actor, string $notificationuuid): void {
         global $DB;
         company_context_service::context($companyuuid, $actor);
@@ -1039,22 +1106,9 @@ class communication_service {
                 'task_uuid' => (string)$notification->taskuuid, 'title' => $notificationtitle,
                 'is_read' => !empty($notification->isread), 'time_created' => (int)$notification->timecreated];
         }
-        $counts = ['unread_threads' => $visibleunreadthreads, 'unread_notifications' => 0, 'mentions' => 0];
-        foreach ($DB->get_records('local_kbacompany_commnotif', [
-            'companyuuid' => $companyuuid, 'userid' => $actor, 'isread' => 0,
-        ]) as $unreadnotification) {
-            $sourceuuid = (string)$unreadnotification->threaduuid;
-            if ($sourceuuid === '') { $counts['unread_notifications']++; continue; }
-            $sourcethread = $DB->get_record('local_kbacompany_commthread', [
-                'companyuuid' => $companyuuid, 'uuid' => $sourceuuid,
-            ]);
-            $allowed = $sourcethread && self::participant($companyuuid, $sourceuuid, $actor);
-            if ($allowed && (string)$sourcethread->threadtype === 'object') {
-                try { self::context_descriptor($companyuuid, $actor, $sourcethread); }
-                catch (\moodle_exception $e) { $allowed = false; }
-            }
-            if ($allowed) { $counts['unread_notifications']++; }
-        }
+        // One rule for the Center badge, the shell counters and the top bar bell.
+        $counts = ['unread_threads' => $visibleunreadthreads,
+            'unread_notifications' => self::visible_unread_notification_count($companyuuid, $actor), 'mentions' => 0];
         foreach ($visiblethreaduuids as $visiblethreaduuid) {
             $counts['mentions'] += (int)$DB->count_records_sql('SELECT COUNT(1)
                   FROM {local_kbacompany_commmention} mn

@@ -12,7 +12,8 @@ use core_privacy\local\request\writer;
 /** Privacy provider for BMS company data, including staffing, execution and communications. */
 class provider implements
         \core_privacy\local\metadata\provider,
-        \core_privacy\local\request\plugin\provider {
+        \core_privacy\local\request\plugin\provider,
+        \core_privacy\local\request\user_preference_provider {
 
     public static function get_metadata(collection $collection): collection {
         $collection->add_database_table('local_kbacompany_revoke', [
@@ -464,7 +465,19 @@ class provider implements
         $collection->add_database_table('local_kbacompany_dreportlog', [
             'actorid' => 'privacy:metadata:dailyreports', 'details' => 'privacy:metadata:dailyreports',
         ], 'privacy:metadata:dailyreports');
+        $collection->add_user_preference(\local_kbacompany\local\communication_center_ui_service::SOUND_PREFERENCE,
+            'privacy:metadata:preference:notificationsound');
         return $collection;
+    }
+
+    /** The opt-in notification sound is the only BMS24 user preference; it belongs to the account. */
+    public static function export_user_preferences(int $userid): void {
+        $name = \local_kbacompany\local\communication_center_ui_service::SOUND_PREFERENCE;
+        $value = get_user_preferences($name, null, $userid);
+        if ($value !== null) {
+            writer::export_user_preference('local_kbacompany', $name, transform::yesno((string)$value === '1'),
+                get_string('privacy:metadata:preference:notificationsound', 'local_kbacompany'));
+        }
     }
 
     public static function get_contexts_for_userid(int $userid): contextlist {

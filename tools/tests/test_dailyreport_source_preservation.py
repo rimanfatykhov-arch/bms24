@@ -30,6 +30,15 @@ UX_MARKER=b'\n// Communication Center UX-1 (2026-11-18): sections and accessible
 UX_KEYS=[b'communicationux_conversations', b'communicationux_notification_count', b'communicationux_filters', b'communicationux_details', b'communicationux_empty_search', b'communicationux_empty_all', b'communicationux_empty_filtered', b'communicationux_reset', b'communicationux_read', b'communicationux_unread', b'communicationux_thread_count']
 C145_MARKER=b'\n// ADR-0009 / #145: strings for the templated communication centre.\n'
 C145_KEYS=[b'communicationux2_badge_total',b'communicationux2_badge_unread',b'communicationux2_audience_object',b'communicationux2_compose_placeholder',b'communicationux2_direct',b'communicationux2_due',b'communicationux2_edit',b'communicationux2_empty_search_text',b'communicationux2_empty_search_title',b'communicationux2_files',b'communicationux2_group_members',b'communicationux2_group_people',b'communicationux2_kv_due',b'communicationux2_kv_status',b'communicationux2_kv_type',b'communicationux2_mark_all',b'communicationux2_mark_read',b'communicationux2_new_messages',b'communicationux2_newconversation',b'communicationux2_notification_settings',b'communicationux2_only_unread',b'communicationux2_open_calendar',b'communicationux2_open_conversation',b'communicationux2_reset_search',b'communicationux2_select_text',b'communicationux2_select_title',b'communicationux2_show_all',b'communicationux2_you',b'communicationux2_chip_mentions',b'communicationux2_details',b'communicationux2_empty_discussions_title',b'communicationux2_empty_discussions_text',b'communicationux2_empty_mentions_title',b'communicationux2_empty_mentions_text',b'communicationux2_empty_messages_title',b'communicationux2_empty_messages_text',b'communicationux2_empty_unread_title',b'communicationux2_empty_unread_text',b'communicationux2_goto_discussions',b'communicationux2_goto_messages',b'communicationux2_group_earlier',b'communicationux2_group_today',b'communicationux2_no_unread_notifications',b'communicationux2_search_objects',b'communicationux2_search_people',b'communicationux2_type_dailyreport',b'communicationux2_type_dayplan',b'communicationux2_type_meeting',b'communicationux2_type_mention',b'communicationux2_type_message',b'communicationux2_type_other',b'communicationux2_type_task']
+BELL_MARKER=b'\n// Top bar bell and opt-in notification sound (owned shell).\n'
+BELL_KEYS=[b'notificationbell_title',b'notificationbell_label',b'notificationbell_all',b'notificationbell_loading',
+           b'notificationbell_empty',b'notificationbell_error',b'notificationbell_unavailable',b'notificationbell_retry',
+           b'notificationbell_readonly_hint',b'notificationbell_sound',b'notificationbell_sound_off',b'notificationbell_sound_on',
+           b'notificationbell_sound_blocked',b'notificationbell_sound_enable',b'notificationbell_sound_test',
+           b'notificationbell_sound_disable',b'privacy:metadata:preference:notificationsound']
+_C145=json.loads((ROOT/'docs/reconcile/communication-center-145-source-preservation.json').read_text(encoding='utf-8'))
+C145_AFTER={lang:next(r['after_sha256_lf'] for r in _C145['files'] if r['path']==f'local/kbacompany/lang/{lang}/local_kbacompany.php')
+            for lang in ('en','ru')}
 E2_KEYS=[b'bpu_tab_discussion',b'bpu_discussion_empty',b'bpu_discussion_readonly',b'bpu_discussion_reader',
          b'communication_object_battleplan',b'communicationcenter_openplan']
 _R2=json.loads((ROOT/'docs/reconcile/daily-reports-r2-source-preservation.json').read_text(encoding='utf-8'))
@@ -88,6 +97,12 @@ class Preservation(unittest.TestCase):
                 e2,ux=e2.split(UX_MARKER)
                 if C145_MARKER in ux:
                     ux,c145=ux.split(C145_MARKER)
+                    if BELL_MARKER in c145:
+                        # The #145 file is byte-identical up to the bell marker; bell keys are new and appended last.
+                        c145,bell=c145.split(BELL_MARKER)
+                        self.assertEqual(BELL_KEYS,keys(bell))
+                        self.assertFalse(set(BELL_KEYS)&set(keys(data.split(BELL_MARKER)[0])))
+                        self.assertEqual(C145_AFTER[lang],hashlib.sha256(data.split(BELL_MARKER)[0]).hexdigest())
                     self.assertEqual(C145_KEYS,keys(c145))
                     self.assertFalse(set(C145_KEYS)&set(keys(data.split(C145_MARKER)[0])))
                 self.assertEqual(UX_KEYS, keys(ux))
