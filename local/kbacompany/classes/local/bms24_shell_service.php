@@ -26,7 +26,7 @@ final class bms24_shell_service {
         $PAGE->set_pagelayout(self::OWNED_PAGE_LAYOUT);
         $PAGE->add_body_class(self::OWNED_BODY_CLASS);
         $PAGE->requires->css(new \moodle_url('/local/kbacompany/bms_ui/tokens.css'));
-        $PAGE->requires->css(new \moodle_url('/local/kbacompany/bms_ui/owned_shell.css'));
+        $PAGE->requires->css(new \moodle_url('/local/kbacompany/bms_ui/owned_shell.css', ['v' => '2026112301-nav1']));
         $PAGE->requires->css(new \moodle_url('/local/kbacompany/bms_ui/ui_kit.css'));
         $PAGE->requires->css(new \moodle_url('/local/kbacompany/bms_ui/task_center.css'));
         // Narrow windows: modal navigation drawer over the page (docs/ui/ADAPTIVE_NAVIGATION.md). Owned mode only.

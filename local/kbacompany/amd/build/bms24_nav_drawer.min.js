@@ -43,7 +43,6 @@ define([], function() {
         drawer.setAttribute('role', 'dialog');
         drawer.setAttribute('aria-modal', 'true');
         drawer.setAttribute('aria-label', drawer.getAttribute('data-bms24-drawer-label') || button.textContent.trim());
-        button.hidden = false;
         close.hidden = false;
         backdrop.hidden = false;
         details.open = false;
@@ -198,18 +197,22 @@ define([], function() {
                 hide(true);
             }
         });
-        var onchange = function() {
+        function syncViewport() {
+            // Keep the mobile trigger hidden on desktop even when the browser has stale shell CSS.
+            button.hidden = !narrow.matches;
             if (!narrow.matches) {
                 hide(false);
             }
-        };
+        }
+        syncViewport();
         if (narrow.addEventListener) {
-            narrow.addEventListener('change', onchange);
+            narrow.addEventListener('change', syncViewport);
         } else if (narrow.addListener) {
-            narrow.addListener(onchange);
+            narrow.addListener(syncViewport);
         }
         window.addEventListener('pageshow', function() {
             hide(false);
+            syncViewport();
         });
     }
 
