@@ -10,6 +10,7 @@ decide() is a pure function. It returns PASS only with positive, candidate-bound
   * Negative-control legs (targets named negative-*) are REQUIRED when planned: their success means the planted defect was
     detected. Replay legs (replay-*) are INFORMATION only and never change the candidate verdict.
   * FAST report PASS is always required.
+  * The exact-head package job must succeed for every current PR.
   * STANDARD (focused PHPUnit + security gates): required for profiles STANDARD and FULL; every selected test PASS.
   * BROWSER: required for FULL, on MariaDB AND
     Percona; the report must contain every required check (contract.required_check_names()) with status PASS.
@@ -40,6 +41,7 @@ FULL_WORKFLOWS = {  # workflow file path -> display name (the path is what is ma
     '.github/workflows/bms24-ci.yml': 'BMS24 Dev AI checks',
 }
 ENGINES = {'mariadb': 'MariaDB 10.11.19', 'mysqli': 'Percona 8.0.46-37'}
+PACKAGE_WORKFLOW = '.github/workflows/pr90-disposable.yml'
 FULL_JOBS = {
     workflow: ('checks', 'Retained PHP 7.4 syntax compatibility') if workflow == '.github/workflows/bms24-ci.yml'
     else tuple('Moodle 4.1.22 / ' + engine for engine in ENGINES.values())
@@ -218,6 +220,12 @@ def _decide(expected, classification, evidence, jobs, planned, full, exec_attemp
         req['BROWSER'] = 'not required for profile ' + profile
 
     # ---- FULL
+    if not expected.get('historical'):
+        req['package'] = 'required for the exact PR head/base'
+        package = (full or {}).get(PACKAGE_WORKFLOW) or {}
+        if package.get('conclusion') != 'success' or (package.get('jobs') or {}).get('package') != 'success':
+            reasons.append('install ZIP for this PR head/base did not pass packaging')
+
     if profile == 'FULL':
         req['FULL'] = 'required: newest run of ' + '; '.join(FULL_WORKFLOWS)
         for wf in FULL_WORKFLOWS:
@@ -235,15 +243,15 @@ def _decide(expected, classification, evidence, jobs, planned, full, exec_attemp
     return ('PASS' if not reasons else 'FAIL'), reasons, req, info
 
 
-def select_full_runs(runs, head, base, pr, historical=False):
-    """Pick, per FULL workflow file, the NEWEST pull_request run for this head/PR/base. Pure.
+def select_full_runs(runs, head, base, pr, historical=False, workflows=FULL_WORKFLOWS):
+    """Pick the newest pull_request run of each requested workflow file for this head/PR/base.
 
     The run object already reflects its latest attempt; a newer run id always wins over an older run, whatever its attempt
     number, so an old successful re-run can never mask a newer failure, cancellation or unfinished run. historical=True
     (replay only) accepts runs whose pull_requests list is empty because the PR is closed.
     """
     out = {}
-    for wf in FULL_WORKFLOWS:
+    for wf in workflows:
         cands = []
         for r in runs or []:
             if (r.get('path') or '').split('@')[0] != wf or r.get('event') != 'pull_request' or r.get('head_sha') != head:
@@ -272,7 +280,7 @@ def _api(url, token):
             time.sleep(5 * (i + 1))
 
 
-def full_status(repo, head, base, pr, token, wait_s, historical=False):
+def full_status(repo, head, base, pr, token, wait_s, historical=False, workflows=FULL_WORKFLOWS):
     deadline = time.time() + wait_s
     while True:
         runs, page = [], 1
@@ -282,14 +290,14 @@ def full_status(repo, head, base, pr, token, wait_s, historical=False):
             if len(d.get('workflow_runs', [])) < 100:
                 break
             page += 1
-        sel = select_full_runs(runs, head, base, pr, historical)
+        sel = select_full_runs(runs, head, base, pr, historical, workflows)
         if all(v.get('status') == 'completed' for v in sel.values()) or time.time() > deadline:
             for run in sel.values():
                 if run.get('conclusion') == 'success':
                     jobs = run_jobs(repo, run['id'], run['run_attempt'], token)
                     run['jobs'] = {name: job['conclusion'] for name, job in jobs.items()}
             return sel
-        time.sleep(60)
+        time.sleep(15 if len(workflows) == 1 else 60)
 
 
 def run_jobs(repo, run_id, attempt, token):
@@ -341,7 +349,7 @@ def main():
     a = ap.parse_args()
     token = os.environ.get('GITHUB_TOKEN', '')
     d = Path(a.artifacts)
-    expected = {'target': a.target, 'head': a.head, 'base': a.base, 'run_id': a.run_id}
+    expected = {'target': a.target, 'head': a.head, 'base': a.base, 'run_id': a.run_id, 'historical': a.historical}
     try:
         planned = [t['name'] for t in json.loads(a.planned)]
     except Exception:
@@ -364,9 +372,15 @@ def main():
                 'STANDARD': load_evidence(d, 'STANDARD', a.target, exec_attempts.get(names['STANDARD'])),
                 'BROWSER': {e: load_evidence(d, 'BROWSER', a.target, exec_attempts.get(names['BROWSER'][e]), e) for e in ENGINES}}
     full = None
-    if isinstance(classification, dict) and classification.get('profile') == 'FULL':
+    profile = classification.get('profile') if isinstance(classification, dict) else None
+    if profile in PROFILES:
+        workflows = [] if a.historical else [PACKAGE_WORKFLOW]
+        if profile == 'FULL':
+            workflows.extend(FULL_WORKFLOWS)
         try:
-            full = full_status(a.repo, a.head, a.base, a.pr, token, a.wait_full, a.historical)
+            if workflows:
+                wait = a.wait_full if profile == 'FULL' else min(a.wait_full, 600)
+                full = full_status(a.repo, a.head, a.base, a.pr, token, wait, a.historical, workflows)
         except Exception as e:
             print('runs API error: %s' % type(e).__name__)
     verdict, reasons, req, info = decide(expected, classification, evidence, jobs, planned, full, exec_attempts)

@@ -57,6 +57,8 @@ def jobs(planned=('this-pr',), **override):
 
 FULL_OK = {w: {'status': 'completed', 'conclusion': 'success', 'id': 1,
                'jobs': dict.fromkeys(g.FULL_JOBS[w], 'success')} for w in WF}
+PACKAGE_OK = {g.PACKAGE_WORKFLOW: {'status': 'completed', 'conclusion': 'success',
+                                   'jobs': {'package': 'success'}}}
 
 
 def attempts(j=None, n=1):
@@ -65,6 +67,7 @@ def attempts(j=None, n=1):
 
 def verdict(c, e=None, j=None, planned=None, full=None, exp=None, att=None):
     j = j if j is not None else jobs()
+    full = {**PACKAGE_OK, **(full or {})}
     return g.decide(exp or EXP, c, e if e is not None else evidence(c), j, planned or PLANNED, full, att if att is not None else attempts(j))
 
 
@@ -129,6 +132,13 @@ class MergeGateExamples(unittest.TestCase):
         for concl in ('failure', 'cancelled', None, 'skipped', 'timed_out'):
             full = copy.deepcopy(FULL_OK); full[WF[0]] = {'status': 'in_progress' if concl is None else 'completed', 'conclusion': concl}
             self.assertEqual('FAIL', verdict(c, full=full)[0], concl)
+
+    def test_failed_or_skipped_packaging_blocks_a_fast_pr(self):
+        c = cls('FAST', ['docs/guide.md'])
+        for package in (None, {'conclusion': 'failure'}, {'conclusion': 'success', 'jobs': {'package': 'skipped'}}):
+            result, reasons, _, _ = verdict(c, full={g.PACKAGE_WORKFLOW: package})
+            self.assertEqual('FAIL', result)
+            self.assertTrue(any('install ZIP' in reason for reason in reasons), reasons)
 
 
 class ReviewFindings(unittest.TestCase):
@@ -207,7 +217,7 @@ class ReviewFindings(unittest.TestCase):
         # everything else consistently stamped for head C; only the classification is for head H
         C = 'c' * 40
         e = evidence(c); e['FAST'] = ev('FAST', {'status': 'PASS', 'head': C, 'base': B}, 'FAST', head=C)
-        self.assertEqual('PASS', g.decide(dict(EXP, head=C), dict(c, head=C), e, jobs(), PLANNED, None, attempts())[0])
+        self.assertEqual('PASS', g.decide(dict(EXP, head=C), dict(c, head=C), e, jobs(), PLANNED, PACKAGE_OK, attempts())[0])
         self.assertEqual('FAIL', g.decide(dict(EXP, head=C), c, e, jobs(), PLANNED, None, attempts())[0])
 
     def test_reports_of_another_sha_run_tier_or_engine_rejected(self):

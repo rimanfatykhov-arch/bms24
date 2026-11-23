@@ -2,7 +2,6 @@ name: Release disposable Moodle acceptance
 on:
   pull_request:
     branches: [main]
-    paths: ['local/kbacompany/**', 'tools/acceptance/**', '.github/workflows/pr90-disposable.yml', 'tools/build_install.py', 'tools/verify_install.py']
 permissions:
   contents: read
 jobs:
