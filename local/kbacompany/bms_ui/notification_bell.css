@@ -1,0 +1,42 @@
+/* BMS24 top bar bell (owned shell only). Scoped to .bms24-app; the panel floats over the page (position: fixed,
+   placed by notification_bell.js), never shifts the layout, fits the viewport and scrolls inside. */
+.bms24-app .bms24-bell {position:relative;display:inline-flex;flex:0 0 auto;}
+.bms24-app .bms24-bell [hidden] {display:none !important;}
+.bms24-app .bms24-bell-button {position:relative;display:inline-flex;align-items:center;justify-content:center;width:40px;height:40px;min-width:40px;padding:0;border:1px solid var(--bms24-border,#d6e2ea);border-radius:10px;background:#fff;color:#0B2B41;cursor:pointer;}
+.bms24-app .bms24-bell-button:hover {background:#E4F2FB;}
+.bms24-app .bms24-bell-button:focus-visible,
+.bms24-app .bms24-bell-panel:focus-visible,
+.bms24-app .bms24-bell-link:focus-visible,
+.bms24-app .bms24-bell-action:focus-visible,
+.bms24-app .bms24-bell-all:focus-visible {outline:3px solid #1777B5;outline-offset:2px;}
+.bms24-app .bms24-bell-button[aria-expanded="true"] {background:#E4F2FB;border-color:#1777B5;}
+.bms24-app .bms24-bell-badge {position:absolute;top:-6px;right:-6px;min-width:20px;height:20px;padding:0 5px;border-radius:10px;background:#0C6C52;color:#fff;font-size:11px;font-weight:700;line-height:20px;text-align:center;box-shadow:0 0 0 2px #fff;}
+.bms24-app .bms24-bell-panel {position:fixed;z-index:1050;box-sizing:border-box;width:min(380px,calc(100vw - 16px));max-height:min(70vh,560px);overflow-y:auto;overscroll-behavior:contain;padding:14px;border:1px solid var(--bms24-border,#d6e2ea);border-radius:14px;background:#fff;color:#0B2B41;box-shadow:0 14px 40px #0b2b412e;text-align:left;white-space:normal;}
+.bms24-app .bms24-bell-head {display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:6px;}
+.bms24-app .bms24-bell-heading {margin:0;font-size:16px;font-weight:700;color:#0B2B41;}
+.bms24-app .bms24-bell-count {font-size:12px;color:#40576a;}
+.bms24-app .bms24-bell-hint {margin:4px 0 8px;font-size:12px;color:#40576a;}
+.bms24-app .bms24-bell-state {margin:8px 0;font-size:13px;color:#40576a;}
+.bms24-app .bms24-bell-state p {margin:0 0 6px;}
+.bms24-app .bms24-bell-list {list-style:none;margin:0;padding:0;}
+.bms24-app .bms24-bell-item {border-top:1px solid #e6eef3;}
+.bms24-app .bms24-bell-item:first-child {border-top:0;}
+.bms24-app .bms24-bell-link {display:flex;flex-direction:column;gap:2px;padding:9px 6px;border-radius:8px;color:#0B2B41;text-decoration:none;overflow-wrap:anywhere;}
+.bms24-app .bms24-bell-link:hover {background:#E4F2FB;text-decoration:none;}
+.bms24-app .bms24-bell-item-unread .bms24-bell-title {font-weight:700;}
+.bms24-app .bms24-bell-item-unread .bms24-bell-link {box-shadow:inset 3px 0 0 #0C6C52;}
+.bms24-app .bms24-bell-type {align-self:flex-start;padding:1px 7px;border-radius:999px;font-size:11px;font-weight:650;background:#E4F2FB;color:#0B2B41;}
+.bms24-app .bms24-bell-type-mint {background:#ECF7F3;color:#0a5a44;}
+.bms24-app .bms24-bell-type-sand {background:#FDF6ED;color:#6b4a12;}
+.bms24-app .bms24-bell-title {font-size:13px;}
+.bms24-app .bms24-bell-subtitle {font-size:12px;color:#40576a;}
+.bms24-app .bms24-bell-meta {display:flex;flex-wrap:wrap;gap:8px;font-size:11px;color:#40576a;}
+.bms24-app .bms24-bell-target {color:#1777B5;font-weight:600;}
+.bms24-app .bms24-bell-sound {margin-top:10px;padding-top:10px;border-top:1px solid #e6eef3;}
+.bms24-app .bms24-bell-subheading {margin:0 0 4px;font-size:13px;font-weight:700;color:#0B2B41;}
+.bms24-app .bms24-bell-soundstate {margin:0 0 8px;font-size:12px;color:#40576a;}
+.bms24-app .bms24-bell-soundactions {display:flex;flex-wrap:wrap;gap:6px;}
+.bms24-app .bms24-bell-action {min-height:36px;padding:6px 11px;border:1px solid var(--bms24-border,#d6e2ea);border-radius:9px;background:#fff;color:#0B2B41;font-size:12px;font-weight:650;cursor:pointer;}
+.bms24-app .bms24-bell-action-primary {background:#0C6C52;border-color:#0C6C52;color:#fff;}
+.bms24-app .bms24-bell-all {display:block;margin-top:10px;padding:9px;border-radius:9px;background:#E4F2FB;color:#0B2B41;font-size:13px;font-weight:650;text-align:center;text-decoration:none;}
+@media (max-width:520px) {.bms24-app .bms24-bell-button {width:38px;height:38px;min-width:38px;}}

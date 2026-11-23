@@ -7,8 +7,18 @@
   </aside>
   <section class="bms24-frame">
     <header class="bms24-topbar">
+      <button type="button" class="bms24-menubutton" aria-expanded="false" aria-controls="bms24-drawer" hidden>
+        <span class="bms24-menubutton-icon" aria-hidden="true"></span><span class="bms24-menubutton-label">{{#str}}bms24_menu_button, local_kbacompany{{/str}}</span>
+      </button>
       <details class="bms24-mobilemenu"><summary>{{topbar.mobilemenulabel}}</summary>
-        <nav aria-label="{{sidebar.arialabel}}">{{> local_kbacompany/bms24_nav_groups}}</nav>
+        <div class="bms24-drawer" id="bms24-drawer" data-bms24-drawer-label="{{sidebar.arialabel}}">
+          <div class="bms24-drawerhead">
+            <div class="bms24-drawerbrand">{{{sidebar.brandmarkhtml}}}</div>
+            <button type="button" class="bms24-drawerclose" data-bms24-drawer-close aria-label="{{#str}}bms24_menu_close, local_kbacompany{{/str}}" hidden><span aria-hidden="true">&times;</span></button>
+          </div>
+          <nav class="bms24-drawerbody" aria-label="{{sidebar.arialabel}}">{{> local_kbacompany/bms24_nav_groups}}</nav>
+        </div>
+        <div class="bms24-drawerbackdrop" data-bms24-drawer-backdrop hidden></div>
       </details>
       <nav class="bms24-crumbs" aria-label="{{#str}}bms24_breadcrumbs, local_kbacompany{{/str}}">
         {{#topbar.breadcrumbs.items}}<span>{{#url}}<a href="{{url}}">{{label}}</a>{{/url}}{{^url}}{{label}}{{/url}}</span>{{/topbar.breadcrumbs.items}}

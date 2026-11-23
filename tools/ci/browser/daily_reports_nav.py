@@ -75,8 +75,12 @@ def menu(page, width, full):
     if page.locator('[data-bms24-owned-shell]').count() == 0:
         return {'present': False}
     if width < 861:
+        # Adaptive navigation: the "Menu" button opens the drawer; the <details> summary is the no-JS fallback only.
+        button = page.locator('.bms24-menubutton')
         summary = page.locator('.bms24-mobilemenu > summary')
-        if summary.count() and summary.is_visible():
+        if button.count() and button.is_visible():
+            button.click(); page.wait_for_timeout(300)
+        elif summary.count() and summary.is_visible():
             summary.click()
         scope = page.locator('.bms24-mobilemenu nav').first
     else:

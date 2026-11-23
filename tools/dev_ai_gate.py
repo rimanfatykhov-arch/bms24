@@ -119,6 +119,7 @@ def validate_repo(root: Path) -> list[str]:
         "local/kbacompany/release/RELEASE_NOTES_RC29_build2026111100.md",
         "local/kbacompany/release/RELEASE_NOTES_RC29_build2026111600.md",
         "local/kbacompany/release/RELEASE_NOTES_RC29_build2026111601.md",
+        "local/kbacompany/release/RELEASE_NOTES_RC29_build2026112301.md",
     ]
     for name in expected:
         if not (root / name).is_file():
@@ -127,8 +128,8 @@ def validate_repo(root: Path) -> list[str]:
         return problems + ["Moodle plugin source directory missing"]
     versiontext = (plugin / "version.php").read_text(encoding="utf-8")
     match = re.search(r"\$plugin->version\s*=\s*(\d+)\s*;", versiontext)
-    if not match or int(match.group(1)) != 2026111601:
-        problems.append("plugin version must be 2026111601")
+    if not match or int(match.group(1)) != 2026112301:
+        problems.append("plugin version must be 2026112301")
     if "1.1.0-rc29" not in versiontext:
         problems.append("RC30 must not be promoted before live acceptance")
     try:
@@ -147,6 +148,8 @@ def validate_repo(root: Path) -> list[str]:
         problems.append("ADR-0009 daily report checkpoint missing or duplicated")
     if upgrade.count("if ($oldversion < 2026111601)") != 1 or upgrade.count("upgrade_plugin_savepoint(true, 2026111601") != 1:
         problems.append("ADR-0009 review checkpoint missing or duplicated")
+    if upgrade.count("if ($oldversion < 2026112301)") != 1 or upgrade.count("upgrade_plugin_savepoint(true, 2026112301") != 1:
+        problems.append("ADR-0010 reviewer/copy checkpoint missing or duplicated")
     # Never allow local runtime state or credentials inside installable code.
     for path in plugin.rglob("*"):
         if path.is_symlink():

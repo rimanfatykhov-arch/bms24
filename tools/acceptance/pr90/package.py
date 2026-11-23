@@ -15,6 +15,8 @@ def version(component):
 out.mkdir(parents=True,exist_ok=True)
 subprocess.run([sys.executable,str(repo/'tools/build_install.py'),'--source',str(repo/'local/kbacompany'),'--output',str(out/'candidate-install.zip'),'--manifest',str(out/'manifest.json')],check=True)
 m=json.loads((out/'manifest.json').read_text())
+subprocess.run([sys.executable,str(repo/'tools/verify_install.py'),'--zip',str(out/'candidate-install.zip'),
+                '--manifest',str(out/'manifest.json'),'--expected-version',str(version('local/kbacompany')['version'])],check=True)
 m['source']={'checkout_sha':checkout_sha,'tree':git('rev-parse','HEAD^{tree}'),'pr_head':pr_head,'base':os.environ['PR_BASE_SHA'],
              'run_id':os.environ['GITHUB_RUN_ID'],'run_attempt':os.environ['GITHUB_RUN_ATTEMPT']}
 m['components']={p:version(p) for p in ['local/kbacompany','local/kbacorporate']}

@@ -8,7 +8,11 @@ concurrency:
   group: rc30-repaired2613-${{ github.ref }}
   cancel-in-progress: true
 jobs:
+  profile:
+    uses: ./.github/workflows/ci-profile.yml
   moodle:
+    needs: profile
+    if: needs.profile.outputs.level == 'FULL' || github.base_ref != 'main'
     name: Moodle 4.1.22 / ${{ matrix.engine }}
     runs-on: ubuntu-22.04
     timeout-minutes: 60

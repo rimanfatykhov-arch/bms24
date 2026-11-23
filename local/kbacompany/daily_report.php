@@ -3,9 +3,11 @@ require_once(__DIR__ . '/../../config.php');
 
 use local_kbacompany\local\business_date_service;
 use local_kbacompany\local\daily_report_service;
+use local_kbacompany\local\daily_report_feed_service as feed;
 use local_kbacompany\local\daily_report_store_service as store;
 use local_kbacompany\local\daily_report_ui_service as reportui;
 use local_kbacompany\local\daily_report_review_service as review;
+use local_kbacompany\local\daily_report_reviewer_service as reviewers;
 use local_kbacompany\local\bms_page_shell_service;
 use local_kbacompany\local\bms24_shell_service;
 use local_kbacompany\local\bms24_ui_kit_service;
@@ -19,7 +21,7 @@ $actor = (int)$USER->id;
 // ADR-0009 R1: saving reports is behind a server-side switch; while it is off the page is the R0 read-only summary.
 $enabled = store::enabled();
 $tab = $enabled ? optional_param('tab', 'my', PARAM_ALPHA) : 'my';
-// R2: the reviewer tab exists only for stored reviewers and company administrators.
+// R2/ADR-0010: the reviewer tab exists for administrators, managers, stored reviewers and copy recipients.
 $canreview = $enabled && review::has_review_access($uuid, $actor);
 if (!in_array($tab, ['my', 'history', 'review'], true) || ($tab === 'review' && !$canreview)) {
     $tab = 'my';
@@ -34,23 +36,36 @@ $knownerrors = ['dailyreports_conflict', 'dailyreports_donerequired', 'dailyrepo
     'dailyreports_taskunavailable', 'dailyreports_toomanylinks', 'dailyreports_texttoolong', 'dailyreports_busy',
     'dailyreports_notrevisable', 'dailyreports_correctionrequired', 'dailyreports_ratingrequired',
     'dailyreports_commentrequired', 'dailyreports_reasonrequired', 'dailyreports_notreviewer', 'dailyreports_staleversion',
-    'dailyreports_notpending', 'dailyreports_reviewerinvalid'];
+    'dailyreports_notpending', 'dailyreports_reviewerinvalid', 'dailyreports_ccinvalid', 'dailyreports_toomanycc',
+    'dailyreports_settingsinvalid'];
 if ($enabled && $tab === 'my' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     require_sesskey();
-    $action = required_param('action', PARAM_ALPHA);
+    // Day feed -> report draft: "Add to report" posts the id of one own submit event (never its text).
+    $addevent = optional_param('addevent', 0, PARAM_INT);
+    $fromfeed = optional_param('source', '', PARAM_ALPHA) === 'feed';
+    $action = $addevent > 0 ? 'addresult' : required_param('action', PARAM_ALPHA);
     $values = [];
     foreach (store::FIELDS as $field) {
         $values[$field] = optional_param($field, '', PARAM_RAW);
     }
     $links = optional_param_array('linkedtasks', [], PARAM_ALPHANUMEXT);
+    $ccusers = optional_param_array('ccusers', [], PARAM_INT);
     $revision = optional_param('revision', 0, PARAM_INT);
     try {
         if ($action === 'save') {
-            store::save_draft($uuid, $actor, $day, $values, $links, $revision);
+            store::save_draft($uuid, $actor, $day, $values, $links, $revision, $ccusers);
             redirect(reportui::url($uuid, ['day' => $day, 'notice' => 'saved']));
         } else if ($action === 'submit') {
-            store::submit($uuid, $actor, $day, required_param('requestkey', PARAM_ALPHANUMEXT), $revision, $values, $links);
+            store::submit($uuid, $actor, $day, required_param('requestkey', PARAM_ALPHANUMEXT), $revision, $values, $links,
+                $ccusers);
             redirect(reportui::url($uuid, ['day' => $day, 'notice' => 'submitted']));
+        } else if ($action === 'addresult') {
+            // From the feed the stored draft is used; from the open form its unsaved text is kept.
+            $added = feed::add($uuid, $actor, $day, $addevent, $fromfeed ? null :
+                ['values' => $values, 'links' => $links, 'cc' => $ccusers, 'revision' => $revision]);
+            $target = reportui::url($uuid, ['day' => $day, 'notice' => $added['added'] ? 'resultadded' : 'resultexists']);
+            $target->set_anchor('dailyreport-done');
+            redirect($target);
         } else if ($action === 'rework' || $action === 'correct') {
             store::start_revision($uuid, $actor, $day,
                 $action === 'correct' ? optional_param('correctionnote', '', PARAM_RAW) : '');
@@ -62,9 +77,10 @@ if ($enabled && $tab === 'my' && $_SERVER['REQUEST_METHOD'] === 'POST') {
             throw $e;
         }
         // Keep the employee's text in the form; show the saved text next to it after a conflict.
-        $posted = ['values' => $values, 'links' => $links];
+        // A feed request carries no form text: the stored draft stays on screen.
+        $posted = $action === 'addresult' && $fromfeed ? null : ['values' => $values, 'links' => $links, 'cc' => $ccusers];
         $error = get_string($e->errorcode, 'local_kbacompany');
-        $conflict = $e->errorcode === 'dailyreports_conflict';
+        $conflict = $posted !== null && $e->errorcode === 'dailyreports_conflict';
     }
 }
 
@@ -81,6 +97,11 @@ if ($canreview && $tab === 'review' && $_SERVER['REQUEST_METHOD'] === 'POST') {
                 optional_param('comment', '', PARAM_RAW), required_param('requestkey', PARAM_ALPHANUMEXT));
         } else if ($action === 'reassign') {
             review::reassign($uuid, $actor, $reportparam, required_param('reviewerid', PARAM_INT));
+        } else if ($action === 'settings') {
+            reviewers::save_settings($uuid, $actor, required_param('toppolicy', PARAM_ALPHA),
+                optional_param('topreviewerid', 0, PARAM_INT), required_param('ccpolicy', PARAM_ALPHA),
+                required_param('revision', PARAM_INT));
+            redirect(reportui::url($uuid, ['tab' => 'review', 'queue' => 'settings', 'notice' => 'settings']));
         } else {
             throw new moodle_exception('invalidparameter');
         }
@@ -133,8 +154,10 @@ if (bms24_shell_service::is_enabled()) {
 }
 
 if ($tab === 'review') {
-    if (optional_param('notice', '', PARAM_ALPHA) === 'decided' && $reviewerror === '') {
-        echo html_writer::div(s(get_string('dailyreports_decided', 'local_kbacompany')), 'alert alert-success', ['role' => 'status']);
+    $reviewnotice = optional_param('notice', '', PARAM_ALPHA);
+    if (in_array($reviewnotice, ['decided', 'settings'], true) && $reviewerror === '') {
+        echo html_writer::div(s(get_string($reviewnotice === 'settings' ? 'dailyreports_settings_saved' :
+            'dailyreports_decided', 'local_kbacompany')), 'alert alert-success', ['role' => 'status']);
     }
     if ($reviewerror !== '') {
         echo html_writer::div(s($reviewerror), 'alert alert-danger', ['role' => 'alert']);
@@ -146,11 +169,22 @@ if ($tab === 'review') {
             $card['can_reassign'] ? review::reviewer_candidates($uuid, $actor, (int)$card['report']->userid) : []);
     } else {
         $queue = optional_param('queue', 'pending', PARAM_ALPHA);
+        $queues = review::queues($uuid, $actor);
         $isadmin = review::is_admin($uuid, $actor);
-        if (!in_array($queue, review::QUEUES, true) && !($queue === 'unassigned' && $isadmin)) {
-            $queue = 'pending';
+        if ($queue === 'settings' && $isadmin) {
+            // ADR-0010: company review rules (top of the chart, automatic copy), administrators only.
+            echo reportui::queue($uuid, ['queue' => 'settings', 'items' => [], 'total' => 0, 'page' => 0], $queues);
+            echo reportui::settings_form($uuid, reviewers::settings($uuid), reviewers::people($uuid, $actor, 0));
+        } else {
+            if (!in_array($queue, $queues, true)) {
+                $queue = 'pending';
+            }
+            echo reportui::queue($uuid, review::queue($uuid, $actor, $queue, optional_param('page', 0, PARAM_INT)), $queues);
+            if ($isadmin) {
+                echo html_writer::link(reportui::url($uuid, ['tab' => 'review', 'queue' => 'settings']),
+                    s(get_string('dailyreports_settings_heading', 'local_kbacompany')), ['class' => 'btn btn-link px-0']);
+            }
         }
-        echo reportui::queue($uuid, review::queue($uuid, $actor, $queue, optional_param('page', 0, PARAM_INT)), $isadmin);
     }
     bms_page_shell_service::finish($shell);
     exit;
@@ -175,7 +209,7 @@ echo html_writer::end_tag('form');
 if ($enabled) {
     // ---- the saved report of this day (draft form or frozen versions)
     $notice = optional_param('notice', '', PARAM_ALPHA);
-    if ($error === '' && in_array($notice, ['saved', 'submitted', 'revision'], true)) {
+    if ($error === '' && in_array($notice, ['saved', 'submitted', 'revision', 'resultadded', 'resultexists'], true)) {
         echo html_writer::div(s(get_string('dailyreports_' . $notice, 'local_kbacompany')), 'alert alert-success',
             ['role' => 'status']);
     }
@@ -188,9 +222,11 @@ if ($enabled) {
     if ($error !== '') {
         echo html_writer::div(s($error), 'alert alert-danger', ['role' => 'alert']);
     }
+    $formopen = false;
     if ($future) {
         echo html_writer::tag('p', s(get_string('dailyreports_futureday', 'local_kbacompany')));
     } else if (!$report || $view['draft']) {
+        $formopen = true;
         $draft = $view['draft'];
         if ($conflict && $draft) {
             echo reportui::conflict($draft, $posted['values']);
@@ -204,8 +240,13 @@ if ($enabled) {
         $selected = $posted['links'] ?? array_map(static function($l): string { return (string)$l->taskuuid; },
             $view['draftlinks']);
         $candidates = store::link_candidates($uuid, $actor, $data, $view['draftlinks']);
+        // ADR-0010 D7: the reviewer is shown before sending; copy recipients are chosen here.
+        $review = store::preview($uuid, $actor, $day);
+        $review['options'] = reviewers::people($uuid, $actor, $actor);
+        $review['selected'] = $posted['cc'] ?? array_map(static function($c): int { return (int)$c->userid; },
+            array_filter($view['draftcc'], static function($c): bool { return (string)$c->source === 'manual'; }));
         echo reportui::form($uuid, $day, $values, $selected, $candidates, $draft ? (int)$draft->revision : 0,
-            \core\uuid::generate());
+            \core\uuid::generate(), $review);
     }
     foreach ($view['versions'] ?? [] as $i => $version) {
         $revieweruser = (int)$version->reviewerid > 0 ? core_user::get_user((int)$version->reviewerid) : false;
@@ -214,10 +255,12 @@ if ($enabled) {
             echo $OUTPUT->heading(s(get_string('dailyreports_versions_previous', 'local_kbacompany')), 3);
         }
         echo reportui::version($uuid, $actor, $version, $view['links'][$version->uuid] ?? [], $reviewer,
-            $i === 0 && $view['late'], $view['reviews'][$version->uuid] ?? []);
+            $i === 0 && $view['late'], $view['reviews'][$version->uuid] ?? [], $view['copies'][$version->uuid] ?? []);
     }
     if ($report && !$view['draft']) {
-        echo reportui::revision_controls($uuid, $day, (string)$report->status);
+        $current = $view['versions'][0] ?? null;
+        $selfreview = $current && (string)$current->reviewersource === 'self_top' && (int)$current->reviewerid === $actor;
+        echo reportui::revision_controls($uuid, $day, (string)$report->status, $selfreview ? (string)$report->uuid : '');
     }
     echo html_writer::end_tag('section');
     // The live summary below is the current state of BMS24 data, not part of any submitted version.
@@ -252,6 +295,12 @@ foreach ($data['results'] as $event) {
     echo html_writer::tag('h3', $link($event->taskuuid, $event->title), ['class' => 'h5']);
     echo html_writer::tag('p', s(userdate($event->timecreated) . ' · ' . $str('submittedstatus') . ': ' . $status($event->newstatus)));
     echo html_writer::tag('p', nl2br(s($event->result !== '' ? $event->result : $str('missingresult'))));
+    if ($enabled && !empty($formopen)) {
+        // Submits the open report form with this event id: unsaved text is kept, the server adds the result once.
+        echo html_writer::tag('button', s(get_string('dailyreports_feed_add', 'local_kbacompany')), ['type' => 'submit',
+            'form' => 'dailyreport-form', 'name' => 'addevent', 'value' => (int)$event->id, 'formnovalidate' => 'formnovalidate',
+            'class' => 'btn btn-outline-primary btn-sm', 'data-dailyreport-add' => (int)$event->id]);
+    }
     echo html_writer::end_tag('article');
 }
 echo $pager('result', $data['resultpage'], $data['resulttotal']);

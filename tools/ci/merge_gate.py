@@ -11,13 +11,13 @@ decide() is a pure function. It returns PASS only with positive, candidate-bound
     detected. Replay legs (replay-*) are INFORMATION only and never change the candidate verdict.
   * FAST report PASS is always required.
   * STANDARD (focused PHPUnit + security gates): required for profiles STANDARD and FULL; every selected test PASS.
-  * BROWSER: required for profiles STANDARD and FULL (the BROWSER job runs for every non-FAST profile), on MariaDB AND
+  * BROWSER: required for FULL, on MariaDB AND
     Percona; the report must contain every required check (contract.required_check_names()) with status PASS.
   * Profile FULL additionally requires the newest FULL run of each FULL workflow (matched by workflow file path, event
     pull_request, head SHA, PR number and base SHA at event time) to have concluded `success`. Older runs never mask a
     newer failure, cancellation or unfinished run. The retained Corporate2613 workflow is not part of FULL (expected FAIL
     history) and is not mixed with the repaired one.
-  * Profile FAST and STANDARD do not wait for FULL (FULL keeps running as observation).
+  * Profile FAST and STANDARD do not run the FULL acceptance jobs on main.
 A green gate allows MERGE only. It never authorises a production deployment (separate owner approval + release card).
 Limitation: the gate code itself is taken from the PR merge commit; changes to tools/ci are classified FULL.
 """
@@ -40,6 +40,11 @@ FULL_WORKFLOWS = {  # workflow file path -> display name (the path is what is ma
     '.github/workflows/bms24-ci.yml': 'BMS24 Dev AI checks',
 }
 ENGINES = {'mariadb': 'MariaDB 10.11.19', 'mysqli': 'Percona 8.0.46-37'}
+FULL_JOBS = {
+    workflow: ('checks', 'Retained PHP 7.4 syntax compatibility') if workflow == '.github/workflows/bms24-ci.yml'
+    else tuple('Moodle 4.1.22 / ' + engine for engine in ENGINES.values())
+    for workflow in FULL_WORKFLOWS
+}
 PROFILES = ('FAST', 'STANDARD', 'FULL')
 SHA_LEN = 40
 
@@ -149,7 +154,9 @@ def _decide(expected, classification, evidence, jobs, planned, full, exec_attemp
     if not isinstance(planned, list) or target not in planned:
         reasons.append('plan does not contain target %r' % target)
         planned = planned if isinstance(planned, list) else []
-    required_jobs = ['Plan targets', names['FAST'], names['STANDARD']] + list(names['BROWSER'].values())
+    required_jobs = ['Plan targets', names['FAST'], names['STANDARD']]
+    if profile == 'FULL':
+        required_jobs.extend(names['BROWSER'].values())
     negatives = [t for t in planned if t.startswith('negative-')] if target == 'this-pr' else []
     for t in negatives:
         n = job_names(t)
@@ -189,7 +196,7 @@ def _decide(expected, classification, evidence, jobs, planned, full, exec_attemp
         req['STANDARD'] = 'not applicable (profile FAST); job must still conclude success'
 
     # ---- BROWSER
-    if profile in ('STANDARD', 'FULL'):
+    if profile == 'FULL':
         need = required_browser_checks()
         req['BROWSER'] = 'required on %s; %d required checks' % (' + '.join(ENGINES.values()), len(need))
         for engine in ENGINES:
@@ -208,7 +215,7 @@ def _decide(expected, classification, evidence, jobs, planned, full, exec_attemp
                 reasons.append('BROWSER %s: status=%r dbtype=%r missing=%r non-PASS=%r' % (engine, r.get('status'), r.get('dbtype'),
                                                                                        missing[:5], (bad + extra_bad)[:5]))
     else:
-        req['BROWSER'] = 'not applicable (profile FAST); jobs must still conclude success'
+        req['BROWSER'] = 'not required for profile ' + profile
 
     # ---- FULL
     if profile == 'FULL':
@@ -218,8 +225,13 @@ def _decide(expected, classification, evidence, jobs, planned, full, exec_attemp
             r = r if isinstance(r, dict) else {}
             if r.get('conclusion') != 'success':
                 reasons.append('FULL %s: %s' % (FULL_WORKFLOWS[wf], r.get('conclusion') or r.get('status') or 'missing'))
+            else:
+                outcomes = r.get('jobs') or {}
+                for name in FULL_JOBS[wf]:
+                    if outcomes.get(name) != 'success':
+                        reasons.append('FULL %s: job %r concluded %r' % (FULL_WORKFLOWS[wf], name, outcomes.get(name, 'missing')))
     else:
-        req['FULL'] = 'not required for merge (still runs as observation)'
+        req['FULL'] = 'not required for merge'
     return ('PASS' if not reasons else 'FAIL'), reasons, req, info
 
 
@@ -272,6 +284,10 @@ def full_status(repo, head, base, pr, token, wait_s, historical=False):
             page += 1
         sel = select_full_runs(runs, head, base, pr, historical)
         if all(v.get('status') == 'completed' for v in sel.values()) or time.time() > deadline:
+            for run in sel.values():
+                if run.get('conclusion') == 'success':
+                    jobs = run_jobs(repo, run['id'], run['run_attempt'], token)
+                    run['jobs'] = {name: job['conclusion'] for name, job in jobs.items()}
             return sel
         time.sleep(60)
 

@@ -1,0 +1,1917 @@
+/*
+ * Communication Center (#145) — presentation of the bms24-* markup, matched to prototype #122
+ * (docs/communication/ux/prototype, screens A-conversation-1440 and tablet-768-notifications).
+ *
+ * Why every selector starts with #bms24-comm-root: the templates keep the legacy bms-comm2-* / bms-comm3-*
+ * classes because live updates, the JS controller and the browser checks rely on them, and styles.css still
+ * carries several generations of rules for those classes (up to four classes plus two elements, e.g. the 32/34px
+ * "new conversation" trigger). A class-only selector here lost that cascade and the primary action stayed clipped.
+ * The id is emitted only by communication_center_ui_service::workspace(), so these rules apply to this page only
+ * and win deterministically without !important. Properties that legacy rules set and this design does not want
+ * (fixed widths, orders, margins, max-heights) are reset explicitly.
+ *
+ * Presentation only: no behaviour, no hidden actions. Colours follow the BMOS palette (AGENTS.md).
+ */
+
+body.bms-comm-page #bms24-comm-root {
+    --cc-navy: #0b2b41;
+    --cc-navy-800: #163a50;
+    --cc-emerald: #0c6c52;
+    --cc-emerald-hover: #095741;
+    --cc-blue: #1777b5;
+    --cc-blue-ink: #155f91;
+    --cc-violet: #6b43b5;
+    --cc-sky: #e4f2fb;
+    --cc-mint: #ecf7f3;
+    --cc-sand: #fdf6ed;
+    --cc-text: #1d2937;
+    --cc-muted: #526673;
+    --cc-border: #d9e5e9;
+    --cc-line: #e8f0f3;
+    --cc-hover: #f3f8fa;
+    --cc-selected: #e6f3ee;
+    --cc-warning: #b15f00;
+    --cc-danger: #bc3030;
+    --cc-danger-bg: #fbeded;
+    --cc-radius-card: 14px;
+    --cc-radius-ctl: 9px;
+    color: var(--cc-text);
+    font-size: 14px;
+    line-height: 1.45;
+    min-width: 0;
+}
+
+body.bms-comm-page #bms24-comm-root *,
+body.bms-comm-page #bms24-comm-root *::before,
+body.bms-comm-page #bms24-comm-root *::after {
+    box-sizing: border-box;
+}
+
+body.bms-comm-page #bms24-comm-root :focus-visible {
+    outline: 3px solid var(--cc-blue);
+    outline-offset: 2px;
+}
+
+/* ---------- card ---------- */
+
+body.bms-comm-page #bms24-comm-root .bms24-card {
+    margin: 0;
+    background: #fff;
+    border: 1px solid var(--cc-border);
+    border-radius: var(--cc-radius-card);
+    /* Visible, not hidden: the "New conversation" form opens below the header and must not be cut by a short card
+       (an empty notification list). Corners are rounded on the header and the body instead. */
+    overflow: visible;
+    box-shadow: none;
+}
+
+body.bms-comm-page #bms24-comm-root .bms24-cardheader {
+    position: relative;
+    z-index: 2;
+    margin: 0;
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--cc-line);
+    border-radius: var(--cc-radius-card) var(--cc-radius-card) 0 0;
+    background: #fff;
+}
+
+body.bms-comm-page #bms24-comm-root .bms24-cardbody,
+body.bms-comm-page #bms24-comm-root .bms24-comm-layout,
+body.bms-comm-page #bms24-comm-root .bms24-comm-nlist {
+    border-radius: 0 0 var(--cc-radius-card) var(--cc-radius-card);
+}
+
+body.bms-comm-page #bms24-comm-root .bms24-cardheadrow {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px 16px;
+    min-width: 0;
+}
+
+body.bms-comm-page #bms24-comm-root .bms24-cardheadrow > div:first-child {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+body.bms-comm-page #bms24-comm-root .bms24-cardheader h2 {
+    margin: 0;
+    font-size: 18px;
+    line-height: 1.3;
+    font-weight: 700;
+    color: var(--cc-navy);
+}
+
+body.bms-comm-page #bms24-comm-root .bms24-cardactions {
+    display: flex;
+    flex-wrap: nowrap;
+    align-items: center;
+    gap: 16px;
+    min-width: 0;
+    margin: 0;
+}
+
+body.bms-comm-page #bms24-comm-root .bms24-cardbody {
+    margin: 0;
+    padding: 0;
+}
+
+/* ---------- section tabs (segmented) ---------- */
+
+body.bms-comm-page #bms24-comm-root .bms24-comm-tabs {
+    order: 0;
+    display: flex;
+    flex: 0 1 auto;
+    flex-wrap: nowrap;
+    align-items: stretch;
+    gap: 4px;
+    margin: 0;
+    padding: 3px;
+    background: var(--cc-hover);
+    border: 0;
+    border-radius: 10px;
+    overflow: visible;
+}
+
+body.bms-comm-page #bms24-comm-root .bms24-comm-tab {
+    display: inline-flex;
+    flex: 0 0 auto;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    min-height: 34px;
+    margin: 0;
+    padding: 6px 12px;
+    border: 0;
+    border-radius: 8px;
+    background: transparent;
+    color: var(--cc-muted);
+    font-size: 14px;
+    line-height: 1.2;
+    font-weight: 600;
+    white-space: nowrap;
+    text-decoration: none;
+}
+
+body.bms-comm-page #bms24-comm-root .bms24-comm-tab:hover {
+    background: rgba(255, 255, 255, .7);
+    color: var(--cc-text);
+    text-decoration: none;
+}
+
+body.bms-comm-page #bms24-comm-root .bms24-comm-tab.is-active {
+    background: #fff;
+    color: var(--cc-text);
+    box-shadow: 0 1px 2px rgba(11, 43, 65, .12);
+}
+
+/* Counter badges (tabs and notifications title). */
+body.bms-comm-page #bms24-comm-root .bms24-badge,
+body.bms-comm-page #bms24-comm-root .bms24-comm-badge {
+    display: inline-block;
+    min-width: 20px;
+    margin: 0;
+    padding: 0 6px;
+    border-radius: 999px;
+    background: var(--cc-emerald);
+    color: #fff;
+    font-size: 12px;
+    font-weight: 700;
+    line-height: 20px;
+    text-align: center;
+    vertical-align: middle;
+}
+
+body.bms-comm-page #bms24-comm-root .bms24-badge-blue,
+body.bms-comm-page #bms24-comm-root .bms24-comm-badge--blue {
+    background: var(--cc-blue);
+}
+
+body.bms-comm-page #bms24-comm-root .bms24-badge-soft {
+    background: var(--cc-line);
+    color: var(--cc-muted);
+}
+
+/* ---------- buttons ---------- */
+
+body.bms-comm-page #bms24-comm-root .bms24-comm-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    width: auto;
+    min-width: 0;
+    height: auto;
+    min-height: 34px;
+    margin: 0;
+    padding: 7px 12px;
+    border: 1px solid var(--cc-border);
+    border-radius: var(--cc-radius-ctl);
+    background: #fff;
+    color: var(--cc-text);
+    font-size: 14px;
+    line-height: 1.2;
+    font-weight: 600;
+    white-space: nowrap;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+body.bms-comm-page #bms24-comm-root .bms24-comm-btn:hover {
+    background: var(--cc-hover);
+    color: var(--cc-text);
+    text-decoration: none;
+}
+
+body.bms-comm-page #bms24-comm-root .bms24-comm-btn--primary {
+    background: var(--cc-emerald);
+    border-color: var(--cc-emerald);
+    color: #fff;
+}
+
+body.bms-comm-page #bms24-comm-root .bms24-comm-btn--primary:hover {
+    background: var(--cc-emerald-hover);
+    border-color: var(--cc-emerald-hover);
+    color: #fff;
+}
+
+body.bms-comm-page #bms24-comm-root .bms24-comm-btn--ghost {
+    background: transparent;
+    border-color: transparent;
+}
+
+body.bms-comm-page #bms24-comm-root .bms24-comm-btn--danger {
+    background: #fff;
+    border-color: #ebc5c5;
+    color: var(--cc-danger);
+}
+
+body.bms-comm-page #bms24-comm-root .bms24-comm-btn--small {
+    min-height: 30px;
+    padding: 4px 10px;
+    font-size: 13px;
+}
+
+body.bms-comm-page #bms24-comm-root .bms24-comm-iconbtn {
+    width: 36px;
+    height: 36px;
+    min-width: 36px;
+    padding: 0;
+    color: var(--cc-navy);
+    font-size: 18px;
+}
+
+/* Line icons (inline SVG, currentColor) instead of emoji glyphs, which render inconsistently across platforms. */
+body.bms-comm-page #bms24-comm-root .bms24-comm-ico {
+    flex: 0 0 auto;
+    width: 16px;
+    height: 16px;
+    vertical-align: middle;
+}
+
+body.bms-comm-page #bms24-comm-root .bms24-comm-iconbtn .bms24-comm-ico {
+    width: 18px;
+    height: 18px;
+}
+
+/* "Participants" / "Details": icon and visible label, as in the prototype; icon only on phones. */
+body.bms-comm-page #bms24-comm-root .bms24-comm-detailsbtn {
+    color: var(--cc-navy);
+}
+
+body.bms-comm-page #bms24-comm-root .bms24-comm-muted {
+    color: var(--cc-muted);
+    font-size: 12px;
+}
+
+/* ---------- "New conversation": full primary button in the card header ---------- */
+
+body.bms-comm-page #bms24-comm-root .bms24-comm-new,
+body.bms-comm-page #bms24-comm-root .bms24-comm-new[open] {
+    position: relative;
+    display: block;
+    flex: 0 0 auto;
+    order: 0;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    box-shadow: none;
+}
+
+body.bms-comm-page #bms24-comm-root .bms24-comm-new > summary.bms-comm2-new-trigger {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    width: auto;
+    min-width: 0;
+    max-width: none;
+    height: auto;
+    min-height: 38px;
+    margin: 0;
+    padding: 8px 14px;
+    border: 1px solid var(--cc-emerald);
+    border-radius: var(--cc-radius-ctl);
+    background: var(--cc-emerald);
+    color: #fff;
+    font-size: 14px;
+    line-height: 1.2;
+    font-weight: 600;
+    text-align: left;
+    white-space: nowrap;
+    overflow: visible;
+    list-style: none;
+    cursor: pointer;
+}
+
+body.bms-comm-page #bms24-comm-root .bms24-comm-new > summary.bms-comm2-new-trigger > span[aria-hidden] {
+    font-size: 18px;
+    line-height: 1;
+    font-weight: 500;
+}
+
+body.bms-comm-page #bms24-comm-root .bms24-comm-new > summary.bms-comm2-new-trigger::-webkit-details-marker {
+    display: none;
+}
+
+body.bms-comm-page #bms24-comm-root .bms24-comm-new > summary.bms-comm2-new-trigger:hover,
+body.bms-comm-page #bms24-comm-root .bms24-comm-new[open] > summary.bms-comm2-new-trigger {
+    background: var(--cc-emerald-hover);
+    border-color: var(--cc-emerald-hover);
+    color: #fff;
+}
+
+body.bms-comm-page #bms24-comm-root .bms24-comm-new .bms24-comm-newform {
+    display: none;
+}
+
+body.bms-comm-page #bms24-comm-root .bms24-comm-new[open] .bms24-comm-newform {
+    position: absolute;
+    top: calc(100% + 8px);
+    right: 0;
+    left: auto;
+    z-index: 30;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    width: min(420px, calc(100vw - 32px));
+    min-width: 0;
+    max-height: 70vh;
+    margin: 0;
+    padding: 16px;
+    overflow: auto;
+    background: #fff;
+    border: 1px solid var(--cc-border);
+    border-radius: var(--cc-radius-card);
+    box-shadow: 0 20px 40px rgba(11, 43, 65, .22);
+}
+
+body.bms-comm-page #bms24-comm-root .bms24-comm-newform label {
+    margin: 4px 0 0;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--cc-navy);
+}
+
+body.bms-comm-page #bms24-comm-root .bms24-comm-newform .bms24-comm-btn {
+    align-self: flex-end;
+    margin-top: 6px;
+}
+
+body.bms-comm-page #bms24-comm-root .bms24-comm-newhead {
+    margin: 0 0 6px;
+    color: var(--cc-navy);
+    font-size: 16px;
+    font-weight: 700;
+}
+
+/* Type: a segmented control over the same threadtype radios (screen D); works without JavaScript. */
+body.bms-comm-page #bms24-comm-root .bms24-comm-seg {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 2px;
+    margin: 0 0 4px;
+    padding: 3px;
+    border: 0;
+    border-radius: 10px;
+    background: var(--cc-sky);
+}
+
+body.bms-comm-page #bms24-comm-root .bms24-comm-seg input {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+}
+
+body.bms-comm-page #bms24-comm-root .bms24-comm-seg label {
+    margin: 0;
+    padding: 7px 10px;
+    border-radius: 8px;
+    color: var(--cc-muted);
+    font-weight: 600;
+    text-align: center;
+    cursor: pointer;
+}
+
+body.bms-comm-page #bms24-comm-root .bms24-comm-seg input:checked + label {
+    background: #fff;
+    color: var(--cc-navy);
+    box-shadow: 0 1px 2px rgba(11, 43, 65, .12);
+}
+
+body.bms-comm-page #bms24-comm-root .bms24-comm-seg input:focus-visible + label {
+    outline: 2px solid var(--cc-blue);
+    outline-offset: 1px;
+}
+
+body.bms-comm-page #bms24-comm-root .bms24-comm-newtitle {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+/* A direct conversation has no title: show the field only for a group (browsers without :has keep it visible). */
+body.bms-comm-page #bms24-comm-root .bms24-comm-newform:has(#bms_comm2_type_direct:checked) .bms24-comm-newtitle {
+    display: none;
+}
+
+body.bms-comm-page #bms24-comm-root .bms24-comm-newform select[multiple] {
+    min-height: 180px;
+}
+
+/* ---------- list + conversation layout ---------- */
+
+body.bms-comm-page #bms24-comm-root .bms24-comm-layout {
+    position: relative;
+    display: grid;
+    grid-template-columns: 340px minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1fr);
+    gap: 0;
+    width: 100%;
+    min-width: 0;
+    height: min(780px, calc(100vh - 210px));
+    min-height: 540px;
+    max-height: none;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+    background: #fff;
+    border: 0;
+}
+
+body.bms-comm-page #bms24-comm-root .bms24-comm-side {
+    position: static;
+    display: flex;
+    flex-direction: column;
+    width: auto;
+    min-width: 0;
+    height: auto;
+    min-height: 0;
+    max-height: none;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+    background: #fff;
+    border: 0;
+    border-right: 1px solid var(--cc-line);
+    border-radius: 0;
+    box-shadow: none;
+}
+
+body.bms-comm-page #bms24-comm-root .bms24-comm-sidehead {
+    display: flex;
+    flex-direction: column;
+    flex: 0 0 auto;
+    gap: 10px;
+    padding: 14px 14px 10px;
+    border-bottom: 1px solid var(--cc-line);
+}
+
+/* Search: the form is the field, as in the prototype (icon + borderless input, focus ring on the box). */
+body.bms-comm-page #bms24-comm-root .bms24-comm-search {
+    order: 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    min-width: 0;
+    margin: 0;
+    padding: 0 12px;
+    border: 1px solid var(--cc-border);
+    border-radius: var(--cc-radius-ctl);
+    background: #fff;
+}
+
+body.bms-comm-page #bms24-comm-root .bms24-comm-search:focus-within {
+    outline: 3px solid var(--cc-blue);
+    outline-offset: 1px;
+}
+
+body.bms-comm-page #bms24-comm-root .bms24-comm-searchicon {
+    position: static;
+    flex: 0 0 auto;
+    color: var(--cc-muted);
+    font-size: 17px;
+    line-height: 1;
+}
+
+body.bms-comm-page #bms24-comm-root .bms24-comm-search input[type="search"] {
+    flex: 1 1 auto;
+    width: 100%;
+    min-width: 0;
+    height: auto;
+    min-height: 38px;
+    margin: 0;
+    padding: 8px 0;
+    border: 0;
+    border-radius: 0;
+    outline: 0;
+    background: transparent;
+    box-shadow: none;
+    color: var(--cc-text);
+    font-size: 14px;
+    -webkit-appearance: none;
+    appearance: none;
+}
+
+body.bms-comm-page #bms24-comm-root .bms24-comm-search input[type="search"]::placeholder {
+    color: #6b7f8a;
+    opacity: 1;
+}
+
+body.bms-comm-page #bms24-comm-root .bms24-comm-chips {
+    order: 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin: 0;
+    padding: 0;
+}
+
+body.bms-comm-page #bms24-comm-root .bms24-comm-chip {
+    display: inline-flex;
+    align-items: center;
+    min-height: 28px;
+    margin: 0;
+    padding: 3px 10px;
+    border: 1px solid var(--cc-border);
+    border-radius: 999px;
+    background: #fff;
+    color: var(--cc-muted);
+    font-size: 13px;
+    line-height: 1.3;
+    font-weight: 500;
+    white-space: nowrap;
+    text-decoration: none;
+}
+
+body.bms-comm-page #bms24-comm-root .bms24-comm-chip:hover {
+    background: var(--cc-hover);
+    color: var(--cc-text);
+    text-decoration: none;
+}
+
+body.bms-comm-page #bms24-comm-root .bms24-comm-chip.is-active {
+    background: var(--cc-selected);
+    border-color: var(--cc-emerald);
+    color: var(--cc-emerald);
+    font-weight: 600;
+}
+
+/* ---------- conversation list rows ---------- */
+
+body.bms-comm-page #bms24-comm-root .bms24-comm-list {
+    order: 0;
+    display: block;
+    flex: 1 1 auto;
+    width: auto;
+    min-height: 0;
+    height: auto;
+    max-height: none;
+    margin: 0;
+    padding: 0;
+    overflow-x: hidden;
+    overflow-y: auto;
+}
+
+body.bms-comm-page #bms24-comm-root .bms24-comm-item {
+    display: grid;
+    grid-template-columns: 38px minmax(0, 1fr) auto;
+    gap: 10px;
+    align-items: start;
+    width: 100%;
+    min-width: 0;
+    max-width: none;
+    min-height: 0;
+    margin: 0;
+    padding: 10px 14px;
+    overflow: hidden;
+    border: 0;
+    border-bottom: 1px solid var(--cc-line);
+    border-radius: 0;
+    background: #fff;
+    box-shadow: none;
+    color: var(--cc-text);
+    text-decoration: none;
+}
+
+body.bms-comm-page #bms24-comm-root .bms24-comm-item:hover {
+    background: var(--cc-hover);
+    text-decoration: none;
+}
+
+body.bms-comm-page #bms24-comm-root .bms24-comm-item.is-active {
+    background: var(--cc-selected);
+    box-shadow: inset 3px 0 0 var(--cc-emerald);
+}
+
+body.bms-comm-page #bms24-comm-root .bms24-comm-ava {
+    display: grid;
+    place-items: center;
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    background: var(--cc-navy-800);
+    color: #fff;
+    font-size: 13px;
+    font-weight: 700;
+    line-height: 1;
+    text-transform: uppercase;
+}
+
+body.bms-comm-page #bms24-comm-root .bms24-comm-ava--group {
+    background: var(--cc-emerald);
+}
+
+body.bms-comm-page #bms24-comm-root .bms24-comm-ava--object {
+    border-radius: 10px;
+    background: var(--cc-blue);
+}
+
+body.bms-comm-page #bms24-comm-root .bms24-comm-ava--small {
+    width: 30px;
+    height: 30px;
+    font-size: 11px;
+}
+
+body.bms-comm-page #bms24-comm-root .bms24-comm-itembody {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 2px;
+    min-width: 0;
+}
+
+body.bms-comm-page #bms24-comm-root .bms24-comm-itemtitle {
+    display: block;
+    max-width: 100%;
+    overflow: hidden;
+    color: var(--cc-text);
+    font-size: 14px;
+    line-height: 1.35;
+    font-weight: 600;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+body.bms-comm-page #bms24-comm-root .bms24-comm-itemkind {
+    display: block;
+    max-width: 100%;
+    margin: 0;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    font-size: 12px;
+}
+
+body.bms-comm-page #bms24-comm-root .bms24-comm-itempreview {
+    display: -webkit-box;
+    max-width: 100%;
+    margin: 0;
+    overflow: hidden;
+    color: var(--cc-muted);
+    font-size: 13px;
+    line-height: 1.4;
+    white-space: normal;
+    overflow-wrap: anywhere;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+}
+
+body.bms-comm-page #bms24-comm-root .bms24-comm-item.has-unread .bms24-comm-itempreview {
+    color: var(--cc-text);
+}
+
+body.bms-comm-page #bms24-comm-root .bms24-comm-itemmeta {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 4px;
+    min-width: 0;
+    margin: 0;
+    overflow: visible;
+    color: var(--cc-muted);
+    font-size: 12px;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+}
+
+body.bms-comm-page #bms24-comm-root .bms24-comm-itemmeta time {
+    margin: 0;
+    color: var(--cc-muted);
+    font-size: 12px;
+}
+
+body.bms-comm-page #bms24-comm-root .bms24-comm-at {
+    color: var(--cc-blue);
+    font-weight: 800;
+    line-height: 1;
+}
+
+body.bms-comm-page #bms24-comm-root .bms24-comm-listempty {
+    padding: 24px 14px;
+}
+
+/* ---------- pills ---------- */
+
+body.bms-comm-page #bms24-comm-root .bms24-comm-pill {
+    display: inline-block;
+    padding: 1px 8px;
+    border-radius: 999px;
+    background: var(--cc-sky);
+    color: var(--cc-blue-ink);
+    font-size: 12px;
+    line-height: 1.5;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+body.bms-comm-page #bms24-comm-root .bms24-comm-pill--mint {
+    background: var(--cc-mint);
+    color: var(--cc-emerald);
+}
+
+body.bms-comm-page #bms24-comm-root .bms24-comm-pill--sand {
+    background: var(--cc-sand);
+    color: var(--cc-warning);
+}
+
+body.bms-comm-page #bms24-comm-root .bms24-comm-pill--violet {
+    background: #efe9f8;
+    color: var(--cc-violet);
+}
+
+/* ---------- conversation ---------- */
+
+body.bms-comm-page #bms24-comm-root .bms24-comm-conv {
+    position: static;
+    display: flex;
+    flex-direction: column;
+    width: auto;
+    min-width: 0;
+    height: auto;
+    min-height: 0;
+    max-height: none;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+    background: #fff;
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+}
+
+body.bms-comm-page #bms24-comm-root .bms24-comm-conv--empty {
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    background: #fafcfd;
+}
+
+body.bms-comm-page #bms24-comm-root .bms24-comm-convhead {
+    display: flex;
+    flex: 0 0 auto;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 12px;
+    margin: 0;
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--cc-line);
+    background: #fff;
+}
+
+body.bms-comm-page #bms24-comm-root .bms24-comm-back {
+    display: none;
+}
+
+body.bms-comm-page #bms24-comm-root .bms24-comm-convtitle {
+    flex: 1 1 260px;
+    min-width: 0;
+}
+
+body.bms-comm-page #bms24-comm-root .bms24-comm-convtitle h2 {
+    margin: 0;
+    overflow: hidden;
+    color: var(--cc-navy);
+    font-size: 16px;
+    line-height: 1.35;
+    font-weight: 700;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+body.bms-comm-page #bms24-comm-root .bms24-comm-kind {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+    margin-top: 2px;
+    color: var(--cc-muted);
+    font-size: 12px;
+}
+
+body.bms-comm-page #bms24-comm-root .bms24-comm-convactions {
+    display: flex;
+    flex: 0 0 auto;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+}
+
+body.bms-comm-page #bms24-comm-root .bms24-comm-openwrap {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    color: var(--cc-muted);
+}
+
+body.bms-comm-page #bms24-comm-root .bms24-comm-msgsearch {
+    display: flex;
+    flex: 0 0 auto;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    margin: 0;
+    padding: 8px 16px;
+    border-bottom: 1px solid var(--cc-line);
+}
+
+body.bms-comm-page #bms24-comm-root .bms24-comm-msgsearch.is-collapsed {
+    display: none;
+}
+
+body.bms-comm-page #bms24-comm-root .bms24-comm-msgsearch input[type="search"] {
+    flex: 1 1 220px;
+    min-width: 0;
+    min-height: 36px;
+    border: 1px solid var(--cc-border);
+    border-radius: var(--cc-radius-ctl);
+    font-size: 14px;
+}
+
+body.bms-comm-page #bms24-comm-root .bms-comm2-search-count {
+    padding: 6px 16px 0;
+    margin: 0;
+}
+
+body.bms-comm-page #bms24-comm-root .bms24-comm-feed {
+    display: flex;
+    flex: 1 1 auto;
+    flex-direction: column;
+    gap: 10px;
+    min-height: 0;
+    height: auto;
+    max-height: none;
+    margin: 0;
+    padding: 14px 16px;
+    overflow-x: hidden;
+    overflow-y: auto;
+    background: #fafcfd;
+}
+
+body.bms-comm-page #bms24-comm-root .bms24-comm-day {
+    align-self: center;
+    width: auto;
+    max-width: 90%;
+    margin: 0;
+    padding: 1px 10px;
+    border: 1px solid var(--cc-line);
+    border-radius: 999px;
+    background: #fff;
+    color: var(--cc-muted);
+    font-size: 12px;
+    text-align: center;
+}
+
+body.bms-comm-page #bms24-comm-root .bms24-comm-newline {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    background: none;
+    color: var(--cc-blue);
+    font-size: 12px;
+    font-weight: 700;
+}
+
+body.bms-comm-page #bms24-comm-root .bms24-comm-newline::before,
+body.bms-comm-page #bms24-comm-root .bms24-comm-newline::after {
+    content: "";
+    flex: 1;
+    height: 1px;
+    background: var(--cc-blue);
+    opacity: .4;
+}
+
+body.bms-comm-page #bms24-comm-root .bms24-comm-event {
+    display: inline-flex;
+    flex-wrap: wrap;
+    align-self: center;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    max-width: 92%;
+    padding: 2px 10px;
+    color: var(--cc-muted);
+    font-size: 12px;
+}
+
+body.bms-comm-page #bms24-comm-root .bms24-comm-event b {
+    color: var(--cc-text);
+    font-weight: 600;
+}
+
+body.bms-comm-page #bms24-comm-root .bms24-comm-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--cc-muted);
+}
+
+body.bms-comm-page #bms24-comm-root .bms24-comm-msg {
+    display: flex;
+    flex-direction: column;
+    align-self: stretch;
+    gap: 4px;
+    width: auto;
+    max-width: min(640px, 88%);
+    margin: 0;
+    padding: 8px 12px;
+    border: 1px solid var(--cc-line);
+    border-radius: 12px;
+    background: #fff;
+    overflow-wrap: anywhere;
+}
+
+body.bms-comm-page #bms24-comm-root .bms24-comm-msg.is-own {
+    align-self: flex-end;
+    margin: 0;
+    background: #eef7f2;
+    border-color: #d3ebdd;
+}
+
+body.bms-comm-page #bms24-comm-root .bms24-comm-who {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 8px;
+    margin: 0;
+    color: var(--cc-muted);
+    font-size: 13px;
+    font-weight: 400;
+}
+
+body.bms-comm-page #bms24-comm-root .bms24-comm-who b {
+    color: var(--cc-navy);
+    font-weight: 700;
+}
+
+body.bms-comm-page #bms24-comm-root .bms24-comm-tm {
+    color: var(--cc-muted);
+    font-size: 12px;
+    font-variant-numeric: tabular-nums;
+}
+
+body.bms-comm-page #bms24-comm-root .bms24-comm-body {
+    color: var(--cc-text);
+    font-size: 14px;
+    line-height: 1.45;
+    overflow-wrap: anywhere;
+}
+
+body.bms-comm-page #bms24-comm-root .bms24-comm-body p:last-child {
+    margin-bottom: 0;
+}
+
+body.bms-comm-page #bms24-comm-root .bms24-comm-msg.is-withdrawn .bms24-comm-body {
+    color: var(--cc-muted);
+    font-style: italic;
+}
+
+body.bms-comm-page #bms24-comm-root .bms24-comm-quote {
+    margin: 0;
+    padding: 4px 8px;
+    border-left: 3px solid var(--cc-blue);
+    border-radius: 6px;
+    background: var(--cc-sky);
+    color: var(--cc-muted);
+    font-size: 13px;
+}
+
+body.bms-comm-page #bms24-comm-root .bms24-comm-quote b {
+    display: block;
+    color: var(--cc-text);
+    font-size: 12px;
+}
+
+body.bms-comm-page #bms24-comm-root .bms24-comm-mentions {
+    color: var(--cc-blue);
+    font-size: 12px;
+}
+
+body.bms-comm-page #bms24-comm-root .bms24-comm-files {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    margin: 0;
+}
+
+body.bms-comm-page #bms24-comm-root .bms24-comm-file {
+    display: grid;
+    grid-template-columns: 18px minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 6px;
+    min-width: 0;
+    padding: 4px 8px;
+    border: 1px solid var(--cc-line);
+    border-radius: 8px;
+    background: #fff;
+    color: var(--cc-text);
+    font-size: 13px;
+}
+
+body.bms-comm-page #bms24-comm-root .bms24-comm-filenm {
+    min-width: 0;
+    overflow: hidden;
+    color: var(--cc-text);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    text-decoration: none;
+}
+
+body.bms-comm-page #bms24-comm-root a.bms24-comm-filenm:hover {
+    color: var(--cc-blue);
+    text-decoration: underline;
+}
+
+body.bms-comm-page #bms24-comm-root .bms24-comm-filesz {
+    color: var(--cc-muted);
+    font-size: 12px;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+}
+
+body.bms-comm-page #bms24-comm-root .bms24-comm-acts {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    gap: 4px;
+    margin: 0;
+}
+
+body.bms-comm-page #bms24-comm-root .bms24-comm-acts > a,
+body.bms-comm-page #bms24-comm-root .bms24-comm-acts > form > button,
+body.bms-comm-page #bms24-comm-root .bms24-comm-actdetails > summary {
+    display: inline-block;
+    margin: 0;
+    padding: 2px 6px;
+    border: 0;
+    border-radius: 6px;
+    background: transparent;
+    color: var(--cc-muted);
+    font-size: 12px;
+    font-weight: 500;
+    text-decoration: none;
+    list-style: none;
+    cursor: pointer;
+}
+
+body.bms-comm-page #bms24-comm-root .bms24-comm-acts > a:hover,
+body.bms-comm-page #bms24-comm-root .bms24-comm-acts > form > button:hover,
+body.bms-comm-page #bms24-comm-root .bms24-comm-actdetails > summary:hover {
+    background: var(--cc-hover);
+    color: var(--cc-text);
+}
+
+body.bms-comm-page #bms24-comm-root .bms24-comm-actdetails > summary::-webkit-details-marker {
+    display: none;
+}
+
+body.bms-comm-page #bms24-comm-root .bms24-comm-actdetails[open] {
+    flex-basis: 100%;
+}
+
+body.bms-comm-page #bms24-comm-root .bms24-comm-actdetails[open] form {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    margin-top: 6px;
+}
+
+body.bms-comm-page #bms24-comm-root .bms24-comm-actdetails[open] textarea {
+    flex: 1 1 100%;
+}
+
+body.bms-comm-page #bms24-comm-root .bms24-comm-confirm {
+    padding: 6px 8px;
+    border: 1px solid #ebc5c5;
+    border-radius: 8px;
+    background: var(--cc-danger-bg);
+    font-size: 13px;
+}
+
+body.bms-comm-page #bms24-comm-root .bms24-comm-confirm p {
+    flex-basis: 100%;
+    margin: 0;
+}
+
+body.bms-comm-page #bms24-comm-root .bms24-comm-inline {
+    display: inline;
+    margin: 0;
+}
+
+body.bms-comm-page #bms24-comm-root .bms24-comm-pager {
+    display: flex;
+    flex: 0 0 auto;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 6px 16px;
+    border-top: 1px solid var(--cc-line);
+}
+
+/* ---------- composer ---------- */
+
+body.bms-comm-page #bms24-comm-root .bms24-comm-compose {
+    position: static;
+    display: flex;
+    flex: 0 0 auto;
+    flex-direction: column;
+    gap: 8px;
+    max-height: none;
+    margin: 0;
+    padding: 10px 16px;
+    border-top: 1px solid var(--cc-line);
+    background: #fff;
+}
+
+body.bms-comm-page #bms24-comm-root .bms24-comm-compose textarea {
+    width: 100%;
+    min-height: 44px;
+    height: 58px;
+    max-height: 160px;
+    padding: 8px 10px;
+    border: 1px solid var(--cc-border);
+    border-radius: var(--cc-radius-ctl);
+    font-family: inherit;
+    font-size: 14px;
+    resize: vertical;
+}
+
+body.bms-comm-page #bms24-comm-root .bms24-comm-bar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+}
+
+body.bms-comm-page #bms24-comm-root .bms24-comm-tools {
+    display: flex;
+    flex: 1 1 auto;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+    min-width: 0;
+}
+
+body.bms-comm-page #bms24-comm-root .bms24-comm-filename {
+    min-width: 0;
+    overflow: hidden;
+    color: var(--cc-muted);
+    font-size: 12px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+body.bms-comm-page #bms24-comm-root .bms24-comm-mentionpicker {
+    position: relative;
+}
+
+body.bms-comm-page #bms24-comm-root .bms24-comm-mentionpicker > summary {
+    display: inline-grid;
+    place-items: center;
+    width: 34px;
+    height: 34px;
+    border: 1px solid transparent;
+    border-radius: var(--cc-radius-ctl);
+    color: var(--cc-blue);
+    font-weight: 800;
+    list-style: none;
+    cursor: pointer;
+}
+
+body.bms-comm-page #bms24-comm-root .bms24-comm-mentionpicker > summary:hover {
+    background: var(--cc-hover);
+}
+
+body.bms-comm-page #bms24-comm-root .bms24-comm-audience {
+    color: var(--cc-muted);
+    font-size: 12px;
+}
+
+body.bms-comm-page #bms24-comm-root .bms24-comm-sendwrap {
+    display: flex;
+    flex: 0 0 auto;
+    justify-content: flex-end;
+    padding: 0;
+}
+
+body.bms-comm-page #bms24-comm-root .bms24-comm-sendwrap .bms24-comm-btn {
+    min-width: 0;
+    min-height: 38px;
+    padding: 8px 16px;
+    font-size: 14px;
+}
+
+body.bms-comm-page #bms24-comm-root .bms24-comm-alert {
+    margin: 0;
+    padding: 8px 12px;
+    border-radius: 10px;
+    font-size: 13px;
+}
+
+body.bms-comm-page #bms24-comm-root .bms24-comm-alert--info {
+    border: 1px solid #c9e1f1;
+    background: var(--cc-sky);
+    color: var(--cc-navy);
+}
+
+/* ---------- details drawer: overlay on demand, never a permanent empty column ---------- */
+
+body.bms-comm-page #bms24-comm-root .bms24-comm-drawerwrap {
+    position: static;
+    width: 0;
+    min-width: 0;
+    height: 0;
+    margin: 0;
+    padding: 0;
+    overflow: visible;
+    border: 0;
+    background: transparent;
+    box-shadow: none;
+}
+
+body.bms-comm-page #bms24-comm-root .bms24-comm-drawer[open] {
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 6;
+    display: flex;
+    flex-direction: column;
+    width: min(360px, 100%);
+    height: auto;
+    overflow-y: auto;
+    background: #fff;
+    border-left: 1px solid var(--cc-border);
+    box-shadow: -12px 0 24px rgba(11, 43, 65, .12);
+}
+
+/* The native summary is only the accessible toggle target; legacy styles.css paints it as a sky bar. Keep it hidden. */
+body.bms-comm-page #bms24-comm-root .bms24-comm-drawer > summary {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    min-height: 0;
+    margin: -1px;
+    padding: 0;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    border: 0;
+    white-space: nowrap;
+    writing-mode: horizontal-tb;
+}
+
+body.bms-comm-page #bms24-comm-root .bms24-comm-drawerhead {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--cc-line);
+}
+
+body.bms-comm-page #bms24-comm-root .bms24-comm-drawerhead h2 {
+    margin: 0;
+    color: var(--cc-navy);
+    font-size: 16px;
+    font-weight: 700;
+}
+
+body.bms-comm-page #bms24-comm-root .bms24-comm-drawerhead .bms-comm3-context-close {
+    position: static;
+    display: inline-flex;
+    width: 34px;
+    height: 34px;
+    min-height: 34px;
+    padding: 0;
+    font-size: 20px;
+}
+
+body.bms-comm-page #bms24-comm-root .bms24-comm-drawerbody {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    padding: 14px 16px;
+    font-size: 13px;
+}
+
+body.bms-comm-page #bms24-comm-root .bms24-comm-drawerbody h3 {
+    margin: 0;
+    color: var(--cc-navy);
+    font-size: 14px;
+    font-weight: 700;
+}
+
+body.bms-comm-page #bms24-comm-root .bms24-comm-kv {
+    display: grid;
+    grid-template-columns: 110px minmax(0, 1fr);
+    gap: 4px 10px;
+    margin: 0;
+    font-size: 13px;
+}
+
+body.bms-comm-page #bms24-comm-root .bms24-comm-kv dt {
+    color: var(--cc-muted);
+    font-weight: 500;
+}
+
+body.bms-comm-page #bms24-comm-root .bms24-comm-kv dd {
+    margin: 0;
+    overflow-wrap: anywhere;
+}
+
+/* The object name has a visually hidden term, so it takes the whole row instead of shifting the columns. */
+body.bms-comm-page #bms24-comm-root .bms24-comm-kv .bms-comm2-context-name {
+    grid-column: 1 / -1;
+    color: var(--cc-navy);
+}
+
+body.bms-comm-page #bms24-comm-root .bms24-comm-person .bms-comm2-person-role {
+    display: block;
+}
+
+body.bms-comm-page #bms24-comm-root .bms24-comm-people {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+body.bms-comm-page #bms24-comm-root .bms24-comm-person {
+    display: grid;
+    grid-template-columns: 30px minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 8px;
+}
+
+body.bms-comm-page #bms24-comm-root .bms24-comm-addperson {
+    display: flex;
+    gap: 8px;
+}
+
+/* ---------- empty state ---------- */
+
+body.bms-comm-page #bms24-comm-root .bms24-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    max-width: 360px;
+    margin: auto;
+    padding: 24px;
+    color: var(--cc-muted);
+    text-align: center;
+}
+
+body.bms-comm-page #bms24-comm-root .bms24-empty strong {
+    color: var(--cc-text);
+    font-size: 16px;
+}
+
+body.bms-comm-page #bms24-comm-root .bms24-empty p {
+    margin: 0;
+}
+
+/* ---------- notifications ---------- */
+
+body.bms-comm-page #bms24-comm-root .bms24-comm-notifswrap {
+    display: block;
+    width: 100%;
+    margin: 0;
+    padding: 0;
+}
+
+body.bms-comm-page #bms24-comm-root .bms24-comm-notifs {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    margin: 0;
+    padding: 0;
+}
+
+body.bms-comm-page #bms24-comm-root .bms24-comm-ntools {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    margin: 0;
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--cc-line);
+}
+
+body.bms-comm-page #bms24-comm-root .bms24-comm-ntitle {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0 auto 0 0;
+    color: var(--cc-navy);
+    font-size: 16px;
+    line-height: 1.3;
+    font-weight: 700;
+}
+
+body.bms-comm-page #bms24-comm-root .bms24-comm-ntools .bms24-comm-chip {
+    min-height: 34px;
+    padding: 6px 12px;
+    font-size: 14px;
+}
+
+body.bms-comm-page #bms24-comm-root .bms24-comm-nlist {
+    position: static;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    width: auto;
+    height: auto;
+    min-height: 0;
+    max-height: none;
+    margin: 0;
+    padding: 8px 16px 16px;
+    overflow: visible;
+    border: 0;
+    background: #fff;
+    box-shadow: none;
+}
+
+body.bms-comm-page #bms24-comm-root .bms24-comm-nday {
+    margin: 12px 0 4px;
+    color: var(--cc-muted);
+    font-size: 12px;
+    line-height: 1.4;
+    font-weight: 700;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+}
+
+body.bms-comm-page #bms24-comm-root .bms24-comm-nrow {
+    display: grid;
+    grid-template-columns: 10px 34px minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 10px;
+    margin: 0;
+    padding: 8px 10px;
+    border: 1px solid transparent;
+    border-radius: 10px;
+    background: transparent;
+    box-shadow: none;
+}
+
+body.bms-comm-page #bms24-comm-root .bms24-comm-nrow:hover {
+    background: var(--cc-hover);
+}
+
+body.bms-comm-page #bms24-comm-root .bms24-comm-ud {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--cc-blue);
+}
+
+body.bms-comm-page #bms24-comm-root .bms24-comm-nrow.is-read .bms24-comm-ud {
+    background: transparent;
+}
+
+body.bms-comm-page #bms24-comm-root .bms24-comm-nic {
+    display: grid;
+    place-items: center;
+    width: 34px;
+    height: 34px;
+    border-radius: 10px;
+    background: var(--cc-sky);
+    color: var(--cc-blue);
+    font-size: 15px;
+    line-height: 1;
+}
+
+body.bms-comm-page #bms24-comm-root .bms24-comm-nic--mint {
+    background: var(--cc-mint);
+    color: var(--cc-emerald);
+}
+
+body.bms-comm-page #bms24-comm-root .bms24-comm-nic--sand {
+    background: var(--cc-sand);
+    color: var(--cc-warning);
+}
+
+body.bms-comm-page #bms24-comm-root .bms24-comm-ntx {
+    min-width: 0;
+    color: var(--cc-text);
+    font-size: 14px;
+}
+
+body.bms-comm-page #bms24-comm-root .bms24-comm-nh {
+    overflow-wrap: anywhere;
+}
+
+body.bms-comm-page #bms24-comm-root .bms24-comm-nh strong {
+    color: var(--cc-text);
+    font-weight: 600;
+}
+
+body.bms-comm-page #bms24-comm-root .bms24-comm-nrow.is-read .bms24-comm-nh strong {
+    color: var(--cc-muted);
+    font-weight: 500;
+}
+
+body.bms-comm-page #bms24-comm-root .bms24-comm-ns {
+    margin: 0;
+    color: var(--cc-muted);
+    font-size: 13px;
+    font-weight: 400;
+    overflow-wrap: anywhere;
+}
+
+body.bms-comm-page #bms24-comm-root .bms24-comm-ns a {
+    color: var(--cc-blue);
+    font-weight: 600;
+    text-decoration: none;
+}
+
+body.bms-comm-page #bms24-comm-root .bms24-comm-ns a:hover {
+    text-decoration: underline;
+}
+
+body.bms-comm-page #bms24-comm-root .bms24-comm-nrt {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 8px;
+    color: var(--cc-muted);
+    font-size: 12px;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+}
+
+body.bms-comm-page #bms24-comm-root .bms24-comm-nrt time {
+    margin: 0;
+    color: var(--cc-muted);
+    font-size: 12px;
+}
+
+body.bms-comm-page #bms24-comm-root .bms24-comm-readstate {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    color: var(--cc-muted);
+    font-size: 12px;
+}
+
+body.bms-comm-page #bms24-comm-root .bms24-comm-nempty {
+    padding: 24px 0;
+    font-size: 14px;
+    text-align: center;
+}
+
+/* ---------- tablet and phone ---------- */
+
+@media (max-width: 900px) {
+    /* Header: title + "New conversation" on the first row, full-width section tabs below (screen tablet-768). */
+    body.bms-comm-page #bms24-comm-root .bms24-cardactions {
+        display: contents;
+    }
+
+    body.bms-comm-page #bms24-comm-root .bms24-cardheadrow > div:first-child {
+        order: 1;
+        flex: 1 1 0;
+    }
+
+    body.bms-comm-page #bms24-comm-root .bms24-comm-new,
+    body.bms-comm-page #bms24-comm-root .bms24-comm-new[open] {
+        order: 2;
+    }
+
+    body.bms-comm-page #bms24-comm-root .bms24-comm-tabs {
+        order: 3;
+        flex: 1 1 100%;
+        width: 100%;
+    }
+
+    body.bms-comm-page #bms24-comm-root .bms24-comm-tab {
+        flex: 1 1 0;
+        min-width: 0;
+        padding: 6px 8px;
+    }
+
+    body.bms-comm-page #bms24-comm-root .bms24-comm-tab > span:first-child {
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    /* One pane at a time, as before: the list, or the open conversation with a back link. */
+    body.bms-comm-page #bms24-comm-root .bms24-comm-layout {
+        grid-template-columns: minmax(0, 1fr);
+        height: calc(100vh - 230px);
+        min-height: 520px;
+    }
+
+    body.bms-comm-page #bms24-comm-root .bms24-comm-side {
+        border-right: 0;
+    }
+
+    body.bms-comm-page #bms24-comm-root .bms24-comm-layout[data-has-thread="1"] .bms24-comm-side,
+    body.bms-comm-page #bms24-comm-root .bms24-comm-layout[data-has-thread="0"] .bms24-comm-conv {
+        display: none;
+    }
+
+    body.bms-comm-page #bms24-comm-root .bms24-comm-back {
+        display: inline-grid;
+        place-items: center;
+        flex: 0 0 34px;
+        width: 34px;
+        height: 34px;
+        border: 1px solid var(--cc-border);
+        border-radius: var(--cc-radius-ctl);
+        color: var(--cc-navy);
+        font-size: 20px;
+        line-height: 1;
+        text-decoration: none;
+    }
+
+    body.bms-comm-page #bms24-comm-root .bms24-comm-msg {
+        max-width: 92%;
+    }
+}
+
+@media (max-width: 600px) {
+    body.bms-comm-page #bms24-comm-root .bms24-cardheader {
+        padding: 10px;
+    }
+
+    body.bms-comm-page #bms24-comm-root .bms24-cardheader h2 {
+        font-size: 16px;
+    }
+
+    body.bms-comm-page #bms24-comm-root .bms24-comm-tab {
+        gap: 4px;
+        padding: 6px 4px;
+        font-size: 13px;
+    }
+
+    body.bms-comm-page #bms24-comm-root .bms24-comm-convtitle {
+        flex-basis: 0;
+    }
+
+    body.bms-comm-page #bms24-comm-root .bms24-comm-detailsbtn {
+        width: 36px;
+        min-width: 36px;
+        padding: 0;
+    }
+
+    body.bms-comm-page #bms24-comm-root .bms24-comm-detailsbtn .bms24-comm-btnlabel {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        overflow: hidden;
+        clip: rect(0 0 0 0);
+        white-space: nowrap;
+    }
+
+    body.bms-comm-page #bms24-comm-root .bms24-comm-nrow {
+        grid-template-columns: 10px 34px minmax(0, 1fr);
+    }
+
+    body.bms-comm-page #bms24-comm-root .bms24-comm-nrt {
+        grid-column: 3;
+        justify-content: flex-start;
+        white-space: normal;
+    }
+
+    body.bms-comm-page #bms24-comm-root .bms24-comm-ntools .bms24-comm-btn,
+    body.bms-comm-page #bms24-comm-root .bms24-comm-nrow .bms24-comm-btn {
+        white-space: normal;
+        text-align: left;
+    }
+}
+
+@media (max-width: 420px) {
+    /* Phones: the button keeps its full label; it wraps under the title instead of shrinking to an icon. */
+    body.bms-comm-page #bms24-comm-root .bms24-cardheadrow > div:first-child {
+        flex-basis: 100%;
+    }
+
+    /* Size each tab to its label and start a new row when the tabs cannot all fit. */
+    body.bms-comm-page #bms24-comm-root .bms24-comm-tabs {
+        flex-wrap: wrap;
+    }
+
+    body.bms-comm-page #bms24-comm-root .bms24-comm-tab {
+        flex-basis: auto;
+        flex-direction: column;
+        gap: 2px;
+        min-height: 44px;
+        padding: 5px 2px;
+        font-size: 12.5px;
+    }
+
+    body.bms-comm-page #bms24-comm-root .bms24-comm-tab > span:first-child {
+        max-width: 100%;
+        overflow: visible;
+        white-space: normal;
+        overflow-wrap: anywhere;
+        text-align: center;
+    }
+}
+
+/* ---------- day feed -> report draft (own submitted task results of one day) ---------- */
+
+body.bms-comm-page #bms24-comm-root .bms24-comm-dayfeedwrap {
+    display: block;
+    width: 100%;
+    margin: 0;
+    padding: 0;
+}
+
+body.bms-comm-page #bms24-comm-root .bms24-comm-dfdate {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+    margin: 0;
+}
+
+body.bms-comm-page #bms24-comm-root .bms24-comm-dfdate label {
+    margin: 0;
+    color: var(--cc-muted);
+    font-size: 13px;
+    font-weight: 600;
+}
+
+body.bms-comm-page #bms24-comm-root .bms24-comm-dfdate input[type="date"] {
+    width: auto;
+    min-width: 0;
+    min-height: 34px;
+    padding: 4px 8px;
+    border: 1px solid var(--cc-border);
+    border-radius: var(--cc-radius-ctl);
+    font-family: inherit;
+    font-size: 14px;
+}
+
+body.bms-comm-page #bms24-comm-root .bms24-comm-dfbody p {
+    margin: 0;
+}
+
+body.bms-comm-page #bms24-comm-root .bms24-comm-dfintro {
+    margin: 0;
+    padding: 10px 16px 0;
+    font-size: 13px;
+}
+
+body.bms-comm-page #bms24-comm-root .bms24-comm-dayfeed > .bms24-comm-alert {
+    margin: 10px 16px 0;
+}
+
+body.bms-comm-page #bms24-comm-root .bms24-comm-dflist {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin: 0;
+    padding: 12px 16px 16px;
+}
+
+body.bms-comm-page #bms24-comm-root .bms24-comm-dfrow {
+    display: grid;
+    grid-template-columns: 52px minmax(0, 1fr);
+    gap: 10px;
+    margin: 0;
+    padding: 10px 12px;
+    border: 1px solid var(--cc-line);
+    border-radius: 12px;
+    background: #fff;
+}
+
+body.bms-comm-page #bms24-comm-root .bms24-comm-dftime {
+    padding-top: 2px;
+    color: var(--cc-muted);
+    font-size: 13px;
+    font-variant-numeric: tabular-nums;
+}
+
+body.bms-comm-page #bms24-comm-root .bms24-comm-dfbody {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    min-width: 0;
+}
+
+body.bms-comm-page #bms24-comm-root .bms24-comm-dftitle {
+    margin: 0;
+    font-size: 15px;
+    font-weight: 700;
+    line-height: 1.35;
+    overflow-wrap: anywhere;
+}
+
+body.bms-comm-page #bms24-comm-root .bms24-comm-dftitle a {
+    color: var(--cc-navy);
+    text-decoration: none;
+}
+
+body.bms-comm-page #bms24-comm-root .bms24-comm-dftitle a:hover {
+    color: var(--cc-blue);
+    text-decoration: underline;
+}
+
+body.bms-comm-page #bms24-comm-root .bms24-comm-dfstate {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+body.bms-comm-page #bms24-comm-root .bms24-comm-dfresult {
+    margin: 0;
+    color: var(--cc-text);
+    font-size: 14px;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+}
+
+body.bms-comm-page #bms24-comm-root .bms24-comm-dfacts {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+}
+
+body.bms-comm-page #bms24-comm-root .bms24-comm-dayfeed .bms24-empty {
+    margin: 8px 0;
+}
+
+body.bms-comm-page #bms24-comm-root .bms24-comm-dayfeed .bms24-comm-pager {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 0 16px 16px;
+}
+
+@media (max-width: 600px) {
+    body.bms-comm-page #bms24-comm-root .bms24-comm-dfrow {
+        grid-template-columns: minmax(0, 1fr);
+        gap: 4px;
+    }
+
+    body.bms-comm-page #bms24-comm-root .bms24-comm-dfdate {
+        flex: 1 1 100%;
+    }
+
+    body.bms-comm-page #bms24-comm-root .bms24-comm-dfdate input[type="date"] {
+        flex: 1 1 140px;
+    }
+
+    body.bms-comm-page #bms24-comm-root .bms24-comm-dfacts .bms24-comm-btn,
+    body.bms-comm-page #bms24-comm-root .bms24-comm-dfacts form {
+        flex: 1 1 auto;
+    }
+
+    body.bms-comm-page #bms24-comm-root .bms24-comm-dfacts form .bms24-comm-btn {
+        width: 100%;
+    }
+}

@@ -30,13 +30,15 @@
 Когда PR готов:
 1. CI проверяет исходный SHA, выполняет обязательные проверки и единожды собирает **install ZIP** с корнем `kbacompany/` (для `local_kbacompany`). ZIP включает только разрешённые файлы этого плагина, без исходного `config.php`, секретов и `moodledata`.
 2. Генерирует `manifest.json` с `commit_sha`, plugin version, file list и SHA256 каждого файла; `SHA256SUMS` с SHA256 самого ZIP и manifest. После сборки артефакт НЕ модифицируется.
-3. Использует существующие `tools/build_install.py`, `tools/acceptance/pr90/package.py`, `tools/verify_install.py` или их проверенный аналог. Не заводить вторую независимую сборочную цепочку.
+3. Установочный ZIP берётся из `Release disposable Moodle acceptance → package` в PR задачи. Артефакт `release-install-<run>-a<attempt>` включает `candidate-install.zip`, `manifest.json` и `SHA256SUMS`. Манифест фиксирует точный head, base и попытку сборки.
 4. CI artifacts из Actions временны. **Принятый** ZIP/manifest/SHA256 сохранять как неизменяемые release assets в GitHub Releases со ссылкой на commit и приёмку; не копировать бинарные ZIP в каждую ветку Git. Draft/падающий CI не публиковать как «готовый релиз».
 5. Установка на test/prod сверяет **тот же ZIP hash**, не только одинаковые названия или plugin version. Если исходный код меняется — это новый SHA, новый пакет, новая приёмка. Никаких «мелких правок прямо в установленном ZIP».
 
 Для установки использовать пакет `release-install-*` из workflow **Release disposable Moodle acceptance** того же PR. В его манифесте `source.pr_head` и `source.checkout_sha` должны совпадать с проверенным коммитом PR, а базовая версия должна соответствовать установленному релизу. Сквозную репетицию установки на двух СУБД запускает этот же workflow для веток `release/*`. Выпуски с миграциями продолжают проходить эту репетицию и проверки восстановления.
 
 Форма квитанции: `release-id | source-sha | zip-sha256 | plugin-version | test-install-time | test-result | production-install-time | production-result`.
+
+Для обычного PR FAST проверяет исходники, а STANDARD добавляет целевые PHPUnit и проверки безопасности. Изменения БД, прав, файлов, интеграций, CI и неопознанные изменения получают FULL с двумя браузерными прогонами и историческими обновлениями БД. Ветки `release/*` продолжают репетицию установки и восстановления. Публикация идёт через приёмку TEST с тем же ZIP.
 
 ## 5. Постоянный test (обязательная приёмка)
 

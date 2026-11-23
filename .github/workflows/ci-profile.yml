@@ -1,0 +1,22 @@
+name: BMS24 change risk
+on:
+  workflow_call:
+    outputs:
+      level:
+        value: ${{ jobs.classify.outputs.level }}
+permissions:
+  contents: read
+jobs:
+  classify:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 5
+    outputs:
+      level: ${{ steps.classify.outputs.profile }}
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false, fetch-depth: 0}
+      - id: classify
+        env:
+          BASE: ${{ github.event.pull_request.base.sha }}
+          HEAD: ${{ github.event.pull_request.head.sha }}
+        run: python3 tools/ci/classify_change.py --base "$BASE" --head "$HEAD" --github-output "$GITHUB_OUTPUT"

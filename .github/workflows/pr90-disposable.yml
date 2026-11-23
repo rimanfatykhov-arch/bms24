@@ -2,13 +2,15 @@ name: Release disposable Moodle acceptance
 on:
   pull_request:
     branches: [main]
-    paths: ['local/kbacompany/**', 'tools/acceptance/**', '.github/workflows/pr90-disposable.yml', 'tools/build_install.py']
+    paths: ['local/kbacompany/**', 'tools/acceptance/**', '.github/workflows/pr90-disposable.yml', 'tools/build_install.py', 'tools/verify_install.py']
 permissions:
   contents: read
 jobs:
   package:
     runs-on: ubuntu-22.04
     timeout-minutes: 10
+    outputs:
+      artifact: ${{ steps.artifact.outputs.name }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -28,9 +30,11 @@ jobs:
           PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
           PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
         run: python tools/acceptance/pr90/package.py '${{ runner.temp }}/release-package'
+      - id: artifact
+        run: printf 'name=release-install-%s-a%s\n' "$GITHUB_RUN_ID" "$GITHUB_RUN_ATTEMPT" >> "$GITHUB_OUTPUT"
       - uses: actions/upload-artifact@v4
         with:
-          name: release-install-${{ github.run_id }}-a${{ github.run_attempt }}
+          name: ${{ steps.artifact.outputs.name }}
           path: ${{ runner.temp }}/release-package/
           if-no-files-found: error
           retention-days: 30
@@ -74,7 +78,7 @@ jobs:
         with: {python-version: '3.12'}
       - uses: actions/download-artifact@v4
         with:
-          name: release-install-${{ github.run_id }}-a${{ github.run_attempt }}
+          name: ${{ needs.package.outputs.artifact }}
           path: ${{ runner.temp }}/release-package
       - run: |
           python -m pip install --quiet playwright==1.49.1

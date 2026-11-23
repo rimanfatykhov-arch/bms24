@@ -1,15 +1,16 @@
 {{!
-    "New conversation" primary action with a native disclosure form (works without JavaScript).
+    "New conversation" primary action with a native disclosure form (works without JavaScript): type as a
+    segmented radio control (same threadtype field), group title only for groups, participants.
     Posts to the canonical communication service with sesskey. Render-only.
 }}
 <details class="bms24-comm-new bms-comm2-new" id="bms-comm2-start-conversation">
 <summary class="bms24-comm-btn bms24-comm-btn--primary bms-comm2-new-trigger"><span aria-hidden="true">+</span> {{label}}</summary>
 <form method="post" class="bms24-comm-newform bms-comm2-new-form">
 {{#hidden}}<input type="hidden" name="{{name}}" value="{{value}}">{{/hidden}}
-<label for="bms_comm2_type">{{typelabel}}</label>
-<select id="bms_comm2_type" name="threadtype" class="form-control">{{#types}}<option value="{{value}}"{{#selected}} selected{{/selected}}>{{label}}</option>{{/types}}</select>
-<label for="bms_comm2_title">{{titlelabel}}</label>
-<input type="text" id="bms_comm2_title" name="title" class="form-control" maxlength="255" placeholder="{{titlehint}}">
+<h3 class="bms24-comm-newhead">{{label}}</h3>
+<fieldset class="bms24-comm-seg bms-comm2-new-type"><legend class="sr-only">{{typelabel}}</legend>{{#types}}<input type="radio" name="threadtype" id="bms_comm2_type_{{value}}" value="{{value}}"{{#selected}} checked{{/selected}}><label for="bms_comm2_type_{{value}}">{{label}}</label>{{/types}}</fieldset>
+<div class="bms24-comm-newtitle"><label for="bms_comm2_title">{{titlelabel}}</label>
+<input type="text" id="bms_comm2_title" name="title" class="form-control" maxlength="255" placeholder="{{titlehint}}"></div>
 <label for="bms_comm2_participants">{{peoplelabel}}</label>
 <select id="bms_comm2_participants" name="participants[]" class="form-control" multiple required>{{#people}}<option value="{{value}}">{{label}}</option>{{/people}}</select>
 <small class="bms24-comm-muted">{{peoplehelp}}</small>

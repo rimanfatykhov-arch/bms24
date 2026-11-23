@@ -11,12 +11,15 @@ import sys
 
 ROOT = Path(__file__).resolve().parents[1]
 WORKFLOW = ROOT / '.github/workflows/bms24-ci.yml'
+PACKAGE_WORKFLOW = ROOT / '.github/workflows/pr90-disposable.yml'
 
 class WorkflowHold(ValueError):
     pass
 
 
-def validate(text: str) -> None:
+def validate(text: str, package: str | None = None) -> None:
+    if package is None:
+        package = PACKAGE_WORKFLOW.read_text(encoding='utf-8')
     # Security-critical contracts for this read-only CI pipeline only.
     required = [
         (r'(?m)^on:\s*$', 'missing triggers'),
@@ -24,14 +27,24 @@ def validate(text: str) -> None:
         (r'(?m)^\s{2}push:\s*$', 'missing push trigger'),
         (r'(?m)^permissions:\s*\n\s{2}contents:\s*read\s*$', 'workflow must be read-only'),
         (r'(?m)^\s+- name: Build and verify deterministic candidate\s*$', 'missing ZIP verification step'),
-        (r'(?m)^\s+- name: Upload candidate artifact \(PR and main\)\s*$', 'missing PR artifact upload'),
-        (r"(?m)^\s+if: github.event_name == 'pull_request' \|\| \(github.event_name == 'push' && github.ref == 'refs/heads/main'\)\s*$", 'unsafe candidate publish condition'),
-        (r'(?m)^\s+uses: actions/upload-artifact@v4\s*$', 'missing artifact upload action'),
-        (r'(?m)^\s+retention-days:\s*14\s*$', 'missing artifact retention'),
     ]
     for expression, msg in required:
         if not re.search(expression, text):
             raise WorkflowHold(msg)
+    if 'actions/upload-artifact@' in text:
+        raise WorkflowHold('the static workflow must not publish a second candidate')
+    package_job = package.split('\n  rehearsal:', 1)[0]
+    for expression in (
+        r'(?m)^\s{2}pull_request:\s*$',
+        r'(?m)^\s{4}branches: \[main\]\s*$',
+        r'(?m)^permissions:\s*\n\s{2}contents:\s*read\s*$',
+        r'ref: \$\{\{ github\.event\.pull_request\.head\.sha \}\}',
+        r'python tools/acceptance/pr90/package\.py',
+        r'uses: actions/upload-artifact@v4',
+        r'retention-days: 30',
+    ):
+        if not re.search(expression, package_job):
+            raise WorkflowHold('missing exact-PR-head packaging or retained upload')
     # Reject risky triggers, token write access, external privilege escalation,
     # and any shell command that would deploy or modify a production server.
     forbidden = [
@@ -44,9 +57,9 @@ def validate(text: str) -> None:
         r'(?im)^\s*(?:-\s*)?(?:run:\s*)?(?:sudo\s+)?(?:kubectl|helm|terraform|ansible-playbook)\s+',
     ]
     for expression in forbidden:
-        if re.search(expression, text):
+        if re.search(expression, text) or re.search(expression, package):
             raise WorkflowHold('privileged or deployment workflow content is not allowed')
-    if not re.search(r'--expected-version 2026111601', text):
+    if not re.search(r'--expected-version 2026112301', text):
         raise WorkflowHold('wrong expected package version')
     if not re.search(r'tools/test_business_dates_1876.py', text):
         raise WorkflowHold('missing regression for calendar dates')

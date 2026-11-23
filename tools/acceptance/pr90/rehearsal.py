@@ -8,6 +8,8 @@ if BASE!='9736452cd91145f3bfd6467cfecfca1ba7ceadce':raise RuntimeError('baseline
 INTEGRATION_BASE='fbf36ed350732b46a232a56a216b3d78c733da34'
 BASELINE_VALIDATOR='f7b4c09e69b6fd10c293394b49c136c6dc200104'
 BASELINE_TREE='314bdd6bfecbe860168fc0d1875aeab429a1d787'
+PUBLISHED_R1R2='927a319c9d058cc9da8c1ddc94d45c97a6ef24fb'
+PUBLISHED_R1R2_PLUGIN_TREE='8b1d4d9ae9c22dc3f70ff4715ffd0863ab476bac'
 BASELINE_CHECKS=json.loads((cand/'docs/reconcile/r1r2-baseline-browser-checkset.json').read_text())['checks']
 if origins.get('baseline_validator')!=BASELINE_VALIDATOR:raise RuntimeError('baseline validator pin changed; independent review required')
 if os.environ.get('GITHUB_ACTIONS')!='true' or runner not in root.parents or os.environ.get('DBHOST')!='127.0.0.1':
@@ -104,6 +106,49 @@ def upgrade_probe(tag,site=None):
     require(isinstance(evidence.get('rows'),dict) and evidence['rows'],'domain evidence missing')
     (public/(tag+'-upgrade.json')).write_text(json.dumps(evidence,indent=1))
     return evidence
+
+def reproduce_r1r2_baseline(before):
+    from daily_reports_upgrade_policy import require, upgraded
+    plugin = core / 'local/kbacompany'
+    source = root / 'published-r1r2'
+    require(git('rev-parse', PUBLISHED_R1R2 + ':local/kbacompany') == PUBLISHED_R1R2_PLUGIN_TREE,
+            'published R1/R2 plugin tree mismatch')
+    cmd(['git', '-C', cand, 'worktree', 'add', '--detach', source, PUBLISHED_R1R2], stdout=subprocess.DEVNULL)
+    shutil.rmtree(plugin)
+    shutil.copytree(source / 'local/kbacompany', plugin)
+    cmd(['php', core / 'admin/cli/upgrade.php', '--non-interactive'], stdout=subprocess.DEVNULL)
+    after = upgrade_probe('published-r1r2-upgraded')
+    upgraded(before, after)
+    require(after['version'] == 2026111601, 'expected the published R1/R2 version')
+
+    # Preserve a submitted report from the second synthetic company, outside the candidate browser scenarios.
+    fixture = json.loads((ev / 'actors.private.json').read_text())
+    company = fixture['companies']['B']['uuid']
+    employee = str(fixture['actors']['EB']['userid'])
+    reviewer = str(fixture['actors']['MB']['userid'])
+    cmd(['php', scripts / 'ci_daily_reports.php', core, 'setup', company, employee, reviewer], stdout=subprocess.DEVNULL)
+    seed = r"""
+define('CLI_SCRIPT', true);
+require $argv[1];
+$employee = (int)$argv[3];
+\core\session\manager::set_user(\core_user::get_user($employee, '*', MUST_EXIST));
+$today = \local_kbacompany\local\business_date_service::day();
+$day = (new DateTimeImmutable($today))->modify('-2 days')->format('Y-m-d');
+\local_kbacompany\local\daily_report_store_service::submit(
+    $argv[2], $employee, $day, \core\uuid::generate(), 0, ['done' => 'Synthetic pre-upgrade report']
+);
+set_config('dailyreports_enabled', 0, 'local_kbacompany');
+"""
+    cmd(['php', '-r', seed, str(core / 'config.php'), company, employee], stdout=subprocess.DEVNULL)
+    snapshot = upgrade_probe('published-r1r2-before-candidate')
+    require(snapshot['enabled'] is False
+            and snapshot['rows']['local_kbacompany_dreport']['count'] > 0
+            and snapshot['rows']['local_kbacompany_dreportver']['count'] > 0,
+            'published R1/R2 baseline did not contain the submitted synthetic report')
+    report['upgrade_baseline'] = {'source': PUBLISHED_R1R2, 'plugin_tree': PUBLISHED_R1R2_PLUGIN_TREE,
+                                  'version': snapshot['version'], 'seeded_report': True}
+    report['steps']['published_r1r2_baseline_with_report'] = 'PASS'
+    return snapshot
 
 def fresh_upgrade_schema(upgrade):
     from daily_reports_upgrade_policy import fresh_equal
@@ -349,8 +394,11 @@ try:
     report['steps']['baseline_writes']='PASS'
     stop()
     elapsed('baseline_reproduction')
-    before=state(); snapshot=root/'snapshot'; snapshot.mkdir()
     upgrade_before=upgrade_probe('published120-before')
+    adr0010 = report['components']['local/kbacompany']['version'] == 2026112301
+    if adr0010:
+        upgrade_before = reproduce_r1r2_baseline(upgrade_before)
+    before=state(); snapshot=root/'snapshot'; snapshot.mkdir()
     baseline_urls=(ev/'p02-urls.json').read_bytes()
     shutil.copytree(core,snapshot/'code'); shutil.copytree(root/'data',snapshot/'data')
     dbargs=['-h127.0.0.1','-P'+env['DBPORT'],'-u'+env['DBUSER']]
@@ -364,7 +412,8 @@ try:
     cmd(['php',core/'admin/cli/upgrade.php','--non-interactive'],stdout=subprocess.DEVNULL)
     unchanged(upgrade_after,upgrade_probe('candidate-upgrade-repeat'))
     fresh_upgrade_schema(upgrade_after)
-    report['steps']['published120_upgrade_repeat_fresh_schema']='PASS'
+    upgrade_step = 'published_r1r2_upgrade_repeat_fresh_schema' if adr0010 else 'published120_upgrade_repeat_fresh_schema'
+    report['steps'][upgrade_step] = 'PASS'
     try:smoke('candidate');report['steps']['candidate_install_smoke']='PASS'
     except Exception as e:report['steps']['candidate_install_smoke']='FAIL: '+str(e)[:160]
     elapsed('install_and_smoke')

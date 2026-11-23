@@ -957,6 +957,94 @@ class ContractTest(unittest.TestCase):
         self.assertTrue(all(v['status'] == 'FAIL' for v in c.evaluate(c.daily_reports_flow_checks(None, None)).values()))
 
     @staticmethod
+    def day_feed_obs():
+        rows = []
+        for shell, width in c.DAY_FEED_CASES:
+            tasks = [{'task': 't%d-%s' % (n, shell), 'event': 100 + n, 'title': 'Task %d' % n, 'result': 'Result %d %s' % (n, shell)}
+                     for n in (1, 2)]
+            pre, edit = 'Hand text ' + shell, 'Unsaved edit ' + shell
+            b1, b2 = ['«%s»: %s' % (t['title'], t['result']) for t in tasks]
+            first = pre + '\n' + b1; second = first + '\n' + edit + '\n' + b2
+            links = sorted(t['task'] for t in tasks)
+            rows.append({
+                'shell': shell, 'width': width, 'day': '2026-11-17', 'today': '2026-11-23', 'empty_day': '2026-10-14',
+                'tasks': tasks, 'pre': pre, 'edit': edit, 'default_day': '2026-11-23', 'tab_active': 1,
+                'items': [{'id': t['event'], 'time': '1%d:00' % n, 'title': t['title'], 'text': t['title'] + '\n' + t['result'],
+                           'task_href': 'http://127.0.0.1:8080/local/kbacompany/tasks.php?uuid=A&task=' + t['task'], 'add': 1}
+                          for n, t in enumerate(tasks)],
+                'empty': {'items': 0, 'state': 1},
+                'landing': {'url': 'http://127.0.0.1:8080/local/kbacompany/daily_report.php?uuid=A&day=2026-11-17&notice=resultadded',
+                            'done': first, 'notice': 1},
+                'after_add': {'report': {'status': 'draft'}, 'draft': {'done': first, 'revision': 2, 'links': [tasks[0]['task']]}, 'sent': [],
+                              'added_events': [tasks[0]['event']]},
+                'after_repeat_form': {'report': {'status': 'draft'}, 'draft': {'done': first + '\n' + edit, 'revision': 3,
+                                      'links': [tasks[0]['task']]}, 'sent': []},
+                'after_second': {'report': {'status': 'draft'}, 'draft': {'done': second, 'revision': 4, 'links': links}, 'sent': [],
+                                 'added_events': [t['event'] for t in tasks]},
+                'after_repeat_feed': {'report': {'status': 'draft'}, 'draft': {'done': second, 'revision': 4, 'links': links}, 'sent': [],
+                                      'added_events': [t['event'] for t in tasks]},
+                'after_negatives': {'report': {'status': 'draft'}, 'draft': {'done': second, 'revision': 4, 'links': links}, 'sent': []},
+                'after_submit': {'report': {'status': 'submitted'}, 'draft': None,
+                                 'sent': [{'done': second, 'revision': 4, 'links': links}]},
+                'after_submit_feed': {'add': 0, 'items': 2, 'sent_note': 1},
+                'forged_http': 200, 'foreign_http': {'company_a': 200, 'company_b': 200}, 'foreign_feed_items': 0,
+                'hscroll_feed': True, 'hscroll_report': True, 'browser_events': list(ABORTED), 'server_errors': []})
+        return {'status': 'PASS', 'cases': rows}
+
+    def test_day_feed_valid_passes_and_mutations_fail(self):
+        obs = self.day_feed_obs()
+        res = c.evaluate(c.day_feed_checks(obs, 0))
+        self.assertEqual({k: 'PASS' for k in res}, {k: v['status'] for k, v in res.items()}, res)
+        self.assertTrue(set(res) <= set(c.required_check_names()))
+
+        def fails(check, mutate):
+            o = copy.deepcopy(obs); mutate(o)
+            r = c.evaluate(c.day_feed_checks(o, 0))
+            self.assertEqual('FAIL', r[check]['status'], (check, r[check]))
+        view, add, dup, iso, send = ('day_feed_today_date_and_empty_day', 'day_feed_add_keeps_text_and_links_task',
+                                     'day_feed_repeated_click_adds_nothing', 'day_feed_foreign_and_forged_denied',
+                                     'day_feed_send_layout_and_browser_errors')
+        fails(view, lambda o: o['cases'][0].update(default_day='2026-11-22'))
+        fails(view, lambda o: o['cases'][1].update(tab_active=0))
+        fails(view, lambda o: o['cases'][0]['items'].pop())
+        fails(view, lambda o: o['cases'][1]['items'].append(dict(o['cases'][1]['items'][0], id=999)))
+        fails(view, lambda o: o['cases'][0]['items'][0].update(text='Task 1'))
+        fails(view, lambda o: o['cases'][0]['items'][1].update(task_href='http://127.0.0.1:8080/local/kbacompany/tasks.php'))
+        fails(view, lambda o: o['cases'][1]['items'][0].update(add=0))
+        fails(view, lambda o: o['cases'][0].update(empty={'items': 1, 'state': 0}))
+        fails(add, lambda o: o['cases'][0]['after_add']['draft'].update(done=o['cases'][0]['tasks'][0]['result']))
+        fails(add, lambda o: o['cases'][1]['after_add']['draft'].update(links=[]))
+        fails(add, lambda o: o['cases'][0]['landing'].update(url='http://127.0.0.1:8080/local/kbacompany/communication_center.php'))
+        fails(add, lambda o: o['cases'][1]['landing'].update(notice=0))
+        fails(add, lambda o: o['cases'][0]['after_second']['draft'].update(
+            done=o['cases'][0]['after_second']['draft']['done'].replace('\n' + o['cases'][0]['edit'], '')))
+        fails(dup, lambda o: o['cases'][0]['after_repeat_form']['draft'].update(
+            done=o['cases'][0]['after_repeat_form']['draft']['done'] + '\n' + o['cases'][0]['tasks'][0]['result']))
+        fails(dup, lambda o: o['cases'][1]['after_repeat_feed']['draft'].update(revision=5))
+        fails(dup, lambda o: o['cases'][0]['after_repeat_feed']['added_events'].append(o['cases'][0]['tasks'][0]['event']))
+        fails(dup, lambda o: o['cases'][1]['after_add'].update(added_events=[]))
+        fails(dup, lambda o: o['cases'][0]['after_repeat_form']['draft'].update(done=o['cases'][0]['after_add']['draft']['done']))
+        fails(iso, lambda o: o['cases'][0].update(forged_http=303))
+        fails(iso, lambda o: o['cases'][1]['foreign_http'].update(company_b=500))
+        fails(iso, lambda o: o['cases'][0]['foreign_http'].pop('company_a'))
+        fails(iso, lambda o: o['cases'][1].update(foreign_feed_items=2))
+        fails(iso, lambda o: o['cases'][0]['after_negatives']['draft'].update(revision=5))
+        fails(send, lambda o: o['cases'][0]['after_submit']['report'].update(status='draft'))
+        fails(send, lambda o: o['cases'][1]['after_submit']['sent'].append(dict(o['cases'][1]['after_submit']['sent'][0])))
+        fails(send, lambda o: o['cases'][0]['after_submit_feed'].update(add=2))
+        fails(send, lambda o: o['cases'][1].update(hscroll_feed=False))
+        fails(send, lambda o: o['cases'][0].update(hscroll_report=False))
+        fails(send, lambda o: o['cases'][0]['browser_events'].append({'source': 'pageerror', 'name': 'Error', 'message': 'x'}))
+        fails(send, lambda o: o['cases'][1]['server_errors'].append({'url': 'x', 'status': 500}))
+        for mutate, code in ((lambda o: o['cases'].pop(), 0), (lambda o: o['cases'].reverse(), 0),
+                             (lambda o: o['cases'][0]['tasks'].pop(), 0), (lambda o: o.update(error='boom'), 0),
+                             (lambda o: o.update(status='FAIL'), 0), (lambda o: None, 1)):
+            o = copy.deepcopy(obs); mutate(o)
+            r = c.evaluate(c.day_feed_checks(o, code))
+            self.assertTrue(all(v['status'] == 'FAIL' for v in r.values()), r)
+        self.assertTrue(all(v['status'] == 'FAIL' for v in c.evaluate(c.day_feed_checks(None, None)).values()))
+
+    @staticmethod
     def plan_denied(label, n):
         """Real Moodle refusals (#135 BROWSER evidence): RA may not open the plan, EB is outside the company."""
         post_reason = PD_REASONS['plan_unavailable' if label == 'RA' else 'company_unavailable']
@@ -1110,6 +1198,415 @@ class ContractTest(unittest.TestCase):
             r = c.evaluate(c.plan_discussion_checks(o, code))
             self.assertTrue(all(x['status'] == 'FAIL' for x in r.values()), r)
         self.assertTrue(all(x['status'] == 'FAIL' for x in c.evaluate(c.plan_discussion_checks(None, None)).values()))
+    # ---- adaptive navigation (adaptive_nav.py)
+    def nav_obs(self):
+        def box(x, y, w, h):
+            return {'x': x, 'y': y, 'w': w, 'h': h, 'r': x + w, 'b': y + h}
+
+        def groups(open_all=False, items=(1, 6, 3)):
+            labels = ('Главное', 'Рабочее пространство', 'Управление')
+            return [{'label': l, 'open': open_all or i < 2, 'summary': box(12, 60 + i * 50, 300, 44), 'items': n,
+                     'visible': n if (open_all or i < 2) else 0, 'current': i == 1} for i, (l, n) in enumerate(zip(labels, items))]
+
+        def labels():
+            return [{'text': t, 'broken': [], 'count': None} for t in ('Задачи', 'Отчёты', 'Боевой план', 'Календарь')] + \
+                [{'text': 'Коммуникационный центр 3', 'broken': [], 'count': {'visible': True, 'text': '3', 'clipped': False, 'inside': True}}]
+
+        def targets(n=6):
+            return [dict(box(12, 60 + i * 48, 280, 44), text='item %d' % i) for i in range(n)]
+
+        def layout(r, open_=False):
+            narrow = r['shell'] == 'owned' and r['js'] and r['width'] <= c.ADAPTIVE_NAV_BREAKPOINT
+            owned = r['shell'] == 'owned'
+            wide_owned = owned and not narrow
+            lay = {'owned': owned, 'inner': r['width'], 'innerh': r['height'], 'client': r['width'], 'scroll': r['width'], 'scrolly': 400,
+                   'main': box(0, 74, r['width'], 2000) if narrow else box(258, 74, r['width'] - 258, 2000),
+                   'sidebar_visible': wide_owned, 'summary_visible': False, 'drawer_visible': open_, 'drawer_focusables': 9 if open_ else 0,
+                   'menu_roles': 0, 'button': None, 'html_overflow': 'hidden' if open_ else 'visible', 'body_overflow': 'visible',
+                   'main_inert': open_, 'backdrop_visible': open_, 'active': 'menubutton' if narrow else 'BODY', 'sidebar': None}
+            if owned:
+                lay['button'] = {'tag': 'BUTTON', 'type': 'button', 'visible': narrow, 'w': 92 if narrow else 0, 'h': 44 if narrow else 0,
+                                 'x': 10, 'y': 15, 'r': 102, 'b': 59, 'expanded': 'true' if open_ else 'false', 'controls': 'bms24-drawer',
+                                 'controls_exists': True, 'name': 'Меню', 'hidden_attr': not r['js']}
+            if wide_owned:
+                lay['sidebar'] = {'groups': groups(), 'labels': labels(), 'targets': targets(), 'outside': [], 'current_visible': True}
+            return lay
+
+        def drawer(r, open_all=False):
+            w = r['width'] if r['width'] < 360 else min(360, r['width'] - 48)
+            return {'visible': True, 'box': box(0, 0, w, r['height']), 'inner': r['width'], 'innerh': r['height'], 'role': 'dialog',
+                    'modal': 'true', 'name': 'Навигация BMS24', 'id': 'bms24-drawer',
+                    'backdrop': dict(box(0, 0, r['width'], r['height']), visible=True),
+                    'close': dict(box(w - 54, 10, 44, 44), visible=True, name='Закрыть меню', tag='BUTTON'),
+                    'focus_inside': True, 'expanded': 'true', 'current': {'visible': True, 'open': True, 'path': 'tasks.php'},
+                    'groups': groups(open_all), 'labels': labels(), 'targets': targets(), 'outside': [],
+                    'scrollers': [{'cls': 'bms24-drawerbody', 'sw': w - 24, 'cw': w - 24, 'sh': 900, 'ch': r['height'] - 70,
+                                   'ox': 'hidden', 'oy': 'auto'}],
+                    'doc_scroll': r['width'], 'client': r['width'], 'html_overflow': 'hidden',
+                    'main': box(0, 74, r['width'], 2000), 'main_inert': True, 'sidebar_inert': True, 'focusables': 9, 'menu_roles': 0}
+
+        def closed(r, method):
+            return {'method': method, 'drawer_visible': False, 'backdrop_visible': False, 'expanded': 'false', 'active': 'menubutton',
+                    'scrolly': 400, 'expected_scrolly': 400, 'html_overflow': 'visible', 'main_inert': False,
+                    'field': c.ADAPTIVE_NAV_MARKER, 'drawer_focusables': 0}
+
+        cases = []
+        for cid, shell, actor, lang, width, height, dpr, js in c.ADAPTIVE_NAV_CASES:
+            r = {'id': cid, 'shell': shell, 'actor': actor, 'lang': lang, 'width': width, 'height': height, 'dpr': dpr, 'js': js,
+                 'language_installed': True, 'http': 200, 'browser_events': []}
+            r['layout'] = layout(r)
+            if js:
+                r['server_errors'] = []
+            narrow = shell == 'owned' and js and width <= c.ADAPTIVE_NAV_BREAKPOINT
+            if narrow:
+                d = drawer(r)
+                r.update({'field_present': True, 'before_open': layout(r), 'open_method': 'button', 'drawer': d,
+                          'stress': {'done': True, 'outside': [], 'box': box(12, 300, d['box']['w'] - 24, 66), 'drawer': d['box'],
+                                     'report': {'text': c.ADAPTIVE_NAV_STRESS['label'] + ' 9999', 'broken': [],
+                                                'count': {'visible': True, 'text': '9999', 'clipped': False, 'inside': True}}},
+                          'tab_forward': [True] * 12, 'tab_backward': [True] * 4, 'wheel': {'before': 400, 'after': 400},
+                          'groups_all_open': groups(True, (1, 6, 3) if actor == 'MA' else (1, 4, 1)),
+                          'last_item': {'found': True, 'text': 'Настройки', 'top': height - 60, 'bottom': height - 16, 'innerh': height,
+                                        'hit': True, 'doc_scroll': width, 'client': width},
+                          'close_escape': closed(r, 'escape'), 'close_button': closed(r, 'button'),
+                          'backdrop_exposed': width >= 360, 'after_close': layout(r)})
+                if width >= 360:
+                    r['close_backdrop'] = closed(r, 'backdrop')
+            if cid in ('owned-375-ru', 'owned-861-ru'):
+                nw, ww = (375, 1440) if cid == 'owned-375-ru' else (860, 861)
+                wide = dict(r, width=ww, shell='owned'); nar = dict(r, width=nw)
+                r['resize'] = {'opened': 'button', 'open': True, 'to_wide': layout(wide), 'back_narrow': layout(nar), 'reopen': 'button',
+                               'reopen_visible': True, 'reclosed': layout(nar)}
+            if cid == 'owned-375-ru':
+                r['bell_handoff'] = {'open_before_menu': True, 'closed_after_menu': True}
+                r['routes'] = [{'target': t, 'opened': 'button', 'links': 1, 'visible': True, 'http': 200, 'path': t, 'opened_after': 'button',
+                                'current': {'visible': True, 'open': True, 'path': t}, 'doc_scroll': 375, 'client': 375}
+                               for t in c.ADAPTIVE_NAV_ROUTES]
+            if not js:
+                if width < 861:
+                    d = drawer(r)
+                    d.update(role=None, modal=None, backdrop=None, close=None, box=box(10, 74, 355, 600))
+                    r.update(summary_visible=True, drawer=d, last_item={'found': True, 'hit': True, 'top': 600, 'bottom': 644})
+                    r['layout']['summary_visible'] = True
+            cases.append(r)
+        return {'status': 'PASS', 'company': 'a1b2c3d4-0000-4000-8000-00000000000a', 'cases': cases}
+
+    def nav_case(self, obs, cid):
+        return next(r for r in obs['cases'] if r['id'] == cid)
+
+    def test_adaptive_nav_genuine_run_passes(self):
+        res = c.evaluate(c.adaptive_nav_checks(self.nav_obs(), 0))
+        self.assertEqual({k: 'PASS' for k in res}, {k: v['status'] for k, v in res.items()})
+        self.assertEqual(16, len(res))
+        for k in res:
+            self.assertIn(k, c.required_check_names())
+
+    def test_adaptive_nav_regressions_fail(self):
+        n = self.nav_case
+
+        def set_(cid, path, value):
+            def go(o):
+                t = n(o, cid)
+                for key in path[:-1]:
+                    t = t[key]
+                t[path[-1]] = value
+            return go
+
+        def stress(o):
+            n(o, 'owned-390-en')['stress']['report']['broken'] = ['подразделениями']
+        cases = [
+            # The pre-fix markup: no button, the old <details> summary used to open the menu.
+            ('adaptive_nav_menu_button_accessible', set_('owned-375-ru', ['before_open', 'button'], None)),
+            ('adaptive_nav_menu_button_accessible', set_('owned-375-ru', ['open_method'], 'summary')),
+            ('adaptive_nav_menu_button_accessible', set_('owned-768-ru', ['before_open', 'button', 'controls'], None)),
+            ('adaptive_nav_menu_button_accessible', set_('owned-320-ru', ['before_open', 'button', 'h'], 40)),
+            ('adaptive_nav_menu_button_accessible', set_('owned-1440-en', ['layout', 'menu_roles'], 1)),
+            ('adaptive_nav_desktop_sidebar_unchanged', set_('owned-1024-ru', ['layout', 'drawer_focusables'], 3)),
+            ('adaptive_nav_desktop_sidebar_unchanged', set_('owned-861-ru', ['layout', 'sidebar_visible'], False)),
+            ('adaptive_nav_drawer_modal_and_focus_trap', set_('owned-375-ru', ['drawer', 'role'], None)),
+            ('adaptive_nav_drawer_modal_and_focus_trap', set_('owned-375-ru', ['bell_handoff', 'closed_after_menu'], False)),
+            ('adaptive_nav_drawer_modal_and_focus_trap', set_('owned-860-ru', ['tab_forward'], [True, True, False, True])),
+            ('adaptive_nav_drawer_modal_and_focus_trap', set_('owned-390x480-ru', ['drawer', 'box', 'b'], 300)),
+            ('adaptive_nav_drawer_modal_and_focus_trap', set_('owned-844x390-ru', ['drawer', 'main_inert'], False)),
+            ('adaptive_nav_drawer_modal_and_focus_trap', set_('owned-zoom200-ru', ['drawer', 'close'], None)),
+            ('adaptive_nav_no_horizontal_overflow', set_('owned-320-ru', ['drawer', 'scrollers'], [{'sw': 340, 'cw': 296}])),
+            ('adaptive_nav_no_horizontal_overflow', set_('owned-375-ru', ['layout', 'scroll'], 391)),
+            ('adaptive_nav_no_horizontal_overflow', set_('owned-768-ru', ['drawer', 'outside'], ['bms24-count'])),
+            ('adaptive_nav_no_horizontal_overflow', set_('owned-390-en', ['stress', 'outside'], ['bms24-navlabel'])),
+            ('adaptive_nav_no_horizontal_overflow', set_('legacy-375-ru', ['layout', 'scroll'], 420)),
+            ('adaptive_nav_groups_open_and_current', set_('owned-375-ru', ['drawer', 'current', 'open'], False)),
+            ('adaptive_nav_groups_open_and_current', set_('owned-768-ru', ['drawer', 'groups', 1, 'visible'], 0)),
+            ('adaptive_nav_groups_open_and_current', set_('owned-860-ru', ['groups_all_open', 2, 'visible'], 1)),
+            ('adaptive_nav_labels_wrap_and_counters', stress),
+            ('adaptive_nav_labels_wrap_and_counters', set_('owned-375-ru', ['drawer', 'labels', 4, 'count', 'clipped'], True)),
+            ('adaptive_nav_labels_wrap_and_counters', set_('owned-1440-en', ['layout', 'sidebar', 'labels', 0, 'broken'], ['Задачи'])),
+            ('adaptive_nav_tap_targets_44', set_('owned-375-ru', ['drawer', 'targets', 2, 'h'], 40)),
+            ('adaptive_nav_tap_targets_44', set_('owned-1440-en', ['layout', 'sidebar', 'targets', 0, 'h'], 37)),
+            ('adaptive_nav_scroll_lock_page_stable', set_('owned-375-ru', ['wheel', 'after'], 1000)),
+            ('adaptive_nav_scroll_lock_page_stable', set_('owned-768-ru', ['drawer', 'html_overflow'], 'auto')),
+            ('adaptive_nav_scroll_lock_page_stable', set_('owned-860-ru', ['drawer', 'client'], 845)),
+            ('adaptive_nav_close_escape_button_backdrop', set_('owned-375-ru', ['close_escape', 'active'], 'BODY')),
+            ('adaptive_nav_close_escape_button_backdrop', set_('owned-390-en', ['close_button', 'scrolly'], 0)),
+            ('adaptive_nav_close_escape_button_backdrop', set_('owned-768-ru', ['close_backdrop', 'backdrop_visible'], True)),
+            ('adaptive_nav_close_escape_button_backdrop', set_('owned-320-ru', ['close_escape', 'field'], '')),
+            ('adaptive_nav_close_escape_button_backdrop', set_('owned-860-ru', ['backdrop_exposed'], False)),
+            ('adaptive_nav_close_escape_button_backdrop', set_('owned-390-en', ['close_button', 'html_overflow'], 'hidden')),
+            ('adaptive_nav_last_item_reachable', set_('owned-390x480-ru', ['last_item', 'hit'], False)),
+            ('adaptive_nav_last_item_reachable', set_('owned-844x390-ru', ['last_item', 'bottom'], 420)),
+            ('adaptive_nav_resize_no_stale_overlay', set_('owned-375-ru', ['resize', 'to_wide', 'backdrop_visible'], True)),
+            ('adaptive_nav_resize_no_stale_overlay', set_('owned-375-ru', ['resize', 'to_wide', 'html_overflow'], 'hidden')),
+            ('adaptive_nav_resize_no_stale_overlay', set_('owned-861-ru', ['resize', 'back_narrow', 'button', 'expanded'], 'true')),
+            ('adaptive_nav_route_transitions', set_('owned-375-ru', ['routes', 2, 'path'], 'tasks.php')),
+            ('adaptive_nav_route_transitions', set_('owned-375-ru', ['routes', 1, 'current', 'path'], 'tasks.php')),
+            ('adaptive_nav_shorter_employee_menu', set_('owned-375-employee-ru', ['groups_all_open'], [])),
+            ('adaptive_nav_no_js_fallback', set_('nojs-375-ru', ['summary_visible'], False)),
+            ('adaptive_nav_no_js_fallback', set_('nojs-375-ru', ['drawer', 'scrollers'], [{'sw': 500, 'cw': 355}])),
+            ('adaptive_nav_no_js_fallback', set_('nojs-1440-en', ['layout', 'sidebar_visible'], False)),
+            ('adaptive_nav_legacy_shell_unchanged', set_('legacy-375-ru', ['layout', 'html_overflow'], 'hidden')),
+            ('adaptive_nav_no_browser_errors', set_('owned-768-ru', ['browser_events'], [{'source': 'pageerror', 'name': 'Error', 'message': 'x'}])),
+            ('adaptive_nav_no_browser_errors', set_('owned-1024-ru', ['server_errors'], [{'url': 'x', 'status': 500}])),
+        ]
+        for name, mutate in cases:
+            with self.subTest(check=name):
+                obs = self.nav_obs(); mutate(obs)
+                self.assertIn(name, failed(c.evaluate(c.adaptive_nav_checks(obs, 0))))
+
+    def test_adaptive_nav_incomplete_runs_fail_every_check(self):
+        base = self.nav_obs()
+        for mutate, code in ((lambda o: None, 1), (lambda o: None, None), (lambda o: o.update(status='FAIL'), 0),
+                             (lambda o: o.update(error='boom'), 0), (lambda o: o['cases'].pop(), 0),
+                             (lambda o: o['cases'][3].update(error='TimeoutError'), 0),
+                             (lambda o: o['cases'][0].update(language_installed=False), 0),
+                             (lambda o: o['cases'][5]['layout'].update(owned=False), 0),
+                             (lambda o: o['cases'].reverse(), 0)):
+            o = copy.deepcopy(base); mutate(o)
+            r = c.evaluate(c.adaptive_nav_checks(o, code))
+            self.assertTrue(all(v['status'] == 'FAIL' for v in r.values()), r)
+        self.assertTrue(all(v['status'] == 'FAIL' for v in c.evaluate(c.adaptive_nav_checks(None, None)).values()))
+
+    @staticmethod
+    def bell_obs():
+        """A genuine-looking notification_bell.py result: every bell check must PASS on it."""
+        center = 'http://127.0.0.1:8080/local/kbacompany/communication_center.php'
+
+        def bell(ids, unread, plays=0, sound='off', read=None, state='ready', text='', bells=1):
+            return {'ids': list(ids), 'read': read or {i: '0' for i in ids}, 'links': {}, 'badge': str(unread) if unread else '',
+                    'unread': str(unread), 'label': 'Unread notifications: %d' % unread if unread else 'Notifications',
+                    'title': 'Unread notifications: %d' % unread if unread else 'Notifications', 'state': state,
+                    'sound': sound, 'text': text, 'plays': plays, 'bells': bells, 'moodlebells': 0, 'headings': 0}
+
+        def srv(unread, pref='0', **read):
+            return {'unread': unread, 'read': dict({'n0': 0}, **read), 'pref': pref}
+
+        def metrics(open_, active='other', **kw):
+            m = {'open': open_, 'expanded': 'true' if open_ else 'false', 'left': 8, 'right': 312, 'top': 120, 'bottom': 600,
+                 'vw': 320, 'vh': 640, 'overflowy': 'auto', 'position': 'fixed', 'scroll': 900, 'client': 480, 'maintop': 160,
+                 'docheight': 1400, 'hscroll': False, 'active': active, 'allhref': center + '?uuid=A&tab=notifications'}
+            m.update(kw)
+            return m
+
+        def cnt(signals, confirms, plays):
+            return {'signals': signals, 'confirms': confirms, 'plays': plays, 'sound': '1', 'epoch': 7}
+
+        def run(*plays):
+            rows = [{'play': x, 't0': 10.0 + i * 0.001, 't1': 10.05 + i * 0.01, 'pid': 1000 + i, 'late': 0.001}
+                    for i, x in enumerate(plays)]
+            return {'results': rows, 'plays': list(plays), 'inflight_at_first_end': len(plays)}
+
+        def width(w):
+            return {'width': w, 'toggle_visible': True, 'closed': metrics(False), 'open_keyboard': metrics(True, 'panel'),
+                    'tab_inside': 'inside', 'after_escape': metrics(False, 'toggle'), 'focus_outline': ['solid', 3.0],
+                    'open_click': metrics(True), 'after_outside': metrics(False)}
+        a_ids = ['n0', 'n1', 'n5', 'n6', 'n9', 'n11', 'b0', 'b1', 'b2']
+        steps = {
+            'initial': {'bell': bell(['n0'], 1), 'server': srv(1), 'server_before': srv(1), 'n0': 'n0', 'nb': 'nb'},
+            'panel': {'metrics': metrics(True, 'panel'), 'bell': bell(['n0'], 1), 'server': srv(1)},
+            'new_sound_off': {'n1': 'n1', 'bell': bell(['n1', 'n0'], 2), 'server': srv(2, n1=0)},
+            'enable': {'plays_after_enable': 1, 'plays_after_test': 2, 'bell': bell(['n1', 'n0'], 2, 2, 'on'),
+                       'server': srv(2, '1', n1=0), 'other_account_pref': '0'},
+            'repeat_poll': {'bell': bell(['n1', 'n0'], 2, 0, 'on')},
+            'center_lists_new': {'n1_form': 1, 'title_shown': 1},
+            'count_only': {'bell': bell(['n1', 'n0'], 1, 0, 'on', {'n1': '1', 'n0': '0'}), 'server': srv(1, '1', n1=1), 'n1': 'n1'},
+            'batch': {'ids': ['b0', 'b1', 'b2'], 'bell': bell(['b2', 'b1', 'b0', 'n1', 'n0'], 4, 1, 'on'), 'server': srv(4, '1')},
+            'tabs': {'n5': 'n5', 'plays': [1, 0], 'bells': [bell(['n5'], 5, 1, 'on'), bell(['n5'], 5, 0, 'on')],
+                     'storage': ['available', 'available']},
+            'tabs_nostorage': {'n6': 'n6', 'plays': [0, 1], 'bells': [bell(['n6', 'n5'], 6, 0, 'on'), bell(['n6', 'n5'], 6, 1, 'on')],
+                               'storage': ['SecurityError', 'SecurityError'], 'other_context': bell(['n6', 'n5'], 6, 0, 'on'),
+                               'events': [{'source': 'console', 'type': 'error', 'text': c.BELL_PLANTED_STORAGE_ECHO, 'url': ''}] * 2},
+            'late_claim': {
+                'off': {'id': 'r1', 'pref_before_release': '0', 'answers': [{'ok': True, 'user': 5, 'play': True}],
+                        'before': cnt(3, 2, 0), 'after': cnt(3, 2, 0), 'bell': bell(['r1'], 9, 0, 'off')},
+                'off_on': {'id': 'r2', 'pref_before_release': '1', 'answers': [{'ok': True, 'user': 5, 'play': True}],
+                           'before': cnt(3, 3, 1), 'after': cnt(3, 4, 2), 'bell': bell(['r2', 'r1'], 10, 2, 'on')},
+                'normal': {'id': 'r3', 'before': cnt(3, 4, 2), 'after': cnt(4, 4, 3), 'bell': bell(['r3', 'r2'], 11, 3, 'on')}},
+            'claims': {
+                'dual': {'userid': 99, 'companies': ['A', 'B']},
+                'cross': {'a': {'uuid': 'xa', 'id': 101}, 'b': {'uuid': 'xb', 'id': 102}, 'first_b': run(True),
+                          'then_a': run(True), 'again_a': run(False), 'a_in_b': run(False)},
+                'order': {'c1': {'uuid': 'o1', 'id': 201}, 'c2': {'uuid': 'o2', 'id': 202}, 'first_c2': run(True), 'then_c1': run(True)},
+                'parallel_same': dict(run(True, *[False] * 7), id={'uuid': 'p1', 'id': 301}),
+                'parallel_companies': dict(run(False, True, False, False, False, False, True, False), a={'id': 401}, b={'id': 402}),
+                'batch': {'ids': ['b1', 'b2', 'b3'], 'first': run(True), 'repeat': run(False, False, False, False)}},
+            'reload': {'bell': bell(['n5'], 5, 0, 'on')},
+            'reconnect': {'ids': ['o0', 'o1'], 'polls_while_offline': 0, 'bell': bell(['o1', 'o0', 'n5'], 7, 1, 'on')},
+            'autoplay_refused': {'n8': 'n8', 'blocked': bell(['n8'], 8, 1, 'blocked'), 'after_test': bell(['n8'], 8, 2, 'on')},
+            'csrf': {'wrong_http': 200, 'wrong': {'ok': False, 'state': 'sesskey', 'user': 5}, 'get_http': 200, 'get_ok': True,
+                     'pref': '1'},
+            'disable': {'n9': 'n9', 'bell': bell(['n9', 'n8'], 9, 0, 'off'), 'pref': '0'},
+            'thread_open': {'uuid': 'tn', 'thread': 'T', 'bell': bell(['tn', 'n9'], 10, 1, 'on'),
+                            'href': center + '?uuid=A&thread=T', 'http': 200, 'landed': center + '?uuid=A&thread=T'},
+            'thread_revoked': {'uuid': 'tn', 'thread': 'T', 'active': 0, 'bell': bell(['n9'], 9, 0, 'on', text='Notifications'),
+                               'server': srv(9, '1'), 'title': 'BMS bell private x-t'},
+            'company_revoked': {'n11': 'n11', 'revoked': bell([], 0, 0, 'on', state='unavailable'),
+                                'revoked_server': {'unread': None, 'read': {}, 'pref': '1'},
+                                'restored': bell(['n11', 'n9'], 10, 0, 'on'), 'server': srv(10, '1')},
+            'isolation': {'eb_bell': bell(['nb'], 1), 'eb_server': {'unread': 1, 'read': {'nb': 0}, 'pref': '0'},
+                          'foreign_http': 200, 'foreign': {'ok': False, 'state': 'unavailable', 'user': 7},
+                          'ma_http': 200, 'ma': {'ok': True, 'items': [{'id': 'm1'}]}, 'ma_bell': bell(['m1'], 1),
+                          'ea_ids': a_ids, 'ea_bell': bell(['n11', 'n9'], 10, 0, 'on'), 'nb': 'nb'},
+            'legacy': {'bells': 0},
+            'account_switch': {'bell': bell([], 0, 0, 'on', state='unavailable'), 'n12': 'n12', 'more_polls': 0,
+                               'ra_bell_count': 1},
+        }
+        return {'status': 'PASS', 'companyuuid': 'A', 'companyb': 'B', 'steps': steps,
+                'widths': [width(w) for w in c.BELL_WIDTHS], 'browser_events': list(ABORTED), 'server_errors': []}
+
+    @staticmethod
+    def run_(*plays):
+        rows = [{'play': x, 't0': 10.0, 't1': 10.05, 'pid': 2000 + i, 'late': 0.0} for i, x in enumerate(plays)]
+        return {'results': rows, 'plays': list(plays), 'inflight_at_first_end': len(plays)}
+
+    def test_notification_bell_valid_passes_and_mutations_fail(self):
+        obs = self.bell_obs()
+        res = c.evaluate(c.notification_bell_checks(obs, 0))
+        self.assertEqual({k: 'PASS' for k in res}, {k: v['status'] for k, v in res.items()}, res)
+
+        def fails(check, mutate):
+            o = copy.deepcopy(obs); mutate(o)
+            r = c.evaluate(c.notification_bell_checks(o, 0))
+            self.assertEqual('FAIL', r[check]['status'], (check, r[check]))
+        st = lambda o, name: o['steps'][name]  # noqa: E731
+        ne = 'notification_bell_new_event_center_and_bell'
+        fails(ne, lambda o: st(o, 'new_sound_off')['bell']['ids'].remove('n1'))
+        fails(ne, lambda o: st(o, 'new_sound_off')['bell'].update(unread='1'))        # badge != server count
+        fails(ne, lambda o: st(o, 'new_sound_off')['bell'].update(label='3'))         # tooltip without unit/count
+        fails(ne, lambda o: st(o, 'center_lists_new').update(n1_form=0))
+        fails(ne, lambda o: st(o, 'panel')['metrics'].update(allhref='http://127.0.0.1:8080/local/kbacompany/communication_center.php?uuid=A'))
+        fails(ne, lambda o: st(o, 'thread_open').update(href='https://example.invalid/local/kbacompany/communication_center.php?uuid=A&thread=T'))
+        fails(ne, lambda o: st(o, 'thread_open').update(http=500))
+        fails(ne, lambda o: st(o, 'thread_open').update(landed='http://127.0.0.1:8080/login/index.php'))
+        rr = 'notification_bell_read_rules_unchanged'
+        fails(rr, lambda o: st(o, 'initial')['server'].update(read={'n0': 1}))      # loading marked read
+        fails(rr, lambda o: st(o, 'panel')['server'].update(read={'n0': 1}))        # opening marked read
+        fails(rr, lambda o: st(o, 'count_only')['server']['read'].update(n1=0))     # Center mark-read broken
+        fails(rr, lambda o: st(o, 'count_only')['bell']['read'].update(n1='0'))
+        iso = 'notification_bell_isolation_roles_and_revocation'
+        fails(iso, lambda o: st(o, 'isolation')['eb_bell']['ids'].append('n1'))       # A row in B
+        fails(iso, lambda o: st(o, 'isolation')['ea_bell']['ids'].append('nb'))       # B row in A
+        fails(iso, lambda o: st(o, 'isolation').update(foreign={'ok': True, 'items': []}))
+        fails(iso, lambda o: st(o, 'isolation')['foreign'].update(unread=3))          # count leaked in refusal
+        fails(iso, lambda o: st(o, 'isolation')['ma']['items'].append({'id': 'n0'}))  # manager reads EA's row
+        fails(iso, lambda o: st(o, 'thread_revoked')['bell']['ids'].append('tn'))
+        fails(iso, lambda o: st(o, 'thread_revoked')['bell'].update(text='BMS bell private x-t'))
+        fails(iso, lambda o: st(o, 'thread_revoked')['bell'].update(unread='10', badge='10'))
+        fails(iso, lambda o: st(o, 'company_revoked')['revoked']['ids'].append('n11'))
+        fails(iso, lambda o: st(o, 'company_revoked')['revoked'].update(badge='3'))
+        fails(iso, lambda o: st(o, 'company_revoked')['revoked'].update(plays=1))
+        fails(iso, lambda o: st(o, 'company_revoked')['restored'].update(plays=1))
+        fails(iso, lambda o: st(o, 'account_switch')['bell']['ids'].append('n12'))
+        fails(iso, lambda o: st(o, 'account_switch').update(more_polls=2))
+        snd = 'notification_bell_sound_signal_rules'
+        fails(snd, lambda o: st(o, 'initial')['bell'].update(plays=1))
+        fails(snd, lambda o: st(o, 'new_sound_off')['bell'].update(plays=1))
+        fails(snd, lambda o: st(o, 'repeat_poll')['bell'].update(plays=1))
+        fails(snd, lambda o: st(o, 'count_only')['bell'].update(plays=1))
+        fails(snd, lambda o: st(o, 'batch')['bell'].update(plays=3))
+        fails(snd, lambda o: st(o, 'batch')['bell'].update(plays=0))
+        fails(snd, lambda o: st(o, 'tabs').update(plays=[1, 1]))
+        fails(snd, lambda o: st(o, 'tabs').update(storage=['SecurityError', 'available']))
+        fails(snd, lambda o: o['steps'].pop('tabs_nostorage'))
+        fails(snd, lambda o: st(o, 'tabs_nostorage').update(plays=[1, 1]))           # duplicate without storage (finding C)
+        fails(snd, lambda o: st(o, 'tabs_nostorage').update(plays=[0, 0]))           # silenced instead of one signal
+        fails(snd, lambda o: st(o, 'tabs_nostorage').update(storage=['available', 'SecurityError']))  # storage not blocked
+        fails(snd, lambda o: st(o, 'tabs_nostorage')['bells'][1].update(state='unavailable'))
+        fails(snd, lambda o: st(o, 'tabs_nostorage')['bells'][0]['ids'].remove('n6'))
+        fails(snd, lambda o: st(o, 'tabs_nostorage')['other_context'].update(plays=1))
+        # Review finding 1: a late claim answer after the sound was turned off (or off and on).
+        fails(snd, lambda o: st(o, 'late_claim')['off']['after'].update(signals=4, plays=1))
+        fails(snd, lambda o: st(o, 'late_claim')['off_on']['after'].update(signals=4, plays=3))
+        fails(snd, lambda o: st(o, 'late_claim')['off']['after'].update(plays=1))              # unexplained play()
+        fails(snd, lambda o: st(o, 'late_claim')['off']['answers'][0].update(play=False))      # race not reproduced
+        fails(snd, lambda o: st(o, 'late_claim')['off'].update(answers=[]))
+        fails(snd, lambda o: st(o, 'late_claim')['off'].update(pref_before_release='1'))      # not turned off in time
+        fails(snd, lambda o: st(o, 'late_claim')['normal']['after'].update(signals=3, plays=2))  # normal signal lost
+        fails(snd, lambda o: st(o, 'late_claim').pop('off_on'))
+        # Review finding 2: dedup by identity, real concurrency.
+        fails(snd, lambda o: st(o, 'claims')['cross'].update(then_a=self.run_(False)))
+        fails(snd, lambda o: st(o, 'claims')['order'].update(then_c1=self.run_(False)))
+        fails(snd, lambda o: st(o, 'claims')['cross'].update(again_a=self.run_(True)))
+        fails(snd, lambda o: st(o, 'claims')['cross'].update(a_in_b=self.run_(True)))
+        fails(snd, lambda o: st(o, 'claims')['cross']['a'].update(id=103))                     # fixture order not proven
+        fails(snd, lambda o: st(o, 'claims')['parallel_same']['plays'].__setitem__(1, True))
+        fails(snd, lambda o: st(o, 'claims')['parallel_same'].update(inflight_at_first_end=1))  # sequential, not parallel
+        fails(snd, lambda o: [r.update(pid=1) for r in st(o, 'claims')['parallel_same']['results']])
+        fails(snd, lambda o: st(o, 'claims')['parallel_companies']['plays'].__setitem__(6, False))
+        fails(snd, lambda o: st(o, 'claims')['parallel_same']['plays'].pop())
+        fails(snd, lambda o: st(o, 'claims')['batch']['repeat']['plays'].__setitem__(2, True))
+        fails(snd, lambda o: st(o, 'claims')['dual'].update(companies=['A']))
+        fails(snd, lambda o: o['steps'].pop('claims'))
+        fails(snd, lambda o: st(o, 'reload')['bell'].update(plays=1))
+        fails(snd, lambda o: st(o, 'reconnect').update(polls_while_offline=1))
+        fails(snd, lambda o: st(o, 'reconnect')['bell'].update(plays=2))
+        fails(snd, lambda o: st(o, 'disable')['bell'].update(plays=1))
+        pref = 'notification_bell_sound_preference'
+        fails(pref, lambda o: st(o, 'initial')['bell'].update(sound='on'))
+        fails(pref, lambda o: st(o, 'initial')['server'].update(pref='1'))
+        fails(pref, lambda o: st(o, 'enable').update(plays_after_enable=0))
+        fails(pref, lambda o: st(o, 'enable')['server'].update(pref='0'))
+        fails(pref, lambda o: st(o, 'enable').update(other_account_pref='1'))
+        fails(pref, lambda o: st(o, 'autoplay_refused')['blocked'].update(sound='on'))
+        fails(pref, lambda o: st(o, 'csrf').update(pref='0'))
+        fails(pref, lambda o: st(o, 'csrf')['wrong'].update(ok=True))
+        fails(pref, lambda o: st(o, 'disable').update(pref='1'))
+        lay = 'notification_bell_panel_layout_keyboard'
+        fails(lay, lambda o: o['widths'].pop())
+        fails(lay, lambda o: o['widths'][2]['open_click'].update(right=330))
+        fails(lay, lambda o: o['widths'][2]['open_click'].update(bottom=700))
+        fails(lay, lambda o: o['widths'][1]['open_click'].update(maintop=300))     # panel pushed the page
+        fails(lay, lambda o: o['widths'][0]['open_click'].update(position='static'))
+        fails(lay, lambda o: o['widths'][0]['open_click'].update(overflowy='visible'))
+        fails(lay, lambda o: o['widths'][2]['open_keyboard'].update(hscroll=True))
+        fails(lay, lambda o: o['widths'][0]['open_keyboard'].update(active='other'))
+        fails(lay, lambda o: o['widths'][0]['after_escape'].update(active='other'))
+        fails(lay, lambda o: o['widths'][1]['after_outside'].update(open=True))
+        fails(lay, lambda o: o['widths'][1].update(focus_outline=['none', 0]))
+        one = 'notification_bell_single_bell'
+        fails(one, lambda o: st(o, 'initial')['bell'].update(bells=2))
+        fails(one, lambda o: st(o, 'reload')['bell'].update(moodlebells=1))
+        fails(one, lambda o: st(o, 'legacy').update(bells=1))
+        fails(one, lambda o: st(o, 'initial')['bell'].update(headings=1))           # hidden h2 shadows the page title
+        fails(one, lambda o: st(o, 'reload')['bell'].pop('headings'))
+        be = 'notification_bell_no_browser_errors'
+        fails(be, lambda o: o['browser_events'].append({'source': 'pageerror', 'name': 'Error', 'message': 'x'}))
+        fails(be, lambda o: o['browser_events'].append({'source': 'console', 'type': 'error', 'text': 'Failed to load resource: 403',
+                                                        'url': 'http://127.0.0.1:8080' + c.FEED_PATH}))
+        fails(be, lambda o: o.update(server_errors=[{'status': 500}]))
+        fails(be, lambda o: o.pop('browser_events'))
+        intentionally_blocked = copy.deepcopy(obs)
+        st(intentionally_blocked, 'tabs_nostorage')['events'].extend(copy.deepcopy(ABORTED))
+        self.assertEqual('PASS', c.evaluate(c.notification_bell_checks(intentionally_blocked, 0))[be]['status'])
+        fails(be, lambda o: st(o, 'tabs_nostorage')['events'].extend(copy.deepcopy(ABORTED[1:])))
+        fails(be, lambda o: st(o, 'tabs_nostorage')['events'].append(dict(ABORTED[0], url='https://example.invalid/script.js')))
+        fails(be, lambda o: st(o, 'tabs_nostorage')['events'].append({'source': 'pageerror', 'name': 'Error', 'message': 'x'}))
+        fails(be, lambda o: st(o, 'tabs_nostorage')['events'].append({'source': 'console', 'type': 'error', 'text': 'TypeError: x'}))
+        fails(be, lambda o: st(o, 'tabs_nostorage')['events'].append({'source': 'requestfailed', 'url': 'http://127.0.0.1:8080/x'}))
+        fails(be, lambda o: st(o, 'tabs_nostorage').pop('events'))
+        for mutate, code in ((lambda o: o.update(error='boom'), 0), (lambda o: o.update(status='FAIL'), 0),
+                             (lambda o: o.update(cleanup_error='x'), 0), (lambda o: None, 1)):
+            o = copy.deepcopy(obs); mutate(o)
+            r = c.evaluate(c.notification_bell_checks(o, code))
+            self.assertTrue(all(x['status'] == 'FAIL' for x in r.values()), r)
+        self.assertTrue(all(x['status'] == 'FAIL' for x in c.evaluate(c.notification_bell_checks(None, None)).values()))
 
     def test_required_check_names_complete(self):
         names = c.required_check_names()

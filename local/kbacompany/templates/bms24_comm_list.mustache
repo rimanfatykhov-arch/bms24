@@ -17,8 +17,8 @@
 <div class="bms24-comm-list bms-comm2-thread-list">
 {{#items}}<a href="{{url}}" class="bms24-comm-item bms-comm2-thread bms-comm3-thread{{#active}} is-active{{/active}}{{#unread}} has-unread{{/unread}}" data-thread-uuid="{{uuid}}"{{#active}} aria-current="true"{{/active}}>
 <span class="bms24-comm-ava bms24-comm-ava--{{avatarvariant}}" aria-hidden="true">{{initials}}</span>
-<span class="bms24-comm-itembody"><span class="bms24-comm-itemtitle" title="{{title}}">{{title}}</span>{{#kind}}<span class="bms24-comm-itemkind"><span class="bms24-comm-pill bms24-comm-pill--{{variant}}">{{label}}</span></span>{{/kind}}{{#preview}}<span class="bms24-comm-itempreview">{{preview}}</span>{{/preview}}</span>
-<span class="bms24-comm-itemmeta">{{#time}}<time>{{time}}</time>{{/time}}{{#mention}}<span class="bms24-comm-at" title="{{mentiontitle}}" aria-label="{{mentiontitle}}">@</span>{{/mention}}{{#unread}}<span class="bms24-comm-badge bms24-comm-badge--unread" aria-label="{{unreadtitle}}: {{unread}}">{{unread}}</span>{{/unread}}</span>
+<span class="bms24-comm-itembody"><span class="bms24-comm-itemtitle bms-comm2-thread-title" title="{{title}}">{{title}}</span>{{#kind}}<span class="bms24-comm-itemkind bms-comm2-thread-meta"><span class="bms24-comm-pill bms24-comm-pill--{{variant}}">{{label}}</span></span>{{/kind}}{{#preview}}<span class="bms24-comm-itempreview bms-comm2-thread-preview">{{preview}}</span>{{/preview}}</span>
+<span class="bms24-comm-itemmeta bms-comm2-thread-meta">{{#time}}<time class="bms-comm2-thread-time">{{time}}</time>{{/time}}{{#mention}}<span class="bms24-comm-at" title="{{mentiontitle}}" aria-label="{{mentiontitle}}">@</span>{{/mention}}{{#unread}}<span class="bms24-comm-badge bms24-comm-badge--unread" aria-label="{{unreadtitle}}: {{unread}}">{{unread}}</span>{{/unread}}</span>
 </a>{{/items}}
 {{#empty}}<div class="bms24-comm-listempty">{{> local_kbacompany/bms24_empty_state}}</div>{{/empty}}
 </div>
