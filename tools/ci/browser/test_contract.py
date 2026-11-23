@@ -975,11 +975,14 @@ class ContractTest(unittest.TestCase):
                 'empty': {'items': 0, 'state': 1},
                 'landing': {'url': 'http://127.0.0.1:8080/local/kbacompany/daily_report.php?uuid=A&day=2026-11-17&notice=resultadded',
                             'done': first, 'notice': 1},
-                'after_add': {'report': {'status': 'draft'}, 'draft': {'done': first, 'revision': 2, 'links': [tasks[0]['task']]}, 'sent': []},
+                'after_add': {'report': {'status': 'draft'}, 'draft': {'done': first, 'revision': 2, 'links': [tasks[0]['task']]}, 'sent': [],
+                              'added_events': [tasks[0]['event']]},
                 'after_repeat_form': {'report': {'status': 'draft'}, 'draft': {'done': first + '\n' + edit, 'revision': 3,
                                       'links': [tasks[0]['task']]}, 'sent': []},
-                'after_second': {'report': {'status': 'draft'}, 'draft': {'done': second, 'revision': 4, 'links': links}, 'sent': []},
-                'after_repeat_feed': {'report': {'status': 'draft'}, 'draft': {'done': second, 'revision': 4, 'links': links}, 'sent': []},
+                'after_second': {'report': {'status': 'draft'}, 'draft': {'done': second, 'revision': 4, 'links': links}, 'sent': [],
+                                 'added_events': [t['event'] for t in tasks]},
+                'after_repeat_feed': {'report': {'status': 'draft'}, 'draft': {'done': second, 'revision': 4, 'links': links}, 'sent': [],
+                                      'added_events': [t['event'] for t in tasks]},
                 'after_negatives': {'report': {'status': 'draft'}, 'draft': {'done': second, 'revision': 4, 'links': links}, 'sent': []},
                 'after_submit': {'report': {'status': 'submitted'}, 'draft': None,
                                  'sent': [{'done': second, 'revision': 4, 'links': links}]},
@@ -1018,6 +1021,8 @@ class ContractTest(unittest.TestCase):
         fails(dup, lambda o: o['cases'][0]['after_repeat_form']['draft'].update(
             done=o['cases'][0]['after_repeat_form']['draft']['done'] + '\n' + o['cases'][0]['tasks'][0]['result']))
         fails(dup, lambda o: o['cases'][1]['after_repeat_feed']['draft'].update(revision=5))
+        fails(dup, lambda o: o['cases'][0]['after_repeat_feed']['added_events'].append(o['cases'][0]['tasks'][0]['event']))
+        fails(dup, lambda o: o['cases'][1]['after_add'].update(added_events=[]))
         fails(dup, lambda o: o['cases'][0]['after_repeat_form']['draft'].update(done=o['cases'][0]['after_add']['draft']['done']))
         fails(iso, lambda o: o['cases'][0].update(forged_http=303))
         fails(iso, lambda o: o['cases'][1]['foreign_http'].update(company_b=500))

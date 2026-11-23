@@ -192,13 +192,44 @@ final class daily_report_feed_service_test extends \advanced_testcase {
         });
     }
 
-    public function test_block_and_merge(): void {
+    public function test_repeat_is_decided_by_submit_event_id_not_by_text(): void {
+        global $DB;
+        $f = $this->fixture(); $u = (int)$f['employee']->id;
+        // Two different submit events whose blocks look exactly alike: both are added.
+        $one = $this->submitted($f, $f['employee'], 'Call client', 'Done', $f['day']);
+        $two = $this->submitted($f, $f['employee'], 'Call client', 'Done', $f['day']);
+        $this->setUser($f['employee']);
+        $this->assertTrue(feed::add($f['company'], $u, $f['day'], $one['event'])['added']);
+        $this->assertTrue(feed::add($f['company'], $u, $f['day'], $two['event'])['added']);
+        $view = store::view($f['company'], $u, $f['day']);
+        $this->assertSame("«Call client»: Done\n«Call client»: Done", $view['draft']->done);
+        $this->assertTrue(store::result_added($f['company'], (string)$view['report']->uuid, $one['event']));
+        $this->assertTrue(store::result_added($f['company'], (string)$view['report']->uuid, $two['event']));
+        // The task is renamed afterwards: the same event is still recognised in the feed and in the open form.
+        $DB->set_field('local_kbacompany_task', 'title', 'Call the key client', ['uuid' => $one['task']]);
+        $revision = (int)$view['draft']->revision;
+        $logs = $DB->count_records('local_kbacompany_dreportlog');
+        $again = feed::add($f['company'], $u, $f['day'], $one['event']);
+        $this->assertSame(['added' => false, 'revision' => $revision], $again);
+        $this->assertSame($logs, $DB->count_records('local_kbacompany_dreportlog'));
+        $form = ['values' => $this->values($view['draft']->done . "\nTyped"), 'links' => [], 'cc' => [], 'revision' => $revision];
+        $this->assertFalse(feed::add($f['company'], $u, $f['day'], $one['event'], $form)['added']);
+        $done = store::view($f['company'], $u, $f['day'])['draft']->done;
+        $this->assertSame("«Call client»: Done\n«Call client»: Done\nTyped", $done);
+        $this->assertStringNotContainsString('Call the key client', $done);
+        // Text removed by hand does not make the event new again; the journal row is per report, not per text.
+        $view = store::view($f['company'], $u, $f['day']);
+        $form = ['values' => $this->values('Rewritten by hand'), 'links' => [], 'cc' => [], 'revision' => (int)$view['draft']->revision];
+        $this->assertFalse(feed::add($f['company'], $u, $f['day'], $two['event'], $form)['added']);
+        $this->assertSame('Rewritten by hand', store::view($f['company'], $u, $f['day'])['draft']->done);
+        // The journal is company-scoped: the same event id is unknown for another report.
+        $this->assertFalse(store::result_added($f['other'], (string)$view['report']->uuid, $one['event']));
+    }
+
+    public function test_block(): void {
         $this->resetAfterTest();
         $event = (object)['title' => ' Title ', 'result' => "Line 1\r\nLine 2 "];
         $this->assertSame("«Title»: Line 1\nLine 2", feed::block($event));
-        $this->assertSame(['«A»: x', true], feed::merge('', '«A»: x'));
-        $this->assertSame(["Mine\n«A»: x", true], feed::merge("Mine\r\n", '«A»: x'));
-        $this->assertSame(["Mine\n«A»: x", false], feed::merge("Mine\n«A»: x", '«A»: x'));
         $this->assertSame('«Title»', feed::block((object)['title' => 'Title', 'result' => '']));
     }
 }

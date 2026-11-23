@@ -10,7 +10,8 @@ defined('MOODLE_INTERNAL') || die();
  * the day summary query: company on log and task, author = session user, current "my tasks" ACL). "Add to report" copies
  * one result, always re-read on the server, into the "Done" field of the employee's own draft of that day through the
  * existing daily_report_store_service::save_draft (lock, transaction, optimistic revision, audit). Text already written
- * is kept; a result already present is not added again. No schema, no new records, no automatic submission.
+ * is kept; the same submit event is added to a report once (decided by its id in the report journal, not by text).
+ * No schema change, no automatic submission.
  */
 final class daily_report_feed_service {
     /** Feed of one day: own results with the current task status ("submitted" is not "accepted"). */
@@ -25,15 +26,6 @@ final class daily_report_feed_service {
         $result = trim(str_replace("\r\n", "\n", (string)$event->result));
         $title = trim((string)$event->title);
         return $result === '' ? '«' . $title . '»' : '«' . $title . '»: ' . $result;
-    }
-
-    /** Append $block to $done unless it is already there; the employee's own text is never changed. */
-    public static function merge(string $done, string $block): array {
-        $done = trim(str_replace("\r\n", "\n", $done));
-        if ($block === '' || ($done !== '' && strpos($done, $block) !== false)) {
-            return [$done, false];
-        }
-        return [$done === '' ? $block : $done . "\n" . $block, true];
     }
 
     /**
@@ -74,16 +66,12 @@ final class daily_report_feed_service {
             $cc = array_map('intval', (array)($form['cc'] ?? []));
             $revision = (int)($form['revision'] ?? 0);
         }
-        $values = daily_report_store_service::clean_values($values);
-        [$values['done'], $added] = self::merge($values['done'], self::block($event));
         if (!in_array((string)$event->taskuuid, $links, true) && count($links) < daily_report_store_service::MAX_LINKS) {
             $links[] = (string)$event->taskuuid;
         }
-        if (!$added && $form === null) {
-            // Repeated click in the feed: the stored draft already has this result; nothing is written.
-            return ['added' => false, 'revision' => $revision];
-        }
-        $saved = daily_report_store_service::save_draft($companyuuid, $actor, $day, $values, $links, $revision, $cc);
-        return ['added' => $added, 'revision' => (int)$saved['revision']];
+        // The repeat is decided by the submit event id in the report journal, under the store's lock and transaction.
+        // A repeated click in the feed writes nothing; in the open form only the employee's own text is saved.
+        return daily_report_store_service::add_result($companyuuid, $actor, $day, (int)$event->id, self::block($event),
+            $values, $links, $revision, $cc, $form !== null);
     }
 }

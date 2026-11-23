@@ -1181,6 +1181,10 @@ def day_feed_checks(obs, exitcode=None):
                 require(draft(r.get(key))['done'].count(t1['result']) == 1, 'result duplicated after %s' % key)
             require(r['edit'] in draft(r['after_repeat_form'])['done'], 'unsaved edit lost on the repeated click')
             require(draft(r['after_repeat_feed']) == draft(r['after_second']), 'repeated click in the feed wrote the draft')
+            events = [t['event'] for t in r['tasks']]
+            require((r['after_add'] or {}).get('added_events') == events[:1]
+                    and all((r.get(k) or {}).get('added_events') == events for k in ('after_second', 'after_repeat_feed')),
+                    'repeat not keyed by the submit event id')
 
     def isolation():
         for r in run():

@@ -5,7 +5,8 @@
 //                                                    synthetic results, submit events placed on <day>; a saved draft
 //                                                    of <day> with text in "Done" (the "already filled draft" case)
 //   today <company> <employee>                       -> the employee's civil day (feed default)
-//   state <company> <employee> <day>                -> JSON: report status, draft text/revision/links, sent versions
+//   state <company> <employee> <day>                -> JSON: report status, draft text/revision/links, sent versions,
+//                                                    submit event ids journalled as added (result_added)
 //   shell <owned|legacy>                            -> switches the BMS24 shell mode of the disposable site
 define('CLI_SCRIPT', true);
 if (getenv('BMS_CI_BROWSER') !== '1') { fwrite(STDERR, "CI browser fixture only\n"); exit(2); }
@@ -56,8 +57,13 @@ if ($phase === 'setup') {
     $employee = (int)($argv[4] ?? 0); $day = (string)($argv[5] ?? '');
     $report = $DB->get_record('local_kbacompany_dreport', ['companyuuid' => $company, 'userid' => $employee, 'reportday' => $day]);
     $out['report'] = $report ? ['status' => (string)$report->status] : null;
-    $out['draft'] = null; $out['sent'] = [];
+    $out['draft'] = null; $out['sent'] = []; $out['added_events'] = [];
     if ($report) {
+        // Submit events recorded as added to this report (the repeat key of the day feed).
+        foreach ($DB->get_records('local_kbacompany_dreportlog', ['companyuuid' => $company, 'reportuuid' => $report->uuid,
+                'action' => 'result_added'], 'id ASC', 'id, details') as $row) {
+            $out['added_events'][] = (int)(json_decode((string)$row->details, true)['event'] ?? 0);
+        }
         foreach ($DB->get_records('local_kbacompany_dreportver', ['companyuuid' => $company, 'reportuuid' => $report->uuid],
                 'versionno ASC') as $v) {
             $links = array_values($DB->get_fieldset_select('local_kbacompany_dreportlink', 'taskuuid',
