@@ -1,0 +1,20 @@
+{{!
+    Details drawer (#145): object type, status, due date, open link; participants with owner actions; task from
+    message. Native <details id="bms-comm3-context-details"> keeps the JS toggle/Escape contract. Render-only.
+}}
+<aside class="bms24-comm-drawerwrap bms-comm2-panel bms-comm2-context">
+<details class="bms24-comm-drawer bms-comm2-context-toggle" id="bms-comm3-context-details">
+<summary class="sr-only" title="{{title}}" aria-label="{{title}}">{{title}}</summary>
+<div class="bms24-comm-drawerhead"><h2>{{title}}</h2><button type="button" class="bms24-comm-btn bms24-comm-btn--ghost bms-comm3-context-close" data-bms-comm-context-close="1" aria-label="{{closelabel}}">×</button></div>
+<div class="bms24-comm-drawerbody bms-comm2-context-body">
+{{#object}}<dl class="bms24-comm-kv"><dt>{{kindlabel}}</dt><dd class="bms-comm2-context-kind">{{kind}}</dd><dt class="sr-only">{{kindlabel}}</dt><dd class="bms-comm2-context-name"><strong>{{title}}</strong></dd>{{#status}}<dt>{{statuslabel}}</dt><dd>{{status}}</dd>{{/status}}{{#due}}<dt>{{duelabel}}</dt><dd>{{due}}</dd>{{/due}}</dl>
+{{#open}}<div class="bms-comm2-context-actions"><a class="bms24-comm-btn" href="{{url}}"><span aria-hidden="true">↗</span> {{label}}</a></div>{{/open}}
+{{#start}}<form method="post" class="bms-comm2-context-actions">{{#hidden}}<input type="hidden" name="{{name}}" value="{{value}}">{{/hidden}}<button type="submit" class="bms24-comm-btn bms24-comm-btn--primary">{{label}}</button></form>{{/start}}{{/object}}
+{{#people}}<h3>{{label}} · {{count}}</h3>
+<div class="bms24-comm-people bms-comm2-people">{{#items}}<div class="bms24-comm-person bms-comm2-person"><span class="bms24-comm-ava bms24-comm-ava--small" aria-hidden="true">{{initials}}</span><span>{{name}}{{#owner}} <span class="bms24-comm-muted bms-comm2-person-role">{{owner}}</span>{{/owner}}</span>{{#remove}}<form method="post" class="bms24-comm-inline">{{#hidden}}<input type="hidden" name="{{name}}" value="{{value}}">{{/hidden}}<button type="submit" class="bms24-comm-btn bms24-comm-btn--small">{{label}}</button></form>{{/remove}}</div>{{/items}}</div>{{/people}}
+{{#addperson}}<form method="post" class="bms24-comm-addperson bms-comm2-add-person">{{#hidden}}<input type="hidden" name="{{name}}" value="{{value}}">{{/hidden}}<label for="bms_comm2_addperson" class="sr-only">{{label}}</label><select id="bms_comm2_addperson" name="participantid" class="form-control">{{#options}}<option value="{{value}}">{{label}}</option>{{/options}}</select><button type="submit" class="bms24-comm-btn">{{label}}</button></form>{{/addperson}}
+{{#leave}}<details class="bms24-comm-actdetails bms-comm2-leave"><summary>{{label}}</summary><form method="post">{{#hidden}}<input type="hidden" name="{{name}}" value="{{value}}">{{/hidden}}<p>{{notice}}</p><button type="submit" class="bms24-comm-btn bms24-comm-btn--danger">{{label}}</button></form></details>{{/leave}}
+{{#taskform}}{{> local_kbacompany/bms24_comm_taskform}}{{/taskform}}
+</div>
+</details>
+</aside>

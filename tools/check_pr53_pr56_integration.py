@@ -77,6 +77,16 @@ def check(root=ROOT):
             errors.append('shared schema/helper changed: '+name)
     # UX-1: exact append-only language/scoped CSS follow-up over E2.
     reviewed_followup.update({'local/kbacompany/lang/en/local_kbacompany.php': 'eac98f182ea03d8332608ede1ad216c2fbde9398634653cb3a2e65eb0bfe890b', 'local/kbacompany/lang/ru/local_kbacompany.php': '6e5cb24b46f5c918bd4d48b50f6ad6f2c6a231a423490374a32481479da268bf', 'local/kbacompany/styles.css': 'cd2d2163a340a79e0b4766e90d63aad3b39a31d334fa4430c6eee686200e4e7f'})
+
+    # #145 (2026-11-21): Communication Center rendered through Mustache templates. Presentation only:
+    # RU/EN strings appended at the end of each language file, one scoped CSS alignment rule appended.
+    # No schema, no ACL, no runtime behaviour change. See
+    # docs/reconcile/COMMUNICATION_CENTER_145_SOURCE_PRESERVATION.md.
+    reviewed_followup.update({
+        'local/kbacompany/lang/en/local_kbacompany.php': 'ffa8c3cc82b19e1e15fdc12f5ec901a6621a7a92abed5f2097ec6e97f71bf348',
+        'local/kbacompany/lang/ru/local_kbacompany.php': '0ff5746d50f5cfc84b13d582f210e6262549973ebd7d08f4667262edaf2cb46b',
+        'local/kbacompany/styles.css': '95563c9160349cb2f40047f092e78e77c446ee6113d48d13456250dfef271417',
+    })
     for row in plan['rows']:
         path=root/row['path']
         if not path.is_file() or path.is_symlink():

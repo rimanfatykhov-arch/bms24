@@ -7154,3 +7154,6 @@ body.bms-comm-page .bms-comm2 :is(a,button,summary,input,textarea,select):focus-
 body.bms-comm-page .bms-comm2 .bms-comm2-welcome-title, body.bms-comm-page .bms-comm2 .bms-comm2-welcome-icon {color:#0b2b41;}
 body.bms-comm-page .bms-comm2 .bms-comm2-welcome-content {background:#e4f2fb;color:#25485e;}
 body.bms-comm-page .bms-comm2 .bms-comm2-context-toggle > summary {height:auto;min-height:44px;}
+
+/* #145: inline SVG glyph inside communication-centre icon buttons. */
+.bms24-comm-iconbtn .bms24-comm-svg { vertical-align: -3px; }

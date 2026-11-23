@@ -1,0 +1,23 @@
+{{!
+    Notifications (#145): toolbar (only unread, mark all as read, notification settings), groups "Today" and
+    "Earlier days", type chip, per-row "Mark as read". .bms-comm2-feed is refreshed by live updates. Render-only.
+}}
+<div class="bms24-comm-notifs bms-comm-ux-notifications" data-section="notifications">
+<div class="bms24-comm-ntools">
+<h2 class="bms24-comm-ntitle">{{title}}{{#unread}} <span class="bms24-comm-badge bms24-comm-badge--blue">{{unread}}</span>{{/unread}}</h2>
+{{#onlyunread}}<a class="bms24-comm-chip{{#active}} is-active{{/active}}" href="{{url}}"{{#active}} aria-current="true"{{/active}}>{{label}}</a>{{/onlyunread}}
+{{#markall}}<form method="post" class="bms24-comm-inline">{{#hidden}}<input type="hidden" name="{{name}}" value="{{value}}">{{/hidden}}<button type="submit" class="bms24-comm-btn">{{label}}</button></form>{{/markall}}
+{{#settings}}<a class="bms24-comm-btn bms24-comm-btn--ghost" href="{{url}}">{{label}}</a>{{/settings}}
+</div>
+<main class="bms24-comm-nlist bms-comm2-panel bms-comm2-feed" aria-label="{{feedlabel}}">
+{{#groups}}<h3 class="bms24-comm-nday">{{label}}</h3>
+{{#items}}<article class="bms24-comm-nrow bms-comm2-notification{{#read}} is-read{{/read}}{{^read}} is-unread{{/read}}">
+<span class="bms24-comm-ud" aria-hidden="true"></span>
+<span class="bms24-comm-nic bms24-comm-nic--{{variant}}" aria-hidden="true">{{icon}}</span>
+<div class="bms24-comm-ntx"><div class="bms24-comm-nh"><span class="bms24-comm-pill bms24-comm-pill--{{variant}}">{{type}}</span> <strong>{{title}}</strong></div>
+<div class="bms24-comm-ns bms-comm2-notification-title">{{subtitle}}{{#links}} · <a href="{{url}}">{{label}}</a>{{/links}}</div></div>
+<div class="bms24-comm-nrt"><time class="bms-comm2-thread-time">{{time}}</time>{{#markread}}<form method="post" class="bms24-comm-inline">{{#hidden}}<input type="hidden" name="{{name}}" value="{{value}}">{{/hidden}}<button type="submit" class="bms24-comm-btn bms24-comm-btn--small">{{label}}</button></form><span class="sr-only bms-comm-ux-unread-state">{{unreadlabel}}</span>{{/markread}}{{#read}}<span class="bms24-comm-readstate bms-comm-ux-read-state"><span aria-hidden="true">✓</span> {{readlabel}}</span>{{/read}}</div>
+</article>{{/items}}{{/groups}}
+{{#empty}}<p class="bms24-comm-muted bms24-comm-nempty">{{empty}}</p>{{/empty}}
+</main>
+</div>

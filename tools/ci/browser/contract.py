@@ -1187,7 +1187,7 @@ def plan_discussion_checks(obs, exitcode=None):
 
     def reasons():
         texts = obs.get('reasons')
-        keys = ('plan_unavailable', 'company_unavailable', 'object_unavailable', 'invalid_sesskey')
+        keys = ('plan_unavailable', 'company_unavailable', 'thread_permission', 'invalid_sesskey')
         require(isinstance(texts, dict) and set(texts) == set(keys)
                 and all(isinstance(texts[k], str) and texts[k].strip() for k in keys)
                 and len({texts[k] for k in keys}) == len(keys), 'expected refusal texts missing')
@@ -1212,7 +1212,7 @@ def plan_discussion_checks(obs, exitcode=None):
         # Who is refused and why (owner decision Q9): RA may not open the plan, EB is outside the company. Each refusal
         # must be the product's own answer for that reason, not any non-success page. RA's join is refused in the Center
         # page itself (200) with the non-disclosing 'object or discussion unavailable' text.
-        expected = {'RA': {'post': texts['plan_unavailable'], 'join_http': (200,), 'join': texts['object_unavailable']},
+        expected = {'RA': {'post': texts['plan_unavailable'], 'join_http': (200,), 'join': texts['thread_permission']},
                     'EB': {'post': texts['company_unavailable'], 'join_http': (403, 404), 'join': texts['company_unavailable']}}
         for r in rows:
             before = participants(r.get('parts_before_refusals'))
@@ -1230,7 +1230,7 @@ def plan_discussion_checks(obs, exitcode=None):
                 require(post.get('http') == 303 and x.get('post_http') == 303, label + ' post refusal is not the redirect back to the plan')
                 exact_redirect(post.get('location'), PLAN_PATH, back)
                 followed = post.get('followed') or {}
-                require(isinstance(followed.get('http'), int) and followed['http'] < 500 and shown(followed, want['post']),
+                require(followed.get('http') in (200, 403, 404) and shown(followed, want['post']),
                         label + ' post refusal does not show the expected reason')
                 join = x.get('join') or {}
                 require(join.get('http') in want['join_http'] and x.get('join_http') == join.get('http')

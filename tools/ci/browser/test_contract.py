@@ -82,7 +82,7 @@ def failed(results):
 
 PD_REASONS = {'plan_unavailable': 'Battle Plan or item is unavailable.',
               'company_unavailable': 'The company is unavailable or outside your access scope.',
-              'object_unavailable': 'This object or discussion is unavailable.',
+              'thread_permission': 'This object or discussion is unavailable.',
               'invalid_sesskey': 'Your session has most likely timed out. Please log in again.'}
 PD_BACK = 'http://127.0.0.1:8080/local/kbacompany/battle_plan.php?uuid=A&plan=P&view=detail&tab=discussion'
 
@@ -960,7 +960,7 @@ class ContractTest(unittest.TestCase):
     def plan_denied(label, n):
         """Real Moodle refusals (#135 BROWSER evidence): RA may not open the plan, EB is outside the company."""
         post_reason = PD_REASONS['plan_unavailable' if label == 'RA' else 'company_unavailable']
-        join = ({'http': 200, 'location': '', 'alerts': [PD_REASONS['object_unavailable']]} if label == 'RA'
+        join = ({'http': 200, 'location': '', 'alerts': [PD_REASONS['thread_permission']]} if label == 'RA'
                 else {'http': 404, 'location': '', 'alerts': [PD_REASONS['company_unavailable']]})
         return {'card_text': False, 'center_text': False, 'download': {'http': 404, 'sha256': None},
                 'post': {'http': 303, 'location': PD_BACK, 'alerts': [],
@@ -1052,13 +1052,15 @@ class ContractTest(unittest.TestCase):
         fails(bad, lambda o: o['cases'][0]['denied']['RA']['post'].update(location=PD_BACK + '&tab=discussion'))
         fails(bad, lambda o: o['cases'][0]['denied']['RA']['post'].pop('followed'))
         fails(bad, lambda o: o['cases'][0]['denied']['RA']['post']['followed'].update(http=500))
+        fails(bad, lambda o: o['cases'][0]['denied']['RA']['post']['followed'].update(http=302))
+        fails(bad, lambda o: o['cases'][0]['denied']['RA']['post']['followed'].update(http=303))
         fails(bad, lambda o: o['cases'][0]['denied']['RA']['post']['followed'].update(alerts=[PD_REASONS['company_unavailable']]))
         fails(bad, lambda o: o['cases'][0]['forged'].update(http=200))
         fails(bad, lambda o: o['cases'][0]['forged'].update(alerts=[]))
         fails(bad, lambda o: o['cases'][0]['forged'].pop('alerts'))
         fails(bad, lambda o: o.pop('reasons'))
         fails(bad, lambda o: o['reasons'].update(invalid_sesskey=''))
-        fails(bad, lambda o: o['reasons'].update(object_unavailable=o['reasons']['plan_unavailable']))
+        fails(bad, lambda o: o['reasons'].update(thread_permission=o['reasons']['plan_unavailable']))
         fails(bad, lambda o: o.pop('urls'))
         fails(bad, lambda o: o['cases'][0].update(messages_before_refusals=None))
         rd = 'plan_discussion_reader_not_joined'

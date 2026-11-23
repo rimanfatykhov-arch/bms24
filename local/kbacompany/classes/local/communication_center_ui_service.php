@@ -3,22 +3,23 @@ namespace local_kbacompany\local;
 
 defined('MOODLE_INTERNAL') || die();
 
-/** Communication Center 2.0 presentation over the canonical communication service. */
+/**
+ * Communication Center presentation (#145): builds a render model only and renders it with the
+ * templates/bms24_comm_*.mustache templates. No SQL, access decisions or writes here; all data comes from
+ * communication_center_service::workspace_context(), which applies company, participation and object ACL.
+ * Legacy selectors and JS contracts (bms-comm2-*, bms-comm-ux-*, data-bms-comm-*) stay on the same elements.
+ */
 class communication_center_ui_service {
     public static function url(string $company, array $params = []): \moodle_url {
         return new \moodle_url('/local/kbacompany/communication_center.php', ['uuid' => $company] + $params);
     }
 
     private static function tr(string $key, $a = null): string {
-        // Moodle language cache may lag the installed plugin upgrade; avoid raw [[keys]].
-        if ($key === 'communicationcenter_search_messages' && !get_string_manager()->string_exists($key, 'local_kbacompany')) {
-            return current_language() === 'ru' ? 'Поиск по сообщениям' : 'Search messages';
-        }
         return get_string($key, 'local_kbacompany', $a);
     }
 
-    /** Non-identifying fallback avatar for dialog names; all text is escaped on output. */
-    private static function initials(string $name): string {
+    /** Non-identifying fallback avatar text; escaped by Mustache. */
+    public static function initials(string $name): string {
         $parts = preg_split('/\s+/u', trim($name), -1, PREG_SPLIT_NO_EMPTY);
         if (!$parts) { return '•'; }
         $first = \core_text::substr($parts[0], 0, 1);
@@ -26,285 +27,254 @@ class communication_center_ui_service {
         return \core_text::strtoupper($first . $last);
     }
 
-    private static function avatar(string $name, string $kind = ''): string {
-        return \html_writer::tag('span', s(self::initials($name)),
-            ['class'=>'bms-comm3-avatar' . ($kind === 'object' ? ' is-object' : ''), 'aria-hidden'=>'true']);
+    /** @return array[] name/value pairs for hidden inputs. */
+    private static function hidden(array $values): array {
+        $out = [];
+        foreach ($values as $name => $value) { $out[] = ['name' => (string)$name, 'value' => (string)$value]; }
+        return $out;
     }
 
-    private static function hidden(array $values): string {
-        return task_ui_service::hidden($values);
-    }
-
-    private static function button(string $label, string $class = 'btn btn-primary'): string {
-        return \html_writer::tag('button', s($label), ['type' => 'submit', 'class' => $class]);
-    }
-
-    private static function post_base(string $company, string $action, string $thread = ''): string {
+    private static function post_base(string $company, string $action, string $thread = ''): array {
         $values = ['uuid' => $company, 'action' => $action, 'sesskey' => sesskey()];
         if ($thread !== '') { $values['thread'] = $thread; }
         return self::hidden($values);
     }
 
-    private static function person_options(array $employees, int $exclude = 0): array {
+    private static function options(array $values, $selected = null): array {
         $out = [];
-        foreach ($employees as $id => $name) {
-            if ((int)$id !== $exclude) { $out[(int)$id] = $name; }
+        foreach ($values as $value => $label) {
+            $out[] = ['value' => (string)$value, 'label' => (string)$label,
+                'selected' => $selected !== null && (string)$selected === (string)$value];
         }
         return $out;
     }
 
-    /** Main three-pane BMS24 communication workspace. */
+    /** List time: today = time, yesterday = word, this week = weekday, older = date. */
+    private static function short_time(int $time): string {
+        if ($time <= 0) { return ''; }
+        $day = business_date_service::day($time);
+        if ($day === business_date_service::day(time())) { return userdate($time, '%H:%M'); }
+        if ($day === business_date_service::yesterday()) { return self::tr('bmscomm3_yesterday'); }
+        if (time() - $time < 6 * DAYSECS) { return userdate($time, '%a'); }
+        return userdate($time, '%d.%m.%Y');
+    }
+
+    private static function day_label(int $time): string {
+        $day = business_date_service::day($time);
+        if ($day === business_date_service::day(time())) { return self::tr('bmscomm3_today'); }
+        if ($day === business_date_service::yesterday()) { return self::tr('bmscomm3_yesterday'); }
+        return userdate($time, '%A, %d.%m.%Y');
+    }
+
+    private static function kind_variant(string $kind): string {
+        return ['task' => 'sky', 'battleplan' => 'mint', 'meeting' => 'sand'][$kind] ?? 'sky';
+    }
+
+    private static function date_text(string $ymd): string {
+        $time = strtotime($ymd . ' 12:00:00 UTC');
+        return $ymd !== '' && $time ? gmdate('d.m.Y', $time) : '';
+    }
+
+    /** Main Communication Center workspace. Public signature kept for callers and tests. */
     public static function workspace(string $company, array $data, ?array $objectrequest = null,
             string $convertmessage = ''): string {
+        global $OUTPUT;
+        $model = self::model($company, $data, $objectrequest, $convertmessage);
+        // Reuse the UI Kit card: the header carries the section tabs and the primary action.
+        $card = $OUTPUT->render_from_template('local_kbacompany/bms24_card', [
+            'header' => true, 'title' => $model['title'],
+            'actionshtml' => $OUTPUT->render_from_template('local_kbacompany/bms24_comm_header', $model),
+            'contenthtml' => \html_writer::div($OUTPUT->render_from_template('local_kbacompany/bms24_comm_body', $model),
+                'bms24-comm-cardbody'),
+        ]);
+        return \html_writer::div($card, 'bms24-comm', ['data-section' => $model['section']]);
+    }
+
+    /** Mustache looks a missing or null key up in the parent context; absent optional values are false instead. */
+    private static function falsify(array $model): array {
+        array_walk_recursive($model, static function(&$value): void {
+            if ($value === null) { $value = false; }
+        });
+        return $model;
+    }
+
+    /** Render model of the whole center (exposed for PHPUnit; contains no HTML). */
+    public static function model(string $company, array $data, ?array $objectrequest = null,
+            string $convertmessage = ''): array {
         global $USER;
+        $actor = (int)$USER->id;
         $tab = (string)$data['tab'];
-        $selected = $data['selected'];
-        $counts = $data['counts'];
-        $filter = (string)($data['filter'] ?? 'all');
         $section = $tab === 'notifications' ? 'notifications' : ($tab === 'discussions' ? 'discussions' : 'messages');
+        $sections = $data['sections'] ?? ['messages' => ['total' => 0, 'unread' => 0],
+            'discussions' => ['total' => 0, 'unread' => 0]];
         $tabs = [];
         foreach (['messages', 'discussions', 'notifications'] as $key) {
             $label = self::tr($key === 'messages' ? 'communicationux_conversations' : 'communicationcenter_tab_' . $key);
-            $badge = $key === 'notifications' && !empty($counts['unread_notifications']) ?
-                \html_writer::tag('span', (string)(int)$counts['unread_notifications'],
-                    ['class' => 'bms-comm3-tab-badge', 'title' => self::tr('communicationux_notification_count')]) : '';
-            $tabs[] = \html_writer::link(self::url($company, ['tab' => $key]), s($label) . $badge,
-                ['class' => 'bms-comm2-filter' . ($key === $section ? ' is-active' : ''),
-                 'aria-current' => $key === $section ? 'page' : null]);
-        }
-        $navigation = \html_writer::tag('nav', implode('', $tabs),
-            ['class' => 'bms-comm2-filters bms-comm-ux-sections', 'aria-label' => self::tr('communicationcenter_title')]);
-        if ($section === 'notifications') {
-            return $navigation . \html_writer::div(self::feed($company, $data, ''),
-                'bms-comm-ux-notifications', ['data-section' => 'notifications']);
-        }
-        $chips = '';
-        foreach (['all', 'unread', 'mentions'] as $key) {
-            $chips .= \html_writer::link(self::url($company, ['tab' => $section, 'filter' => $key]),
-                s($key === 'mentions' ? '@' : self::tr('communicationcenter_tab_' . $key)),
-                ['title' => self::tr('communicationcenter_tab_' . $key), 'class' => 'bms-comm-ux-chip' . ($key === $filter ? ' is-active' : ''),
-                 'aria-current' => $key === $filter ? 'true' : null]);
-        }
-        $chips = \html_writer::tag('nav', $chips, ['class' => 'bms-comm-ux-filters',
-            'aria-label' => self::tr('communicationux_filters')]);
-        $left = self::thread_sidebar($company, $data, $chips);
-        $centre = self::feed($company, $data, $convertmessage);
-        // No empty permanent column. Native details remains usable without JavaScript.
-        $right = $selected || $objectrequest ?
-            self::context_panel($company, $data, $objectrequest, (int)$USER->id, $convertmessage) : '';
-        return $navigation . \html_writer::div($left . $centre . $right, 'bms-comm2-layout',
-            ['data-has-thread' => $selected ? '1' : '0', 'data-section' => $section]);
-    }
-
-    /** Compact, accessible object-mode switcher; navigation only, never a data source. */
-    private static function object_rail(string $company, string $tab, array $counts): string {
-        $icons = [
-            'inbox' => '✉', 'messages' => '▤', 'discussions' => '☷',
-            'mentions' => '@', 'notifications' => '♧', 'meetings' => '▦',
-        ];
-        $links = '';
-        foreach ($icons as $mode => $icon) {
-            $label = self::tr('communicationcenter_tab_' . $mode);
-            $badge = '';
-            if ($mode === 'mentions' && !empty($counts['mentions'])) {
-                $badge = (string)(int)$counts['mentions'];
-            } else if ($mode === 'notifications' && !empty($counts['unread_notifications'])) {
-                $badge = (string)(int)$counts['unread_notifications'];
-            }
-            $content = \html_writer::tag('span', s($icon), ['class' => 'bms-comm2-rail-icon', 'aria-hidden' => 'true']);
-            if ($badge !== '') {
-                $content .= \html_writer::tag('span', s($badge), ['class' => 'bms-comm2-rail-badge',
-                    'aria-label' => $label . ': ' . $badge]);
-            }
-            $links .= \html_writer::link(self::url($company, ['tab' => $mode]), $content,
-                ['class' => 'bms-comm2-rail-link' . ($tab === $mode ? ' is-active' : ''),
-                 'title' => $label, 'aria-label' => $label,
-                 'aria-current' => $tab === $mode ? 'page' : null]);
-        }
-        return \html_writer::tag('nav', $links, ['class' => 'bms-comm2-rail',
-            'aria-label' => self::tr('communicationcenter_title')]);
-    }
-
-    private static function thread_sidebar(string $company, array $data, string $navigation = ''): string {
-        $tab = (string)$data['tab'];
-        $search = (string)$data['search'];
-        $form = self::hidden(['uuid' => $company, 'tab' => $tab, 'filter' => $data['filter'] ?? 'all']);
-        $form .= \html_writer::label(s(self::tr('tui_search')), 'bms_comm2_search', false, ['class' => 'sr-only']);
-        $form .= \html_writer::empty_tag('input', ['type' => 'search', 'id' => 'bms_comm2_search', 'name' => 'q',
-            'value' => $search, 'class' => 'form-control', 'placeholder' => self::tr('tui_search')]);
-        $form .= \html_writer::empty_tag('input', ['type' => 'submit', 'hidden' => 'hidden', 'tabindex' => '-1']);
-        // One compact new-thread action in the title row; do not push the scrollable list down.
-        // The details/form still posts to the canonical communication service with sesskey.
-        $newthread = self::new_conversation_form($company, $data['employees'], (int)$GLOBALS['USER']->id);
-        $unread = max(0, (int)($data['counts']['unread_threads'] ?? 0));
-        $unreadindicator = \html_writer::tag('span', (string)$unread,
-            ['class' => 'bms-comm4-unread-indicator',
-             'aria-label' => self::tr('communication_unreadthreads'),
-             'aria-live' => 'polite', 'hidden' => $unread ? null : 'hidden']);
-        $sidebartitle = \html_writer::div(
-            \html_writer::tag('span', '💬', ['class' => 'bms-comm3-sidebar-icon', 'aria-hidden' => 'true']) .
-            \html_writer::tag('strong', s(self::tr('communicationcenter_conversations_title'))),
-            'bms-comm3-sidebar-title');
-        $html = \html_writer::div($sidebartitle . $unreadindicator . $newthread,
-            'bms-comm2-sidebar-head');
-        $html .= $navigation;
-        $html .= \html_writer::tag('form', $form, ['method' => 'get', 'class' => 'bms-comm2-search']);
-
-        if ($tab === 'meetings') {
-            $html .= task_ui_service::note(self::tr('communicationcenter_meetings_help'));
-            $html .= task_ui_service::link(new \moodle_url('/local/kbacompany/meetings.php', ['uuid' => $company]),
-                self::tr('meeting_open_center'), true);
-            return \html_writer::tag('aside', $html, ['class' => 'bms-comm2-panel bms-comm2-sidebar', 'aria-label' => self::tr('communicationcenter_conversations_title')]);
-        }
-        if ($tab === 'notifications') {
-            $html .= task_ui_service::note(self::tr('communicationcenter_notifications_help'));
-            return \html_writer::tag('aside', $html, ['class' => 'bms-comm2-panel bms-comm2-sidebar', 'aria-label' => self::tr('communicationcenter_conversations_title')]);
-        }
-
-        $items = '';
-        foreach ($data['threads'] as $thread) {
-            $classes = 'bms-comm2-thread';
-            if (!empty($data['selected']) && $data['selected']['uuid'] === $thread['uuid']) { $classes .= ' is-active'; }
-            if ((int)$thread['unread_count'] > 0) { $classes .= ' has-unread'; }
-            $meta = '';
-            if (!empty($thread['context'])) {
-                $meta = $thread['context']['label'] . ' · ' . $thread['context']['title'];
+            $badge = null;
+            if ($key === 'notifications') {
+                $n = (int)($data['counts']['unread_notifications'] ?? 0);
+                if ($n > 0) {
+                    $badge = ['value' => $n, 'variant' => 'blue', 'title' => self::tr('communicationux_notification_count')];
+                }
             } else {
-                $meta = self::tr($thread['thread_type'] === 'direct' ? 'communication_type_direct' : 'communication_type_group');
+                $unread = (int)($sections[$key]['unread'] ?? 0);
+                $total = (int)($sections[$key]['total'] ?? 0);
+                if ($unread > 0) {
+                    $badge = ['value' => $unread, 'variant' => 'unread', 'title' => self::tr('communicationux2_badge_unread', $unread)];
+                } else if ($total > 0) {
+                    $badge = ['value' => $total, 'variant' => 'soft', 'title' => self::tr('communicationux2_badge_total', $total)];
+                }
             }
-            $badge = (int)$thread['unread_count'] > 0 ?
-                \html_writer::tag('span', (string)(int)$thread['unread_count'],
-                    ['class' => 'bms-comm3-unread', 'aria-label'=>self::tr('communication_unreadthreads')]) : '';
-            $time = (int)$thread['last_message_at'] > 0 ?
-                \html_writer::tag('time', s(userdate((int)$thread['last_message_at'], '%H:%M')),
-                    ['class'=>'bms-comm3-thread-time']) : '';
-            $title = \html_writer::tag('strong', s($thread['title']), ['class'=>'bms-comm3-thread-name', 'title' => (string)$thread['title']]);
-            $top = \html_writer::div($title . $time, 'bms-comm3-thread-top');
-            $contextlabel = !empty($thread['context']) ? (string)$thread['context']['label'] : $meta;
-            $details = \html_writer::div(s($contextlabel), 'bms-comm3-thread-kind');
-            if (!empty($thread['preview'])) {
-                $details .= \html_writer::div(s((string)$thread['preview']['body']), 'bms-comm3-thread-preview');
-            }
-            $info = \html_writer::div($top . $details, 'bms-comm3-thread-info');
-            $trailing = $badge;
-            if (!empty($thread['has_unread_mention'])) {
-                $trailing .= \html_writer::tag('span', '@',
-                    ['class'=>'bms-comm3-mention', 'aria-label'=>self::tr('communicationcenter_unread_mention_signal')]);
-            }
-            $body = self::avatar((string)$thread['title'], $thread['thread_type'] === 'object' ? 'object' : '') .
-                $info . \html_writer::div($trailing, 'bms-comm3-thread-flags');
-            $items .= \html_writer::link(self::url($company,
-                ['tab'=>$tab, 'thread'=>$thread['uuid'], 'q'=>$data['search'], 'filter'=>$data['filter'] ?? 'all']), $body,
-                ['class'=>$classes . ' bms-comm3-thread',
-                 'data-thread-uuid'=>$thread['uuid'],
-                 'aria-current'=>strpos($classes, 'is-active') !== false ? 'true' : null]);
+            $tabs[] = ['key' => $key, 'label' => $label, 'url' => self::url($company, ['tab' => $key])->out(false),
+                'active' => $key === $section, 'badge' => $badge];
         }
-        if ($items === '') {
-            $items = task_ui_service::note(self::tr('communicationux_empty_' .
-                ($search !== '' ? 'search' : (($data['filter'] ?? 'all') === 'all' ? 'all' : 'filtered'))));
-            $items .= task_ui_service::link(self::url($company, ['tab' => $tab]), self::tr('communicationux_reset'));
+        $model = [
+            'title' => self::tr('communicationcenter_title'),
+            'sectionslabel' => self::tr('communicationcenter_title'),
+            'tabs' => $tabs, 'section' => $section,
+            'isnotifications' => $section === 'notifications',
+            'newconversation' => self::new_conversation($company, $data['employees'], $actor),
+        ];
+        if ($section === 'notifications') {
+            $model['notifications'] = self::notifications($company, $data);
+            return self::falsify($model);
         }
-        $html .= \html_writer::div($items, 'bms-comm2-thread-list');
-        return \html_writer::tag('aside', $html, ['class' => 'bms-comm2-panel bms-comm2-sidebar', 'aria-label' => self::tr('communicationcenter_conversations_title')]);
+        $selected = $data['selected'];
+        $model['layout'] = [
+            'section' => $section,
+            'hasthread' => !empty($selected),
+            'list' => self::thread_list($company, $data, $section, $sections),
+            'thread' => $selected ? self::thread($company, $data, $actor) : null,
+            'emptythread' => $selected ? null : ['title' => self::tr('communicationux2_select_title'),
+                'text' => self::tr('communicationux2_select_text'), 'action' => null],
+            'context' => ($selected || $objectrequest) ?
+                self::context_panel($company, $data, $objectrequest, $actor, $convertmessage) : null,
+        ];
+        return self::falsify($model);
     }
 
-    private static function feed(string $company, array $data, string $convertmessage): string {
-        if ($data['tab'] === 'meetings') {
-            $body = \html_writer::tag('h2', s(self::tr('meeting_title'))) .
-                task_ui_service::note(self::tr('communicationcenter_meetings_help')) .
-                task_ui_service::link(new \moodle_url('/local/kbacompany/meetings.php', ['uuid' => $company]),
-                    self::tr('meeting_open_center'), true);
-            return \html_writer::tag('main', $body, ['class' => 'bms-comm2-panel bms-comm2-feed', 'aria-label' => self::tr('communicationcenter_selectthread')]);
+    private static function thread_list(string $company, array $data, string $section, array $sections): array {
+        global $USER;
+        $search = (string)$data['search'];
+        $filter = (string)($data['filter'] ?? 'all');
+        $chips = [];
+        foreach (['all' => 'communicationcenter_tab_all', 'unread' => 'communicationcenter_tab_unread',
+                'mentions' => 'communicationux2_chip_mentions'] as $key => $string) {
+            $chips[] = ['label' => self::tr($string), 'title' => self::tr($key === 'mentions' ?
+                'communicationcenter_tab_mentions' : $string),
+                'url' => self::url($company, ['tab' => $section, 'filter' => $key])->out(false), 'active' => $key === $filter];
         }
-        if ($data['tab'] === 'notifications') {
-            return \html_writer::tag('main', self::notification_feed($company, $data),
-                ['class' => 'bms-comm2-panel bms-comm2-feed', 'aria-label' => self::tr('communicationcenter_selectthread')]);
+        $items = [];
+        foreach ($data['threads'] as $thread) {
+            $isobject = $thread['thread_type'] === 'object';
+            $kind = null;
+            if ($isobject && !empty($thread['context'])) {
+                $kind = ['label' => (string)$thread['context']['label'],
+                    'variant' => self::kind_variant((string)$thread['context']['kind'])];
+            } else if ($thread['thread_type'] === 'group') {
+                $kind = ['label' => self::tr('communicationux2_group_members', count($thread['participants'])),
+                    'variant' => 'mint'];
+            }
+            $preview = '';
+            if (!empty($thread['preview'])) {
+                $authorid = (int)$thread['preview']['author_id'];
+                $prefix = '';
+                if ($authorid === (int)$USER->id) {
+                    $prefix = self::tr('communicationux2_you') . ': ';
+                } else if ($thread['thread_type'] !== 'direct' && isset($data['employees'][$authorid])) {
+                    $prefix = preg_split('/\s+/u', trim((string)$data['employees'][$authorid]))[0] . ': ';
+                }
+                $preview = $prefix . (string)$thread['preview']['body'];
+            }
+            $avatarsource = $isobject && !empty($thread['context']) ? (string)$thread['context']['label'] : (string)$thread['title'];
+            $unread = max(0, (int)$thread['unread_count']);
+            $items[] = [
+                'uuid' => (string)$thread['uuid'], 'title' => (string)$thread['title'],
+                'url' => self::url($company, ['tab' => $section, 'thread' => $thread['uuid'], 'q' => $search,
+                    'filter' => $filter])->out(false),
+                'active' => !empty($data['selected']) && $data['selected']['uuid'] === $thread['uuid'],
+                'initials' => self::initials($avatarsource),
+                'avatarvariant' => $isobject ? 'object' : ($thread['thread_type'] === 'group' ? 'group' : 'person'),
+                'kind' => $kind, 'preview' => $preview,
+                'time' => self::short_time((int)$thread['last_message_at']),
+                'unread' => $unread > 0 ? $unread : null,
+                'unreadtitle' => self::tr('communication_unreadthreads'),
+                'mention' => !empty($thread['has_unread_mention']),
+                'mentiontitle' => self::tr('communicationcenter_unread_mention_signal'),
+            ];
         }
+        $empty = null;
+        if (!$items) {
+            $other = $section === 'messages' ? 'discussions' : 'messages';
+            $othertotal = (int)($sections[$other]['total'] ?? 0);
+            if ($search !== '') {
+                $empty = ['title' => self::tr('communicationux2_empty_search_title'),
+                    'text' => self::tr('communicationux2_empty_search_text', $search),
+                    'action' => ['label' => self::tr('communicationux2_reset_search'),
+                        'url' => self::url($company, ['tab' => $section, 'filter' => $filter])->out(false)]];
+            } else if ($filter !== 'all') {
+                $empty = ['title' => self::tr('communicationux2_empty_' . $filter . '_title'),
+                    'text' => self::tr('communicationux2_empty_' . $filter . '_text'),
+                    'action' => ['label' => self::tr('communicationux2_show_all'),
+                        'url' => self::url($company, ['tab' => $section, 'filter' => 'all'])->out(false)]];
+            } else {
+                $empty = ['title' => self::tr('communicationux2_empty_' . $section . '_title'),
+                    'text' => self::tr('communicationux2_empty_' . $section . '_text'),
+                    'action' => $othertotal > 0 ? ['label' => self::tr('communicationux2_goto_' . $other, $othertotal),
+                        'url' => self::url($company, ['tab' => $other])->out(false)] : null,
+                    'newconversation' => $section === 'messages'];
+            }
+        }
+        return [
+            'label' => self::tr('communicationcenter_conversations_title'),
+            'filterslabel' => self::tr('communicationux_filters'),
+            'search' => ['hidden' => self::hidden(['uuid' => $company, 'tab' => $section, 'filter' => $filter]),
+                'value' => $search, 'label' => self::tr('tui_search'),
+                'placeholder' => self::tr($section === 'discussions' ? 'communicationux2_search_objects' :
+                    'communicationux2_search_people')],
+            'chips' => $chips, 'items' => $items, 'empty' => $empty,
+            'unreadtotal' => max(0, (int)($data['counts']['unread_threads'] ?? 0)),
+            'unreadlabel' => self::tr('communication_unreadthreads'),
+        ];
+    }
 
+    private static function thread(string $company, array $data, int $actor): array {
         $thread = $data['selected'];
-        if (!$thread) {
-            // An intentional messenger welcome state, rather than a plain text placeholder.
-            // Static SVG is presentation-only and does not expose thread or employee data.
-            $bubbleicon = '<svg viewBox="0 0 96 96" width="96" height="96" fill="none" aria-hidden="true" focusable="false">' .
-                '<path d="M18 23c0-5 4-9 9-9h36c5 0 9 4 9 9v25c0 5-4 9-9 9H42L27 70V57c-5 0-9-4-9-9V23Z" fill="currentColor" opacity=".95"/>' .
-                '<path d="M58 58h13c5 0 9-4 9-9V34c5 1 8 5 8 10v24c0 5-4 9-9 9v10L65 77H57c-5 0-9-4-9-9v-3" fill="currentColor" opacity=".8"/>' .
-                '</svg>';
-            $body = \html_writer::div(
-                \html_writer::div($bubbleicon, 'bms-comm2-welcome-icon') .
-                \html_writer::tag('h2', s(self::tr('communicationcenter_welcome_title')), ['class' => 'bms-comm2-welcome-title']) .
-                \html_writer::tag('p', s(self::tr('communicationcenter_welcome_help')), ['class' => 'bms-comm2-welcome-help']),
-                'bms-comm2-welcome-content');
-            if ($data['tab'] === 'inbox' && !empty($data['notifications'])) {
-                $body .= \html_writer::tag('h3', s(self::tr('communication_notifications')));
-                $body .= self::notification_cards($company, $data['notifications'], 5);
-            }
-            return \html_writer::tag('main', $body, ['class' => 'bms-comm2-panel bms-comm2-feed bms-comm2-welcome', 'aria-label' => self::tr('communicationcenter_selectthread')]);
+        $tab = (string)$data['tab'];
+        $isobject = $thread['thread_type'] === 'object' && !empty($thread['context']);
+        $meta = $data['selected_meta'] ?? null;
+        $kindline = ['pill' => null, 'status' => '', 'due' => '', 'text' => ''];
+        if ($isobject) {
+            $kindline['pill'] = ['label' => (string)$thread['context']['label'],
+                'variant' => self::kind_variant((string)$thread['context']['kind'])];
+            if ($meta && $meta['status'] !== '') { $kindline['status'] = (string)$meta['status']; }
+            $due = $meta ? self::date_text((string)$meta['due']) : '';
+            if ($due !== '') { $kindline['due'] = self::tr('communicationux2_due', $due); }
+        } else {
+            $kindline['text'] = $thread['thread_type'] === 'group' ?
+                self::tr('communicationux2_group_people', count($thread['participants'])) : self::tr('communicationux2_direct');
         }
-
-        $participantcount = count($thread['participants']);
-        $heading = \html_writer::div(
-            \html_writer::tag('h2', s($thread['title']), ['class' => 'bms-comm2-feed-title', 'title' => (string)$thread['title']]) .
-            \html_writer::tag('span', s(self::tr('communication_participants') . ': ' . $participantcount),
-                ['class' => 'bms-comm2-feed-people']), 'bms-comm3-chat-heading');
-        $controls = \html_writer::tag('button', '⌕', ['type'=>'button',
-            'class'=>'bms-comm3-iconbtn', 'data-bms-comm-search-toggle'=>'1',
-            'aria-label'=>self::tr('communicationcenter_search_messages'),
-            'title'=>self::tr('communicationcenter_search_messages'), 'aria-controls'=>'bms-comm3-search-panel',
-            'aria-expanded'=>'false']);
-        $controls .= \html_writer::tag('button', s(self::tr('communicationux_details')), ['type'=>'button',
-            'class'=>'bms-comm3-iconbtn', 'data-bms-comm-context-toggle'=>'1',
-            'aria-label'=>self::tr('communicationcenter_context_title'),
-            'title'=>self::tr('communicationcenter_context_title'), 'aria-controls'=>'bms-comm3-context-details', 'aria-expanded'=>'false']);
-        $back = \html_writer::link(self::url($company, ['tab'=>$data['tab']]), '‹',
-            ['class'=>'bms-comm3-mobile-back', 'aria-label'=>self::tr('communicationcenter_conversations_title')]);
-        $body = \html_writer::div($back . self::avatar((string)$thread['title'],
-            $thread['thread_type'] === 'object' ? 'object' : '') . $heading .
-            \html_writer::div($controls, 'bms-comm3-chat-controls'), 'bms-comm2-feed-head');
-        if (!empty($thread['context'])) {
-            $contextline = s($thread['context']['label'] . ' · ' . $thread['context']['title']);
-            if ((string)$thread['context']['url'] !== '') {
-                $contextline .= ' ' . \html_writer::link(new \moodle_url($thread['context']['url']),
-                    s(self::tr($thread['context']['kind'] === 'task' ? 'communicationcenter_opentask' :
-                        ($thread['context']['kind'] === 'battleplan' ? 'communicationcenter_openplan' : 'communication_opencontext'))),
-                    ['class' => 'bms-comm2-feed-context-link']);
-            }
-            $body .= \html_writer::div($contextline, 'bms-comm2-feed-context');
+        $openlink = null;
+        if ($isobject && (string)$thread['context']['url'] !== '') {
+            $kind = (string)$thread['context']['kind'];
+            $openlink = ['url' => (string)$thread['context']['url'], 'label' => self::tr($kind === 'task' ?
+                'communicationcenter_opentask' : ($kind === 'battleplan' ? 'communicationcenter_openplan' :
+                'communication_opencontext'))];
         }
-        // Search operates only on the canonical already-authorized selected thread projection.
-        // There is no separate messages query, write operation, or change to read state.
         $messagequery = trim(\core_text::substr((string)($data['message_search'] ?? ''), 0, 200));
-        $searchform = self::hidden(['uuid' => $company, 'tab' => $data['tab'], 'thread' => $thread['uuid']]);
-        $searchform .= \html_writer::label(s(self::tr('communicationcenter_search_messages')),
-            'bms_comm2_messagesearch', false, ['class'=>'sr-only']);
-        $searchform .= \html_writer::empty_tag('input', ['type'=>'search', 'id'=>'bms_comm2_messagesearch',
-            'name'=>'mq', 'value'=>$messagequery, 'class'=>'form-control',
-            'placeholder'=>self::tr('communicationcenter_search_messages')]);
-        $searchform .= \html_writer::empty_tag('input', ['type' => 'submit', 'hidden' => 'hidden', 'tabindex' => '-1']);
-        if ($messagequery !== '') {
-            $searchform .= \html_writer::link(self::url($company, ['tab'=>$data['tab'], 'thread'=>$thread['uuid']]),
-                s(self::tr('communicationcenter_clear_search')), ['class'=>'btn btn-outline-secondary']);
-        }
-        $body .= \html_writer::tag('form', $searchform, ['method'=>'get', 'id'=>'bms-comm3-search-panel',
-            'class'=>'bms-comm2-search bms-comm2-message-search', 'data-has-query'=>$messagequery !== '' ? '1' : '0']);
-        // Canonical DB-bounded pagination. The core enforces company, participant and object ACL.
         $visiblemessages = $data['messages'];
         $history = $data['history'] ?? ['total' => count($visiblemessages), 'page' => 0, 'pages' => 1];
-        $matched = (int)$history['total'];
         $pages = max(1, (int)$history['pages']);
         $page = (int)$history['page'];
-        $messagehtml = '';
-        $previousday = null;
+
+        // Timeline: messages plus task History events inside the page's time window (never during a search).
         $timeline = [];
         foreach ($visiblemessages as $i => $message) {
             $timeline[] = ['time' => (int)$message['time_created'], 'order' => 1, 'seq' => $i, 'message' => $message];
         }
-        // Task History events appear on the history page whose time window contains them (never during a search):
-        // the oldest page has no lower bound, the newest page has no upper bound.
         if ($messagequery === '') {
-            $pageindex = (int)($history['page'] ?? 0);
-            $pagecount = max(1, (int)($history['pages'] ?? 1));
-            $lower = $visiblemessages && $pageindex < $pagecount - 1 ? (int)$visiblemessages[0]['time_created'] : PHP_INT_MIN;
-            $upper = $visiblemessages && $pageindex > 0 ?
+            $lower = $visiblemessages && $page < $pages - 1 ? (int)$visiblemessages[0]['time_created'] : PHP_INT_MIN;
+            $upper = $visiblemessages && $page > 0 ?
                 (int)$visiblemessages[count($visiblemessages) - 1]['time_created'] : PHP_INT_MAX;
             foreach (($data['events'] ?? []) as $i => $event) {
                 $time = (int)$event['time_created'];
@@ -315,236 +285,199 @@ class communication_center_ui_service {
         usort($timeline, static function(array $a, array $b): int {
             return [$a['time'], $a['order'], $a['seq']] <=> [$b['time'], $b['order'], $b['seq']];
         });
+        // "New messages" divider: before the first of the thread's unread messages from others on the latest page.
+        $newfrom = null;
+        $unread = (int)($thread['unread_count'] ?? 0);
+        if ($unread > 0 && $page === 0 && $messagequery === '') {
+            $others = array_values(array_filter($visiblemessages, static function(array $m) use ($actor): bool {
+                return (int)$m['author_id'] !== $actor && $m['status'] === 'active';
+            }));
+            if (count($others) >= $unread) { $newfrom = $others[count($others) - $unread]['uuid']; }
+        }
+        $writer = !isset($thread['is_participant']) || !empty($thread['is_participant']);
+        $entries = [];
+        $previousday = null;
         foreach ($timeline as $entry) {
             $day = business_date_service::day((int)$entry['time']);
             if ($day !== $previousday) {
-                $today = business_date_service::day(time());
-                $yesterday = business_date_service::yesterday();
-                $label = $day === $today ? self::tr('bmscomm3_today') :
-                    ($day === $yesterday ? self::tr('bmscomm3_yesterday') :
-                    userdate((int)$entry['time'], '%d.%m.%Y'));
-                $messagehtml .= \html_writer::div(s($label), 'bms-comm3-day-separator');
+                $entries[] = ['isday' => true, 'label' => self::day_label((int)$entry['time'])];
                 $previousday = $day;
             }
-            $messagehtml .= isset($entry['event']) ? self::event_line($entry['event']) :
-                self::message_card($company, $thread, $entry['message'], $data['employees'], $data['tab']);
+            if (isset($entry['event'])) {
+                $entries[] = ['isevent' => true] + self::event_line($entry['event']);
+                continue;
+            }
+            if ($newfrom !== null && $entry['message']['uuid'] === $newfrom) {
+                $entries[] = ['isnew' => true, 'label' => self::tr('communicationux2_new_messages')];
+            }
+            $entries[] = ['ismessage' => true] +
+                self::message($company, $thread, $entry['message'], $data['employees'], $tab, $writer, $actor);
         }
-        if ($messagequery !== '') {
-            $body .= \html_writer::div(s(get_string('communicationcenter_search_count','local_kbacompany', $matched)),
-                'bms-comm2-search-count');
-        }
-        if ($messagehtml === '') {
-            $messagehtml = task_ui_service::note(self::tr($messagequery !== '' ?
-                'communicationcenter_search_empty' : 'communicationcenter_no_messages'));
-        }
-        $body .= \html_writer::div($messagehtml, 'bms-comm2-messages', ['id' => 'bms-comm2-history']);
+        $pager = null;
         if ($pages > 1) {
-            $base = ['tab'=>$data['tab'], 'thread'=>$thread['uuid']];
+            $base = ['tab' => $tab, 'thread' => $thread['uuid']];
             if ($messagequery !== '') { $base['mq'] = $messagequery; }
-            $pager = \html_writer::tag('span', s(get_string('communicationcenter_history_page',
-                'local_kbacompany', (object)['current'=>$page + 1, 'total'=>$pages])), ['class'=>'bms-comm2-page-number']);
-            if ($page + 1 < $pages) {
-                $pager = \html_writer::link(self::url($company, $base + ['mpage'=>$page+1]),
-                    s(self::tr('communicationcenter_older_messages')), ['class'=>'btn btn-outline-secondary btn-sm']) . $pager;
-            }
-            if ($page > 0) {
-                $pager .= \html_writer::link(self::url($company, $base + ['mpage'=>$page-1]),
-                    s(self::tr('communicationcenter_newer_messages')), ['class'=>'btn btn-outline-secondary btn-sm']);
-            }
-            $body .= \html_writer::tag('nav', $pager,
-                ['class'=>'bms-comm2-message-pager',
-                 'aria-label'=>self::tr('communicationcenter_history_navigation')]);
+            $pager = ['label' => self::tr('communicationcenter_history_navigation'),
+                'text' => get_string('communicationcenter_history_page', 'local_kbacompany',
+                    (object)['current' => $page + 1, 'total' => $pages]),
+                'older' => $page + 1 < $pages ? ['url' => self::url($company, $base + ['mpage' => $page + 1])->out(false),
+                    'label' => self::tr('communicationcenter_older_messages')] : null,
+                'newer' => $page > 0 ? ['url' => self::url($company, $base + ['mpage' => $page - 1])->out(false),
+                    'label' => self::tr('communicationcenter_newer_messages')] : null];
         }
-
-        if (isset($thread['is_participant']) && !$thread['is_participant']) {
+        $model = [
+            'uuid' => (string)$thread['uuid'], 'title' => (string)$thread['title'], 'kindline' => $kindline,
+            'backurl' => self::url($company, ['tab' => $tab])->out(false), 'backlabel' => self::tr('communicationcenter_conversations_title'),
+            'openlink' => $openlink,
+            'detailslabel' => self::tr($isobject ? 'communicationux2_details' : 'communication_participants'),
+            'detailstitle' => self::tr('communicationcenter_context_title'),
+            'searchlabel' => self::tr('communicationcenter_search_messages'),
+            'messagesearch' => ['hidden' => self::hidden(['uuid' => $company, 'tab' => $tab, 'thread' => $thread['uuid']]),
+                'value' => $messagequery, 'hasquery' => $messagequery !== '',
+                'clearurl' => self::url($company, ['tab' => $tab, 'thread' => $thread['uuid']])->out(false),
+                'clearlabel' => self::tr('communicationcenter_clear_search'),
+                'count' => $messagequery !== '' ? get_string('communicationcenter_search_count', 'local_kbacompany',
+                    (int)$history['total']) : ''],
+            'entries' => $entries,
+            'nomessages' => $entries ? '' : self::tr($messagequery !== '' ? 'communicationcenter_search_empty' :
+                'communicationcenter_no_messages'),
+            'feedlabel' => self::tr('communicationcenter_selectthread'),
+            'pager' => $pager,
+        ];
+        if (!$writer) {
             if (empty($thread['can_join'])) {
-                $body .= task_ui_service::note(self::tr('communicationcenter_readonly_note'));
-                return \html_writer::tag('main', $body, ['class' => 'bms-comm2-panel bms-comm2-feed', 'aria-label' => self::tr('communicationcenter_selectthread')]);
+                $model['readonly'] = self::tr('communicationcenter_readonly_note');
+            } else {
+                // Readers join explicitly before writing; reading never joins silently.
+                $model['join'] = ['hidden' => array_merge(self::post_base($company, 'createobject'), self::hidden([
+                    'objectkind' => $thread['context']['kind'] ?? $thread['context_kind'],
+                    'objectuuid' => $thread['context_uuid'], 'objectrevision' => $thread['context_revision']])),
+                    'note' => self::tr('communicationcenter_reader_note'), 'label' => self::tr('communicationcenter_join_discussion')];
             }
-            // Readers of a task discussion join explicitly before writing; reading never joins silently.
-            $join = self::post_base($company, 'createobject') . self::hidden([
-                'objectkind' => $thread['context']['kind'] ?? $thread['context_kind'],
-                'objectuuid' => $thread['context_uuid'], 'objectrevision' => $thread['context_revision'],
-            ]) . \html_writer::tag('p', s(self::tr('communicationcenter_reader_note'))) .
-                self::button(self::tr('communicationcenter_join_discussion'));
-            $body .= \html_writer::tag('form', $join, ['method' => 'post', 'class' => 'bms-comm2-compose bms-comm2-join']);
-            return \html_writer::tag('main', $body, ['class' => 'bms-comm2-panel bms-comm2-feed', 'aria-label' => self::tr('communicationcenter_selectthread')]);
+            return $model;
         }
+        $model['compose'] = self::compose($company, $data, $thread, $isobject, $actor);
+        return $model;
+    }
+
+    private static function compose(string $company, array $data, array $thread, bool $isobject, int $actor): array {
+        $tab = (string)$data['tab'];
         $replytarget = null;
         $replyuuid = (string)($data['reply'] ?? '');
-        foreach ($visiblemessages as $candidate) {
+        foreach ($data['messages'] as $candidate) {
             if ($replyuuid !== '' && $candidate['uuid'] === $replyuuid && $candidate['status'] === 'active') {
                 $replytarget = $candidate; break;
             }
         }
-        $mentionoptions = [];
+        $mentions = [];
         foreach ($thread['participants'] as $participant) {
-            if ((int)$participant['user_id'] !== (int)$GLOBALS['USER']->id) {
-                $mentionoptions[(int)$participant['user_id']] = $participant['name'];
+            if ((int)$participant['user_id'] !== $actor) {
+                $mentions[(int)$participant['user_id']] = $participant['name'];
             }
         }
-        $form = self::post_base($company, 'send', $thread['uuid']);
+        $hidden = self::post_base($company, 'send', $thread['uuid']);
+        $reply = null;
         if ($replytarget) {
-            $form .= self::hidden(['replytouuid' => $replytarget['uuid']]);
-            $form .= \html_writer::div(s(self::tr('communication_replyingto')) . self::quote([
-                    'author_name' => $replytarget['author_name'], 'status' => 'active',
-                    'excerpt' => \core_text::substr(preg_replace('/\s+/u', ' ', trim((string)$replytarget['body'])), 0, 160)]) .
-                \html_writer::link(self::url($company, ['tab' => $data['tab'], 'thread' => $thread['uuid']]),
-                    s(self::tr('communication_cancelreply'))), 'bms-comm2-reply-target');
+            $hidden = array_merge($hidden, self::hidden(['replytouuid' => $replytarget['uuid']]));
+            $reply = ['label' => self::tr('communication_replyingto'), 'author' => (string)$replytarget['author_name'],
+                'excerpt' => \core_text::substr(preg_replace('/\s+/u', ' ', trim((string)$replytarget['body'])), 0, 160),
+                'cancelurl' => self::url($company, ['tab' => $tab, 'thread' => $thread['uuid']])->out(false),
+                'cancellabel' => self::tr('communication_cancelreply')];
         }
-        $form .= \html_writer::label(s(self::tr('communication_message')), 'bms_comm2_body', false, ['class' => 'sr-only']);
-        $form .= \html_writer::tag('textarea', '', ['id' => 'bms_comm2_body', 'name' => 'body', 'rows' => 3,
-            'class' => 'form-control', 'placeholder' => self::tr('communicationcenter_message_placeholder')]);
-        $tools = '';
-        // The native file input stays in the form (multipart POST) and keyboard-focusable; the label is its visible
-        // button. The chosen file name and a remove button are shown next to it (communication_live_ui.js).
-        $tools .= \html_writer::empty_tag('input', ['type' => 'file', 'name' => 'attachment', 'id' => 'bms_comm2_attachment',
-            'class' => 'bms-comm3-file-input']);
-        $tools .= \html_writer::label('📎', 'bms_comm2_attachment', false,
-            ['class' => 'bms-comm3-tool', 'title' => self::tr('communication_attachment'),
-             'aria-label' => self::tr('communication_attachment')]);
-        $tools .= \html_writer::span('', 'bms-comm3-file-name', ['data-bms-comm-filename' => '1', 'aria-live' => 'polite']);
-        $tools .= \html_writer::tag('button', '×', ['type' => 'button', 'class' => 'bms-comm3-file-clear',
-            'data-bms-comm-file-clear' => '1', 'hidden' => 'hidden', 'title' => self::tr('communication_file_remove'),
-            'aria-label' => self::tr('communication_file_remove')]);
-        if ($mentionoptions) {
-            $mentionbody = \html_writer::label(s(self::tr('communication_mentions')), 'bms_comm2_mentions');
-            $mentionbody .= \html_writer::select($mentionoptions, 'mentions[]', [], false,
-                ['id' => 'bms_comm2_mentions', 'class' => 'form-control', 'multiple' => 'multiple']);
-            $mentionbody .= \html_writer::tag('small', s(self::tr('communication_mentions_help')), ['class' => 'bms-tui-note']);
-            $mentionbody .= \html_writer::tag('small', s(self::tr('communication_mentions_inline_help')), ['class' => 'bms-tui-note']);
-            $tools .= \html_writer::tag('details',
-                \html_writer::tag('summary', '@', ['title' => self::tr('communication_mentions'),
-                    'aria-label' => self::tr('communication_mentions')]) .
-                \html_writer::div($mentionbody, 'bms-comm3-mention-picker-body'),
-                ['class' => 'bms-comm3-mention-picker']);
-        }
-        $send = \html_writer::tag('button',
-            \html_writer::tag('span', '➜', ['aria-hidden' => 'true']) .
-            \html_writer::tag('span', s(self::tr('communication_send')), ['class' => 'sr-only']),
-            ['type' => 'submit', 'class' => 'btn btn-primary bms-comm3-send']);
-        $form .= \html_writer::div(
-            \html_writer::div($tools, 'bms-comm3-compose-tools') .
-            \html_writer::div($send, 'bms-comm3-compose-actions'),
-            'bms-comm3-compose-bar');
-        $body .= \html_writer::tag('form', $form, ['method' => 'post', 'enctype' => 'multipart/form-data',
-            'class' => 'bms-comm2-compose', 'data-bms-comm-compose'=>'1',
-            'data-maxbytes' => (int)get_max_upload_file_size(),
-            'data-msg-empty' => self::tr('communication_body_or_file'),
-            'data-msg-toolarge' => self::tr('communication_filesize')]);
-        return \html_writer::tag('main', $body, ['class' => 'bms-comm2-panel bms-comm2-feed', 'aria-label' => self::tr('communicationcenter_selectthread')]);
-    }
-
-    /** Quoted original of a reply; a withdrawn original shows only that it was withdrawn. */
-    private static function quote(?array $quote): string {
-        if (!$quote) { return ''; }
-        $text = $quote['status'] === 'active' ? (string)$quote['excerpt'] : self::tr('communication_messagewithdrawn');
-        return \html_writer::tag('blockquote', \html_writer::tag('strong', s((string)$quote['author_name'])) .
-            \html_writer::div(s($text)), ['class' => 'bms-comm2-quote']);
+        return [
+            'hidden' => $hidden, 'reply' => $reply,
+            'maxbytes' => (int)get_max_upload_file_size(),
+            'msgempty' => self::tr('communication_body_or_file'), 'msgtoolarge' => self::tr('communication_filesize'),
+            'bodylabel' => self::tr('communication_message'),
+            'placeholder' => self::tr('communicationux2_compose_placeholder'),
+            'fileslabel' => self::tr('communicationux2_files'), 'filetitle' => self::tr('communication_attachment'),
+            'fileremove' => self::tr('communication_file_remove'),
+            'audience' => $isobject ? self::tr('communicationux2_audience_object') : '',
+            'mentions' => $mentions ? ['label' => self::tr('communication_mentions'),
+                'options' => self::options($mentions), 'help' => self::tr('communication_mentions_help'),
+                'inlinehelp' => self::tr('communication_mentions_inline_help')] : null,
+            'sendlabel' => self::tr('communication_send'),
+        ];
     }
 
     /** Read-only task History event inside a task discussion; never a message. */
-    private static function event_line(array $event): string {
+    private static function event_line(array $event): array {
         $key = 'taskdiscussion_event_' . (string)$event['action'];
         $label = get_string_manager()->string_exists($key, 'local_kbacompany') ? self::tr($key) : self::tr('tui_history_event');
-        $line = \html_writer::tag('strong', s($label));
-        if ($event['new_status'] !== '' && $event['new_status'] !== $event['old_status']) {
-            $line .= ' ' . task_ui_service::badge((string)$event['new_status']);
+        $status = '';
+        if ($event['new_status'] !== '' && $event['new_status'] !== $event['old_status'] &&
+                in_array((string)$event['new_status'], task_service::STATUSES, true)) {
+            $status = self::tr('taskcenter_status_' . $event['new_status']);
         }
-        $actor = trim((string)$event['actor_name']);
-        $line .= ' · ' . ($actor !== '' ? s($actor) . ' · ' : '') . s(userdate((int)$event['time_created'], '%H:%M'));
-        $reason = trim((string)($event['reason'] ?? ''));
-        return \html_writer::div($line . ($reason !== '' ? \html_writer::div(s($reason), 'bms-comm2-event-reason') : ''),
-            'bms-comm2-event', ['role' => 'note']);
+        return ['label' => $label, 'status' => $status, 'actor' => trim((string)$event['actor_name']),
+            'time' => userdate((int)$event['time_created'], '%H:%M'), 'reason' => trim((string)($event['reason'] ?? ''))];
     }
 
-    private static function message_card(string $company, array $thread, array $message, array $employees, string $tab): string {
-        $content = $message['status'] === 'active' ? format_text($message['body'], FORMAT_PLAIN) :
-            \html_writer::tag('em', s(self::tr('communication_messagewithdrawn')));
-        $meta = s($message['author_name']) . ' · ' . s(userdate((int)$message['time_created']));
-        if (!empty($message['edited']) && $message['status'] === 'active') {
-            $meta .= ' · ' . s(self::tr('communication_edited'));
+    private static function message(string $company, array $thread, array $message, array $employees, string $tab,
+            bool $writer, int $actor): array {
+        $active = $message['status'] === 'active';
+        $own = (int)$message['author_id'] === $actor;
+        $mentionnames = [];
+        foreach (($message['mentions'] ?? []) as $userid) {
+            if (isset($employees[(int)$userid])) { $mentionnames[] = '@' . $employees[(int)$userid]; }
         }
-        $html = \html_writer::div($meta, 'bms-comm2-message-meta') . self::quote($message['reply_to'] ?? null) .
-            \html_writer::div($content, 'bms-comm2-message-body');
-        $writer = !isset($thread['is_participant']) || !empty($thread['is_participant']);
-        if (!empty($message['mentions'])) {
-            $names = [];
-            foreach ($message['mentions'] as $userid) {
-                if (isset($employees[(int)$userid])) { $names[] = '@' . $employees[(int)$userid]; }
-            }
-            if ($names) { $html .= \html_writer::div(s(implode(', ', $names)), 'bms-comm2-mentions'); }
+        $files = [];
+        foreach ($active ? ($message['attachments'] ?? []) : [] as $attachment) {
+            $label = $attachment['label'] !== '' ? $attachment['label'] : $attachment['value'];
+            $files[] = ['name' => (string)$label, 'url' => (string)$attachment['url'],
+                'size' => isset($attachment['size']) ? display_size((int)$attachment['size']) : ''];
         }
-        if (!empty($message['attachments'])) {
-            $files = '';
-            foreach ($message['attachments'] as $attachment) {
-                $label = $attachment['label'] !== '' ? $attachment['label'] : $attachment['value'];
-                $files .= $attachment['url'] !== '' ?
-                    \html_writer::link($attachment['url'], s($label), ['class' => 'btn btn-sm btn-outline-secondary']) :
-                    \html_writer::tag('span', s($label), ['class' => 'badge badge-light']);
-            }
-            $html .= \html_writer::div($files, 'bms-comm2-files');
+        $quote = null;
+        if (!empty($message['reply_to'])) {
+            $quote = ['author' => (string)$message['reply_to']['author_name'],
+                'text' => $message['reply_to']['status'] === 'active' ? (string)$message['reply_to']['excerpt'] :
+                    self::tr('communication_messagewithdrawn')];
         }
-        $actions = '';
-        if ($writer && $message['status'] === 'active') {
-            $actions .= task_ui_service::link(self::url($company, ['tab' => $tab, 'thread' => $thread['uuid'],
-                'reply' => $message['uuid']]) , self::tr('communication_reply'));
+        $actions = [];
+        if ($writer && $active) {
+            $actions[] = ['url' => self::url($company, ['tab' => $tab, 'thread' => $thread['uuid'],
+                'reply' => $message['uuid']])->out(false), 'label' => self::tr('communication_reply')];
         }
         if ($message['task_uuid'] !== '') {
-            $actions .= task_ui_service::link(task_ui_service::url($company, ['task' => $message['task_uuid']]),
-                self::tr('communication_opentask'));
-        } else if ($writer && $message['status'] === 'active') {
-            $actions .= task_ui_service::link(self::url($company, ['tab' => $tab, 'thread' => $thread['uuid'],
-                'convert' => $message['uuid']]), self::tr('communication_createtask'));
+            $actions[] = ['url' => task_ui_service::url($company, ['task' => $message['task_uuid']])->out(false),
+                'label' => self::tr('communication_opentask')];
+        } else if ($writer && $active) {
+            $actions[] = ['url' => self::url($company, ['tab' => $tab, 'thread' => $thread['uuid'],
+                'convert' => $message['uuid']])->out(false), 'label' => self::tr('communication_createtask')];
         }
-        if ($writer && $message['status'] === 'active' && $thread['context_kind'] === 'meeting') {
-            $form = self::post_base($company, 'createdecision', $thread['uuid']) .
-                self::hidden(['messageuuid' => $message['uuid']]) .
-                self::button(self::tr('communication_createdecision'), 'btn btn-sm btn-outline-primary');
-            $actions .= \html_writer::tag('form', $form, ['method' => 'post', 'class' => 'd-inline-block']);
+        $decision = null;
+        if ($writer && $active && $thread['context_kind'] === 'meeting') {
+            $decision = ['hidden' => array_merge(self::post_base($company, 'createdecision', $thread['uuid']),
+                self::hidden(['messageuuid' => $message['uuid']])), 'label' => self::tr('communication_createdecision')];
         }
-        if ($actions !== '') { $html .= \html_writer::div($actions, 'bms-comm2-message-actions'); }
-        $own = (int)$message['author_id'] === (int)$GLOBALS['USER']->id;
-        // Authors may correct or withdraw their own active messages. Linked tasks and
-        // decisions are additionally protected server-side to preserve audit trails.
-        if ($own && $message['status'] === 'active' && $message['task_uuid'] === '') {
+        $edit = null;
+        // Authors may correct or withdraw their own active messages; linked tasks stay protected server-side.
+        if ($own && $active && $message['task_uuid'] === '') {
             $basehash = hash('sha256', $message['body'] . "\n" . $message['status']);
-            $editform = self::post_base($company, 'editmessage', $thread['uuid']) .
-                self::hidden(['messageuuid' => $message['uuid'], 'expectedhash' => $basehash, 'tab' => $tab]);
-            $editform .= \html_writer::label(s(self::tr('communication_message')),
-                'editmsg_' . $message['uuid'], false, ['class' => 'sr-only']);
-            $editform .= \html_writer::tag('textarea', s($message['body']), [
-                'id' => 'editmsg_' . $message['uuid'], 'name' => 'body', 'rows' => 3,
-                'required' => 'required', 'maxlength' => 20000, 'class' => 'form-control']);
-            $editform .= self::button(self::tr('communication_saveedit'), 'btn btn-primary btn-sm');
-            $edit = \html_writer::tag('details',
-                \html_writer::tag('summary', s(self::tr('communication_editmessage'))) .
-                \html_writer::tag('form', $editform, ['method' => 'post']),
-                ['class' => 'bms-comm5-edit']);
-            $deleteform = self::post_base($company, 'withdrawmessage', $thread['uuid']) .
-                self::hidden(['messageuuid' => $message['uuid'], 'expectedhash' => $basehash, 'tab' => $tab]);
-            $deleteform .= \html_writer::tag('p', s(self::tr('communication_deletenotice')));
-            $checkid = 'deleteconfirm_' . $message['uuid'];
-            $deleteform .= \html_writer::empty_tag('input', [
-                'type' => 'checkbox', 'id' => $checkid, 'name' => 'confirmwithdraw',
-                'value' => '1', 'required' => 'required']);
-            $deleteform .= \html_writer::label(s(self::tr('communication_confirmdelete')), $checkid);
-            $deleteform .= self::button(self::tr('communication_withdrawmessage'), 'btn btn-outline-danger btn-sm');
-            $delete = \html_writer::tag('details',
-                \html_writer::tag('summary', s(self::tr('communication_withdrawmessage'))) .
-                \html_writer::tag('form', $deleteform, ['method' => 'post']),
-                ['class' => 'bms-comm5-delete']);
-            $html .= \html_writer::div($edit . $delete, 'bms-comm5-actions');
+            $common = self::hidden(['messageuuid' => $message['uuid'], 'expectedhash' => $basehash, 'tab' => $tab]);
+            $edit = [
+                'edithidden' => array_merge(self::post_base($company, 'editmessage', $thread['uuid']), $common),
+                'deletehidden' => array_merge(self::post_base($company, 'withdrawmessage', $thread['uuid']), $common),
+                'editlabel' => self::tr('communicationux2_edit'), 'deletelabel' => self::tr('communication_withdrawmessage'),
+                'savelabel' => self::tr('communication_saveedit'), 'bodylabel' => self::tr('communication_message'),
+                'deletenotice' => self::tr('communication_deletenotice'),
+                'confirmlabel' => self::tr('communication_confirmdelete'),
+            ];
         }
-        return \html_writer::tag('article', $html,
-            ['class'=>'bms-comm2-message ' . ($own ? 'bms-comm3-outgoing' : 'bms-comm3-incoming'),
-             'id'=>'message-' . $message['uuid']]);
-    }
-
-    private static function notification_feed(string $company, array $data): string {
-        $html = \html_writer::tag('h2', s(self::tr('communication_notifications')));
-        $html .= self::notification_cards($company, $data['notifications'], 30);
-        return $html;
+        return [
+            'uuid' => (string)$message['uuid'], 'own' => $own, 'withdrawn' => !$active,
+            'author' => $own ? self::tr('communicationux2_you') : (string)$message['author_name'],
+            'time' => userdate((int)$message['time_created'], '%H:%M'),
+            'fulltime' => userdate((int)$message['time_created']),
+            'edited' => !empty($message['edited']) && $active ? self::tr('communication_edited') : '',
+            'quote' => $quote,
+            'bodyhtml' => $active ? format_text($message['body'], FORMAT_PLAIN) : '',
+            'withdrawntext' => $active ? '' : self::tr('communication_messagewithdrawn'),
+            'body' => (string)$message['body'],
+            'mentions' => $mentionnames ? implode(', ', $mentionnames) : '',
+            'files' => $files, 'hasfiles' => !empty($files), 'actions' => $actions, 'decision' => $decision, 'edit' => $edit,
+            'hasactions' => $actions || $decision || $edit,
+        ];
     }
 
     /**
@@ -562,193 +495,191 @@ class communication_center_ui_service {
         return null;
     }
 
-    private static function notification_cards(string $company, array $notifications, int $limit): string {
-        if (!$notifications) { return task_ui_service::note(self::tr('communication_nonotifications')); }
-        $html = ''; $n = 0;
-        foreach ($notifications as $notification) {
-            if ($n++ >= $limit) { break; }
+    /** Type chip of a notification kind: [string key, variant, icon]. */
+    public static function notification_type(string $kind): array {
+        if ($kind === 'mention') { return ['communicationux2_type_mention', 'sky', '@']; }
+        if (in_array($kind, ['message', 'thread_invite'], true)) { return ['communicationux2_type_message', 'sky', '✉']; }
+        if (in_array($kind, ['task_created', 'calendar_task_due'], true)) { return ['communicationux2_type_task', 'mint', '✓']; }
+        if ($kind === 'calendar_meeting_hour') { return ['communicationux2_type_meeting', 'sand', '◷']; }
+        if (strpos($kind, 'calendar_') === 0) { return ['communicationux2_type_dayplan', 'sand', '◷']; }
+        if (strpos($kind, 'dailyreport_') === 0) { return ['communicationux2_type_dailyreport', 'mint', '⚑']; }
+        return ['communicationux2_type_other', 'sky', '•'];
+    }
+
+    private static function notifications(string $company, array $data): array {
+        $onlyunread = ($data['filter'] ?? 'all') === 'unread';
+        $groups = ['today' => [], 'earlier' => []];
+        $today = business_date_service::day(time());
+        $unread = 0;
+        foreach (array_slice($data['notifications'], 0, 30) as $notification) {
+            if (!$notification['is_read']) { $unread++; }
+            if ($onlyunread && $notification['is_read']) { continue; }
             $key = 'communication_notification_' . $notification['kind'];
-            $kind = get_string_manager()->string_exists($key, 'local_kbacompany') ? self::tr($key) : self::tr('communication_notification');
-            $actions = '';
+            $title = get_string_manager()->string_exists($key, 'local_kbacompany') ? self::tr($key) :
+                self::tr('communication_notification');
+            [$typekey, $variant, $icon] = self::notification_type((string)$notification['kind']);
+            $links = [];
             if ($notification['thread_uuid'] !== '') {
-                $actions .= task_ui_service::link(self::url($company, ['tab' => 'all', 'thread' => $notification['thread_uuid']]),
-                    self::tr('communication_open'));
+                $links[] = ['url' => self::url($company, ['thread' => $notification['thread_uuid']])->out(false),
+                    'label' => self::tr('communicationux2_open_conversation')];
             }
             $target = self::daily_report_target($company, (string)$notification['kind']);
-            if ($target) {
-                $actions .= task_ui_service::link($target[0], self::tr($target[1]));
+            if ($target) { $links[] = ['url' => $target[0]->out(false), 'label' => self::tr($target[1])]; }
+            if (strpos((string)$notification['kind'], 'calendar_') === 0) {
+                $links[] = ['url' => (new \moodle_url('/local/kbacompany/calendar.php', ['uuid' => $company]))->out(false),
+                    'label' => self::tr('communicationux2_open_calendar')];
             }
-            if (!$notification['is_read']) {
-                $form = self::post_base($company, 'readnotification') .
-                    self::hidden(['notification' => $notification['uuid'], 'tab' => 'notifications']) .
-                    self::button(self::tr('communication_markread'), 'btn btn-sm btn-outline-secondary');
-                $actions .= \html_writer::tag('form', $form, ['method' => 'post', 'class' => 'd-inline-block']);
-            }
-            $actions .= $notification['is_read'] ? \html_writer::tag('span', s(self::tr('communicationux_read')),
-                ['class' => 'bms-comm-ux-read-state']) : \html_writer::tag('span', s(self::tr('communicationux_unread')),
-                ['class' => 'bms-comm-ux-unread-state']);
-            $html .= \html_writer::tag('article',
-                \html_writer::tag('strong', s($kind)) .
-                \html_writer::div(s($notification['title']), 'bms-comm2-notification-title') .
-                \html_writer::div(s(userdate((int)$notification['time_created'])), 'bms-comm2-thread-time') .
-                \html_writer::div($actions, 'bms-comm2-message-actions'),
-                ['class' => 'bms-comm2-notification' . (!$notification['is_read'] ? ' is-unread' : '')]);
+            $time = (int)$notification['time_created'];
+            $istoday = business_date_service::day($time) === $today;
+            $groups[$istoday ? 'today' : 'earlier'][] = [
+                'uuid' => (string)$notification['uuid'], 'read' => !empty($notification['is_read']),
+                'type' => self::tr($typekey), 'variant' => $variant, 'icon' => $icon,
+                'title' => $title, 'subtitle' => (string)$notification['title'], 'links' => $links,
+                'time' => $istoday ? userdate($time, '%H:%M') : userdate($time, '%d.%m.%Y, %H:%M'),
+                'markread' => empty($notification['is_read']) ? ['hidden' => array_merge(
+                    self::post_base($company, 'readnotification'),
+                    self::hidden(['notification' => $notification['uuid'], 'tab' => 'notifications'])),
+                    'label' => self::tr('communicationux2_mark_read')] : null,
+                'readlabel' => self::tr('communicationux_read'),
+                'unreadlabel' => self::tr('communicationux_unread'),
+            ];
         }
-        return $html;
+        $out = [];
+        foreach (['today' => 'communicationux2_group_today', 'earlier' => 'communicationux2_group_earlier'] as $key => $label) {
+            if ($groups[$key]) { $out[] = ['label' => self::tr($label), 'items' => $groups[$key]]; }
+        }
+        return [
+            'title' => self::tr('communicationcenter_tab_notifications'), 'unread' => $unread ?: null,
+            'onlyunread' => ['active' => $onlyunread, 'label' => self::tr('communicationux2_only_unread'),
+                'url' => self::url($company, ['tab' => 'notifications', 'filter' => $onlyunread ? 'all' : 'unread'])->out(false)],
+            'markall' => $unread > 0 ? ['hidden' => self::post_base($company, 'readallnotifications'),
+                'label' => self::tr('communicationux2_mark_all')] : null,
+            'settings' => ['url' => (new \moodle_url('/local/kbacompany/calendar_notifications.php', ['uuid' => $company]))->out(false),
+                'label' => self::tr('communicationux2_notification_settings')],
+            'groups' => $out,
+            'empty' => $out ? '' : self::tr($onlyunread ? 'communicationux2_no_unread_notifications' :
+                'communication_nonotifications'),
+            'feedlabel' => self::tr('communication_notifications'),
+        ];
     }
 
     private static function context_panel(string $company, array $data, ?array $objectrequest, int $actor,
-            string $convertmessage): string {
+            string $convertmessage): array {
         $thread = $data['selected'];
-        $html = '';
+        $meta = $data['selected_meta'] ?? null;
+        $model = ['title' => self::tr('communicationcenter_context_title'),
+            'closelabel' => self::tr('bmscomm3_closecontext')];
+        $object = null;
         if ($thread && !empty($thread['context'])) {
             $context = $thread['context'];
-            $html .= \html_writer::tag('h2', s(self::tr('communicationcenter_context_title')));
-            $html .= \html_writer::tag('div', s($context['label']), ['class' => 'bms-comm2-context-kind']);
-            $html .= \html_writer::tag('strong', s($context['title']), ['class' => 'bms-comm2-context-name']);
-            if ($context['url'] !== '') {
-                $html .= \html_writer::div(task_ui_service::link(new \moodle_url($context['url']),
-                    self::tr('communication_opencontext')), 'bms-comm2-context-actions');
-            }
+            $object = ['start' => null, 'kind' => (string)$context['label'], 'title' => (string)$context['title'],
+                'status' => $meta ? (string)$meta['status'] : '', 'due' => $meta ? self::date_text((string)$meta['due']) : '',
+                'open' => (string)$context['url'] !== '' ? ['url' => (string)$context['url'],
+                    'label' => self::tr('communication_opencontext')] : null];
         } else if ($objectrequest) {
-            $html .= \html_writer::tag('h2', s(self::tr('communicationcenter_context_title')));
-            $html .= \html_writer::tag('div', s($objectrequest['label']), ['class' => 'bms-comm2-context-kind']);
-            $html .= \html_writer::tag('strong', s($objectrequest['title']), ['class' => 'bms-comm2-context-name']);
-            $form = self::post_base($company, 'createobject') . self::hidden([
-                'objectkind' => $objectrequest['kind'], 'objectuuid' => $objectrequest['uuid'],
-                'objectrevision' => $objectrequest['revision'],
-            ]) . self::button(self::tr('communicationcenter_startdiscussion'));
-            $html .= \html_writer::tag('form', $form, ['method' => 'post', 'class' => 'bms-comm2-context-actions']);
+            $object = ['open' => null, 'status' => '', 'due' => '',
+                'kind' => (string)$objectrequest['label'], 'title' => (string)$objectrequest['title'],
+                'start' => ['hidden' => array_merge(self::post_base($company, 'createobject'), self::hidden([
+                    'objectkind' => $objectrequest['kind'], 'objectuuid' => $objectrequest['uuid'],
+                    'objectrevision' => $objectrequest['revision']])),
+                    'label' => self::tr('communicationcenter_startdiscussion')]];
         }
-
+        if ($object) {
+            $object += ['kindlabel' => self::tr('communicationux2_kv_type'), 'statuslabel' => self::tr('communicationux2_kv_status'),
+                'duelabel' => self::tr('communicationux2_kv_due')];
+        }
+        $model['object'] = $object;
         if ($thread) {
-            $html .= \html_writer::tag('h3', s(self::tr('communication_participants')));
-            $people = '';
             $isowner = false;
-            $participantids = [];
+            $ids = [];
             foreach ($thread['participants'] as $participant) {
                 if ((int)$participant['user_id'] === $actor && $participant['role'] === 'owner') { $isowner = true; }
+                $ids[] = (int)$participant['user_id'];
             }
             $isgroup = $thread['thread_type'] === 'group';
+            $people = [];
             foreach ($thread['participants'] as $participant) {
                 $userid = (int)$participant['user_id'];
-                $participantids[] = $userid;
-                $person = s($participant['name']);
-                if ($participant['role'] === 'owner') {
-                    $person .= ' ' . \html_writer::tag('span', s(self::tr('communication_owner')), ['class' => 'bms-comm2-person-role']);
-                }
-                if ($isgroup && $isowner && $userid !== $actor) {
-                    $remove = self::post_base($company, 'removeparticipant', $thread['uuid']) .
-                        self::hidden(['participantid' => $userid]) .
-                        self::button(self::tr('communication_removeparticipant'), 'btn btn-link btn-sm');
-                    $person .= \html_writer::tag('form', $remove, ['method' => 'post', 'class' => 'd-inline-block']);
-                }
-                $people .= \html_writer::div($person, 'bms-comm2-person');
+                $people[] = ['name' => (string)$participant['name'], 'initials' => self::initials((string)$participant['name']),
+                    'owner' => $participant['role'] === 'owner' ? self::tr('communication_owner') : '',
+                    'remove' => $isgroup && $isowner && $userid !== $actor ? ['hidden' => array_merge(
+                        self::post_base($company, 'removeparticipant', $thread['uuid']),
+                        self::hidden(['participantid' => $userid])), 'label' => self::tr('communication_removeparticipant')] : null];
             }
-            $html .= \html_writer::div($people, 'bms-comm2-people');
-            if ($isgroup && in_array($actor, $participantids, true)) {
-                $leave = self::post_base($company, 'leavethread', $thread['uuid']) .
-                    \html_writer::tag('p', s(self::tr('communication_leave_notice'))) .
-                    self::button(self::tr('communication_leave'), 'btn btn-outline-danger btn-sm');
-                $html .= \html_writer::tag('details', \html_writer::tag('summary', s(self::tr('communication_leave'))) .
-                    \html_writer::tag('form', $leave, ['method' => 'post']), ['class' => 'bms-comm2-leave']);
+            $model['people'] = ['label' => self::tr('communication_participants'), 'count' => count($people), 'items' => $people];
+            if ($isgroup && in_array($actor, $ids, true)) {
+                $model['leave'] = ['hidden' => self::post_base($company, 'leavethread', $thread['uuid']),
+                    'label' => self::tr('communication_leave'), 'notice' => self::tr('communication_leave_notice')];
             }
             if ($isowner && $thread['thread_type'] !== 'direct') {
-                $available = array_diff_key(self::person_options($data['employees'], $actor), array_flip($participantids));
+                $available = [];
+                foreach ($data['employees'] as $id => $name) {
+                    if ((int)$id !== $actor && !in_array((int)$id, $ids, true)) { $available[(int)$id] = $name; }
+                }
                 if ($available) {
-                    $form = self::post_base($company, 'addparticipant', $thread['uuid']);
-                    $form .= \html_writer::select($available, 'participantid', '', false, ['class' => 'form-control']);
-                    $form .= self::button(self::tr('communication_addparticipant'), 'btn btn-outline-secondary');
-                    $html .= \html_writer::tag('form', $form, ['method' => 'post', 'class' => 'bms-comm2-add-person']);
+                    // Never name this key "add": Mustache calls a method of that name on object frames,
+                    // and Moodle's mustache_helper_collection::add() takes two arguments, so {{#add}}
+                    // throws ArgumentCountError at render time.
+                    $model['addperson'] = ['hidden' => self::post_base($company, 'addparticipant', $thread['uuid']),
+                        'options' => self::options($available), 'label' => self::tr('communication_addparticipant')];
+                }
+            }
+            if ($convertmessage !== '') {
+                foreach ($data['messages'] as $candidate) {
+                    if ($candidate['uuid'] === $convertmessage && $candidate['status'] === 'active' &&
+                            $candidate['task_uuid'] === '') {
+                        $model['taskform'] = self::task_form($company, $thread, $candidate, $data['employees'], $actor);
+                        break;
+                    }
                 }
             }
         }
+        return $model;
+    }
 
-        if ($thread && $convertmessage !== '') {
-            $message = null;
-            foreach ($data['messages'] as $candidate) {
-                if ($candidate['uuid'] === $convertmessage) { $message = $candidate; break; }
-            }
-            if ($message && $message['status'] === 'active' && $message['task_uuid'] === '') {
-                $html .= self::task_form($company, $thread, $message, $data['employees'], $actor);
-            }
+    private static function new_conversation(string $company, array $employees, int $actor): ?array {
+        $people = [];
+        foreach ($employees as $id => $name) {
+            if ((int)$id !== $actor) { $people[(int)$id] = $name; }
         }
-
-        $summary = \html_writer::tag('span', '☰', ['class' => 'bms-comm3-context-icon', 'aria-hidden' => 'true']) .
-            \html_writer::tag('span', s(self::tr('communicationcenter_context_title')), ['class' => 'bms-comm-ux-details-label']);
-        return \html_writer::tag('aside', \html_writer::tag('details',
-            \html_writer::tag('summary', $summary, ['title' => self::tr('communicationcenter_context_title'),
-                'aria-label' => self::tr('communicationcenter_context_title')]) .
-            \html_writer::tag('button', '×', ['type'=>'button',
-                'class'=>'bms-comm3-context-close', 'data-bms-comm-context-close'=>'1',
-                'aria-label'=>self::tr('bmscomm3_closecontext')]) .
-            \html_writer::div($html, 'bms-comm2-context-body'),
-            ['class' => 'bms-comm2-context-toggle', 'id'=>'bms-comm3-context-details']),
-            ['class' => 'bms-comm2-panel bms-comm2-context']);
+        if (!$people) { return null; }
+        return [
+            'label' => self::tr('communicationux2_newconversation'),
+            'hidden' => self::post_base($company, 'createthread'),
+            'typelabel' => self::tr('communication_type'),
+            'types' => self::options(['direct' => self::tr('communication_type_direct'),
+                'group' => self::tr('communication_type_group')], 'direct'),
+            'titlelabel' => self::tr('communication_thread'), 'titlehint' => self::tr('communicationcenter_group_title_hint'),
+            'peoplelabel' => self::tr('communication_participants'), 'people' => self::options($people),
+            'peoplehelp' => self::tr('communicationcenter_participants_help'),
+            'createlabel' => self::tr('communication_create'), 'closelabel' => self::tr('bmscomm3_closecontext'),
+        ];
     }
 
-    private static function new_conversation_form(string $company, array $employees, int $actor): string {
-        $people = self::person_options($employees, $actor);
-        if (!$people) { return ''; }
-        $form = self::post_base($company, 'createthread');
-        $form .= \html_writer::label(s(self::tr('communication_type')), 'bms_comm2_type');
-        $form .= \html_writer::select([
-            'direct' => self::tr('communication_type_direct'), 'group' => self::tr('communication_type_group'),
-        ], 'threadtype', 'direct', false, ['id' => 'bms_comm2_type', 'class' => 'form-control']);
-        $form .= \html_writer::label(s(self::tr('communication_thread')), 'bms_comm2_title');
-        $form .= \html_writer::empty_tag('input', ['type' => 'text', 'id' => 'bms_comm2_title', 'name' => 'title',
-            'class' => 'form-control', 'maxlength' => 255, 'placeholder' => self::tr('communicationcenter_group_title_hint')]);
-        $form .= \html_writer::label(s(self::tr('communication_participants')), 'bms_comm2_participants');
-        $form .= \html_writer::select($people, 'participants[]', [], false,
-            ['id' => 'bms_comm2_participants', 'class' => 'form-control', 'multiple' => 'multiple', 'required' => 'required']);
-        $form .= \html_writer::tag('small', s(self::tr('communicationcenter_participants_help')), ['class' => 'bms-tui-note']);
-        $form .= self::button(self::tr('communication_create'));
-        $label = self::tr('communicationcenter_newconversation');
-        $trigger = \html_writer::tag('summary',
-            \html_writer::tag('span', '+', ['aria-hidden' => 'true']) .
-            \html_writer::tag('span', s($label), ['class' => 'sr-only']),
-            ['class' => 'bms-comm2-new-trigger', 'title' => $label, 'aria-label' => $label]);
-        return \html_writer::tag('details',
-            $trigger . \html_writer::tag('form', $form,
-                ['method' => 'post', 'class' => 'bms-comm2-new-form']),
-            ['class' => 'bms-comm2-new', 'id' => 'bms-comm2-start-conversation']);
-    }
-
-    private static function task_form(string $company, array $thread, array $message, array $employees, int $actor): string {
+    private static function task_form(string $company, array $thread, array $message, array $employees, int $actor): array {
         $streams = [];
         foreach (task_service::STREAMS as $stream) { $streams[$stream] = self::tr('taskcenter_stream_' . $stream); }
         $priorities = [];
         foreach (task_service::PRIORITIES as $priority) { $priorities[$priority] = self::tr('taskcenter_priority_' . $priority); }
-        $reviewers = [0 => self::tr('taskcenter_noreviewer')] + $employees;
-        $title = \core_text::substr(trim(preg_replace('/\s+/u', ' ', $message['body'])), 0, 120);
-        $form = self::post_base($company, 'createtask', $thread['uuid']);
-        $form .= self::hidden(['messageuuid' => $message['uuid'], 'startdate' => '', 'planminutes' => 0]);
-        $form .= \html_writer::label(s(self::tr('taskcenter_task')), 'bms_comm2_task_title');
-        $form .= \html_writer::empty_tag('input', ['type' => 'text', 'name' => 'title', 'id' => 'bms_comm2_task_title',
-            'value' => $title, 'class' => 'form-control', 'required' => 'required']);
-        $form .= \html_writer::label(s(self::tr('taskcenter_product')), 'bms_comm2_task_product');
-        $form .= \html_writer::tag('textarea', '', ['name' => 'product', 'id' => 'bms_comm2_task_product', 'rows' => 2,
-            'class' => 'form-control', 'required' => 'required']);
-        $form .= \html_writer::label(s(self::tr('taskcenter_description')), 'bms_comm2_task_description');
-        $form .= \html_writer::tag('textarea', s($message['body']), ['name' => 'description', 'id' => 'bms_comm2_task_description',
-            'rows' => 3, 'class' => 'form-control']);
-        $form .= \html_writer::label(s(self::tr('taskcenter_assignee')), 'bms_comm2_task_assignee');
-        $form .= \html_writer::select($employees, 'assigneeid', $actor, false, ['id' => 'bms_comm2_task_assignee', 'class' => 'form-control']);
-        $form .= \html_writer::label(s(self::tr('taskcenter_reviewer')), 'bms_comm2_task_reviewer');
-        $form .= \html_writer::select($reviewers, 'reviewerid', 0, false, ['id' => 'bms_comm2_task_reviewer', 'class' => 'form-control']);
-        $form .= \html_writer::label(s(self::tr('taskcenter_stream')), 'bms_comm2_task_stream');
-        $form .= \html_writer::select($streams, 'stream', 'operate', false, ['id' => 'bms_comm2_task_stream', 'class' => 'form-control']);
-        $form .= \html_writer::label(s(self::tr('taskcenter_priority')), 'bms_comm2_task_priority');
-        $form .= \html_writer::select($priorities, 'priority', 'normal', false, ['id' => 'bms_comm2_task_priority', 'class' => 'form-control']);
-        $form .= \html_writer::label(s(self::tr('taskcenter_duedate')), 'bms_comm2_task_due');
-        $form .= \html_writer::empty_tag('input', ['type' => 'date', 'name' => 'duedate', 'id' => 'bms_comm2_task_due', 'class' => 'form-control']);
-        $form .= self::button(self::tr('communication_createtask'), 'btn btn-success');
-        return \html_writer::tag('section', \html_writer::tag('h3', s(self::tr('communication_taskfrommessage'))) .
-            \html_writer::tag('form', $form, ['method' => 'post', 'class' => 'bms-comm2-task-form']),
-            ['class' => 'bms-comm2-task-create']);
+        return [
+            'title' => self::tr('communication_taskfrommessage'),
+            'hidden' => array_merge(self::post_base($company, 'createtask', $thread['uuid']),
+                self::hidden(['messageuuid' => $message['uuid'], 'startdate' => '', 'planminutes' => 0])),
+            'tasktitle' => \core_text::substr(trim(preg_replace('/\s+/u', ' ', $message['body'])), 0, 120),
+            'description' => (string)$message['body'],
+            'labels' => ['title' => self::tr('taskcenter_task'), 'product' => self::tr('taskcenter_product'),
+                'description' => self::tr('taskcenter_description'), 'assignee' => self::tr('taskcenter_assignee'),
+                'reviewer' => self::tr('taskcenter_reviewer'), 'stream' => self::tr('taskcenter_stream'),
+                'priority' => self::tr('taskcenter_priority'), 'due' => self::tr('taskcenter_duedate')],
+            'assignees' => self::options($employees, $actor),
+            'reviewers' => self::options([0 => self::tr('taskcenter_noreviewer')] + $employees, 0),
+            'streams' => self::options($streams, 'operate'),
+            'priorities' => self::options($priorities, 'normal'),
+            'submit' => self::tr('communication_createtask'),
+        ];
     }
 
-    /** Kept for compatibility with older callers; uses the new workspace when possible. */
+    /** Kept for compatibility with older callers. */
     public static function screen(string $company, array $data, string $search): string {
         return task_ui_service::note(self::tr('communicationcenter_intro'));
     }

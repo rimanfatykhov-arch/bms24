@@ -108,7 +108,8 @@ class RehearsalPolicyTest(unittest.TestCase):
     def test_integration_pin_includes_corporate125_without_changing_deployed_baseline(self):
         source=SOURCE.read_text()
         self.assertIn("INTEGRATION_BASE='fbf36ed350732b46a232a56a216b3d78c733da34'",source)
-        self.assertIn("manifest['source']['base']!=INTEGRATION_BASE",source)
+        self.assertIn("git_ok('merge-base','--is-ancestor',INTEGRATION_BASE",source)
+        self.assertNotIn("manifest['source']['base']!=INTEGRATION_BASE",source)
         self.assertNotIn("INTEGRATION_BASE='2739a5d3986b71893979f2f3178b2063a7fa4780'",source)
 
     def test_published120_baseline_pair_and_full_checkset_fail_closed(self):

@@ -13,7 +13,9 @@ REVIEWED_UPDATES = {'.github/workflows/prepare-release.yml', 'docs/00_MASTER_CON
 # Exact reviewed blobs, not a blanket exemption for future edits.
 REVIEWED_DOC_CONTENT = {
     'docs/DEVELOPMENT_WORKFLOW.md': '555a050f9edb7a513b55d6a5e22063eaf768f94b',
-    'docs/05_RELEASE_QA_STANDARD.md': '47b200efa4aefa2f062874afdc78e3e58848d1f4',
+    # Release Conveyor v1 (PR #144): two-line pointer to the new standard, reviewed by the owner.
+    # Exact blob, not an exemption: any further edit to this document fails the gate again.
+    'docs/05_RELEASE_QA_STANDARD.md': '3d6843aa099ad18fb1359beabea01ff472419196',
 }
 
 def check(root=ROOT):
