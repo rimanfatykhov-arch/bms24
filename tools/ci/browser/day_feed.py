@@ -3,10 +3,12 @@
 Two cases (owned 1440, legacy 375), each on its own past day with two results submitted by employee EA through the task
 workflow and a draft that already has text. Per case: the Communication Center "Day feed" opens on today; choosing the day
 shows both results (time, task, result text, task link); an empty day shows the empty state; "Add to report" in the feed
-copies the result into "Done" after the existing text and opens the report; in the open form an unsaved edit is kept and
-a repeated click on the same result adds nothing; the second result is added; a repeated click in the feed writes
-nothing; EB (company B) and a forged sesskey change nothing; EA sends the report through the existing button; afterwards
-the feed offers no "Add" for that day; no horizontal scroll; no browser errors or HTTP 5xx.
+copies the result into "Done" after the existing text and opens the report; back in the feed and after a reload the
+first result shows "Added earlier" and the second keeps "Add"; the report link opens the selected date; another date
+shows no marks and the day keeps them; in the open form an unsaved edit is kept and a repeated click adds nothing; the
+second result is added; a double POST of an added result and an unavailable event write nothing; EB (company B) and
+a forged sesskey change nothing; EA sends the report through the existing button; afterwards the feed keeps both marks
+and offers no "Add" for that day; no horizontal scroll; no browser errors or HTTP 5xx.
 Observations only -> EVIDENCE/day-feed-result.json; the verdict is computed by contract.day_feed_checks.
 """
 import datetime
@@ -18,6 +20,7 @@ import urllib.error
 import urllib.parse
 import urllib.request
 import uuid
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
@@ -84,7 +87,25 @@ def feed_items(page):
     return page.locator('[data-dayfeed-event]').evaluate_all('''els => els.map(e => ({
         id: Number(e.dataset.dayfeedEvent), time: (e.querySelector('time') || {}).textContent || '',
         title: (e.querySelector('h3') || {}).textContent || '', text: e.innerText,
-        task_href: (e.querySelector('h3 a') || {}).href || '', add: e.querySelectorAll('form[data-dayfeed-add]').length}))''')
+        task_href: (e.querySelector('h3 a') || {}).href || '', add: e.querySelectorAll('form[data-dayfeed-add]').length,
+        added: e.querySelectorAll('[data-dayfeed-added]').length}))''')
+
+
+def marks(page):
+    """Which results offer "Add" and which show "Added earlier" (visible label and screen-reader hint), and the day."""
+    return page.evaluate('''() => {
+        const rows = [...document.querySelectorAll('[data-dayfeed-event]')];
+        const ids = sel => rows.filter(e => e.querySelector(sel)).map(e => Number(e.dataset.dayfeedEvent));
+        const labels = [...document.querySelectorAll('[data-dayfeed-added]')].map(el => {
+            const hint = el.querySelector('.sr-only');
+            const box = el.getBoundingClientRect();
+            return {visible: el.innerText.replace(hint ? hint.innerText : '', '').trim(),
+                    hint: hint ? hint.textContent.trim() : '', shown: box.width > 0 && box.height > 0,
+                    hint_hidden: hint ? hint.getBoundingClientRect().width <= 1 : false};
+        });
+        return {day: (document.querySelector('#bms24-dayfeed-day') || {}).value || '',
+                add: ids('form[data-dayfeed-add]'), added: ids('[data-dayfeed-added]'), labels};
+    }''')
 
 
 with sync_playwright() as pw:
@@ -131,27 +152,50 @@ with sync_playwright() as pw:
             case['landing'] = {'url': page.url, 'done': page.locator('#dailyreport-done').input_value(),
                                'notice': page.locator('.alert-success[role=status]').count()}
             case['after_add'] = state(day)
-            # 5. in the open form: unsaved edit kept, repeated click on the same result adds nothing
+            # 5. back in the feed and after a page reload: the first result shows "Added earlier", the second keeps "Add"
+            page.goto(center(day=day), wait_until='networkidle')
+            case['feed_after_first'] = marks(page)
+            page.reload(wait_until='networkidle')
+            case['feed_after_reload'] = marks(page)
+            case['hscroll_marks'] = page.evaluate(HSCROLL)
+            # 6. the ordinary report link opens the selected date
+            with page.expect_navigation():
+                page.locator('.bms24-comm-dayfeed a.bms24-comm-dfreport').click()
+            page.wait_for_load_state('networkidle')
+            case['report_link'] = {'url': page.url, 'done': page.locator('#dailyreport-done').input_value()}
+            # 7. changing the date: another day shows no marks; back on the day the mark is still there
+            page.goto(center(day=day), wait_until='networkidle')
+            for key, value in (('feed_other_day', empty), ('feed_back_to_day', day)):
+                page.locator('#bms24-dayfeed-day').fill(value)
+                with page.expect_navigation():
+                    page.locator('form[data-dayfeed-date] button[type=submit]').click()
+                page.wait_for_load_state('networkidle')
+                case[key] = marks(page)
+            # 8. in the open report form (unchanged buttons): unsaved edit kept, a repeated click adds nothing,
+            #    then the second result goes after the edit
+            page.goto(local_url(REPORT + '?' + urllib.parse.urlencode({'uuid': company, 'day': day})), wait_until='networkidle')
             done = page.locator('#dailyreport-done')
             done.fill(done.input_value() + '\n' + case['edit'])
             with page.expect_navigation():
                 page.locator('button[name=addevent][value="%d"]' % t1['event']).click()
             page.wait_for_load_state('networkidle')
             case['after_repeat_form'] = state(day)
-            # 6. the second result from the open form
             with page.expect_navigation():
                 page.locator('button[name=addevent][value="%d"]' % t2['event']).click()
             page.wait_for_load_state('networkidle')
             case['after_second'] = state(day)
             case['hscroll_report'] = page.evaluate(HSCROLL)
-            # 7. repeated click in the feed writes nothing
+            # 9. the feed marks both; a double POST of an added result and an unavailable event write nothing
             page.goto(center(day=day), wait_until='networkidle')
-            with page.expect_navigation():
-                page.locator('[data-dayfeed-event="%d"] form[data-dayfeed-add] button' % t1['event']).click()
-            page.wait_for_load_state('networkidle')
-            case['after_repeat_feed'] = state(day)
-            # 8. company B employee and a forged sesskey change nothing
+            case['feed_after_second'] = marks(page)
+            own = page.evaluate('() => M.cfg.sesskey')
             fields = {'uuid': company, 'day': day, 'source': 'feed', 'addevent': str(t1['event'])}
+            with ThreadPoolExecutor(max_workers=2) as pool:
+                case['repeat_http'] = list(pool.map(lambda _: post(ctx, dict(fields, sesskey=own)), range(2)))
+            case['unavailable_http'] = post(ctx, dict(fields, sesskey=own,
+                                                      addevent=str(max(t['event'] for t in setup['tasks']) + 1000000)))
+            case['after_repeat_feed'] = state(day)
+            # 10. company B employee and a forged sesskey change nothing
             case['forged_http'] = post(ctx, dict(fields, sesskey='0' * 10))
             octx = browser.new_context(); op = login(octx, 'EB')
             op.goto(local_url(base + '/my/'), wait_until='networkidle')
@@ -162,16 +206,15 @@ with sync_playwright() as pw:
             case['foreign_feed_items'] = op.locator('[data-dayfeed-event]').count()
             octx.close()
             case['after_negatives'] = state(day)
-            # 9. the employee sends the report through the existing button; the feed then offers no "Add"
+            # 11. the employee sends the report through the existing button; the feed keeps the marks, offers no "Add"
             page.goto(local_url(REPORT + '?' + urllib.parse.urlencode({'uuid': company, 'day': day})), wait_until='networkidle')
             with page.expect_navigation():
                 page.locator('button[name=action][value=submit]').click()
             page.wait_for_load_state('networkidle')
             case['after_submit'] = state(day)
             page.goto(center(day=day), wait_until='networkidle')
-            case['after_submit_feed'] = {'add': page.locator('form[data-dayfeed-add]').count(),
-                                         'items': page.locator('[data-dayfeed-event]').count(),
-                                         'sent_note': page.locator('.bms24-comm-dayfeed [role=note]').count()}
+            case['after_submit_feed'] = dict(marks(page), items=page.locator('[data-dayfeed-event]').count(),
+                                             sent_note=page.locator('.bms24-comm-dayfeed [role=note]').count())
             case['browser_events'] = recorder.events; case['server_errors'] = server_errors
             ctx.close()
             result['cases'].append(case)
