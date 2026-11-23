@@ -3,7 +3,6 @@ namespace local_kbacompany;
 
 defined('MOODLE_INTERNAL') || die();
 
-use local_kbacompany\local\business_date_service;
 use local_kbacompany\local\daily_report_review_service as review;
 use local_kbacompany\local\daily_report_reviewer_service as reviewers;
 use local_kbacompany\local\daily_report_store_service as store;
@@ -48,7 +47,9 @@ final class daily_report_reviewer_service_test extends \advanced_testcase {
         $this->assign($company, $nodes['team'], (int)$users['employee']->id, false);
         $this->assign($company, $nodes['sub'], (int)$users['worker']->id, false);
         $this->assign($company, $nodes['team'], (int)$users['peer']->id, false);
-        return compact('admin', 'company', 'cid', 'nodes') + ['day' => business_date_service::day()] + $users;
+        // The runner's administrator and the report authors can be on different civil dates.
+        $day = (new \DateTimeImmutable('yesterday', new \DateTimeZone('Europe/Moscow')))->format('Y-m-d');
+        return compact('admin', 'company', 'cid', 'nodes', 'day') + $users;
     }
 
     private function member(int $cid, int $userid): void {
