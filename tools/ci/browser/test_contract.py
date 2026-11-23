@@ -957,6 +957,94 @@ class ContractTest(unittest.TestCase):
         self.assertTrue(all(v['status'] == 'FAIL' for v in c.evaluate(c.daily_reports_flow_checks(None, None)).values()))
 
     @staticmethod
+    def day_feed_obs():
+        rows = []
+        for shell, width in c.DAY_FEED_CASES:
+            tasks = [{'task': 't%d-%s' % (n, shell), 'event': 100 + n, 'title': 'Task %d' % n, 'result': 'Result %d %s' % (n, shell)}
+                     for n in (1, 2)]
+            pre, edit = 'Hand text ' + shell, 'Unsaved edit ' + shell
+            b1, b2 = ['«%s»: %s' % (t['title'], t['result']) for t in tasks]
+            first = pre + '\n' + b1; second = first + '\n' + edit + '\n' + b2
+            links = sorted(t['task'] for t in tasks)
+            rows.append({
+                'shell': shell, 'width': width, 'day': '2026-11-17', 'today': '2026-11-23', 'empty_day': '2026-10-14',
+                'tasks': tasks, 'pre': pre, 'edit': edit, 'default_day': '2026-11-23', 'tab_active': 1,
+                'items': [{'id': t['event'], 'time': '1%d:00' % n, 'title': t['title'], 'text': t['title'] + '\n' + t['result'],
+                           'task_href': 'http://127.0.0.1:8080/local/kbacompany/tasks.php?uuid=A&task=' + t['task'], 'add': 1}
+                          for n, t in enumerate(tasks)],
+                'empty': {'items': 0, 'state': 1},
+                'landing': {'url': 'http://127.0.0.1:8080/local/kbacompany/daily_report.php?uuid=A&day=2026-11-17&notice=resultadded',
+                            'done': first, 'notice': 1},
+                'after_add': {'report': {'status': 'draft'}, 'draft': {'done': first, 'revision': 2, 'links': [tasks[0]['task']]}, 'sent': [],
+                              'added_events': [tasks[0]['event']]},
+                'after_repeat_form': {'report': {'status': 'draft'}, 'draft': {'done': first + '\n' + edit, 'revision': 3,
+                                      'links': [tasks[0]['task']]}, 'sent': []},
+                'after_second': {'report': {'status': 'draft'}, 'draft': {'done': second, 'revision': 4, 'links': links}, 'sent': [],
+                                 'added_events': [t['event'] for t in tasks]},
+                'after_repeat_feed': {'report': {'status': 'draft'}, 'draft': {'done': second, 'revision': 4, 'links': links}, 'sent': [],
+                                      'added_events': [t['event'] for t in tasks]},
+                'after_negatives': {'report': {'status': 'draft'}, 'draft': {'done': second, 'revision': 4, 'links': links}, 'sent': []},
+                'after_submit': {'report': {'status': 'submitted'}, 'draft': None,
+                                 'sent': [{'done': second, 'revision': 4, 'links': links}]},
+                'after_submit_feed': {'add': 0, 'items': 2, 'sent_note': 1},
+                'forged_http': 200, 'foreign_http': {'company_a': 200, 'company_b': 200}, 'foreign_feed_items': 0,
+                'hscroll_feed': True, 'hscroll_report': True, 'browser_events': list(ABORTED), 'server_errors': []})
+        return {'status': 'PASS', 'cases': rows}
+
+    def test_day_feed_valid_passes_and_mutations_fail(self):
+        obs = self.day_feed_obs()
+        res = c.evaluate(c.day_feed_checks(obs, 0))
+        self.assertEqual({k: 'PASS' for k in res}, {k: v['status'] for k, v in res.items()}, res)
+        self.assertTrue(set(res) <= set(c.required_check_names()))
+
+        def fails(check, mutate):
+            o = copy.deepcopy(obs); mutate(o)
+            r = c.evaluate(c.day_feed_checks(o, 0))
+            self.assertEqual('FAIL', r[check]['status'], (check, r[check]))
+        view, add, dup, iso, send = ('day_feed_today_date_and_empty_day', 'day_feed_add_keeps_text_and_links_task',
+                                     'day_feed_repeated_click_adds_nothing', 'day_feed_foreign_and_forged_denied',
+                                     'day_feed_send_layout_and_browser_errors')
+        fails(view, lambda o: o['cases'][0].update(default_day='2026-11-22'))
+        fails(view, lambda o: o['cases'][1].update(tab_active=0))
+        fails(view, lambda o: o['cases'][0]['items'].pop())
+        fails(view, lambda o: o['cases'][1]['items'].append(dict(o['cases'][1]['items'][0], id=999)))
+        fails(view, lambda o: o['cases'][0]['items'][0].update(text='Task 1'))
+        fails(view, lambda o: o['cases'][0]['items'][1].update(task_href='http://127.0.0.1:8080/local/kbacompany/tasks.php'))
+        fails(view, lambda o: o['cases'][1]['items'][0].update(add=0))
+        fails(view, lambda o: o['cases'][0].update(empty={'items': 1, 'state': 0}))
+        fails(add, lambda o: o['cases'][0]['after_add']['draft'].update(done=o['cases'][0]['tasks'][0]['result']))
+        fails(add, lambda o: o['cases'][1]['after_add']['draft'].update(links=[]))
+        fails(add, lambda o: o['cases'][0]['landing'].update(url='http://127.0.0.1:8080/local/kbacompany/communication_center.php'))
+        fails(add, lambda o: o['cases'][1]['landing'].update(notice=0))
+        fails(add, lambda o: o['cases'][0]['after_second']['draft'].update(
+            done=o['cases'][0]['after_second']['draft']['done'].replace('\n' + o['cases'][0]['edit'], '')))
+        fails(dup, lambda o: o['cases'][0]['after_repeat_form']['draft'].update(
+            done=o['cases'][0]['after_repeat_form']['draft']['done'] + '\n' + o['cases'][0]['tasks'][0]['result']))
+        fails(dup, lambda o: o['cases'][1]['after_repeat_feed']['draft'].update(revision=5))
+        fails(dup, lambda o: o['cases'][0]['after_repeat_feed']['added_events'].append(o['cases'][0]['tasks'][0]['event']))
+        fails(dup, lambda o: o['cases'][1]['after_add'].update(added_events=[]))
+        fails(dup, lambda o: o['cases'][0]['after_repeat_form']['draft'].update(done=o['cases'][0]['after_add']['draft']['done']))
+        fails(iso, lambda o: o['cases'][0].update(forged_http=303))
+        fails(iso, lambda o: o['cases'][1]['foreign_http'].update(company_b=500))
+        fails(iso, lambda o: o['cases'][0]['foreign_http'].pop('company_a'))
+        fails(iso, lambda o: o['cases'][1].update(foreign_feed_items=2))
+        fails(iso, lambda o: o['cases'][0]['after_negatives']['draft'].update(revision=5))
+        fails(send, lambda o: o['cases'][0]['after_submit']['report'].update(status='draft'))
+        fails(send, lambda o: o['cases'][1]['after_submit']['sent'].append(dict(o['cases'][1]['after_submit']['sent'][0])))
+        fails(send, lambda o: o['cases'][0]['after_submit_feed'].update(add=2))
+        fails(send, lambda o: o['cases'][1].update(hscroll_feed=False))
+        fails(send, lambda o: o['cases'][0].update(hscroll_report=False))
+        fails(send, lambda o: o['cases'][0]['browser_events'].append({'source': 'pageerror', 'name': 'Error', 'message': 'x'}))
+        fails(send, lambda o: o['cases'][1]['server_errors'].append({'url': 'x', 'status': 500}))
+        for mutate, code in ((lambda o: o['cases'].pop(), 0), (lambda o: o['cases'].reverse(), 0),
+                             (lambda o: o['cases'][0]['tasks'].pop(), 0), (lambda o: o.update(error='boom'), 0),
+                             (lambda o: o.update(status='FAIL'), 0), (lambda o: None, 1)):
+            o = copy.deepcopy(obs); mutate(o)
+            r = c.evaluate(c.day_feed_checks(o, code))
+            self.assertTrue(all(v['status'] == 'FAIL' for v in r.values()), r)
+        self.assertTrue(all(v['status'] == 'FAIL' for v in c.evaluate(c.day_feed_checks(None, None)).values()))
+
+    @staticmethod
     def plan_denied(label, n):
         """Real Moodle refusals (#135 BROWSER evidence): RA may not open the plan, EB is outside the company."""
         post_reason = PD_REASONS['plan_unavailable' if label == 'RA' else 'company_unavailable']

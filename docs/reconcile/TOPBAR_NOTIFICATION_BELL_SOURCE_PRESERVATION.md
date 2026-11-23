@@ -8,11 +8,11 @@
 | Файл | Изменение |
 |---|---|
 | `local/kbacompany/classes/local/communication_service.php` | Добавлены `notification_source_visible()` (public: им же пользуется `notification_bell_service::claim_signal`), `visible_unread_notification_count()` и `notification_feed()` (только чтение). `context()` считает непрочитанные через общую функцию; правило видимости то же: компания → активный участник → текущий доступ к объекту. |
-| `local/kbacompany/lang/en/local_kbacompany.php` | 18 строк: `notificationbell_*`, `privacy:metadata:preference:notificationsound` и `privacy:metadata:preference:notificationsoundsignalled` добавлены после блока ADR-0010 из #154 |
+| `local/kbacompany/lang/en/local_kbacompany.php` | 18 строк: `notificationbell_*`, `privacy:metadata:preference:notificationsound` и `privacy:metadata:preference:notificationsoundsignalled` добавлены после блока «Лента дня» из #158 |
 | `local/kbacompany/lang/ru/local_kbacompany.php` | те же 18 ключей, в конец |
 
 Цепочка хэшей (LF) записана в `docs/reconcile/topbar-notification-bell-source-preservation.json`:
-`before` каждого файла совпадает с хешем опубликованного #154 и завершает предыдущий шаг ADR-0010.
+`before` каждого файла совпадает с хешем опубликованного #158. Строки «Ленты дня» сохранены побайтно после нормализации CRLF в LF.
 
 ## Что не менялось
 

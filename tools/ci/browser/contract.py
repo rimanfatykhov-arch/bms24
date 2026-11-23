@@ -1122,6 +1122,95 @@ def daily_reports_flow_checks(obs, exitcode=None):
             'daily_report_foreign_and_nonreviewer_denied': negatives, 'daily_report_layout_and_browser_errors': layout_and_events}
 
 
+DAY_FEED_CASES = [('owned', 1440), ('legacy', 375)]
+
+
+def day_feed_checks(obs, exitcode=None):
+    """Day feed -> report draft (day_feed.py). Verdicts come from the draft state read after each step; the producer's
+    PASS alone is never sufficient."""
+    def run():
+        require(exitcode == 0, 'day feed browser process failed or was not run')
+        require(isinstance(obs, dict) and obs.get('status') == 'PASS' and not obs.get('error'), 'day feed run incomplete')
+        rows = obs.get('cases')
+        require(isinstance(rows, list) and [(r.get('shell'), r.get('width')) for r in rows] == DAY_FEED_CASES,
+                'owned 1440 / legacy 375 cases required')
+        for r in rows:
+            tasks = r.get('tasks')
+            require(isinstance(tasks, list) and len(tasks) == 2 and all(isinstance(t, dict) and isinstance(t.get('event'), int)
+                    and t.get('title') and t.get('result') for t in tasks), 'synthetic results missing')
+            require(isinstance(r.get('pre'), str) and r['pre'] and isinstance(r.get('edit'), str) and r['edit'], 'case texts missing')
+        return rows
+
+    def block(t):
+        return '«%s»: %s' % (t['title'], t['result'])
+
+    def draft(st):
+        d = (st or {}).get('draft')
+        require(isinstance(d, dict) and isinstance(d.get('done'), str) and isinstance(d.get('revision'), int), 'draft missing')
+        return d
+
+    def view():
+        for r in run():
+            require(r.get('default_day') == r.get('today'), 'feed did not open on today: %r' % (r.get('default_day'),))
+            require(r.get('tab_active') == 1, 'day feed section not active')
+            items = r.get('items') or []
+            require([i.get('id') for i in items] == [t['event'] for t in r['tasks']], 'feed does not show exactly the two results')
+            for item, t in zip(items, r['tasks']):
+                require(t['result'] in (item.get('text') or '') and t['title'] in (item.get('title') or ''), 'result or task missing')
+                require('task=' + t['task'] in (item.get('task_href') or ''), 'task link missing')
+                require(isinstance(item.get('time'), str) and len(item['time'].strip()) == 5, 'time missing')
+                require(item.get('add') == 1, '"Add to report" missing')
+            require(r.get('empty') == {'items': 0, 'state': 1}, 'empty day not shown as empty: %r' % (r.get('empty'),))
+
+    def add():
+        for r in run():
+            t1, t2 = r['tasks']
+            first = r['pre'] + '\n' + block(t1)
+            require(draft(r.get('after_add'))['done'] == first, 'result not appended after the existing text')
+            require(t1['task'] in draft(r['after_add']).get('links', []), 'task not linked to the draft')
+            landing = r.get('landing') or {}
+            require('/local/kbacompany/daily_report.php' in (landing.get('url') or '') and 'day=' + r['day'] in landing['url']
+                    and landing.get('done') == first and landing.get('notice') == 1, 'report not opened with the added text')
+            second = draft(r.get('after_second'))['done']
+            require(second == first + '\n' + r['edit'] + '\n' + block(t2), 'second result or the unsaved edit lost: %r' % second)
+
+    def no_duplicate():
+        for r in run():
+            t1 = r['tasks'][0]
+            for key in ('after_repeat_form', 'after_second', 'after_repeat_feed'):
+                require(draft(r.get(key))['done'].count(t1['result']) == 1, 'result duplicated after %s' % key)
+            require(r['edit'] in draft(r['after_repeat_form'])['done'], 'unsaved edit lost on the repeated click')
+            require(draft(r['after_repeat_feed']) == draft(r['after_second']), 'repeated click in the feed wrote the draft')
+            events = [t['event'] for t in r['tasks']]
+            require((r['after_add'] or {}).get('added_events') == events[:1]
+                    and all((r.get(k) or {}).get('added_events') == events for k in ('after_second', 'after_repeat_feed')),
+                    'repeat not keyed by the submit event id')
+
+    def isolation():
+        for r in run():
+            http = [r.get('forged_http')] + list((r.get('foreign_http') or {}).values())
+            require(len(http) == 3 and all(isinstance(x, int) and x != 303 and x < 500 for x in http),
+                    'forged or foreign request redirected as a success or failed with 5xx: %r' % (http,))
+            require(r.get('foreign_feed_items') == 0, 'company B feed shows company A results')
+            require(draft(r.get('after_negatives')) == draft(r.get('after_repeat_feed')), 'forged or foreign request changed the draft')
+
+    def submit_and_layout():
+        for r in run():
+            st = r.get('after_submit') or {}
+            sent = st.get('sent') or []
+            require((st.get('report') or {}).get('status') == 'submitted' and st.get('draft') is None and len(sent) == 1
+                    and sent[0].get('done') == draft(r['after_negatives'])['done'], 'report not sent with the edited text')
+            require(r.get('after_submit_feed') == {'add': 0, 'items': 2, 'sent_note': 1}, 'feed still offers "Add" for a sent report')
+            require(r.get('hscroll_feed') is True and r.get('hscroll_report') is True, 'horizontal scroll at %s px' % r.get('width'))
+            violations = browser_event_violations(r.get('browser_events'))
+            require(not violations, 'browser errors: %r' % violations[:3])
+            require(r.get('server_errors') == [], 'HTTP 5xx: %r' % (r.get('server_errors'),))
+
+    return {'day_feed_today_date_and_empty_day': view, 'day_feed_add_keeps_text_and_links_task': add,
+            'day_feed_repeated_click_adds_nothing': no_duplicate, 'day_feed_foreign_and_forged_denied': isolation,
+            'day_feed_send_layout_and_browser_errors': submit_and_layout}
+
+
 PLAN_CASES = [('owned', 1440, 'click'), ('legacy', 320, 'keyboard')]
 
 
@@ -1687,6 +1776,7 @@ def required_check_names():
             + list(message_action_checks({})) + list(task_open_checks({}))
             + list(communication_center_checks({})) + list(daily_reports_nav_checks({}))
             + list(daily_reports_flow_checks({})) + list(plan_discussion_checks({})) + list(communication_ux_checks({}))
+            + list(day_feed_checks({}))
             + list(notification_bell_checks({})))
 
 

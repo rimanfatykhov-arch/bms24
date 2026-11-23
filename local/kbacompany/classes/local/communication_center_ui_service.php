@@ -104,14 +104,22 @@ class communication_center_ui_service {
         global $USER;
         $actor = (int)$USER->id;
         $tab = (string)$data['tab'];
-        $section = $tab === 'notifications' ? 'notifications' : ($tab === 'discussions' ? 'discussions' : 'messages');
+        $section = in_array($tab, ['notifications', 'dayfeed'], true) ? $tab :
+            ($tab === 'discussions' ? 'discussions' : 'messages');
+        $sectionkeys = ['messages', 'discussions', 'notifications'];
+        if (!empty($data['dayfeed_enabled'])) {
+            $sectionkeys[] = 'dayfeed';
+        }
         $sections = $data['sections'] ?? ['messages' => ['total' => 0, 'unread' => 0],
             'discussions' => ['total' => 0, 'unread' => 0]];
         $tabs = [];
-        foreach (['messages', 'discussions', 'notifications'] as $key) {
-            $label = self::tr($key === 'messages' ? 'communicationux_conversations' : 'communicationcenter_tab_' . $key);
+        foreach ($sectionkeys as $key) {
+            $label = self::tr($key === 'messages' ? 'communicationux_conversations' :
+                ($key === 'dayfeed' ? 'dailyreports_feed_tab' : 'communicationcenter_tab_' . $key));
             $badge = null;
-            if ($key === 'notifications') {
+            if ($key === 'dayfeed') {
+                $badge = null;
+            } else if ($key === 'notifications') {
                 $n = (int)($data['counts']['unread_notifications'] ?? 0);
                 if ($n > 0) {
                     $badge = ['value' => $n, 'variant' => 'blue', 'title' => self::tr('communicationux_notification_count')];
@@ -133,8 +141,13 @@ class communication_center_ui_service {
             'sectionslabel' => self::tr('communicationcenter_title'),
             'tabs' => $tabs, 'section' => $section,
             'isnotifications' => $section === 'notifications',
+            'isdayfeed' => $section === 'dayfeed',
             'newconversation' => self::new_conversation($company, $data['employees'], $actor),
         ];
+        if ($section === 'dayfeed') {
+            $model['dayfeed'] = self::day_feed($company, $data['dayfeed']);
+            return self::falsify($model);
+        }
         if ($section === 'notifications') {
             $model['notifications'] = self::notifications($company, $data);
             return self::falsify($model);
@@ -642,6 +655,69 @@ class communication_center_ui_service {
             'empty' => $out ? '' : self::tr($onlyunread ? 'communicationux2_no_unread_notifications' :
                 'communication_nonotifications'),
             'feedlabel' => self::tr('communication_notifications'),
+        ];
+    }
+
+    /**
+     * Day feed -> report draft: own submitted task results of one day. The "Add to report" form posts only the event id
+     * (with sesskey) to the report page, which re-reads the result on the server. No button for a sent report or a
+     * future day (both decided by the page from the store); the result text is shown as stored in the submit event.
+     */
+    private static function day_feed(string $company, array $feed): array {
+        $day = (string)$feed['day'];
+        $today = (string)$feed['today'];
+        $sent = !empty($feed['sent']);
+        $canadd = !empty($feed['canadd']);
+        $reporturl = new \moodle_url('/local/kbacompany/daily_report.php', ['uuid' => $company, 'day' => $day]);
+        $items = [];
+        foreach ($feed['results'] as $event) {
+            $status = (string)$event->currentstatus;
+            $statuskey = 'taskcenter_status_' . $status;
+            $statuslabel = get_string_manager()->string_exists($statuskey, 'local_kbacompany') ? self::tr($statuskey) : $status;
+            $result = (string)$event->result;
+            $items[] = [
+                'id' => (int)$event->id,
+                'time' => userdate((int)$event->timecreated, '%H:%M'),
+                'fulltime' => userdate((int)$event->timecreated),
+                'title' => (string)$event->title,
+                'taskurl' => (new \moodle_url('/local/kbacompany/tasks.php',
+                    ['uuid' => $company, 'task' => (string)$event->taskuuid]))->out(false),
+                'opentask' => self::tr('dailyreports_feed_open_task'),
+                'result' => $result,
+                'noresult' => $result === '' ? self::tr('dailyreport_missingresult') : '',
+                'submitted' => self::tr('dailyreports_feed_submitted'),
+                'now' => self::tr('dailyreports_feed_now', $statuslabel),
+                'nowvariant' => $status === 'done' ? 'mint' : ($status === 'returned' ? 'sand' : 'sky'),
+                'addform' => $canadd ? ['url' => (new \moodle_url('/local/kbacompany/daily_report.php'))->out(false),
+                    'hidden' => self::hidden(['sesskey' => sesskey(), 'uuid' => $company, 'day' => $day, 'source' => 'feed',
+                        'addevent' => (string)(int)$event->id]),
+                    'label' => self::tr('dailyreports_feed_add')] : null,
+            ];
+        }
+        $page = (int)$feed['page'];
+        $pages = (int)ceil((int)$feed['total'] / daily_report_service::PAGE_SIZE);
+        $pageurl = static function(int $p) use ($company, $day): string {
+            return self::url($company, ['tab' => 'dayfeed', 'day' => $day, 'fpage' => $p])->out(false);
+        };
+        return [
+            'title' => self::tr('dailyreports_feed_title'),
+            'intro' => self::tr('dailyreports_feed_intro'),
+            'total' => (int)$feed['total'] ?: null,
+            'form' => ['url' => self::url($company)->out(false), 'hidden' => self::hidden(['uuid' => $company, 'tab' => 'dayfeed']),
+                'label' => self::tr('dailyreports_feed_day'), 'value' => $day, 'max' => $today,
+                'show' => self::tr('dailyreports_feed_show'),
+                'today' => $day !== $today ? ['url' => self::url($company, ['tab' => 'dayfeed'])->out(false),
+                    'label' => self::tr('dailyreports_feed_today')] : null],
+            'timezone' => self::tr('dailyreport_timezone') . ': ' . (string)$feed['timezone'],
+            'report' => ['url' => $reporturl->out(false), 'label' => self::tr('dailyreports_feed_open_report')],
+            'sent' => $sent && $items ? self::tr('dailyreports_feed_sent') : '',
+            'items' => $items,
+            'empty' => $items ? null : ['title' => self::tr('dailyreports_feed_empty_title'),
+                'text' => self::tr('dailyreports_feed_empty_text'), 'action' => null],
+            'pager' => $pages > 1 ? ['label' => self::tr('dailyreports_feed_pages'),
+                'prev' => $page > 0 ? ['url' => $pageurl($page - 1), 'label' => self::tr('dailyreports_feed_prev')] : null,
+                'next' => $page + 1 < $pages ? ['url' => $pageurl($page + 1), 'label' => self::tr('dailyreports_feed_next')] : null,
+                'text' => ($page + 1) . ' / ' . $pages] : null,
         ];
     }
 

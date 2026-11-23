@@ -96,11 +96,17 @@ def check(root=ROOT):
         'local/kbacompany/lang/ru/local_kbacompany.php': '0698c4976b6364b07fb124700624ff30023df5356f7260dab0260f60641320ac',
         'local/kbacompany/classes/local/communication_service.php': '6a5de10a764edc99864aee634ec4b9ecbe432c7a76e4dfcbc5d60b81b6874b40',
     })
-    # #156: append the bell to the published #154 tree, preserving the ADR-0010 sources.
+    # Day feed -> report draft (owner task 2026-11-23, first scenario: task results only). RU/EN block appended after
+    # ADR-0010; no schema, version, capability or notification change. See docs/reconcile/DAY_FEED_REPORT_DRAFT.md.
+    reviewed_followup.update({
+        'local/kbacompany/lang/en/local_kbacompany.php': '07f9ed6af27a2030cff81ddd90c70995d667598ff4625c24c6ebd0dcad6a782f',
+        'local/kbacompany/lang/ru/local_kbacompany.php': 'd456cdb1ccfcb2910d3fef22a72b12304121bd2246ea871e5508e8890daf82bb',
+    })
+    # #156: append bell strings and the notification feed to the published #158 tree.
     reviewed_followup.update({
         'local/kbacompany/classes/local/communication_service.php': 'f3c7ab27e4da9001673e6c60a72b18b8e5af604068b15b349c5c01a45de3ad05',
-        'local/kbacompany/lang/en/local_kbacompany.php': '5627a2459e4b00188f824f85fe521c0a04a1c999df1bc4c3072649550bff2c1e',
-        'local/kbacompany/lang/ru/local_kbacompany.php': '353a6d98ad7cecc34354013bd9496668d75ffe35c80ead0d3ee18da64d447462',
+        'local/kbacompany/lang/en/local_kbacompany.php': '2d2686ca949a0e25b586d30bf639ccbadd4979c0d341d2ba34258f5136a9b2fb',
+        'local/kbacompany/lang/ru/local_kbacompany.php': 'ecb4d6bbaf07e37e750532287a75827e3f705667cb3dfd22a74f6d915808c3d8',
     })
     for row in plan['rows']:
         path=root/row['path']

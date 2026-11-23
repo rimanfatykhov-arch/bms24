@@ -8,6 +8,9 @@ use local_kbacompany\local\communication_center_ui_service as ui;
 use local_kbacompany\local\communication_object_service;
 use local_kbacompany\local\communication_service;
 use local_kbacompany\local\company_context_service;
+use local_kbacompany\local\business_date_service;
+use local_kbacompany\local\daily_report_feed_service;
+use local_kbacompany\local\daily_report_store_service;
 use local_kbacompany\local\task_ui_service;
 use local_kbacompany\local\task_service;
 
@@ -54,8 +57,11 @@ if ($tab === 'tasks' && $method !== 'POST' && $action === '') {
     }
     redirect(task_ui_service::url($uuid, $params));
 }
-$allowedtabs = ['all', 'inbox', 'unread', 'messages', 'discussions', 'mentions', 'meetings', 'notifications'];
+$allowedtabs = ['all', 'inbox', 'unread', 'messages', 'discussions', 'mentions', 'meetings', 'notifications', 'dayfeed'];
 if ($tab !== '' && !in_array($tab, $allowedtabs, true)) { $tab = 'messages'; }
+// Day feed -> report draft: the section exists only while saved daily reports are switched on (server-side switch).
+$dayfeedenabled = daily_report_store_service::enabled();
+if ($tab === 'dayfeed' && !$dayfeedenabled) { $tab = 'messages'; }
 
 $error = '';
 if ($action !== '') {
@@ -198,10 +204,11 @@ if ($tab === '') {
     // No stored preference (no new personal data): open the first section that has content.
     $tab = communication_center_service::default_tab(communication_center_service::section_counts($uuid, $actor));
 }
-if ($tab === 'notifications') { $selected = ''; $convertmessage = ''; }
+if ($tab === 'notifications' || $tab === 'dayfeed') { $selected = ''; $convertmessage = ''; }
 try {
-    $data = communication_center_service::workspace_context($uuid, $actor, $tab, $selected, $q,
-        $mq, optional_param('mpage', 0, PARAM_INT), $filter);
+    // The day feed shows no conversation: the workspace is loaded like the notifications section (counters, people).
+    $data = communication_center_service::workspace_context($uuid, $actor, $tab === 'dayfeed' ? 'notifications' : $tab,
+        $selected, $q, $mq, optional_param('mpage', 0, PARAM_INT), $filter);
 } catch (moodle_exception $e) {
     if ($e->module !== 'local_kbacompany') { throw $e; }
     // Do not leak whether a thread/object exists after access was revoked.
@@ -211,11 +218,36 @@ try {
     $data = communication_center_service::workspace_context($uuid, $actor, $tab, '', $q, '', 0, $filter);
 }
 
+$data['dayfeed_enabled'] = $dayfeedenabled;
+$feedday = '';
+if ($tab === 'dayfeed') {
+    // Own submitted task results of one civil day in the employee's timezone (today by default).
+    $data['tab'] = 'dayfeed';
+    $feedday = optional_param('day', business_date_service::day(), PARAM_RAW_TRIMMED);
+    try {
+        $data['dayfeed'] = daily_report_feed_service::day($uuid, $actor, $feedday,
+            max(0, min(100000, optional_param('fpage', 0, PARAM_INT))));
+    } catch (moodle_exception $e) {
+        if ($e->errorcode !== 'dailyreport_invaliddate') { throw $e; }
+        $error = get_string('dailyreport_invaliddate', 'local_kbacompany');
+        $feedday = business_date_service::day();
+        $data['dayfeed'] = daily_report_feed_service::day($uuid, $actor, $feedday);
+    }
+    // Results can be added only to the own draft of a past or current day; never to a sent report.
+    $data['dayfeed']['today'] = business_date_service::day();
+    $data['dayfeed']['sent'] = false;
+    $data['dayfeed']['canadd'] = false;
+    if (strcmp($feedday, $data['dayfeed']['today']) <= 0) {
+        $reportview = daily_report_store_service::view($uuid, $actor, $feedday);
+        $data['dayfeed']['sent'] = $reportview['report'] && !$reportview['draft'];
+        $data['dayfeed']['canadd'] = !$data['dayfeed']['sent'];
+    }
+}
 $data['message_search'] = $mq;
 $data['reply'] = optional_param('reply', '', PARAM_ALPHANUMEXT);
 $data['message_page'] = optional_param('mpage', 0, PARAM_INT);
 $PAGE->set_context($context);
-$PAGE->set_url(ui::url($uuid, ['tab' => $tab, 'thread' => $selected]));
+$PAGE->set_url(ui::url($uuid, ['tab' => $tab, 'thread' => $selected] + ($feedday !== '' ? ['day' => $feedday] : [])));
 $PAGE->set_title(get_string('communicationcenter_title', 'local_kbacompany'));
 $PAGE->set_heading(get_string('pluginname', 'local_kbacompany'));
 $PAGE->add_body_class('bms-comm-page');

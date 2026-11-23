@@ -9946,6 +9946,27 @@ $string['dailyreports_cc_max_help'] = 'Maximum number of people an author can pu
 $string['messageprovider:dailyreport_copy'] = 'Copy of a daily report';
 $string['communication_notification_dailyreport_copy'] = 'Copy of a daily report';
 
+// Day feed -> report draft (2026-11-23): own submitted task results into the Done field of the own draft.
+$string['dailyreports_feed_tab'] = 'Day feed';
+$string['dailyreports_feed_title'] = 'My submitted results';
+$string['dailyreports_feed_intro'] = 'Task results you submitted on the selected day. "Add to report" copies a result into the "Done" field of your draft for that day; text you already wrote is kept. You review and send the report yourself.';
+$string['dailyreports_feed_day'] = 'Day';
+$string['dailyreports_feed_show'] = 'Show';
+$string['dailyreports_feed_today'] = 'Today';
+$string['dailyreports_feed_submitted'] = 'Result submitted';
+$string['dailyreports_feed_now'] = 'Now: {$a}';
+$string['dailyreports_feed_add'] = 'Add to report';
+$string['dailyreports_feed_open_task'] = 'Open task';
+$string['dailyreports_feed_open_report'] = 'Open the daily report';
+$string['dailyreports_feed_empty_title'] = 'No results submitted on this day';
+$string['dailyreports_feed_empty_text'] = 'Results you submit on your tasks appear here. Choose another day or open your tasks.';
+$string['dailyreports_feed_sent'] = 'The report for this day has already been sent. You can add results again when it is a draft (rework or correction).';
+$string['dailyreports_feed_pages'] = 'Result pages';
+$string['dailyreports_feed_prev'] = 'Previous';
+$string['dailyreports_feed_next'] = 'Next';
+$string['dailyreports_resultadded'] = 'The result was added to the "Done" field of the draft. Check the text and send the report.';
+$string['dailyreports_resultexists'] = 'This result is already in the "Done" field; it was not added again.';
+
 // Top bar bell and opt-in notification sound (owned shell).
 $string['notificationbell_title'] = 'Notifications';
 $string['notificationbell_label'] = 'Unread notifications: {$a}';

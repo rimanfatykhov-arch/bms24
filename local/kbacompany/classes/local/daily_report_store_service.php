@@ -321,6 +321,72 @@ final class daily_report_store_service {
     }
 
     /**
+     * Day feed: save the draft with one submitted task result appended to "Done", once per submit event and report.
+     *
+     * The repeat is decided by the submit event id recorded in the report journal (action result_added), under the
+     * same lock and transaction as the write, never by comparing text: two equal-looking results are both added, and a
+     * renamed task or edited text does not add the same event again. When the event is already in the report, the draft
+     * is written only if $writeifpresent (the open form with the employee's unsaved text), without the result; otherwise
+     * nothing is written. $eventid and $block must come from the server-side event read by the caller.
+     * Returns ['added' => bool, 'revision' => int].
+     */
+    public static function add_result(string $companyuuid, int $actor, string $day, int $eventid, string $block,
+            array $values, array $taskuuids, int $expectedrevision, array $ccusers, bool $writeifpresent): array {
+        global $DB;
+        self::require_enabled();
+        $companyuuid = self::scope($companyuuid, $actor, $day);
+        if ($eventid <= 0 || trim($block) === '') {
+            throw new \moodle_exception('dailyreports_taskunavailable', 'local_kbacompany');
+        }
+        $values = self::clean_values($values);
+        $taskuuids = self::clean_links($companyuuid, $actor, $taskuuids);
+        $ccusers = daily_report_reviewer_service::clean_cc($companyuuid, $actor, $ccusers);
+        $lock = self::lock($companyuuid, $actor, $day);
+        try {
+            $tx = $DB->start_delegated_transaction();
+            try {
+                $report = self::find($companyuuid, $actor, $day);
+                $present = $report && self::result_added($companyuuid, (string)$report->uuid, $eventid);
+                if ($present && !$writeifpresent) {
+                    $draft = self::version($companyuuid, $report->uuid, (string)$report->draftversionuuid);
+                    $revision = $draft ? (int)$draft->revision : $expectedrevision;
+                } else {
+                    if (!$present) {
+                        $values['done'] = $values['done'] === '' ? $block : $values['done'] . "\n" . $block;
+                        $values = self::clean_values($values);
+                    }
+                    [$report, $draft] = self::write_draft($companyuuid, $actor, $day, $values, $taskuuids,
+                        $expectedrevision, $ccusers);
+                    if (!$present) {
+                        self::log($companyuuid, $report->uuid, $draft->uuid, $actor, 'result_added',
+                            ['event' => $eventid, 'revision' => (int)$draft->revision]);
+                    }
+                    $revision = (int)$draft->revision;
+                }
+                $tx->allow_commit();
+            } catch (\Throwable $e) {
+                $tx->rollback($e);
+            }
+        } finally {
+            $lock->release();
+        }
+        return ['added' => !$present, 'revision' => $revision];
+    }
+
+    /** Whether this submit event was already added to this report (any version), read from the report journal. */
+    public static function result_added(string $companyuuid, string $reportuuid, int $eventid): bool {
+        global $DB;
+        foreach ($DB->get_records('local_kbacompany_dreportlog', ['companyuuid' => $companyuuid,
+                'reportuuid' => $reportuuid, 'action' => 'result_added'], 'id ASC', 'id, details') as $row) {
+            $details = json_decode((string)$row->details, true);
+            if (is_array($details) && (int)($details['event'] ?? 0) === $eventid) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
      * Idempotent submission under one lock and one transaction. A version already created with this request key is
      * returned unchanged (double click, retry, parallel POST). With $values the form text is saved first against
      * $expectedrevision; then the draft is frozen with its task snapshot, day snapshot, reviewer and content hash.
