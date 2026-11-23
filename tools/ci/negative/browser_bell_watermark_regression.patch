@@ -1,13 +1,15 @@
 diff --git a/local/kbacompany/classes/local/notification_bell_service.php b/local/kbacompany/classes/local/notification_bell_service.php
 --- a/local/kbacompany/classes/local/notification_bell_service.php
 +++ b/local/kbacompany/classes/local/notification_bell_service.php
-@@ -61,7 +61,8 @@ final class notification_bell_service {
+@@ -61,7 +61,10 @@ final class notification_bell_service {
          try {
-             [$floor, $signalled] = self::signalled($actor, $since);
-             $new = array_filter($visible, static function(int $created, int $id) use ($floor, $signalled): bool {
--                return $created > $floor && !isset($signalled[$id]);
-+                // NEGATIVE CONTROL (CI only): dedup by highest id instead of identity (original #156 rule).
-+                return $created > $floor && $id > max(array_merge([0], array_keys($signalled)));
-             }, ARRAY_FILTER_USE_BOTH);
+             $preferences = self::signal_preferences($actor);
+             $signalled = self::signalled($actor, $since, $preferences);
+-            $new = array_diff_key($visible, $signalled);
++            // NEGATIVE CONTROL (CI only): dedup by highest id instead of identity (original #156 rule).
++            $new = array_filter($visible, static function(int $id) use ($signalled): bool {
++                return $id > max(array_merge([0], array_keys($signalled)));
++            }, ARRAY_FILTER_USE_KEY);
              if (!$new) {
                  return false;
+             }

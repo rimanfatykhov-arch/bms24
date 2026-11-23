@@ -444,28 +444,28 @@ with sync_playwright() as p:
         held = HeldClaims(page)
         try:
             reset_plays(page)
-            base = signal_counts(page)
+            before = signal_counts(page)
             r1 = notify(A, EA, 'race1')
             ctx.clock.fast_forward(31000)
             held.wait()
             set_sound(page, False)
             race['off'] = {'id': r1, 'pref_before_release': state(A, EA)['pref'], 'answers': held.release(),
-                           'before': base, 'after': signal_counts(page), 'bell': bell(page)}
+                           'before': before, 'after': signal_counts(page), 'bell': bell(page)}
             set_sound(page, True)
-            base = signal_counts(page)
+            before = signal_counts(page)
             r2 = notify(A, EA, 'race2')
             ctx.clock.fast_forward(31000)
             held.wait()
             set_sound(page, False)
             set_sound(page, True)
             race['off_on'] = {'id': r2, 'pref_before_release': state(A, EA)['pref'], 'answers': held.release(),
-                              'before': base, 'after': signal_counts(page), 'bell': bell(page)}
+                              'before': before, 'after': signal_counts(page), 'bell': bell(page)}
         finally:
             held.close()
-        base = signal_counts(page)
+        before = signal_counts(page)
         r3 = notify(A, EA, 'race3')
         tick(ctx, [page])
-        race['normal'] = {'id': r3, 'before': base, 'after': signal_counts(page), 'bell': bell(page)}
+        race['normal'] = {'id': r3, 'before': before, 'after': signal_counts(page), 'bell': bell(page)}
         steps['late_claim'] = race
         set_sound(page, False)
 

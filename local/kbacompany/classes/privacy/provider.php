@@ -488,10 +488,10 @@ class provider implements
             writer::export_user_preference('local_kbacompany', $name, transform::yesno((string)$value === '1'),
                 get_string('privacy:metadata:preference:notificationsound', 'local_kbacompany'));
         }
-        $signalled = \local_kbacompany\local\notification_bell_service::SIGNALLED_PREFERENCE;
-        $value = get_user_preferences($signalled, null, $userid);
-        if ($value !== null) {
-            writer::export_user_preference('local_kbacompany', $signalled, (string)$value,
+        $signalled = \local_kbacompany\local\notification_bell_service::signal_preferences($userid);
+        if ($signalled) {
+            writer::export_user_preference('local_kbacompany',
+                \local_kbacompany\local\notification_bell_service::SIGNALLED_PREFERENCE, implode(',', $signalled),
                 get_string('privacy:metadata:preference:notificationsoundsignalled', 'local_kbacompany'));
         }
     }
