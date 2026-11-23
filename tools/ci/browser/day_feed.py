@@ -38,8 +38,11 @@ result = {'status': 'FAIL', 'cases': []}
 
 
 def php(*args):
-    out = subprocess.run(['php', str(here / 'ci_day_feed.php'), core, *args], check=True, capture_output=True, text=True).stdout
-    return json.loads(out.strip().splitlines()[-1])
+    process = subprocess.run(['php', str(here / 'ci_day_feed.php'), core, *args], capture_output=True, text=True)
+    if process.returncode:
+        diagnostic = next((line for line in process.stderr.splitlines() if line.startswith('CI day feed fixture: ')), '')
+        raise RuntimeError(f'{args[0]} exited {process.returncode}. {diagnostic}'.rstrip())
+    return json.loads(process.stdout.strip().splitlines()[-1])
 
 
 def state(day):

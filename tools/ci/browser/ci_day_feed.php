@@ -19,6 +19,14 @@ use local_kbacompany\local\task_service;
 
 $phase = $argv[2] ?? '';
 $company = (string)($argv[3] ?? '');
+set_exception_handler(static function (Throwable $error): void {
+    $errorcode = $error instanceof moodle_exception ? (string)$error->errorcode : '';
+    $code = preg_match('/^[a-zA-Z0-9_]+$/D', $errorcode) ? ' ' . $errorcode : '';
+    // Keep database diagnostics and private fixture values out of the browser artifact.
+    fwrite(STDERR, sprintf("CI day feed fixture: %s%s in %s:%d\n",
+        get_class($error), $code, basename($error->getFile()), $error->getLine()));
+    exit(1);
+});
 $out = ['phase' => $phase];
 if ($phase === 'setup') {
     $employee = (int)($argv[4] ?? 0); $reviewer = (int)($argv[5] ?? 0);
@@ -32,8 +40,9 @@ if ($phase === 'setup') {
     foreach ([1, 2] as $n) {
         \core\session\manager::set_user(\core_user::get_user($reviewer, '*', MUST_EXIST));
         $title = 'CI day feed ' . $token . ' task ' . $n;
+        // The synthetic manager can create tasks but is not an employee eligible as a task reviewer.
         $task = task_service::create($company, $reviewer, ['title' => $title, 'description' => '', 'product' => 'Synthetic',
-            'assigneeid' => $employee, 'reviewerid' => $reviewer, 'observerid' => 0, 'priority' => 'normal',
+            'assigneeid' => $employee, 'reviewerid' => 0, 'observerid' => 0, 'priority' => 'normal',
             'stream' => 'operate', 'startdate' => '', 'duedate' => $day, 'planminutes' => 0, 'parentuuid' => '']);
         \core\session\manager::set_user($employeeuser);
         $result = 'CI day feed ' . $token . ' result ' . $n;
