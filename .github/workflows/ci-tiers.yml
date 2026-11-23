@@ -64,7 +64,14 @@ jobs:
                            'browser_fail': ['attachments_no_browser_errors', 'oversize_no_browser_errors'],
                            'browser_fail_reason': 'failed request %r' % 'http://127.0.0.1:8080/local/kbacompany/ci_negative_failed_request.php',
                            'browser_pass': ['moodle_install', 'download_participant_allowed', 'csrf_invalid_sesskey_rejected', 'access_no_browser_errors',
-                                            'task_tab_desktop_no_browser_errors', 'task_tab_mobile_no_browser_errors']}]
+                                            'task_tab_desktop_no_browser_errors', 'task_tab_mobile_no_browser_errors']},
+                          # BROWSER negative control (top bar bell): notification source visibility removed in the runner.
+                          # The bell must still show a notification of a conversation the user was removed from -> FAIL.
+                          {'name': 'negative-browser-bell-acl', 'base': head, 'head': head, 'patch': 'tools/ci/negative/browser_bell_acl_regression.patch',
+                           'expect': {'fast': 'pass', 'standard': 'na', 'browser': 'fail'},
+                           'browser_fail': ['notification_bell_isolation_roles_and_revocation'],
+                           'browser_fail_reason': 'revoked thread still shown',
+                           'browser_pass': ['moodle_install', 'notification_bell_single_bell', 'notification_bell_panel_layout_keyboard']}]
           # Roles (merge_gate.py): 'this-pr' = the candidate (required); 'negative-*' = required when planned (their job succeeds
           # only if the planted defect is detected); 'replay-*' = information only, never part of the candidate verdict.
           with open(os.environ['GITHUB_OUTPUT'], 'a') as out:
