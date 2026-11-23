@@ -116,16 +116,3 @@ jobs:
           python tools/verify_install.py --zip artifacts/INSTALL_local_kbacompany_1.1.0-rc29_build2026112301.zip --manifest artifacts/MANIFEST_build2026112301.json --expected-version 2026112301
           sha256sum artifacts/INSTALL_local_kbacompany_1.1.0-rc29_build2026112301.zip > artifacts/SHA256SUMS.txt
           rm artifacts/repeat.zip
-      # Reviewed PRs must get an installable candidate BEFORE merge.
-      # Artifacts are UNAPPROVED; no deploy job or credentials in CI.
-      - name: Upload candidate artifact (PR and main)
-        if: github.event_name == 'pull_request' || (github.event_name == 'push' && github.ref == 'refs/heads/main')
-        uses: actions/upload-artifact@v4
-        with:
-          name: bms24-candidate-${{ github.event.pull_request.number || github.sha }}-build2026112301
-          path: |
-            artifacts/INSTALL_local_kbacompany_1.1.0-rc29_build2026112301.zip
-            artifacts/MANIFEST_build2026112301.json
-            artifacts/SHA256SUMS.txt
-          if-no-files-found: error
-          retention-days: 14
