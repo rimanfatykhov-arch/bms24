@@ -44,6 +44,22 @@ final class bms_workspace_focus_service {
         return $mode !== 'personal';
     }
 
+    /**
+     * Where the top bar "Needs attention" flag leads: the most urgent part of what its badge counts.
+     * Overdue tasks first, then tasks waiting for the user's review, then new inbox items; '' when nothing needs attention.
+     * Presentation only: the counts come from the already scoped workspace model, and the target page re-checks access.
+     *
+     * @param array $counts workspace counters with keys overdue, control, incoming
+     */
+    public static function attention_target(array $counts): string {
+        foreach (['overdue', 'control', 'incoming'] as $key) {
+            if ((int)($counts[$key] ?? 0) > 0) {
+                return $key;
+            }
+        }
+        return '';
+    }
+
     /** Filter AFTER taking a larger bounded source projection, before final LIMIT. */
     public static function actions(array $items, string $mode): array {
         $personal = ['bmsaction_fix_task', 'bmsaction_open_overdue', 'bmsaction_open_today',
