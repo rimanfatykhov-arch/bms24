@@ -1665,9 +1665,10 @@ def notification_bell_checks(obs, exitcode=None):
         page_error_check(obs, 'notification bell')()
         ev = (step('tabs_nostorage') or {}).get('events')
         require(isinstance(ev, list), 'no-storage context events not recorded')
-        other = [e for e in ev if not (e.get('source') == 'console' and e.get('type') == 'error'
-                                       and e.get('text') == BELL_PLANTED_STORAGE_ECHO)]
-        require(not other, 'no-storage context: unexpected browser events %r' % other[:3])
+        events = [e for e in ev if not (isinstance(e, dict) and e.get('source') == 'console' and e.get('type') == 'error'
+                                        and e.get('text') == BELL_PLANTED_STORAGE_ECHO)]
+        violations = browser_event_violations(events)
+        require(not violations, 'no-storage context: unexpected browser events %r' % violations[:3])
 
     return {'notification_bell_new_event_center_and_bell': new_event_center_and_bell,
             'notification_bell_read_rules_unchanged': read_rules_unchanged,
