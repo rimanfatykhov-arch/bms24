@@ -71,8 +71,9 @@ def check(root=ROOT):
     reviewed_followup['local/kbacorporate/db/upgrade.php'] = 'ef39434356106043292de20bf355165961ca07462e9ead6a79f19bbc4b6d5019'
     reviewed_metadata={'AGENTS.md','docs/00_MASTER_CONTEXT.md'}
     for name, expected in plan['unchanged_schema_hashes'].items():
-        # ADR-0009 R1 appends five additive daily report tables; every earlier table definition is unchanged.
-        target = {'local/kbacompany/db/install.xml': '06a60b36d0d5a4dfc86924bc43819a0d7b2c6fd054888639d3363fbec5979845'}.get(name, expected)
+        # ADR-0009 R1 appends five additive daily report tables, ADR-0010 two more (dreportcc, dreportset);
+        # every earlier table definition is unchanged.
+        target = {'local/kbacompany/db/install.xml': '5e18cb8713fc65590e91d8b2526735e14a23eafd866de7c555ca5dd24291640e'}.get(name, expected)
         if digest(root/name)!=target:
             errors.append('shared schema/helper changed: '+name)
     # UX-1: exact append-only language/scoped CSS follow-up over E2.
@@ -87,13 +88,19 @@ def check(root=ROOT):
         'local/kbacompany/lang/ru/local_kbacompany.php': '0ff5746d50f5cfc84b13d582f210e6262549973ebd7d08f4667262edaf2cb46b',
         'local/kbacompany/styles.css': '95563c9160349cb2f40047f092e78e77c446ee6113d48d13456250dfef271417',
     })
-    # Top bar notification bell (after #145): one shared read-only notification feed/count in communication_service
-    # (same ACL as context(); no generation, read-rule or schema change) and RU/EN strings appended at the end.
-    # See docs/reconcile/TOPBAR_NOTIFICATION_BELL_SOURCE_PRESERVATION.md.
+    # ADR-0010 (owner decision 2026-11-21): reviewer by org chart, self review at the top, manager visibility,
+    # report copies. RU/EN block appended after #145; one notification kind added. See
+    # docs/reconcile/DAILY_REPORTS_ADR0010.md.
     reviewed_followup.update({
-        'local/kbacompany/classes/local/communication_service.php': '5199aac3569343b3807b962e19e82a62ee5c1959401242346c785bbcf5a41b5f',
-        'local/kbacompany/lang/en/local_kbacompany.php': '1867be01b8e6afcab83b1425dac05657306ad6f26fae60f5978fbe076933d755',
-        'local/kbacompany/lang/ru/local_kbacompany.php': 'b1af4e0bf94d7160cfac2743113f0f75928e57eb33b7adc697f6e90c2d3cd6c4',
+        'local/kbacompany/lang/en/local_kbacompany.php': '8ca0f2edf94a7675402634d986f75fa6968ac557e9c68e43d7864ba3e94b9bae',
+        'local/kbacompany/lang/ru/local_kbacompany.php': '0698c4976b6364b07fb124700624ff30023df5356f7260dab0260f60641320ac',
+        'local/kbacompany/classes/local/communication_service.php': '6a5de10a764edc99864aee634ec4b9ecbe432c7a76e4dfcbc5d60b81b6874b40',
+    })
+    # #156: append the bell to the published #154 tree, preserving the ADR-0010 sources.
+    reviewed_followup.update({
+        'local/kbacompany/classes/local/communication_service.php': 'f3c7ab27e4da9001673e6c60a72b18b8e5af604068b15b349c5c01a45de3ad05',
+        'local/kbacompany/lang/en/local_kbacompany.php': '5627a2459e4b00188f824f85fe521c0a04a1c999df1bc4c3072649550bff2c1e',
+        'local/kbacompany/lang/ru/local_kbacompany.php': '353a6d98ad7cecc34354013bd9496668d75ffe35c80ead0d3ee18da64d447462',
     })
     for row in plan['rows']:
         path=root/row['path']
@@ -107,7 +114,7 @@ def check(root=ROOT):
         errors.append('one historical0902 release note was lost')
     upgrade=(root/'local/kbacompany/db/upgrade.php').read_text(encoding='utf-8')
     versions=[int(v) for v in re.findall(r'upgrade_plugin_savepoint\(true,\s*(\d+)',upgrade)]
-    if len(versions)!=485 or versions!=sorted(set(versions)) or versions[-3:]!=[2026111100,2026111600,2026111601]:
+    if len(versions)!=486 or versions!=sorted(set(versions)) or versions[-4:]!=[2026111100,2026111600,2026111601,2026112301]:
         errors.append('merged upgrade chronology/identity changed')
     driver=(root/'tools/tests/moodle_acceptance.php').read_text(encoding='utf-8')
     for ref in [plan['pr53_sha'],plan['pr56_sha']]:

@@ -87,7 +87,7 @@ class communication_center_ui_service {
             'contenthtml' => \html_writer::div($OUTPUT->render_from_template('local_kbacompany/bms24_comm_body', $model),
                 'bms24-comm-cardbody'),
         ]);
-        return \html_writer::div($card, 'bms24-comm', ['data-section' => $model['section']]);
+        return \html_writer::div($card, 'bms24-comm', ['id' => 'bms24-comm-root', 'data-section' => $model['section']]);
     }
 
     /** Mustache looks a missing or null key up in the parent context; absent optional values are false instead. */
@@ -486,7 +486,7 @@ class communication_center_ui_service {
      * @return array|null [moodle_url, string key] or null for other kinds
      */
     public static function daily_report_target(string $company, string $kind): ?array {
-        if ($kind === 'dailyreport_submitted') {
+        if ($kind === 'dailyreport_submitted' || $kind === 'dailyreport_copy') {
             return [daily_report_ui_service::url($company, ['tab' => 'review']), 'dailyreports_tab_review'];
         }
         if ($kind === 'dailyreport_decision') {
@@ -634,8 +634,8 @@ class communication_center_ui_service {
             'title' => self::tr('communicationcenter_tab_notifications'), 'unread' => $unread ?: null,
             'onlyunread' => ['active' => $onlyunread, 'label' => self::tr('communicationux2_only_unread'),
                 'url' => self::url($company, ['tab' => 'notifications', 'filter' => $onlyunread ? 'all' : 'unread'])->out(false)],
-            'markall' => $unread > 0 ? ['hidden' => self::post_base($company, 'readallnotifications'),
-                'label' => self::tr('communicationux2_mark_all')] : null,
+            // mark-all-read is withheld from this candidate: the prototype only proposed it and the
+            // owner has not approved a bulk action. The POST endpoint is left intact for a later decision.
             'settings' => ['url' => (new \moodle_url('/local/kbacompany/calendar_notifications.php', ['uuid' => $company]))->out(false),
                 'label' => self::tr('communicationux2_notification_settings')],
             'groups' => $out,

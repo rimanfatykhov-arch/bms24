@@ -1,22 +1,22 @@
 {
   "scope": "top bar notification bell: one shared read-only notification feed/count method in communication_service (same ACL as context(); context() and shell_counters reuse it), and append-only RU/EN strings; no schema, no notification generation, read-rule or cron change",
-  "base_sha": "36cc7ddc284f9d22c6e145aee59d64d1a856b665",
+  "base_sha": "6275795ee24ecbf4f450ad92c1dc827d54e06840",
   "normalization": "CRLF to LF only",
   "files": [
     {
       "path": "local/kbacompany/classes/local/communication_service.php",
-      "before_sha256_lf": "7433c0f6d21133e38de79f05da131daafda7bc245769225d973b8bdf69bf177a",
-      "after_sha256_lf": "5199aac3569343b3807b962e19e82a62ee5c1959401242346c785bbcf5a41b5f"
+      "before_sha256_lf": "6a5de10a764edc99864aee634ec4b9ecbe432c7a76e4dfcbc5d60b81b6874b40",
+      "after_sha256_lf": "f3c7ab27e4da9001673e6c60a72b18b8e5af604068b15b349c5c01a45de3ad05"
     },
     {
       "path": "local/kbacompany/lang/en/local_kbacompany.php",
-      "before_sha256_lf": "ffa8c3cc82b19e1e15fdc12f5ec901a6621a7a92abed5f2097ec6e97f71bf348",
-      "after_sha256_lf": "1867be01b8e6afcab83b1425dac05657306ad6f26fae60f5978fbe076933d755"
+      "before_sha256_lf": "8ca0f2edf94a7675402634d986f75fa6968ac557e9c68e43d7864ba3e94b9bae",
+      "after_sha256_lf": "5627a2459e4b00188f824f85fe521c0a04a1c999df1bc4c3072649550bff2c1e"
     },
     {
       "path": "local/kbacompany/lang/ru/local_kbacompany.php",
-      "before_sha256_lf": "0ff5746d50f5cfc84b13d582f210e6262549973ebd7d08f4667262edaf2cb46b",
-      "after_sha256_lf": "b1af4e0bf94d7160cfac2743113f0f75928e57eb33b7adc697f6e90c2d3cd6c4"
+      "before_sha256_lf": "0698c4976b6364b07fb124700624ff30023df5356f7260dab0260f60641320ac",
+      "after_sha256_lf": "353a6d98ad7cecc34354013bd9496668d75ffe35c80ead0d3ee18da64d447462"
     }
   ]
 }

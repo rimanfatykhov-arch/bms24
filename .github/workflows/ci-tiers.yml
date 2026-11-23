@@ -137,6 +137,7 @@ jobs:
         run: |
           python3 tools/ci/browser/test_contract.py
           python3 -O tools/ci/browser/test_contract.py
+          (cd tools/ci/browser && python3 test_communication_ux_contract.py && python3 -O test_communication_ux_contract.py)
       - name: FAST checks (lint, JS, AMD, lang parity, CSS contract, package + source identity)
         continue-on-error: ${{ matrix.target.expect.fast == 'fail' }}
         run: |
