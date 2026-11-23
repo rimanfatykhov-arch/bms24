@@ -42,7 +42,7 @@ define([], function() {
         shell.setAttribute('data-bms24-drawer', '1');
         drawer.setAttribute('role', 'dialog');
         drawer.setAttribute('aria-modal', 'true');
-        drawer.setAttribute('aria-label', drawer.getAttribute('data-bms24-drawer-label') || button.textContent.trim());
+        drawer.setAttribute('aria-label', drawer.getAttribute('data-bms24-drawer-label') || button.getAttribute('aria-label'));
         close.hidden = false;
         backdrop.hidden = false;
         details.open = false;
