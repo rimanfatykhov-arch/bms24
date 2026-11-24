@@ -1,6 +1,6 @@
 {
   "scope": "exact intentional source updates; not runtime or release acceptance",
-  "base_sha": "4ae6051993682082ca3d9435b38fc4d7c298e94c",
+  "base_sha": "6a9613a5bbb51d1e38f8592fe27a94139907fc6a (#172 over #169 over the published #173 head)",
   "normalization": "CRLF to LF only",
   "previous_evidence": "docs/reconcile/daily-reports-r5a-source-preservation.json",
   "decision": "docs/daily-reports/R5_REPORTING_CALENDAR_PROPOSAL.md (owner decisions K3, K5, 24.11.2026; PR #170)",
@@ -8,13 +8,13 @@
   "files": [
     {
       "path": "local/kbacompany/lang/en/local_kbacompany.php",
-      "before_sha256_lf": "8c13ea943b1bcb4923c7a70a9b584d436d89331bbc7840250558f3a00096d4a3",
-      "after_sha256_lf": "bec1c7e3cdf603439b852b4dcd5bee30eaff81bb52ea16f83b8192b53bafbfd8"
+      "before_sha256_lf": "37047b1f5dc9d06b7f37c0c4b5e5adcf104245a19de100dec400e67535ed4f14",
+      "after_sha256_lf": "78ca82d41e8954ba972a93f31c29c6a2329b4998c294c01f0a87348933b3e740"
     },
     {
       "path": "local/kbacompany/lang/ru/local_kbacompany.php",
-      "before_sha256_lf": "da05d7e31ac11f3e67b3e18c794771069a08aa24a2786d1f810fb300dfbdcee8",
-      "after_sha256_lf": "77f496ecdd7f082fd20963ef13712d0cb46e11c5b60c5bf375c062a4b2a4d153"
+      "before_sha256_lf": "1530583466fd865e18c39a5a67feeccfc1d0a854c09c1f57f58e72ebf23fa8d9",
+      "after_sha256_lf": "cba6353c0fefe51e9577c8aec6a6eb17a7349b722cbc1c19907ee066c3c67ce5"
     }
   ]
 }
