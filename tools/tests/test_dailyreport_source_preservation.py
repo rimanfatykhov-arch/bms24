@@ -57,6 +57,11 @@ E2_KEYS=[b'bpu_tab_discussion',b'bpu_discussion_empty',b'bpu_discussion_readonly
          b'communication_object_battleplan',b'communicationcenter_openplan']
 NAV_MARKER=b'\n// Adaptive BMS24 navigation (2026-11-18): narrow-window menu button and drawer close label.\n'
 NAV_KEYS=[b'bms24_menu_button',b'bms24_menu_close']
+AE_MARKER=b'\n// Day feed "Added earlier" (2026-11-24): mark of a result already added to the report of the day.\n'
+AE_KEYS=[b'dailyreports_feed_addedearlier',b'dailyreports_feed_addedearlier_hint']
+_AE=json.loads((ROOT/'docs/reconcile/day-feed-added-earlier-source-preservation.json').read_text(encoding='utf-8'))
+AE_BEFORE={lang:next(r['before_sha256_lf'] for r in _AE['files'] if r['path']==f'local/kbacompany/lang/{lang}/local_kbacompany.php')
+           for lang in ('en','ru')}
 _R2=json.loads((ROOT/'docs/reconcile/daily-reports-r2-source-preservation.json').read_text(encoding='utf-8'))
 R2_AFTER={lang:next(r['after_sha256_lf'] for r in _R2['files'] if r['path']==f'local/kbacompany/lang/{lang}/local_kbacompany.php')
           for lang in ('en','ru')}
@@ -118,6 +123,12 @@ class Preservation(unittest.TestCase):
                     ux,c145=ux.split(C145_MARKER)
                     if NAV_MARKER in c145:
                         c145,nav=c145.split(NAV_MARKER)
+                        if AE_MARKER in nav:
+                            # Navigation and everything before it are byte-identical up to the "Added earlier" marker.
+                            nav,ae=nav.split(AE_MARKER)
+                            self.assertEqual(AE_BEFORE[lang],hashlib.sha256(data.split(AE_MARKER)[0]).hexdigest())
+                            self.assertEqual(AE_KEYS,keys(ae))
+                            self.assertFalse(set(AE_KEYS)&set(keys(data.split(AE_MARKER)[0])))
                         # The integrated Day Feed and bell are byte-identical up to the adaptive navigation marker.
                         self.assertEqual(NAV_BEFORE[lang],hashlib.sha256(data.split(NAV_MARKER)[0]).hexdigest())
                         self.assertEqual(NAV_KEYS,keys(nav))

@@ -1,7 +1,9 @@
 {{!
     Day feed (first scenario: task results only). The employee's own submitted task results of one day, a date
     picker (GET), and per result "Add to report": a POST of the event id and sesskey to the report page, which re-reads
-    the result on the server and writes the own draft. Render-only. Uses no live-update classes.
+    the result on the server and writes the own draft. A result already added to the report of this day (fact by
+    submit event id in the report journal) shows "Added earlier" instead of the button. Render-only. Uses no
+    live-update classes.
 }}
 <div class="bms24-comm-dayfeed" data-section="dayfeed">
 <div class="bms24-comm-ntools bms24-comm-dftools">
@@ -25,6 +27,7 @@
 {{#result}}<p class="bms24-comm-dfresult">{{result}}</p>{{/result}}{{#noresult}}<p class="bms24-comm-muted">{{noresult}}</p>{{/noresult}}
 <div class="bms24-comm-dfacts">
 {{#addform}}<form method="post" action="{{url}}" class="bms24-comm-inline" data-dayfeed-add="1">{{#hidden}}<input type="hidden" name="{{name}}" value="{{value}}">{{/hidden}}<button type="submit" class="bms24-comm-btn bms24-comm-btn--primary bms24-comm-btn--small">{{label}}</button></form>{{/addform}}
+{{#addedearlier}}<span class="bms24-comm-pill bms24-comm-pill--mint" data-dayfeed-added="1">{{label}}<span class="sr-only"> {{hint}}</span></span>{{/addedearlier}}
 <a class="bms24-comm-btn bms24-comm-btn--small" href="{{taskurl}}">{{opentask}}</a>
 </div>
 </div>
