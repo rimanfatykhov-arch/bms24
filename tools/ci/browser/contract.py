@@ -2089,6 +2089,160 @@ def adaptive_nav_checks(obs, exitcode=None):
             'adaptive_nav_shorter_employee_menu': employee, 'adaptive_nav_no_js_fallback': nojs,
             'adaptive_nav_legacy_shell_unchanged': legacy, 'adaptive_nav_no_browser_errors': events}
 
+INBOUND_ENVELOPES = {'malformed': 'error:inbound_payload_invalid', 'duplicate_key': 'error:inbound_payload_invalid',
+                     'foreign_scope': 'error:inbound_scope_denied',
+                     'changed_content': 'error:inbound_idempotency_conflict', 'bad_token': 'error:invalidtoken',
+                     'switch_off': 'error:inbound_retryable_unavailable'}
+INBOUND_ADAPTER_REVIEW = {'adp.bot': 'sender_bot', 'adp.attachment': 'unsupported_attachment', 'adp.reply': 'reply_held',
+                          'adp.forward': 'forward_held', 'adp.channel': 'unsupported_chat', 'adp.held': 'source_held'}
+INBOUND_RACES = {'race_sender': ('1', 'race.s.', ('sender_unverified',)),
+                 'race_membership': ('2', 'race.m.', ('author_unavailable',))}
+
+
+def inbound_checks(obs, exitcode=None):
+    """RC33 fake MAX inbound, owner D4 (max_inbound.py + ci_inbound.php). Verdicts come from DB state read by a separate
+    PHP process after each step; the producer's PASS alone is never sufficient."""
+    def run():
+        require(exitcode == 0, 'inbound producer failed or was not run')
+        require(isinstance(obs, dict) and obs.get('status') == 'PASS' and not obs.get('error')
+                and obs.get('setup_exit') == 0, 'inbound run incomplete')
+        return obs
+
+    def company(label, tenant='A'):
+        st = run().get(label)
+        require(isinstance(st, dict) and isinstance((st.get('companies') or {}).get(tenant), dict),
+                'inbound state %s missing' % label)
+        return st['companies'][tenant]
+
+    def binding(label, n, tenant='A'):
+        b = (company(label, tenant).get('bindings') or {}).get(n)
+        require(isinstance(b, dict) and isinstance(b.get('receipts'), list) and isinstance(b.get('messages'), list),
+                'binding %s missing in %s' % (n, label))
+        return b
+
+    def receipts(b, prefix):
+        rows = [r for r in b['receipts'] if str(r.get('mid', '')).startswith(prefix)]
+        require(len(rows) == len({r['mid'] for r in rows}), 'two receipts for one source event')
+        return {r['mid']: r for r in rows}
+
+    def authored(b):
+        return [m for m in b['messages'] if m.get('author') == b.get('author')]
+
+    def twenty_identical():
+        o = run()
+        outs = o.get('n09')
+        require(isinstance(outs, list) and len(outs) == 20 and all(r[0] == 200 for r in outs), '20 HTTP answers missing')
+        kinds = [r[1] for r in outs]
+        require(kinds.count('created') == 1 and kinds.count('duplicate') == 19, 'not one created + 19 duplicates: %r'
+                % sorted(set(kinds)))
+        b = binding('state_n09', '1')
+        rs = receipts(b, 'n09.')
+        require(list(rs) == ['n09.same'] and rs['n09.same']['outcome'] == 'created', 'receipt not exactly one created')
+        mine = authored(b)
+        require(len(mine) == 1 and mine[0]['id'] == rs['n09.same']['message_id'], 'not exactly one message by the human author')
+        require(b['notified'].get(mine[0]['uuid']) == sorted([b['owner'], b['peer']]),
+                'notifications not exactly once per other participant: %r' % (b['notified'].get(mine[0]['uuid']),))
+        require(len(b.get('events') or []) == 1 and not b['events'][0]['leaks_external_id'], 'not one neutral outbox event')
+        a = company('state_n09')
+        require(a.get('audit_create') == 1 and a.get('audit_create_dual_actor') == 1, 'dual-actor audit missing')
+
+    def envelopes():
+        o = run()
+        env = o.get('envelopes') or {}
+        for name, expected in INBOUND_ENVELOPES.items():
+            r = env.get(name)
+            require(isinstance(r, list) and r[0] == 200 and r[1] == expected,
+                    '%s: expected HTTP 200 envelope %s, got %r' % (name, expected, r))
+        before, after = binding('state_n09', '1'), binding('state_envelopes', '1')
+        require(before['receipts'] == after['receipts'] and before['messages'] == after['messages'],
+                'a refused request wrote a receipt or a message')
+        require(binding('state_envelopes', '1', 'B')['receipts'] == [], 'company B received a receipt')
+
+    def adapter_end_to_end():
+        o = run()
+        ad = o.get('adapter') or {}
+        hooks = ad.get('hooks') or {}
+        require(hooks.get('wrong_secret') == 401, 'wrong webhook secret not refused')
+        require(hooks.get('twenty_identical') == [200] * 20, '20 identical webhooks not all acknowledged')
+        others = {k: v for k, v in hooks.items() if k not in ('wrong_secret', 'twenty_identical')}
+        require(others and all(v == 200 for v in others.values()), 'fixture webhook not acknowledged: %r' % others)
+        rows = ad.get('rows') or []
+        states = {}
+        for r in rows:
+            states[r['state']] = states.get(r['state'], 0) + 1
+        require(states == {'committed': 2, 'review_required': 8, 'rejected': 1}, 'adapter inbox states %r' % states)
+        require(max(r['deliveries'] for r in rows) == 20 and all(r['has_body'] == 0 for r in rows),
+                'duplicate deliveries not collapsed or a terminal row kept its body')
+        require(not ad.get('paused'), 'adapter paused unexpectedly')
+        off = ad.get('switch_off_rows') or []
+        require(len(off) == 1 and off[0]['reason'] == 'inbound_retryable_unavailable',
+                'kill switch did not leave the event waiting for retry')
+        b = binding('state_adapter', '1')
+        rs = receipts(b, 'adp.')
+        require(set(rs) == {'adp.create', 'adp.switch'} | set(INBOUND_ADAPTER_REVIEW),
+                'unexpected adapter receipts %r' % sorted(rs))
+        for mid in ('adp.create', 'adp.switch'):
+            require(rs[mid]['outcome'] == 'created' and rs[mid]['message_author'] == b['author'], mid + ' not created')
+        for mid, reason in INBOUND_ADAPTER_REVIEW.items():
+            require(rs[mid]['outcome'] == 'review_required' and rs[mid]['reason'] == reason and rs[mid]['message_id'] == 0,
+                    '%s: %r' % (mid, rs[mid]))
+        require(len(authored(b)) == 3, 'adapter published other than exactly two messages')
+        require(b.get('holds') == 2, 'remove/edit controls not held')
+
+    def race_check(key):
+        def check():
+            o = run()
+            n, prefix, reasons = INBOUND_RACES[key]
+            r = o.get(key) or {}
+            rev = r.get('revocation')
+            require(r.get('revoker_exit') == 0 and isinstance(rev, dict) and isinstance(rev.get('max_message_id'), int),
+                    'revocation process failed')
+            answers = (r.get('pre') or []) + (r.get('middle') or []) + (r.get('post') or [])
+            require(len(answers) == 25 and all(x[1] == 200 for x in answers), 'race answers missing or not HTTP 200')
+            require(all(x[2] == 'created' for x in r['pre']), 'imports before the revocation did not commit')
+            require(all(x[2] == 'review_required' and x[3] in reasons for x in r['post']),
+                    'import after the revocation not refused: %r' % (r['post'],))
+            require(all(x[2] == 'created' or (x[2] == 'review_required' and x[3] in reasons) for x in r['middle']),
+                    'unexpected concurrent answer: %r' % (r['middle'],))
+            b = binding('state_final', n)
+            rs = receipts(b, prefix)
+            require(len(rs) == 25, 'race receipts %d != 25' % len(rs))
+            for x in answers:
+                require(rs[x[0]]['outcome'] == x[2], 'answer and receipt disagree for %s' % x[0])
+            created = [x for x in rs.values() if x['outcome'] == 'created']
+            require(all(0 < x['message_id'] <= rev['max_message_id'] and x['message_author'] == b['author']
+                        for x in created), 'an import committed after the revocation (linearization broken)')
+            require(not [m for m in authored(b) if m['id'] > rev['max_message_id']],
+                    'a message by the revoked author appeared after the revocation committed')
+            require(all(x['message_id'] == 0 for x in rs.values() if x['outcome'] != 'created'), 'review published')
+        return check
+
+    def isolation_and_audit():
+        o = run()
+        for tenant in ('B',):
+            for n in ('1', '2'):
+                b = binding('state_final', n, tenant)
+                require(b['receipts'] == [] and b['messages'] == [], 'company B touched by company A traffic')
+        created = 0
+        for n in ('1', '2'):
+            b = binding('state_final', n)
+            created += sum(1 for r in b['receipts'] if r['outcome'] == 'created')
+            require(all(not e['leaks_external_id'] for e in b.get('events') or []), 'outbox carries MAX identifiers')
+            require(len(b.get('events') or []) == sum(1 for r in b['receipts'] if r['outcome'] == 'created'),
+                    'outbox events differ from created receipts')
+        a = company('state_final')
+        require(a.get('audit_create') == created and a.get('audit_create_dual_actor') == created,
+                'dual-actor audit does not match created imports')
+        require(o['state_final'].get('gate_held') is False, 'company gate left held')
+
+    return {'inbound_n09_twenty_parallel_identical_one_message': twenty_identical,
+            'inbound_n20_refusals_are_http200_envelopes_without_writes': envelopes,
+            'inbound_fake_adapter_end_to_end_states': adapter_end_to_end,
+            'inbound_n21_sender_revocation_during_intake_linearized': race_check('race_sender'),
+            'inbound_n28_membership_revocation_during_intake_linearized': race_check('race_membership'),
+            'inbound_tenant_isolation_outbox_and_dual_actor_audit': isolation_and_audit}
+
+
 def required_check_names():
     """Every check a complete BROWSER report must contain (used by browser_acceptance.py and merge_gate.py)."""
     return (['moodle_install', 'fixtures_companies_A_B'] + list(task_tab_checks({})) + list(attachments_checks({}, {}))
@@ -2098,7 +2252,8 @@ def required_check_names():
             + list(daily_reports_flow_checks({})) + list(plan_discussion_checks({})) + list(communication_ux_checks({}))
             + list(day_feed_checks({}))
             + list(notification_bell_checks({}))
-            + list(adaptive_nav_checks({})))
+            + list(adaptive_nav_checks({}))
+            + list(inbound_checks({})))
 
 
 def evaluate(checks):
