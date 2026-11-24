@@ -524,4 +524,108 @@ final class daily_report_ui_service {
         return self::post_form($uuid, ['tab' => 'review', 'queue' => 'settings'], ['tab' => 'review', 'action' => 'settings',
             'revision' => (int)$settings->revision], $body, 'border rounded p-3 bms-dailyreport-settings');
     }
+    /** Cell symbol and label of the monthly summary; state is always text plus icon, never colour alone. */
+    private static function summary_cell(array $cell): array {
+        if ($cell['state'] === 'accepted') {
+            $icon = ['positive' => '✓+', 'negative' => '✓−'][$cell['rating']] ?? '✓';
+            return [$icon, self::str('status_accepted') . ($cell['rating'] !== 'none' ?
+                ', ' . self::str('summary_rating_' . $cell['rating']) : '')];
+        }
+        return [self::ICONS[$cell['state']] ?? '·', self::str('status_' . $cell['state'])];
+    }
+
+    /** Month navigation link of the summary, keeping the filters. */
+    private static function summary_link(string $uuid, array $grid, int $delta, string $text, string $marker): string {
+        return html_writer::link(self::url($uuid, ['tab' => 'summary',
+            'month' => daily_report_summary_service::shift($grid['month'], $delta), 'scope' => $grid['scope'],
+            'unit' => $grid['unit']]), $text, ['class' => 'btn btn-sm btn-outline-secondary mr-2 mb-2', $marker => '1']);
+    }
+
+    /** One labelled filter control of the summary form. */
+    private static function summary_field(string $id, string $label, string $control): string {
+        return html_writer::div(html_writer::tag('label', s($label), ['for' => $id, 'class' => 'd-block']) . $control,
+            'd-inline-block mr-2 mb-2 align-bottom mw-100');
+    }
+
+    /**
+     * ADR-0011 block 1: monthly summary grid (unit -> employee -> day) with the share of rated reports and of positive
+     * ratings. Filters are a GET form; every cell with a report links to the read-only card. Presentation only.
+     */
+    public static function summary(string $uuid, array $grid): string {
+        $month = $grid['month'];
+        $label = userdate(make_timestamp((int)substr($month, 0, 4), (int)substr($month, 5, 2), 15, 12),
+            get_string('strftimemonthyear', 'langconfig'));
+        $nav = self::summary_link($uuid, $grid, -1, '‹ ' . s(self::str('summary_prev')), 'data-dailyreport-summary-prev') .
+            html_writer::tag('strong', s($label), ['class' => 'mr-2 mb-2 d-inline-block',
+                'data-dailyreport-summary-month' => $month]) .
+            self::summary_link($uuid, $grid, 1, s(self::str('summary_next')) . ' ›', 'data-dailyreport-summary-next');
+        $form = html_writer::start_tag('form', ['method' => 'get', 'class' => 'mb-3',
+                'data-dailyreport-summary-filter' => '1']) .
+            html_writer::empty_tag('input', ['type' => 'hidden', 'name' => 'uuid', 'value' => $uuid]) .
+            html_writer::empty_tag('input', ['type' => 'hidden', 'name' => 'tab', 'value' => 'summary']) .
+            self::summary_field('dailyreport-summary-month', self::str('summary_month'),
+                html_writer::empty_tag('input', ['type' => 'month', 'id' => 'dailyreport-summary-month', 'name' => 'month',
+                    'value' => $month, 'class' => 'form-control'])) .
+            self::summary_field('dailyreport-summary-scope', self::str('summary_scope'),
+                html_writer::select(['all' => self::str('summary_scope_all'), 'mine' => self::str('summary_scope_mine')],
+                    'scope', $grid['scope'], false, ['id' => 'dailyreport-summary-scope', 'class' => 'custom-select'])) .
+            self::summary_field('dailyreport-summary-unit', self::str('summary_unit'),
+                html_writer::select($grid['units'], 'unit', $grid['unit'], ['' => self::str('summary_unit_all')],
+                    ['id' => 'dailyreport-summary-unit', 'class' => 'custom-select mw-100'])) .
+            html_writer::tag('button', s(self::str('summary_show')), ['type' => 'submit', 'class' => 'btn btn-primary mb-2 align-bottom']) .
+            html_writer::end_tag('form');
+        $legend = '';
+        foreach ([['accepted', 'positive'], ['accepted', 'negative'], ['accepted', 'none'], ['submitted', 'none'],
+                ['returned', 'none'], ['none', 'none']] as [$state, $rating]) {
+            [$icon, $text] = self::summary_cell(['state' => $state, 'rating' => $rating]);
+            $legend .= html_writer::span(html_writer::span($icon, '', ['aria-hidden' => 'true']) . ' ' . s($text),
+                'mr-3 d-inline-block');
+        }
+        $out = html_writer::tag('p', s(self::str('summary_intro')), ['class' => 'text-muted']) .
+            html_writer::div($nav, 'mb-2') . $form .
+            html_writer::tag('p', $legend, ['class' => 'small', 'data-dailyreport-summary-legend' => '1']);
+        if (!$grid['groups']) {
+            return $out . html_writer::tag('p', s(self::str('summary_empty')), ['data-dailyreport-summary-empty' => '1']);
+        }
+        $sticky = 'position: sticky; left: 0; z-index: 1; background: #fff; min-width: 10rem;';
+        $head = html_writer::tag('th', s(self::str('employee')), ['scope' => 'col', 'style' => $sticky]) .
+            html_writer::tag('th', s(self::str('summary_ratedpct')), ['scope' => 'col', 'class' => 'text-right']) .
+            html_writer::tag('th', s(self::str('summary_positivepct')), ['scope' => 'col', 'class' => 'text-right']);
+        foreach ($grid['days'] as $day => $weekday) {
+            $head .= html_writer::tag('th', (string)(int)substr($day, 8, 2), ['scope' => 'col',
+                'class' => 'text-center' . ($weekday >= 6 ? ' text-muted' : ''), 'title' => $day]);
+        }
+        $body = '';
+        $columns = 3 + count($grid['days']);
+        foreach ($grid['groups'] as $group) {
+            $body .= html_writer::tag('tr', html_writer::tag('th', s($group['unit'] === '' ? self::str('summary_nounit') :
+                $group['name']), ['scope' => 'colgroup', 'colspan' => $columns, 'class' => 'bg-light']),
+                ['data-dailyreport-summary-group' => $group['unit']]);
+            foreach ($group['rows'] as $row) {
+                $tr = html_writer::tag('th', s($row['name']), ['scope' => 'row', 'style' => $sticky]) .
+                    html_writer::tag('td', $row['ratedpct'] === null ? '—' : $row['ratedpct'] . '%', ['class' => 'text-right']) .
+                    html_writer::tag('td', $row['positivepct'] === null ? '—' : $row['positivepct'] . '%',
+                        ['class' => 'text-right']);
+                foreach ($row['cells'] as $day => $cell) {
+                    [$icon, $text] = self::summary_cell($cell);
+                    $hidden = html_writer::span(s($day . ': ' . $text), 'sr-only');
+                    $content = $cell['report'] !== '' ?
+                        html_writer::link(self::url($uuid, ['tab' => 'review', 'report' => $cell['report']]),
+                            html_writer::span($icon, '', ['aria-hidden' => 'true']) . $hidden, ['title' => $day . ': ' . $text]) :
+                        html_writer::span('·', 'text-muted', ['aria-hidden' => 'true']) . $hidden;
+                    $tr .= html_writer::tag('td', $content, ['class' => 'text-center text-nowrap',
+                        'data-dailyreport-summary-cell' => $cell['state'], 'data-dailyreport-summary-rating' => $cell['rating']]);
+                }
+                $body .= html_writer::tag('tr', $tr, ['data-dailyreport-summary-user' => $row['userid'],
+                    'data-dailyreport-summary-total' => $row['total'], 'data-dailyreport-summary-rated' => $row['rated'],
+                    'data-dailyreport-summary-positive' => $row['positive']]);
+            }
+        }
+        $table = html_writer::tag('table', html_writer::tag('caption', s(self::str('summary_caption') . ' · ' . $label),
+            ['class' => 'sr-only']) . html_writer::tag('thead', html_writer::tag('tr', $head)) .
+            html_writer::tag('tbody', $body),
+            ['class' => 'generaltable table-sm bms-dailyreport-summary', 'data-dailyreport-summary' => $month]);
+        return $out . html_writer::div($table, 'table-responsive', ['tabindex' => '0', 'role' => 'region',
+            'aria-label' => self::str('summary_caption')]);
+    }
 }
