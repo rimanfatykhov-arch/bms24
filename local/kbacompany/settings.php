@@ -36,5 +36,12 @@ if ($hassiteconfig) {
         5,
         PARAM_INT
     ));
+    // FIN-W2: the Finance workspace (read-only overview over existing financial objects) is off until explicitly enabled.
+    $settings->add(new admin_setting_configcheckbox(
+        'local_kbacompany/finance_workspace_enabled',
+        get_string('financews_enabled', 'local_kbacompany'),
+        get_string('financews_enabled_help', 'local_kbacompany'),
+        0
+    ));
     $ADMIN->add('localplugins', $settings);
 }

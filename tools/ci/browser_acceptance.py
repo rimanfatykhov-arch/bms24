@@ -182,6 +182,9 @@ try:
     # Adaptive navigation (docs/ui/ADAPTIVE_NAVIGATION.md): owned drawer <= 860 px / sidebar, legacy, no-JS, 16 cases.
     nav_exit = timed('adaptive_nav', lambda: browser('adaptive_nav.py', 'verify'))
     record(contract.evaluate(contract.adaptive_nav_checks(load('adaptive-nav-result.json'), nav_exit)))
+    # FIN-W2 Finance workspace: default-off switch, figures = service, menu/planned sections, financial gate, A/B, revocation.
+    finance_exit = timed('finance_workspace', lambda: browser('finance_workspace.py', 'verify'))
+    record(contract.evaluate(contract.finance_workspace_checks(load('finance-workspace-result.json'), finance_exit)))
     timed('server_restart_64k', lambda: start_server(['-d', 'upload_max_filesize=64K', '-d', 'post_max_size=8M']))
     timed('oversize', lambda: browser('attachments.py', 'oversize'))
     timed('db_state_oversize', lambda: php_state('oversize'))

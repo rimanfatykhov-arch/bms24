@@ -62,6 +62,10 @@ AE_KEYS=[b'dailyreports_feed_addedearlier',b'dailyreports_feed_addedearlier_hint
 _AE=json.loads((ROOT/'docs/reconcile/day-feed-added-earlier-source-preservation.json').read_text(encoding='utf-8'))
 AE_BEFORE={lang:next(r['before_sha256_lf'] for r in _AE['files'] if r['path']==f'local/kbacompany/lang/{lang}/local_kbacompany.php')
            for lang in ('en','ru')}
+FINANCE_MARKER=b'\n// FIN-W2 Finance workspace (2026-11-24): read-only overview over existing financial model, budgets and resource gates.\n'
+_FINANCE=json.loads((ROOT/'docs/reconcile/finance-workspace-fin-w2-source-preservation.json').read_text(encoding='utf-8'))
+FINANCE_BEFORE={lang:next(r['before_sha256_lf'] for r in _FINANCE['files'] if r['path']==f'local/kbacompany/lang/{lang}/local_kbacompany.php')
+                for lang in ('en','ru')}
 _R2=json.loads((ROOT/'docs/reconcile/daily-reports-r2-source-preservation.json').read_text(encoding='utf-8'))
 R2_AFTER={lang:next(r['after_sha256_lf'] for r in _R2['files'] if r['path']==f'local/kbacompany/lang/{lang}/local_kbacompany.php')
           for lang in ('en','ru')}
@@ -126,6 +130,14 @@ class Preservation(unittest.TestCase):
                         if AE_MARKER in nav:
                             # Navigation and everything before it are byte-identical up to the "Added earlier" marker.
                             nav,ae=nav.split(AE_MARKER)
+                            if FINANCE_MARKER in ae:
+                                # Everything up to the FIN-W2 Finance marker is byte-identical; finance keys are new.
+                                ae,finance=ae.split(FINANCE_MARKER)
+                                self.assertEqual(FINANCE_BEFORE[lang],hashlib.sha256(data.split(FINANCE_MARKER)[0]).hexdigest())
+                                financekeys=keys(finance)
+                                self.assertEqual(83,len(financekeys));self.assertEqual(len(financekeys),len(set(financekeys)))
+                                self.assertTrue(all(k.startswith(b'financews_') for k in financekeys))
+                                self.assertFalse(set(financekeys)&set(keys(data.split(FINANCE_MARKER)[0])))
                             self.assertEqual(AE_BEFORE[lang],hashlib.sha256(data.split(AE_MARKER)[0]).hexdigest())
                             self.assertEqual(AE_KEYS,keys(ae))
                             self.assertFalse(set(AE_KEYS)&set(keys(data.split(AE_MARKER)[0])))
