@@ -1141,11 +1141,69 @@ def daily_reports_flow_checks(obs, exitcode=None):
             require(team.get('hscroll') is True, 'horizontal scroll on the team for the day at %s px' % r.get('width'))
             require(r.get('team_employee_filters') == 0, 'an ordinary employee received the team for the day')
 
+    def users(rows):
+        require(isinstance(rows, list) and all(isinstance(x, list) and len(x) == 2 for x in rows), 'team rows malformed')
+        return [x[0] for x in rows]
+
+    def team_scopes_and_open():
+        # #168 with a synthetic unit (MA manages EA): "my team" lists EA and only people of the whole company; "whole
+        # company" lists EA and RA (RA only with a private draft, "not sent"); nobody of company B; the sent report opens
+        # from the list by a click; RA's draft text is never rendered.
+        for r in run():
+            ids, scopes = r.get('ids') or {}, r.get('team_scopes') or {}
+            team, comp = scopes.get('team') or {}, scopes.get('company') or {}
+            for name, s in (('team', team), ('company', comp)):
+                require(s.get('options') == ['team', 'company'] and s.get('selected') == name,
+                        'scope %s not offered or not kept: %r' % (name, s.get('options')))
+                require(s.get('draft_leak') is False and s.get('hscroll') is True, 'draft text or horizontal scroll on %s' % name)
+            tu, cu = users(team.get('rows')), users(comp.get('rows'))
+            require(ids.get('EA') in tu and ids.get('EB') not in tu and set(tu) <= set(cu) and len(tu) == len(set(tu)),
+                    'my team list wrong: %r' % (tu,))
+            require(ids.get('EA') in cu and ids.get('RA') in cu and ids.get('EB') not in cu and len(cu) == len(set(cu)),
+                    'whole company list wrong: %r' % (cu,))
+            require([x[1] for x in comp['rows'] if x[0] == ids.get('RA')] == ['notsent'], 'RA draft not shown as "not sent"')
+            o = r.get('team_open') or {}
+            require(o.get('link') == 1 and o.get('url_report') is True and isinstance(o.get('versions'), int)
+                    and o['versions'] >= 1 and o.get('draft_leak') is False, 'sent report did not open from the list: %r' % (o,))
+
+    def monthly_summary():
+        # #173: the case month, EA's accepted positive cell linked, previous month by link, "my subordinates" through the
+        # filter form, the cell opens the card, nobody of company B, no draft text, no horizontal scroll.
+        for r in run():
+            ids, s = r.get('ids') or {}, r.get('summary') or {}
+            month = str(r.get('day') or '')[:7]
+            require(len(month) == 7 and s.get('month') == month and s.get('filters') == 1, 'summary month or filters wrong')
+            y, m = int(month[:4]), int(month[5:7])
+            prev = '%04d-%02d' % ((y, m - 1) if m > 1 else (y - 1, 12))
+            require(s.get('prev_month') == prev, 'previous month link wrong: %r' % (s.get('prev_month'),))
+            ua, um = s.get('users_all'), s.get('users_mine')
+            require(isinstance(ua, list) and ids.get('EA') in ua and ids.get('EB') not in ua, 'summary rows wrong: %r' % (ua,))
+            require(isinstance(um, list) and ids.get('EA') in um and ids.get('EB') not in um and set(um) <= set(ua)
+                    and s.get('scope_kept') == 'mine', 'my subordinates filter wrong: %r' % (um,))
+            require(s.get('cell_links') == 1 and s.get('cell') == ['accepted', 'positive'], 'EA cell wrong: %r' % (s.get('cell'),))
+            card = s.get('card') or {}
+            require(card.get('url_report') is True and isinstance(card.get('versions'), int) and card['versions'] >= 1,
+                    'summary cell did not open the card')
+            require(s.get('draft_leak') is False and s.get('hscroll') is True, 'draft text or horizontal scroll in the summary')
+
+    def release_access_denied():
+        # #168 + #173: an ordinary employee has no summary; a member of another company gets no list, summary or card.
+        for r in run():
+            d = r.get('release_denied') or {}
+            ea = d.get('EA') or {}
+            require(ea.get('summary') == 0 and ea.get('summary_tab') == 0, 'an ordinary employee received the summary')
+            for key in ('EB_team', 'EB_summary', 'EB_card'):
+                x = d.get(key) or {}
+                require(isinstance(x.get('http'), int) and x['http'] < 500, '%s failed: %r' % (key, x.get('http')))
+                require(x.get('team') == 0 and x.get('summary') == 0 and x.get('versions') == 0 and x.get('leak') is False,
+                        'another company member reached %s: %r' % (key, x))
+
     return {'daily_report_draft_relogin_and_conflict': draft_and_conflict, 'daily_report_concurrent_submit_one_version': submit_once,
             'daily_report_csrf_and_get_rejected': csrf, 'daily_report_snapshot_immutable': snapshot,
             'daily_report_return_rework_accept_once': review_cycle, 'daily_report_notifications_once_with_link': notifications,
             'daily_report_foreign_and_nonreviewer_denied': negatives, 'daily_report_layout_and_browser_errors': layout_and_events,
-            'daily_report_team_day_view': team_day}
+            'daily_report_team_day_view': team_day, 'daily_report_team_scopes_and_open': team_scopes_and_open,
+            'daily_report_monthly_summary': monthly_summary, 'daily_report_release_access_denied': release_access_denied}
 
 
 DAY_FEED_CASES = [('owned', 1440), ('legacy', 375)]
