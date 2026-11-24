@@ -491,6 +491,10 @@ if ($fresh) {
             'corporate_member_default_adr0005_test',
             // ADR-0010: reviewer by org chart, self review at the top, manager visibility, copies.
             'daily_report_reviewer_service_test',
+            // R4 (#168): team for the day, scope, filters, revoked members, drafts closed.
+            'daily_report_team_service_test',
+            // ADR-0011 block 1: monthly summary for managers, read-only, company-scoped.
+            'daily_report_summary_service_test',
             // R5a: reporting calendar, exceptions, absences (owner decisions K1-K6).
             'daily_report_calendar_service_test',
             // R5b: due states, "due by" and the schedule filter (owner decisions K3, K5).

@@ -120,28 +120,32 @@ def check(root=ROOT):
     # See docs/reconcile/daily-reports-r4-source-preservation.json.
     reviewed_followup['local/kbacompany/lang/en/local_kbacompany.php'] = 'ff960b76019f947c522bcc2765e1247baa0cfbbd4db5e7de20c0531bd535f07d'
     reviewed_followup['local/kbacompany/lang/ru/local_kbacompany.php'] = '6075cfd77ddcbf01f33d00a5501dda3c162d2ebe6ef49d52113b7c6ab6f805f5'
-    # Daily reports R3 (owner decision 24.11.2026): append the report discussion block after R4 and register the
+    # ADR-0011 block 1: monthly summary of daily reports (read-only, no schema). RU/EN block appended after the
+    # R4 "Team for the day" block (#168). See docs/reconcile/daily-reports-summary-source-preservation.json.
+    reviewed_followup['local/kbacompany/lang/en/local_kbacompany.php'] = '9a3fa3efb85ef6f9aeaf18202ba4377bf418787c4631b636dbf766f7a45c2f88'
+    reviewed_followup['local/kbacompany/lang/ru/local_kbacompany.php'] = '81334038357d7bc9f79a2dfefca9c8022c088045919931fc54e78a939b82a858'
+    # Daily reports R3 (owner decision 24.11.2026): append the report discussion block after the ADR-0011 summary (#173) and register the
     # 'dailyreport' discussion kind. See docs/reconcile/daily-reports-r3-source-preservation.json.
-    reviewed_followup['local/kbacompany/lang/en/local_kbacompany.php'] = '7be0cc8f09d3c55c3fe048a4549579face1efcf9e0413d8b34b740e7fa7dc28a'
-    reviewed_followup['local/kbacompany/lang/ru/local_kbacompany.php'] = '3949f0637e307491558c8197f36e1d4824ca9abec6c931ea48dada5e369f8aa6'
+    reviewed_followup['local/kbacompany/lang/en/local_kbacompany.php'] = '2a8007f42e8de2339927da3be2dcdc5aecf91534a634b5bd2bd21dadf17402eb'
+    reviewed_followup['local/kbacompany/lang/ru/local_kbacompany.php'] = 'e2e51490b8c1f5988948b057ba93701ee4229bbc4ed9e0175da02f0a655fcfc9'
     reviewed_followup['local/kbacompany/classes/local/communication_service.php'] = '870b471dba39c867b5b13f8b04f55fb82f67ce484ea44cf929b5b9c4f93dae92'
     # Daily reports R5a (owner decisions K1-K6, 24.11.2026): append the reporting calendar block after R3.
     # See docs/reconcile/daily-reports-r5a-source-preservation.json.
-    reviewed_followup['local/kbacompany/lang/en/local_kbacompany.php'] = '8c13ea943b1bcb4923c7a70a9b584d436d89331bbc7840250558f3a00096d4a3'
-    reviewed_followup['local/kbacompany/lang/ru/local_kbacompany.php'] = 'da05d7e31ac11f3e67b3e18c794771069a08aa24a2786d1f810fb300dfbdcee8'
+    reviewed_followup['local/kbacompany/lang/en/local_kbacompany.php'] = '37047b1f5dc9d06b7f37c0c4b5e5adcf104245a19de100dec400e67535ed4f14'
+    reviewed_followup['local/kbacompany/lang/ru/local_kbacompany.php'] = '1530583466fd865e18c39a5a67feeccfc1d0a854c09c1f57f58e72ebf23fa8d9'
     # Daily reports R5b (owner decisions K3, K5, 24.11.2026): append the due-state block after R5a.
     # See docs/reconcile/daily-reports-r5b-source-preservation.json.
-    reviewed_followup['local/kbacompany/lang/en/local_kbacompany.php'] = 'bec1c7e3cdf603439b852b4dcd5bee30eaff81bb52ea16f83b8192b53bafbfd8'
-    reviewed_followup['local/kbacompany/lang/ru/local_kbacompany.php'] = '77f496ecdd7f082fd20963ef13712d0cb46e11c5b60c5bf375c062a4b2a4d153'
+    reviewed_followup['local/kbacompany/lang/en/local_kbacompany.php'] = '78ca82d41e8954ba972a93f31c29c6a2329b4998c294c01f0a87348933b3e740'
+    reviewed_followup['local/kbacompany/lang/ru/local_kbacompany.php'] = 'cba6353c0fefe51e9577c8aec6a6eb17a7349b722cbc1c19907ee066c3c67ce5'
     # Daily reports R5c (owner decision K4, 24.11.2026): append the reminder block after R5b and register the
     # 'dailyreport_reminder' notification kind. See docs/reconcile/daily-reports-r5c-source-preservation.json.
-    reviewed_followup['local/kbacompany/lang/en/local_kbacompany.php'] = 'dc21f933da462868f29deec1b91befb08b3112630b8e6216df786440fa4f194e'
-    reviewed_followup['local/kbacompany/lang/ru/local_kbacompany.php'] = '33c6faaab413076b18616b22c9139dcc66f3b0db2d8810c924daddcdcc08ecd2'
+    reviewed_followup['local/kbacompany/lang/en/local_kbacompany.php'] = 'f05e83b9059b63ffd2795c6f8d43fbe315adfd80c22ac794864de4badd23c1b4'
+    reviewed_followup['local/kbacompany/lang/ru/local_kbacompany.php'] = '427d05b0b693326c3dce32258eafda95d9a7bbbbbe3c8480e7567905ec5347f5'
     reviewed_followup['local/kbacompany/classes/local/communication_service.php'] = 'c796f4eb579cebc002bfd073222ee3e284e2f7ca10d5d46acf9de717a7e3a7ff'
     # Daily reports R6 (#75 RC34, 24.11.2026): append the team-list period and navigation block after R5c.
     # See docs/reconcile/daily-reports-r6-source-preservation.json.
-    reviewed_followup['local/kbacompany/lang/en/local_kbacompany.php'] = '3235aedc2153e01f0c8c0da18227cdf55ec820b8b0af0d995355bf0f628ef8a7'
-    reviewed_followup['local/kbacompany/lang/ru/local_kbacompany.php'] = '40ba572450815074a94b8331b2f437ee9ed6dc975757b211e0e32f909f21f13f'
+    reviewed_followup['local/kbacompany/lang/en/local_kbacompany.php'] = 'b9439468130973216d231b3a97d45e2b8c1720c7cbcd5851fc5aa322737dcf84'
+    reviewed_followup['local/kbacompany/lang/ru/local_kbacompany.php'] = 'c814e31017b2cfe540ceb4e6e20b327f8f5bd1449811ce07e55f240f04a52c5c'
     for row in plan['rows']:
         path=root/row['path']
         if not path.is_file() or path.is_symlink():
