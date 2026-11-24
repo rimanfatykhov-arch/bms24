@@ -10009,3 +10009,12 @@ $string['dailyreports_team_open'] = 'Open';
 $string['dailyreports_team_open_for'] = 'Open report: {$a}';
 $string['dailyreports_team_empty'] = 'No employees match these filters.';
 $string['dailyreports_team_note'] = 'Current company members are shown. "No report" is not a violation: no reporting calendar is set yet. Drafts stay private.';
+// Daily reports R3 (2026-11-24): report discussion, owner decision (read: report readers; write: author and current reviewer).
+$string['communication_object_dailyreport'] = 'Daily report';
+$string['dailyreports_discussion_title'] = 'Report for {$a->day}: {$a->name}';
+$string['dailyreports_discussion_heading'] = 'Discussion';
+$string['dailyreports_discussion_note'] = 'Everyone who can open this report reads the discussion. The author and the reviewer of the current version write. A message does not accept, return or rate the report.';
+$string['dailyreports_discussion_empty'] = 'No messages yet.';
+$string['dailyreports_discussion_readonly'] = 'Only the author and the reviewer of the current version write here.';
+$string['dailyreports_discussion_empty_message'] = 'Write a message.';
+$string['dailyreports_discussion_files'] = 'This message has files. Open it in the Communication Center.';

@@ -2,7 +2,8 @@
 // CI-only helper for daily_reports_flow.py on the disposable Moodle (synthetic data only). Phases:
 //   setup <company> <employee> <reviewer>       -> enables daily reports; approved battle plan of the employee for the
 //                                                   last 14 days with the given reviewer (reviewer resolution, ADR-0009 В1)
-//   state <company> <employee> <day> [marker]   -> JSON: report status, versions, decisions, notifications (read-only);
+//   state <company> <employee> <day> [marker]   -> JSON: report status, versions, decisions, discussion messages and
+//                                                   notifications (read-only);
 //                                                   marker = text whose presence in each version snapshot is reported
 //   touch_task <company> <taskuuid>             -> changes the synthetic task title (snapshot immutability probe)
 //   shell <owned|legacy>                        -> switches the BMS24 shell mode of the disposable site
@@ -36,7 +37,7 @@ if ($phase === 'setup') {
     $employee = (int)($argv[4] ?? 0); $day = (string)($argv[5] ?? '');
     $report = $DB->get_record('local_kbacompany_dreport', ['companyuuid' => $company, 'userid' => $employee, 'reportday' => $day]);
     $out['report'] = $report ? ['uuid' => (string)$report->uuid, 'status' => (string)$report->status] : null;
-    $out['versions'] = []; $out['decisions'] = [];
+    $out['versions'] = []; $out['decisions'] = []; $out['discussion'] = [];
     if ($report) {
         foreach ($DB->get_records('local_kbacompany_dreportver', ['companyuuid' => $company, 'reportuuid' => $report->uuid],
                 'versionno ASC') as $v) {
@@ -49,6 +50,14 @@ if ($phase === 'setup') {
                 'id ASC') as $r) {
             $out['decisions'][] = ['versionuuid' => (string)$r->versionuuid, 'decision' => (string)$r->decision,
                 'rating' => (string)$r->rating, 'reviewerid' => (int)$r->reviewerid];
+        }
+        // R3: messages of the report discussion threads (one canonical thread expected), oldest first.
+        foreach ($DB->get_records('local_kbacompany_commthread', ['companyuuid' => $company, 'contextkind' => 'dailyreport',
+                'contextuuid' => $report->uuid], 'id ASC') as $t) {
+            foreach ($DB->get_records('local_kbacompany_commmsg', ['companyuuid' => $company, 'threaduuid' => $t->uuid],
+                    'id ASC') as $m) {
+                $out['discussion'][] = ['thread' => (string)$t->uuid, 'authorid' => (int)$m->authorid, 'body' => (string)$m->body];
+            }
         }
     }
     $out['notifications'] = [];

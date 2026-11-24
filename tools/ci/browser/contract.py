@@ -1141,11 +1141,41 @@ def daily_reports_flow_checks(obs, exitcode=None):
             require(team.get('hscroll') is True, 'horizontal scroll on the team for the day at %s px' % r.get('width'))
             require(r.get('team_employee_filters') == 0, 'an ordinary employee received the team for the day')
 
+    def discussion():
+        # R3 (owner decision 24.11.2026): one canonical thread; the author's and the reviewer's messages stored once, in order,
+        # markup kept as text; a forged sesskey, the same-company non-reader RA and the foreign EB store nothing.
+        for r in run():
+            ids, d = r.get('ids') or {}, r.get('discussion_texts') or {}
+            require(set(d) == {'author', 'reviewer', 'forged', 'RA', 'EB'} and len(set(d.values())) == 5,
+                    'discussion texts missing')
+            require(r.get('discussion_author_composer') == 1, 'the author has no discussion composer')
+            require(r.get('discussion_reviewer_sections') == 1 and r.get('discussion_reviewer_sees_author') is True,
+                    'the reviewer does not read the author message on the card')
+            require(r.get('discussion_injected_tags') == 0, 'message markup was rendered as HTML')
+            forged = r.get('discussion_forged_http') or []
+            require(len(forged) == 1 and isinstance(forged[0], int) and forged[0] != 303 and forged[0] < 500,
+                    'forged discussion sesskey redirected as success or failed with 5xx: %r' % (forged,))
+            for label in ('EB', 'RA'):
+                http = ((r.get('discussion_negatives') or {}).get(label) or {}).get('http') or []
+                require(len(http) == 1 and isinstance(http[0], int) and http[0] < 500,
+                        '%s discussion request failed unexpectedly: %r' % (label, http))
+            after = r.get('after_discussion') or {}
+            msgs = after.get('discussion')
+            require(isinstance(msgs, list) and msgs, 'discussion state missing')
+            require(len(set(m.get('thread') for m in msgs)) == 1, 'report discussion is not one canonical thread')
+            got = [(m.get('authorid'), m.get('body')) for m in msgs]
+            require(got == [(ids.get('EA'), d['author']), (ids.get('MA'), d['reviewer'])],
+                    'discussion messages wrong, duplicated or forged: %r' % (got,))
+            require(after.get('report') == (r.get('after_accept') or {}).get('report') and
+                    after.get('decisions') == (r.get('after_accept') or {}).get('decisions'),
+                    'a discussion message changed the report or its decisions')
+            require(r.get('hscroll_discussion') is True, 'horizontal scroll on the report discussion at %s px' % r.get('width'))
+
     return {'daily_report_draft_relogin_and_conflict': draft_and_conflict, 'daily_report_concurrent_submit_one_version': submit_once,
             'daily_report_csrf_and_get_rejected': csrf, 'daily_report_snapshot_immutable': snapshot,
             'daily_report_return_rework_accept_once': review_cycle, 'daily_report_notifications_once_with_link': notifications,
             'daily_report_foreign_and_nonreviewer_denied': negatives, 'daily_report_layout_and_browser_errors': layout_and_events,
-            'daily_report_team_day_view': team_day}
+            'daily_report_team_day_view': team_day, 'daily_report_discussion_author_and_reviewer': discussion}
 
 
 DAY_FEED_CASES = [('owned', 1440), ('legacy', 375)]

@@ -63,6 +63,11 @@ R4_KEYS=[b'dailyreports_queue_team',b'dailyreports_status_notsent',b'dailyreport
          b'dailyreports_team_unit_all',b'dailyreports_team_unit_none',b'dailyreports_team_status_all',b'dailyreports_team_show',
          b'dailyreports_team_filters',b'dailyreports_team_counts',b'dailyreports_team_reviewer',b'dailyreports_team_open',
          b'dailyreports_team_open_for',b'dailyreports_team_empty',b'dailyreports_team_note']
+R3_MARKER=(b'\n// Daily reports R3 (2026-11-24): report discussion, owner decision (read: report readers; '
+           b'write: author and current reviewer).\n')
+R3_KEYS=[b'communication_object_dailyreport',b'dailyreports_discussion_title',b'dailyreports_discussion_heading',
+         b'dailyreports_discussion_note',b'dailyreports_discussion_empty',b'dailyreports_discussion_readonly',
+         b'dailyreports_discussion_empty_message',b'dailyreports_discussion_files']
 _R2=json.loads((ROOT/'docs/reconcile/daily-reports-r2-source-preservation.json').read_text(encoding='utf-8'))
 R2_AFTER={lang:next(r['after_sha256_lf'] for r in _R2['files'] if r['path']==f'local/kbacompany/lang/{lang}/local_kbacompany.php')
           for lang in ('en','ru')}
@@ -71,6 +76,9 @@ NAV_BEFORE={lang:next(r['before_sha256_lf'] for r in _NAV['files'] if r['path']=
             for lang in ('en','ru')}
 _R4=json.loads((ROOT/'docs/reconcile/daily-reports-r4-source-preservation.json').read_text(encoding='utf-8'))
 R4_BEFORE={lang:next(r['before_sha256_lf'] for r in _R4['files'] if r['path']==f'local/kbacompany/lang/{lang}/local_kbacompany.php')
+           for lang in ('en','ru')}
+_R3=json.loads((ROOT/'docs/reconcile/daily-reports-r3-source-preservation.json').read_text(encoding='utf-8'))
+R3_BEFORE={lang:next(r['before_sha256_lf'] for r in _R3['files'] if r['path']==f'local/kbacompany/lang/{lang}/local_kbacompany.php')
            for lang in ('en','ru')}
 _COMM=json.loads((ROOT/'docs/reconcile/communication-center-cleanup-source-preservation.json').read_text(encoding='utf-8'))
 COMM_AFTER={lang:next(r['after_sha256_lf'] for r in _COMM['files'] if r['path']==f'local/kbacompany/lang/{lang}/local_kbacompany.php')
@@ -129,6 +137,12 @@ class Preservation(unittest.TestCase):
                         c145,nav=c145.split(NAV_MARKER)
                         if R4_MARKER in nav:
                             nav,r4=nav.split(R4_MARKER)
+                            if R3_MARKER in r4:
+                                r4,r3=r4.split(R3_MARKER)
+                                # The R4 file is byte-identical up to the R3 marker (its final newline starts the marker).
+                                self.assertEqual(R3_BEFORE[lang],hashlib.sha256(data.split(R3_MARKER)[0]+b'\n').hexdigest())
+                                self.assertEqual(R3_KEYS,keys(r3))
+                                self.assertFalse(set(R3_KEYS)&set(keys(data.split(R3_MARKER)[0])))
                             # The released file after adaptive navigation (#156) is byte-identical up to the R4 marker;
                             # that file ended with a newline, which is the first byte of the marker.
                             self.assertEqual(R4_BEFORE[lang],hashlib.sha256(data.split(R4_MARKER)[0]+b'\n').hexdigest())

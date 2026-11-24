@@ -6,7 +6,8 @@ eight concurrent submit POSTs (one request key) create one version and one revie
 a GET change nothing; (today) the submitted snapshot keeps the task title after the task changes; eight concurrent "return"
 POSTs give one decision and one author notification; rework + resubmit in the browser create version 2; eight concurrent
 "accept" POSTs give one accepted decision bound to version 2; EB and RA cannot decide; the reviewer's Communication Center
-notification links to the review tab; no horizontal scroll at the case width; no browser errors or HTTP 5xx.
+notification links to the review tab; (R3) author and reviewer write one report discussion, readers' and foreign posts
+store nothing; no horizontal scroll at the case width; no browser errors or HTTP 5xx.
 Observations only -> EVIDENCE/daily-reports-flow-result.json; the verdict is computed by contract.daily_reports_flow_checks.
 """
 import datetime
@@ -217,6 +218,39 @@ with sync_playwright() as pw:
             # An ordinary employee asking for the same list gets their own tab, not the list.
             page.goto(url(tab='review', queue='team', day=day), wait_until='networkidle')
             case['team_employee_filters'] = page.locator('form[data-dailyreport-team-filters]').count()
+            # 12. R3 report discussion: the author writes from the own day view (markup stays text), the reviewer reads it
+            # on the card and answers; a forged sesskey, a same-company non-reader and a foreign member store nothing.
+            disc = {'author': 'DR %s discussion <b>author</b>' % token, 'reviewer': 'DR %s discussion reviewer' % token,
+                    'forged': 'DR %s discussion forged' % token, 'RA': 'DR %s discussion RA' % token,
+                    'EB': 'DR %s discussion EB' % token}
+            page.goto(url(day=day), wait_until='networkidle')
+            case['discussion_author_composer'] = page.locator('form[data-dailyreport-discussion-composer]').count()
+            authorpost = form_fields(page, 'form[data-dailyreport-discussion-composer]')
+            page.locator('#dailyreport_discussion_message').fill(disc['author'])
+            with page.expect_navigation():
+                page.locator('form[data-dailyreport-discussion-composer] button[type=submit]').click()
+            page.wait_for_load_state('networkidle')
+            case['discussion_forged_http'] = parallel_post(ctx, dict(authorpost, sesskey='0' * 10, message=disc['forged']), 1)
+            rp.goto(url(tab='review', report=report), wait_until='networkidle')
+            section = rp.locator('[data-dailyreport-discussion]')
+            case['discussion_reviewer_sections'] = section.count()
+            case['discussion_reviewer_sees_author'] = section.count() == 1 and disc['author'] in section.inner_text()
+            case['discussion_injected_tags'] = rp.locator('[data-dailyreport-discussion-message] b').count()
+            rp.locator('#dailyreport_discussion_message').fill(disc['reviewer'])
+            with rp.expect_navigation():
+                rp.locator('form[data-dailyreport-discussion-composer] button[type=submit]').click()
+            rp.wait_for_load_state('networkidle')
+            case['hscroll_discussion'] = rp.evaluate(HSCROLL)
+            dneg = {}
+            for label in ('EB', 'RA'):
+                octx = browser.new_context(); op = login(octx, label)
+                op.goto(local_url(base + '/my/'), wait_until='networkidle')
+                dneg[label] = {'http': parallel_post(octx, dict(authorpost, sesskey=op.evaluate('() => M.cfg.sesskey'),
+                                                                message=disc[label]), 1)}
+                octx.close()
+            case['discussion_negatives'] = dneg
+            case['discussion_texts'] = disc
+            case['after_discussion'] = state(day)
             case['ids'] = {k: f['actors'][k]['userid'] for k in ('EA', 'MA', 'RA', 'EB')}
             case['browser_events'] = recorder.events; case['server_errors'] = server_errors
             rctx.close(); ctx.close()

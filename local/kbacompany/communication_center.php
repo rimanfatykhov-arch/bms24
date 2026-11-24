@@ -9,6 +9,7 @@ use local_kbacompany\local\communication_object_service;
 use local_kbacompany\local\communication_service;
 use local_kbacompany\local\company_context_service;
 use local_kbacompany\local\business_date_service;
+use local_kbacompany\local\daily_report_discussion_service;
 use local_kbacompany\local\daily_report_feed_service;
 use local_kbacompany\local\daily_report_store_service;
 use local_kbacompany\local\task_ui_service;
@@ -90,6 +91,11 @@ if ($action !== '') {
             // The same for a Battle Plan discussion (Q9): reading follows the plan, joining needs the plan write right.
             if ($postkind === 'battleplan' &&
                     !battle_plan_discussion_service::can_post_for($uuid, $actor, $postuuid)) {
+                throw new moodle_exception('communication_permission', 'local_kbacompany');
+            }
+            // R3: a daily report discussion is read by report readers; only the author and current reviewer join.
+            if ($postkind === 'dailyreport' &&
+                    !daily_report_discussion_service::can_post_for($uuid, $actor, $postuuid)) {
                 throw new moodle_exception('communication_permission', 'local_kbacompany');
             }
             // create_thread resolves the canonical object and is also the safe, idempotent join operation.

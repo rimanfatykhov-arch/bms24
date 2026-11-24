@@ -115,6 +115,11 @@ def check(root=ROOT):
     # See docs/reconcile/daily-reports-r4-source-preservation.json.
     reviewed_followup['local/kbacompany/lang/en/local_kbacompany.php'] = 'cb90de961e189272cef3e0e4a952694b358b82c34ccaad3123426b7a50ac1705'
     reviewed_followup['local/kbacompany/lang/ru/local_kbacompany.php'] = 'f19ecf6dd9b88e943213d1305f21792312fb04d4e9d13e53aa224a6242b77f75'
+    # Daily reports R3 (owner decision 24.11.2026): append the report discussion block after R4 and register the
+    # 'dailyreport' discussion kind. See docs/reconcile/daily-reports-r3-source-preservation.json.
+    reviewed_followup['local/kbacompany/lang/en/local_kbacompany.php'] = 'f7d35a48ed252d6c8596ba7b8d634b6d341a2d0183c5d56a7b757130c577e8ee'
+    reviewed_followup['local/kbacompany/lang/ru/local_kbacompany.php'] = '42a583ea9afff8c540471ab34b9f0000281f9e9a1df7cd5e2569ec2a592900c5'
+    reviewed_followup['local/kbacompany/classes/local/communication_service.php'] = '870b471dba39c867b5b13f8b04f55fb82f67ce484ea44cf929b5b9c4f93dae92'
     for row in plan['rows']:
         path=root/row['path']
         if not path.is_file() or path.is_symlink():

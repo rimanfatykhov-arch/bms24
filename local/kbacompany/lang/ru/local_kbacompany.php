@@ -10011,3 +10011,12 @@ $string['dailyreports_team_open'] = 'Открыть';
 $string['dailyreports_team_open_for'] = 'Открыть отчёт: {$a}';
 $string['dailyreports_team_empty'] = 'По этим условиям сотрудников нет.';
 $string['dailyreports_team_note'] = 'Показан текущий состав компании. «Отчёта нет» — не нарушение: график отчётности пока не задан. Черновики остаются личными.';
+// Daily reports R3 (2026-11-24): report discussion, owner decision (read: report readers; write: author and current reviewer).
+$string['communication_object_dailyreport'] = 'Ежедневный отчёт';
+$string['dailyreports_discussion_title'] = 'Отчёт за {$a->day}: {$a->name}';
+$string['dailyreports_discussion_heading'] = 'Обсуждение';
+$string['dailyreports_discussion_note'] = 'Обсуждение читают все, кто может открыть этот отчёт. Пишут автор и проверяющий текущей версии. Сообщение не принимает, не возвращает и не оценивает отчёт.';
+$string['dailyreports_discussion_empty'] = 'Сообщений пока нет.';
+$string['dailyreports_discussion_readonly'] = 'Писать здесь могут только автор и проверяющий текущей версии.';
+$string['dailyreports_discussion_empty_message'] = 'Напишите сообщение.';
+$string['dailyreports_discussion_files'] = 'В сообщении есть файлы. Откройте его в Центре коммуникаций.';
