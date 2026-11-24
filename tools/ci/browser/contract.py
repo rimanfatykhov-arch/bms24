@@ -1492,7 +1492,37 @@ def communication_ux_checks(obs, exitcode=None):
                     field = number(search.get('input_width'), 'search input width')
                     require(box >= 200 and box >= 0.85 * side and field >= box - 64,
                             'list search too narrow (%r of %r, input %r): %s' % (box, side, field, where))
-    return {'communication_ux1_layout_and_navigation': verify, 'communication_ux2_primary_action_geometry': geometry}
+    def frame():
+        """Fixed frame like a messenger: at 900px height the page itself does not scroll (document and the window-bounded
+        page container), the block ends inside the window, the list and the messages are the scroll containers and the
+        open conversation shows its composer on screen. Both shells, all five widths, list and open conversation."""
+        require(exitcode == 0 and isinstance(obs, dict) and obs.get('status') == 'PASS'
+                and not obs.get('error'), 'UX browser run missing/failed')
+        rows = obs.get('cases')
+        require(isinstance(rows, list) and len(rows) == 10, 'UX matrix incomplete')
+
+        def integer(value):
+            return isinstance(value, int) and not isinstance(value, bool)
+        for row in rows:
+            for state in ['frame_list', 'frame_thread']:
+                where = '%s/%s/%s' % (row.get('shell'), row.get('width'), state)
+                f = row.get(state)
+                require(isinstance(f, dict), 'frame measurement missing: ' + where)
+                require(f.get('framed') is True, 'Center is not framed: ' + where)
+                for key in ['page_excess', 'layout_bottom', 'view']:
+                    require(integer(f.get(key)), 'frame %s missing: %s' % (key, where))
+                require(f['view'] >= 600, 'frame measured on a short window: ' + where)
+                require(f['page_excess'] <= 1, 'the page scrolls by %rpx: %s' % (f['page_excess'], where))
+                require(0 < f['layout_bottom'] <= f['view'] + 1, 'block ends outside the window: ' + where)
+                require(f.get('list_overflow') in ('auto', 'scroll'), 'list is not a scroll container: ' + where)
+                feed = f.get('feed_overflow')
+                require(feed in ('auto', 'scroll') or (state == 'frame_list' and feed is None),
+                        'messages are not a scroll container: ' + where)
+                if state == 'frame_thread':
+                    c = f.get('compose_bottom')
+                    require(integer(c) and 0 < c <= f['view'] + 1, 'composer not on screen: ' + where)
+    return {'communication_ux1_layout_and_navigation': verify, 'communication_ux2_primary_action_geometry': geometry,
+            'communication_ux3_fixed_frame': frame}
 
 
 BELL_WIDTHS = (1440, 768, 320)

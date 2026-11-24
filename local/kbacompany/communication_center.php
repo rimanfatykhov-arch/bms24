@@ -255,6 +255,8 @@ $PAGE->requires->css(new moodle_url('/local/kbacompany/styles.css'));
 $PAGE->requires->css(new moodle_url('/local/kbacompany/bms_ui/communication_center.css'));
 // The centre renders bms24-* markup; without this sheet those components have no rules.
 $PAGE->requires->js_call_amd('local_kbacompany/communication_live_ui', 'init');
+// Fixed frame: the page fits the window, only the list and the messages scroll (progressive enhancement).
+$PAGE->requires->js_call_amd('local_kbacompany/communication_frame', 'init');
 $shell = \local_kbacompany\local\bms_page_shell_service::begin($uuid, $actor, 'communications',
     get_string('communicationcenter_title', 'local_kbacompany'));
 
