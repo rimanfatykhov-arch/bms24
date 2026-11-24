@@ -9994,3 +9994,23 @@ $string['bms24_menu_close'] = 'Close menu';
 // Day feed "Added earlier" (2026-11-24): mark of a result already added to the report of the day.
 $string['dailyreports_feed_addedearlier'] = 'Added earlier';
 $string['dailyreports_feed_addedearlier_hint'] = 'This result was already added to the report for this day.';
+
+// ADR-0011 block 1: monthly summary of daily reports for managers and administrators.
+$string['dailyreports_tab_summary'] = 'Monthly summary';
+$string['dailyreports_summary_intro'] = 'Reports of the month by unit and employee. Read-only: decisions are made in the report card by the assigned reviewer. Drafts are not shown.';
+$string['dailyreports_summary_prev'] = 'Previous month';
+$string['dailyreports_summary_next'] = 'Next month';
+$string['dailyreports_summary_month'] = 'Month';
+$string['dailyreports_summary_scope'] = 'Employees';
+$string['dailyreports_summary_scope_all'] = 'All employees';
+$string['dailyreports_summary_scope_mine'] = 'Only my subordinates';
+$string['dailyreports_summary_unit'] = 'Unit';
+$string['dailyreports_summary_unit_all'] = 'All units';
+$string['dailyreports_summary_nounit'] = 'Not placed in the organisation chart';
+$string['dailyreports_summary_ratedpct'] = 'Rated reports';
+$string['dailyreports_summary_positivepct'] = 'Positive ratings';
+$string['dailyreports_summary_caption'] = 'Daily reports of the month';
+$string['dailyreports_summary_empty'] = 'No employees match the filter.';
+$string['dailyreports_summary_rating_positive'] = 'positive rating';
+$string['dailyreports_summary_rating_negative'] = 'negative rating';
+$string['dailyreports_summary_show'] = 'Show';

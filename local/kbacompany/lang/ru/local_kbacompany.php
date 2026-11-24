@@ -9996,3 +9996,23 @@ $string['bms24_menu_close'] = 'Закрыть меню';
 // Day feed "Added earlier" (2026-11-24): mark of a result already added to the report of the day.
 $string['dailyreports_feed_addedearlier'] = 'Добавлено ранее';
 $string['dailyreports_feed_addedearlier_hint'] = 'Этот результат уже добавляли в отчёт за этот день.';
+
+// ADR-0011 block 1: monthly summary of daily reports for managers and administrators.
+$string['dailyreports_tab_summary'] = 'Сводка за месяц';
+$string['dailyreports_summary_intro'] = 'Отчёты за месяц по подразделениям и сотрудникам. Только чтение: решение принимает назначенный проверяющий в карточке отчёта. Черновики не показываются.';
+$string['dailyreports_summary_prev'] = 'Предыдущий месяц';
+$string['dailyreports_summary_next'] = 'Следующий месяц';
+$string['dailyreports_summary_month'] = 'Месяц';
+$string['dailyreports_summary_scope'] = 'Сотрудники';
+$string['dailyreports_summary_scope_all'] = 'Все сотрудники';
+$string['dailyreports_summary_scope_mine'] = 'Только мои подчинённые';
+$string['dailyreports_summary_unit'] = 'Подразделение';
+$string['dailyreports_summary_unit_all'] = 'Все подразделения';
+$string['dailyreports_summary_nounit'] = 'Не размещены в оргсхеме';
+$string['dailyreports_summary_ratedpct'] = 'Оценено отчётов';
+$string['dailyreports_summary_positivepct'] = 'Положительных оценок';
+$string['dailyreports_summary_caption'] = 'Ежедневные отчёты за месяц';
+$string['dailyreports_summary_empty'] = 'Нет сотрудников под выбранный фильтр.';
+$string['dailyreports_summary_rating_positive'] = 'положительная оценка';
+$string['dailyreports_summary_rating_negative'] = 'отрицательная оценка';
+$string['dailyreports_summary_show'] = 'Показать';

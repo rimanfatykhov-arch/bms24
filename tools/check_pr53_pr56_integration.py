@@ -115,6 +115,10 @@ def check(root=ROOT):
     # See docs/reconcile/DAY_FEED_ADDED_EARLIER.md.
     reviewed_followup['local/kbacompany/lang/en/local_kbacompany.php'] = '9495d7e1467dbe67c7cb18be14cc4b19a3d33a40e632d528f77fb08788dbc803'
     reviewed_followup['local/kbacompany/lang/ru/local_kbacompany.php'] = 'dc4772de7d84d31a80927bb13c8f97966f18ca9db9f4e8d759d3204365255226'
+    # ADR-0011 block 1: monthly summary of daily reports (read-only, no schema). RU/EN block appended after the
+    # "Added earlier" block. See docs/reconcile/daily-reports-summary-source-preservation.json.
+    reviewed_followup['local/kbacompany/lang/en/local_kbacompany.php'] = 'b8018d8d2b58b7fdbbf87f9c1b752b60ba7e08f27e36cf5230e3f166a5b3e0fa'
+    reviewed_followup['local/kbacompany/lang/ru/local_kbacompany.php'] = '96248dbf5333a63b45937ad4b8f93f937cc96788882a3b3f32d6ebfa243c65d9'
     for row in plan['rows']:
         path=root/row['path']
         if not path.is_file() or path.is_symlink():
