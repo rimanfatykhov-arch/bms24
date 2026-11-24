@@ -736,11 +736,17 @@ if ($attentioncount > 0) {
         'variant' => $counts['overdue'] > 0 ? 'danger' : 'brand',
         'title' => get_string('bmsworkspace_attention', 'local_kbacompany'),
     ]);
+    // The flag opens the most urgent part of what it counts, not the Communication Center start page,
+    // and its tooltip and screen-reader label name each part of the count.
+    $attentiontargets = ['overdue' => $overdueurl, 'control' => $reviewurl, 'incoming' => $communicationurl];
+    $attentionurl = $attentiontargets[bms_workspace_focus_service::attention_target($counts)];
+    $attentionlabel = get_string('bmsworkspace_attention', 'local_kbacompany') . ': '
+        . implode('; ', array_column($attentionitems, 'label'));
     // Owned shell: the bell belongs to notifications only, so "Needs attention" uses a flag, not a second bell.
-    $attentionhtml = html_writer::link($communicationurl,
+    $attentionhtml = html_writer::link($attentionurl,
         $OUTPUT->pix_icon($useowned ? 'i/flagged' : 'i/notifications', '', 'moodle') . $badge,
-        ['class' => 'kba-bms-iconbutton', 'title' => get_string('bmsworkspace_attention', 'local_kbacompany'),
-            'aria-label' => get_string('bmsworkspace_attention', 'local_kbacompany')]);
+        ['class' => 'kba-bms-iconbutton', 'title' => $attentionlabel, 'aria-label' => $attentionlabel,
+            'data-bms-attention-target' => bms_workspace_focus_service::attention_target($counts)]);
 }
 
 $quickactions = html_writer::link($newtaskurl,

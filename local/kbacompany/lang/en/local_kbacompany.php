@@ -9990,6 +9990,10 @@ $string['privacy:metadata:preference:notificationsoundsignalled'] = 'Internal nu
 // Adaptive BMS24 navigation (2026-11-18): narrow-window menu button and drawer close label.
 $string['bms24_menu_button'] = 'Menu';
 $string['bms24_menu_close'] = 'Close menu';
+
+// Day feed "Added earlier" (2026-11-24): mark of a result already added to the report of the day.
+$string['dailyreports_feed_addedearlier'] = 'Added earlier';
+$string['dailyreports_feed_addedearlier_hint'] = 'This result was already added to the report for this day.';
 // Daily reports R4 (2026-11-24): team for the day, owner decisions T1-T5.
 $string['dailyreports_queue_team'] = 'Team for the day';
 $string['dailyreports_status_notsent'] = 'Not sent';

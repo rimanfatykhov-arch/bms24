@@ -375,15 +375,23 @@ final class daily_report_store_service {
 
     /** Whether this submit event was already added to this report (any version), read from the report journal. */
     public static function result_added(string $companyuuid, string $reportuuid, int $eventid): bool {
+        return in_array($eventid, self::added_events($companyuuid, $reportuuid), true);
+    }
+
+    /** Submit event ids added to this report through the day feed (journal action result_added), ascending. */
+    public static function added_events(string $companyuuid, string $reportuuid): array {
         global $DB;
+        $out = [];
         foreach ($DB->get_records('local_kbacompany_dreportlog', ['companyuuid' => $companyuuid,
                 'reportuuid' => $reportuuid, 'action' => 'result_added'], 'id ASC', 'id, details') as $row) {
             $details = json_decode((string)$row->details, true);
-            if (is_array($details) && (int)($details['event'] ?? 0) === $eventid) {
-                return true;
+            $event = is_array($details) ? (int)($details['event'] ?? 0) : 0;
+            if ($event > 0) {
+                $out[$event] = $event;
             }
         }
-        return false;
+        ksort($out);
+        return array_values($out);
     }
 
     /**

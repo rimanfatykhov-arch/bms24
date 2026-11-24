@@ -981,31 +981,42 @@ class ContractTest(unittest.TestCase):
         for shell, width in c.DAY_FEED_CASES:
             tasks = [{'task': 't%d-%s' % (n, shell), 'event': 100 + n, 'title': 'Task %d' % n, 'result': 'Result %d %s' % (n, shell)}
                      for n in (1, 2)]
+            e1, e2 = 101, 102
             pre, edit = 'Hand text ' + shell, 'Unsaved edit ' + shell
             b1, b2 = ['«%s»: %s' % (t['title'], t['result']) for t in tasks]
             first = pre + '\n' + b1; second = first + '\n' + edit + '\n' + b2
             links = sorted(t['task'] for t in tasks)
+            day, empty = '2026-11-17', '2026-10-14'
+            label = {'visible': 'Added earlier', 'hint': 'This result was already added to the report for this day.', 'shown': True,
+                     'hint_hidden': True}
+
+            def m(d, add, added):
+                return {'day': d, 'add': add, 'added': added, 'labels': [dict(label) for _ in added]}
             rows.append({
-                'shell': shell, 'width': width, 'day': '2026-11-17', 'today': '2026-11-23', 'empty_day': '2026-10-14',
+                'shell': shell, 'width': width, 'day': day, 'today': '2026-11-23', 'empty_day': empty,
                 'tasks': tasks, 'pre': pre, 'edit': edit, 'default_day': '2026-11-23', 'tab_active': 1,
                 'items': [{'id': t['event'], 'time': '1%d:00' % n, 'title': t['title'], 'text': t['title'] + '\n' + t['result'],
-                           'task_href': 'http://127.0.0.1:8080/local/kbacompany/tasks.php?uuid=A&task=' + t['task'], 'add': 1}
-                          for n, t in enumerate(tasks)],
+                           'task_href': 'http://127.0.0.1:8080/local/kbacompany/tasks.php?uuid=A&task=' + t['task'], 'add': 1,
+                           'added': 0} for n, t in enumerate(tasks)],
                 'empty': {'items': 0, 'state': 1},
-                'landing': {'url': 'http://127.0.0.1:8080/local/kbacompany/daily_report.php?uuid=A&day=2026-11-17&notice=resultadded',
+                'landing': {'url': 'http://127.0.0.1:8080/local/kbacompany/daily_report.php?uuid=A&day=%s&notice=resultadded' % day,
                             'done': first, 'notice': 1},
-                'after_add': {'report': {'status': 'draft'}, 'draft': {'done': first, 'revision': 2, 'links': [tasks[0]['task']]}, 'sent': [],
-                              'added_events': [tasks[0]['event']]},
+                'after_add': {'report': {'status': 'draft'}, 'draft': {'done': first, 'revision': 2, 'links': [tasks[0]['task']]},
+                              'sent': [], 'added_events': [e1]},
+                'feed_after_first': m(day, [e2], [e1]), 'feed_after_reload': m(day, [e2], [e1]), 'hscroll_marks': True,
+                'report_link': {'url': 'http://127.0.0.1:8080/local/kbacompany/daily_report.php?uuid=A&day=' + day, 'done': first},
+                'feed_other_day': m(empty, [], []), 'feed_back_to_day': m(day, [e2], [e1]),
                 'after_repeat_form': {'report': {'status': 'draft'}, 'draft': {'done': first + '\n' + edit, 'revision': 3,
-                                      'links': [tasks[0]['task']]}, 'sent': []},
+                                      'links': [tasks[0]['task']]}, 'sent': [], 'added_events': [e1]},
                 'after_second': {'report': {'status': 'draft'}, 'draft': {'done': second, 'revision': 4, 'links': links}, 'sent': [],
-                                 'added_events': [t['event'] for t in tasks]},
-                'after_repeat_feed': {'report': {'status': 'draft'}, 'draft': {'done': second, 'revision': 4, 'links': links}, 'sent': [],
-                                      'added_events': [t['event'] for t in tasks]},
+                                 'added_events': [e1, e2]},
+                'feed_after_second': m(day, [], [e1, e2]), 'repeat_http': [303, 303], 'unavailable_http': 200,
+                'after_repeat_feed': {'report': {'status': 'draft'}, 'draft': {'done': second, 'revision': 4, 'links': links},
+                                      'sent': [], 'added_events': [e1, e2]},
                 'after_negatives': {'report': {'status': 'draft'}, 'draft': {'done': second, 'revision': 4, 'links': links}, 'sent': []},
                 'after_submit': {'report': {'status': 'submitted'}, 'draft': None,
                                  'sent': [{'done': second, 'revision': 4, 'links': links}]},
-                'after_submit_feed': {'add': 0, 'items': 2, 'sent_note': 1},
+                'after_submit_feed': dict(m(day, [], [e1, e2]), items=2, sent_note=1),
                 'forged_http': 200, 'foreign_http': {'company_a': 200, 'company_b': 200}, 'foreign_feed_items': 0,
                 'hscroll_feed': True, 'hscroll_report': True, 'browser_events': list(ABORTED), 'server_errors': []})
         return {'status': 'PASS', 'cases': rows}
@@ -1015,14 +1026,16 @@ class ContractTest(unittest.TestCase):
         res = c.evaluate(c.day_feed_checks(obs, 0))
         self.assertEqual({k: 'PASS' for k in res}, {k: v['status'] for k, v in res.items()}, res)
         self.assertTrue(set(res) <= set(c.required_check_names()))
+        self.assertIn('day_feed_added_earlier_marks_reload_date_and_link', res)
 
         def fails(check, mutate):
             o = copy.deepcopy(obs); mutate(o)
             r = c.evaluate(c.day_feed_checks(o, 0))
             self.assertEqual('FAIL', r[check]['status'], (check, r[check]))
-        view, add, dup, iso, send = ('day_feed_today_date_and_empty_day', 'day_feed_add_keeps_text_and_links_task',
-                                     'day_feed_repeated_click_adds_nothing', 'day_feed_foreign_and_forged_denied',
-                                     'day_feed_send_layout_and_browser_errors')
+        view, add, ae, dup, iso, send = ('day_feed_today_date_and_empty_day', 'day_feed_add_keeps_text_and_links_task',
+                                         'day_feed_added_earlier_marks_reload_date_and_link',
+                                         'day_feed_repeated_click_adds_nothing', 'day_feed_foreign_and_forged_denied',
+                                         'day_feed_send_layout_and_browser_errors')
         fails(view, lambda o: o['cases'][0].update(default_day='2026-11-22'))
         fails(view, lambda o: o['cases'][1].update(tab_active=0))
         fails(view, lambda o: o['cases'][0]['items'].pop())
@@ -1030,6 +1043,7 @@ class ContractTest(unittest.TestCase):
         fails(view, lambda o: o['cases'][0]['items'][0].update(text='Task 1'))
         fails(view, lambda o: o['cases'][0]['items'][1].update(task_href='http://127.0.0.1:8080/local/kbacompany/tasks.php'))
         fails(view, lambda o: o['cases'][1]['items'][0].update(add=0))
+        fails(view, lambda o: o['cases'][0]['items'][1].update(added=1))
         fails(view, lambda o: o['cases'][0].update(empty={'items': 1, 'state': 0}))
         fails(add, lambda o: o['cases'][0]['after_add']['draft'].update(done=o['cases'][0]['tasks'][0]['result']))
         fails(add, lambda o: o['cases'][1]['after_add']['draft'].update(links=[]))
@@ -1037,12 +1051,35 @@ class ContractTest(unittest.TestCase):
         fails(add, lambda o: o['cases'][1]['landing'].update(notice=0))
         fails(add, lambda o: o['cases'][0]['after_second']['draft'].update(
             done=o['cases'][0]['after_second']['draft']['done'].replace('\n' + o['cases'][0]['edit'], '')))
+        # "Added earlier": exact before/after, reload, report link, date change, sent report, accessible label.
+        fails(ae, lambda o: o['cases'][0]['feed_after_first'].update(add=[101, 102]))
+        fails(ae, lambda o: o['cases'][1]['feed_after_first'].update(added=[]))
+        fails(ae, lambda o: o['cases'][0]['feed_after_reload'].update(added=[101, 102]))
+        fails(ae, lambda o: o['cases'][1]['feed_after_reload'].update(add=[]))
+        fails(ae, lambda o: o['cases'][0]['feed_after_first']['labels'][0].update(hint=''))
+        fails(ae, lambda o: o['cases'][1]['feed_after_reload']['labels'][0].update(visible=''))
+        fails(ae, lambda o: o['cases'][0]['feed_after_first']['labels'][0].update(shown=False))
+        fails(ae, lambda o: o['cases'][1]['feed_after_second']['labels'][1].update(hint_hidden=False))
+        fails(ae, lambda o: o['cases'][1]['feed_after_first']['labels'].append(dict(o['cases'][1]['feed_after_first']['labels'][0])))
+        fails(ae, lambda o: o['cases'][0]['report_link'].update(url='http://127.0.0.1:8080/local/kbacompany/daily_report.php?uuid=A'))
+        fails(ae, lambda o: o['cases'][1]['report_link'].update(done=''))
+        fails(ae, lambda o: o['cases'][0]['feed_other_day'].update(day=o['cases'][0]['day']))
+        fails(ae, lambda o: o['cases'][1]['feed_back_to_day'].update(added=[]))
+        fails(ae, lambda o: o['cases'][0]['feed_after_second'].update(add=[102]))
+        fails(ae, lambda o: o['cases'][1]['after_submit_feed'].update(add=[101]))
+        fails(ae, lambda o: o['cases'][0]['after_submit_feed'].update(added=[101]))
+        fails(ae, lambda o: o['cases'][1]['after_submit_feed'].update(sent_note=0))
+        fails(ae, lambda o: o['cases'][0].update(hscroll_marks=False))
         fails(dup, lambda o: o['cases'][0]['after_repeat_form']['draft'].update(
             done=o['cases'][0]['after_repeat_form']['draft']['done'] + '\n' + o['cases'][0]['tasks'][0]['result']))
         fails(dup, lambda o: o['cases'][1]['after_repeat_feed']['draft'].update(revision=5))
         fails(dup, lambda o: o['cases'][0]['after_repeat_feed']['added_events'].append(o['cases'][0]['tasks'][0]['event']))
         fails(dup, lambda o: o['cases'][1]['after_add'].update(added_events=[]))
         fails(dup, lambda o: o['cases'][0]['after_repeat_form']['draft'].update(done=o['cases'][0]['after_add']['draft']['done']))
+        fails(dup, lambda o: o['cases'][1].update(repeat_http=[303]))
+        fails(dup, lambda o: o['cases'][0].update(repeat_http=[303, 500]))
+        fails(dup, lambda o: o['cases'][1].update(unavailable_http=303))
+        fails(dup, lambda o: o['cases'][0].update(unavailable_http=500))
         fails(iso, lambda o: o['cases'][0].update(forged_http=303))
         fails(iso, lambda o: o['cases'][1]['foreign_http'].update(company_b=500))
         fails(iso, lambda o: o['cases'][0]['foreign_http'].pop('company_a'))
@@ -1050,7 +1087,6 @@ class ContractTest(unittest.TestCase):
         fails(iso, lambda o: o['cases'][0]['after_negatives']['draft'].update(revision=5))
         fails(send, lambda o: o['cases'][0]['after_submit']['report'].update(status='draft'))
         fails(send, lambda o: o['cases'][1]['after_submit']['sent'].append(dict(o['cases'][1]['after_submit']['sent'][0])))
-        fails(send, lambda o: o['cases'][0]['after_submit_feed'].update(add=2))
         fails(send, lambda o: o['cases'][1].update(hscroll_feed=False))
         fails(send, lambda o: o['cases'][0].update(hscroll_report=False))
         fails(send, lambda o: o['cases'][0]['browser_events'].append({'source': 'pageerror', 'name': 'Error', 'message': 'x'}))
