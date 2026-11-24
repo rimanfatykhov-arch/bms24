@@ -138,6 +138,10 @@ def check(root=ROOT):
     reviewed_followup['local/kbacompany/lang/en/local_kbacompany.php'] = 'dc21f933da462868f29deec1b91befb08b3112630b8e6216df786440fa4f194e'
     reviewed_followup['local/kbacompany/lang/ru/local_kbacompany.php'] = '33c6faaab413076b18616b22c9139dcc66f3b0db2d8810c924daddcdcc08ecd2'
     reviewed_followup['local/kbacompany/classes/local/communication_service.php'] = 'c796f4eb579cebc002bfd073222ee3e284e2f7ca10d5d46acf9de717a7e3a7ff'
+    # Daily reports R6 (#75 RC34, 24.11.2026): append the team-list period and navigation block after R5c.
+    # See docs/reconcile/daily-reports-r6-source-preservation.json.
+    reviewed_followup['local/kbacompany/lang/en/local_kbacompany.php'] = '3235aedc2153e01f0c8c0da18227cdf55ec820b8b0af0d995355bf0f628ef8a7'
+    reviewed_followup['local/kbacompany/lang/ru/local_kbacompany.php'] = '40ba572450815074a94b8331b2f437ee9ed6dc975757b211e0e32f909f21f13f'
     for row in plan['rows']:
         path=root/row['path']
         if not path.is_file() or path.is_symlink():

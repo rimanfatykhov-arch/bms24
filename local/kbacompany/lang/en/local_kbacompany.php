@@ -10085,3 +10085,13 @@ $string['dailyreports_due_own_notrequired'] = 'A report for this day is not requ
 $string['dailyreports_remind_task'] = 'Daily reports: morning reminder about an unsent report';
 $string['dailyreports_remind_title'] = 'Your report for {$a->day} has not been sent. Due by {$a->due}.';
 $string['messageprovider:dailyreport_reminder'] = 'Reminder about an unsent daily report';
+// Daily reports R6 (2026-11-24): team list period, employee filter and reading reports one after another.
+$string['dailyreports_team_dayto'] = 'To (optional)';
+$string['dailyreports_team_dayto_hint'] = 'Leave empty for one day. A period can last up to {$a} days.';
+$string['dailyreports_team_employee_all'] = 'All employees';
+$string['dailyreports_team_back'] = 'Back to the team list';
+$string['dailyreports_team_position'] = 'Report {$a->index} of {$a->total}';
+$string['dailyreports_team_previous'] = 'Previous report';
+$string['dailyreports_team_next'] = 'Next report';
+$string['dailyreports_team_nav'] = 'Reports of the team list';
+$string['dailyreports_teamperiod'] = 'The period must end on or after its first day and last at most {$a} days. The first day is shown.';

@@ -20,9 +20,15 @@ defined('MOODLE_INTERNAL') || die();
  * R5b (owner decisions K3, K5): once the company reporting calendar is on, every row also carries a due state
  * (daily_report_calendar_service::due) and the deadline in the employee's time zone; before the calendar start and
  * while it is off the due state is "neutral" and the R4 view is unchanged (T3).
+ *
+ * R6 (roadmap #75, "reports of my team"): an optional period up to MAX_DAYS days (one row per employee and day), a filter
+ * by one employee of the listed people, and the ordered sequence of the sent reports of the whole filtered list, so that
+ * a reviewer can read them one after another; every card is still opened through the per-report access check.
  */
 final class daily_report_team_service {
     public const PAGE_SIZE = 50;
+    /** R6: longest period of the list, days (inclusive). */
+    public const MAX_DAYS = 31;
     public const SCOPES = ['team', 'company'];
     /** Day states, in display order; 'notsent' is a draft without any submitted version (T2). */
     public const STATUSES = ['none', 'notsent', 'submitted', 'returned', 'accepted'];
@@ -55,10 +61,11 @@ final class daily_report_team_service {
      * @return array ['day', 'scope', 'scopes', 'unit', 'units' => [uuid => name], 'status', 'counts' => [state => int],
      *                'total', 'page', 'items' => [['userid', 'name', 'unit', 'state', 'reportuuid', 'submittedat', 'late',
      *                'reviewerid', 'reviewersource', 'rating', 'due', 'deadline']], 'due' => filter,
-     *                'duecounts' => [due => int], 'calendar' => bool]
+     *                'duecounts' => [due => int], 'calendar' => bool, 'dayto', 'days' => int, 'employee' => int,
+     *                'people' => [userid => name], 'sequence' => [reportuuid, ...]]; each item also has its 'day'.
      */
     public static function day(string $companyuuid, int $actor, string $day, string $scope = '', string $unit = '',
-            string $status = '', int $page = 0, string $due = ''): array {
+            string $status = '', int $page = 0, string $due = '', int $employee = 0, string $dayto = ''): array {
         global $DB;
         $companyuuid = company_context_service::normalise_uuid($companyuuid);
         company_context_service::context($companyuuid, $actor);
@@ -67,8 +74,19 @@ final class daily_report_team_service {
             throw new \moodle_exception('dailyreports_notavailable', 'local_kbacompany');
         }
         daily_report_service::bounds($day);
-        if (strcmp($day, business_date_service::day()) > 0) {
+        $dayto = $dayto === '' ? $day : $dayto;
+        daily_report_service::bounds($dayto);
+        if (strcmp($day, business_date_service::day()) > 0 || strcmp($dayto, business_date_service::day()) > 0) {
             throw new \moodle_exception('dailyreports_futureday', 'local_kbacompany');
+        }
+        $days = [];
+        for ($cursor = new \DateTimeImmutable($dayto, new \DateTimeZone('UTC'));
+                count($days) <= self::MAX_DAYS && strcmp($cursor->format('Y-m-d'), $day) >= 0;
+                $cursor = $cursor->modify('-1 day')) {
+            $days[] = $cursor->format('Y-m-d');
+        }
+        if (!$days || count($days) > self::MAX_DAYS || $employee < 0) {
+            throw new \moodle_exception('dailyreports_teamperiod', 'local_kbacompany', '', self::MAX_DAYS);
         }
         if ($page < 0 || $page > 100000 || ($status !== '' && !in_array($status, self::STATUSES, true)) ||
                 ($due !== '' && !in_array($due, daily_report_calendar_service::DUE, true))) {
@@ -116,25 +134,43 @@ final class daily_report_team_service {
                 return $unit === 'none' ? $p['unit'] === '' : $p['unit'] === $unit;
             });
         }
+        // R6: one employee of exactly the people this list may show; anyone else is refused, never looked up.
+        $options = [];
+        foreach ($people as $id => $person) {
+            $options[$id] = $person['name'];
+        }
+        \core_collator::asort($options);
+        if ($employee > 0) {
+            if (!isset($people[$employee])) {
+                throw new \moodle_exception('invalidparameter');
+            }
+            $people = [$employee => $people[$employee]];
+        }
 
-        // Reports of the day for exactly these people, company and day in SQL.
-        $reports = [];
+        // Reports of the period for exactly these people, company and days in SQL.
+        $byday = [];
+        $all = [];
         if ($people) {
             [$insql, $inparams] = $DB->get_in_or_equal(array_keys($people), SQL_PARAMS_NAMED, 'tu');
-            $reports = $DB->get_records_sql("SELECT r.userid, r.uuid, r.status, r.currentversionuuid,
+            $all = $DB->get_records_sql("SELECT r.id, r.userid, r.reportday, r.uuid, r.status, r.currentversionuuid,
                     v.submittedat, v.reviewerid, v.reviewersource
                 FROM {local_kbacompany_dreport} r
            LEFT JOIN {local_kbacompany_dreportver} v ON v.companyuuid = r.companyuuid AND v.uuid = r.currentversionuuid
-               WHERE r.companyuuid = :c AND r.reportday = :day AND r.userid {$insql}",
-                ['c' => $companyuuid, 'day' => $day] + $inparams);
+               WHERE r.companyuuid = :c AND r.reportday >= :dfrom AND r.reportday <= :dto AND r.userid {$insql}",
+                ['c' => $companyuuid, 'dfrom' => $day, 'dto' => $dayto] + $inparams);
+            foreach ($all as $row) {
+                $byday[(string)$row->reportday][(int)$row->userid] = $row;
+            }
         }
-        $ratings = self::ratings($companyuuid, $reports);
-        $schedule = self::schedule($companyuuid, array_keys($people), $day, $reports);
+        $ratings = self::ratings($companyuuid, $all);
 
         $counts = array_fill_keys(self::STATUSES, 0);
         $duecounts = array_fill_keys(daily_report_calendar_service::DUE, 0);
         $rows = [];
-        foreach ($people as $id => $person) {
+        foreach ($days as $rowday) {
+          $reports = $byday[$rowday] ?? [];
+          $schedule = self::schedule($companyuuid, array_keys($people), $rowday, $reports);
+          foreach ($people as $id => $person) {
             $report = $reports[$id] ?? null;
             $state = self::state($report);
             [$duestate, $deadline] = $schedule[$id];
@@ -152,21 +188,32 @@ final class daily_report_team_service {
                 'submittedat' => $submittedat,
                 // With the calendar on, lateness is judged by the deadline (K3), otherwise by the report day (R1).
                 'late' => in_array($duestate, ['ontime', 'late'], true) ? $duestate === 'late' :
-                    $submittedat > 0 && strcmp(business_date_service::day($submittedat), $day) > 0,
+                    $submittedat > 0 && strcmp(business_date_service::day($submittedat), $rowday) > 0,
                 'reviewerid' => $sent ? (int)$report->reviewerid : 0,
                 'reviewersource' => $sent ? (string)$report->reviewersource : '',
                 'rating' => $state === 'accepted' ? ($ratings[(string)$report->currentversionuuid] ?? '') : '',
                 'due' => $duestate,
                 'deadline' => $deadline,
+                'day' => $rowday,
             ];
+          }
         }
+        // Newest day first, then by name: for one day this is the R4 order.
         usort($rows, static function(array $left, array $right): int {
-            return strcasecmp($left['name'], $right['name']) ?: $left['userid'] <=> $right['userid'];
+            return strcmp($right['day'], $left['day']) ?: strcasecmp($left['name'], $right['name']) ?:
+                $left['userid'] <=> $right['userid'];
         });
+        $sequence = [];
+        foreach ($rows as $row) {
+            if ($row['reportuuid'] !== '') {
+                $sequence[] = $row['reportuuid'];
+            }
+        }
         return ['day' => $day, 'scope' => $scope, 'scopes' => $scopes, 'unit' => $unit, 'units' => $units,
             'status' => $status, 'counts' => $counts, 'total' => count($rows), 'page' => $page,
-            'due' => $due, 'duecounts' => $duecounts, 'calendar' => $duecounts['neutral'] < count($people),
-            'items' => array_slice($rows, $page * self::PAGE_SIZE, self::PAGE_SIZE)];
+            'due' => $due, 'duecounts' => $duecounts, 'calendar' => $duecounts['neutral'] < count($people) * count($days),
+            'dayto' => $dayto, 'days' => count($days), 'employee' => $employee, 'people' => $options,
+            'sequence' => $sequence, 'items' => array_slice($rows, $page * self::PAGE_SIZE, self::PAGE_SIZE)];
     }
 
     /** Names of the units the listed people belong to: Corporate departments and BMS chart nodes of this company. */

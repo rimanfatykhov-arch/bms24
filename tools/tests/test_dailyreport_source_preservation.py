@@ -73,6 +73,11 @@ R3_MARKER=(b'\n// Daily reports R3 (2026-11-24): report discussion, owner decisi
 R3_KEYS=[b'communication_object_dailyreport',b'dailyreports_discussion_title',b'dailyreports_discussion_heading',
          b'dailyreports_discussion_note',b'dailyreports_discussion_empty',b'dailyreports_discussion_readonly',
          b'dailyreports_discussion_empty_message',b'dailyreports_discussion_files']
+R6_MARKER=b'\n// Daily reports R6 (2026-11-24): team list period, employee filter and reading reports one after another.\n'
+R6_KEYS=[b'dailyreports_team_dayto',b'dailyreports_team_dayto_hint',b'dailyreports_team_employee_all',b'dailyreports_team_back',b'dailyreports_team_position',b'dailyreports_team_previous',b'dailyreports_team_next',b'dailyreports_team_nav',b'dailyreports_teamperiod']
+_R6=json.loads((ROOT/'docs/reconcile/daily-reports-r6-source-preservation.json').read_text(encoding='utf-8'))
+R6_BEFORE={lang:next(r['before_sha256_lf'] for r in _R6['files'] if r['path']==f'local/kbacompany/lang/{lang}/local_kbacompany.php')
+            for lang in ('en','ru')}
 R5C_MARKER=b'\n// Daily reports R5c (2026-11-24): morning reminder about an unsent report, owner decision K4.\n'
 R5C_KEYS=[b'dailyreports_remind_task',b'dailyreports_remind_title',b'messageprovider:dailyreport_reminder']
 _R5C=json.loads((ROOT/'docs/reconcile/daily-reports-r5c-source-preservation.json').read_text(encoding='utf-8'))
@@ -167,6 +172,12 @@ class Preservation(unittest.TestCase):
                                             r5a,r5b=r5a.split(R5B_MARKER)
                                             if R5C_MARKER in r5b:
                                                 r5b,r5c=r5b.split(R5C_MARKER)
+                                                if R6_MARKER in r5c:
+                                                    r5c,r6=r5c.split(R6_MARKER)
+                                                    # The R5c file is byte-identical up to the R6 marker.
+                                                    self.assertEqual(R6_BEFORE[lang],hashlib.sha256(data.split(R6_MARKER)[0]+b'\n').hexdigest())
+                                                    self.assertEqual(R6_KEYS,keys(r6))
+                                                    self.assertFalse(set(R6_KEYS)&set(keys(data.split(R6_MARKER)[0])))
                                                 # The R5b file is byte-identical up to the R5c marker.
                                                 self.assertEqual(R5C_BEFORE[lang],hashlib.sha256(data.split(R5C_MARKER)[0]+b'\n').hexdigest())
                                                 self.assertEqual(R5C_KEYS,keys(r5c))

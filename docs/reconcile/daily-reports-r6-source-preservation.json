@@ -1,0 +1,20 @@
+{
+  "scope": "exact intentional source updates; not runtime or release acceptance",
+  "base_sha": "93482c11107c718f53a18065f6580e8b06fd2f54",
+  "normalization": "CRLF to LF only",
+  "previous_evidence": "docs/reconcile/daily-reports-r5c-source-preservation.json",
+  "decision": "Issue #75 RC34 (reports of my team: filters by date and employee, batch reading with an individual access check); owner request 24.11.2026",
+  "change": "Append the daily reports R6 block (dailyreports_team_dayto*, dailyreports_team_employee_all, dailyreports_team_back, dailyreports_team_position, dailyreports_team_previous, dailyreports_team_next, dailyreports_team_nav, dailyreports_teamperiod) after the R5c block. Retain all preceding keys.",
+  "files": [
+    {
+      "path": "local/kbacompany/lang/en/local_kbacompany.php",
+      "before_sha256_lf": "dc21f933da462868f29deec1b91befb08b3112630b8e6216df786440fa4f194e",
+      "after_sha256_lf": "3235aedc2153e01f0c8c0da18227cdf55ec820b8b0af0d995355bf0f628ef8a7"
+    },
+    {
+      "path": "local/kbacompany/lang/ru/local_kbacompany.php",
+      "before_sha256_lf": "33c6faaab413076b18616b22c9139dcc66f3b0db2d8810c924daddcdcc08ecd2",
+      "after_sha256_lf": "40ba572450815074a94b8331b2f437ee9ed6dc975757b211e0e32f909f21f13f"
+    }
+  ]
+}

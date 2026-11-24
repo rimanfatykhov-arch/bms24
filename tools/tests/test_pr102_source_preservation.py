@@ -30,7 +30,8 @@ FOLLOWUPS = ['docs/reconcile/task-open-source-preservation.json',
              'docs/reconcile/daily-reports-r3-source-preservation.json',
              'docs/reconcile/daily-reports-r5a-source-preservation.json',
              'docs/reconcile/daily-reports-r5b-source-preservation.json',
-             'docs/reconcile/daily-reports-r5c-source-preservation.json']
+             'docs/reconcile/daily-reports-r5c-source-preservation.json',
+             'docs/reconcile/daily-reports-r6-source-preservation.json']
 
 
 class SourcePreservationTest(unittest.TestCase):

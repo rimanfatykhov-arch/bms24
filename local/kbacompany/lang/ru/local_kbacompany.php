@@ -10087,3 +10087,13 @@ $string['dailyreports_due_own_notrequired'] = 'По графику компан�
 $string['dailyreports_remind_task'] = 'Ежедневные отчёты: утреннее напоминание о неотправленном отчёте';
 $string['dailyreports_remind_title'] = 'Отчёт за {$a->day} не отправлен. Сдать до {$a->due}.';
 $string['messageprovider:dailyreport_reminder'] = 'Напоминание о неотправленном ежедневном отчёте';
+// Daily reports R6 (2026-11-24): team list period, employee filter and reading reports one after another.
+$string['dailyreports_team_dayto'] = 'По (необязательно)';
+$string['dailyreports_team_dayto_hint'] = 'Оставьте пустым для одного дня. Период — не больше {$a} дней.';
+$string['dailyreports_team_employee_all'] = 'Все сотрудники';
+$string['dailyreports_team_back'] = 'Назад к списку команды';
+$string['dailyreports_team_position'] = 'Отчёт {$a->index} из {$a->total}';
+$string['dailyreports_team_previous'] = 'Предыдущий отчёт';
+$string['dailyreports_team_next'] = 'Следующий отчёт';
+$string['dailyreports_team_nav'] = 'Отчёты из списка команды';
+$string['dailyreports_teamperiod'] = 'Период должен заканчиваться не раньше первого дня и длиться не больше {$a} дней. Показан первый день.';

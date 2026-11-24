@@ -496,7 +496,9 @@ if ($fresh) {
             // R5b: due states, "due by" and the schedule filter (owner decisions K3, K5).
             'daily_report_due_test',
             // R5c: morning reminder task (owner decision K4).
-            'daily_report_reminder_test'];
+            'daily_report_reminder_test',
+            // R6: team list period, employee filter and previous/next reading.
+            'daily_report_team_period_test'];
     }
     foreach ($focused as $test) {
         if ($code !== 0) { $report['phpunit'][$test] = 'NOT RUN'; continue; }
