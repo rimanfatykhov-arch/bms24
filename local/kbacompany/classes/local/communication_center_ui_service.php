@@ -668,6 +668,7 @@ class communication_center_ui_service {
         $today = (string)$feed['today'];
         $sent = !empty($feed['sent']);
         $canadd = !empty($feed['canadd']);
+        $added = array_map('intval', (array)($feed['added'] ?? []));
         $reporturl = new \moodle_url('/local/kbacompany/daily_report.php', ['uuid' => $company, 'day' => $day]);
         $items = [];
         foreach ($feed['results'] as $event) {
@@ -675,6 +676,8 @@ class communication_center_ui_service {
             $statuskey = 'taskcenter_status_' . $status;
             $statuslabel = get_string_manager()->string_exists($statuskey, 'local_kbacompany') ? self::tr($statuskey) : $status;
             $result = (string)$event->result;
+            // Fact of adding (submit event id in the report journal), independent of the current draft text.
+            $inreport = in_array((int)$event->id, $added, true);
             $items[] = [
                 'id' => (int)$event->id,
                 'time' => userdate((int)$event->timecreated, '%H:%M'),
@@ -688,7 +691,9 @@ class communication_center_ui_service {
                 'submitted' => self::tr('dailyreports_feed_submitted'),
                 'now' => self::tr('dailyreports_feed_now', $statuslabel),
                 'nowvariant' => $status === 'done' ? 'mint' : ($status === 'returned' ? 'sand' : 'sky'),
-                'addform' => $canadd ? ['url' => (new \moodle_url('/local/kbacompany/daily_report.php'))->out(false),
+                'addedearlier' => $inreport ? ['label' => self::tr('dailyreports_feed_addedearlier'),
+                    'hint' => self::tr('dailyreports_feed_addedearlier_hint')] : null,
+                'addform' => $canadd && !$inreport ? ['url' => (new \moodle_url('/local/kbacompany/daily_report.php'))->out(false),
                     'hidden' => self::hidden(['sesskey' => sesskey(), 'uuid' => $company, 'day' => $day, 'source' => 'feed',
                         'addevent' => (string)(int)$event->id]),
                     'label' => self::tr('dailyreports_feed_add')] : null,

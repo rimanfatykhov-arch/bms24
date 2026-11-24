@@ -1159,7 +1159,7 @@ def day_feed_checks(obs, exitcode=None):
                 require(t['result'] in (item.get('text') or '') and t['title'] in (item.get('title') or ''), 'result or task missing')
                 require('task=' + t['task'] in (item.get('task_href') or ''), 'task link missing')
                 require(isinstance(item.get('time'), str) and len(item['time'].strip()) == 5, 'time missing')
-                require(item.get('add') == 1, '"Add to report" missing')
+                require(item.get('add') == 1 and item.get('added') == 0, '"Add to report" missing before adding')
             require(r.get('empty') == {'items': 0, 'state': 1}, 'empty day not shown as empty: %r' % (r.get('empty'),))
 
     def add():
@@ -1174,13 +1174,44 @@ def day_feed_checks(obs, exitcode=None):
             second = draft(r.get('after_second'))['done']
             require(second == first + '\n' + r['edit'] + '\n' + block(t2), 'second result or the unsaved edit lost: %r' % second)
 
+    def marks(m, day, add, added):
+        require(isinstance(m, dict) and m.get('day') == day and m.get('add') == add and m.get('added') == added,
+                'feed marks on %s: %r (expected add %r, added earlier %r)' % (day, m, add, added))
+        labels = m.get('labels')
+        require(isinstance(labels, list) and len(labels) == len(added) and all(
+            isinstance(x, dict) and x.get('visible') and x.get('hint') and x['visible'] != x['hint'] and x.get('shown') is True
+            and x.get('hint_hidden') is True
+            for x in labels), '"Added earlier" label without visible text or screen-reader hint: %r' % (labels,))
+
+    def added_earlier():
+        for r in run():
+            e1, e2 = [t['event'] for t in r['tasks']]
+            marks(r.get('feed_after_first'), r['day'], [e2], [e1])
+            marks(r.get('feed_after_reload'), r['day'], [e2], [e1])
+            require(r.get('hscroll_marks') is True, 'horizontal scroll with the mark at %s px' % r.get('width'))
+            link = r.get('report_link') or {}
+            first = r['pre'] + '\n' + block(r['tasks'][0])
+            require('/local/kbacompany/daily_report.php' in (link.get('url') or '') and 'day=' + r['day'] in link['url']
+                    and link.get('done') == first, 'report link did not open the selected date: %r' % (link,))
+            marks(r.get('feed_other_day'), r['empty_day'], [], [])
+            marks(r.get('feed_back_to_day'), r['day'], [e2], [e1])
+            marks(r.get('feed_after_second'), r['day'], [], [e1, e2])
+            sub = dict(r.get('after_submit_feed') or {})
+            require(sub.pop('items', None) == 2 and sub.pop('sent_note', None) == 1, 'sent report note missing')
+            marks(sub, r['day'], [], [e1, e2])
+
     def no_duplicate():
         for r in run():
             t1 = r['tasks'][0]
             for key in ('after_repeat_form', 'after_second', 'after_repeat_feed'):
                 require(draft(r.get(key))['done'].count(t1['result']) == 1, 'result duplicated after %s' % key)
             require(r['edit'] in draft(r['after_repeat_form'])['done'], 'unsaved edit lost on the repeated click')
-            require(draft(r['after_repeat_feed']) == draft(r['after_second']), 'repeated click in the feed wrote the draft')
+            http = r.get('repeat_http')
+            require(isinstance(http, list) and len(http) == 2 and all(x == 303 for x in http),
+                    'double POST of an added result not answered by the report page: %r' % (http,))
+            u = r.get('unavailable_http')
+            require(isinstance(u, int) and u != 303 and u < 500, 'unavailable event accepted or 5xx: %r' % (u,))
+            require(draft(r['after_repeat_feed']) == draft(r['after_second']), 'double POST or unavailable event wrote the draft')
             events = [t['event'] for t in r['tasks']]
             require((r['after_add'] or {}).get('added_events') == events[:1]
                     and all((r.get(k) or {}).get('added_events') == events for k in ('after_second', 'after_repeat_feed')),
@@ -1200,13 +1231,13 @@ def day_feed_checks(obs, exitcode=None):
             sent = st.get('sent') or []
             require((st.get('report') or {}).get('status') == 'submitted' and st.get('draft') is None and len(sent) == 1
                     and sent[0].get('done') == draft(r['after_negatives'])['done'], 'report not sent with the edited text')
-            require(r.get('after_submit_feed') == {'add': 0, 'items': 2, 'sent_note': 1}, 'feed still offers "Add" for a sent report')
             require(r.get('hscroll_feed') is True and r.get('hscroll_report') is True, 'horizontal scroll at %s px' % r.get('width'))
             violations = browser_event_violations(r.get('browser_events'))
             require(not violations, 'browser errors: %r' % violations[:3])
             require(r.get('server_errors') == [], 'HTTP 5xx: %r' % (r.get('server_errors'),))
 
     return {'day_feed_today_date_and_empty_day': view, 'day_feed_add_keeps_text_and_links_task': add,
+            'day_feed_added_earlier_marks_reload_date_and_link': added_earlier,
             'day_feed_repeated_click_adds_nothing': no_duplicate, 'day_feed_foreign_and_forged_denied': isolation,
             'day_feed_send_layout_and_browser_errors': submit_and_layout}
 
