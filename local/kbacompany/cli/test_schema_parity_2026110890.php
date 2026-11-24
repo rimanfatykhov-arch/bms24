@@ -216,7 +216,7 @@ $dom->load(__DIR__ . '/../db/install.xml');
 $newtables = [];
 foreach ($dom->getElementsByTagName('TABLE') as $tablenode) {
     $name = $tablenode->getAttribute('NAME');
-    if (!preg_match('/^local_kbacompany_dreport/', $name)) { continue; }
+    if (!preg_match('/^local_kbacompany_(?:dreport|inb)/', $name)) { continue; }
     $structure = ['fields' => [], 'keys' => [], 'indexes' => []];
     foreach ($tablenode->getElementsByTagName('FIELD') as $node) {
         $structure['fields'][$node->getAttribute('NAME')] = [$node->getAttribute('TYPE'), $node->getAttribute('LENGTH'),
@@ -230,8 +230,8 @@ foreach ($dom->getElementsByTagName('TABLE') as $tablenode) {
     }
     $newtables[$name] = $structure;
 }
-// ADR-0009 R1 adds five tables, ADR-0010 two more (dreportcc, dreportset).
-if (count($newtables) !== 7) { throw new RuntimeException('expected seven ADR-0009/ADR-0010 daily report tables in install.xml'); }
+// ADR-0009 R1 adds five tables, ADR-0010 two more (dreportcc, dreportset), RC33 PR-2 seven inbound tables (inb*).
+if (count($newtables) !== 14) { throw new RuntimeException('expected seven daily report and seven inbound tables in install.xml'); }
 foreach ($newtables as $name => $structure) {
     if (!$structure['fields'] || !isset($structure['keys']['primary'])) { throw new RuntimeException('incomplete XMLDB fixture: ' . $name); }
 }
@@ -257,6 +257,7 @@ foreach ([2026101645, 2026101879, 2026110802, 2026110804, 2026110890, 2026111100
         parity_check($oldversion >= 2026111100 || in_array(2026111100, $savepoints, true), 'repair checkpoint passed from ' . $oldversion);
         parity_check(in_array(2026111600, $savepoints, true), 'daily report table step passed from ' . $oldversion);
         parity_check(in_array(2026112301, $savepoints, true), 'ADR-0010 table step passed from ' . $oldversion);
+        parity_check(in_array(2026112500, $savepoints, true), 'RC33 inbound table step passed from ' . $oldversion);
         parity_check(new_tables_installed($DB), 'five R1 tables installed exactly as install.xml from ' . $oldversion);
         parity_check($DB->manager->installs === array_keys($newtables), 'each new table installed once, in order');
         foreach ($targets as $key => $metadata) {
@@ -277,7 +278,7 @@ foreach ([2026101645, 2026101879, 2026110802, 2026110804, 2026110890, 2026111100
         parity_check($DB->manager->installs === array_keys($newtables) && new_tables_installed($DB), 'retry installs no table twice');
         $savepoints = [];
         xmldb_local_kbacompany_upgrade($targetversion);
-        parity_check(!$savepoints && $DB->manager->adds === $adds && count($DB->manager->installs) === 7, 'installed target is no-op');
+        parity_check(!$savepoints && $DB->manager->adds === $adds && count($DB->manager->installs) === 14, 'installed target is no-op');
     }
 }
 
@@ -337,7 +338,7 @@ parity_check($DB->manager->installs === array_slice($names, 0, 2) && isset($DB->
 $DB->manager->failinstall = null;
 $savepoints = [];
 xmldb_local_kbacompany_upgrade(2026111100);
-parity_check(end($savepoints) === $targetversion && new_tables_installed($DB) && count($DB->manager->installs) === 7,
+parity_check(end($savepoints) === $targetversion && new_tables_installed($DB) && count($DB->manager->installs) === 14,
     'retry after failed create installs the remaining tables once');
 
 $DB = new SchemaParityDatabase($targets, 7);
@@ -362,5 +363,5 @@ $failed = false;
 try { $DB->manager->table_exists(42); } catch (InvalidArgumentException $e) { $failed = true; }
 parity_check($failed, 'table_exists() rejects unsupported argument types');
 
-echo "PASS: schema parity upgrade entrypoint, 41 version/partial-state cases, seven daily report tables (R1 + ADR-0010) and failures; target $targetversion; $assertions assertions\n";
+echo "PASS: schema parity upgrade entrypoint, 41 version/partial-state cases, seven daily report tables (R1 + ADR-0010), seven RC33 inbound tables and failures; target $targetversion; $assertions assertions\n";
 echo "NOT RUN: actual Moodle SQL drivers, fresh install and complete historical migration semantics\n";

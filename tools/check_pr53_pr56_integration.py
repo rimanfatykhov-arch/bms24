@@ -72,8 +72,9 @@ def check(root=ROOT):
     reviewed_metadata={'AGENTS.md','docs/00_MASTER_CONTEXT.md'}
     for name, expected in plan['unchanged_schema_hashes'].items():
         # ADR-0009 R1 appends five additive daily report tables, ADR-0010 two more (dreportcc, dreportset);
+        # RC33 PR-2 appends seven inbound tables (inb*), see rc33-pr2-max-inbound-source-preservation.json;
         # every earlier table definition is unchanged.
-        target = {'local/kbacompany/db/install.xml': '5e18cb8713fc65590e91d8b2526735e14a23eafd866de7c555ca5dd24291640e'}.get(name, expected)
+        target = {'local/kbacompany/db/install.xml': 'a3acab0aa3751ac50dd7cb01ef1294e26fa7f8678c393a3b5b4ae87da6054bd3'}.get(name, expected)
         if digest(root/name)!=target:
             errors.append('shared schema/helper changed: '+name)
     # UX-1: exact append-only language/scoped CSS follow-up over E2.
@@ -119,6 +120,11 @@ def check(root=ROOT):
     # schema or version change. See docs/reconcile/RC33_PR1_COMMUNICATION_WRITE_GATE.md.
     reviewed_followup['local/kbacompany/classes/local/communication_service.php'] = 'a483674056db868903e362b77d987d709f8547bc3fffc94fb8ca054445bfd85c'
     reviewed_followup['local/kbacompany/classes/local/employee_service.php'] = '80a5502f410dd618dc1b64988a7824343960145d3276a7d8e89e8cd0db5f48be'
+    # RC33 PR-2 (owner D1-D4 2026-11-24, ADR-0012): fixed import audience in add_participant and the append-only
+    # inbound lang block. See docs/reconcile/RC33_PR2_MAX_INBOUND_SERVER.md.
+    reviewed_followup['local/kbacompany/classes/local/communication_service.php'] = '2e8aeea888a21e88d592af8611445d36dbb43cf75b5fd2301f6960e90d4a8797'
+    reviewed_followup['local/kbacompany/lang/en/local_kbacompany.php'] = '34095bffcaf317f32946da597b7e16a24b3be3e9f6555756d69b91141d8102be'
+    reviewed_followup['local/kbacompany/lang/ru/local_kbacompany.php'] = '5e27cb9da745157ce8c0d55a6e33b2f546715639bc2466b0eb2b855aa311b2a9'
     for row in plan['rows']:
         path=root/row['path']
         if not path.is_file() or path.is_symlink():
@@ -131,7 +137,7 @@ def check(root=ROOT):
         errors.append('one historical0902 release note was lost')
     upgrade=(root/'local/kbacompany/db/upgrade.php').read_text(encoding='utf-8')
     versions=[int(v) for v in re.findall(r'upgrade_plugin_savepoint\(true,\s*(\d+)',upgrade)]
-    if len(versions)!=486 or versions!=sorted(set(versions)) or versions[-4:]!=[2026111100,2026111600,2026111601,2026112301]:
+    if len(versions)!=487 or versions!=sorted(set(versions)) or versions[-5:]!=[2026111100,2026111600,2026111601,2026112301,2026112500]:
         errors.append('merged upgrade chronology/identity changed')
     driver=(root/'tools/tests/moodle_acceptance.php').read_text(encoding='utf-8')
     for ref in [plan['pr53_sha'],plan['pr56_sha']]:

@@ -395,7 +395,8 @@ try:
     stop()
     elapsed('baseline_reproduction')
     upgrade_before=upgrade_probe('published120-before')
-    adr0010 = report['components']['local/kbacompany']['version'] == 2026112301
+    # ADR-0010 and later candidates (RC33 inbound 2026112500) upgrade over the reproduced published R1/R2 baseline.
+    adr0010 = report['components']['local/kbacompany']['version'] in (2026112301, 2026112500)
     if adr0010:
         upgrade_before = reproduce_r1r2_baseline(upgrade_before)
     before=state(); snapshot=root/'snapshot'; snapshot.mkdir()

@@ -473,6 +473,29 @@ class provider implements
         $collection->add_database_table('local_kbacompany_dreportset', [
             'topreviewerid' => 'privacy:metadata:dailyreports', 'modifiedby' => 'privacy:metadata:dailyreports',
         ], 'privacy:metadata:dailyreports');
+        // RC33 inbound integration (fake MAX slice): sender mapping, integration account and import audit; no text.
+        $collection->add_database_table('local_kbacompany_inbsender', [
+            'userid' => 'privacy:metadata:inbound', 'externalsenderid' => 'privacy:metadata:inbound',
+            'verifiedby' => 'privacy:metadata:inbound', 'evidenceref' => 'privacy:metadata:inbound',
+            'timecreated' => 'privacy:metadata:inbound',
+        ], 'privacy:metadata:inbound');
+        $collection->add_database_table('local_kbacompany_inbconn', [
+            'principaluserid' => 'privacy:metadata:inbound', 'createdby' => 'privacy:metadata:inbound',
+        ], 'privacy:metadata:inbound');
+        $collection->add_database_table('local_kbacompany_inbgroup', [
+            'approvedby' => 'privacy:metadata:inbound',
+        ], 'privacy:metadata:inbound');
+        $collection->add_database_table('local_kbacompany_inbns', [
+            'createdby' => 'privacy:metadata:inbound',
+        ], 'privacy:metadata:inbound');
+        $collection->add_database_table('local_kbacompany_inbreceipt', [
+            'principaluserid' => 'privacy:metadata:inbound', 'timereceived' => 'privacy:metadata:inbound',
+        ], 'privacy:metadata:inbound');
+        $collection->add_database_table('local_kbacompany_inbaudit', [
+            'principaluserid' => 'privacy:metadata:inbound', 'actoruserid' => 'privacy:metadata:inbound',
+            'action' => 'privacy:metadata:inbound', 'outcome' => 'privacy:metadata:inbound',
+            'timecreated' => 'privacy:metadata:inbound',
+        ], 'privacy:metadata:inbound');
         $collection->add_user_preference(\local_kbacompany\local\communication_center_ui_service::SOUND_PREFERENCE,
             'privacy:metadata:preference:notificationsound');
         $collection->add_user_preference(\local_kbacompany\local\notification_bell_service::SIGNALLED_PREFERENCE,
@@ -666,6 +689,15 @@ class provider implements
                   OR ds.modifiedby = :drmodifier))',
             ['drlevel' => CONTEXT_SYSTEM, 'druser' => $userid, 'drreviewer' => $userid, 'drdecider' => $userid,
              'dractor' => $userid, 'drcopy' => $userid, 'drtop' => $userid, 'drmodifier' => $userid]);
+        $contextlist->add_from_sql('SELECT ctx.id FROM {context} ctx WHERE ctx.contextlevel = :inlevel
+            AND (EXISTS (SELECT 1 FROM {local_kbacompany_inbsender} s WHERE s.userid = :insender OR s.verifiedby = :inverifier)
+              OR EXISTS (SELECT 1 FROM {local_kbacompany_inbconn} c WHERE c.principaluserid = :inprincipal
+                  OR c.createdby = :increator)
+              OR EXISTS (SELECT 1 FROM {local_kbacompany_inbgroup} g WHERE g.approvedby = :inapprover)
+              OR EXISTS (SELECT 1 FROM {local_kbacompany_inbaudit} a WHERE a.actoruserid = :inactor
+                  OR a.principaluserid = :inauditprincipal))',
+            ['inlevel' => CONTEXT_SYSTEM, 'insender' => $userid, 'inverifier' => $userid, 'inprincipal' => $userid,
+             'increator' => $userid, 'inapprover' => $userid, 'inactor' => $userid, 'inauditprincipal' => $userid]);
         return $contextlist;
     }
 
@@ -677,6 +709,7 @@ class provider implements
             return;
         }
         self::export_daily_reports((int)$contextlist->get_user()->id, $systemcontext);
+        self::export_inbound((int)$contextlist->get_user()->id, $systemcontext);
         $revocations = $DB->get_records_select('local_kbacompany_revoke',
             'userid = :subject OR revokedby = :revoker OR reopenedby = :opener',
             ['subject'=>$contextlist->get_user()->id,'revoker'=>$contextlist->get_user()->id,
@@ -1125,6 +1158,7 @@ class provider implements
                 $DB->delete_records($table);
             }
             $DB->delete_records('local_kbacompany_commrev');
+            self::forget_inbound(null);
             self::document_files_for_privacy(null, true);
             self::forget_workflow(null);
             $DB->set_field_select('local_kbacompany_aclog', 'oldvalue', null, 'actorid <> 0');
@@ -1264,6 +1298,7 @@ class provider implements
         if (in_array($systemcontext->id, $contextlist->get_contextids())) {
             self::forget_revocation_audit((int)$contextlist->get_user()->id);
             self::forget_daily_reports((int)$contextlist->get_user()->id);
+            self::forget_inbound((int)$contextlist->get_user()->id);
             self::document_files_for_privacy((int)$contextlist->get_user()->id, true);
             self::forget_workflow((int)$contextlist->get_user()->id);
             $where = ['actorid' => $contextlist->get_user()->id];
@@ -1605,6 +1640,51 @@ class provider implements
         $DB->set_field('local_kbacompany_dreportset', 'modifiedby', 0, ['modifiedby' => $userid]);
         $DB->set_field('local_kbacompany_dreportlog', 'details', null, ['actorid' => $userid]);
         $DB->set_field('local_kbacompany_dreportlog', 'actorid', 0, ['actorid' => $userid]);
+    }
+
+    /** RC33 inbound: the user's sender mappings and the import audit naming them; never message text. */
+    private static function export_inbound(int $userid, \context $context): void {
+        global $DB;
+        $senders = array_values($DB->get_records('local_kbacompany_inbsender', ['userid' => $userid], 'id ASC',
+            'id, uuid, companyuuid, externalsenderid, bindinguuid, consentversion, evidenceref, effectivefrom, expiresat,
+             revokedat, timecreated'));
+        $principal = array_values($DB->get_records('local_kbacompany_inbconn', ['principaluserid' => $userid], 'id ASC',
+            'id, uuid, companyuuid, provider, status, timecreated'));
+        $audit = array_values($DB->get_records_select('local_kbacompany_inbaudit',
+            'actoruserid = :a OR principaluserid = :p', ['a' => $userid, 'p' => $userid], 'id ASC',
+            'id, uuid, companyuuid, channel, action, outcome, reason, objectuuid, timecreated'));
+        if ($senders || $principal || $audit) {
+            writer::with_context($context)->export_data([get_string('privacy:metadata:inbound', 'local_kbacompany')],
+                (object)['sender_mappings' => $senders, 'integration_account_of' => $principal, 'audit' => $audit]);
+        }
+    }
+
+    /**
+     * Erasure closes the import path (fail-closed): the user's sender mappings go, a connection whose integration
+     * account is erased is revoked, and the user's identity is removed from the audit. Receipts and holds keep only
+     * source identity so a deleted source can never be imported twice.
+     */
+    private static function forget_inbound(?int $userid): void {
+        global $DB;
+        if ($userid === null) {
+            $DB->delete_records('local_kbacompany_inbsender');
+            $DB->delete_records('local_kbacompany_inbaudit');
+            $DB->execute("UPDATE {local_kbacompany_inbconn} SET principaluserid = 0, createdby = 0, status = 'revoked'");
+            $DB->set_field_select('local_kbacompany_inbgroup', 'approvedby', 0, 'approvedby <> 0');
+            $DB->set_field_select('local_kbacompany_inbns', 'createdby', 0, 'createdby <> 0');
+            $DB->set_field_select('local_kbacompany_inbreceipt', 'principaluserid', 0, 'principaluserid <> 0');
+            return;
+        }
+        $DB->delete_records('local_kbacompany_inbsender', ['userid' => $userid]);
+        $DB->set_field('local_kbacompany_inbsender', 'verifiedby', 0, ['verifiedby' => $userid]);
+        $DB->execute("UPDATE {local_kbacompany_inbconn} SET principaluserid = 0, status = 'revoked'
+            WHERE principaluserid = :userid", ['userid' => $userid]);
+        $DB->set_field('local_kbacompany_inbconn', 'createdby', 0, ['createdby' => $userid]);
+        $DB->set_field('local_kbacompany_inbgroup', 'approvedby', 0, ['approvedby' => $userid]);
+        $DB->set_field('local_kbacompany_inbns', 'createdby', 0, ['createdby' => $userid]);
+        $DB->set_field('local_kbacompany_inbreceipt', 'principaluserid', 0, ['principaluserid' => $userid]);
+        $DB->set_field('local_kbacompany_inbaudit', 'actoruserid', 0, ['actoruserid' => $userid]);
+        $DB->set_field('local_kbacompany_inbaudit', 'principaluserid', 0, ['principaluserid' => $userid]);
     }
 
     /** Erasure must not grant access: retain only active deny identity while an account can log in. */

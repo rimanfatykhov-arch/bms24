@@ -481,6 +481,8 @@ if ($fresh) {
             'communication_live_service_test', 'task_service_test',
             // RC33 PR-1: shared communication write gate, revocation re-checks, notification eligibility.
             'communication_write_gate_test',
+            // RC33 PR-2: fake-provider MAX inbound server side (ADR-0012), N02-N16/N19-N32 single-process.
+            'max_inbound_service_test',
             'membership_revocation_test', 'pr48_tenant_isolation_test',
             'task_manager_workspace1853_test', 'task_manager_access_regression_test',
             // ADR-0009 R0: daily reports navigation and the updated recurring-route order contract.

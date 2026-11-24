@@ -312,6 +312,21 @@ $functions = [
         'type' => 'read',
         'ajax' => false,
     ],
+    // RC33 (owner D2): inbound write functions; only in the disabled restricted inbound service below.
+    'local_kbacompany_public_inbound_message' => [
+        'classname' => 'local_kbacompany\external\inbound_api',
+        'methodname' => 'message',
+        'description' => 'Import one normalized plain-text inbound message for a confirmed human author (fake MAX slice).',
+        'type' => 'write',
+        'ajax' => false,
+    ],
+    'local_kbacompany_public_inbound_control' => [
+        'classname' => 'local_kbacompany\external\inbound_api',
+        'methodname' => 'control',
+        'description' => 'Record an inbound edit or removal as a hold/tombstone; never changes a published message.',
+        'type' => 'write',
+        'ajax' => false,
+    ],
     'local_kbacompany_odoo_contract' => [
         'classname' => 'local_kbacompany\external\odoo_api',
         'methodname' => 'contract',
@@ -437,6 +452,17 @@ $services = [
         'restrictedusers' => 1,
         'enabled' => 0,
         'shortname' => 'local_kbacompany_public_v1',
+    ],
+
+    // Separate from the read-only Public API v1, which is not extended with write rights.
+    'BMS Inbound Integration API v1' => [
+        'functions' => [
+            'local_kbacompany_public_inbound_message',
+            'local_kbacompany_public_inbound_control',
+        ],
+        'restrictedusers' => 1,
+        'enabled' => 0,
+        'shortname' => 'local_kbacompany_public_inbound_v1',
     ],
 
     'BMS Bitrix24 Provider API v1' => [

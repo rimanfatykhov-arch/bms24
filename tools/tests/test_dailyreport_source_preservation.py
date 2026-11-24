@@ -62,6 +62,15 @@ AE_KEYS=[b'dailyreports_feed_addedearlier',b'dailyreports_feed_addedearlier_hint
 _AE=json.loads((ROOT/'docs/reconcile/day-feed-added-earlier-source-preservation.json').read_text(encoding='utf-8'))
 AE_BEFORE={lang:next(r['before_sha256_lf'] for r in _AE['files'] if r['path']==f'local/kbacompany/lang/{lang}/local_kbacompany.php')
            for lang in ('en','ru')}
+MX_MARKER=b'\n// RC33 MAX fake-provider inbound slice (2026-11-24): restricted import, registry and refusals.\n'
+MX_KEYS=[b'kbacompany:importinbound',b'inbound_unauthenticated',b'inbound_scope_denied',b'inbound_payload_invalid',
+         b'inbound_idempotency_conflict',b'inbound_retryable_unavailable',b'inbound_registry_reference',
+         b'inbound_registry_principal',b'inbound_registry_invalid',b'inbound_registry_exists',
+         b'inbound_registry_namespace',b'inbound_registry_state',b'inbound_registry_thread',b'inbound_registry_user',
+         b'communication_importaudience',b'privacy:metadata:inbound']
+_MX=json.loads((ROOT/'docs/reconcile/rc33-pr2-max-inbound-source-preservation.json').read_text(encoding='utf-8'))
+MX_BEFORE={lang:next(r['before_sha256_lf'] for r in _MX['files'] if r['path']==f'local/kbacompany/lang/{lang}/local_kbacompany.php')
+           for lang in ('en','ru')}
 _R2=json.loads((ROOT/'docs/reconcile/daily-reports-r2-source-preservation.json').read_text(encoding='utf-8'))
 R2_AFTER={lang:next(r['after_sha256_lf'] for r in _R2['files'] if r['path']==f'local/kbacompany/lang/{lang}/local_kbacompany.php')
           for lang in ('en','ru')}
@@ -126,8 +135,15 @@ class Preservation(unittest.TestCase):
                         if AE_MARKER in nav:
                             # Navigation and everything before it are byte-identical up to the "Added earlier" marker.
                             nav,ae=nav.split(AE_MARKER)
+                            if MX_MARKER in ae:
+                                # RC33 PR-2: everything up to the inbound marker is the reviewed "Added earlier" file.
+                                ae,mx=ae.split(MX_MARKER)
+                                self.assertEqual(MX_BEFORE[lang],hashlib.sha256(data.split(MX_MARKER)[0]).hexdigest())
+                                self.assertEqual(MX_KEYS,keys(mx))
+                                self.assertFalse(set(MX_KEYS)&set(keys(data.split(MX_MARKER)[0])))
+                                self.assertEqual(AE_KEYS,keys(ae))
                             self.assertEqual(AE_BEFORE[lang],hashlib.sha256(data.split(AE_MARKER)[0]).hexdigest())
-                            self.assertEqual(AE_KEYS,keys(ae))
+                            self.assertEqual(AE_KEYS,keys(ae.split(MX_MARKER)[0]))
                             self.assertFalse(set(AE_KEYS)&set(keys(data.split(AE_MARKER)[0])))
                         # The integrated Day Feed and bell are byte-identical up to the adaptive navigation marker.
                         self.assertEqual(NAV_BEFORE[lang],hashlib.sha256(data.split(NAV_MARKER)[0]).hexdigest())

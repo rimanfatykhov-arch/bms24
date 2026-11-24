@@ -345,6 +345,10 @@ class communication_service {
             $thread = self::thread($companyuuid, $threaduuid);
             self::require_thread_context($companyuuid, $actor, $thread);
             if ($thread->status !== 'active' || $thread->threadtype === 'direct') { self::fail('state'); }
+            // RC33 fixed audience: imported history is never widened to new readers while an import binding lives.
+            if (max_inbound_registry_service::thread_has_import_binding($companyuuid, $threaduuid)) {
+                self::fail('importaudience');
+            }
             $employees = self::employees($companyuuid, $actor); self::require_employee($employees, $userid);
             if (!self::recipient_eligible($companyuuid, $userid)) { self::fail('employee'); }
             if ($thread->threadtype === 'object') {
