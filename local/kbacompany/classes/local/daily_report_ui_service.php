@@ -127,7 +127,8 @@ final class daily_report_ui_service {
                 ['class' => 'mb-1']);
         }
         $text .= html_writer::tag('p', s(self::str('reviewer_preview_note')), ['class' => 'small text-muted mb-0']);
-        return html_writer::div($text, 'alert alert-secondary bms-dailyreport-reviewer', ['data-dailyreport-reviewer' => $source]);
+        return html_writer::div($text, 'alert alert-secondary bms-dailyreport-reviewer',
+            ['data-dailyreport-reviewer' => $source, 'data-dailyreport-reviewerid' => (string)$reviewerid]);
     }
 
     /** Manual copy recipients (other active members of the company); read-only for them, never a decision. */
@@ -327,7 +328,8 @@ final class daily_report_ui_service {
             $readonly = $card['admin'] ? 'admin_readonly' : (($card['manager'] ?? false) ? 'manager_readonly' :
                 (($card['copy'] ?? false) ? 'copy_readonly' : ''));
             if ($readonly !== '') {
-                $out .= html_writer::tag('p', s(self::str($readonly)), ['class' => 'text-muted']);
+                $out .= html_writer::tag('p', s(self::str($readonly)), ['class' => 'text-muted',
+                    'data-dailyreport-readonly' => $readonly]);
             }
         }
         $current = $card['versions'][0] ?? null;
