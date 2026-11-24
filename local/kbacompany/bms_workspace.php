@@ -731,22 +731,33 @@ $contenthtml .= html_writer::end_div();
 $attentionhtml = '';
 $attentioncount = $counts['overdue'] + $counts['incoming'] + $counts['control'];
 if ($attentioncount > 0) {
-    $badge = $render('badge', [
-        'value' => (string)$attentioncount,
-        'variant' => $counts['overdue'] > 0 ? 'danger' : 'brand',
-        'title' => get_string('bmsworkspace_attention', 'local_kbacompany'),
-    ]);
     // The flag opens the most urgent part of what it counts, not the Communication Center start page,
     // and its tooltip and screen-reader label name each part of the count.
     $attentiontargets = ['overdue' => $overdueurl, 'control' => $reviewurl, 'incoming' => $communicationurl];
     $attentionurl = $attentiontargets[bms_workspace_focus_service::attention_target($counts)];
     $attentionlabel = get_string('bmsworkspace_attention', 'local_kbacompany') . ': '
         . implode('; ', array_column($attentionitems, 'label'));
-    // Owned shell: the bell belongs to notifications only, so "Needs attention" uses a flag, not a second bell.
-    $attentionhtml = html_writer::link($attentionurl,
-        $OUTPUT->pix_icon($useowned ? 'i/flagged' : 'i/notifications', '', 'moodle') . $badge,
-        ['class' => 'kba-bms-iconbutton', 'title' => $attentionlabel, 'aria-label' => $attentionlabel,
-            'data-bms-attention-target' => bms_workspace_focus_service::attention_target($counts)]);
+    if ($useowned) {
+        // Owned shell: the bell belongs to notifications only, so "Needs attention" uses a flag, not a second bell,
+        // drawn as the same top bar button as the bell with the count in its corner.
+        $attentionhtml = $OUTPUT->render_from_template('local_kbacompany/bms24_attention_flag', [
+            'url' => $attentionurl->out(false),
+            'target' => bms_workspace_focus_service::attention_target($counts),
+            'label' => $attentionlabel,
+            'count' => $attentioncount > 99 ? '99+' : (string)$attentioncount,
+            'danger' => $counts['overdue'] > 0,
+        ]);
+    } else {
+        $badge = $render('badge', [
+            'value' => (string)$attentioncount,
+            'variant' => $counts['overdue'] > 0 ? 'danger' : 'brand',
+            'title' => get_string('bmsworkspace_attention', 'local_kbacompany'),
+        ]);
+        $attentionhtml = html_writer::link($attentionurl,
+            $OUTPUT->pix_icon('i/notifications', '', 'moodle') . $badge,
+            ['class' => 'kba-bms-iconbutton', 'title' => $attentionlabel, 'aria-label' => $attentionlabel,
+                'data-bms-attention-target' => bms_workspace_focus_service::attention_target($counts)]);
+    }
 }
 
 $quickactions = html_writer::link($newtaskurl,

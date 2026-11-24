@@ -35,7 +35,18 @@ final class bms_workspace_attention_target_test extends \basic_testcase {
 
     public function test_page_uses_target_not_center_start(): void {
         $source = file_get_contents(__DIR__ . '/../bms_workspace.php');
+        $this->assertStringContainsString("'url' => $attentionurl->out(false),", $source);
         $this->assertStringContainsString('$attentionhtml = html_writer::link($attentionurl,', $source);
         $this->assertStringNotContainsString('$attentionhtml = html_writer::link($communicationurl,', $source);
+    }
+
+    public function test_owned_flag_template_is_a_bell_sized_button(): void {
+        $template = file_get_contents(__DIR__ . '/../templates/bms24_attention_flag.mustache');
+        $this->assertStringContainsString('class="bms24-attention"', $template);
+        $this->assertStringContainsString('aria-label="{{label}}"', $template);
+        $this->assertStringContainsString('aria-hidden="true">{{count}}</span>', $template);
+        $css = file_get_contents(__DIR__ . '/../bms_ui/notification_bell.css');
+        $this->assertStringContainsString('.bms24-app .bms24-attention {', $css);
+        $this->assertStringContainsString('.bms24-app .bms24-attention-badge {', $css);
     }
 }
