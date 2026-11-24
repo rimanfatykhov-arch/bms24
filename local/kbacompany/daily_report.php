@@ -9,6 +9,7 @@ use local_kbacompany\local\daily_report_ui_service as reportui;
 use local_kbacompany\local\daily_report_review_service as review;
 use local_kbacompany\local\daily_report_reviewer_service as reviewers;
 use local_kbacompany\local\daily_report_summary_service as summary;
+use local_kbacompany\local\daily_report_team_service as team;
 use local_kbacompany\local\bms_page_shell_service;
 use local_kbacompany\local\bms24_shell_service;
 use local_kbacompany\local\bms24_ui_kit_service;
@@ -188,7 +189,15 @@ if ($tab === 'review') {
             if (!in_array($queue, $queues, true)) {
                 $queue = 'pending';
             }
-            echo reportui::queue($uuid, review::queue($uuid, $actor, $queue, optional_param('page', 0, PARAM_INT)), $queues);
+            if ($queue === 'team') {
+                // R4: every current employee for one day (read-only); filters are typed GET parameters.
+                echo reportui::team($uuid, team::day($uuid, $actor, $day, optional_param('scope', '', PARAM_ALPHA),
+                    optional_param('unit', '', PARAM_ALPHANUMEXT), optional_param('status', '', PARAM_ALPHA),
+                    optional_param('page', 0, PARAM_INT)), $queues);
+            } else {
+                echo reportui::queue($uuid, review::queue($uuid, $actor, $queue, optional_param('page', 0, PARAM_INT)),
+                    $queues);
+            }
             if ($isadmin) {
                 echo html_writer::link(reportui::url($uuid, ['tab' => 'review', 'queue' => 'settings']),
                     s(get_string('dailyreports_settings_heading', 'local_kbacompany')), ['class' => 'btn btn-link px-0']);

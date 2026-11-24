@@ -115,10 +115,14 @@ def check(root=ROOT):
     # See docs/reconcile/DAY_FEED_ADDED_EARLIER.md.
     reviewed_followup['local/kbacompany/lang/en/local_kbacompany.php'] = '9495d7e1467dbe67c7cb18be14cc4b19a3d33a40e632d528f77fb08788dbc803'
     reviewed_followup['local/kbacompany/lang/ru/local_kbacompany.php'] = 'dc4772de7d84d31a80927bb13c8f97966f18ca9db9f4e8d759d3204365255226'
+    # Daily reports R4 (owner decisions T1-T5, 24.11.2026): append the team-for-the-day block after "Added earlier" (#165).
+    # See docs/reconcile/daily-reports-r4-source-preservation.json.
+    reviewed_followup['local/kbacompany/lang/en/local_kbacompany.php'] = 'ff960b76019f947c522bcc2765e1247baa0cfbbd4db5e7de20c0531bd535f07d'
+    reviewed_followup['local/kbacompany/lang/ru/local_kbacompany.php'] = '6075cfd77ddcbf01f33d00a5501dda3c162d2ebe6ef49d52113b7c6ab6f805f5'
     # ADR-0011 block 1: monthly summary of daily reports (read-only, no schema). RU/EN block appended after the
-    # "Added earlier" block. See docs/reconcile/daily-reports-summary-source-preservation.json.
-    reviewed_followup['local/kbacompany/lang/en/local_kbacompany.php'] = 'b8018d8d2b58b7fdbbf87f9c1b752b60ba7e08f27e36cf5230e3f166a5b3e0fa'
-    reviewed_followup['local/kbacompany/lang/ru/local_kbacompany.php'] = '96248dbf5333a63b45937ad4b8f93f937cc96788882a3b3f32d6ebfa243c65d9'
+    # R4 "Team for the day" block (#168). See docs/reconcile/daily-reports-summary-source-preservation.json.
+    reviewed_followup['local/kbacompany/lang/en/local_kbacompany.php'] = '9a3fa3efb85ef6f9aeaf18202ba4377bf418787c4631b636dbf766f7a45c2f88'
+    reviewed_followup['local/kbacompany/lang/ru/local_kbacompany.php'] = '81334038357d7bc9f79a2dfefca9c8022c088045919931fc54e78a939b82a858'
     for row in plan['rows']:
         path=root/row['path']
         if not path.is_file() or path.is_symlink():

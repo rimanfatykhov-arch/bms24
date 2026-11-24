@@ -26,6 +26,7 @@ FOLLOWUPS = ['docs/reconcile/task-open-source-preservation.json',
              'docs/reconcile/topbar-notification-bell-source-preservation.json',
              'docs/reconcile/adaptive-navigation-source-preservation.json',
              'docs/reconcile/day-feed-added-earlier-source-preservation.json',
+             'docs/reconcile/daily-reports-r4-source-preservation.json',
              'docs/reconcile/daily-reports-summary-source-preservation.json']
 
 
