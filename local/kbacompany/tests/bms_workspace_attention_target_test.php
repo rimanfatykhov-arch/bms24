@@ -35,7 +35,7 @@ final class bms_workspace_attention_target_test extends \basic_testcase {
 
     public function test_page_uses_target_not_center_start(): void {
         $source = file_get_contents(__DIR__ . '/../bms_workspace.php');
-        $this->assertStringContainsString("'url' => $attentionurl->out(false),", $source);
+        $this->assertStringContainsString('\'url\' => $attentionurl->out(false),', $source);
         $this->assertStringContainsString('$attentionhtml = html_writer::link($attentionurl,', $source);
         $this->assertStringNotContainsString('$attentionhtml = html_writer::link($communicationurl,', $source);
     }
