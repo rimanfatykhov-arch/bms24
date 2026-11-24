@@ -23,17 +23,26 @@ final class office_workspace_service_test extends \advanced_testcase {
         return ['id' => $companyid, 'uuid' => identity_registry::company_uuid($companyid)];
     }
 
-    private function member(array $company, string $membertype = 'employee'): \stdClass {
+    private function member(array $company, bool $manager = false): \stdClass {
         global $DB;
         $user = $this->getDataGenerator()->create_user();
         $DB->insert_record('local_kbacorp_member', (object)[
-            'companyid' => $company['id'], 'userid' => $user->id, 'membertype' => $membertype,
-            'isemployee' => 1, 'ismanager' => 0, 'isdepartmentmanager' => 0, 'ishr' => 0,
+            'companyid' => $company['id'], 'userid' => $user->id, 'membertype' => 'employee',
+            'isemployee' => 1, 'ismanager' => (int)$manager, 'isdepartmentmanager' => 0, 'ishr' => 0,
         ]);
         $DB->insert_record('local_kbacompany_member', (object)[
             'uuid' => \core\uuid::generate(), 'companyuuid' => $company['uuid'], 'userid' => $user->id,
-            'membertype' => $membertype, 'isemployee' => 1, 'active' => 1,
+            'membertype' => 'employee', 'isemployee' => 1, 'ismanager' => (int)$manager, 'active' => 1,
         ]);
+        if ($manager) {
+            // Company manager (not a site admin): the existing management capability plus the company manager flag.
+            $context = \context_system::instance();
+            $roleid = create_role('Office test manager ' . $user->id, 'officemanager' . $user->id, 'Synthetic fixture');
+            assign_capability('local/kbacompany:viewowncompany', CAP_ALLOW, $roleid, $context->id);
+            assign_capability('local/kbacompany:manageorganization', CAP_ALLOW, $roleid, $context->id);
+            assign_capability('local/kbacompany:viewallcompanies', CAP_PROHIBIT, $roleid, $context->id);
+            role_assign($roleid, $user->id, $context->id);
+        }
         return $user;
     }
 
@@ -74,6 +83,7 @@ final class office_workspace_service_test extends \advanced_testcase {
         $a = $this->company('Office A');
         $b = $this->company('Office B');
         $ea = $this->member($a);
+        $ma = $this->member($a, true);
         $eb = $this->member($b);
         $effective = $this->document($a['uuid'], $admin, 'OA-1', 'A effective procedure');
         $this->release($a['uuid'], $admin, (int)$ea->id, $effective);
@@ -93,7 +103,7 @@ final class office_workspace_service_test extends \advanced_testcase {
             'startdate' => '', 'duedate' => '', 'planminutes' => 0,
         ]);
         $foreigntask = $this->decision_task($b['uuid'], $admin, (int)$eb->id, 'B overdue decision task', $past);
-        return compact('admin', 'a', 'b', 'ea', 'eb', 'effective', 'review', 'draft', 'foreign', 'overdue', 'open',
+        return compact('admin', 'a', 'b', 'ea', 'ma', 'eb', 'effective', 'review', 'draft', 'foreign', 'overdue', 'open',
             'manual', 'foreigntask');
     }
 
@@ -177,7 +187,9 @@ final class office_workspace_service_test extends \advanced_testcase {
     public function test_manager_sees_company_documents_and_create_action(): void {
         $s = $this->scenario();
         set_config(office_workspace_service::SETTING, 1, 'local_kbacompany');
-        $model = office_workspace_service::overview($s['a']['uuid'], $s['admin']);
+        $this->assertFalse(is_siteadmin($s['ma']->id));
+        $this->setUser($s['ma']);
+        $model = office_workspace_service::overview($s['a']['uuid'], (int)$s['ma']->id);
         $this->assertTrue($model['can_manage_documents']);
         $this->assertSame(3, $model['counts']['documents']);
         $this->assertSame(1, $model['counts']['review']);

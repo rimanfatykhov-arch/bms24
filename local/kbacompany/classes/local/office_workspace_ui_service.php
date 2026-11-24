@@ -44,7 +44,7 @@ final class office_workspace_ui_service {
         $uuid = $model['company']['uuid'];
         $routes = office_workspace_service::routes($uuid);
         $c = $model['counts'];
-        $out = html_writer::start_div('bms24-ws bms24-office', ['data-office-workspace' => '1']);
+        $out = html_writer::start_div('bms24-ws bms-office', ['data-office-workspace' => '1']);
         $out .= html_writer::start_tag('header', ['class' => 'bms24-ws-header']);
         $out .= html_writer::tag('h1', s(self::str('title')));
         $out .= html_writer::tag('p', s(self::str('intro', format_string($model['company']['name']))),
