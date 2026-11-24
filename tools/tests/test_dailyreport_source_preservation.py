@@ -73,6 +73,11 @@ R3_MARKER=(b'\n// Daily reports R3 (2026-11-24): report discussion, owner decisi
 R3_KEYS=[b'communication_object_dailyreport',b'dailyreports_discussion_title',b'dailyreports_discussion_heading',
          b'dailyreports_discussion_note',b'dailyreports_discussion_empty',b'dailyreports_discussion_readonly',
          b'dailyreports_discussion_empty_message',b'dailyreports_discussion_files']
+R5B_MARKER=b'\n// Daily reports R5b (2026-11-24): due states and "due by", owner decisions K3 and K5.\n'
+R5B_KEYS=[b'dailyreports_due_neutral',b'dailyreports_due_notrequired',b'dailyreports_due_expected',b'dailyreports_due_missed',b'dailyreports_due_ontime',b'dailyreports_due_late',b'dailyreports_due_filter',b'dailyreports_due_all',b'dailyreports_due_counts',b'dailyreports_due_by',b'dailyreports_due_own_missed',b'dailyreports_due_own_notrequired']
+_R5B=json.loads((ROOT/'docs/reconcile/daily-reports-r5b-source-preservation.json').read_text(encoding='utf-8'))
+R5B_BEFORE={lang:next(r['before_sha256_lf'] for r in _R5B['files'] if r['path']==f'local/kbacompany/lang/{lang}/local_kbacompany.php')
+            for lang in ('en','ru')}
 R5A_MARKER=b'\n// Daily reports R5a (2026-11-24): reporting calendar and absences, owner decisions K1-K6.\n'
 _R5A=json.loads((ROOT/'docs/reconcile/daily-reports-r5a-source-preservation.json').read_text(encoding='utf-8'))
 R5A_BEFORE={lang:next(r['before_sha256_lf'] for r in _R5A['files'] if r['path']==f'local/kbacompany/lang/{lang}/local_kbacompany.php')
@@ -153,6 +158,12 @@ class Preservation(unittest.TestCase):
                                     r4,r3=r4.split(R3_MARKER)
                                     if R5A_MARKER in r3:
                                         r3,r5a=r3.split(R5A_MARKER)
+                                        if R5B_MARKER in r5a:
+                                            r5a,r5b=r5a.split(R5B_MARKER)
+                                            # The R5a file is byte-identical up to the R5b marker.
+                                            self.assertEqual(R5B_BEFORE[lang],hashlib.sha256(data.split(R5B_MARKER)[0]+b'\n').hexdigest())
+                                            self.assertEqual(R5B_KEYS,keys(r5b))
+                                            self.assertFalse(set(R5B_KEYS)&set(keys(data.split(R5B_MARKER)[0])))
                                         # The R3 file is byte-identical up to the R5a marker.
                                         self.assertEqual(R5A_BEFORE[lang],hashlib.sha256(data.split(R5A_MARKER)[0]+b'\n').hexdigest())
                                         r5akeys=keys(r5a)

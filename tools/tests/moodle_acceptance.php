@@ -492,7 +492,9 @@ if ($fresh) {
             // ADR-0010: reviewer by org chart, self review at the top, manager visibility, copies.
             'daily_report_reviewer_service_test',
             // R5a: reporting calendar, exceptions, absences (owner decisions K1-K6).
-            'daily_report_calendar_service_test'];
+            'daily_report_calendar_service_test',
+            // R5b: due states, "due by" and the schedule filter (owner decisions K3, K5).
+            'daily_report_due_test'];
     }
     foreach ($focused as $test) {
         if ($code !== 0) { $report['phpunit'][$test] = 'NOT RUN'; continue; }

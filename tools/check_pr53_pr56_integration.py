@@ -129,6 +129,10 @@ def check(root=ROOT):
     # See docs/reconcile/daily-reports-r5a-source-preservation.json.
     reviewed_followup['local/kbacompany/lang/en/local_kbacompany.php'] = '8c13ea943b1bcb4923c7a70a9b584d436d89331bbc7840250558f3a00096d4a3'
     reviewed_followup['local/kbacompany/lang/ru/local_kbacompany.php'] = 'da05d7e31ac11f3e67b3e18c794771069a08aa24a2786d1f810fb300dfbdcee8'
+    # Daily reports R5b (owner decisions K3, K5, 24.11.2026): append the due-state block after R5a.
+    # See docs/reconcile/daily-reports-r5b-source-preservation.json.
+    reviewed_followup['local/kbacompany/lang/en/local_kbacompany.php'] = 'bec1c7e3cdf603439b852b4dcd5bee30eaff81bb52ea16f83b8192b53bafbfd8'
+    reviewed_followup['local/kbacompany/lang/ru/local_kbacompany.php'] = '77f496ecdd7f082fd20963ef13712d0cb46e11c5b60c5bf375c062a4b2a4d153'
     for row in plan['rows']:
         path=root/row['path']
         if not path.is_file() or path.is_symlink():

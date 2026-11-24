@@ -10070,3 +10070,16 @@ $string['dailyreports_absence_empty'] = 'Отсутствий нет.';
 $string['dailyreports_absence_invalid'] = 'Проверьте отсутствие: вид, даты по порядку, не больше года.';
 $string['dailyreports_absence_overlap'] = 'У сотрудника уже есть отсутствие на эти даты.';
 $string['privacy:metadata:dailyreportabsences'] = 'Периоды отсутствия сотрудника для ежедневных отчётов: вид (отпуск, больничный, другое) и даты, кто внёс и изменил.';
+// Daily reports R5b (2026-11-24): due states and "due by", owner decisions K3 and K5.
+$string['dailyreports_due_neutral'] = 'Без графика';
+$string['dailyreports_due_notrequired'] = 'Не требуется';
+$string['dailyreports_due_expected'] = 'Ожидается';
+$string['dailyreports_due_missed'] = 'Не сдан';
+$string['dailyreports_due_ontime'] = 'Сдан вовремя';
+$string['dailyreports_due_late'] = 'Сдан с опозданием';
+$string['dailyreports_due_filter'] = 'По графику';
+$string['dailyreports_due_all'] = 'Все';
+$string['dailyreports_due_counts'] = 'Итоги дня по графику';
+$string['dailyreports_due_by'] = 'Сдать до {$a}';
+$string['dailyreports_due_own_missed'] = 'Срок сдачи прошёл: {$a}. Отправьте отчёт как можно скорее.';
+$string['dailyreports_due_own_notrequired'] = 'По графику компании отчёт за этот день не требуется.';
