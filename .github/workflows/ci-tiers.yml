@@ -1,7 +1,5 @@
 name: BMS24 CI tiers
-# RC31 Pilot 03 (Issue #82). FAST and STANDARD run IN ADDITION to the existing required/FULL workflows
-# (BMS24 Dev AI checks, PR48 isolated Moodle acceptance, RC30 ADR-0004, RC30 Corporate2613). Nothing is disabled.
-# Unknown classification = FULL. FULL keeps the existing matrix; this workflow never replaces it.
+# Risk determines the depth of the PR checks. Unknown changes use FULL.
 on:
   pull_request:
     branches: [main]
@@ -17,9 +15,15 @@ jobs:
     timeout-minutes: 5
     outputs:
       targets: ${{ steps.plan.outputs.targets }}
+      profile: ${{ steps.classify.outputs.profile }}
     steps:
       - uses: actions/checkout@v4
         with: {persist-credentials: false, fetch-depth: 0}
+      - id: classify
+        env:
+          BASE: ${{ github.event.pull_request.base.sha }}
+          HEAD: ${{ github.event.pull_request.head.sha }}
+        run: python3 tools/ci/classify_change.py --base "$BASE" --head "$HEAD" --github-output "$GITHUB_OUTPUT"
       - id: plan
         env:
           BASE: ${{ github.event.pull_request.base.sha }}
@@ -30,13 +34,9 @@ jobs:
           base, head = os.environ['BASE'], os.environ['HEAD']
           targets = [{'name': 'this-pr', 'base': base, 'head': head}]
           changed = subprocess.run(['git', 'diff', '--name-only', base, head], capture_output=True, text=True, check=True).stdout.split()
-          # Changing the tier machinery itself replays the two completed RC31 releases as evidence.
+          # Changes to the tier machinery must still prove that it detects known defects.
           if any(p.startswith('tools/ci/') or p == '.github/workflows/ci-tiers.yml' for p in changed):
-              targets += [{'name': 'replay-pr80-css', 'base': 'bfc4d2b9307b520e197fa91c7ec87faa204be527', 'head': 'd732306608e17cbca46c3b274f15e5955ef6cb53'},
-                          {'name': 'replay-pr81-attachments', 'base': 'c2d9b0c1f72d84b3efccf62c84d41cd7eda52343', 'head': '5f5f5dd8f11a24951c70c23f813af1186d3ce217'},
-                          # Negative control: a deliberate security regression + EN/RU drift applied only inside the runner.
-                          # The tiers must detect it (FAST lang parity FAIL; classifier FULL; STANDARD PHPUnit FAIL).
-                          {'name': 'negative-control', 'base': head, 'head': head, 'patch': 'tools/ci/negative/security_regression.patch',
+              targets += [{'name': 'negative-control', 'base': head, 'head': head, 'patch': 'tools/ci/negative/security_regression.patch',
                            'expect': {'fast': 'fail', 'standard': 'fail', 'browser': 'na'}},
                           # BROWSER negative control: pluginfile authorization for communication attachments removed in the runner.
                           # BROWSER must FAIL on the denial checks; STANDARD has no pluginfile test for it (explicit NOT APPLICABLE).
@@ -87,7 +87,7 @@ jobs:
                            'browser_fail_reason': 'older fresh notification suppressed',
                            'browser_pass': ['moodle_install', 'notification_bell_isolation_roles_and_revocation', 'notification_bell_single_bell']}]
           # Roles (merge_gate.py): 'this-pr' = the candidate (required); 'negative-*' = required when planned (their job succeeds
-          # only if the planted defect is detected); 'replay-*' = information only, never part of the candidate verdict.
+          # only if the planted defect is detected).
           with open(os.environ['GITHUB_OUTPUT'], 'a') as out:
               out.write('targets=' + json.dumps(targets) + '\n')
           print(json.dumps(targets, indent=1))
@@ -293,6 +293,7 @@ jobs:
   browser:
     name: BROWSER / ${{ matrix.target.name }} / ${{ matrix.engine.name }}
     needs: plan
+    if: needs.plan.outputs.profile == 'FULL'
     runs-on: ubuntu-22.04
     timeout-minutes: 30
     strategy:
@@ -424,13 +425,11 @@ jobs:
           if-no-files-found: warn
 
   merge-gate:
-    # The ONE required check. Always runs; decides only from evidence bound to THIS PR head/base and THIS run:
-    #  * job outcomes of this run attempt (Actions API): 'Plan targets', FAST / STANDARD / BROWSER (MariaDB + Percona) legs of
-    #    'this-pr' and every planned 'negative-*' leg must conclude success; failure, cancellation, skip or a missing job blocks
-    #    even when a PASS report was uploaded. 'replay-*' legs are information only.
+    # Decides from evidence bound to this PR head/base and this run.
+    # A missing, skipped or failed job required by the profile blocks even when it uploaded a PASS report.
     #  * identity.json of every report (target, head, base, profile, engine, run id, job, report SHA256) taken from the
     #    artifact of the attempt in which that job actually executed (re-run of failed jobs reuses earlier successful jobs).
-    #  * FAST always; STANDARD + BROWSER for profiles STANDARD/FULL; for FULL the newest FULL run per workflow file
+    #  * FAST always, focused PHPUnit for STANDARD/FULL, browsers and the newest FULL run per workflow file for FULL
     #    (pull_request, same head, same PR and base) must have succeeded. FAST/STANDARD never wait for FULL.
     # A PASS allows merge only - never a production deployment.
     name: Merge gate
@@ -460,26 +459,10 @@ jobs:
             --run-id ${{ github.run_id }} --run-attempt ${{ github.run_attempt }} --planned "$PLANNED" \
             --wait-full 4200 | tee -a $GITHUB_STEP_SUMMARY
           exit ${PIPESTATUS[0]}
-      - name: Information only - gate replayed on completed releases (never affects this verdict)
-        if: always()
-        continue-on-error: true
-        env:
-          GITHUB_TOKEN: ${{ github.token }}
-          PLANNED: ${{ needs.plan.outputs.targets }}
-        run: |
-          ls -d $RUNNER_TEMP/gate/ci-tiers-fast-replay-pr80-css-a* >/dev/null 2>&1 || exit 0
-          common="--artifacts $RUNNER_TEMP/gate --repo ${{ github.repository }} --run-id ${{ github.run_id }} --run-attempt ${{ github.run_attempt }} --wait-full 0 --historical"
-          python3 tools/ci/merge_gate.py $common --planned "$PLANNED" --report $RUNNER_TEMP/gate-pr80.json --target replay-pr80-css --pr 80 \
-            --head d732306608e17cbca46c3b274f15e5955ef6cb53 --base bfc4d2b9307b520e197fa91c7ec87faa204be527 | tee -a $GITHUB_STEP_SUMMARY || true
-          python3 tools/ci/merge_gate.py $common --planned "$PLANNED" --report $RUNNER_TEMP/gate-pr81.json --target replay-pr81-attachments --pr 81 \
-            --head 5f5f5dd8f11a24951c70c23f813af1186d3ce217 --base c2d9b0c1f72d84b3efccf62c84d41cd7eda52343 | tee -a $GITHUB_STEP_SUMMARY || true
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: ci-tiers-merge-gate-a${{ github.run_attempt }}
-          path: |
-            ${{ runner.temp }}/merge-gate.json
-            ${{ runner.temp }}/gate-pr80.json
-            ${{ runner.temp }}/gate-pr81.json
+          path: ${{ runner.temp }}/merge-gate.json
           retention-days: 30
           if-no-files-found: warn
