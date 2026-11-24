@@ -1,0 +1,20 @@
+{
+  "scope": "exact intentional source updates; not runtime or release acceptance",
+  "base_sha": "4d80b295bb14802c0e0cdb3da955e86f6775b6bd (#168 \"Team for the day\", published head; main 62fdc49 + R4)",
+  "normalization": "CRLF to LF only",
+  "previous_evidence": "docs/reconcile/daily-reports-r4-source-preservation.json (R4 \"Team for the day\" block)",
+  "decision": "docs/adr/ADR-0011-daily-report-monthly-summary.md",
+  "change": "Append the ADR-0011 block 1 strings (18 keys, dailyreports_tab_summary and dailyreports_summary_*) after the R4 \"Team for the day\" block (#168) in both languages. No schema, no capability, no notification change.",
+  "files": [
+    {
+      "path": "local/kbacompany/lang/en/local_kbacompany.php",
+      "before_sha256_lf": "ff960b76019f947c522bcc2765e1247baa0cfbbd4db5e7de20c0531bd535f07d",
+      "after_sha256_lf": "9a3fa3efb85ef6f9aeaf18202ba4377bf418787c4631b636dbf766f7a45c2f88"
+    },
+    {
+      "path": "local/kbacompany/lang/ru/local_kbacompany.php",
+      "before_sha256_lf": "6075cfd77ddcbf01f33d00a5501dda3c162d2ebe6ef49d52113b7c6ab6f805f5",
+      "after_sha256_lf": "81334038357d7bc9f79a2dfefca9c8022c088045919931fc54e78a939b82a858"
+    }
+  ]
+}

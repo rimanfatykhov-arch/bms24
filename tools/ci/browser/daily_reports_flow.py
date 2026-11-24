@@ -218,7 +218,99 @@ with sync_playwright() as pw:
             # An ordinary employee asking for the same list gets their own tab, not the list.
             page.goto(url(tab='review', queue='team', day=day), wait_until='networkidle')
             case['team_employee_filters'] = page.locator('form[data-dailyreport-team-filters]').count()
-            # 12. R3 report discussion: the author writes from the own day view (markup stays text), the reviewer reads it
+            # 12. Release #168 + #173. RA keeps a private draft for the day; a synthetic unit makes MA the manager of EA.
+            radraft = 'DR %s ra-draft' % token
+            dctx = browser.new_context(viewport={'width': width, 'height': 900}); recorder.install(dctx)
+            dp = login(dctx, 'RA')
+            dp.on('response', lambda r: server_errors.append({'url': r.url, 'status': r.status}) if r.status >= 500 else None)
+            dp.goto(url(day=day), wait_until='networkidle')
+            dp.locator('#dailyreport-done').fill(radraft)
+            with dp.expect_navigation():
+                dp.locator('button[name=action][value=save]').click()
+            dp.wait_for_load_state('networkidle')
+            dctx.close()
+            php('orgchart', company, str(f['actors']['MA']['userid']), str(f['actors']['EA']['userid']))
+            rows_js = ('() => Array.from(document.querySelectorAll("[data-dailyreport-team-user]")).map('
+                       'e => [Number(e.dataset.dailyreportTeamUser), e.dataset.dailyreportTeamState])')
+            scopes = {}
+            for scope in ('team', 'company'):
+                rp.goto(url(tab='review', queue='team', day=day, scope=scope), wait_until='networkidle')
+                scopes[scope] = {'rows': rp.evaluate(rows_js),
+                                 'options': rp.evaluate('() => Array.from(document.querySelectorAll('
+                                                        '"#dailyreport-team-scope option")).map(o => o.value)'),
+                                 'selected': rp.evaluate('() => (document.querySelector("#dailyreport-team-scope") || {}).value'),
+                                 'draft_leak': radraft in rp.content(), 'hscroll': rp.evaluate(HSCROLL)}
+            # Open the sent report from the list (company scope) with a real click.
+            link = rp.locator('a[href*="report=%s"]' % report).first
+            opened = {'link': link.count()}
+            if opened['link']:
+                with rp.expect_navigation():
+                    link.click()
+                rp.wait_for_load_state('networkidle')
+                opened.update(url_report=('report=' + report) in rp.url,
+                              versions=rp.locator('[data-dailyreport-version]').count(), draft_leak=radraft in rp.content())
+            case['team_scopes'] = scopes; case['team_open'] = opened
+            # 13. Monthly summary (#173): the month of the case day, EA's accepted cell links to the card; previous month by
+            # link; "my subordinates" through the filter form; the cell opens the card; RA's draft never appears.
+            month = day[:7]
+            rp.goto(url(tab='summary', month=month), wait_until='networkidle')
+            users_js = ('() => Array.from(document.querySelectorAll("[data-dailyreport-summary-user]")).map('
+                        'e => Number(e.dataset.dailyreportSummaryUser))')
+            cell = rp.locator('[data-dailyreport-summary-user="%d"] a[href*="report=%s"]' % (f['actors']['EA']['userid'], report))
+            summ = {'month': rp.evaluate('() => (document.querySelector("[data-dailyreport-summary-month]") || {dataset: {}})'
+                                         '.dataset.dailyreportSummaryMonth'),
+                    'filters': rp.locator('form[data-dailyreport-summary-filter]').count(),
+                    'users_all': rp.evaluate(users_js), 'cell_links': cell.count(),
+                    'cell': cell.first.evaluate('a => [a.closest("td").dataset.dailyreportSummaryCell, '
+                                                'a.closest("td").dataset.dailyreportSummaryRating]') if cell.count() else None,
+                    'draft_leak': radraft in rp.content()}
+            with rp.expect_navigation():
+                rp.locator('a[data-dailyreport-summary-prev]').first.click()
+            rp.wait_for_load_state('networkidle')
+            summ['prev_month'] = rp.evaluate('() => (document.querySelector("[data-dailyreport-summary-month]") || '
+                                             '{dataset: {}}).dataset.dailyreportSummaryMonth')
+            rp.goto(url(tab='summary', month=month), wait_until='networkidle')
+            rp.locator('#dailyreport-summary-scope').select_option('mine')
+            with rp.expect_navigation():
+                rp.locator('form[data-dailyreport-summary-filter] button[type=submit]').click()
+            rp.wait_for_load_state('networkidle')
+            summ['users_mine'] = rp.evaluate(users_js)
+            summ['scope_kept'] = rp.evaluate('() => document.querySelector("#dailyreport-summary-scope").value')
+            summ['hscroll'] = rp.evaluate(HSCROLL)
+            cell = rp.locator('[data-dailyreport-summary-user="%d"] a[href*="report=%s"]' % (f['actors']['EA']['userid'], report))
+            if cell.count():
+                with rp.expect_navigation():
+                    cell.first.click()
+                rp.wait_for_load_state('networkidle')
+                summ['card'] = {'url_report': ('report=' + report) in rp.url,
+                                'versions': rp.locator('[data-dailyreport-version]').count()}
+            case['summary'] = summ
+            # 14. An ordinary employee (EA) and a member of another company (EB) get neither list nor summary.
+            denied = {}
+            page.goto(url(tab='summary', month=month), wait_until='networkidle')
+            denied['EA'] = {'summary': page.locator('[data-dailyreport-summary]').count(),
+                            'summary_tab': page.locator('a[href*="tab=summary"]').count()}
+            # The denials below are expected HTTP 404 pages: their console lines go to a separate recorder (as in
+            # daily_reports_nav.py), so the case's no-browser-errors check keeps judging the pages that must work.
+            deniedrecorder = Recorder()
+            ectx = browser.new_context(viewport={'width': width, 'height': 900}); deniedrecorder.install(ectx)
+            ep = login(ectx, 'EB')
+            ep.on('response', lambda r: server_errors.append({'url': r.url, 'status': r.status}) if r.status >= 500 else None)
+            for key, params in (('team', {'tab': 'review', 'queue': 'team', 'day': day, 'scope': 'company'}),
+                                ('summary', {'tab': 'summary', 'month': month}), ('card', {'tab': 'review', 'report': report})):
+                resp = ep.goto(url(**params), wait_until='networkidle')
+                html = ep.content()
+                denied['EB_' + key] = {'http': resp.status if resp else None,
+                                       'team': ep.locator('[data-dailyreport-team-user]').count(),
+                                       'summary': ep.locator('[data-dailyreport-summary]').count(),
+                                       'versions': ep.locator('[data-dailyreport-version]').count(),
+                                       'leak': radraft in html or texts['rework'] in html}
+            ectx.close()
+            denied['browser_events'] = deniedrecorder.events
+            case['release_denied'] = denied
+            php('orgclear', company)
+            case['ids'] ={k: f['actors'][k]['userid'] for k in ('EA', 'MA', 'RA', 'EB')}
+            # 15. R3 report discussion: the author writes from the own day view (markup stays text), the reviewer reads it
             # on the card and answers; a forged sesskey, a same-company non-reader and a foreign member store nothing.
             disc = {'author': 'DR %s discussion <b>author</b>' % token, 'reviewer': 'DR %s discussion reviewer' % token,
                     'forged': 'DR %s discussion forged' % token, 'RA': 'DR %s discussion RA' % token,
@@ -251,7 +343,6 @@ with sync_playwright() as pw:
             case['discussion_negatives'] = dneg
             case['discussion_texts'] = disc
             case['after_discussion'] = state(day)
-            case['ids'] = {k: f['actors'][k]['userid'] for k in ('EA', 'MA', 'RA', 'EB')}
             case['browser_events'] = recorder.events; case['server_errors'] = server_errors
             rctx.close(); ctx.close()
             result['cases'].append(case)
@@ -266,6 +357,10 @@ with sync_playwright() as pw:
     finally:
         try:
             php('shell', 'owned')
+        except Exception:
+            pass
+        try:
+            php('orgclear', company)
         except Exception:
             pass
         browser.close()
