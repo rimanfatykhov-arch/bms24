@@ -83,6 +83,8 @@ final class daily_report_review_service {
         $companyuuid = self::member($companyuuid, $actor);
         $out = array_merge(self::QUEUES, ['copies']);
         if (self::can_read_all($companyuuid, $actor)) {
+            // R4 (owner decisions T1–T5): every current employee for one day, rendered by daily_report_team_service.
+            $out[] = 'team';
             $out[] = 'company';
         }
         if (self::is_admin($companyuuid, $actor)) {
