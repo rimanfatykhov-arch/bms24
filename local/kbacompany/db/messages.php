@@ -16,4 +16,8 @@ $messageproviders = [
     'dailyreport_decision' => [
         'capability' => 'local/kbacompany:viewowncompany',
     ],
+    // ADR-0010: a copy of a submitted daily report (reading only).
+    'dailyreport_copy' => [
+        'capability' => 'local/kbacompany:viewowncompany',
+    ],
 ];

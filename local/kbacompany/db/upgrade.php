@@ -6256,5 +6256,16 @@ function xmldb_local_kbacompany_upgrade(int $oldversion): bool {
         upgrade_plugin_savepoint(true, 2026111601, 'local', 'kbacompany');
     }
 
+    // ADR-0010: two additive tables (version copy recipients, per-company review rules) from install.xml and the
+    // dailyreport_copy message provider. Existing tables and rows are untouched; no backfill of earlier versions.
+    if ($oldversion < 2026112301) {
+        foreach (['local_kbacompany_dreportcc', 'local_kbacompany_dreportset'] as $name) {
+            if (!$dbman->table_exists($name)) {
+                $dbman->install_one_table_from_xmldb_file(__DIR__ . '/install.xml', $name);
+            }
+        }
+        upgrade_plugin_savepoint(true, 2026112301, 'local', 'kbacompany');
+    }
+
     return true;
 }

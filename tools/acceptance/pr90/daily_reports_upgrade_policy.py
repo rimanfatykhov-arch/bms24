@@ -1,6 +1,12 @@
-"""Fail-closed acceptance of exact 1100 -> 1601 schema/data evidence; pure functions."""
+"""Fail-closed acceptance of the supported daily-report schema transitions."""
 NEW = {'local_kbacompany_dreport', 'local_kbacompany_dreportver', 'local_kbacompany_dreportlink',
        'local_kbacompany_dreportrev', 'local_kbacompany_dreportlog'}
+ADR0010_TABLES = {'local_kbacompany_dreportcc', 'local_kbacompany_dreportset'}
+ADDITIONS = {
+    (2026111100, 2026111601): NEW,
+    (2026111100, 2026112301): NEW | ADR0010_TABLES,
+    (2026111601, 2026112301): ADR0010_TABLES,
+}
 
 
 def require(ok, reason):
@@ -9,21 +15,27 @@ def require(ok, reason):
 
 
 def upgraded(before, after):
-    require(before.get('version') == 2026111100, 'baseline version must be actual published 2026111100')
-    require(after.get('version') == 2026111601, 'candidate version must be 2026111601')
+    transition = (before.get('version'), after.get('version'))
+    require(transition in ADDITIONS, 'unsupported daily-report upgrade: %r -> %r' % transition)
+    added = ADDITIONS[transition]
     old = set(before.get('tables', [])); current = set(after.get('tables', []))
-    require(old and not old & NEW and current == old | NEW, 'exactly five additive tables required')
+    if transition[0] == 2026111601:
+        require(NEW <= old, 'R1/R2 baseline tables missing')
+    require(old and not old & added and current == old | added, 'unexpected upgrade table inventory')
+    require(isinstance(before.get('enabled'), bool) and before['enabled'] is after.get('enabled'),
+            'feature switch changed during the upgrade')
     require(before.get('schemas') and before.get('rows'), 'baseline schema/data evidence missing')
     for table in old:
         require(before['schemas'][table] == after.get('schemas', {}).get(table), 'existing schema changed: ' + table)
         require(before['rows'][table] == after.get('rows', {}).get(table), 'existing data changed: ' + table)
-    for table in NEW:
+    for table in added:
         require(after.get('schemas', {}).get(table, {}).get('columns'), 'new schema missing: ' + table)
         require(after.get('rows', {}).get(table, {}).get('count') == 0, 'unexpected backfill: ' + table)
 
 
 def fresh_equal(fresh, upgrade):
-    require(fresh.get('version') == upgrade.get('version') == 2026111601, 'fresh/upgrade version mismatch')
+    version = upgrade.get('version')
+    require(version in (2026111601, 2026112301) and fresh.get('version') == version, 'fresh/upgrade version mismatch')
     require(fresh.get('schemas') and fresh['schemas'] == upgrade.get('schemas'), 'fresh/upgrade full domain schema differs')
 
 

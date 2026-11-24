@@ -44,6 +44,42 @@ def navigate(page, kind, key):
             'overflow': page.evaluate('document.documentElement.scrollWidth > innerWidth + 1')}
 
 
+# Rendered geometry of one Center section (#145/#152). Measures what is drawn, not what is in the DOM:
+# the primary action box against its own label, the card header and the section tabs; clipped control labels;
+# the list search width; whether the Center stylesheet is applied (its custom property on the root).
+GEOMETRY_JS = r'''() => {
+    const root = document.querySelector('#bms24-comm-root');
+    const vis = (e) => !!e && e.checkVisibility() && e.getClientRects().length > 0;
+    const box = (e) => e.getBoundingClientRect();
+    const out = {root: !!root, overflow: document.documentElement.scrollWidth > innerWidth + 1};
+    out.css = !!root && getComputedStyle(root).getPropertyValue('--cc-emerald').trim() !== '';
+    const triggers = [...document.querySelectorAll('summary.bms-comm2-new-trigger')].filter(vis);
+    const head = root && root.querySelector('.bms24-cardheader');
+    const t = triggers.length ? triggers[0] : null;
+    if (t && head) {
+        const b = box(t), h = box(head), tabs = box(root.querySelector('.bms-comm-ux-sections'));
+        const details = t.closest('details');
+        const form = details && details.querySelector('form[method=post]');
+        out.action = {count: triggers.length, label: t.innerText.replace(/\s+/g, ' ').trim(),
+            width: Math.round(b.width), height: Math.round(b.height), scroll_width: t.scrollWidth, client_width: t.clientWidth,
+            in_header: head.contains(t) && b.left >= h.left - 0.5 && b.right <= h.right + 0.5
+                && b.top >= h.top - 0.5 && b.bottom <= h.bottom + 0.5,
+            overlaps_tabs: !(b.right <= tabs.left || b.left >= tabs.right || b.bottom <= tabs.top || b.top >= tabs.bottom),
+            in_form: !!form && !!form.querySelector('input[name=sesskey]')};
+    } else {
+        out.action = null;
+    }
+    const controls = root ? root.querySelectorAll('.bms-comm-ux-sections a, .bms-comm-ux-sections a > span, '
+        + '.bms-comm-ux-filters a, .bms24-comm-ntools a, .bms24-comm-btn, summary.bms-comm2-new-trigger') : [];
+    out.clipped = [...controls].filter((e) => vis(e) && e.clientWidth > 1 && e.scrollWidth > e.clientWidth + 1)
+        .map((e) => e.innerText.replace(/\s+/g, ' ').trim().slice(0, 40));
+    const s = document.querySelector('#bms_comm2_search');
+    out.search = s && vis(s) ? {width: Math.round(box(s.closest('form')).width),
+        side_width: Math.round(box(s.closest('.bms-comm2-sidebar')).width), input_width: Math.round(box(s).width)} : null;
+    return out;
+}'''
+
+
 def url(**kwargs):
     return local_url(base + '/local/kbacompany/communication_center.php?' + urlencode({'uuid': company, **kwargs}))
 
@@ -100,6 +136,14 @@ with sync_playwright() as p:
                 case['notifications_overflow'] = page.evaluate('document.documentElement.scrollWidth > innerWidth + 1')
                 if width in [375, 1440]:
                     page.screenshot(path=str(root / ('ux1-%s-%s.png' % (mode, width))), full_page=True)
+                # Rendered geometry of every section (each loaded on its own; synthetic actors only).
+                case['geometry'] = {}
+                for section in ['messages', 'discussions', 'notifications']:
+                    response = page.goto(url(tab=section), wait_until='networkidle')
+                    require(response is not None and response.status == 200, 'section %s HTTP failure' % section)
+                    case['geometry'][section] = page.evaluate(GEOMETRY_JS)
+                    if width in [768, 1440]:
+                        page.screenshot(path=str(root / ('ux2-%s-%s-%s.png' % (mode, width, section))), full_page=False)
                 case['browser_events'] = rec.events
                 case['server_errors'] = errors
                 result['cases'].append(case)

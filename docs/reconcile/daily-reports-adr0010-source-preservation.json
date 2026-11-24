@@ -1,0 +1,31 @@
+{
+  "scope": "exact intentional source updates; not runtime or release acceptance",
+  "base_sha": "36cc7dd",
+  "normalization": "CRLF to LF only",
+  "previous_evidence": "docs/reconcile/daily-reports-r2-source-preservation.json (#119); #145 language block",
+  "decision": "docs/adr/ADR-0010-daily-report-reviewer-org-chart.md (owner decision 2026-11-21)",
+  "change": "Append the ADR-0010 block (41 keys) after the #145 block in both languages; add dailyreport_copy to communication_service::NOTIFICATION_KINDS only; append two additive XMLDB tables after dreportlog.",
+  "files": [
+    {
+      "path": "local/kbacompany/lang/en/local_kbacompany.php",
+      "before_sha256_lf": "ffa8c3cc82b19e1e15fdc12f5ec901a6621a7a92abed5f2097ec6e97f71bf348",
+      "after_sha256_lf": "8ca0f2edf94a7675402634d986f75fa6968ac557e9c68e43d7864ba3e94b9bae"
+    },
+    {
+      "path": "local/kbacompany/lang/ru/local_kbacompany.php",
+      "before_sha256_lf": "0ff5746d50f5cfc84b13d582f210e6262549973ebd7d08f4667262edaf2cb46b",
+      "after_sha256_lf": "0698c4976b6364b07fb124700624ff30023df5356f7260dab0260f60641320ac"
+    },
+    {
+      "path": "local/kbacompany/classes/local/communication_service.php",
+      "before_sha256_lf": "7433c0f6d21133e38de79f05da131daafda7bc245769225d973b8bdf69bf177a",
+      "after_sha256_lf": "6a5de10a764edc99864aee634ec4b9ecbe432c7a76e4dfcbc5d60b81b6874b40"
+    }
+  ],
+  "schema": {
+    "path": "local/kbacompany/db/install.xml",
+    "before_sha256_lf": "06a60b36d0d5a4dfc86924bc43819a0d7b2c6fd054888639d3363fbec5979845",
+    "after_sha256_lf": "5e18cb8713fc65590e91d8b2526735e14a23eafd866de7c555ca5dd24291640e",
+    "note": "install.xml is bound by the unchanged_schema_hashes target in tools/check_pr53_pr56_integration.py"
+  }
+}

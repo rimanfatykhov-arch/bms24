@@ -46,7 +46,7 @@ body.bms24-owned-page {margin:0;background:var(--bms24-surface-sky);}
 .bms24-app .bms24-metalabel strong {color:var(--bms24-color-navy);font-weight:750;}
 .bms24-app .bms24-pageactions {display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
 .bms24-app .bms24-pageactions:empty,.bms24-app .bms24-pagemeta:empty {display:none;}
-.bms24-app .bms24-navlabel {min-width:0;overflow-wrap:anywhere;}
+.bms24-app .bms24-navlabel {min-width:0;overflow-wrap:break-word;}
 .bms24-app .bms24-content {min-width:0;}
 .bms24-app .bms24-content .row > [class*="col-"] {min-width:0;}
 .bms24-app .bms24-card,.bms24-app .bms24-stat {background:#fff;border:1px solid var(--bms24-border);border-radius:14px;padding:20px;box-shadow:0 3px 14px #0b2b4109;min-width:0;}
@@ -69,9 +69,43 @@ body.bms24-owned-page {margin:0;background:var(--bms24-surface-sky);}
 .bms24-app .bms24-navlabel-short {display:none;}
 .bms24-app .bms24-skip {position:absolute;transform:translateY(-200%);background:#fff;color:#000;padding:8px;z-index:99;}.bms24-app .bms24-skip:focus {transform:none;}
 @media(max-width:1100px) {.bms24-app {grid-template-columns:220px minmax(0,1fr);}.bms24-app .bms24-topbar {flex-wrap:wrap;}.bms24-app .bms24-topactions {order:3;width:100%;}}
-@media(max-width:860px) {.bms24-app {display:block;}.bms24-app .bms24-sidebar {display:none;position:static;height:auto;overflow:visible;}.bms24-app .bms24-mobilemenu {display:block;position:relative;}.bms24-app .bms24-mobilemenu summary {padding:8px 12px;border:1px solid var(--bms24-border);border-radius:9px;cursor:pointer;}.bms24-app .bms24-mobilemenu nav {position:absolute;top:100%;left:0;z-index:30;width:min(90vw,320px);max-height:70vh;overflow:auto;background:var(--bms24-sidebar);padding:12px;border-radius:12px;box-shadow:0 8px 24px #0003;}.bms24-app .bms24-splitview {display:block;}.bms24-app .bms24-splitnav {margin-bottom:15px;}}
+@media(max-width:860px) {.bms24-app {display:block;}.bms24-app .bms24-sidebar {display:none;position:static;height:auto;overflow:visible;}.bms24-app .bms24-mobilemenu {display:block;position:relative;}.bms24-app .bms24-splitview {display:block;}.bms24-app .bms24-splitnav {margin-bottom:15px;}}
 @media(max-width:860px) {.bms24-app .bms24-navlabel-short {display:inline;}.bms24-app .bms24-navlabel-short::before {content:attr(data-label);}.bms24-app .bms24-navlabel-full {position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0;}}
 @media(max-width:520px) {.bms24-app .bms24-main {padding:14px;}.bms24-app .bms24-pageintrobar {align-items:stretch;}.bms24-app .bms24-pageactions {width:100%;}.bms24-app .bms24-pageactions .bms24-button {flex:1 1 auto;}.bms24-app .bms24-topbar {padding:10px;}.bms24-app .bms24-pageintro h1 {font-size:21px;}.bms24-app .bms24-topactions {gap:5px;}.bms24-app .bms24-topactions .kba-bms-button {padding:6px 9px;font-size:12px;}}
+/* Adaptive navigation (docs/ui/ADAPTIVE_NAVIGATION.md). Sidebar >= 861px; <= 860px a "Menu" button opens a modal
+   drawer (JS: amd/src/bms24_nav_drawer.js). Without JS the <details> summary opens the same list below the top bar. */
+.bms24-app .bms24-navitem {min-height:44px;flex-wrap:wrap;row-gap:2px;}
+.bms24-app .bms24-navgroup summary {min-height:44px;line-height:20px;}
+/* A label never shrinks below its longest word; when label and counter do not fit (220 px sidebar), the counter
+   moves to its own line instead of breaking the word. */
+.bms24-app .bms24-navitem .bms24-navlabel {flex:1 1 0;min-width:min-content;overflow-wrap:break-word;word-break:normal;}
+.bms24-app .bms24-navitem .bms24-count {flex:none;margin-left:auto;white-space:nowrap;}
+/* The brand subtitle wraps inside the 220 px sidebar instead of sticking out (shared rule below keeps nowrap for legacy). */
+.bms24-app.bms24-app:not(.bms-shell-nav-compact) .bms-shell-nav-header .bms-shell-nav-brand .bms24-brandcompany {white-space:normal !important;overflow-wrap:break-word;}
+.bms24-app .bms24-menubutton {display:none;}
+.bms24-app .bms24-drawerhead {display:flex;align-items:center;justify-content:space-between;gap:8px;flex:none;padding:6px 12px;border-bottom:1px solid #FFFFFF26;}
+.bms24-app .bms24-drawerbrand a {display:inline-flex;align-items:center;min-height:44px;min-width:44px;color:#fff;font-weight:800;font-size:20px;letter-spacing:-.03em;}
+.bms24-app .bms24-drawerclose {display:inline-flex;align-items:center;justify-content:center;flex:none;width:44px;height:44px;padding:0;border:1px solid #FFFFFF40;border-radius:10px;background:transparent;color:#fff;font-size:26px;line-height:1;cursor:pointer;}
+.bms24-app .bms24-drawerclose[hidden],.bms24-app .bms24-drawerbackdrop[hidden] {display:none;}
+.bms24-app .bms24-drawerclose:hover {background:#FFFFFF1A;}
+.bms24-app .bms24-drawerclose:focus-visible,.bms24-app .bms24-menubutton:focus-visible {outline:3px solid var(--bms24-color-info);outline-offset:2px;}
+.bms24-app .bms24-drawerbody {flex:1 1 auto;min-height:0;overflow-y:auto;overscroll-behavior:contain;padding:8px 12px 16px;}
+@media(max-width:860px) {
+ .bms24-app .bms24-menubutton:not([hidden]),
+ .bms24-app .bms24-mobilemenu > summary {display:inline-flex;align-items:center;justify-content:center;flex:none;width:44px;height:44px;padding:0;border:1px solid var(--bms24-border);border-radius:10px;background:#fff;color:var(--bms24-color-navy);cursor:pointer;list-style:none;}
+ .bms24-app .bms24-mobilemenu > summary::-webkit-details-marker {display:none;}
+ /* The visually hidden full label (phone short labels, line above) must stay 1 px wide. */
+ .bms24-app .bms24-navitem .bms24-navlabel-full {min-width:0;}
+ .bms24-app .bms24-menubutton-icon {position:relative;display:inline-block;width:18px;height:2px;background:currentColor;border-radius:2px;box-shadow:0 -6px 0 currentColor,0 6px 0 currentColor;}
+ /* No-JS fallback: the list opens under the top bar, vertical scrolling only. */
+ .bms24-app .bms24-drawer {position:absolute;top:calc(100% + 6px);left:0;z-index:30;display:flex;flex-direction:column;width:min(360px,calc(100vw - 16px));max-height:calc(100vh - 100px);max-height:calc(100dvh - 100px);background:var(--bms24-sidebar);color:#e2f3eb;border-radius:12px;box-shadow:0 8px 24px #0003;}
+ /* Enhanced: modal drawer over the page. */
+ .bms24-app[data-bms24-drawer="1"] .bms24-mobilemenu > summary {display:none;}
+ .bms24-app[data-bms24-drawer="1"] .bms24-drawer {position:fixed;top:0;bottom:0;left:0;z-index:2;width:min(360px,calc(100vw - 48px));height:100vh;height:100dvh;max-height:none;border-radius:0;box-shadow:8px 0 28px #0b2b4152;padding:env(safe-area-inset-top) 0 env(safe-area-inset-bottom) env(safe-area-inset-left);}
+ .bms24-app[data-bms24-drawer="1"] .bms24-drawerbackdrop {position:fixed;top:0;right:0;bottom:0;left:0;z-index:1;background:#0b2b418c;}
+ .bms24-app.bms24-drawer-open .bms24-topbar {z-index:1040;}
+}
+@media(max-width:359px) {.bms24-app[data-bms24-drawer="1"] .bms24-drawer {width:100vw;}}
 
 /* RC29 build 2026101661: Battle Plan management overview action-first UX. */
 .bms24-app .bms24-overview-kpis .bms24-overview-kpi {display:flex;flex-direction:column;gap:3px;color:inherit;text-decoration:none;transition:transform .12s ease,box-shadow .12s ease,border-color .12s ease;}

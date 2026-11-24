@@ -88,26 +88,8 @@ class communication_center_service {
             }
             $unreadthreads++;
         }
-        $unreadnotifications = 0;
-        foreach ($DB->get_records('local_kbacompany_commnotif', [
-            'companyuuid'=>$companyuuid,'userid'=>$actor,'isread'=>0,
-        ]) as $notification) {
-            if ((string)$notification->threaduuid === '') { $unreadnotifications++; continue; }
-            $thread = $DB->get_record('local_kbacompany_commthread', [
-                'companyuuid'=>$companyuuid,'uuid'=>(string)$notification->threaduuid,
-            ]);
-            if (!$thread || !$DB->record_exists('local_kbacompany_commpart', [
-                    'companyuuid'=>$companyuuid,'threaduuid'=>(string)$thread->uuid,'userid'=>$actor,'active'=>1])) {
-                continue;
-            }
-            if ((string)$thread->threadtype === 'object') {
-                try {
-                    communication_object_service::describe($companyuuid,$actor,(string)$thread->contextkind,
-                        (string)$thread->contextuuid,(int)$thread->contextrevision);
-                } catch (\moodle_exception $e) { continue; }
-            }
-            $unreadnotifications++;
-        }
+        // Same visibility rule as the Center and the top bar bell.
+        $unreadnotifications = communication_service::visible_unread_notification_count($companyuuid, $actor);
         $tasks = task_service::dashboard_counts($companyuuid, $actor);
         $learning = $DB->count_records_sql("SELECT COUNT(t.id) FROM {local_kbacompany_task} t
             WHERE t.companyuuid=:c AND t.assigneeid=:a AND t.stream='develop'

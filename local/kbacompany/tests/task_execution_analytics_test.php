@@ -136,6 +136,9 @@ final class task_execution_analytics_test extends \advanced_testcase {
     /** Build1839: list drill-down dates must agree with the summary calendar window. */
     public function test_seven_calendar_days_drilldown_matches_report(): void {
         $f = $this->fixture();
+        // Keep the fixture and the subsequent queries on the same civil day, even if CI runs near midnight.
+        $hour = (int)gmdate('G');
+        set_config('forcetimezone', $hour < 6 || $hour >= 18 ? 'Etc/GMT-12' : 'UTC');
         $dates = task_service::reporting_dates();
         $today = new \DateTimeImmutable($dates['today'], new \DateTimeZone('UTC'));
         $yesterday = $today->modify('-1 day')->format('Y-m-d');

@@ -30,11 +30,39 @@ UX_MARKER=b'\n// Communication Center UX-1 (2026-11-18): sections and accessible
 UX_KEYS=[b'communicationux_conversations', b'communicationux_notification_count', b'communicationux_filters', b'communicationux_details', b'communicationux_empty_search', b'communicationux_empty_all', b'communicationux_empty_filtered', b'communicationux_reset', b'communicationux_read', b'communicationux_unread', b'communicationux_thread_count']
 C145_MARKER=b'\n// ADR-0009 / #145: strings for the templated communication centre.\n'
 C145_KEYS=[b'communicationux2_badge_total',b'communicationux2_badge_unread',b'communicationux2_audience_object',b'communicationux2_compose_placeholder',b'communicationux2_direct',b'communicationux2_due',b'communicationux2_edit',b'communicationux2_empty_search_text',b'communicationux2_empty_search_title',b'communicationux2_files',b'communicationux2_group_members',b'communicationux2_group_people',b'communicationux2_kv_due',b'communicationux2_kv_status',b'communicationux2_kv_type',b'communicationux2_mark_all',b'communicationux2_mark_read',b'communicationux2_new_messages',b'communicationux2_newconversation',b'communicationux2_notification_settings',b'communicationux2_only_unread',b'communicationux2_open_calendar',b'communicationux2_open_conversation',b'communicationux2_reset_search',b'communicationux2_select_text',b'communicationux2_select_title',b'communicationux2_show_all',b'communicationux2_you',b'communicationux2_chip_mentions',b'communicationux2_details',b'communicationux2_empty_discussions_title',b'communicationux2_empty_discussions_text',b'communicationux2_empty_mentions_title',b'communicationux2_empty_mentions_text',b'communicationux2_empty_messages_title',b'communicationux2_empty_messages_text',b'communicationux2_empty_unread_title',b'communicationux2_empty_unread_text',b'communicationux2_goto_discussions',b'communicationux2_goto_messages',b'communicationux2_group_earlier',b'communicationux2_group_today',b'communicationux2_no_unread_notifications',b'communicationux2_search_objects',b'communicationux2_search_people',b'communicationux2_type_dailyreport',b'communicationux2_type_dayplan',b'communicationux2_type_meeting',b'communicationux2_type_mention',b'communicationux2_type_message',b'communicationux2_type_other',b'communicationux2_type_task']
+A10_MARKER=b'\n// ADR-0010: reviewer by organisation chart, self review at the top, manager visibility and report copies.\n'
+DF_MARKER=b'\n// Day feed -> report draft (2026-11-23): own submitted task results into the Done field of the own draft.\n'
+DF_KEYS=[b'dailyreports_feed_tab',b'dailyreports_feed_title',b'dailyreports_feed_intro',b'dailyreports_feed_day',
+         b'dailyreports_feed_show',b'dailyreports_feed_today',b'dailyreports_feed_submitted',b'dailyreports_feed_now',
+         b'dailyreports_feed_add',b'dailyreports_feed_open_task',b'dailyreports_feed_open_report',
+         b'dailyreports_feed_empty_title',b'dailyreports_feed_empty_text',b'dailyreports_feed_sent',b'dailyreports_feed_pages',
+         b'dailyreports_feed_prev',b'dailyreports_feed_next',b'dailyreports_resultadded',b'dailyreports_resultexists']
+_DF=json.loads((ROOT/'docs/reconcile/day-feed-report-draft-source-preservation.json').read_text(encoding='utf-8'))
+DF_BEFORE={lang:next(r['before_sha256_lf'] for r in _DF['files'] if r['path']==f'local/kbacompany/lang/{lang}/local_kbacompany.php')
+           for lang in ('en','ru')}
+_A10=json.loads((ROOT/'docs/reconcile/daily-reports-adr0010-source-preservation.json').read_text(encoding='utf-8'))
+A10_BEFORE={lang:next(r['before_sha256_lf'] for r in _A10['files'] if r['path']==f'local/kbacompany/lang/{lang}/local_kbacompany.php')
+            for lang in ('en','ru')}
+BELL_MARKER=b'\n// Top bar bell and opt-in notification sound (owned shell).\n'
+BELL_KEYS=[b'notificationbell_title',b'notificationbell_label',b'notificationbell_all',b'notificationbell_loading',
+           b'notificationbell_empty',b'notificationbell_error',b'notificationbell_unavailable',b'notificationbell_retry',
+           b'notificationbell_readonly_hint',b'notificationbell_sound',b'notificationbell_sound_off',b'notificationbell_sound_on',
+           b'notificationbell_sound_blocked',b'notificationbell_sound_enable',b'notificationbell_sound_test',
+           b'notificationbell_sound_disable',b'privacy:metadata:preference:notificationsound',
+           b'privacy:metadata:preference:notificationsoundsignalled']
+DF_AFTER={lang:next(r['after_sha256_lf'] for r in _DF['files']
+                    if r['path']==f'local/kbacompany/lang/{lang}/local_kbacompany.php')
+          for lang in ('en','ru')}
 E2_KEYS=[b'bpu_tab_discussion',b'bpu_discussion_empty',b'bpu_discussion_readonly',b'bpu_discussion_reader',
          b'communication_object_battleplan',b'communicationcenter_openplan']
+NAV_MARKER=b'\n// Adaptive BMS24 navigation (2026-11-18): narrow-window menu button and drawer close label.\n'
+NAV_KEYS=[b'bms24_menu_button',b'bms24_menu_close']
 _R2=json.loads((ROOT/'docs/reconcile/daily-reports-r2-source-preservation.json').read_text(encoding='utf-8'))
 R2_AFTER={lang:next(r['after_sha256_lf'] for r in _R2['files'] if r['path']==f'local/kbacompany/lang/{lang}/local_kbacompany.php')
           for lang in ('en','ru')}
+_NAV=json.loads((ROOT/'docs/reconcile/adaptive-navigation-source-preservation.json').read_text(encoding='utf-8'))
+NAV_BEFORE={lang:next(r['before_sha256_lf'] for r in _NAV['files'] if r['path']==f'local/kbacompany/lang/{lang}/local_kbacompany.php')
+            for lang in ('en','ru')}
 _COMM=json.loads((ROOT/'docs/reconcile/communication-center-cleanup-source-preservation.json').read_text(encoding='utf-8'))
 COMM_AFTER={lang:next(r['after_sha256_lf'] for r in _COMM['files'] if r['path']==f'local/kbacompany/lang/{lang}/local_kbacompany.php')
             for lang in PUBLISHED}
@@ -88,6 +116,33 @@ class Preservation(unittest.TestCase):
                 e2,ux=e2.split(UX_MARKER)
                 if C145_MARKER in ux:
                     ux,c145=ux.split(C145_MARKER)
+                    if NAV_MARKER in c145:
+                        c145,nav=c145.split(NAV_MARKER)
+                        # The integrated Day Feed and bell are byte-identical up to the adaptive navigation marker.
+                        self.assertEqual(NAV_BEFORE[lang],hashlib.sha256(data.split(NAV_MARKER)[0]).hexdigest())
+                        self.assertEqual(NAV_KEYS,keys(nav))
+                        self.assertFalse(set(NAV_KEYS)&set(keys(data.split(NAV_MARKER)[0])))
+                    if BELL_MARKER in c145:
+                        c145,bell=c145.split(BELL_MARKER)
+                        prefix_before_bell=data.split(BELL_MARKER)[0]
+                        self.assertEqual(DF_AFTER[lang],hashlib.sha256(prefix_before_bell).hexdigest())
+                        self.assertEqual(BELL_KEYS,keys(bell))
+                        self.assertFalse(set(BELL_KEYS)&set(keys(prefix_before_bell)))
+                    if A10_MARKER in c145:
+                        # The #145 file is byte-identical up to the ADR-0010 marker; ADR-0010 keys are new.
+                        c145,a10=c145.split(A10_MARKER)
+                        self.assertEqual(A10_BEFORE[lang],hashlib.sha256(data.split(A10_MARKER)[0]).hexdigest())
+                        if DF_MARKER in a10:
+                            # The ADR-0010 file is byte-identical up to the day feed marker; day feed keys are new.
+                            a10,df=a10.split(DF_MARKER)
+                            self.assertEqual(DF_BEFORE[lang],hashlib.sha256(data.split(DF_MARKER)[0]).hexdigest())
+                            self.assertEqual(DF_KEYS,keys(df))
+                            self.assertFalse(set(DF_KEYS)&set(keys(data.split(DF_MARKER)[0])))
+                        a10keys=keys(a10)
+                        self.assertEqual(41,len(a10keys));self.assertEqual(len(a10keys),len(set(a10keys)))
+                        self.assertTrue(all(k.startswith((b'dailyreports_',b'messageprovider:dailyreport_',
+                                                          b'communication_notification_dailyreport_')) for k in a10keys))
+                        self.assertFalse(set(a10keys)&set(keys(data.split(A10_MARKER)[0])))
                     self.assertEqual(C145_KEYS,keys(c145))
                     self.assertFalse(set(C145_KEYS)&set(keys(data.split(C145_MARKER)[0])))
                 self.assertEqual(UX_KEYS, keys(ux))
@@ -117,7 +172,8 @@ class Preservation(unittest.TestCase):
             for mutation in [lambda b:b+b'\n// unexpected',lambda b:b.replace(b'dailyreport_title',b'overridden_key',1),
                              lambda b:b.replace(b'communication_reply',b'overridden_key',1),
                              lambda b:b.replace(b'dailyreports_button',b'dailyreports_other',1),
-                             lambda b:b.replace(b'communicationcenter_openplan',b'overridden_key',1)]:
+                             lambda b:b.replace(b'communicationcenter_openplan',b'overridden_key',1),
+                             lambda b:b.replace(b'bms24_menu_close',b'overridden_key',1)]:
                 changed=hashlib.sha256(mutation(path.read_bytes().replace(b'\r\n',b'\n'))).hexdigest()
                 with patch.object(gate,'digest',side_effect=lambda p: changed if p==path else original(p)):
                     self.assertIn('parent source lost: '+path.relative_to(ROOT).as_posix(),gate.check(ROOT))

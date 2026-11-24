@@ -736,8 +736,9 @@ if ($attentioncount > 0) {
         'variant' => $counts['overdue'] > 0 ? 'danger' : 'brand',
         'title' => get_string('bmsworkspace_attention', 'local_kbacompany'),
     ]);
+    // Owned shell: the bell belongs to notifications only, so "Needs attention" uses a flag, not a second bell.
     $attentionhtml = html_writer::link($communicationurl,
-        $OUTPUT->pix_icon('i/notifications', '', 'moodle') . $badge,
+        $OUTPUT->pix_icon($useowned ? 'i/flagged' : 'i/notifications', '', 'moodle') . $badge,
         ['class' => 'kba-bms-iconbutton', 'title' => get_string('bmsworkspace_attention', 'local_kbacompany'),
             'aria-label' => get_string('bmsworkspace_attention', 'local_kbacompany')]);
 }
@@ -789,7 +790,8 @@ $shell = [
         'quickactionhtml' => $quickactions,
         'planhtml' => html_writer::link($planurl, get_string('bms_plan_title', 'local_kbacompany'),
             ['class' => 'kba-bms-button kba-bms-button--plan']),
-        'notificationshtml' => $attentionhtml,
+        'notificationshtml' => $attentionhtml . ($useowned
+            ? ' ' . \local_kbacompany\local\bms24_shell_service::notification_bell($uuid, (int)$USER->id) : ''),
         'usermenuhtml' => $OUTPUT->user_menu(),
     ],
     'header' => [

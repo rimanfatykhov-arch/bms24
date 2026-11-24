@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 import unittest
-from pathlib import Path
-from check_workflow_policy import validate, WorkflowHold, WORKFLOW
+from check_workflow_policy import validate, WorkflowHold, WORKFLOW, PACKAGE_WORKFLOW
 
 class WorkflowPolicyTest(unittest.TestCase):
     @classmethod
@@ -37,7 +36,17 @@ class WorkflowPolicyTest(unittest.TestCase):
         self.assert_hold(self.text + '\n        persist-credentials: true\n')
 
     def test_no_main_only(self):
-        self.assert_hold(self.text.replace("github.event_name == 'pull_request' || ", ''))
+        package = PACKAGE_WORKFLOW.read_text(encoding='utf-8')
+        with self.assertRaises(WorkflowHold):
+            validate(self.text, package.replace('  pull_request:', '  push:'))
+
+    def test_package_must_use_exact_pr_head(self):
+        package = PACKAGE_WORKFLOW.read_text(encoding='utf-8')
+        with self.assertRaises(WorkflowHold):
+            validate(self.text, package.replace('github.event.pull_request.head.sha', 'github.sha'))
+
+    def test_static_workflow_cannot_upload_a_duplicate(self):
+        self.assert_hold(self.text + '\n      - uses: actions/upload-artifact@v4\n')
 
     def test_no_zip_verify(self):
         self.assert_hold(self.text.replace('Build and verify deterministic candidate', 'Build candidate'))
@@ -46,7 +55,7 @@ class WorkflowPolicyTest(unittest.TestCase):
         self.assert_hold(self.text.replace('tools/test_business_dates_1876.py','tools/no_date_test.py'))
 
     def test_no_wrong_build(self):
-        self.assert_hold(self.text.replace('--expected-version 2026111601','--expected-version 2026101878'))
+        self.assert_hold(self.text.replace('--expected-version 2026112301','--expected-version 2026101878'))
 
 if __name__ == '__main__':
     unittest.main(verbosity=2)
