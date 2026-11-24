@@ -4,8 +4,8 @@
     python tools/ui_harness/measure.py --out DIR [--widths 320,375,768,1440] [--only PAGE_PREFIX]
 
 Serves DIR on 127.0.0.1 (random port), opens every page at every width, runs probe.js and writes measurements.json
-plus screenshots (shots/<page>-<width>.png at 768 and 1440). Exit 0 = every rule holds, 1 = violations (listed),
-2 = Playwright missing. Needs: pip install playwright && python -m playwright install chromium.
+plus screenshots (shots/<page>-<width>.png). Exit 0 = every rule holds, 1 = violations (listed),
+2 = setup or selection error. Needs Playwright and Chromium, Edge, or Chrome.
 
 Rules mirror the BROWSER contract communication_ux2_primary_action_geometry (#152): readable full "New conversation"
 button in the card header, not over the tabs, with its POST form; no clipped control label; no horizontal overflow;
@@ -25,6 +25,8 @@ def violations(m):
     bad = []
     if not m.get('root'):
         return ['Center root not rendered']
+    if not m.get('css') or m.get('missing_stylesheets'):
+        bad.append('stylesheets not loaded: %s' % ', '.join(m.get('missing_stylesheets') or ['plugin CSS']))
     if m.get('overflow'):
         bad.append('horizontal overflow (wider: %s)' % ', '.join(m.get('wide') or []))
     if m.get('clipped'):
@@ -71,7 +73,8 @@ def launch(p, channel):
             return p.chromium.launch(headless=True, channel=ch) if ch else p.chromium.launch(headless=True)
         except Exception as e:  # browser not installed: try the next one
             tried.append('%s: %s' % (ch or 'bundled chromium', str(e).splitlines()[0][:120]))
-    raise SystemExit('no browser could be started:\n  ' + '\n  '.join(tried))
+    print('No browser could be started:\n  ' + '\n  '.join(tried), file=sys.stderr)
+    return None
 
 
 def main(argv=None):
@@ -81,15 +84,27 @@ def main(argv=None):
     ap.add_argument('--widths', default='320,375,768,1440')
     ap.add_argument('--only', default='', help='measure only pages whose name starts with this prefix')
     a = ap.parse_args(argv)
+    root = a.out.resolve()
+    try:
+        manifest = json.loads((root / 'manifest.json').read_text(encoding='utf-8'))
+    except (OSError, ValueError) as error:
+        ap.error(f'cannot read the UI harness manifest; run build.py first ({error})')
+    if manifest.get('bootstrap') is not True:
+        ap.error('rebuild with Bootstrap using build.py --measure without --offline')
+    pages = [p['page'] for p in manifest['pages'] if p['page'].startswith(a.only)]
+    if not pages:
+        ap.error(f'no pages match --only {a.only!r}')
+    try:
+        widths = list(dict.fromkeys(int(w) for w in a.widths.split(',')))
+    except ValueError:
+        ap.error('--widths must be a comma-separated list of positive integers')
+    if min(widths) < 1:
+        ap.error('--widths must be a comma-separated list of positive integers')
     try:
         from playwright.sync_api import sync_playwright
     except ImportError:
-        print('Playwright not installed: pip install playwright && python -m playwright install chromium')
+        print(f'Playwright not installed. Run "{sys.executable}" -m pip install playwright.', file=sys.stderr)
         return 2
-    root = a.out.resolve()
-    manifest = json.loads((root / 'manifest.json').read_text(encoding='utf-8'))
-    pages = [p['page'] for p in manifest['pages'] if p['page'].startswith(a.only)]
-    widths = [int(w) for w in a.widths.split(',')]
     (root / 'shots').mkdir(exist_ok=True)
     server = serve(root)
     base = 'http://127.0.0.1:%d/' % server.server_address[1]
@@ -97,6 +112,8 @@ def main(argv=None):
     try:
         with sync_playwright() as p:
             browser = launch(p, a.channel)
+            if browser is None:
+                return 2
             for width in widths:
                 ctx = browser.new_context(viewport={'width': width, 'height': 900})
                 page = ctx.new_page()
@@ -107,8 +124,7 @@ def main(argv=None):
                     page.goto(base + name, wait_until='load')
                     m = page.evaluate('window.BMS24_PROBE()')
                     problems = violations(m) + ['page error: %s' % e for e in errors]
-                    if width in (768, 1440):
-                        page.screenshot(path=str(root / 'shots' / ('%s-%d.png' % (name[:-5], width))))
+                    page.screenshot(path=str(root / 'shots' / ('%s-%d.png' % (name[:-5], width))))
                     results.append({'page': name, 'width': width, 'probe': m, 'problems': problems})
                     failed += bool(problems)
                     print('%-4s %-34s %5d  %s' % ('FAIL' if problems else 'ok', name, width, '; '.join(problems)))
@@ -116,6 +132,7 @@ def main(argv=None):
             browser.close()
     finally:
         server.shutdown()
+        server.server_close()
     (root / 'measurements.json').write_text(json.dumps({'repo': manifest['repo'], 'results': results},
                                                        ensure_ascii=False, indent=1), encoding='utf-8')
     print('%d of %d page/width cases failed; details in %s' % (failed, len(results), root / 'measurements.json'))

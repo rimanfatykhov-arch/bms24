@@ -7,21 +7,23 @@ CI pass.
 
 ## Usage
 
-```
-python tools/ui_harness/build.py --out ../outputs/ui-harness           # pages + CSS copies + manifest.json
-python tools/ui_harness/measure.py --out ../outputs/ui-harness         # rules, measurements.json, shots/*.png
+```sh
+python -m pip install playwright                                      # once per Python environment
+python tools/ui_harness/build.py --measure --out ../outputs/ui-harness
 ```
 
-- `build.py --repo PATH` renders another checkout, for example a PR worktree. `--shell owned|legacy|both` (default:
-  both). `--offline` skips Bootstrap from the CDN. Use it only to check that pages build: without Bootstrap the
-  form controls have browser default widths, and the list-search rule reports false violations (28 of 56 on `main`
-  `dcc90f4`, 0 of 56 with Bootstrap).
-- `measure.py` needs `pip install playwright`. If `python -m playwright install chromium` cannot download (the
-  Playwright CDN is not reachable from every location), it falls back to installed Edge/Chrome, or you can force one
-  with `--channel msedge|chrome`. Exit code: 0 = all rules hold, 1 = violations (listed per page and width),
-  2 = Playwright missing.
-- Open `index.html` in the output folder to look at the pages by hand. Screenshots of every page at 768 and 1440 are
-  in `shots/`.
+- `--repo PATH` checks another checkout, such as a PR worktree. `--shell owned|legacy|both` selects the shell;
+  both run by default. Use an empty or previously generated output folder.
+- The first build downloads and verifies [Bootstrap 4.6.2](https://getbootstrap.com/docs/4.6/getting-started/introduction/).
+  Repeat builds use the copy saved in the output directory. Where the CDN is unavailable, pass the official CSS file
+  with `--bootstrap PATH`. `--offline` renders pages without Bootstrap for template checks only.
+- Playwright uses bundled Chromium or an installed Edge or Chrome. Pass `--channel msedge` or `--channel chrome` to
+  select one. If none is installed, run `python -m playwright install chromium`.
+- Open `index.html` for previews. The run writes `measurements.json` and screenshots in `shots/` at all four widths.
+  Exit code `0` means all measured cases passed, `1` means a build error or failed rule, and `2` means a configuration
+  or selection error. The report lists the measurements and violations for each case.
+- To recheck an already built preview at selected widths, use
+  `python tools/ui_harness/measure.py --out ../outputs/ui-harness --only messages --widths 320,375`.
 
 ## What is real and what is not
 

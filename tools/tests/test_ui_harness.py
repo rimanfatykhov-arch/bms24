@@ -4,6 +4,9 @@ The browser part (measure.py + probe.js) needs Playwright and is run by develope
 against measured shapes, including the 34x34 "New conversation" defect the harness was built to catch (#145/#152).
 """
 import copy
+import contextlib
+import io
+import json
 import sys
 import tempfile
 import unittest
@@ -79,6 +82,34 @@ class BuildTest(unittest.TestCase):
         self.assertEqual(facts['owned_body_class'], 'bms24-owned-page')
         self.assertIn('bms-comm2-shell', facts['page_wrapper_class'])
 
+    def test_existing_files_survive_rebuild(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            out = Path(tmp)
+            note = out / 'note.txt'
+            note.write_text('keep', encoding='utf-8')
+            with self.assertRaises(SystemExit):
+                build.build(REPO, out, offline=True)
+            self.assertEqual(note.read_text(encoding='utf-8'), 'keep')
+
+            out = out / 'preview'
+            build.build(REPO, out, offline=True)
+            note = out / 'note.txt'
+            note.touch()
+            report = out / 'measurements.json'
+            report.touch()
+            build.build(REPO, out, offline=True)
+            self.assertTrue(note.is_file())
+            self.assertFalse(report.exists())
+
+    def test_invalid_bootstrap_file_is_rejected(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            out = Path(tmp) / 'preview'
+            stylesheet = Path(tmp) / 'bootstrap.min.css'
+            stylesheet.write_text('wrong stylesheet', encoding='utf-8')
+            with self.assertRaisesRegex(SystemExit, 'checksum mismatch'):
+                build.build(REPO, out, bootstrap=stylesheet)
+            self.assertFalse(out.exists())
+
 
 def good_probe():
     return {'root': True, 'root_id': True, 'width': 1440, 'overflow': False, 'css': True, 'clipped': [], 'wide': [],
@@ -108,10 +139,24 @@ class RulesTest(unittest.TestCase):
             'narrow_search_input': lambda m: m.update(search={'width': 421, 'side_width': 422, 'input_width': 155}),
             'narrow_search_box': lambda m: m.update(search={'width': 150, 'side_width': 340, 'input_width': 120}),
             'no_root': lambda m: m.update(root=False),
+            'missing_plugin_css': lambda m: m.update(css=False),
+            'missing_bootstrap': lambda m: m.update(missing_stylesheets=['assets/bootstrap-4.6.2.min.css']),
         }
         for name, mutate in cases.items():
             m = copy.deepcopy(good_probe()); mutate(m)
             self.assertTrue(measure.violations(m), name)
+
+    def test_no_success_for_offline_or_empty_selection(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            manifest = Path(tmp) / 'manifest.json'
+            for bootstrap, expected_error in [(False, 'rebuild with Bootstrap'), (True, 'no pages match')]:
+                manifest.write_text(json.dumps({'bootstrap': bootstrap, 'pages': [{'page': 'messages.owned.html'}]}),
+                                    encoding='utf-8')
+                stderr = io.StringIO()
+                with contextlib.redirect_stderr(stderr), self.assertRaises(SystemExit) as error:
+                    measure.main(['--out', tmp, '--only', 'typo'])
+                self.assertEqual(error.exception.code, 2)
+                self.assertIn(expected_error, stderr.getvalue())
 
 
 if __name__ == '__main__':

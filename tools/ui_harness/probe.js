@@ -15,6 +15,8 @@ window.BMS24_PROBE = function () {
         return out;
     }
     out.css = getComputedStyle(root).getPropertyValue('--cc-emerald').trim() !== '';
+    out.missing_stylesheets = [...document.querySelectorAll('link[rel="stylesheet"]')]
+        .filter((link) => !link.sheet).map((link) => link.getAttribute('href'));
     const triggers = [...document.querySelectorAll('summary.bms-comm2-new-trigger')].filter(vis);
     const head = root.querySelector('.bms24-cardheader');
     const sections = root.querySelector('.bms-comm-ux-sections');

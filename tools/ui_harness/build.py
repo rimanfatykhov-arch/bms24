@@ -1,6 +1,6 @@
 """BMS24 UI harness — render the real Communication Center templates and CSS on synthetic data (#160, task B).
 
-    python tools/ui_harness/build.py [--repo PATH] [--out DIR] [--shell owned|legacy|both] [--offline]
+    python tools/ui_harness/build.py --measure [--repo PATH] [--out DIR] [--shell owned|legacy|both]
 
 Writes static pages (one per fixtures.SCENARIOS entry and shell), copies of the plugin CSS they load, the geometry
 probe and manifest.json into --out (default: <tmp>/bms24-ui-harness). Open index.html, or run measure.py.
@@ -24,6 +24,7 @@ import shutil
 import subprocess
 import sys
 import tempfile
+import urllib.request
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
@@ -33,6 +34,24 @@ from mustache import Renderer, load_strings  # noqa: E402
 
 PLUGIN_URL = '/local/kbacompany/'
 BOOTSTRAP = 'https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/css/bootstrap.min.css'
+BOOTSTRAP_PATH = 'assets/bootstrap-4.6.2.min.css'
+BOOTSTRAP_SHA256 = 'f886516f3d41e9e7bd994c7f7a39a89cafae9483f90396cb0ddeafe8d1ea5e72'
+
+
+def bootstrap_css(target, source):
+    """Use a local copy if available; the browser never needs to fetch Bootstrap."""
+    try:
+        local = source or target
+        if source is not None or local.is_file():
+            data = local.read_bytes()
+        else:
+            with urllib.request.urlopen(BOOTSTRAP, timeout=15) as response:
+                data = response.read(256 * 1024)
+    except OSError as error:
+        raise SystemExit(f'Bootstrap 4.6.2 unavailable ({error}). Use --bootstrap with a local copy.') from error
+    if hashlib.sha256(data).hexdigest() != BOOTSTRAP_SHA256:
+        raise SystemExit(f'Bootstrap 4.6.2 checksum mismatch. Replace {local} or pass --bootstrap with the official CSS.')
+    return data
 
 
 def css_requires(php):
@@ -82,22 +101,30 @@ def git_head(repo):
         out = subprocess.run(['git', '-C', str(repo), 'rev-parse', 'HEAD'], capture_output=True, text=True, timeout=10)
         dirty = subprocess.run(['git', '-C', str(repo), 'status', '--porcelain', '--', 'local/kbacompany'],
                                capture_output=True, text=True, timeout=10)
-        return {'head': out.stdout.strip() or None, 'plugin_dirty': bool(dirty.stdout.strip())}
+        return {'head': out.stdout.strip() if out.returncode == 0 else None,
+                'plugin_dirty': bool(dirty.stdout.strip()) if dirty.returncode == 0 else None}
     except (OSError, subprocess.SubprocessError):
         return {'head': None, 'plugin_dirty': None}
 
 
-def build(repo, out, shells=('owned', 'legacy'), offline=False):
+def build(repo, out, shells=('owned', 'legacy'), offline=False, bootstrap=None):
     plugin = repo / 'local' / 'kbacompany'
     if not (plugin / 'templates').is_dir():
         raise SystemExit('not a BMS24 checkout: %s' % repo)
     renderer = Renderer(plugin / 'templates', load_strings(plugin / 'lang' / 'ru' / 'local_kbacompany.php'))
     facts = source_facts(plugin)
-    if out.exists():
-        shutil.rmtree(out)
-    (out / 'assets').mkdir(parents=True)
+    manifest_path = out / 'manifest.json'
+    if out.exists() and (not out.is_dir() or (any(out.iterdir()) and not manifest_path.is_file())):
+        raise SystemExit(f'Choose an empty or existing UI harness output directory: {out}')
+    bootstrap_data = None if offline else bootstrap_css(out / BOOTSTRAP_PATH, bootstrap)
+    (out / 'assets').mkdir(parents=True, exist_ok=True)
+    # An interrupted build remains reusable, but cannot be measured until it has a complete manifest.
+    manifest_path.write_text('{}', encoding='utf-8')
+    (out / 'measurements.json').unlink(missing_ok=True)
+    if bootstrap_data is not None:
+        (out / BOOTSTRAP_PATH).write_bytes(bootstrap_data)
     shutil.copy2(HERE / 'probe.js', out / 'probe.js')
-    manifest = {'repo': git_head(repo), 'facts': facts, 'shells': {}, 'pages': []}
+    manifest = {'repo': git_head(repo), 'facts': facts, 'shells': {}, 'pages': [], 'bootstrap': not offline}
     copied = {}
     for shell in shells:
         sheets = stylesheets(plugin, shell)
@@ -108,7 +135,7 @@ def build(repo, out, shells=('owned', 'legacy'), offline=False):
                 target.parent.mkdir(parents=True, exist_ok=True)
                 shutil.copy2(plugin / rel, target)
                 copied[rel] = hashlib.sha256((plugin / rel).read_bytes()).hexdigest()
-        links = ([] if offline else ['<link rel="stylesheet" href="%s">' % BOOTSTRAP]) + \
+        links = ([] if offline else ['<link rel="stylesheet" href="%s">' % BOOTSTRAP_PATH]) + \
             ['<link rel="stylesheet" href="assets/%s">' % rel for rel in sheets]
         body = 'bms-comm-page' + (' ' + facts['owned_body_class'] if shell == 'owned' else '')
         for name, (section, kwargs) in SCENARIOS.items():
@@ -126,11 +153,11 @@ def build(repo, out, shells=('owned', 'legacy'), offline=False):
     manifest['css_sha256'] = copied
     manifest['templates_used'] = sorted(renderer.used)
     manifest['missing_strings'] = sorted(renderer.missing_strings)
-    (out / 'manifest.json').write_text(json.dumps(manifest, ensure_ascii=False, indent=1), encoding='utf-8')
     rows = ''.join('<li><a href="%s">%s</a></li>' % (p['page'], p['page']) for p in manifest['pages'])
     (out / 'index.html').write_text('<!doctype html><meta charset="utf-8"><title>BMS24 UI harness</title>'
                                     '<h1>BMS24 UI harness</h1><p>Synthetic data only. Not Moodle, not acceptance.</p>'
                                     '<ul>%s</ul>' % rows, encoding='utf-8')
+    manifest_path.write_text(json.dumps(manifest, ensure_ascii=False, indent=1), encoding='utf-8')
     return manifest
 
 
@@ -139,17 +166,32 @@ def main(argv=None):
     ap.add_argument('--repo', type=Path, default=HERE.parents[1])
     ap.add_argument('--out', type=Path, default=Path(tempfile.gettempdir()) / 'bms24-ui-harness')
     ap.add_argument('--shell', choices=['owned', 'legacy', 'both'], default='both')
-    ap.add_argument('--offline', action='store_true', help='do not link Bootstrap from the CDN')
+    css = ap.add_mutually_exclusive_group()
+    css.add_argument('--offline', action='store_true', help='render pages without Bootstrap for build checks only')
+    css.add_argument('--bootstrap', type=Path, help='use an existing official bootstrap.min.css from Bootstrap 4.6.2')
+    ap.add_argument('--measure', action='store_true', help='check geometry and save screenshots after the build')
+    ap.add_argument('--channel', choices=['msedge', 'chrome'], help='browser to use with --measure')
     a = ap.parse_args(argv)
+    if a.measure and a.offline:
+        ap.error('--measure needs Bootstrap; omit --offline or use --bootstrap')
+    if a.channel and not a.measure:
+        ap.error('--channel requires --measure')
     shells = ('owned', 'legacy') if a.shell == 'both' else (a.shell,)
-    m = build(a.repo.resolve(), a.out.resolve(), shells, a.offline)
+    out = a.out.resolve()
+    m = build(a.repo.resolve(), out, shells, a.offline, a.bootstrap)
     print('built %d pages from %s%s -> %s' % (len(m['pages']), m['repo']['head'] or 'unknown HEAD',
                                               ' (+ uncommitted plugin changes)' if m['repo']['plugin_dirty'] else '', a.out))
     for shell, sheets in m['shells'].items():
         print('  %s CSS: %s' % (shell, ', '.join(sheets)))
     if m['missing_strings']:
         print('  strings not found (rendered as keys): %s' % ', '.join(m['missing_strings']))
-    print('  open %s or run: python tools/ui_harness/measure.py --out %s' % (a.out / 'index.html', a.out))
+    print('  preview: %s' % (out / 'index.html'))
+    if a.measure:
+        from measure import main as measure_main
+        args = ['--out', str(out)]
+        if a.channel:
+            args.extend(['--channel', a.channel])
+        return measure_main(args)
 
 
 if __name__ == '__main__':
