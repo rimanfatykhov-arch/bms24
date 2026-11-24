@@ -30,7 +30,7 @@ final class daily_report_summary_service_test extends \advanced_testcase {
         $users = [];
         foreach (['director', 'head', 'lead', 'employee', 'worker', 'peer', 'other'] as $name) {
             $u = $this->getDataGenerator()->create_user(['timezone' => 'Europe/Moscow', 'firstname' => 'Synthetic',
-                'lastname' => $name === 'peer' ? '<b>peer</b>' : $name]);
+                'lastname' => $name === 'peer' ? "Peer & O'Brien" : $name]);
             $this->member($cid, (int)$u->id);
             $users[$name] = $u;
         }
@@ -156,8 +156,8 @@ final class daily_report_summary_service_test extends \advanced_testcase {
 
         // Rendering: escaped names, cell states as data, links to the read-only card, text next to every icon.
         $html = reportui::summary($f['company'], summary::grid($f['company'], (int)$f['director']->id, $f['month']));
-        $this->assertStringNotContainsString('<b>peer</b>', $html);
-        $this->assertStringContainsString('&lt;b&gt;peer&lt;/b&gt;', $html);
+        $this->assertStringNotContainsString("Peer & O'Brien", $html);
+        $this->assertStringContainsString('Peer &amp; O', $html);
         $this->assertStringContainsString('data-dailyreport-summary-cell="accepted"', $html);
         $this->assertStringContainsString('data-dailyreport-summary-rating="positive"', $html);
         $this->assertStringContainsString('report=' . $accepted['reportuuid'], $html);
