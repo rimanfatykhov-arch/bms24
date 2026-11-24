@@ -9992,3 +9992,7 @@ $string['privacy:metadata:preference:notificationsoundsignalled'] = 'Служе�
 // Adaptive BMS24 navigation (2026-11-18): narrow-window menu button and drawer close label.
 $string['bms24_menu_button'] = 'Меню';
 $string['bms24_menu_close'] = 'Закрыть меню';
+
+// Day feed "Added earlier" (2026-11-24): mark of a result already added to the report of the day.
+$string['dailyreports_feed_addedearlier'] = 'Добавлено ранее';
+$string['dailyreports_feed_addedearlier_hint'] = 'Этот результат уже добавляли в отчёт за этот день.';

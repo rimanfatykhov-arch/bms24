@@ -111,6 +111,10 @@ def check(root=ROOT):
     # #128: append the adaptive navigation labels after the integrated bell.
     reviewed_followup['local/kbacompany/lang/en/local_kbacompany.php'] = '796443e2f78e013e5a45d4782a2cba51c89193d87f17d2104fb684228560a14b'
     reviewed_followup['local/kbacompany/lang/ru/local_kbacompany.php'] = 'c6f620c5aa0410fdaf067a6750d8e4cc4e847c2cdfd145b023a6fff975ad5dde'
+    # Day feed "Added earlier" (owner task 2026-11-24): two RU/EN keys after the navigation block; display only.
+    # See docs/reconcile/DAY_FEED_ADDED_EARLIER.md.
+    reviewed_followup['local/kbacompany/lang/en/local_kbacompany.php'] = '9495d7e1467dbe67c7cb18be14cc4b19a3d33a40e632d528f77fb08788dbc803'
+    reviewed_followup['local/kbacompany/lang/ru/local_kbacompany.php'] = 'dc4772de7d84d31a80927bb13c8f97966f18ca9db9f4e8d759d3204365255226'
     for row in plan['rows']:
         path=root/row['path']
         if not path.is_file() or path.is_symlink():

@@ -1,0 +1,20 @@
+{
+ "scope": "exact intentional source updates; not runtime or release acceptance",
+ "base_sha": "cc36c13f05de0bd0353d97641572008fc59c06c3",
+ "normalization": "CRLF to LF only",
+ "previous_evidence": "docs/reconcile/adaptive-navigation-source-preservation.json",
+ "decision": "docs/reconcile/DAY_FEED_ADDED_EARLIER.md (owner task 2026-11-24: Day feed \"Added earlier\" mark)",
+ "change": "Append the day feed \"Added earlier\" block (dailyreports_feed_addedearlier, dailyreports_feed_addedearlier_hint) after the adaptive navigation block. Retain the published Day Feed, bell, navigation and all preceding keys. No schema, version, capability or notification change.",
+ "files": [
+  {
+   "path": "local/kbacompany/lang/en/local_kbacompany.php",
+   "before_sha256_lf": "796443e2f78e013e5a45d4782a2cba51c89193d87f17d2104fb684228560a14b",
+   "after_sha256_lf": "9495d7e1467dbe67c7cb18be14cc4b19a3d33a40e632d528f77fb08788dbc803"
+  },
+  {
+   "path": "local/kbacompany/lang/ru/local_kbacompany.php",
+   "before_sha256_lf": "c6f620c5aa0410fdaf067a6750d8e4cc4e847c2cdfd145b023a6fff975ad5dde",
+   "after_sha256_lf": "dc4772de7d84d31a80927bb13c8f97966f18ca9db9f4e8d759d3204365255226"
+  }
+ ]
+}
