@@ -39,4 +39,11 @@
 .bms24-app .bms24-bell-action {min-height:36px;padding:6px 11px;border:1px solid var(--bms24-border,#d6e2ea);border-radius:9px;background:#fff;color:#0B2B41;font-size:12px;font-weight:650;cursor:pointer;}
 .bms24-app .bms24-bell-action-primary {background:#0C6C52;border-color:#0C6C52;color:#fff;}
 .bms24-app .bms24-bell-all {display:block;margin-top:10px;padding:9px;border-radius:9px;background:#E4F2FB;color:#0B2B41;font-size:13px;font-weight:650;text-align:center;text-decoration:none;}
-@media (max-width:520px) {.bms24-app .bms24-bell-button {width:38px;height:38px;min-width:38px;}}
+/* "Needs attention" flag next to the bell (bms_workspace.php, owned shell): the same button box and corner count,
+   red when something is overdue. */
+.bms24-app .bms24-attention {position:relative;display:inline-flex;flex:0 0 auto;align-items:center;justify-content:center;box-sizing:border-box;width:40px;height:40px;min-width:40px;padding:0;border:1px solid var(--bms24-border,#d6e2ea);border-radius:10px;background:#fff;color:#0B2B41;text-decoration:none;}
+.bms24-app .bms24-attention:hover {background:#E4F2FB;color:#0B2B41;text-decoration:none;}
+.bms24-app .bms24-attention:focus-visible {outline:3px solid #1777B5;outline-offset:2px;}
+.bms24-app .bms24-attention-badge {position:absolute;top:-6px;right:-6px;min-width:20px;height:20px;padding:0 5px;box-sizing:border-box;border-radius:10px;background:#1777B5;color:#fff;font-size:11px;font-weight:700;line-height:20px;text-align:center;box-shadow:0 0 0 2px #fff;}
+.bms24-app .bms24-attention-badge-danger {background:#B3261E;}
+@media (max-width:520px) {.bms24-app .bms24-bell-button,.bms24-app .bms24-attention {width:38px;height:38px;min-width:38px;}}
