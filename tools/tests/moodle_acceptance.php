@@ -108,8 +108,14 @@ if (in_array($mode, ['seed', 'verify', 'snapshot', 'corporate-seed', 'corporate-
     }
     if ($mode === 'seed') {
         $fixtures = [];
-        foreach (['local_kbacompany_task', 'local_kbacompany_deviation', 'local_kbacompany_doc',
-                'local_kbacompany_member', 'local_kbacompany_empcomp'] as $table) {
+        $dbman = $DB->get_manager();
+        $reportuuids = [];
+        $versionuuids = [];
+        $reporttables = array_values(array_filter(['local_kbacompany_dreport', 'local_kbacompany_dreportver',
+                'local_kbacompany_dreportset', 'local_kbacompany_dreportcc'],
+            static function(string $t) use ($dbman): bool { return $dbman->table_exists($t); }));
+        foreach (array_merge(['local_kbacompany_task', 'local_kbacompany_deviation', 'local_kbacompany_doc',
+                'local_kbacompany_member', 'local_kbacompany_empcomp'], $reporttables) as $table) {
             $columns = $DB->get_columns($table, false);
             foreach (['aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb'] as $tenant) {
                 $row = new stdClass();
@@ -134,11 +140,33 @@ if (in_array($mode, ['seed', 'verify', 'snapshot', 'corporate-seed', 'corporate-
                     $row->content = 'Original published content';
                     $row->doctype = 'procedure';
                 }
+                if ($table === 'local_kbacompany_dreport') {
+                    $row->userid = 2;
+                    $row->reportday = '2026-11-20';
+                    $row->timezone = 'Europe/Moscow';
+                    $row->status = 'submitted';
+                    $row->revision = 1;
+                    $row->timecreated = 1763625600;
+                    $row->timemodified = 1763629200;
+                }
+                if ($table === 'local_kbacompany_dreportver' || $table === 'local_kbacompany_dreportcc') {
+                    // Linked to this tenant's seeded report so the unique report/version keys stay distinct.
+                    $row->reportuuid = $reportuuids[$tenant];
+                }
+                if ($table === 'local_kbacompany_dreportver') {
+                    $row->versionno = 1;
+                }
+                if ($table === 'local_kbacompany_dreportcc') {
+                    $row->versionuuid = $versionuuids[$tenant];
+                    $row->userid = 2;
+                }
                 if ($table === 'local_kbacompany_empcomp') {
                     $row->currentlevel = 2;
                     $row->evidence = 'Synthetic competency evidence';
                 }
                 $id = $DB->insert_record($table, $row);
+                if ($table === 'local_kbacompany_dreport') { $reportuuids[$tenant] = $row->uuid; }
+                if ($table === 'local_kbacompany_dreportver') { $versionuuids[$tenant] = $row->uuid; }
                 $actual = (array)$DB->get_record($table, ['id' => $id], '*', MUST_EXIST);
                 $fixtures[] = ['table' => $table, 'id' => $id, 'row' => $actual];
                 if ($table === 'local_kbacompany_doc') {
@@ -153,7 +181,7 @@ if (in_array($mode, ['seed', 'verify', 'snapshot', 'corporate-seed', 'corporate-
             }
         }
         write_json($output, $fixtures);
-        echo 'PASS seeded ' . count($fixtures) . " synthetic task/deviation/document-history/membership/competency rows across two tenant UUIDs; not an ACL test\n";
+        echo 'PASS seeded ' . count($fixtures) . " synthetic task/deviation/document-history/membership/competency/daily-report rows across two tenant UUIDs; not an ACL test\n";
         exit(0);
     }
     $fixtures = json_decode(file_get_contents($output), true, 512, JSON_THROW_ON_ERROR);
@@ -246,7 +274,10 @@ $scenarios = ['fresh' => null, 'from1645' => $main, 'from1879' => $import,
         'frompr580904' => 'd3a16c3d08b9b10ac7edc32658157aa7f237e9a0',
         'frompr590905' => '2446347adf26ebb9e1520414a65c89e930dadba2',
         'frompr650906' => '4e5482df3d5bd8fd4cc604c070ed8728e7c0fc17',
-        'frompr671001' => '34763fd4b8980d36bf6de0a309a7737693e9e3dc'];
+        'frompr671001' => '34763fd4b8980d36bf6de0a309a7737693e9e3dc',
+        // Published production source (#173 head, local_kbacompany 2026112301): daily-report rows seeded there
+        // must survive the R5a/R5c upgrade unchanged, and the upgraded schema must equal a fresh install.
+        'fromprod2026112301' => '4c76f77050d921f7e6917744e9f010833638b642'];
 if ($productionprofile) { $scenarios = ['fresh'=>null, 'fromprod1878'=>'a87252b642e5796c6d84105dd448d51d9a5b5241']; }
 if ($standard) {
     $report['not_covered'][] = 'historical upgrades and full PHPUnit suites (separate mandatory FULL)';
@@ -362,6 +393,10 @@ foreach ($scenarios as $name => $historical) {
             }
             if (!$step('upgrade', [PHP_BINARY, $core . '/admin/cli/upgrade.php', '--non-interactive'])) {
                 throw new RuntimeException('Actual Moodle upgrade failed');
+            }
+            if ($name === 'fromprod2026112301') {
+                // Safe repeat: a second upgrade run over the upgraded site must be a clean no-op.
+                $step('upgrade-repeat', [PHP_BINARY, $core . '/admin/cli/upgrade.php', '--non-interactive']);
             }
         }
         $step('candidate-schema', [PHP_BINARY, $core . '/admin/cli/check_database_schema.php']);
