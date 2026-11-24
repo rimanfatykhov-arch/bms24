@@ -1116,10 +1116,36 @@ def daily_reports_flow_checks(obs, exitcode=None):
             require(not violations, 'browser errors: %r' % violations[:3])
             require(r.get('server_errors') == [], 'HTTP 5xx: %r' % (r.get('server_errors'),))
 
+    def team_day():
+        # R4 (owner decisions T1–T5): one row per current member of company A for the case day, the accepted report of EA
+        # linked, nobody from company B, counts equal to the rows, no horizontal scroll; an employee never gets the list.
+        for r in run():
+            ids, team = r.get('ids') or {}, r.get('team') or {}
+            rows = team.get('rows')
+            require(isinstance(rows, list) and rows and all(isinstance(x, list) and len(x) == 2 for x in rows),
+                    'team for the day rendered no rows at %s px' % r.get('width'))
+            users = [x[0] for x in rows]
+            require(len(users) == len(set(users)), 'a member is listed twice: %r' % (users,))
+            require([x[1] for x in rows if x[0] == ids.get('EA')] == ['accepted'], 'EA not listed once as accepted: %r' % (rows,))
+            require(ids.get('RA') in users, 'same-company employee RA missing from the team for the day')
+            require(ids.get('EB') not in users, 'a member of another company is listed')
+            states = set(x[1] for x in rows)
+            require(states <= {'none', 'notsent', 'submitted', 'returned', 'accepted'}, 'unknown day state: %r' % (states,))
+            counts = team.get('counts') or {}
+            require(set(counts) == {'none', 'notsent', 'submitted', 'returned', 'accepted'} and
+                    all(isinstance(v, int) for v in counts.values()) and sum(counts.values()) == len(rows) and
+                    all(counts[s] == sum(1 for x in rows if x[1] == s) for s in counts),
+                    'day counts do not match the rows: %r' % (counts,))
+            require(team.get('filters') == 1 and isinstance(team.get('report_links'), int) and team['report_links'] >= 1,
+                    'team filters or the link to the accepted report missing')
+            require(team.get('hscroll') is True, 'horizontal scroll on the team for the day at %s px' % r.get('width'))
+            require(r.get('team_employee_filters') == 0, 'an ordinary employee received the team for the day')
+
     return {'daily_report_draft_relogin_and_conflict': draft_and_conflict, 'daily_report_concurrent_submit_one_version': submit_once,
             'daily_report_csrf_and_get_rejected': csrf, 'daily_report_snapshot_immutable': snapshot,
             'daily_report_return_rework_accept_once': review_cycle, 'daily_report_notifications_once_with_link': notifications,
-            'daily_report_foreign_and_nonreviewer_denied': negatives, 'daily_report_layout_and_browser_errors': layout_and_events}
+            'daily_report_foreign_and_nonreviewer_denied': negatives, 'daily_report_layout_and_browser_errors': layout_and_events,
+            'daily_report_team_day_view': team_day}
 
 
 DAY_FEED_CASES = [('owned', 1440), ('legacy', 375)]

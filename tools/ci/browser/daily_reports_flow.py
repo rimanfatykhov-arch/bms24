@@ -202,7 +202,22 @@ with sync_playwright() as pw:
             rp.goto(local_url(base + '/local/kbacompany/communication_center.php?' + urllib.parse.urlencode(
                 {'uuid': company, 'tab': 'notifications'})), wait_until='networkidle')
             case['notification_links'] = rp.locator('a[href*="daily_report.php"][href*="tab=review"]').count()
-            case['ids'] = {k: f['actors'][k]['userid'] for k in ('EA', 'MA')}
+            # 11. R4 team for the day: the administrator-manager sees every company A member for this day, once, with the
+            # accepted report linked; another company's member is absent; no horizontal scroll at the case width.
+            rp.goto(url(tab='review', queue='team', day=day), wait_until='networkidle')
+            case['team'] = {
+                'rows': rp.evaluate('() => Array.from(document.querySelectorAll("[data-dailyreport-team-user]")).map('
+                                    'e => [Number(e.dataset.dailyreportTeamUser), e.dataset.dailyreportTeamState])'),
+                'counts': rp.evaluate('() => Object.fromEntries(Array.from(document.querySelectorAll('
+                                      '"[data-dailyreport-team-count]")).map(e => [e.dataset.dailyreportTeamCount, '
+                                      'Number(e.textContent.trim())]))'),
+                'filters': rp.locator('form[data-dailyreport-team-filters]').count(),
+                'report_links': rp.locator('a[href*="report=%s"]' % report).count() if report else 0,
+                'hscroll': rp.evaluate(HSCROLL)}
+            # An ordinary employee asking for the same list gets their own tab, not the list.
+            page.goto(url(tab='review', queue='team', day=day), wait_until='networkidle')
+            case['team_employee_filters'] = page.locator('form[data-dailyreport-team-filters]').count()
+            case['ids'] = {k: f['actors'][k]['userid'] for k in ('EA', 'MA', 'RA', 'EB')}
             case['browser_events'] = recorder.events; case['server_errors'] = server_errors
             rctx.close(); ctx.close()
             result['cases'].append(case)

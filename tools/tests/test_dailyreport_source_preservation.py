@@ -57,12 +57,21 @@ E2_KEYS=[b'bpu_tab_discussion',b'bpu_discussion_empty',b'bpu_discussion_readonly
          b'communication_object_battleplan',b'communicationcenter_openplan']
 NAV_MARKER=b'\n// Adaptive BMS24 navigation (2026-11-18): narrow-window menu button and drawer close label.\n'
 NAV_KEYS=[b'bms24_menu_button',b'bms24_menu_close']
+R4_MARKER=b'\n// Daily reports R4 (2026-11-24): team for the day, owner decisions T1-T5.\n'
+R4_KEYS=[b'dailyreports_queue_team',b'dailyreports_status_notsent',b'dailyreports_team_day',b'dailyreports_team_scope',
+         b'dailyreports_team_scope_team',b'dailyreports_team_scope_company',b'dailyreports_team_unit',
+         b'dailyreports_team_unit_all',b'dailyreports_team_unit_none',b'dailyreports_team_status_all',b'dailyreports_team_show',
+         b'dailyreports_team_filters',b'dailyreports_team_counts',b'dailyreports_team_reviewer',b'dailyreports_team_open',
+         b'dailyreports_team_open_for',b'dailyreports_team_empty',b'dailyreports_team_note']
 _R2=json.loads((ROOT/'docs/reconcile/daily-reports-r2-source-preservation.json').read_text(encoding='utf-8'))
 R2_AFTER={lang:next(r['after_sha256_lf'] for r in _R2['files'] if r['path']==f'local/kbacompany/lang/{lang}/local_kbacompany.php')
           for lang in ('en','ru')}
 _NAV=json.loads((ROOT/'docs/reconcile/adaptive-navigation-source-preservation.json').read_text(encoding='utf-8'))
 NAV_BEFORE={lang:next(r['before_sha256_lf'] for r in _NAV['files'] if r['path']==f'local/kbacompany/lang/{lang}/local_kbacompany.php')
             for lang in ('en','ru')}
+_R4=json.loads((ROOT/'docs/reconcile/daily-reports-r4-source-preservation.json').read_text(encoding='utf-8'))
+R4_BEFORE={lang:next(r['before_sha256_lf'] for r in _R4['files'] if r['path']==f'local/kbacompany/lang/{lang}/local_kbacompany.php')
+           for lang in ('en','ru')}
 _COMM=json.loads((ROOT/'docs/reconcile/communication-center-cleanup-source-preservation.json').read_text(encoding='utf-8'))
 COMM_AFTER={lang:next(r['after_sha256_lf'] for r in _COMM['files'] if r['path']==f'local/kbacompany/lang/{lang}/local_kbacompany.php')
             for lang in PUBLISHED}
@@ -118,6 +127,13 @@ class Preservation(unittest.TestCase):
                     ux,c145=ux.split(C145_MARKER)
                     if NAV_MARKER in c145:
                         c145,nav=c145.split(NAV_MARKER)
+                        if R4_MARKER in nav:
+                            nav,r4=nav.split(R4_MARKER)
+                            # The released file after adaptive navigation (#156) is byte-identical up to the R4 marker;
+                            # that file ended with a newline, which is the first byte of the marker.
+                            self.assertEqual(R4_BEFORE[lang],hashlib.sha256(data.split(R4_MARKER)[0]+b'\n').hexdigest())
+                            self.assertEqual(R4_KEYS,keys(r4))
+                            self.assertFalse(set(R4_KEYS)&set(keys(data.split(R4_MARKER)[0])))
                         # The integrated Day Feed and bell are byte-identical up to the adaptive navigation marker.
                         self.assertEqual(NAV_BEFORE[lang],hashlib.sha256(data.split(NAV_MARKER)[0]).hexdigest())
                         self.assertEqual(NAV_KEYS,keys(nav))

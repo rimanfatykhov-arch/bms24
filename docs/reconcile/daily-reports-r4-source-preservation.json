@@ -1,0 +1,20 @@
+{
+  "scope": "exact intentional source updates; not runtime or release acceptance",
+  "base_sha": "dcc90f48e1a6dac442a7daa107da6e07059d7273",
+  "normalization": "CRLF to LF only",
+  "previous_evidence": "docs/reconcile/adaptive-navigation-source-preservation.json",
+  "decision": "docs/daily-reports/R4_TEAM_DAY_PROPOSAL.md (owner decisions T1-T5, 24.11.2026)",
+  "change": "Append the daily reports R4 block (team for the day: dailyreports_queue_team, dailyreports_status_notsent and dailyreports_team_*) after the adaptive navigation block. Retain all preceding keys.",
+  "files": [
+    {
+      "path": "local/kbacompany/lang/en/local_kbacompany.php",
+      "before_sha256_lf": "796443e2f78e013e5a45d4782a2cba51c89193d87f17d2104fb684228560a14b",
+      "after_sha256_lf": "cb90de961e189272cef3e0e4a952694b358b82c34ccaad3123426b7a50ac1705"
+    },
+    {
+      "path": "local/kbacompany/lang/ru/local_kbacompany.php",
+      "before_sha256_lf": "c6f620c5aa0410fdaf067a6750d8e4cc4e847c2cdfd145b023a6fff975ad5dde",
+      "after_sha256_lf": "f19ecf6dd9b88e943213d1305f21792312fb04d4e9d13e53aa224a6242b77f75"
+    }
+  ]
+}

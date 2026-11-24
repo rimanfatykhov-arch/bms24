@@ -9992,3 +9992,22 @@ $string['privacy:metadata:preference:notificationsoundsignalled'] = 'Служе�
 // Adaptive BMS24 navigation (2026-11-18): narrow-window menu button and drawer close label.
 $string['bms24_menu_button'] = 'Меню';
 $string['bms24_menu_close'] = 'Закрыть меню';
+// Daily reports R4 (2026-11-24): team for the day, owner decisions T1-T5.
+$string['dailyreports_queue_team'] = 'Команда за день';
+$string['dailyreports_status_notsent'] = 'Не отправлен';
+$string['dailyreports_team_day'] = 'День';
+$string['dailyreports_team_scope'] = 'Кого показать';
+$string['dailyreports_team_scope_team'] = 'Моя команда';
+$string['dailyreports_team_scope_company'] = 'Вся компания';
+$string['dailyreports_team_unit'] = 'Подразделение';
+$string['dailyreports_team_unit_all'] = 'Все подразделения';
+$string['dailyreports_team_unit_none'] = 'Без подразделения';
+$string['dailyreports_team_status_all'] = 'Все статусы';
+$string['dailyreports_team_show'] = 'Показать';
+$string['dailyreports_team_filters'] = 'Фильтры команды за день';
+$string['dailyreports_team_counts'] = 'Итоги за день по статусам';
+$string['dailyreports_team_reviewer'] = 'Проверяющий';
+$string['dailyreports_team_open'] = 'Открыть';
+$string['dailyreports_team_open_for'] = 'Открыть отчёт: {$a}';
+$string['dailyreports_team_empty'] = 'По этим условиям сотрудников нет.';
+$string['dailyreports_team_note'] = 'Показан текущий состав компании. «Отчёта нет» — не нарушение: график отчётности пока не задан. Черновики остаются личными.';
