@@ -111,14 +111,18 @@ def check(root=ROOT):
     # #128: append the adaptive navigation labels after the integrated bell.
     reviewed_followup['local/kbacompany/lang/en/local_kbacompany.php'] = '796443e2f78e013e5a45d4782a2cba51c89193d87f17d2104fb684228560a14b'
     reviewed_followup['local/kbacompany/lang/ru/local_kbacompany.php'] = 'c6f620c5aa0410fdaf067a6750d8e4cc4e847c2cdfd145b023a6fff975ad5dde'
-    # Daily reports R4 (owner decisions T1-T5, 24.11.2026): append the team-for-the-day block after navigation.
+    # Day feed "Added earlier" (owner task 2026-11-24): two RU/EN keys after the navigation block; display only.
+    # See docs/reconcile/DAY_FEED_ADDED_EARLIER.md.
+    reviewed_followup['local/kbacompany/lang/en/local_kbacompany.php'] = '9495d7e1467dbe67c7cb18be14cc4b19a3d33a40e632d528f77fb08788dbc803'
+    reviewed_followup['local/kbacompany/lang/ru/local_kbacompany.php'] = 'dc4772de7d84d31a80927bb13c8f97966f18ca9db9f4e8d759d3204365255226'
+    # Daily reports R4 (owner decisions T1-T5, 24.11.2026): append the team-for-the-day block after "Added earlier" (#165).
     # See docs/reconcile/daily-reports-r4-source-preservation.json.
-    reviewed_followup['local/kbacompany/lang/en/local_kbacompany.php'] = 'cb90de961e189272cef3e0e4a952694b358b82c34ccaad3123426b7a50ac1705'
-    reviewed_followup['local/kbacompany/lang/ru/local_kbacompany.php'] = 'f19ecf6dd9b88e943213d1305f21792312fb04d4e9d13e53aa224a6242b77f75'
+    reviewed_followup['local/kbacompany/lang/en/local_kbacompany.php'] = 'ff960b76019f947c522bcc2765e1247baa0cfbbd4db5e7de20c0531bd535f07d'
+    reviewed_followup['local/kbacompany/lang/ru/local_kbacompany.php'] = '6075cfd77ddcbf01f33d00a5501dda3c162d2ebe6ef49d52113b7c6ab6f805f5'
     # Daily reports R3 (owner decision 24.11.2026): append the report discussion block after R4 and register the
     # 'dailyreport' discussion kind. See docs/reconcile/daily-reports-r3-source-preservation.json.
-    reviewed_followup['local/kbacompany/lang/en/local_kbacompany.php'] = 'f7d35a48ed252d6c8596ba7b8d634b6d341a2d0183c5d56a7b757130c577e8ee'
-    reviewed_followup['local/kbacompany/lang/ru/local_kbacompany.php'] = '42a583ea9afff8c540471ab34b9f0000281f9e9a1df7cd5e2569ec2a592900c5'
+    reviewed_followup['local/kbacompany/lang/en/local_kbacompany.php'] = '7be0cc8f09d3c55c3fe048a4549579face1efcf9e0413d8b34b740e7fa7dc28a'
+    reviewed_followup['local/kbacompany/lang/ru/local_kbacompany.php'] = '3949f0637e307491558c8197f36e1d4824ca9abec6c931ea48dada5e369f8aa6'
     reviewed_followup['local/kbacompany/classes/local/communication_service.php'] = '870b471dba39c867b5b13f8b04f55fb82f67ce484ea44cf929b5b9c4f93dae92'
     for row in plan['rows']:
         path=root/row['path']

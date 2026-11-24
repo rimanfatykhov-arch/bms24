@@ -21,6 +21,27 @@ final class daily_report_feed_service {
             'total' => $data['resulttotal'], 'page' => $page];
     }
 
+    /**
+     * Read-only state of the own report of $day for the feed: 'sent' (no draft any more), 'canadd' (past or current day
+     * and not sent) and 'added' (submit event ids added earlier). "Added earlier" is the fact recorded in the report
+     * journal when the result was added (result_added), so it stays exact when the draft text is edited later. The
+     * report is the actor's own report of $day in $companyuuid, so company, author and day are part of the lookup.
+     */
+    public static function marks(string $companyuuid, int $actor, string $day, string $today): array {
+        $out = ['sent' => false, 'canadd' => false, 'added' => []];
+        if (strcmp($day, $today) > 0) {
+            return $out;
+        }
+        $view = daily_report_store_service::view($companyuuid, $actor, $day);
+        $out['sent'] = $view['report'] && !$view['draft'];
+        $out['canadd'] = !$out['sent'];
+        if ($view['report']) {
+            $out['added'] = daily_report_store_service::added_events((string)$view['report']->companyuuid,
+                (string)$view['report']->uuid);
+        }
+        return $out;
+    }
+
     /** The line written into "Done": task title and the submitted result text. */
     public static function block(\stdClass $event): string {
         $result = trim(str_replace("\r\n", "\n", (string)$event->result));

@@ -57,6 +57,11 @@ E2_KEYS=[b'bpu_tab_discussion',b'bpu_discussion_empty',b'bpu_discussion_readonly
          b'communication_object_battleplan',b'communicationcenter_openplan']
 NAV_MARKER=b'\n// Adaptive BMS24 navigation (2026-11-18): narrow-window menu button and drawer close label.\n'
 NAV_KEYS=[b'bms24_menu_button',b'bms24_menu_close']
+AE_MARKER=b'\n// Day feed "Added earlier" (2026-11-24): mark of a result already added to the report of the day.\n'
+AE_KEYS=[b'dailyreports_feed_addedearlier',b'dailyreports_feed_addedearlier_hint']
+_AE=json.loads((ROOT/'docs/reconcile/day-feed-added-earlier-source-preservation.json').read_text(encoding='utf-8'))
+AE_BEFORE={lang:next(r['before_sha256_lf'] for r in _AE['files'] if r['path']==f'local/kbacompany/lang/{lang}/local_kbacompany.php')
+           for lang in ('en','ru')}
 R4_MARKER=b'\n// Daily reports R4 (2026-11-24): team for the day, owner decisions T1-T5.\n'
 R4_KEYS=[b'dailyreports_queue_team',b'dailyreports_status_notsent',b'dailyreports_team_day',b'dailyreports_team_scope',
          b'dailyreports_team_scope_team',b'dailyreports_team_scope_company',b'dailyreports_team_unit',
@@ -135,19 +140,25 @@ class Preservation(unittest.TestCase):
                     ux,c145=ux.split(C145_MARKER)
                     if NAV_MARKER in c145:
                         c145,nav=c145.split(NAV_MARKER)
-                        if R4_MARKER in nav:
-                            nav,r4=nav.split(R4_MARKER)
-                            if R3_MARKER in r4:
-                                r4,r3=r4.split(R3_MARKER)
-                                # The R4 file is byte-identical up to the R3 marker (its final newline starts the marker).
-                                self.assertEqual(R3_BEFORE[lang],hashlib.sha256(data.split(R3_MARKER)[0]+b'\n').hexdigest())
-                                self.assertEqual(R3_KEYS,keys(r3))
-                                self.assertFalse(set(R3_KEYS)&set(keys(data.split(R3_MARKER)[0])))
-                            # The released file after adaptive navigation (#156) is byte-identical up to the R4 marker;
-                            # that file ended with a newline, which is the first byte of the marker.
-                            self.assertEqual(R4_BEFORE[lang],hashlib.sha256(data.split(R4_MARKER)[0]+b'\n').hexdigest())
-                            self.assertEqual(R4_KEYS,keys(r4))
-                            self.assertFalse(set(R4_KEYS)&set(keys(data.split(R4_MARKER)[0])))
+                        if AE_MARKER in nav:
+                            # Navigation and everything before it are byte-identical up to the "Added earlier" marker.
+                            nav,ae=nav.split(AE_MARKER)
+                            if R4_MARKER in ae:
+                                ae,r4=ae.split(R4_MARKER)
+                                if R3_MARKER in r4:
+                                    r4,r3=r4.split(R3_MARKER)
+                                    # The R4 file is byte-identical up to the R3 marker (its final newline starts the marker).
+                                    self.assertEqual(R3_BEFORE[lang],hashlib.sha256(data.split(R3_MARKER)[0]+b'\n').hexdigest())
+                                    self.assertEqual(R3_KEYS,keys(r3))
+                                    self.assertFalse(set(R3_KEYS)&set(keys(data.split(R3_MARKER)[0])))
+                                # The file released with "Added earlier" (#165) is byte-identical up to the R4 marker;
+                                # that file ended with a newline, which is the first byte of the marker.
+                                self.assertEqual(R4_BEFORE[lang],hashlib.sha256(data.split(R4_MARKER)[0]+b'\n').hexdigest())
+                                self.assertEqual(R4_KEYS,keys(r4))
+                                self.assertFalse(set(R4_KEYS)&set(keys(data.split(R4_MARKER)[0])))
+                            self.assertEqual(AE_BEFORE[lang],hashlib.sha256(data.split(AE_MARKER)[0]).hexdigest())
+                            self.assertEqual(AE_KEYS,keys(ae))
+                            self.assertFalse(set(AE_KEYS)&set(keys(data.split(AE_MARKER)[0])))
                         # The integrated Day Feed and bell are byte-identical up to the adaptive navigation marker.
                         self.assertEqual(NAV_BEFORE[lang],hashlib.sha256(data.split(NAV_MARKER)[0]).hexdigest())
                         self.assertEqual(NAV_KEYS,keys(nav))
