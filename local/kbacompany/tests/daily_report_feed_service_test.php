@@ -226,6 +226,53 @@ final class daily_report_feed_service_test extends \advanced_testcase {
         $this->assertFalse(store::result_added($f['other'], (string)$view['report']->uuid, $one['event']));
     }
 
+    public function test_marks_show_added_earlier_by_event_fact_for_own_report_of_the_day(): void {
+        global $DB;
+        $f = $this->fixture(); $u = (int)$f['employee']->id;
+        $one = $this->submitted($f, $f['employee'], 'First task', 'First result', $f['day']);
+        $two = $this->submitted($f, $f['employee'], 'Second task', 'Second result', $f['day']);
+        $this->submitted($f, $f['peer'], 'Peer task', 'Peer result', $f['day']);
+        $this->setUser($f['employee']);
+        $today = business_date_service::day();
+        // Before adding: both results offer "Add".
+        $this->assertSame(['sent' => false, 'canadd' => true, 'added' => []], feed::marks($f['company'], $u, $f['day'], $today));
+        $this->assertTrue(feed::add($f['company'], $u, $f['day'], $one['event'])['added']);
+        $this->assertSame(['sent' => false, 'canadd' => true, 'added' => [$one['event']]],
+            feed::marks($f['company'], $u, $f['day'], $today));
+        // The employee rewrites the draft by hand: "Added earlier" is the fact of adding, not a text match.
+        $view = store::view($f['company'], $u, $f['day']);
+        store::save_draft($f['company'], $u, $f['day'], $this->values('Rewritten by hand'), [], (int)$view['draft']->revision);
+        $this->assertSame([$one['event']], feed::marks($f['company'], $u, $f['day'], $today)['added']);
+        $this->assertNotContains($two['event'], feed::marks($f['company'], $u, $f['day'], $today)['added']);
+        // Another day of the same employee has its own report (none yet): nothing is marked there.
+        $other = date('Y-m-d', strtotime($f['day'] . ' -1 day'));
+        $this->assertSame(['sent' => false, 'canadd' => true, 'added' => []], feed::marks($f['company'], $u, $other, $today));
+        // A future day offers nothing.
+        $future = date('Y-m-d', strtotime($today . ' +1 day'));
+        $this->assertSame(['sent' => false, 'canadd' => false, 'added' => []], feed::marks($f['company'], $u, $future, $today));
+        // Another author in the same company: own report only, the employee's journal is not visible.
+        $this->setUser($f['peer']);
+        $this->assertSame([], feed::marks($f['company'], (int)$f['peer']->id, $f['day'], $today)['added']);
+        // An employee of another company: nothing under B, refused under A.
+        $this->setUser($f['foreign']);
+        $foreign = (int)$f['foreign']->id;
+        $this->assertSame([], feed::marks($f['other'], $foreign, $f['day'], $today)['added']);
+        try {
+            feed::marks($f['company'], $foreign, $f['day'], $today);
+            $this->fail('Foreign member read company A');
+        } catch (\moodle_exception $e) {
+            $this->assertNotSame('', $e->errorcode);
+        }
+        // After sending: no "Add" any more, the mark stays.
+        $this->setUser($f['employee']);
+        $report = $DB->get_record('local_kbacompany_dreport', ['companyuuid' => $f['company'], 'userid' => $u, 'reportday' => $f['day']],
+            '*', MUST_EXIST);
+        $DB->set_field('local_kbacompany_dreport', 'draftversionuuid', '', ['id' => $report->id]);
+        $DB->set_field('local_kbacompany_dreport', 'status', 'submitted', ['id' => $report->id]);
+        $this->assertSame(['sent' => true, 'canadd' => false, 'added' => [$one['event']]],
+            feed::marks($f['company'], $u, $f['day'], $today));
+    }
+
     public function test_block(): void {
         $this->resetAfterTest();
         $event = (object)['title' => ' Title ', 'result' => "Line 1\r\nLine 2 "];

@@ -239,15 +239,11 @@ if ($tab === 'dayfeed') {
         $feedday = business_date_service::day();
         $data['dayfeed'] = daily_report_feed_service::day($uuid, $actor, $feedday);
     }
-    // Results can be added only to the own draft of a past or current day; never to a sent report.
+    // Results can be added only to the own draft of a past or current day; never to a sent report. Results already
+    // added to the own report of this day show "Added earlier" (read-only, from the report journal).
     $data['dayfeed']['today'] = business_date_service::day();
-    $data['dayfeed']['sent'] = false;
-    $data['dayfeed']['canadd'] = false;
-    if (strcmp($feedday, $data['dayfeed']['today']) <= 0) {
-        $reportview = daily_report_store_service::view($uuid, $actor, $feedday);
-        $data['dayfeed']['sent'] = $reportview['report'] && !$reportview['draft'];
-        $data['dayfeed']['canadd'] = !$data['dayfeed']['sent'];
-    }
+    $data['dayfeed'] = daily_report_feed_service::marks($uuid, $actor, $feedday, $data['dayfeed']['today'])
+        + $data['dayfeed'];
 }
 $data['message_search'] = $mq;
 $data['reply'] = optional_param('reply', '', PARAM_ALPHANUMEXT);
