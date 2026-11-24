@@ -58,6 +58,10 @@ E2_KEYS=[b'bpu_tab_discussion',b'bpu_discussion_empty',b'bpu_discussion_readonly
 NAV_MARKER=b'\n// Adaptive BMS24 navigation (2026-11-18): narrow-window menu button and drawer close label.\n'
 NAV_KEYS=[b'bms24_menu_button',b'bms24_menu_close']
 AE_MARKER=b'\n// Day feed "Added earlier" (2026-11-24): mark of a result already added to the report of the day.\n'
+SUM_MARKER=b'\n// ADR-0011 block 1: monthly summary of daily reports for managers and administrators.\n'
+_SUM=json.loads((ROOT/'docs/reconcile/daily-reports-summary-source-preservation.json').read_text(encoding='utf-8'))
+SUM_BEFORE={lang:next(r['before_sha256_lf'] for r in _SUM['files'] if r['path']==f'local/kbacompany/lang/{lang}/local_kbacompany.php')
+            for lang in ('en','ru')}
 AE_KEYS=[b'dailyreports_feed_addedearlier',b'dailyreports_feed_addedearlier_hint']
 _AE=json.loads((ROOT/'docs/reconcile/day-feed-added-earlier-source-preservation.json').read_text(encoding='utf-8'))
 AE_BEFORE={lang:next(r['before_sha256_lf'] for r in _AE['files'] if r['path']==f'local/kbacompany/lang/{lang}/local_kbacompany.php')
@@ -140,8 +144,16 @@ class Preservation(unittest.TestCase):
                                 # The file released with "Added earlier" (#165) is byte-identical up to the R4 marker;
                                 # that file ended with a newline, which is the first byte of the marker.
                                 self.assertEqual(R4_BEFORE[lang],hashlib.sha256(data.split(R4_MARKER)[0]+b'\n').hexdigest())
-                                self.assertEqual(R4_KEYS,keys(r4))
+                                self.assertEqual(R4_KEYS,keys(r4.split(SUM_MARKER)[0]))
                                 self.assertFalse(set(R4_KEYS)&set(keys(data.split(R4_MARKER)[0])))
+                                if SUM_MARKER in r4:
+                                    # Everything up to the ADR-0011 summary marker is the published R4 (#168) file; keys are new.
+                                    r4,summ=r4.split(SUM_MARKER)
+                                    self.assertEqual(SUM_BEFORE[lang],hashlib.sha256(data.split(SUM_MARKER)[0]).hexdigest())
+                                    sumkeys=keys(summ)
+                                    self.assertEqual(18,len(sumkeys));self.assertEqual(len(sumkeys),len(set(sumkeys)))
+                                    self.assertTrue(all(k.startswith(b'dailyreports_') for k in sumkeys))
+                                    self.assertFalse(set(sumkeys)&set(keys(data.split(SUM_MARKER)[0])))
                             self.assertEqual(AE_BEFORE[lang],hashlib.sha256(data.split(AE_MARKER)[0]).hexdigest())
                             self.assertEqual(AE_KEYS,keys(ae))
                             self.assertFalse(set(AE_KEYS)&set(keys(data.split(AE_MARKER)[0])))

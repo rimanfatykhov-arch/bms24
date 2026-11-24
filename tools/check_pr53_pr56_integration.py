@@ -119,6 +119,10 @@ def check(root=ROOT):
     # See docs/reconcile/daily-reports-r4-source-preservation.json.
     reviewed_followup['local/kbacompany/lang/en/local_kbacompany.php'] = 'ff960b76019f947c522bcc2765e1247baa0cfbbd4db5e7de20c0531bd535f07d'
     reviewed_followup['local/kbacompany/lang/ru/local_kbacompany.php'] = '6075cfd77ddcbf01f33d00a5501dda3c162d2ebe6ef49d52113b7c6ab6f805f5'
+    # ADR-0011 block 1: monthly summary of daily reports (read-only, no schema). RU/EN block appended after the
+    # R4 "Team for the day" block (#168). See docs/reconcile/daily-reports-summary-source-preservation.json.
+    reviewed_followup['local/kbacompany/lang/en/local_kbacompany.php'] = '9a3fa3efb85ef6f9aeaf18202ba4377bf418787c4631b636dbf766f7a45c2f88'
+    reviewed_followup['local/kbacompany/lang/ru/local_kbacompany.php'] = '81334038357d7bc9f79a2dfefca9c8022c088045919931fc54e78a939b82a858'
     for row in plan['rows']:
         path=root/row['path']
         if not path.is_file() or path.is_symlink():

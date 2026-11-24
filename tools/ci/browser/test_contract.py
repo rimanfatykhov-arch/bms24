@@ -910,7 +910,21 @@ class ContractTest(unittest.TestCase):
                    'team': {'rows': [[EA, 'accepted'], [MA, 'none'], [RA, 'none']],
                             'counts': {'none': 2, 'notsent': 0, 'submitted': 0, 'returned': 0, 'accepted': 1},
                             'filters': 1, 'report_links': 1, 'hscroll': True},
-                   'team_employee_filters': 0}
+                   'team_employee_filters': 0,
+                   'team_scopes': {
+                       'team': {'rows': [[EA, 'accepted']], 'options': ['team', 'company'], 'selected': 'team',
+                                'draft_leak': False, 'hscroll': True},
+                       'company': {'rows': [[EA, 'accepted'], [MA, 'none'], [RA, 'notsent']], 'options': ['team', 'company'],
+                                   'selected': 'company', 'draft_leak': False, 'hscroll': True}},
+                   'team_open': {'link': 1, 'url_report': True, 'versions': 2, 'draft_leak': False},
+                   'summary': {'month': day[:7], 'filters': 1, 'users_all': [EA, MA, RA], 'cell_links': 1,
+                               'cell': ['accepted', 'positive'], 'draft_leak': False, 'prev_month': '2026-10',
+                               'users_mine': [EA], 'scope_kept': 'mine', 'hscroll': True,
+                               'card': {'url_report': True, 'versions': 2}},
+                   'release_denied': {'EA': {'summary': 0, 'summary_tab': 0},
+                                      'EB_team': {'http': 200, 'team': 0, 'summary': 0, 'versions': 0, 'leak': False},
+                                      'EB_summary': {'http': 200, 'team': 0, 'summary': 0, 'versions': 0, 'leak': False},
+                                      'EB_card': {'http': 404, 'team': 0, 'summary': 0, 'versions': 0, 'leak': False}}}
             if today:
                 row['after_touch'] = {'report': {'status': 'submitted'}, 'versions': [dict(v1)], 'decisions': []}
             rows.append(row)
@@ -964,6 +978,33 @@ class ContractTest(unittest.TestCase):
         fails('daily_report_team_day_view', lambda o: o['cases'][1]['team'].update(hscroll=False))
         fails('daily_report_team_day_view', lambda o: o['cases'][0].update(team_employee_filters=1))
         fails('daily_report_team_day_view', lambda o: o['cases'][1].pop('team'))
+        # Release #168 + #173: scopes, opening a report, monthly summary, access and draft privacy
+        fails('daily_report_team_scopes_and_open', lambda o: o['cases'][0]['team_scopes']['team'].update(options=['company']))
+        fails('daily_report_team_scopes_and_open', lambda o: o['cases'][1]['team_scopes']['company'].update(selected='team'))
+        fails('daily_report_team_scopes_and_open', lambda o: o['cases'][0]['team_scopes']['team']['rows'].append([14, 'none']))
+        fails('daily_report_team_scopes_and_open', lambda o: o['cases'][1]['team_scopes']['team'].update(rows=[]))
+        fails('daily_report_team_scopes_and_open', lambda o: o['cases'][0]['team_scopes']['company']['rows'].pop())
+        fails('daily_report_team_scopes_and_open', lambda o: o['cases'][1]['team_scopes']['company'].update(draft_leak=True))
+        fails('daily_report_team_scopes_and_open', lambda o: o['cases'][0]['team_open'].update(url_report=False))
+        fails('daily_report_team_scopes_and_open', lambda o: o['cases'][1]['team_open'].update(draft_leak=True))
+        fails('daily_report_team_scopes_and_open', lambda o: o['cases'][0].pop('team_scopes'))
+        fails('daily_report_monthly_summary', lambda o: o['cases'][0]['summary'].update(month='2026-10'))
+        fails('daily_report_monthly_summary', lambda o: o['cases'][1]['summary'].update(prev_month='2026-11'))
+        fails('daily_report_monthly_summary', lambda o: o['cases'][0]['summary']['users_all'].append(14))
+        fails('daily_report_monthly_summary', lambda o: o['cases'][1]['summary'].update(users_mine=[13]))
+        fails('daily_report_monthly_summary', lambda o: o['cases'][0]['summary'].update(scope_kept='all'))
+        fails('daily_report_monthly_summary', lambda o: o['cases'][1]['summary'].update(cell=['submitted', 'none']))
+        fails('daily_report_monthly_summary', lambda o: o['cases'][0]['summary'].update(cell_links=0))
+        fails('daily_report_monthly_summary', lambda o: o['cases'][1]['summary'].pop('card'))
+        fails('daily_report_monthly_summary', lambda o: o['cases'][0]['summary'].update(draft_leak=True))
+        fails('daily_report_monthly_summary', lambda o: o['cases'][1]['summary'].update(filters=0))
+        fails('daily_report_release_access_denied', lambda o: o['cases'][0]['release_denied']['EA'].update(summary=1))
+        fails('daily_report_release_access_denied', lambda o: o['cases'][1]['release_denied']['EA'].update(summary_tab=1))
+        fails('daily_report_release_access_denied', lambda o: o['cases'][0]['release_denied']['EB_team'].update(team=2))
+        fails('daily_report_release_access_denied', lambda o: o['cases'][1]['release_denied']['EB_summary'].update(summary=1))
+        fails('daily_report_release_access_denied', lambda o: o['cases'][0]['release_denied']['EB_card'].update(versions=1))
+        fails('daily_report_release_access_denied', lambda o: o['cases'][1]['release_denied']['EB_card'].update(http=500))
+        fails('daily_report_release_access_denied', lambda o: o['cases'][0]['release_denied']['EB_summary'].update(leak=True))
         fails('daily_report_layout_and_browser_errors', lambda o: o['cases'][1].update(hscroll_form=False))
         fails('daily_report_layout_and_browser_errors', lambda o: o['cases'][0]['browser_events'].append(
             {'source': 'pageerror', 'name': 'Error', 'message': 'x'}))
