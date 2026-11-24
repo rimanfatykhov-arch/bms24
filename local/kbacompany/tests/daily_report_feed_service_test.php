@@ -147,9 +147,8 @@ final class daily_report_feed_service_test extends \advanced_testcase {
         global $DB;
         $f = $this->fixture(); $u = (int)$f['employee']->id;
         $r = $this->submitted($f, $f['employee'], 'Own task', 'Own result', $f['day']);
-        $this->submitted($f, $f['peer'], 'Peer task', 'Peer result', $f['day']);
+        $peer = $this->submitted($f, $f['peer'], 'Peer task', 'Peer result', $f['day']);
         $this->setUser($f['employee']);
-        $today = business_date_service::day();
         // Another author's event in the same company.
         $this->expect_error('dailyreports_taskunavailable', function() use ($f, $u, $peer) {
             feed::add($f['company'], $u, $f['day'], $peer['event']);

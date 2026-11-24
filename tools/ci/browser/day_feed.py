@@ -69,9 +69,14 @@ class NoRedirect(urllib.request.HTTPRedirectHandler):
         return None
 
 
-def post(ctx, fields):
+def cookie_of(ctx):
+    """Session cookie header of a browser context (Playwright is called on the main thread only)."""
+    return '; '.join('%s=%s' % (c['name'], c['value']) for c in ctx.cookies(local_url(base + '/')))
+
+
+def post(ctx, fields, cookie=None):
     """One POST of this session to the report page (real HTTP, redirect not followed)."""
-    cookie = '; '.join('%s=%s' % (c['name'], c['value']) for c in ctx.cookies(local_url(base + '/')))
+    cookie = cookie_of(ctx) if cookie is None else cookie
     req = urllib.request.Request(local_url(REPORT), data=urllib.parse.urlencode(fields).encode(), method='POST',
                                  headers={'Cookie': cookie, 'Content-Type': 'application/x-www-form-urlencoded'})
     try:
@@ -190,8 +195,9 @@ with sync_playwright() as pw:
             case['feed_after_second'] = marks(page)
             own = page.evaluate('() => M.cfg.sesskey')
             fields = {'uuid': company, 'day': day, 'source': 'feed', 'addevent': str(t1['event'])}
+            cookie = cookie_of(ctx)
             with ThreadPoolExecutor(max_workers=2) as pool:
-                case['repeat_http'] = list(pool.map(lambda _: post(ctx, dict(fields, sesskey=own)), range(2)))
+                case['repeat_http'] = list(pool.map(lambda _: post(None, dict(fields, sesskey=own), cookie), range(2)))
             case['unavailable_http'] = post(ctx, dict(fields, sesskey=own,
                                                       addevent=str(max(t['event'] for t in setup['tasks']) + 1000000)))
             case['after_repeat_feed'] = state(day)
