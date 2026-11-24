@@ -1,0 +1,20 @@
+{
+ "scope": "exact intentional source updates; not runtime or release acceptance",
+ "base_sha": "62fdc4934b8b8a87fb8c7f21a52c56b64229e836",
+ "normalization": "CRLF to LF only",
+ "previous_evidence": "docs/reconcile/day-feed-added-earlier-source-preservation.json",
+ "decision": "docs/office/DOC_W2_OFFICE_WORKSPACE.md (owner task 2026-11-24: DOC-W2 Office workspace, BMS-12)",
+ "change": "Append the DOC-W2 Office workspace block (officews_* keys) after the day feed \"Added earlier\" block. Retain all preceding keys byte-for-byte. No schema, version, capability or notification change; the workspace is behind local_kbacompany/office_workspace_enabled (default off).",
+ "files": [
+  {
+   "path": "local/kbacompany/lang/en/local_kbacompany.php",
+   "before_sha256_lf": "9495d7e1467dbe67c7cb18be14cc4b19a3d33a40e632d528f77fb08788dbc803",
+   "after_sha256_lf": "e957b977732bba7209226388ea0e6c96e469e3ae57f3800a843a8ae76bf2737d"
+  },
+  {
+   "path": "local/kbacompany/lang/ru/local_kbacompany.php",
+   "before_sha256_lf": "dc4772de7d84d31a80927bb13c8f97966f18ca9db9f4e8d759d3204365255226",
+   "after_sha256_lf": "bd7a89005f0fb7bb5d7949408716665b161f04bfbb17bea504e1844c3b1eb06f"
+  }
+ ]
+}

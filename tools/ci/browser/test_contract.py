@@ -1644,6 +1644,93 @@ class ContractTest(unittest.TestCase):
             self.assertTrue(all(x['status'] == 'FAIL' for x in r.values()), r)
         self.assertTrue(all(x['status'] == 'FAIL' for x in c.evaluate(c.notification_bell_checks(None, None)).values()))
 
+    def office_obs(self):
+        company = 'a1b2c3d4-0000-4000-8000-00000000000a'
+        ea = {'acknowledge': 1, 'decisions': 0, 'directives': 0, 'documents': 3, 'execution': 2, 'overdue': 1, 'review': 1}
+        ma = {'acknowledge': 0, 'decisions': 0, 'directives': 0, 'documents': 6, 'execution': 0, 'overdue': 0, 'review': 2}
+        eb = {'acknowledge': 0, 'decisions': 0, 'directives': 0, 'documents': 1, 'execution': 1, 'overdue': 1, 'review': 1}
+        shown = lambda m: {k: v for k, v in m.items() if k != 'decisions'}
+        planned = [{'key': k, 'tag': 'span', 'inlink': False, 'href': None, 'disabled': 'true'} for k in c.OFFICE_PLANNED]
+        active = [{'path': p, 'uuid': company, 'href': 'http://127.0.0.1:8080/local/kbacompany/' + p, 'current': None}
+                  for p in c.OFFICE_ACTIVE]
+        active[0]['current'] = 'page'
+        cases = []
+        for shell, width, lang in c.OFFICE_CASES:
+            page = {'workspace': True, 'http': 200, 'counts': shown(ea), 'planned': copy.deepcopy(planned),
+                    'active': copy.deepcopy(active), 'h1': [c.OFFICE_TITLES[lang]], 'empty': [], 'create': 0,
+                    'owned_shell': shell == 'owned', 'leaked': [], 'hscroll': {'scroll': width, 'inner': width},
+                    'menu': [{'uuid': company, 'current': 'page', 'visible': True}] if shell == 'owned' else []}
+            case = {'shell': shell, 'width': width, 'lang': lang, 'language_installed': True, 'page': page,
+                    'browser_events': [], 'server_errors': []}
+            if shell == 'owned' and width == 1440:
+                case['landing'] = [{'path': p, 'http': 200, 'workspace_error': False} for p in c.OFFICE_ACTIVE]
+            cases.append(case)
+        denied = {'workspace': False, 'http': 404, 'counts': {}, 'leaked': [], 'menu': []}
+        return {'status': 'PASS', 'company': company, 'cases': cases,
+                'switch_off': {'enabled': False}, 'switch_on': {'enabled': True},
+                'off': dict(denied, menu_on_documents=[]), 'model': {'EA': ea, 'MA': ma, 'EB': eb},
+                'manager': {'workspace': True, 'http': 200, 'counts': shown(ma), 'create': 1, 'leaked': [], 'browser_events': []},
+                'foreign': dict(denied), 'own_b': {'workspace': True, 'http': 200, 'counts': shown(eb), 'leaked': []},
+                'revoked_flag': True, 'reopened_flag': True,
+                'revocation': {'before': {'workspace': True, 'http': 200, 'counts': shown(ea)}, 'after': dict(denied)}}
+
+    def test_office_workspace_genuine_run_passes(self):
+        res = c.evaluate(c.office_workspace_checks(self.office_obs(), 0))
+        self.assertEqual({k: 'PASS' for k in res}, {k: v['status'] for k, v in res.items()})
+        self.assertEqual(7, len(res))
+        for k in res:
+            self.assertIn(k, c.required_check_names())
+
+    def test_office_workspace_regressions_fail(self):
+        mutations = [
+            ('office_switch_off_hides_route_and_menu', lambda o: o['off'].update(workspace=True)),
+            ('office_switch_off_hides_route_and_menu', lambda o: o['off'].update(menu_on_documents=[{'uuid': 'x'}])),
+            ('office_switch_off_hides_route_and_menu', lambda o: o['switch_off'].update(enabled=True)),
+            ('office_switch_off_hides_route_and_menu', lambda o: o['off'].update(http=500)),
+            ('office_counters_equal_service_ground_truth', lambda o: o['cases'][1]['page']['counts'].update(review=5)),
+            ('office_counters_equal_service_ground_truth', lambda o: o['cases'][2]['page']['counts'].pop('acknowledge')),
+            ('office_counters_equal_service_ground_truth', lambda o: o['cases'][0]['page'].update(leaked=['OFFICE CI REVIEW B'])),
+            ('office_counters_equal_service_ground_truth', lambda o: o['cases'][3]['page'].update(create=1)),
+            ('office_counters_equal_service_ground_truth', lambda o: o['cases'][1]['page'].update(h1=['Office'])),
+            ('office_menu_and_planned_sections', lambda o: o['cases'][0]['page']['planned'][2].update(tag='a')),
+            ('office_menu_and_planned_sections', lambda o: o['cases'][0]['page']['planned'][0].update(inlink=True)),
+            ('office_menu_and_planned_sections', lambda o: o['cases'][1]['page']['planned'].pop()),
+            ('office_menu_and_planned_sections', lambda o: o['cases'][0]['page']['active'][3].update(uuid='other')),
+            ('office_menu_and_planned_sections', lambda o: o['cases'][0]['page']['active'][2].update(current='page')),
+            ('office_menu_and_planned_sections', lambda o: o['cases'][1]['page'].update(menu=[])),
+            ('office_menu_and_planned_sections', lambda o: o['cases'][0]['page']['menu'][0].update(current=None)),
+            ('office_sections_open_canonical_pages', lambda o: o['cases'][0]['landing'][3].update(http=403)),
+            ('office_sections_open_canonical_pages', lambda o: o['cases'][0].pop('landing')),
+            ('office_manager_view_and_company_isolation', lambda o: o['manager']['counts'].update(documents=1)),
+            ('office_manager_view_and_company_isolation', lambda o: o['manager'].update(create=0)),
+            ('office_manager_view_and_company_isolation', lambda o: o['foreign'].update(workspace=True)),
+            ('office_manager_view_and_company_isolation', lambda o: o['foreign'].update(leaked=['OFFICE CI EFFECTIVE A'])),
+            ('office_manager_view_and_company_isolation', lambda o: o['foreign'].update(counts={'review': 1})),
+            ('office_manager_view_and_company_isolation', lambda o: o['own_b']['counts'].update(overdue=2)),
+            ('office_revocation_closes_workspace', lambda o: o['revocation']['after'].update(workspace=True)),
+            ('office_revocation_closes_workspace', lambda o: o.update(revoked_flag=False)),
+            ('office_revocation_closes_workspace', lambda o: o.update(reopened_flag=False)),
+            ('office_layout_and_browser_errors', lambda o: o['cases'][1]['page'].update(hscroll={'scroll': 420, 'inner': 375})),
+            ('office_layout_and_browser_errors', lambda o: o['cases'][2].update(server_errors=[{'url': 'x', 'status': 500}])),
+            ('office_layout_and_browser_errors',
+             lambda o: o['cases'][3].update(browser_events=[{'source': 'pageerror', 'name': 'Error', 'message': 'boom'}])),
+        ]
+        for name, mutate in mutations:
+            with self.subTest(check=name):
+                o = self.office_obs(); mutate(o)
+                res = c.evaluate(c.office_workspace_checks(o, 0))
+                self.assertEqual('FAIL', res[name]['status'], res[name])
+
+    def test_office_workspace_incomplete_runs_fail_every_check(self):
+        obs = self.office_obs()
+        for mutate, code in ((lambda o: o.update(error='boom'), 0), (lambda o: o.update(status='FAIL'), 0),
+                             (lambda o: o['cases'].pop(), 0), (lambda o: o['model'].pop('EB'), 0),
+                             (lambda o: o['model']['EA'].update(acknowledge=0), 0), (lambda o: None, 1)):
+            o = copy.deepcopy(obs); mutate(o)
+            r = c.evaluate(c.office_workspace_checks(o, code))
+            self.assertTrue(all(x['status'] == 'FAIL' for x in r.values()), r)
+        self.assertTrue(all(x['status'] == 'FAIL' for x in c.evaluate(c.office_workspace_checks(None, None)).values()))
+
     def test_required_check_names_complete(self):
         names = c.required_check_names()
         self.assertEqual(len(names), len(set(names)))

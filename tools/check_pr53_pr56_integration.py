@@ -115,6 +115,10 @@ def check(root=ROOT):
     # See docs/reconcile/DAY_FEED_ADDED_EARLIER.md.
     reviewed_followup['local/kbacompany/lang/en/local_kbacompany.php'] = '9495d7e1467dbe67c7cb18be14cc4b19a3d33a40e632d528f77fb08788dbc803'
     reviewed_followup['local/kbacompany/lang/ru/local_kbacompany.php'] = 'dc4772de7d84d31a80927bb13c8f97966f18ca9db9f4e8d759d3204365255226'
+    # DOC-W2 Office workspace (owner task 2026-11-24): officews_* RU/EN block after "Added earlier"; read-only, default off.
+    # See docs/office/DOC_W2_OFFICE_WORKSPACE.md.
+    reviewed_followup['local/kbacompany/lang/en/local_kbacompany.php'] = 'e957b977732bba7209226388ea0e6c96e469e3ae57f3800a843a8ae76bf2737d'
+    reviewed_followup['local/kbacompany/lang/ru/local_kbacompany.php'] = 'bd7a89005f0fb7bb5d7949408716665b161f04bfbb17bea504e1844c3b1eb06f'
     for row in plan['rows']:
         path=root/row['path']
         if not path.is_file() or path.is_symlink():

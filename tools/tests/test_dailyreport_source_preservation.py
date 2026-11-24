@@ -62,6 +62,10 @@ AE_KEYS=[b'dailyreports_feed_addedearlier',b'dailyreports_feed_addedearlier_hint
 _AE=json.loads((ROOT/'docs/reconcile/day-feed-added-earlier-source-preservation.json').read_text(encoding='utf-8'))
 AE_BEFORE={lang:next(r['before_sha256_lf'] for r in _AE['files'] if r['path']==f'local/kbacompany/lang/{lang}/local_kbacompany.php')
            for lang in ('en','ru')}
+OFFICE_MARKER=b'\n// DOC-W2 Office workspace (2026-11-24): read-only overview over existing documents, approvals and decisions.\n'
+_OFFICE=json.loads((ROOT/'docs/reconcile/office-workspace-doc-w2-source-preservation.json').read_text(encoding='utf-8'))
+OFFICE_BEFORE={lang:next(r['before_sha256_lf'] for r in _OFFICE['files'] if r['path']==f'local/kbacompany/lang/{lang}/local_kbacompany.php')
+               for lang in ('en','ru')}
 _R2=json.loads((ROOT/'docs/reconcile/daily-reports-r2-source-preservation.json').read_text(encoding='utf-8'))
 R2_AFTER={lang:next(r['after_sha256_lf'] for r in _R2['files'] if r['path']==f'local/kbacompany/lang/{lang}/local_kbacompany.php')
           for lang in ('en','ru')}
@@ -126,6 +130,14 @@ class Preservation(unittest.TestCase):
                         if AE_MARKER in nav:
                             # Navigation and everything before it are byte-identical up to the "Added earlier" marker.
                             nav,ae=nav.split(AE_MARKER)
+                            if OFFICE_MARKER in ae:
+                                # Everything up to the DOC-W2 Office marker is byte-identical; office keys are new.
+                                ae,office=ae.split(OFFICE_MARKER)
+                                self.assertEqual(OFFICE_BEFORE[lang],hashlib.sha256(data.split(OFFICE_MARKER)[0]).hexdigest())
+                                officekeys=keys(office)
+                                self.assertEqual(59,len(officekeys));self.assertEqual(len(officekeys),len(set(officekeys)))
+                                self.assertTrue(all(k.startswith(b'officews_') for k in officekeys))
+                                self.assertFalse(set(officekeys)&set(keys(data.split(OFFICE_MARKER)[0])))
                             self.assertEqual(AE_BEFORE[lang],hashlib.sha256(data.split(AE_MARKER)[0]).hexdigest())
                             self.assertEqual(AE_KEYS,keys(ae))
                             self.assertFalse(set(AE_KEYS)&set(keys(data.split(AE_MARKER)[0])))
