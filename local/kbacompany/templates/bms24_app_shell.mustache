@@ -7,10 +7,11 @@
   </aside>
   <section class="bms24-frame">
     <header class="bms24-topbar">
-      <button type="button" class="bms24-menubutton" aria-expanded="false" aria-controls="bms24-drawer" hidden>
-        <span class="bms24-menubutton-icon" aria-hidden="true"></span><span class="bms24-menubutton-label">{{#str}}bms24_menu_button, local_kbacompany{{/str}}</span>
+      <button type="button" class="bms24-menubutton" aria-label="{{#str}}bms24_menu_button, local_kbacompany{{/str}}" aria-expanded="false" aria-controls="bms24-drawer" hidden>
+        <span class="bms24-menubutton-icon" aria-hidden="true"></span>
       </button>
-      <details class="bms24-mobilemenu"><summary>{{topbar.mobilemenulabel}}</summary>
+      <details class="bms24-mobilemenu">
+        <summary aria-label="{{topbar.mobilemenulabel}}"><span class="bms24-menubutton-icon" aria-hidden="true"></span></summary>
         <div class="bms24-drawer" id="bms24-drawer" data-bms24-drawer-label="{{sidebar.arialabel}}">
           <div class="bms24-drawerhead">
             <div class="bms24-drawerbrand">{{{sidebar.brandmarkhtml}}}</div>

@@ -42,6 +42,7 @@ FULL_PATHS = [
     ('local/kbacorporate/*', 'Corporate plugin (retained 2613 line)'),
     ('theme/*', 'KBA Theme'),
     ('.github/*', 'CI workflow definition'),
+    ('tools/ci/*', 'CI classification, gate or acceptance infrastructure'),
     ('tools/tests/*', 'acceptance test infrastructure'),
     ('tools/build_*', 'release packaging'),
     ('tools/check_*', 'release / preservation gates'),
@@ -68,7 +69,7 @@ FAST_PATHS = ['*.css', '*.md', 'docs/*', '*.png', '*.svg', '*.jpg', '*.gif', '*.
 # Paths that need STANDARD at least (server/client logic without FULL triggers).
 STANDARD_PATHS = ['local/kbacompany/*.php', 'local/kbacompany/classes/*', 'local/kbacompany/templates/*',
                   'local/kbacompany/amd/*', 'local/kbacompany/js/*', 'local/kbacompany/tests/*',
-                  'local/kbacompany/cli/*', 'tools/ci/*', 'scripts/*']
+                  'local/kbacompany/cli/*', 'scripts/*']
 # Always-on security regression set for STANDARD and FULL (company isolation, revocation, CSRF/ACL paths).
 SECURITY_GATES = ['pr48_tenant_isolation_test', 'membership_revocation_test', 'rc30_integrated_access_test',
                   'task_membership_regression_test', 'privacy_provider_test']
@@ -171,7 +172,7 @@ def classify(repo: Path, base: str, head: str) -> dict:
         'focused_phpunit': tests, 'security_gates': gates,
         'required_workflows': {'FAST': ['ci-tiers / FAST'],
                                'STANDARD': ['ci-tiers / FAST', 'ci-tiers / STANDARD'],
-                               'FULL': ['ci-tiers / FAST', 'ci-tiers / STANDARD'] + FULL_WORKFLOWS}[profile],
+                               'FULL': ['ci-tiers / FAST', 'ci-tiers / STANDARD', 'ci-tiers / BROWSER'] + FULL_WORKFLOWS}[profile],
         'reasons': unique,
         'explanation': {'FAST': 'Only presentation/text files changed; no PHP/JS logic and no security-sensitive content.',
                         'STANDARD': 'Application code changed without schema, permission, file-serving, SQL or external-API triggers.',
