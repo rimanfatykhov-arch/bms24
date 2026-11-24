@@ -13,7 +13,9 @@ python tools/ui_harness/measure.py --out ../outputs/ui-harness         # rules, 
 ```
 
 - `build.py --repo PATH` renders another checkout, for example a PR worktree. `--shell owned|legacy|both` (default:
-  both). `--offline` skips Bootstrap from the CDN.
+  both). `--offline` skips Bootstrap from the CDN. Use it only to check that pages build: without Bootstrap the
+  form controls have browser default widths, and the list-search rule reports false violations (28 of 56 on `main`
+  `dcc90f4`, 0 of 56 with Bootstrap).
 - `measure.py` needs `pip install playwright`. If `python -m playwright install chromium` cannot download (the
   Playwright CDN is not reachable from every location), it falls back to installed Edge/Chrome, or you can force one
   with `--channel msedge|chrome`. Exit code: 0 = all rules hold, 1 = violations (listed per page and width),
