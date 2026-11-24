@@ -10081,3 +10081,7 @@ $string['dailyreports_due_counts'] = 'Day totals by the reporting schedule';
 $string['dailyreports_due_by'] = 'Due by {$a}';
 $string['dailyreports_due_own_missed'] = 'The deadline has passed: {$a}. Submit the report as soon as possible.';
 $string['dailyreports_due_own_notrequired'] = 'A report for this day is not required by the company reporting schedule.';
+// Daily reports R5c (2026-11-24): morning reminder about an unsent report, owner decision K4.
+$string['dailyreports_remind_task'] = 'Daily reports: morning reminder about an unsent report';
+$string['dailyreports_remind_title'] = 'Your report for {$a->day} has not been sent. Due by {$a->due}.';
+$string['messageprovider:dailyreport_reminder'] = 'Reminder about an unsent daily report';

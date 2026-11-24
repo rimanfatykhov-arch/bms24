@@ -11,6 +11,11 @@ ADDITIONS = {
     (2026111100, 2026112400): NEW | ADR0010_TABLES | R5A_TABLES,
     (2026111601, 2026112400): ADR0010_TABLES | R5A_TABLES,
     (2026112301, 2026112400): R5A_TABLES,
+    # R5c registers a scheduled task and a message provider only: no table changes.
+    (2026111100, 2026112401): NEW | ADR0010_TABLES | R5A_TABLES,
+    (2026111601, 2026112401): ADR0010_TABLES | R5A_TABLES,
+    (2026112301, 2026112401): R5A_TABLES,
+    (2026112400, 2026112401): set(),
 }
 
 
@@ -28,6 +33,8 @@ def upgraded(before, after):
         require(NEW <= old, 'R1/R2 baseline tables missing')
     if transition[0] == 2026112301:
         require(NEW | ADR0010_TABLES <= old, 'ADR-0010 baseline tables missing')
+    if transition[0] == 2026112400:
+        require(NEW | ADR0010_TABLES | R5A_TABLES <= old, 'R5a baseline tables missing')
     require(old and not old & added and current == old | added, 'unexpected upgrade table inventory')
     require(isinstance(before.get('enabled'), bool) and before['enabled'] is after.get('enabled'),
             'feature switch changed during the upgrade')
@@ -42,7 +49,7 @@ def upgraded(before, after):
 
 def fresh_equal(fresh, upgrade):
     version = upgrade.get('version')
-    require(version in (2026111601, 2026112301, 2026112400) and fresh.get('version') == version, 'fresh/upgrade version mismatch')
+    require(version in (2026111601, 2026112301, 2026112400, 2026112401) and fresh.get('version') == version, 'fresh/upgrade version mismatch')
     require(fresh.get('schemas') and fresh['schemas'] == upgrade.get('schemas'), 'fresh/upgrade full domain schema differs')
 
 

@@ -17,7 +17,7 @@ class communication_service {
         'kbaelement', 'improvement', 'meeting', 'battleplan', 'dailyreport'];
     public const NOTIFICATION_KINDS = ['thread_invite', 'message', 'mention', 'task_created',
         'calendar_day', 'calendar_meeting_hour', 'calendar_task_due', 'calendar_checkpoint_tomorrow', 'bp_decision',
-        'dailyreport_submitted', 'dailyreport_decision', 'dailyreport_copy'];
+        'dailyreport_submitted', 'dailyreport_decision', 'dailyreport_copy', 'dailyreport_reminder'];
     public const ATTACHMENT_KINDS = ['document', 'moodlefile', 'url', 'external'];
     /**
      * Object kinds whose single canonical discussion is readable by everyone allowed to open the object.

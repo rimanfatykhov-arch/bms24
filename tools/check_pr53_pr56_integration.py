@@ -133,6 +133,11 @@ def check(root=ROOT):
     # See docs/reconcile/daily-reports-r5b-source-preservation.json.
     reviewed_followup['local/kbacompany/lang/en/local_kbacompany.php'] = 'bec1c7e3cdf603439b852b4dcd5bee30eaff81bb52ea16f83b8192b53bafbfd8'
     reviewed_followup['local/kbacompany/lang/ru/local_kbacompany.php'] = '77f496ecdd7f082fd20963ef13712d0cb46e11c5b60c5bf375c062a4b2a4d153'
+    # Daily reports R5c (owner decision K4, 24.11.2026): append the reminder block after R5b and register the
+    # 'dailyreport_reminder' notification kind. See docs/reconcile/daily-reports-r5c-source-preservation.json.
+    reviewed_followup['local/kbacompany/lang/en/local_kbacompany.php'] = 'dc21f933da462868f29deec1b91befb08b3112630b8e6216df786440fa4f194e'
+    reviewed_followup['local/kbacompany/lang/ru/local_kbacompany.php'] = '33c6faaab413076b18616b22c9139dcc66f3b0db2d8810c924daddcdcc08ecd2'
+    reviewed_followup['local/kbacompany/classes/local/communication_service.php'] = 'c796f4eb579cebc002bfd073222ee3e284e2f7ca10d5d46acf9de717a7e3a7ff'
     for row in plan['rows']:
         path=root/row['path']
         if not path.is_file() or path.is_symlink():
@@ -145,7 +150,7 @@ def check(root=ROOT):
         errors.append('one historical0902 release note was lost')
     upgrade=(root/'local/kbacompany/db/upgrade.php').read_text(encoding='utf-8')
     versions=[int(v) for v in re.findall(r'upgrade_plugin_savepoint\(true,\s*(\d+)',upgrade)]
-    if len(versions)!=487 or versions!=sorted(set(versions)) or versions[-5:]!=[2026111100,2026111600,2026111601,2026112301,2026112400]:
+    if len(versions)!=488 or versions!=sorted(set(versions)) or versions[-6:]!=[2026111100,2026111600,2026111601,2026112301,2026112400,2026112401]:
         errors.append('merged upgrade chronology/identity changed')
     driver=(root/'tools/tests/moodle_acceptance.php').read_text(encoding='utf-8')
     for ref in [plan['pr53_sha'],plan['pr56_sha']]:

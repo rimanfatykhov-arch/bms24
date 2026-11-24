@@ -10083,3 +10083,7 @@ $string['dailyreports_due_counts'] = 'Итоги дня по графику';
 $string['dailyreports_due_by'] = 'Сдать до {$a}';
 $string['dailyreports_due_own_missed'] = 'Срок сдачи прошёл: {$a}. Отправьте отчёт как можно скорее.';
 $string['dailyreports_due_own_notrequired'] = 'По графику компании отчёт за этот день не требуется.';
+// Daily reports R5c (2026-11-24): morning reminder about an unsent report, owner decision K4.
+$string['dailyreports_remind_task'] = 'Ежедневные отчёты: утреннее напоминание о неотправленном отчёте';
+$string['dailyreports_remind_title'] = 'Отчёт за {$a->day} не отправлен. Сдать до {$a->due}.';
+$string['messageprovider:dailyreport_reminder'] = 'Напоминание о неотправленном ежедневном отчёте';

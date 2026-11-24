@@ -6278,5 +6278,11 @@ function xmldb_local_kbacompany_upgrade(int $oldversion): bool {
         upgrade_plugin_savepoint(true, 2026112400, 'local', 'kbacompany');
     }
 
+    if ($oldversion < 2026112401) {
+        // Daily reports R5c (owner decision K4): registers the send_daily_report_reminders task and the
+        // dailyreport_reminder message provider. No schema or data change.
+        upgrade_plugin_savepoint(true, 2026112401, 'local', 'kbacompany');
+    }
+
     return true;
 }
