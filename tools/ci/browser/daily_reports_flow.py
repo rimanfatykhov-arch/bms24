@@ -289,7 +289,10 @@ with sync_playwright() as pw:
             page.goto(url(tab='summary', month=month), wait_until='networkidle')
             denied['EA'] = {'summary': page.locator('[data-dailyreport-summary]').count(),
                             'summary_tab': page.locator('a[href*="tab=summary"]').count()}
-            ectx = browser.new_context(viewport={'width': width, 'height': 900}); recorder.install(ectx)
+            # The denials below are expected HTTP 404 pages: their console lines go to a separate recorder (as in
+            # daily_reports_nav.py), so the case's no-browser-errors check keeps judging the pages that must work.
+            deniedrecorder = Recorder()
+            ectx = browser.new_context(viewport={'width': width, 'height': 900}); deniedrecorder.install(ectx)
             ep = login(ectx, 'EB')
             ep.on('response', lambda r: server_errors.append({'url': r.url, 'status': r.status}) if r.status >= 500 else None)
             for key, params in (('team', {'tab': 'review', 'queue': 'team', 'day': day, 'scope': 'company'}),
@@ -302,6 +305,7 @@ with sync_playwright() as pw:
                                        'versions': ep.locator('[data-dailyreport-version]').count(),
                                        'leak': radraft in html or texts['rework'] in html}
             ectx.close()
+            denied['browser_events'] = deniedrecorder.events
             case['release_denied'] = denied
             php('orgclear', company)
             case['ids'] ={k: f['actors'][k]['userid'] for k in ('EA', 'MA', 'RA', 'EB')}
