@@ -173,6 +173,9 @@ try:
     # Saved daily reports R1/R2: draft, conflict, concurrent submit/decisions, CSRF, snapshot, review cycle, notifications.
     flow_exit = timed('daily_reports_flow', lambda: browser('daily_reports_flow.py', 'verify'))
     record(contract.evaluate(contract.daily_reports_flow_checks(load('daily-reports-flow-result.json'), flow_exit)))
+    # ADR-0010: org chart reviewer, self review only at the top, manager reads the company, read-only copies; screenshots.
+    a10_exit = timed('daily_reports_adr0010', lambda: browser('daily_reports_adr0010.py', 'verify'))
+    record(contract.evaluate(contract.daily_reports_adr0010_checks(load('daily-reports-adr0010-result.json'), a10_exit)))
     timed('server_restart_64k', lambda: start_server(['-d', 'upload_max_filesize=64K', '-d', 'post_max_size=8M']))
     timed('oversize', lambda: browser('attachments.py', 'oversize'))
     timed('db_state_oversize', lambda: php_state('oversize'))
