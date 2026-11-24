@@ -397,6 +397,20 @@ foreach ($scenarios as $name => $historical) {
             if ($name === 'fromprod2026112301') {
                 // Safe repeat: a second upgrade run over the upgraded site must be a clean no-op.
                 $step('upgrade-repeat', [PHP_BINARY, $core . '/admin/cli/upgrade.php', '--non-interactive']);
+                // R5c: the reminder task is registered by the upgrade and runs through the real Moodle scheduled-task
+                // runner, twice in a row. The CLI exits 0 even when a task throws, so the log must say it completed.
+                foreach ([1, 2] as $run) {
+                    $label = 'cron-dailyreport-reminder-' . $run;
+                    $log = $logs . '/' . $name . '-' . $label . '.log';
+                    $code = command([PHP_BINARY, $core . '/admin/cli/scheduled_task.php',
+                        '--execute=\local_kbacompany\task\send_daily_report_reminders'], $core, $log);
+                    $text = is_file($log) ? (string)file_get_contents($log) : '';
+                    $ok = $code === 0 && strpos($text, 'Scheduled task complete') !== false
+                        && strpos($text, 'Scheduled task failed') === false;
+                    $entry['steps'][$label] = ['status' => $ok ? 'PASS' : 'FAIL', 'exit_code' => $code];
+                    echo $name . '/' . $label . ': ' . ($ok ? 'PASS' : 'FAIL') . "
+";
+                }
             }
         }
         $step('candidate-schema', [PHP_BINARY, $core . '/admin/cli/check_database_schema.php']);
