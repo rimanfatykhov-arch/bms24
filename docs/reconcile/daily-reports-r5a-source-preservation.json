@@ -1,0 +1,20 @@
+{
+  "scope": "exact intentional source updates; not runtime or release acceptance",
+  "base_sha": "34c73248ddab880437e2d51036707ef254507d85",
+  "normalization": "CRLF to LF only",
+  "previous_evidence": "docs/reconcile/daily-reports-r3-source-preservation.json",
+  "decision": "docs/daily-reports/R5_REPORTING_CALENDAR_PROPOSAL.md (owner decisions K1-K6, 24.11.2026; PR #170)",
+  "change": "Append the daily reports R5a block (reporting calendar and absences: dailyreports_queue_calendar, dailyreports_queue_absences, dailyreports_calendar_*, dailyreports_weekday_*, dailyreports_offday_*, dailyreports_absence_*, privacy:metadata:dailyreportabsences) after the R3 block. Retain all preceding keys and table definitions. The three additive install.xml tables are covered by the install.xml digest in tools/check_pr53_pr56_integration.py.",
+  "files": [
+    {
+      "path": "local/kbacompany/lang/en/local_kbacompany.php",
+      "before_sha256_lf": "f7d35a48ed252d6c8596ba7b8d634b6d341a2d0183c5d56a7b757130c577e8ee",
+      "after_sha256_lf": "6d5d0171aa790b5450142f3d05a8de390b86a8884b67c1019180c9492374acb3"
+    },
+    {
+      "path": "local/kbacompany/lang/ru/local_kbacompany.php",
+      "before_sha256_lf": "42a583ea9afff8c540471ab34b9f0000281f9e9a1df7cd5e2569ec2a592900c5",
+      "after_sha256_lf": "56e89980c9257c4f698556b20e7926dcacfbe983b2744434cb86b9ea9469d869"
+    }
+  ]
+}

@@ -11,7 +11,10 @@ use local_kbacompany\local\daily_report_reviewer_service as reviewers;
 use local_kbacompany\local\daily_report_team_service as team;
 use local_kbacompany\local\daily_report_discussion_service as discussion;
 use local_kbacompany\local\daily_report_discussion_ui_service as discussionui;
+use local_kbacompany\local\daily_report_calendar_service as calendar;
+use local_kbacompany\local\daily_report_calendar_ui_service as calendarui;
 use local_kbacompany\local\bms_page_shell_service;
+use local_kbacompany\local\company_context_service;
 use local_kbacompany\local\bms24_shell_service;
 use local_kbacompany\local\bms24_ui_kit_service;
 
@@ -59,7 +62,8 @@ $knownerrors = ['dailyreports_conflict', 'dailyreports_donerequired', 'dailyrepo
     'dailyreports_notrevisable', 'dailyreports_correctionrequired', 'dailyreports_ratingrequired',
     'dailyreports_commentrequired', 'dailyreports_reasonrequired', 'dailyreports_notreviewer', 'dailyreports_staleversion',
     'dailyreports_notpending', 'dailyreports_reviewerinvalid', 'dailyreports_ccinvalid', 'dailyreports_toomanycc',
-    'dailyreports_settingsinvalid'];
+    'dailyreports_settingsinvalid', 'dailyreports_calendar_invalid', 'dailyreports_calendar_dayexists',
+    'dailyreports_absence_invalid', 'dailyreports_absence_overlap'];
 if ($enabled && $tab === 'my' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     require_sesskey();
     // Day feed -> report draft: "Add to report" posts the id of one own submit event (never its text).
@@ -124,6 +128,37 @@ if ($canreview && $tab === 'review' && $_SERVER['REQUEST_METHOD'] === 'POST') {
                 optional_param('topreviewerid', 0, PARAM_INT), required_param('ccpolicy', PARAM_ALPHA),
                 required_param('revision', PARAM_INT));
             redirect(reportui::url($uuid, ['tab' => 'review', 'queue' => 'settings', 'notice' => 'settings']));
+        } else if (in_array($action, ['calendar', 'offdayadd', 'offdayremove'], true)) {
+            // R5a: the company reporting calendar (administrators; re-checked by the service).
+            if ($action === 'calendar') {
+                $weekdays = optional_param_array('weekday', [], PARAM_INT);
+                $pattern = '';
+                for ($i = 1; $i <= 7; $i++) { $pattern .= in_array($i, $weekdays, true) ? '1' : '0'; }
+                $deadline = optional_param('deadline', '', PARAM_RAW_TRIMMED);
+                if (!preg_match('/^([01]\d|2[0-3]):([0-5]\d)$/', $deadline, $time)) {
+                    throw new moodle_exception('dailyreports_calendar_invalid', 'local_kbacompany');
+                }
+                calendar::save_settings($uuid, $actor, (bool)optional_param('enabled', 0, PARAM_BOOL), $pattern,
+                    (int)$time[1] * 60 + (int)$time[2], required_param('revision', PARAM_INT));
+            } else if ($action === 'offdayadd') {
+                calendar::add_offday($uuid, $actor, required_param('offday', PARAM_RAW_TRIMMED),
+                    required_param('kind', PARAM_ALPHA), optional_param('name', '', PARAM_TEXT));
+            } else {
+                calendar::remove_offday($uuid, $actor, required_param('offday', PARAM_ALPHANUMEXT));
+            }
+            redirect(reportui::url($uuid, ['tab' => 'review', 'queue' => 'calendar', 'notice' => 'settings']));
+        } else if (in_array($action, ['absenceadd', 'absencechange', 'absencecancel'], true)) {
+            // R5a: absence periods (administrator or the employee's nearest manager; re-checked by the service).
+            if ($action === 'absenceadd') {
+                calendar::add_absence($uuid, $actor, required_param('employee', PARAM_INT), required_param('kind', PARAM_ALPHA),
+                    required_param('startday', PARAM_RAW_TRIMMED), required_param('endday', PARAM_RAW_TRIMMED));
+            } else {
+                calendar::change_absence($uuid, $actor, required_param('absence', PARAM_ALPHANUMEXT),
+                    required_param('revision', PARAM_INT), optional_param('kind', '', PARAM_ALPHA),
+                    optional_param('startday', '', PARAM_RAW_TRIMMED), optional_param('endday', '', PARAM_RAW_TRIMMED),
+                    $action === 'absencecancel');
+            }
+            redirect(reportui::url($uuid, ['tab' => 'review', 'queue' => 'absences', 'notice' => 'settings']));
         } else {
             throw new moodle_exception('invalidparameter');
         }
@@ -204,7 +239,15 @@ if ($tab === 'review') {
             if (!in_array($queue, $queues, true)) {
                 $queue = 'pending';
             }
-            if ($queue === 'team') {
+            if ($queue === 'calendar') {
+                // R5a: administrators only (the queue list already hides it from everyone else).
+                $companykey = company_context_service::normalise_uuid($uuid);
+                echo calendarui::calendar($uuid, calendar::settings($companykey),
+                    calendar::offdays($companykey, '2000-01-01', '2100-12-31'), $queues);
+            } else if ($queue === 'absences') {
+                echo calendarui::absences($uuid, calendar::absences($uuid, $actor, optional_param('page', 0, PARAM_INT)),
+                    $queues);
+            } else if ($queue === 'team') {
                 // R4: every current employee for one day (read-only); filters are typed GET parameters.
                 echo reportui::team($uuid, team::day($uuid, $actor, $day, optional_param('scope', '', PARAM_ALPHA),
                     optional_param('unit', '', PARAM_ALPHANUMEXT), optional_param('status', '', PARAM_ALPHA),

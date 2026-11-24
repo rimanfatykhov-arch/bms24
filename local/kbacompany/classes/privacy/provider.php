@@ -473,6 +473,18 @@ class provider implements
         $collection->add_database_table('local_kbacompany_dreportset', [
             'topreviewerid' => 'privacy:metadata:dailyreports', 'modifiedby' => 'privacy:metadata:dailyreports',
         ], 'privacy:metadata:dailyreports');
+        // R5a: company reporting calendar, its exceptions and employee absence periods (type and dates only).
+        $collection->add_database_table('local_kbacompany_dreportcal', [
+            'modifiedby' => 'privacy:metadata:dailyreports',
+        ], 'privacy:metadata:dailyreports');
+        $collection->add_database_table('local_kbacompany_dreportoff', [
+            'createdby' => 'privacy:metadata:dailyreports',
+        ], 'privacy:metadata:dailyreports');
+        $collection->add_database_table('local_kbacompany_dreportabs', [
+            'userid' => 'privacy:metadata:dailyreportabsences', 'kind' => 'privacy:metadata:dailyreportabsences',
+            'startday' => 'privacy:metadata:dailyreportabsences', 'endday' => 'privacy:metadata:dailyreportabsences',
+            'createdby' => 'privacy:metadata:dailyreportabsences', 'modifiedby' => 'privacy:metadata:dailyreportabsences',
+        ], 'privacy:metadata:dailyreportabsences');
         $collection->add_user_preference(\local_kbacompany\local\communication_center_ui_service::SOUND_PREFERENCE,
             'privacy:metadata:preference:notificationsound');
         $collection->add_user_preference(\local_kbacompany\local\notification_bell_service::SIGNALLED_PREFERENCE,
@@ -663,9 +675,14 @@ class provider implements
               OR EXISTS (SELECT 1 FROM {local_kbacompany_dreportlog} dl WHERE dl.actorid = :dractor)
               OR EXISTS (SELECT 1 FROM {local_kbacompany_dreportcc} dc WHERE dc.userid = :drcopy)
               OR EXISTS (SELECT 1 FROM {local_kbacompany_dreportset} ds WHERE ds.topreviewerid = :drtop
-                  OR ds.modifiedby = :drmodifier))',
+                  OR ds.modifiedby = :drmodifier)
+              OR EXISTS (SELECT 1 FROM {local_kbacompany_dreportcal} dk WHERE dk.modifiedby = :drcal)
+              OR EXISTS (SELECT 1 FROM {local_kbacompany_dreportoff} dof WHERE dof.createdby = :droff)
+              OR EXISTS (SELECT 1 FROM {local_kbacompany_dreportabs} da WHERE da.userid = :drabs
+                  OR da.createdby = :drabscreator OR da.modifiedby = :drabsmodifier))',
             ['drlevel' => CONTEXT_SYSTEM, 'druser' => $userid, 'drreviewer' => $userid, 'drdecider' => $userid,
-             'dractor' => $userid, 'drcopy' => $userid, 'drtop' => $userid, 'drmodifier' => $userid]);
+             'dractor' => $userid, 'drcopy' => $userid, 'drtop' => $userid, 'drmodifier' => $userid, 'drcal' => $userid,
+             'droff' => $userid, 'drabs' => $userid, 'drabscreator' => $userid, 'drabsmodifier' => $userid]);
         return $contextlist;
     }
 
@@ -1119,7 +1136,8 @@ class provider implements
         global $DB;
         if ($context->contextlevel === CONTEXT_SYSTEM) {
             self::forget_revocation_audit(null);
-            foreach (['local_kbacompany_dreportcc', 'local_kbacompany_dreportset', 'local_kbacompany_dreportlog',
+            foreach (['local_kbacompany_dreportabs', 'local_kbacompany_dreportoff', 'local_kbacompany_dreportcal',
+                    'local_kbacompany_dreportcc', 'local_kbacompany_dreportset', 'local_kbacompany_dreportlog',
                     'local_kbacompany_dreportrev', 'local_kbacompany_dreportlink', 'local_kbacompany_dreportver',
                     'local_kbacompany_dreport'] as $table) {
                 $DB->delete_records($table);
@@ -1568,11 +1586,20 @@ class provider implements
             'id, companyuuid, reportuuid, versionuuid, source, timecreated'));
         $rules = array_values($DB->get_records_select('local_kbacompany_dreportset', 'topreviewerid = :t OR modifiedby = :m',
             ['t' => $userid, 'm' => $userid], 'id ASC', 'id, companyuuid, toppolicy, topreviewerid, ccpolicy, modifiedby'));
-        if ($reports || $decisions || $copies || $rules) {
+        // R5a: own absence periods and the ones this user entered or changed for others; calendar changes made.
+        $absences = array_values($DB->get_records_select('local_kbacompany_dreportabs',
+            'userid = :u OR createdby = :c OR modifiedby = :m', ['u' => $userid, 'c' => $userid, 'm' => $userid], 'id ASC',
+            'id, companyuuid, userid, kind, startday, endday, status, createdby, modifiedby, timecreated, timemodified'));
+        $calendars = array_values($DB->get_records('local_kbacompany_dreportcal', ['modifiedby' => $userid], 'id ASC',
+            'id, companyuuid, enabled, enabledfrom, workdays, deadlineminutes, timemodified'));
+        $offdays = array_values($DB->get_records('local_kbacompany_dreportoff', ['createdby' => $userid], 'id ASC',
+            'id, companyuuid, offday, kind, name, timecreated'));
+        if ($reports || $decisions || $copies || $rules || $absences || $calendars || $offdays) {
             writer::with_context($context)->export_data(
                 [get_string('privacy:metadata:dailyreports', 'local_kbacompany')],
                 (object)['reports' => $reports, 'decisions_as_reviewer' => $decisions, 'copies_received' => $copies,
-                    'review_rules' => $rules]);
+                    'review_rules' => $rules, 'absences' => $absences, 'calendars_changed' => $calendars,
+                    'calendar_exceptions_added' => $offdays]);
         }
     }
 
@@ -1605,6 +1632,17 @@ class provider implements
         $DB->set_field('local_kbacompany_dreportset', 'modifiedby', 0, ['modifiedby' => $userid]);
         $DB->set_field('local_kbacompany_dreportlog', 'details', null, ['actorid' => $userid]);
         $DB->set_field('local_kbacompany_dreportlog', 'actorid', 0, ['actorid' => $userid]);
+        // R5a: own absence periods go; journal rows about them lose their details; authorship elsewhere is anonymised.
+        $absenceuuids = $DB->get_fieldset_select('local_kbacompany_dreportabs', 'uuid', 'userid = :u', ['u' => $userid]);
+        foreach ($absenceuuids as $absenceuuid) {
+            $DB->set_field_select('local_kbacompany_dreportlog', 'details', null,
+                "reportuuid = '' AND " . $DB->sql_like('details', ':needle'), ['needle' => '%' . $absenceuuid . '%']);
+        }
+        $DB->delete_records('local_kbacompany_dreportabs', ['userid' => $userid]);
+        $DB->set_field('local_kbacompany_dreportabs', 'createdby', 0, ['createdby' => $userid]);
+        $DB->set_field('local_kbacompany_dreportabs', 'modifiedby', 0, ['modifiedby' => $userid]);
+        $DB->set_field('local_kbacompany_dreportcal', 'modifiedby', 0, ['modifiedby' => $userid]);
+        $DB->set_field('local_kbacompany_dreportoff', 'createdby', 0, ['createdby' => $userid]);
     }
 
     /** Erasure must not grant access: retain only active deny identity while an account can log in. */
