@@ -787,8 +787,14 @@ class employee_service {
             ['userid' => $userid, 'companyuuid' => $companyuuid]);
         $now = time();
         foreach ($rows as $row) {
-            $row->active = 0; $row->effectiveto = $now; $row->timemodified = $now;
-            $DB->update_record('local_kbacompany_member', $row);
+            // Closing access to another company is serialized with that company's communication writers.
+            $gate = communication_write_gate::acquire((string)$row->companyuuid);
+            try {
+                $row->active = 0; $row->effectiveto = $now; $row->timemodified = $now;
+                $DB->update_record('local_kbacompany_member', $row);
+            } finally {
+                $gate->release();
+            }
         }
     }
 

@@ -244,9 +244,7 @@ class communication_service {
                 ' ↔ ' . ($employees[$participantids[0]] ?? get_string('communication_direct', 'local_kbacompany'));
         }
 
-        $lock = \core\lock\lock_config::get_lock_factory('local_kbacompany')
-            ->get_lock('communication:' . $companyuuid, 10);
-        if (!$lock) { self::fail('lock'); }
+        $lock = communication_write_gate::acquire($companyuuid);
         try {
             $tx = $DB->start_delegated_transaction();
             if ($type === 'object') {
@@ -339,44 +337,80 @@ class communication_service {
     /** Add a participant. Thread owners only; management role alone never grants access to private content. */
     public static function add_participant(string $companyuuid, int $actor, string $threaduuid, int $userid): void {
         global $DB;
-        company_context_service::context($companyuuid, $actor);
-        self::require_owner($companyuuid, $threaduuid, $actor);
-        $thread = self::thread($companyuuid, $threaduuid);
-        self::require_thread_context($companyuuid, $actor, $thread);
-        if ($thread->status !== 'active' || $thread->threadtype === 'direct') { self::fail('state'); }
-        $employees = self::employees($companyuuid, $actor); self::require_employee($employees, $userid);
-        if ($thread->threadtype === 'object') {
-            try {
-                communication_object_service::describe($companyuuid, $userid, (string)$thread->contextkind,
-                    (string)$thread->contextuuid, (int)$thread->contextrevision);
-            } catch (\moodle_exception $e) {
-                self::fail('permission');
+        // Audience changes are serialized with sends and revocations (communication_write_gate).
+        $lock = communication_write_gate::acquire($companyuuid);
+        try {
+            company_context_service::context($companyuuid, $actor);
+            self::require_owner($companyuuid, $threaduuid, $actor);
+            $thread = self::thread($companyuuid, $threaduuid);
+            self::require_thread_context($companyuuid, $actor, $thread);
+            if ($thread->status !== 'active' || $thread->threadtype === 'direct') { self::fail('state'); }
+            $employees = self::employees($companyuuid, $actor); self::require_employee($employees, $userid);
+            if (!self::recipient_eligible($companyuuid, $userid)) { self::fail('employee'); }
+            if ($thread->threadtype === 'object') {
+                try {
+                    communication_object_service::describe($companyuuid, $userid, (string)$thread->contextkind,
+                        (string)$thread->contextuuid, (int)$thread->contextrevision);
+                } catch (\moodle_exception $e) {
+                    self::fail('permission');
+                }
             }
-        }
-        $existing = $DB->get_record('local_kbacompany_commpart', [
-            'companyuuid' => $companyuuid, 'threaduuid' => $threaduuid, 'userid' => $userid,
-        ]);
-        $now = time();
-        if ($existing) {
-            $existing->active = 1; $existing->leftat = 0; $existing->joinedat = $now;
-            $DB->update_record('local_kbacompany_commpart', $existing);
-        } else {
-            $DB->insert_record('local_kbacompany_commpart', (object)[
+            $tx = $DB->start_delegated_transaction();
+            $existing = $DB->get_record('local_kbacompany_commpart', [
                 'companyuuid' => $companyuuid, 'threaduuid' => $threaduuid, 'userid' => $userid,
-                'role' => 'member', 'active' => 1, 'muted' => 0, 'joinedat' => $now, 'leftat' => 0, 'timecreated' => $now,
             ]);
-            $DB->insert_record('local_kbacompany_commread', (object)[
-                'companyuuid' => $companyuuid, 'threaduuid' => $threaduuid, 'userid' => $userid,
-                'lastmessageid' => 0, 'timeread' => $now,
-            ]);
+            $now = time();
+            if ($existing) {
+                $existing->active = 1; $existing->leftat = 0; $existing->joinedat = $now;
+                $DB->update_record('local_kbacompany_commpart', $existing);
+            } else {
+                $DB->insert_record('local_kbacompany_commpart', (object)[
+                    'companyuuid' => $companyuuid, 'threaduuid' => $threaduuid, 'userid' => $userid,
+                    'role' => 'member', 'active' => 1, 'muted' => 0, 'joinedat' => $now, 'leftat' => 0,
+                    'timecreated' => $now,
+                ]);
+                $DB->insert_record('local_kbacompany_commread', (object)[
+                    'companyuuid' => $companyuuid, 'threaduuid' => $threaduuid, 'userid' => $userid,
+                    'lastmessageid' => 0, 'timeread' => $now,
+                ]);
+            }
+            self::create_notification($companyuuid, $userid, 'thread_invite', $threaduuid, '', '', (string)$thread->title);
+            $tx->allow_commit();
+        } catch (\Throwable $e) {
+            if (isset($tx)) { $tx->rollback($e); }
+            throw $e;
+        } finally {
+            $lock->release();
         }
-        self::create_notification($companyuuid, $userid, 'thread_invite', $threaduuid, '', '', (string)$thread->title);
     }
 
-    /** Append one message and notify other active participants. */
+    /**
+     * A recipient is notified only while the account is live (not deleted or suspended) and the user still
+     * has company access (explicit ADR-0006 revocation, closed membership). Object ACL is checked separately.
+     */
+    private static function recipient_eligible(string $companyuuid, int $userid): bool {
+        global $DB;
+        if ($userid <= 0 || !$DB->record_exists('user', ['id' => $userid, 'deleted' => 0, 'suspended' => 0])) {
+            return false;
+        }
+        try {
+            company_context_service::context($companyuuid, $userid);
+        } catch (\moodle_exception $e) {
+            return false;
+        }
+        return true;
+    }
+
+    /**
+     * Append one message and notify other eligible active participants.
+     *
+     * @param bool $inlinementions false keeps "@Full Name" text literal (no mention or mention notification);
+     *     for imported text whose author never chose a Moodle mention. Explicit $mentionids are unaffected.
+     */
     public static function send_message(string $companyuuid, int $actor, string $threaduuid, string $body,
-            array $mentionids = [], string $replytouuid = ''): string {
-        return self::append_message($companyuuid, $actor, $threaduuid, $body, $mentionids, $replytouuid, false);
+            array $mentionids = [], string $replytouuid = '', bool $inlinementions = true): string {
+        return self::append_message($companyuuid, $actor, $threaduuid, $body, $mentionids, $replytouuid, false,
+            $inlinementions);
     }
 
     /**
@@ -435,13 +469,20 @@ class communication_service {
         if (!$files) {
             return self::send_message($companyuuid, $actor, $threaduuid, $body, $mentionids, $replytouuid);
         }
-        $tx = $DB->start_delegated_transaction();
+        // The gate covers the message and its files through this transaction's commit.
+        $lock = communication_write_gate::acquire($companyuuid);
         try {
-            $messageuuid = self::append_message($companyuuid, $actor, $threaduuid, $body, $mentionids, $replytouuid, true);
-            foreach ($files as $upload) { self::add_uploaded_attachment($companyuuid, $actor, $messageuuid, $upload); }
-            $tx->allow_commit();
-            return $messageuuid;
-        } catch (\Throwable $e) { $tx->rollback($e); throw $e; }
+            $tx = $DB->start_delegated_transaction();
+            try {
+                $messageuuid = self::append_message($companyuuid, $actor, $threaduuid, $body, $mentionids,
+                    $replytouuid, true);
+                foreach ($files as $upload) { self::add_uploaded_attachment($companyuuid, $actor, $messageuuid, $upload); }
+                $tx->allow_commit();
+                return $messageuuid;
+            } catch (\Throwable $e) { $tx->rollback($e); throw $e; }
+        } finally {
+            $lock->release();
+        }
     }
 
     /** Validate one $_FILES entry without storing it; null when no file was chosen. */
@@ -459,10 +500,23 @@ class communication_service {
         return ['tmp' => $tmp, 'name' => $name, 'size' => $size];
     }
 
+    /** Author access, thread state and recipients are checked under the gate, so a revocation cannot interleave. */
     private static function append_message(string $companyuuid, int $actor, string $threaduuid, string $body,
-            array $mentionids, string $replytouuid, bool $withfile): string {
+            array $mentionids, string $replytouuid, bool $withfile, bool $inlinementions = true): string {
+        $lock = communication_write_gate::acquire($companyuuid);
+        try {
+            return self::append_message_locked($companyuuid, $actor, $threaduuid, $body, $mentionids, $replytouuid,
+                $withfile, $inlinementions);
+        } finally {
+            $lock->release();
+        }
+    }
+
+    private static function append_message_locked(string $companyuuid, int $actor, string $threaduuid, string $body,
+            array $mentionids, string $replytouuid, bool $withfile, bool $inlinementions): string {
         global $DB;
         company_context_service::context($companyuuid, $actor);
+        if (!$DB->record_exists('user', ['id' => $actor, 'deleted' => 0, 'suspended' => 0])) { self::fail('permission'); }
         self::require_participant($companyuuid, $threaduuid, $actor);
         $thread = self::thread($companyuuid, $threaduuid);
         self::require_thread_context($companyuuid, $actor, $thread);
@@ -483,8 +537,10 @@ class communication_service {
             if (!isset($participantids[$userid])) { self::fail('mention'); }
         }
         // Inline "@Full Name" mentions resolve only against active participants of this thread.
-        $mentions = array_values(array_unique(array_merge($mentions, self::inline_mentions($body,
-            array_keys($participantids), self::employees($companyuuid, $actor), $actor))));
+        if ($inlinementions) {
+            $mentions = array_values(array_unique(array_merge($mentions, self::inline_mentions($body,
+                array_keys($participantids), self::employees($companyuuid, $actor), $actor))));
+        }
         $tx = $DB->start_delegated_transaction();
         $uuid = self::uuid(); $now = time();
         $messageid = $DB->insert_record('local_kbacompany_commmsg', (object)[
@@ -500,6 +556,8 @@ class communication_service {
         }
         foreach (array_keys($participantids) as $userid) {
             if ($userid === $actor) { continue; }
+            // Notification eligibility: revoked, suspended or deleted recipients receive nothing.
+            if (!self::recipient_eligible($companyuuid, (int)$userid)) { continue; }
             if ((string)$thread->threadtype === 'object') {
                 try {
                     communication_object_service::describe($companyuuid, (int)$userid, (string)$thread->contextkind,
@@ -544,9 +602,7 @@ class communication_service {
         $part = self::require_participant($companyuuid, $threaduuid, $actor);
         $thread = self::thread($companyuuid, $threaduuid);
         if ($thread->status !== 'active' || (string)$thread->threadtype !== 'group') { self::fail('state'); }
-        $lock = \core\lock\lock_config::get_lock_factory('local_kbacompany')
-            ->get_lock('communication:' . $companyuuid, 10);
-        if (!$lock) { self::fail('lock'); }
+        $lock = communication_write_gate::acquire($companyuuid);
         try {
             $tx = $DB->start_delegated_transaction();
             $now = time();
@@ -574,18 +630,29 @@ class communication_service {
     /** The group owner removes another member. History is retained; the member loses access. */
     public static function remove_participant(string $companyuuid, int $actor, string $threaduuid, int $userid): void {
         global $DB;
-        company_context_service::context($companyuuid, $actor);
-        self::require_owner($companyuuid, $threaduuid, $actor);
-        $thread = self::thread($companyuuid, $threaduuid);
-        if ($thread->status !== 'active' || (string)$thread->threadtype !== 'group') { self::fail('state'); }
-        if ($userid === $actor) { self::fail('invalid'); }
-        $part = self::participant($companyuuid, $threaduuid, $userid);
-        if (!$part) { self::fail('reference'); }
-        $now = time();
-        $part->active = 0; $part->leftat = $now; $part->role = 'member';
-        $DB->update_record('local_kbacompany_commpart', $part);
-        $thread->timemodified = max($now, (int)$thread->timemodified + 1);
-        $DB->update_record('local_kbacompany_commthread', $thread);
+        // Serialized with sends: a message checked after this commit no longer reaches the removed member.
+        $lock = communication_write_gate::acquire($companyuuid);
+        try {
+            company_context_service::context($companyuuid, $actor);
+            self::require_owner($companyuuid, $threaduuid, $actor);
+            $thread = self::thread($companyuuid, $threaduuid);
+            if ($thread->status !== 'active' || (string)$thread->threadtype !== 'group') { self::fail('state'); }
+            if ($userid === $actor) { self::fail('invalid'); }
+            $part = self::participant($companyuuid, $threaduuid, $userid);
+            if (!$part) { self::fail('reference'); }
+            $tx = $DB->start_delegated_transaction();
+            $now = time();
+            $part->active = 0; $part->leftat = $now; $part->role = 'member';
+            $DB->update_record('local_kbacompany_commpart', $part);
+            $thread->timemodified = max($now, (int)$thread->timemodified + 1);
+            $DB->update_record('local_kbacompany_commthread', $thread);
+            $tx->allow_commit();
+        } catch (\Throwable $e) {
+            if (isset($tx)) { $tx->rollback($e); }
+            throw $e;
+        } finally {
+            $lock->release();
+        }
     }
 
     /** Whether a non-participant may read this object discussion; object ACL is checked separately. */
@@ -601,21 +668,33 @@ class communication_service {
      */
     public static function change_message(string $companyuuid, int $actor, string $threaduuid,
             string $messageuuid, string $operation, string $newbody, string $expectedhash): void {
+        // Author access is checked under the company gate, serialized with revocation; lock order gate -> commmsg.
+        $gate = communication_write_gate::acquire($companyuuid);
+        try {
+            company_context_service::context($companyuuid, $actor);
+            if (!in_array($operation, ['edit', 'withdraw'], true) ||
+                    !preg_match('/^[a-f0-9]{64}$/D', $expectedhash)) {
+                self::fail('invalid');
+            }
+            self::require_participant($companyuuid, $threaduuid, $actor);
+            $thread = self::thread($companyuuid, $threaduuid);
+            self::require_thread_context($companyuuid, $actor, $thread);
+            if ($thread->status !== 'active') { self::fail('state'); }
+            $newbody = trim($newbody);
+            if ($operation === 'edit' && ($newbody === '' || \core_text::strlen($newbody) > 20000)) {
+                self::fail('invalid');
+            }
+            self::change_message_locked($companyuuid, $actor, $threaduuid, $messageuuid, $operation, $newbody,
+                $expectedhash, $thread);
+        } finally {
+            $gate->release();
+        }
+    }
+
+    private static function change_message_locked(string $companyuuid, int $actor, string $threaduuid,
+            string $messageuuid, string $operation, string $newbody, string $expectedhash, \stdClass $thread): void {
         global $DB;
-        company_context_service::context($companyuuid, $actor);
-        if (!in_array($operation, ['edit', 'withdraw'], true) ||
-                !preg_match('/^[a-f0-9]{64}$/D', $expectedhash)) {
-            self::fail('invalid');
-        }
-        self::require_participant($companyuuid, $threaduuid, $actor);
-        $thread = self::thread($companyuuid, $threaduuid);
-        self::require_thread_context($companyuuid, $actor, $thread);
-        if ($thread->status !== 'active') { self::fail('state'); }
-        $newbody = trim($newbody);
-        if ($operation === 'edit' && ($newbody === '' || \core_text::strlen($newbody) > 20000)) {
-            self::fail('invalid');
-        }
-        // Serialize concurrent edits using the same named lock as other communication writes.
+        // Serialize concurrent edits of one message.
         $factory = \core\lock\lock_config::get_lock_factory('local_kbacompany');
         $lock = $factory->get_lock('commmsg:' . $companyuuid . ':' . $messageuuid, 10);
         if (!$lock) { self::fail('lock'); }

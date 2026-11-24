@@ -89,7 +89,11 @@ final class membership_access_service {
         $lock = \core\lock\lock_config::get_lock_factory('local_kbacompany')
             ->get_lock('member:' . sha1($companyuuid . "\n" . $userid), 10);
         if (!$lock) { throw new \moodle_exception('identitylockfailed', 'local_kbacompany'); }
+        // Lock order member -> communication gate: a revocation commits either before a concurrent send's access
+        // check (the send fails) or after the send commits (published earlier, never later).
+        $gate = null;
         try {
+            $gate = communication_write_gate::acquire($companyuuid);
             $tx = $DB->start_delegated_transaction();
             $where = ['companyuuid'=>$companyuuid, 'userid'=>$userid, 'timereopened'=>0];
             $now = time();
@@ -114,6 +118,9 @@ final class membership_access_service {
                          integration_service::BITRIX_PROVIDER,'user',(string)$userid)]);
             }
             $tx->allow_commit();
-        } finally { $lock->release(); }
+        } finally {
+            if ($gate) { $gate->release(); }
+            $lock->release();
+        }
     }
 }

@@ -115,6 +115,10 @@ def check(root=ROOT):
     # See docs/reconcile/DAY_FEED_ADDED_EARLIER.md.
     reviewed_followup['local/kbacompany/lang/en/local_kbacompany.php'] = '9495d7e1467dbe67c7cb18be14cc4b19a3d33a40e632d528f77fb08788dbc803'
     reviewed_followup['local/kbacompany/lang/ru/local_kbacompany.php'] = 'dc4772de7d84d31a80927bb13c8f97966f18ca9db9f4e8d759d3204365255226'
+    # RC33 PR-1 (owner D3 2026-11-24): shared communication write gate and notification eligibility; no lang,
+    # schema or version change. See docs/reconcile/RC33_PR1_COMMUNICATION_WRITE_GATE.md.
+    reviewed_followup['local/kbacompany/classes/local/communication_service.php'] = 'a483674056db868903e362b77d987d709f8547bc3fffc94fb8ca054445bfd85c'
+    reviewed_followup['local/kbacompany/classes/local/employee_service.php'] = '80a5502f410dd618dc1b64988a7824343960145d3276a7d8e89e8cd0db5f48be'
     for row in plan['rows']:
         path=root/row['path']
         if not path.is_file() or path.is_symlink():

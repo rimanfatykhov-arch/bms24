@@ -1324,6 +1324,8 @@ class task_service {
             // Thread creation owns its company lock and commits before the message transaction.
             // A rejected upload may leave an empty discussion, but never a partial message/file set.
             $threaduuid = self::ensure_discussion($companyuuid, $actor, $row);
+            // Hold the communication gate through this outer commit (lock order: taskdiscussion -> gate).
+            $gate = communication_write_gate::acquire($companyuuid);
             $tx = $DB->start_delegated_transaction();
             // One canonical message and all protected attachments commit together.
             $messageuuid = communication_service::send_message_with_attachments(
@@ -1336,6 +1338,7 @@ class task_service {
             if (isset($tx)) { $tx->rollback($e); }
             throw $e;
         } finally {
+            if (isset($gate)) { $gate->release(); }
             $lock->release();
         }
     }

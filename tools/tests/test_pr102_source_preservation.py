@@ -25,7 +25,8 @@ FOLLOWUPS = ['docs/reconcile/task-open-source-preservation.json',
              'docs/reconcile/day-feed-report-draft-source-preservation.json',
              'docs/reconcile/topbar-notification-bell-source-preservation.json',
              'docs/reconcile/adaptive-navigation-source-preservation.json',
-             'docs/reconcile/day-feed-added-earlier-source-preservation.json']
+             'docs/reconcile/day-feed-added-earlier-source-preservation.json',
+             'docs/reconcile/rc33-pr1-communication-write-gate-source-preservation.json']
 
 
 class SourcePreservationTest(unittest.TestCase):
