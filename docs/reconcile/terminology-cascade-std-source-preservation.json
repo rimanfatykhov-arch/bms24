@@ -1,0 +1,639 @@
+{
+  "scope": "exact intentional source updates; not runtime or release acceptance",
+  "base_sha": "323f948c6cc670c34722f516118ca7426fd604f7 (main after #173)",
+  "normalization": "CRLF to LF only",
+  "previous_evidence": "docs/reconcile/daily-reports-summary-source-preservation.json (ADR-0011 block 1)",
+  "decision": "BMS-STD-TER-001 v1.0 and BMS-ADM-000 changes 2.6/2.7; owner approved explicit hash update for PR #187 on 2026-11-25",
+  "change": "In-place value replacement of existing RU/EN strings (terminology only): Administrative Scale -> Administrative Cascade, Ideal state -> Target state, Org policy -> Organizational policy, Decision/order -> Management decision; legacy cascade module labelled as legacy. Same line count; no key added, removed or renamed; no schema, capability or notification change.",
+  "files": [
+    {
+      "path": "local/kbacompany/lang/en/local_kbacompany.php",
+      "before_sha256_lf": "9a3fa3efb85ef6f9aeaf18202ba4377bf418787c4631b636dbf766f7a45c2f88",
+      "after_sha256_lf": "ae1d04bc082d15cfb7160083027283dd690cd909517fb9181bde961c9c0f0360",
+      "line_replacements": [
+        {
+          "line": 65,
+          "before": "$string['wf_title'] = 'Administrative cascade execution';",
+          "after": "$string['wf_title'] = 'Legacy administrative cascade execution';"
+        },
+        {
+          "line": 139,
+          "before": "$string['privacy:metadata:aclog'] = 'Administrative cascade audit log';",
+          "after": "$string['privacy:metadata:aclog'] = 'Legacy administrative cascade audit log';"
+        },
+        {
+          "line": 142,
+          "before": "$string['privacy:path:cascade'] = 'Administrative cascade';",
+          "after": "$string['privacy:path:cascade'] = 'Legacy administrative cascade';"
+        },
+        {
+          "line": 143,
+          "before": "$string['ac_title'] = 'Administrative cascade (legacy compatibility)';",
+          "after": "$string['ac_title'] = 'Legacy administrative cascade (compatibility)';"
+        },
+        {
+          "line": 1043,
+          "before": "$string['ofs_openlegacyfunctions'] = 'Administrative-cascade Functions';",
+          "after": "$string['ofs_openlegacyfunctions'] = 'Legacy administrative-cascade Functions';"
+        },
+        {
+          "line": 1325,
+          "before": "// v0.4.1 Administrative Scale.",
+          "after": "// v0.4.1 Administrative Cascade."
+        },
+        {
+          "line": 1326,
+          "before": "$string['adminscale_title'] = 'Administrative Scale';",
+          "after": "$string['adminscale_title'] = 'Administrative Cascade';"
+        },
+        {
+          "line": 1327,
+          "before": "$string['adminscale_intro'] = 'Turn strategic goals into governed execution: Goal → Policy → Plan → Program → Project → Decision/Order → Task.';",
+          "after": "$string['adminscale_intro'] = 'The BMS Administrative Cascade (formerly the Administrative Scale) turns strategic goals into governed execution: Goal → Organizational policy → Plan → Program → Project → Management decision → Task.';"
+        },
+        {
+          "line": 1328,
+          "before": "$string['adminscale_rule'] = 'Every executable scale item should state the expected result. The scale defines why work exists; actual execution is handled separately by Battle Plans and workflow.';",
+          "after": "$string['adminscale_rule'] = 'Every executable cascade item should state the expected result. The cascade defines why work exists; actual execution is handled separately by Battle Plans and workflow.';"
+        },
+        {
+          "line": 1330,
+          "before": "$string['adminscale_scale'] = 'Administrative scale';",
+          "after": "$string['adminscale_scale'] = 'Administrative cascade';"
+        },
+        {
+          "line": 1331,
+          "before": "$string['adminscale_editor'] = 'Create and revise scale items';",
+          "after": "$string['adminscale_editor'] = 'Create and revise cascade items';"
+        },
+        {
+          "line": 1332,
+          "before": "$string['adminscale_empty'] = 'No administrative-scale items yet.';",
+          "after": "$string['adminscale_empty'] = 'No administrative-cascade items yet.';"
+        },
+        {
+          "line": 1334,
+          "before": "$string['adminscale_saved'] = 'Administrative Scale saved.';",
+          "after": "$string['adminscale_saved'] = 'Administrative Cascade saved.';"
+        },
+        {
+          "line": 1345,
+          "before": "$string['adminscale_kind_decision'] = 'Decision / order';",
+          "after": "$string['adminscale_kind_decision'] = 'Management decision';"
+        },
+        {
+          "line": 1356,
+          "before": "$string['adminscale_parent'] = 'Parent scale item';",
+          "after": "$string['adminscale_parent'] = 'Parent cascade item';"
+        },
+        {
+          "line": 1381,
+          "before": "$string['adminscale_duplicatecode'] = 'This Administrative Scale code is already used in the company.';",
+          "after": "$string['adminscale_duplicatecode'] = 'This Administrative Cascade code is already used in the company.';"
+        },
+        {
+          "line": 1382,
+          "before": "$string['adminscale_conflict'] = 'This scale item changed. Reopen it and reconcile the latest revision.';",
+          "after": "$string['adminscale_conflict'] = 'This cascade item changed. Reopen it and reconcile the latest revision.';"
+        },
+        {
+          "line": 1384,
+          "before": "$string['adminscale_kindimmutable'] = 'The type of an existing Administrative Scale item cannot be changed.';",
+          "after": "$string['adminscale_kindimmutable'] = 'The type of an existing Administrative Cascade item cannot be changed.';"
+        },
+        {
+          "line": 1385,
+          "before": "$string['adminscale_lock'] = 'Administrative Scale is being changed by another operation. Try again.';",
+          "after": "$string['adminscale_lock'] = 'Administrative Cascade is being changed by another operation. Try again.';"
+        },
+        {
+          "line": 1387,
+          "before": "$string['adminscale_referenced'] = 'Archive or revise child scale items first.';",
+          "after": "$string['adminscale_referenced'] = 'Archive or revise child cascade items first.';"
+        },
+        {
+          "line": 1388,
+          "before": "$string['adminscale_cycle'] = 'Administrative Scale hierarchy contains a cycle.';",
+          "after": "$string['adminscale_cycle'] = 'Administrative Cascade hierarchy contains a cycle.';"
+        },
+        {
+          "line": 1389,
+          "before": "$string['privacy:metadata:adminscale'] = 'Administrative Scale revisions and their authors';",
+          "after": "$string['privacy:metadata:adminscale'] = 'Administrative Cascade revisions and their authors';"
+        },
+        {
+          "line": 1390,
+          "before": "$string['privacy:metadata:adminscale:actorid'] = 'User who created or modified an Administrative Scale revision';",
+          "after": "$string['privacy:metadata:adminscale:actorid'] = 'User who created or modified an Administrative Cascade revision';"
+        },
+        {
+          "line": 1392,
+          "before": "$string['adminscale_parentref'] = 'Select a published parent of the required Administrative Scale type.';",
+          "after": "$string['adminscale_parentref'] = 'Select a published parent of the required Administrative Cascade type.';"
+        },
+        {
+          "line": 1398,
+          "before": "$string['taskcenter_intro'] = 'One BMS24 task workspace: assignments, Administrative Scale tasks, recurring position work and future development work converge here.';",
+          "after": "$string['taskcenter_intro'] = 'One BMS24 task workspace: assignments, Administrative Cascade tasks, recurring position work and future development work converge here.';"
+        },
+        {
+          "line": 1399,
+          "before": "$string['taskcenter_rule'] = 'A task is an execution object. The Administrative Scale and Position Work Program remain source definitions and do not duplicate execution fact.';",
+          "after": "$string['taskcenter_rule'] = 'A task is an execution object. The Administrative Cascade and Position Work Program remain source definitions and do not duplicate execution fact.';"
+        },
+        {
+          "line": 1430,
+          "before": "$string['taskcenter_relation_hint'] = 'Make this task a subtask of another task or link it to a goal, policy, plan, programme, or a published Administrative Scale project revision.';",
+          "after": "$string['taskcenter_relation_hint'] = 'Make this task a subtask of another task or link it to a goal, policy, plan, programme, or a published Administrative Cascade project revision.';"
+        },
+        {
+          "line": 1445,
+          "before": "$string['taskcenter_source_adminscale'] = 'Administrative Scale';",
+          "after": "$string['taskcenter_source_adminscale'] = 'Administrative Cascade';"
+        },
+        {
+          "line": 1521,
+          "before": "$string['battleplan_fromadmin'] = 'Tasks from Administrative Scale';",
+          "after": "$string['battleplan_fromadmin'] = 'Tasks from Administrative Cascade';"
+        },
+        {
+          "line": 2705,
+          "before": "$string['taskcenter_relation_management_project'] = 'Administrative Scale project';",
+          "after": "$string['taskcenter_relation_management_project'] = 'Administrative Cascade project';"
+        },
+        {
+          "line": 3860,
+          "before": "// v0.6.9.5 — Administrative Scale Strategy Foundation.",
+          "after": "// v0.6.9.5 — Administrative Cascade Strategy Foundation."
+        },
+        {
+          "line": 3862,
+          "before": "$string['adminscale_methodology_rule'] = 'The Administrative Scale is reconciled up and down until its elements align. Projects and tasks support program execution; they do not replace the methodology levels. Tasks execute in Battle Plans.';",
+          "after": "$string['adminscale_methodology_rule'] = 'The Administrative Cascade is reconciled up and down until its elements align. Projects and tasks support program execution; they do not replace the methodology levels. Tasks execute in Battle Plans.';"
+        },
+        {
+          "line": 3865,
+          "before": "$string['adminscale_overview_intro'] = 'Check that the core scale elements exist, are published and do not depend on stale revisions.';",
+          "after": "$string['adminscale_overview_intro'] = 'Check that the core cascade elements exist, are published and do not depend on stale revisions.';"
+        },
+        {
+          "line": 3876,
+          "before": "$string['adminscale_kind_idealstate'] = 'Ideal state';",
+          "after": "$string['adminscale_kind_idealstate'] = 'Target state';"
+        },
+        {
+          "line": 3890,
+          "before": "$string['adminscale_kind_help_longtermgoal'] = 'The long-term direction derived only from published owner requirements. It sets the upper priority for the rest of the scale.';",
+          "after": "$string['adminscale_kind_help_longtermgoal'] = 'The long-term direction derived only from published owner requirements. It sets the upper priority for the rest of the cascade.';"
+        },
+        {
+          "line": 3902,
+          "before": "$string['strategy_adminscale_card'] = 'Administrative Scale';",
+          "after": "$string['strategy_adminscale_card'] = 'Administrative Cascade';"
+        },
+        {
+          "line": 3904,
+          "before": "$string['strategy_adminscale_open'] = 'Open Administrative Scale';",
+          "after": "$string['strategy_adminscale_open'] = 'Open Administrative Cascade';"
+        },
+        {
+          "line": 3906,
+          "before": "$string['strategy_execution_desc'] = 'Tasks created from published Administrative Scale items execute in the existing Battle Plan.';",
+          "after": "$string['strategy_execution_desc'] = 'Tasks created from published Administrative Cascade items execute in the existing Battle Plan.';"
+        },
+        {
+          "line": 3909,
+          "before": "$string['strategy_intro_v2'] = 'Manage strategy as a system: objectives across four BSC perspectives, accountable positions, real BMS24 indicators, causal links, and execution through the Administrative Scale and Battle Plan.';",
+          "after": "$string['strategy_intro_v2'] = 'Manage strategy as a system: objectives across four BSC perspectives, accountable positions, real BMS24 indicators, causal links, and execution through the Administrative Cascade and Battle Plan.';"
+        },
+        {
+          "line": 3928,
+          "before": "$string['strategy_execution_goal_summary'] = 'Administrative Scale branches: {$a->roots}; execution objects: {$a->items}; tasks: {$a->tasks}; done: {$a->done}.';",
+          "after": "$string['strategy_execution_goal_summary'] = 'Administrative Cascade branches: {$a->roots}; execution objects: {$a->items}; tasks: {$a->tasks}; done: {$a->done}.';"
+        },
+        {
+          "line": 3953,
+          "before": "$string['taskcenter_open_adminscale_source'] = 'Open source in Administrative Scale';",
+          "after": "$string['taskcenter_open_adminscale_source'] = 'Open source in Administrative Cascade';"
+        },
+        {
+          "line": 4005,
+          "before": "$string['adminscale_field_idealstate_name'] = 'Ideal state name';",
+          "after": "$string['adminscale_field_idealstate_name'] = 'Target state name';"
+        },
+        {
+          "line": 4006,
+          "before": "$string['adminscale_field_idealstate_parentuuid'] = 'Related scale record';",
+          "after": "$string['adminscale_field_idealstate_parentuuid'] = 'Related cascade record';"
+        },
+        {
+          "line": 4007,
+          "before": "$string['adminscale_field_idealstate_description'] = 'Ideal state description';",
+          "after": "$string['adminscale_field_idealstate_description'] = 'Target state description';"
+        },
+        {
+          "line": 4014,
+          "before": "$string['adminscale_field_ckp_parentuuid'] = 'Related scale record';",
+          "after": "$string['adminscale_field_ckp_parentuuid'] = 'Related cascade record';"
+        },
+        {
+          "line": 4441,
+          "before": "$string['bmsarchitecture_step_gapsstrategy'] = 'Gaps, strategy and administrative scale';",
+          "after": "$string['bmsarchitecture_step_gapsstrategy'] = 'Gaps, strategy and administrative cascade';"
+        },
+        {
+          "line": 4449,
+          "before": "$string['bmsarchitecture_guidance_gapsstrategy'] = 'Record proven AS-IS ↔ TARGET gaps, then choose strategy and the minimum sufficient change mechanism through the administrative scale.';",
+          "after": "$string['bmsarchitecture_guidance_gapsstrategy'] = 'Record proven AS-IS ↔ TARGET gaps, then choose strategy and the minimum sufficient change mechanism through the administrative cascade.';"
+        },
+        {
+          "line": 4460,
+          "before": "$string['bmsarchitecture_fact_adminitems'] = 'Administrative scale items';",
+          "after": "$string['bmsarchitecture_fact_adminitems'] = 'Administrative cascade items';"
+        },
+        {
+          "line": 5607,
+          "before": "$string['projectexec_empty_tasks'] = 'No accessible linked tasks were found. Open Tasks and link a task to this project. An Administrative Scale task definition without a canonical execution task is not treated as completed work.';",
+          "after": "$string['projectexec_empty_tasks'] = 'No accessible linked tasks were found. Open Tasks and link a task to this project. An Administrative Cascade task definition without a canonical execution task is not treated as completed work.';"
+        },
+        {
+          "line": 5614,
+          "before": "$string['projectexec_legacy_post'] = 'This editor has been retired. Changes from the old form have not been saved. Open Administrative Scale, review the fields and save the record there.';",
+          "after": "$string['projectexec_legacy_post'] = 'This editor has been retired. Changes from the old form have not been saved. Open Administrative Cascade, review the fields and save the record there.';"
+        },
+        {
+          "line": 5646,
+          "before": "$string['mcu_template_help_year'] = 'Annual review cadence. Strategy stays in Strategy and the Administrative Scale.';",
+          "after": "$string['mcu_template_help_year'] = 'Annual review cadence. Strategy stays in Strategy and the Administrative Cascade.';"
+        },
+        {
+          "line": 6062,
+          "before": "$string['tui_relation_help'] = 'Select an existing task, project or another published Administrative Scale record. Up to 100 tasks and 100 records are shown; search refines this selection.';",
+          "after": "$string['tui_relation_help'] = 'Select an existing task, project or another published Administrative Cascade record. Up to 100 tasks and 100 records are shown; search refines this selection.';"
+        },
+        {
+          "line": 6193,
+          "before": "$string['pcu_links_help'] = 'Administrative Scale records refer to an exact policy or directive revision. This panel is read-only: publishing a new revision does not update those references or create tasks.';",
+          "after": "$string['pcu_links_help'] = 'Administrative Cascade records refer to an exact policy or directive revision. This panel is read-only: publishing a new revision does not update those references or create tasks.';"
+        },
+        {
+          "line": 6195,
+          "before": "$string['pcu_no_links'] = 'No related Administrative Scale records.';",
+          "after": "$string['pcu_no_links'] = 'No related Administrative Cascade records.';"
+        },
+        {
+          "line": 6201,
+          "before": "$string['pcu_confirm_publish'] = 'A published revision will be appended. The previous publication remains in history. Related tasks, documents and scale records do not change.';",
+          "after": "$string['pcu_confirm_publish'] = 'A published revision will be appended. The previous publication remains in history. Related tasks, documents and cascade records do not change.';"
+        },
+        {
+          "line": 6685,
+          "before": "$string['pru_dep_adminitems'] = 'Administrative scale';",
+          "after": "$string['pru_dep_adminitems'] = 'Administrative cascade';"
+        },
+        {
+          "line": 9247,
+          "before": "$string['implproj_intro'] = 'Link a paid Corporate implementation program to an existing published BMS Administrative Scale project. No tasks are copied or modified.';",
+          "after": "$string['implproj_intro'] = 'Link a paid Corporate implementation program to an existing published BMS Administrative Cascade project. No tasks are copied or modified.';"
+        },
+        {
+          "line": 9259,
+          "before": "$string['implproj_no_projects'] = 'No published projects. First publish a project in the Administrative Scale.';",
+          "after": "$string['implproj_no_projects'] = 'No published projects. First publish a project in the Administrative Cascade.';"
+        },
+        {
+          "line": 9477,
+          "before": "$string['bms_exec_projects_note'] = 'Only tasks directly referencing an Administrative Scale project are included; children without their own project context are not inferred. Up to 10 projects.';",
+          "after": "$string['bms_exec_projects_note'] = 'Only tasks directly referencing an Administrative Cascade project are included; children without their own project context are not inferred. Up to 10 projects.';"
+        }
+      ]
+    },
+    {
+      "path": "local/kbacompany/lang/ru/local_kbacompany.php",
+      "before_sha256_lf": "81334038357d7bc9f79a2dfefca9c8022c088045919931fc54e78a939b82a858",
+      "after_sha256_lf": "b4297dd6ffc3d82c4da5b68882c93241e47670f6f07a8762668b3b8141cd4754",
+      "line_replacements": [
+        {
+          "line": 65,
+          "before": "$string['wf_title'] = 'Исполнение административного каскада';",
+          "after": "$string['wf_title'] = 'Исполнение прежнего административного каскада';"
+        },
+        {
+          "line": 139,
+          "before": "$string['privacy:metadata:aclog'] = 'Журнал административного каскада';",
+          "after": "$string['privacy:metadata:aclog'] = 'Журнал прежнего административного каскада';"
+        },
+        {
+          "line": 142,
+          "before": "$string['privacy:path:cascade'] = 'Административный каскад';",
+          "after": "$string['privacy:path:cascade'] = 'Прежний административный каскад';"
+        },
+        {
+          "line": 143,
+          "before": "$string['ac_title'] = 'Административный каскад (совместимость)';",
+          "after": "$string['ac_title'] = 'Прежний административный каскад (совместимость)';"
+        },
+        {
+          "line": 162,
+          "before": "$string['ac_empty'] = 'Объекты каскада ещё не созданы.';",
+          "after": "$string['ac_empty'] = 'Объекты прежнего каскада ещё не созданы.';"
+        },
+        {
+          "line": 1029,
+          "before": "$string['function_legacycompat'] = 'Сохранено прежних функций административного каскада: {$a}. Они остаются доступными для обратной совместимости и не мигрируются автоматически.';",
+          "after": "$string['function_legacycompat'] = 'Сохранено функций прежнего административного каскада: {$a}. Они остаются доступными для обратной совместимости и не мигрируются автоматически.';"
+        },
+        {
+          "line": 1043,
+          "before": "$string['ofs_openlegacyfunctions'] = 'Функции административного каскада';",
+          "after": "$string['ofs_openlegacyfunctions'] = 'Функции прежнего административного каскада';"
+        },
+        {
+          "line": 1325,
+          "before": "// v0.4.1 Административная шкала.",
+          "after": "// v0.4.1 Административный каскад."
+        },
+        {
+          "line": 1326,
+          "before": "$string['adminscale_title'] = 'Административная шкала';",
+          "after": "$string['adminscale_title'] = 'Административный каскад';"
+        },
+        {
+          "line": 1327,
+          "before": "$string['adminscale_intro'] = 'Преобразует стратегические цели в управляемое исполнение: Цель → Оргполитика → План → Программа → Проект → Решение/Приказ → Задача.';",
+          "after": "$string['adminscale_intro'] = 'Административный каскад BMS (ранее — Административная шкала) преобразует стратегические цели в управляемое исполнение: Цель → Организационная политика → План → Программа → Проект → Управленческое решение → Задача.';"
+        },
+        {
+          "line": 1328,
+          "before": "$string['adminscale_rule'] = 'Для каждого исполняемого элемента шкалы задавайте ожидаемый результат. Шкала объясняет, зачем существует работа; фактическое исполнение управляется отдельно через Боевые планы и контур исполнения.';",
+          "after": "$string['adminscale_rule'] = 'Для каждого исполняемого элемента каскада задавайте ожидаемый результат. Каскад объясняет, зачем существует работа; фактическое исполнение управляется отдельно через Боевые планы и контур исполнения.';"
+        },
+        {
+          "line": 1329,
+          "before": "$string['adminscale_legacy'] = 'Совместимость: в старом «Административном каскаде» остаётся {$a} действующих объектов. Они не мигрируются автоматически.';",
+          "after": "$string['adminscale_legacy'] = 'Совместимость: в прежнем административном каскаде остаётся {$a} действующих объектов. Они не мигрируются автоматически.';"
+        },
+        {
+          "line": 1330,
+          "before": "$string['adminscale_scale'] = 'Административная шкала';",
+          "after": "$string['adminscale_scale'] = 'Административный каскад';"
+        },
+        {
+          "line": 1331,
+          "before": "$string['adminscale_editor'] = 'Создание и изменение элементов шкалы';",
+          "after": "$string['adminscale_editor'] = 'Создание и изменение элементов каскада';"
+        },
+        {
+          "line": 1332,
+          "before": "$string['adminscale_empty'] = 'Элементы административной шкалы ещё не созданы.';",
+          "after": "$string['adminscale_empty'] = 'Элементы административного каскада ещё не созданы.';"
+        },
+        {
+          "line": 1334,
+          "before": "$string['adminscale_saved'] = 'Административная шкала сохранена.';",
+          "after": "$string['adminscale_saved'] = 'Административный каскад сохранён.';"
+        },
+        {
+          "line": 1341,
+          "before": "$string['adminscale_kind_policy'] = 'Оргполитика';",
+          "after": "$string['adminscale_kind_policy'] = 'Организационная политика';"
+        },
+        {
+          "line": 1345,
+          "before": "$string['adminscale_kind_decision'] = 'Решение / приказ';",
+          "after": "$string['adminscale_kind_decision'] = 'Управленческое решение';"
+        },
+        {
+          "line": 1356,
+          "before": "$string['adminscale_parent'] = 'Родительский элемент шкалы';",
+          "after": "$string['adminscale_parent'] = 'Родительский элемент каскада';"
+        },
+        {
+          "line": 1381,
+          "before": "$string['adminscale_duplicatecode'] = 'Этот код уже используется в Административной шкале компании.';",
+          "after": "$string['adminscale_duplicatecode'] = 'Этот код уже используется в Административном каскаде компании.';"
+        },
+        {
+          "line": 1382,
+          "before": "$string['adminscale_conflict'] = 'Элемент шкалы уже изменён. Откройте последнюю редакцию и повторите изменение.';",
+          "after": "$string['adminscale_conflict'] = 'Элемент каскада уже изменён. Откройте последнюю редакцию и повторите изменение.';"
+        },
+        {
+          "line": 1384,
+          "before": "$string['adminscale_kindimmutable'] = 'Тип существующего элемента Административной шкалы менять нельзя.';",
+          "after": "$string['adminscale_kindimmutable'] = 'Тип существующего элемента Административного каскада менять нельзя.';"
+        },
+        {
+          "line": 1385,
+          "before": "$string['adminscale_lock'] = 'Административная шкала сейчас изменяется другой операцией. Повторите попытку.';",
+          "after": "$string['adminscale_lock'] = 'Административный каскад сейчас изменяется другой операцией. Повторите попытку.';"
+        },
+        {
+          "line": 1387,
+          "before": "$string['adminscale_referenced'] = 'Сначала архивируйте или измените дочерние элементы шкалы.';",
+          "after": "$string['adminscale_referenced'] = 'Сначала архивируйте или измените дочерние элементы каскада.';"
+        },
+        {
+          "line": 1388,
+          "before": "$string['adminscale_cycle'] = 'В Административной шкале обнаружен цикл.';",
+          "after": "$string['adminscale_cycle'] = 'В Административном каскаде обнаружен цикл.';"
+        },
+        {
+          "line": 1389,
+          "before": "$string['privacy:metadata:adminscale'] = 'Редакции Административной шкалы и их авторы';",
+          "after": "$string['privacy:metadata:adminscale'] = 'Редакции Административного каскада и их авторы';"
+        },
+        {
+          "line": 1390,
+          "before": "$string['privacy:metadata:adminscale:actorid'] = 'Пользователь, создавший или изменивший редакцию Административной шкалы';",
+          "after": "$string['privacy:metadata:adminscale:actorid'] = 'Пользователь, создавший или изменивший редакцию Административного каскада';"
+        },
+        {
+          "line": 1392,
+          "before": "$string['adminscale_parentref'] = 'Выберите опубликованный родительский элемент требуемого типа Административной шкалы.';",
+          "after": "$string['adminscale_parentref'] = 'Выберите опубликованный родительский элемент требуемого типа Административного каскада.';"
+        },
+        {
+          "line": 1398,
+          "before": "$string['taskcenter_intro'] = 'Единое рабочее пространство задач BMS24: поручения, задачи административной шкалы, регулярная работа должности и будущие задачи развития собираются в одном месте.';",
+          "after": "$string['taskcenter_intro'] = 'Единое рабочее пространство задач BMS24: поручения, задачи административного каскада, регулярная работа должности и будущие задачи развития собираются в одном месте.';"
+        },
+        {
+          "line": 1399,
+          "before": "$string['taskcenter_rule'] = 'Задача — это исполняемый объект. Административная шкала и программа работы должности остаются источниками/определениями и не дублируют факт исполнения.';",
+          "after": "$string['taskcenter_rule'] = 'Задача — это исполняемый объект. Административный каскад и программа работы должности остаются источниками/определениями и не дублируют факт исполнения.';"
+        },
+        {
+          "line": 1430,
+          "before": "$string['taskcenter_relation_hint'] = 'Можно сделать задачу подзадачей другой задачи или связать её с целью, оргполитикой, планом, программой или опубликованной редакцией проекта Административной шкалы.';",
+          "after": "$string['taskcenter_relation_hint'] = 'Можно сделать задачу подзадачей другой задачи или связать её с целью, организационной политикой, планом, программой или опубликованной редакцией проекта Административного каскада.';"
+        },
+        {
+          "line": 1445,
+          "before": "$string['taskcenter_source_adminscale'] = 'Административная шкала';",
+          "after": "$string['taskcenter_source_adminscale'] = 'Административный каскад';"
+        },
+        {
+          "line": 1521,
+          "before": "$string['battleplan_fromadmin'] = 'Задачи из административной шкалы';",
+          "after": "$string['battleplan_fromadmin'] = 'Задачи из административного каскада';"
+        },
+        {
+          "line": 2705,
+          "before": "$string['taskcenter_relation_management_project'] = 'Проект Административной шкалы';",
+          "after": "$string['taskcenter_relation_management_project'] = 'Проект Административного каскада';"
+        },
+        {
+          "line": 3862,
+          "before": "$string['adminscale_methodology_rule'] = 'Административная шкала прорабатывается вверх и вниз до согласования элементов. Проекты и задачи являются исполнительной поддержкой программы, а не заменяют уровни методики. Задачи исполняются в Боевом плане.';",
+          "after": "$string['adminscale_methodology_rule'] = 'Административный каскад прорабатывается вверх и вниз до согласования элементов. Проекты и задачи являются исполнительной поддержкой программы, а не заменяют уровни методики. Задачи исполняются в Боевом плане.';"
+        },
+        {
+          "line": 3865,
+          "before": "$string['adminscale_overview_intro'] = 'Проверьте, что основные элементы шкалы сформулированы, опубликованы и не имеют устаревших зависимостей.';",
+          "after": "$string['adminscale_overview_intro'] = 'Проверьте, что основные элементы каскада сформулированы, опубликованы и не имеют устаревших зависимостей.';"
+        },
+        {
+          "line": 3871,
+          "before": "$string['adminscale_alignment_ok'] = 'Контур административной шкалы заполнен по всем методологическим уровням; устаревших зависимостей не обнаружено.';",
+          "after": "$string['adminscale_alignment_ok'] = 'Контур административного каскада заполнен по всем методологическим уровням; устаревших зависимостей не обнаружено.';"
+        },
+        {
+          "line": 3876,
+          "before": "$string['adminscale_kind_idealstate'] = 'Идеальная картина';",
+          "after": "$string['adminscale_kind_idealstate'] = 'Целевое состояние';"
+        },
+        {
+          "line": 3884,
+          "before": "$string['adminscale_idealstatebody'] = 'Описание идеальной картины';",
+          "after": "$string['adminscale_idealstatebody'] = 'Описание целевого состояния';"
+        },
+        {
+          "line": 3890,
+          "before": "$string['adminscale_kind_help_longtermgoal'] = 'Долговременное направление, выведенное только из опубликованных требований собственника. Оно задаёт верхний приоритет для остальных элементов шкалы.';",
+          "after": "$string['adminscale_kind_help_longtermgoal'] = 'Долговременное направление, выведенное только из опубликованных требований собственника. Оно задаёт верхний приоритет для остальных элементов каскада.';"
+        },
+        {
+          "line": 3902,
+          "before": "$string['strategy_adminscale_card'] = 'Административная шкала';",
+          "after": "$string['strategy_adminscale_card'] = 'Административный каскад';"
+        },
+        {
+          "line": 3904,
+          "before": "$string['strategy_adminscale_open'] = 'Открыть административную шкалу';",
+          "after": "$string['strategy_adminscale_open'] = 'Открыть административный каскад';"
+        },
+        {
+          "line": 3906,
+          "before": "$string['strategy_execution_desc'] = 'Задачи из опубликованных элементов административной шкалы исполняются в существующем Боевом плане.';",
+          "after": "$string['strategy_execution_desc'] = 'Задачи из опубликованных элементов административного каскада исполняются в существующем Боевом плане.';"
+        },
+        {
+          "line": 3909,
+          "before": "$string['strategy_intro_v2'] = 'Управляйте стратегией как системой: цели по четырём перспективам ССП, ответственные должности, реальные показатели BMS24, причинно-следственные связи и исполнение через Административную шкалу и Боевой план.';",
+          "after": "$string['strategy_intro_v2'] = 'Управляйте стратегией как системой: цели по четырём перспективам ССП, ответственные должности, реальные показатели BMS24, причинно-следственные связи и исполнение через Административный каскад и Боевой план.';"
+        },
+        {
+          "line": 3928,
+          "before": "$string['strategy_execution_goal_summary'] = 'Связанных ветвей Административной шкалы: {$a->roots}; объектов исполнения: {$a->items}; задач: {$a->tasks}; выполнено: {$a->done}.';",
+          "after": "$string['strategy_execution_goal_summary'] = 'Связанных ветвей Административного каскада: {$a->roots}; объектов исполнения: {$a->items}; задач: {$a->tasks}; выполнено: {$a->done}.';"
+        },
+        {
+          "line": 3953,
+          "before": "$string['taskcenter_open_adminscale_source'] = 'Открыть источник в Административной шкале';",
+          "after": "$string['taskcenter_open_adminscale_source'] = 'Открыть источник в Административном каскаде';"
+        },
+        {
+          "line": 4005,
+          "before": "$string['adminscale_field_idealstate_name'] = 'Название идеальной картины';",
+          "after": "$string['adminscale_field_idealstate_name'] = 'Название целевого состояния';"
+        },
+        {
+          "line": 4006,
+          "before": "$string['adminscale_field_idealstate_parentuuid'] = 'Связанный элемент шкалы';",
+          "after": "$string['adminscale_field_idealstate_parentuuid'] = 'Связанный элемент каскада';"
+        },
+        {
+          "line": 4007,
+          "before": "$string['adminscale_field_idealstate_description'] = 'Описание идеального состояния';",
+          "after": "$string['adminscale_field_idealstate_description'] = 'Описание целевого состояния';"
+        },
+        {
+          "line": 4014,
+          "before": "$string['adminscale_field_ckp_parentuuid'] = 'Связано с элементом шкалы';",
+          "after": "$string['adminscale_field_ckp_parentuuid'] = 'Связано с элементом каскада';"
+        },
+        {
+          "line": 4441,
+          "before": "$string['bmsarchitecture_step_gapsstrategy'] = 'Разрывы, стратегия и административная шкала';",
+          "after": "$string['bmsarchitecture_step_gapsstrategy'] = 'Разрывы, стратегия и административный каскад';"
+        },
+        {
+          "line": 4449,
+          "before": "$string['bmsarchitecture_guidance_gapsstrategy'] = 'Зафиксируйте доказанные разрывы AS-IS ↔ TARGET, затем определите стратегию и минимально достаточный механизм изменений через административную шкалу.';",
+          "after": "$string['bmsarchitecture_guidance_gapsstrategy'] = 'Зафиксируйте доказанные разрывы AS-IS ↔ TARGET, затем определите стратегию и минимально достаточный механизм изменений через административный каскад.';"
+        },
+        {
+          "line": 4460,
+          "before": "$string['bmsarchitecture_fact_adminitems'] = 'Элементы административной шкалы';",
+          "after": "$string['bmsarchitecture_fact_adminitems'] = 'Элементы административного каскада';"
+        },
+        {
+          "line": 5607,
+          "before": "$string['projectexec_empty_tasks'] = 'Доступные связанные задачи не найдены. Откройте раздел задач и укажите связь с этим проектом. Определение задачи в Административной шкале без созданной задачи исполнения здесь не считается выполненной работой.';",
+          "after": "$string['projectexec_empty_tasks'] = 'Доступные связанные задачи не найдены. Откройте раздел задач и укажите связь с этим проектом. Определение задачи в Административном каскаде без созданной задачи исполнения здесь не считается выполненной работой.';"
+        },
+        {
+          "line": 5614,
+          "before": "$string['projectexec_legacy_post'] = 'Этот редактор выведен из использования. Изменения из старой формы не сохранены. Откройте Административную шкалу, проверьте поля и сохраните запись там.';",
+          "after": "$string['projectexec_legacy_post'] = 'Этот редактор выведен из использования. Изменения из старой формы не сохранены. Откройте Административный каскад, проверьте поля и сохраните запись там.';"
+        },
+        {
+          "line": 5646,
+          "before": "$string['mcu_template_help_year'] = 'Годовой ритм контроля. Стратегия остаётся в стратегии и Административной шкале.';",
+          "after": "$string['mcu_template_help_year'] = 'Годовой ритм контроля. Стратегия остаётся в стратегии и Административном каскаде.';"
+        },
+        {
+          "line": 6062,
+          "before": "$string['tui_relation_help'] = 'Выберите существующую задачу, проект или другой опубликованный элемент Административной шкалы. Показаны первые 100 задач и 100 элементов; поиск уточняет выбор.';",
+          "after": "$string['tui_relation_help'] = 'Выберите существующую задачу, проект или другой опубликованный элемент Административного каскада. Показаны первые 100 задач и 100 элементов; поиск уточняет выбор.';"
+        },
+        {
+          "line": 6193,
+          "before": "$string['pcu_links_help'] = 'Элементы Административной шкалы ссылаются на точную редакцию политики или директивы. Здесь они только отображаются: публикация новой редакции не обновляет эти ссылки и не создаёт задачи.';",
+          "after": "$string['pcu_links_help'] = 'Элементы Административного каскада ссылаются на точную редакцию политики или директивы. Здесь они только отображаются: публикация новой редакции не обновляет эти ссылки и не создаёт задачи.';"
+        },
+        {
+          "line": 6195,
+          "before": "$string['pcu_no_links'] = 'Связанных элементов Административной шкалы пока нет.';",
+          "after": "$string['pcu_no_links'] = 'Связанных элементов Административного каскада пока нет.';"
+        },
+        {
+          "line": 6201,
+          "before": "$string['pcu_confirm_publish'] = 'Будет добавлена опубликованная редакция. Предыдущая публикация останется в истории. Связанные задачи, документы и элементы шкалы не изменятся.';",
+          "after": "$string['pcu_confirm_publish'] = 'Будет добавлена опубликованная редакция. Предыдущая публикация останется в истории. Связанные задачи, документы и элементы каскада не изменятся.';"
+        },
+        {
+          "line": 6685,
+          "before": "$string['pru_dep_adminitems'] = 'Административная шкала';",
+          "after": "$string['pru_dep_adminitems'] = 'Административный каскад';"
+        },
+        {
+          "line": 9249,
+          "before": "$string['implproj_intro'] = 'Свяжите оплаченную программу внедрения Corporate с уже опубликованным проектом Административной шкалы BMS24. Связь не создаёт задач и не меняет статусы.';",
+          "after": "$string['implproj_intro'] = 'Свяжите оплаченную программу внедрения Corporate с уже опубликованным проектом Административного каскада BMS24. Связь не создаёт задач и не меняет статусы.';"
+        },
+        {
+          "line": 9261,
+          "before": "$string['implproj_no_projects'] = 'Нет опубликованных проектов. Сначала создайте и опубликуйте проект в Административной шкале.';",
+          "after": "$string['implproj_no_projects'] = 'Нет опубликованных проектов. Сначала создайте и опубликуйте проект в Административном каскаде.';"
+        },
+        {
+          "line": 9479,
+          "before": "$string['bms_exec_projects_note'] = 'Учитываются только задачи с прямой ссылкой на проект Административной шкалы; дочерние задачи без собственного контекста сюда не включены. Не более 10 проектов.';",
+          "after": "$string['bms_exec_projects_note'] = 'Учитываются только задачи с прямой ссылкой на проект Административного каскада; дочерние задачи без собственного контекста сюда не включены. Не более 10 проектов.';"
+        }
+      ]
+    }
+  ]
+}
