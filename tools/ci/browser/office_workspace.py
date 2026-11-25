@@ -46,16 +46,19 @@ PAGE_STATE = """() => {
       text: document.body.innerText};
 }"""
 MENU = """() => { const scopes = [...document.querySelectorAll('aside.bms24-sidebar, .bms24-mobilemenu nav')];
-  const links = scopes.flatMap(s => [...s.querySelectorAll('a.bms24-navitem')]);
+  const links = [...new Set(scopes.flatMap(s => [...s.querySelectorAll('a.bms24-navitem')]))];
   return links.filter(a => new URL(a.href).pathname.endsWith('/office.php')).map(a => ({
       uuid: new URL(a.href).searchParams.get('uuid'), current: a.getAttribute('aria-current'),
       visible: a.getBoundingClientRect().width > 0})); }"""
 
 
 def php(*args):
-    out = subprocess.run(['php', str(here / 'ci_office_workspace.php'), *args], check=True,
-                         capture_output=True, text=True).stdout
-    return json.loads(out.strip().splitlines()[-1])
+    run = subprocess.run(['php', str(here / 'ci_office_workspace.php'), *args], capture_output=True, text=True)
+    if run.returncode != 0:
+        # The helper writes only the exception class, error code and source line; keep the last line, never stdout.
+        tail = (run.stderr or '').strip().splitlines()[-1:] or ['']
+        raise RuntimeError('ci_office_workspace.php %s exited %d: %s' % (args[0], run.returncode, tail[0][:300]))
+    return json.loads(run.stdout.strip().splitlines()[-1])
 
 
 def helper(*args):

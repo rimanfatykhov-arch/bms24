@@ -3,7 +3,9 @@
  *   switch <0|1>             -> sets local_kbacompany/office_workspace_enabled
  *   seed                     -> company A: an effective document EA must acknowledge, a document in review assigned to EA,
  *                               an overdue decision task of EA; company B: a document in review assigned to EB and an
- *                               overdue decision task of EB. Prints titles (no secrets).
+ *                               overdue decision task of EB. Created by the company's own fixture manager (MA / MB), as the
+ *                               shared fixture creates its tasks. Prints titles (no secrets); a failure prints only the
+ *                               exception class and error code to STDERR.
  *   model <A|B> <actor>      -> counters of office_workspace_service::overview for that actor (ground truth)
  *   revoke|reopen <actor>    -> canonical membership revocation in company A (membership_access_service::change)
  */
@@ -31,17 +33,21 @@ if ($phase === 'switch' && in_array($argv[2] ?? '', ['0', '1'], true)) {
     $out['enabled'] = office_workspace_service::enabled();
 } else if ($phase === 'seed') {
     $nonce = bin2hex(random_bytes(3));
-    $doc = static function(string $c, string $code, string $title) use ($admin): string {
-        return document_service::create_manual($c, (int)$admin->id, ['code' => $code, 'title' => $title,
+    $as = static function(int $user): void { \core\session\manager::set_user(\core_user::get_user($user, '*', MUST_EXIST)); };
+    $doc = static function(string $c, int $m, string $code, string $title) use ($as): string {
+        $as($m);
+        return document_service::create_manual($c, $m, ['code' => $code, 'title' => $title,
             'doctype' => 'procedure', 'doclevel' => 2, 'content' => 'Synthetic CI ' . $code, 'changereason' => 'CI']);
     };
-    $review = static function(string $c, string $uuid, int $reviewer) use ($admin): void {
-        document_service::add_reviewer($c, (int)$admin->id, $uuid, 1, $reviewer);
-        document_service::submit_review($c, (int)$admin->id, $uuid, 1);
+    $review = static function(string $c, int $m, string $uuid, int $reviewer) use ($as): void {
+        $as($m);
+        document_service::add_reviewer($c, $m, $uuid, 1, $reviewer);
+        document_service::submit_review($c, $m, $uuid, 1);
     };
-    $task = static function(string $c, int $assignee, string $title) use ($admin): string {
+    $task = static function(string $c, int $m, int $assignee, string $title) use ($as): string {
         global $DB;
-        $uuid = task_service::create($c, (int)$admin->id, ['title' => $title, 'product' => 'Synthetic CI result',
+        $as($m);
+        $uuid = task_service::create($c, $m, ['title' => $title, 'product' => 'Synthetic CI result',
             'description' => '', 'assigneeid' => $assignee, 'reviewerid' => 0, 'observerid' => 0, 'priority' => 'normal',
             'stream' => 'operate', 'startdate' => '', 'duedate' => '', 'planminutes' => 0]);
         // Fixture only: a task created from a meeting decision, overdue by ten days.
@@ -50,20 +56,30 @@ if ($phase === 'switch' && in_array($argv[2] ?? '', ['0', '1'], true)) {
         return $uuid;
     };
     $a = $company('A'); $b = $company('B'); $ea = $actor('EA'); $eb = $actor('EB');
+    $ma = $actor('MA'); $mb = $actor('MB');
     $titles = ['effective' => 'OFFICE CI EFFECTIVE A ' . $nonce, 'review' => 'OFFICE CI REVIEW A ' . $nonce,
         'task' => 'OFFICE CI OVERDUE A ' . $nonce, 'review_b' => 'OFFICE CI REVIEW B ' . $nonce,
         'task_b' => 'OFFICE CI OVERDUE B ' . $nonce];
-    $effective = $doc($a, 'OCI-E-' . $nonce, $titles['effective']);
-    $review($a, $effective, $ea);
-    document_service::review_decision($a, $ea, $effective, 1, 'approved', 'CI');
-    document_service::approve($a, (int)$admin->id, $effective, 1, 'CI');
-    document_service::publish($a, (int)$admin->id, $effective, 1, 0);
-    document_service::activate($a, (int)$admin->id, $effective, 1);
-    document_service::require_acknowledgement($a, (int)$admin->id, $effective, 1, $ea);
-    $review($a, $doc($a, 'OCI-R-' . $nonce, $titles['review']), $ea);
-    $task($a, $ea, $titles['task']);
-    $review($b, $doc($b, 'OCI-RB-' . $nonce, $titles['review_b']), $eb);
-    $task($b, $eb, $titles['task_b']);
+    try {
+        $effective = $doc($a, $ma, 'OCI-E-' . $nonce, $titles['effective']);
+        $review($a, $ma, $effective, $ea);
+        $as($ea);
+        document_service::review_decision($a, $ea, $effective, 1, 'approved', 'CI');
+        $as($ma);
+        document_service::approve($a, $ma, $effective, 1, 'CI');
+        document_service::publish($a, $ma, $effective, 1, 0);
+        document_service::activate($a, $ma, $effective, 1);
+        document_service::require_acknowledgement($a, $ma, $effective, 1, $ea);
+        $review($a, $ma, $doc($a, $ma, 'OCI-R-' . $nonce, $titles['review']), $ea);
+        $task($a, $ma, $ea, $titles['task']);
+        $review($b, $mb, $doc($b, $mb, 'OCI-RB-' . $nonce, $titles['review_b']), $eb);
+        $task($b, $mb, $eb, $titles['task_b']);
+    } catch (\Throwable $e) {
+        // Diagnostics without data: class, Moodle error code and the failing source line only.
+        fwrite(STDERR, 'seed failed: ' . get_class($e) . ' ' . (string)($e->errorcode ?? '') . ' at '
+            . basename($e->getFile()) . ':' . $e->getLine() . "\n");
+        exit(1);
+    }
     $out['titles'] = $titles;
     // Titles that must never appear on company A pages of EA: company B objects and the fixture's private drafts.
     $out['private'] = [$titles['review_b'], $titles['task_b'], (string)$f['documents']['A']['title'],
