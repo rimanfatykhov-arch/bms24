@@ -361,7 +361,12 @@ def open_chart(page, code):
 
 def close_chart(page):
     page.keyboard.press('Escape')
-    page.wait_for_function('() => !document.getElementById("bmsic-dialog").open')
+    # The browser clears `open` before dispatching the close event that disposes ECharts.
+    page.wait_for_function("""() => {
+        const dialog = document.getElementById('bmsic-dialog');
+        const chart = dialog.querySelector('[data-bmsic=chart]');
+        return !dialog.open && !chart.hasAttribute('data-engine') && !chart.querySelector('.bmsic-canvas svg');
+    }""")
 
 
 if __name__ == '__main__':
