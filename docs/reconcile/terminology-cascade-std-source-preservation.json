@@ -1,15 +1,15 @@
 {
   "scope": "exact intentional source updates; not runtime or release acceptance",
-  "base_sha": "323f948c6cc670c34722f516118ca7426fd604f7 (main after #173)",
+  "base_sha": "a515a38 (main after #169 R3 report discussion; originally prepared on 323f948c6cc670c34722f516118ca7426fd604f7, main after #173)",
   "normalization": "CRLF to LF only",
-  "previous_evidence": "docs/reconcile/daily-reports-summary-source-preservation.json (ADR-0011 block 1)",
-  "decision": "BMS-STD-TER-001 v1.0 and BMS-ADM-000 changes 2.6/2.7; owner approved explicit hash update for PR #187 on 2026-11-25",
+  "previous_evidence": "docs/reconcile/daily-reports-r3-source-preservation.json (daily reports R3, #169)",
+  "decision": "BMS-STD-TER-001 v1.0 and BMS-ADM-000 changes 2.6/2.7; owner approved explicit hash update for PR #187 on 2026-11-25 (recomputed on the #169 base: same lines, same before/after text)",
   "change": "In-place value replacement of existing RU/EN strings (terminology only): Administrative Scale -> Administrative Cascade, Ideal state -> Target state, Org policy -> Organizational policy, Decision/order -> Management decision; legacy cascade module labelled as legacy. Same line count; no key added, removed or renamed; no schema, capability or notification change.",
   "files": [
     {
       "path": "local/kbacompany/lang/en/local_kbacompany.php",
-      "before_sha256_lf": "9a3fa3efb85ef6f9aeaf18202ba4377bf418787c4631b636dbf766f7a45c2f88",
-      "after_sha256_lf": "ae1d04bc082d15cfb7160083027283dd690cd909517fb9181bde961c9c0f0360",
+      "before_sha256_lf": "2a8007f42e8de2339927da3be2dcdc5aecf91534a634b5bd2bd21dadf17402eb",
+      "after_sha256_lf": "07cb3d7b59099088b761860e81cc8aa484325ad6a3c617a8dda79fd5ec335d92",
       "line_replacements": [
         {
           "line": 65,
@@ -310,8 +310,8 @@
     },
     {
       "path": "local/kbacompany/lang/ru/local_kbacompany.php",
-      "before_sha256_lf": "81334038357d7bc9f79a2dfefca9c8022c088045919931fc54e78a939b82a858",
-      "after_sha256_lf": "b4297dd6ffc3d82c4da5b68882c93241e47670f6f07a8762668b3b8141cd4754",
+      "before_sha256_lf": "e2e51490b8c1f5988948b057ba93701ee4229bbc4ed9e0175da02f0a655fcfc9",
+      "after_sha256_lf": "ebef03ed9be8c857721c8b7f8daae1fe8893b6541f33e31e2de58fea9c7b5356",
       "line_replacements": [
         {
           "line": 65,

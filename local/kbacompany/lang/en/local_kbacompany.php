@@ -10033,3 +10033,12 @@ $string['dailyreports_summary_empty'] = 'No employees match the filter.';
 $string['dailyreports_summary_rating_positive'] = 'positive rating';
 $string['dailyreports_summary_rating_negative'] = 'negative rating';
 $string['dailyreports_summary_show'] = 'Show';
+// Daily reports R3 (2026-11-24): report discussion, owner decision (read: report readers; write: author and current reviewer).
+$string['communication_object_dailyreport'] = 'Daily report';
+$string['dailyreports_discussion_title'] = 'Report for {$a->day}: {$a->name}';
+$string['dailyreports_discussion_heading'] = 'Discussion';
+$string['dailyreports_discussion_note'] = 'Everyone who can open this report reads the discussion. The author and the reviewer of the current version write. A message does not accept, return or rate the report.';
+$string['dailyreports_discussion_empty'] = 'No messages yet.';
+$string['dailyreports_discussion_readonly'] = 'Only the author and the reviewer of the current version write here.';
+$string['dailyreports_discussion_empty_message'] = 'Write a message.';
+$string['dailyreports_discussion_files'] = 'This message has files. Open it in the Communication Center.';

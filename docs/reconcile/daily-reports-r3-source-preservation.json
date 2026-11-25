@@ -1,0 +1,25 @@
+{
+  "scope": "exact intentional source updates; not runtime or release acceptance",
+  "base_sha": "4c76f77050d921f7e6917744e9f010833638b642 (#173 published head: main 62fdc49 + #168 + #173)",
+  "normalization": "CRLF to LF only",
+  "previous_evidence": "docs/reconcile/daily-reports-summary-source-preservation.json (ADR-0011 block 1, published)",
+  "decision": "Owner decision 24.11.2026 on roadmap #75 R3: the report discussion is read by everyone who can open the report and written by the author and the reviewer of the current version.",
+  "change": "Append the daily reports R3 block (report discussion: communication_object_dailyreport and dailyreports_discussion_*) after the ADR-0011 monthly summary block (published #173). Register the 'dailyreport' object discussion kind in communication_service (context and viewer-read kinds, one contract rule) and re-check the write rule for that kind before every message. Retain all preceding keys and behaviour.",
+  "files": [
+    {
+      "path": "local/kbacompany/lang/en/local_kbacompany.php",
+      "before_sha256_lf": "9a3fa3efb85ef6f9aeaf18202ba4377bf418787c4631b636dbf766f7a45c2f88",
+      "after_sha256_lf": "2a8007f42e8de2339927da3be2dcdc5aecf91534a634b5bd2bd21dadf17402eb"
+    },
+    {
+      "path": "local/kbacompany/lang/ru/local_kbacompany.php",
+      "before_sha256_lf": "81334038357d7bc9f79a2dfefca9c8022c088045919931fc54e78a939b82a858",
+      "after_sha256_lf": "e2e51490b8c1f5988948b057ba93701ee4229bbc4ed9e0175da02f0a655fcfc9"
+    },
+    {
+      "path": "local/kbacompany/classes/local/communication_service.php",
+      "before_sha256_lf": "f3c7ab27e4da9001673e6c60a72b18b8e5af604068b15b349c5c01a45de3ad05",
+      "after_sha256_lf": "870b471dba39c867b5b13f8b04f55fb82f67ce484ea44cf929b5b9c4f93dae92"
+    }
+  ]
+}
