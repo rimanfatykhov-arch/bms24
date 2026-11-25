@@ -123,10 +123,15 @@ def check(root=ROOT):
     # R4 "Team for the day" block (#168). See docs/reconcile/daily-reports-summary-source-preservation.json.
     reviewed_followup['local/kbacompany/lang/en/local_kbacompany.php'] = '9a3fa3efb85ef6f9aeaf18202ba4377bf418787c4631b636dbf766f7a45c2f88'
     reviewed_followup['local/kbacompany/lang/ru/local_kbacompany.php'] = '81334038357d7bc9f79a2dfefca9c8022c088045919931fc54e78a939b82a858'
-    # DOC-W2 Office workspace (owner task 2026-11-24): officews_* RU/EN block after the ADR-0011 monthly summary block (#173); read-only, default off.
+    # Daily reports R3 (owner decision 24.11.2026): append the report discussion block after the ADR-0011 summary (#173) and register the
+    # 'dailyreport' discussion kind. See docs/reconcile/daily-reports-r3-source-preservation.json.
+    reviewed_followup['local/kbacompany/lang/en/local_kbacompany.php'] = '2a8007f42e8de2339927da3be2dcdc5aecf91534a634b5bd2bd21dadf17402eb'
+    reviewed_followup['local/kbacompany/lang/ru/local_kbacompany.php'] = 'e2e51490b8c1f5988948b057ba93701ee4229bbc4ed9e0175da02f0a655fcfc9'
+    reviewed_followup['local/kbacompany/classes/local/communication_service.php'] = '870b471dba39c867b5b13f8b04f55fb82f67ce484ea44cf929b5b9c4f93dae92'
+    # DOC-W2 Office workspace (owner task 2026-11-24): officews_* RU/EN block after the R3 report discussion block (#169); read-only, default off.
     # See docs/office/DOC_W2_OFFICE_WORKSPACE.md.
-    reviewed_followup['local/kbacompany/lang/en/local_kbacompany.php'] = 'db00f5757a80b5447850642f912e5c83edb0a897743282f6b4f6f9761307a250'
-    reviewed_followup['local/kbacompany/lang/ru/local_kbacompany.php'] = 'fe8e902bb668a6538a6e67bbe2412e2e83daff18280593f4c788777484554deb'
+    reviewed_followup['local/kbacompany/lang/en/local_kbacompany.php'] = '41c1b3df5c7fe4b964fb385a387c05b8cb028402c6311249d8b4c1c431882bbc'
+    reviewed_followup['local/kbacompany/lang/ru/local_kbacompany.php'] = '63a851e6c654d3e026371a7381bdcad294bc6255efcaa1391ca8a7daffe6e874'
     for row in plan['rows']:
         path=root/row['path']
         if not path.is_file() or path.is_symlink():

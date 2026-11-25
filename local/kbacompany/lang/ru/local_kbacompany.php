@@ -10035,6 +10035,15 @@ $string['dailyreports_summary_empty'] = 'Нет сотрудников под в
 $string['dailyreports_summary_rating_positive'] = 'положительная оценка';
 $string['dailyreports_summary_rating_negative'] = 'отрицательная оценка';
 $string['dailyreports_summary_show'] = 'Показать';
+// Daily reports R3 (2026-11-24): report discussion, owner decision (read: report readers; write: author and current reviewer).
+$string['communication_object_dailyreport'] = 'Ежедневный отчёт';
+$string['dailyreports_discussion_title'] = 'Отчёт за {$a->day}: {$a->name}';
+$string['dailyreports_discussion_heading'] = 'Обсуждение';
+$string['dailyreports_discussion_note'] = 'Обсуждение читают все, кто может открыть этот отчёт. Пишут автор и проверяющий текущей версии. Сообщение не принимает, не возвращает и не оценивает отчёт.';
+$string['dailyreports_discussion_empty'] = 'Сообщений пока нет.';
+$string['dailyreports_discussion_readonly'] = 'Писать здесь могут только автор и проверяющий текущей версии.';
+$string['dailyreports_discussion_empty_message'] = 'Напишите сообщение.';
+$string['dailyreports_discussion_files'] = 'В сообщении есть файлы. Откройте его в Центре коммуникаций.';
 
 // DOC-W2 Office workspace (2026-11-24): read-only overview over existing documents, approvals and decisions.
 $string['officews_enabled'] = 'Включить рабочее пространство «Канцелярия»';

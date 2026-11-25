@@ -925,6 +925,15 @@ class ContractTest(unittest.TestCase):
                                       'EB_team': {'http': 200, 'team': 0, 'summary': 0, 'versions': 0, 'leak': False},
                                       'EB_summary': {'http': 200, 'team': 0, 'summary': 0, 'versions': 0, 'leak': False},
                                       'EB_card': {'http': 404, 'team': 0, 'summary': 0, 'versions': 0, 'leak': False}}}
+            d = {k: 'DR %s discussion %s' % (shell, k) for k in ('author', 'reviewer', 'forged', 'RA', 'EB')}
+            row.update({'discussion_texts': d, 'discussion_author_composer': 1, 'discussion_reviewer_sections': 1,
+                        'discussion_reviewer_sees_author': True, 'discussion_injected_tags': 0,
+                        'discussion_forged_http': [200], 'hscroll_discussion': True,
+                        'discussion_negatives': {'EB': {'http': [200]}, 'RA': {'http': [303]}},
+                        'after_discussion': {'report': {'status': 'accepted'}, 'versions': [v1, v2],
+                                             'decisions': copy.deepcopy(accepted),
+                                             'discussion': [{'thread': 't-' + shell, 'authorid': EA, 'body': d['author']},
+                                                            {'thread': 't-' + shell, 'authorid': MA, 'body': d['reviewer']}]}})
             if today:
                 row['after_touch'] = {'report': {'status': 'submitted'}, 'versions': [dict(v1)], 'decisions': []}
             rows.append(row)
@@ -1005,6 +1014,30 @@ class ContractTest(unittest.TestCase):
         fails('daily_report_release_access_denied', lambda o: o['cases'][0]['release_denied']['EB_card'].update(versions=1))
         fails('daily_report_release_access_denied', lambda o: o['cases'][1]['release_denied']['EB_card'].update(http=500))
         fails('daily_report_release_access_denied', lambda o: o['cases'][0]['release_denied']['EB_summary'].update(leak=True))
+        # R3 report discussion
+        disc = 'daily_report_discussion_author_and_reviewer'
+        fails(disc, lambda o: o['cases'][0].update(discussion_author_composer=0))
+        fails(disc, lambda o: o['cases'][1].update(discussion_reviewer_sees_author=False))
+        fails(disc, lambda o: o['cases'][0].update(discussion_reviewer_sections=2))
+        fails(disc, lambda o: o['cases'][1].update(discussion_injected_tags=1))
+        fails(disc, lambda o: o['cases'][0].update(discussion_forged_http=[303]))
+        fails(disc, lambda o: o['cases'][1].update(discussion_forged_http=[500]))
+        fails(disc, lambda o: o['cases'][0]['discussion_negatives']['RA'].update(http=[500]))
+        fails(disc, lambda o: o['cases'][1]['discussion_negatives'].pop('EB'))
+        fails(disc, lambda o: o['cases'][0]['after_discussion']['discussion'].append(
+            {'thread': 't-owned', 'authorid': 13, 'body': o['cases'][0]['discussion_texts']['RA']}))
+        fails(disc, lambda o: o['cases'][1]['after_discussion']['discussion'].append(
+            {'thread': 't-legacy', 'authorid': 12, 'body': o['cases'][1]['discussion_texts']['forged']}))
+        fails(disc, lambda o: o['cases'][0]['after_discussion']['discussion'].append(
+            dict(o['cases'][0]['after_discussion']['discussion'][1])))
+        fails(disc, lambda o: o['cases'][1]['after_discussion']['discussion'][1].update(thread='t-other'))
+        fails(disc, lambda o: o['cases'][0]['after_discussion']['discussion'].reverse())
+        fails(disc, lambda o: o['cases'][1]['after_discussion'].update(discussion=[]))
+        fails(disc, lambda o: o['cases'][0]['after_discussion']['report'].update(status='returned'))
+        fails(disc, lambda o: o['cases'][1]['after_discussion']['decisions'].append(
+            {'versionuuid': 'v2-legacy', 'decision': 'accepted', 'rating': 'negative'}))
+        fails(disc, lambda o: o['cases'][0].update(hscroll_discussion=False))
+        fails(disc, lambda o: o['cases'][1].pop('discussion_texts'))
         fails('daily_report_layout_and_browser_errors', lambda o: o['cases'][1].update(hscroll_form=False))
         fails('daily_report_layout_and_browser_errors', lambda o: o['cases'][0]['browser_events'].append(
             {'source': 'pageerror', 'name': 'Error', 'message': 'x'}))

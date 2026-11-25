@@ -10,6 +10,8 @@ use local_kbacompany\local\daily_report_review_service as review;
 use local_kbacompany\local\daily_report_reviewer_service as reviewers;
 use local_kbacompany\local\daily_report_summary_service as summary;
 use local_kbacompany\local\daily_report_team_service as team;
+use local_kbacompany\local\daily_report_discussion_service as discussion;
+use local_kbacompany\local\daily_report_discussion_ui_service as discussionui;
 use local_kbacompany\local\bms_page_shell_service;
 use local_kbacompany\local\bms24_shell_service;
 use local_kbacompany\local\bms24_ui_kit_service;
@@ -34,6 +36,25 @@ if (!in_array($tab, ['my', 'history', 'review', 'summary'], true) || ($tab === '
 $data = daily_report_service::context($uuid, $actor, $day,
     optional_param('taskpage', 0, PARAM_INT), optional_param('resultpage', 0, PARAM_INT));
 $base = ['uuid' => $uuid, 'day' => $day];
+
+// ---- R3 report discussion: one text message by the author or the current reviewer (re-checked by the service).
+if ($enabled && $_SERVER['REQUEST_METHOD'] === 'POST' && optional_param('action', '', PARAM_ALPHA) === 'discuss') {
+    require_sesskey();
+    $discussreport = required_param('discussreport', PARAM_ALPHANUMEXT);
+    $discussback = reportui::url($uuid, []);
+    try {
+        $discussback = discussion::url($uuid, discussion::target($uuid, $actor, $discussreport));
+        discussion::post($uuid, $actor, $discussreport, optional_param('message', '', PARAM_RAW),
+            optional_param('replytouuid', '', PARAM_ALPHANUMEXT));
+    } catch (moodle_exception $e) {
+        if ($e->module !== 'local_kbacompany') {
+            throw $e;
+        }
+        // Unknown, foreign and unreadable reports fail the same way; nothing is stored on failure.
+        redirect($discussback, $e->getMessage(), null, \core\output\notification::NOTIFY_ERROR);
+    }
+    redirect($discussback);
+}
 
 // ---- writes: POST + sesskey only; the actor is the session user, never a request parameter.
 $posted = null; $error = ''; $conflict = false;
@@ -177,6 +198,9 @@ if ($tab === 'review') {
         echo html_writer::link(reportui::url($uuid, ['tab' => 'review']), s(get_string('dailyreports_back_queue', 'local_kbacompany')));
         echo reportui::card($uuid, $actor, $card,
             $card['can_reassign'] ? review::reviewer_candidates($uuid, $actor, (int)$card['report']->userid) : []);
+        // R3: the report discussion, readable by everyone who opens this card.
+        echo discussionui::render($uuid, discussion::context($uuid, $actor, (string)$card['report']->uuid),
+            optional_param('reply', '', PARAM_ALPHANUMEXT));
     } else {
         $queue = optional_param('queue', 'pending', PARAM_ALPHA);
         $queues = review::queues($uuid, $actor);
@@ -286,6 +310,11 @@ if ($enabled) {
         $current = $view['versions'][0] ?? null;
         $selfreview = $current && (string)$current->reviewersource === 'self_top' && (int)$current->reviewerid === $actor;
         echo reportui::revision_controls($uuid, $day, (string)$report->status, $selfreview ? (string)$report->uuid : '');
+    }
+    if ($report && (string)$report->currentversionuuid !== '') {
+        // R3: the discussion of this report with the reviewer (also while a returned report is being corrected).
+        echo discussionui::render($uuid, discussion::context($uuid, $actor, (string)$report->uuid),
+            optional_param('reply', '', PARAM_ALPHANUMEXT));
     }
     echo html_writer::end_tag('section');
     // The live summary below is the current state of BMS24 data, not part of any submitted version.
