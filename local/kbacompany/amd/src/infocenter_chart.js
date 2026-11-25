@@ -65,7 +65,7 @@ define([], function() {
     function resetView() {
         state.start = 0;
         state.end = Math.max(0, state.points.length - 1);
-        state.selected = lastFact(state.start, state.end);
+        state.selected = state.points.length ? lastFact(state.start, state.end) : -1;
         render();
     }
 
