@@ -11,6 +11,7 @@ use local_kbacompany\local\daily_report_review_service as review;
 use local_kbacompany\local\daily_report_store_service as store;
 use local_kbacompany\local\identity_registry;
 use local_kbacompany\local\membership_access_service;
+use local_kbacompany\local\organization_service;
 use local_kbacorporate\local\repository;
 
 /**
@@ -250,5 +251,47 @@ final class daily_report_discussion_test extends \advanced_testcase {
         $this->assertStringNotContainsString('data-dailyreport-discussion-composer', $html);
         $this->assertStringContainsString('data-dailyreport-discussion-readonly', $html);
         $this->assertStringNotContainsString('<script>alert(1)</script>', $html);
+    }
+    public function test_author_writes_first_when_the_reviewer_is_a_manager_outside_the_staff_roster(): void {
+        global $DB;
+        $f = $this->fixture();
+        $report = $f['sent']['reportuuid'];
+        $lead = (int)$f['lead']->id; $employee = (int)$f['employee']->id;
+        // The reviewer is a company manager without a staff row (as company owners/managers often are).
+        $DB->set_field('local_kbacorp_member', 'membertype', 'manager', ['companyid' => $f['cid'], 'userid' => $lead]);
+        $DB->set_field('local_kbacorp_member', 'isemployee', 0, ['companyid' => $f['cid'], 'userid' => $lead]);
+        $DB->set_field('local_kbacorp_member', 'ismanager', 1, ['companyid' => $f['cid'], 'userid' => $lead]);
+        $this->setUser($f['employee']);
+        $roster = array_map('intval', array_column(
+            organization_service::organization_context($f['company'], $employee)['employees'], 'user_id'));
+        $this->assertNotContains($lead, $roster, 'precondition: the reviewer is not on the staff roster');
+        $this->assertSame($lead, discussion::target($f['company'], $employee, $report)['reviewer_id']);
+        $participants = function(string $thread) use ($DB, $f): array {
+            $ids = array_map('intval', $DB->get_fieldset_select('local_kbacompany_commpart', 'userid',
+                'companyuuid = :c AND threaduuid = :t AND active = 1', ['c' => $f['company'], 't' => $thread]));
+            sort($ids);
+            return $ids;
+        };
+        $bodies = function(int $actor) use ($f, $report): array {
+            return array_values(array_map(static function(array $m): string {
+                return (string)$m['body'];
+            }, discussion::context($f['company'], $actor, $report)['messages']));
+        };
+
+        // The author's first message is stored; the reviewer is not force-added but reads it by the report read rule.
+        discussion::post($f['company'], $employee, $report, 'Author first');
+        $thread = (string)discussion::thread($f['company'], $report)->uuid;
+        $this->assertSame([$employee], $participants($thread));
+        $this->setUser($f['lead']);
+        $this->assertTrue(discussion::can_post_for($f['company'], $lead, $report));
+        $this->assertSame(['Author first'], $bodies($lead));
+        // The reviewer answers in the same thread (posting joins), and the author reads both in order.
+        discussion::post($f['company'], $lead, $report, 'Reviewer answer');
+        $this->assertSame($thread, (string)discussion::thread($f['company'], $report)->uuid);
+        $expected = [$employee, $lead];
+        sort($expected);
+        $this->assertSame($expected, $participants($thread));
+        $this->setUser($f['employee']);
+        $this->assertSame(['Author first', 'Reviewer answer'], $bodies($employee));
     }
 }
