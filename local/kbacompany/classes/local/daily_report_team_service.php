@@ -109,10 +109,11 @@ final class daily_report_team_service {
             $snapshot = ['employees' => [], 'org_units' => []];
         }
         $people = [];
-        foreach ($snapshot['employees'] ?? [] as $employee) {
-            $id = (int)$employee['user_id'];
+        // The loop variable must not be $employee: that is the R6 employee filter parameter used below.
+        foreach ($snapshot['employees'] ?? [] as $staff) {
+            $id = (int)$staff['user_id'];
             if ($id > 0 && !isset($people[$id]) && daily_report_store_service::eligible_reviewer($companyuuid, $id, 0)) {
-                $people[$id] = ['userid' => $id, 'name' => (string)$employee['full_name'],
+                $people[$id] = ['userid' => $id, 'name' => (string)$staff['full_name'],
                     'unit' => (string)(($unitsof[$id] ?? [])[0] ?? '')];
             }
         }
