@@ -30,7 +30,7 @@ for (const name of Object.keys(PINNED)) {
 const lf = text => text.replace(/\r\n?/g, '\n').replace(/\s*$/, '\n');
 
 const result = await build({
-    entryPoints: [join(here, 'entry.js')],
+    entryPoints: [join(here, 'entry.mjs')],
     bundle: true,
     format: 'iife',
     globalName: 'bms24echarts',
