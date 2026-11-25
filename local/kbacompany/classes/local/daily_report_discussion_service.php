@@ -91,12 +91,22 @@ final class daily_report_discussion_service {
         }
     }
 
-    /** The author and the current reviewer become participants when the thread is created (if they may read). */
+    /**
+     * The author and the current reviewer become participants when the thread is created (if they may read). As in the
+     * Battle Plan discussion, only people on the company staff roster can be added by someone else: a reviewer who is a
+     * company manager or owner without a staff row (isemployee = 0) is not added by the author, keeps reading the report
+     * by the read rule and joins the thread on the first own message. Otherwise the author's first message would fail.
+     */
     private static function initial_participants(string $companyuuid, int $actor, array $target): array {
+        $roster = [];
+        foreach (organization_service::organization_context($companyuuid, $actor)['employees'] as $employee) {
+            $roster[(int)$employee['user_id']] = true;
+        }
         $result = [];
         foreach (array_unique(array_filter([$target['user_id'], $target['reviewer_id']])) as $userid) {
             $userid = (int)$userid;
-            if ($userid === $actor || !daily_report_store_service::eligible_reviewer($companyuuid, $userid, 0)) {
+            if ($userid === $actor || !isset($roster[$userid]) ||
+                    !daily_report_store_service::eligible_reviewer($companyuuid, $userid, 0)) {
                 continue;
             }
             try {
