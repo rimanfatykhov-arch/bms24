@@ -8,6 +8,8 @@ use local_kbacompany\local\daily_report_store_service as store;
 use local_kbacompany\local\daily_report_ui_service as reportui;
 use local_kbacompany\local\daily_report_review_service as review;
 use local_kbacompany\local\daily_report_reviewer_service as reviewers;
+use local_kbacompany\local\daily_report_summary_service as summary;
+use local_kbacompany\local\daily_report_team_service as team;
 use local_kbacompany\local\bms_page_shell_service;
 use local_kbacompany\local\bms24_shell_service;
 use local_kbacompany\local\bms24_ui_kit_service;
@@ -23,7 +25,10 @@ $enabled = store::enabled();
 $tab = $enabled ? optional_param('tab', 'my', PARAM_ALPHA) : 'my';
 // R2/ADR-0010: the reviewer tab exists for administrators, managers, stored reviewers and copy recipients.
 $canreview = $enabled && review::has_review_access($uuid, $actor);
-if (!in_array($tab, ['my', 'history', 'review'], true) || ($tab === 'review' && !$canreview)) {
+// ADR-0011 block 1: the monthly summary is for the readers of every report (administrators and managers).
+$cansummary = $enabled && summary::can_view($uuid, $actor);
+if (!in_array($tab, ['my', 'history', 'review', 'summary'], true) || ($tab === 'review' && !$canreview) ||
+        ($tab === 'summary' && !$cansummary)) {
     $tab = 'my';
 }
 $data = daily_report_service::context($uuid, $actor, $day,
@@ -115,7 +120,8 @@ if ($canreview && $tab === 'review' && $_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 
 $PAGE->set_context($context);
-$PAGE->set_url(new moodle_url('/local/kbacompany/daily_report.php', $base + ($tab === 'history' ? ['tab' => 'history'] : [])));
+$PAGE->set_url(new moodle_url('/local/kbacompany/daily_report.php', $base + (in_array($tab, ['history', 'summary'], true) ?
+    ['tab' => $tab] : [])));
 $PAGE->set_title(get_string('dailyreports_nav', 'local_kbacompany'));
 $PAGE->set_heading(get_string('pluginname', 'local_kbacompany'));
 if ($enabled && $tab === 'my') {
@@ -138,6 +144,10 @@ if ($enabled) {
 if ($canreview) {
     $tabs[] = ['url' => reportui::url($uuid, ['tab' => 'review'])->out(false),
         'label' => get_string('dailyreports_tab_review', 'local_kbacompany'), 'active' => $tab === 'review'];
+}
+if ($cansummary) {
+    $tabs[] = ['url' => reportui::url($uuid, ['tab' => 'summary'])->out(false),
+        'label' => get_string('dailyreports_tab_summary', 'local_kbacompany'), 'active' => $tab === 'summary'];
 }
 $tablabel = get_string('dailyreports_tabs', 'local_kbacompany');
 if (bms24_shell_service::is_enabled()) {
@@ -179,13 +189,28 @@ if ($tab === 'review') {
             if (!in_array($queue, $queues, true)) {
                 $queue = 'pending';
             }
-            echo reportui::queue($uuid, review::queue($uuid, $actor, $queue, optional_param('page', 0, PARAM_INT)), $queues);
+            if ($queue === 'team') {
+                // R4: every current employee for one day (read-only); filters are typed GET parameters.
+                echo reportui::team($uuid, team::day($uuid, $actor, $day, optional_param('scope', '', PARAM_ALPHA),
+                    optional_param('unit', '', PARAM_ALPHANUMEXT), optional_param('status', '', PARAM_ALPHA),
+                    optional_param('page', 0, PARAM_INT)), $queues);
+            } else {
+                echo reportui::queue($uuid, review::queue($uuid, $actor, $queue, optional_param('page', 0, PARAM_INT)),
+                    $queues);
+            }
             if ($isadmin) {
                 echo html_writer::link(reportui::url($uuid, ['tab' => 'review', 'queue' => 'settings']),
                     s(get_string('dailyreports_settings_heading', 'local_kbacompany')), ['class' => 'btn btn-link px-0']);
             }
         }
     }
+    bms_page_shell_service::finish($shell);
+    exit;
+}
+
+if ($tab === 'summary') {
+    echo reportui::summary($uuid, summary::grid($uuid, $actor, optional_param('month', '', PARAM_RAW_TRIMMED),
+        optional_param('scope', 'all', PARAM_ALPHA), optional_param('unit', '', PARAM_ALPHANUMEXT)));
     bms_page_shell_service::finish($shell);
     exit;
 }

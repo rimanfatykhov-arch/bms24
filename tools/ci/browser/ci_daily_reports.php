@@ -6,6 +6,8 @@
 //                                                   marker = text whose presence in each version snapshot is reported
 //   touch_task <company> <taskuuid>             -> changes the synthetic task title (snapshot immutability probe)
 //   shell <owned|legacy>                        -> switches the BMS24 shell mode of the disposable site
+//   orgchart <company> <manager> <member>       -> one synthetic unit: manager and member (replaces an earlier one)
+//   orgclear <company>                          -> removes the synthetic unit, its positions and assignments
 define('CLI_SCRIPT', true);
 if (getenv('BMS_CI_BROWSER') !== '1') { fwrite(STDERR, "CI browser fixture only\n"); exit(2); }
 require($argv[1] . '/config.php');
@@ -61,6 +63,43 @@ if ($phase === 'setup') {
     $DB->set_field('local_kbacompany_task', 'title', 'CI changed after submission ' . time(),
         ['companyuuid' => $company, 'uuid' => $task]);
     $out['touched'] = $task;
+} else if ($phase === 'orgchart' || $phase === 'orgclear') {
+    // #168/#173: one synthetic unit (manager -> member) so that "my team" and "my subordinates" have content; removed by
+    // orgclear. Only rows marked sourceentity = ci_daily_reports_flow are created or deleted.
+    $nodes = $DB->get_fieldset_select('local_kbacompany_orgnode', 'uuid', 'companyuuid = :c AND sourceentity = :s',
+        ['c' => $company, 's' => 'ci_daily_reports_flow']);
+    if ($nodes) {
+        [$in, $params] = $DB->get_in_or_equal($nodes, SQL_PARAMS_NAMED);
+        $positions = $DB->get_fieldset_select('local_kbacompany_position', 'uuid', "companyuuid = :c AND orgnodeuuid $in",
+            ['c' => $company] + $params);
+        if ($positions) {
+            [$pin, $pparams] = $DB->get_in_or_equal($positions, SQL_PARAMS_NAMED, 'p');
+            $DB->delete_records_select('local_kbacompany_posassign', "companyuuid = :c AND positionuuid $pin",
+                ['c' => $company] + $pparams);
+            $DB->delete_records_select('local_kbacompany_position', "companyuuid = :c AND uuid $pin", ['c' => $company] + $pparams);
+        }
+        $DB->delete_records_select('local_kbacompany_orgnode', "companyuuid = :c AND uuid $in", ['c' => $company] + $params);
+    }
+    if ($phase === 'orgchart') {
+        $manager = (int)($argv[4] ?? 0); $member = (int)($argv[5] ?? 0);
+        $branch = \core\uuid::generate(); $unit = \core\uuid::generate(); $now = time();
+        $DB->insert_record('local_kbacompany_orgnode', (object)['companyuuid' => $company, 'branchuuid' => $branch,
+            'uuid' => $unit, 'parentuuid' => '', 'code' => 'CIDR', 'nodetype' => 'department', 'name' => 'CI daily reports unit',
+            'sortorder' => 0, 'color' => '', 'sourcecomponent' => 'local_kbacompany', 'sourceentity' => 'ci_daily_reports_flow',
+            'sourceid' => 0, 'active' => 1, 'timecreated' => $now, 'timemodified' => $now]);
+        foreach ([[$manager, 1], [$member, 0]] as [$userid, $ismanager]) {
+            $position = \core\uuid::generate();
+            $DB->insert_record('local_kbacompany_position', (object)['companyuuid' => $company, 'branchuuid' => $branch,
+                'orgnodeuuid' => $unit, 'uuid' => $position, 'code' => substr($position, 0, 8), 'name' => 'CI position',
+                'purpose' => '', 'ismanager' => $ismanager, 'plannedcount' => 1, 'sortorder' => 0, 'active' => 1,
+                'timecreated' => $now, 'timemodified' => $now]);
+            $DB->insert_record('local_kbacompany_posassign', (object)['companyuuid' => $company, 'positionuuid' => $position,
+                'slotuuid' => '', 'userid' => $userid, 'assignmenttype' => 'primary', 'assignmentfte' => 1, 'effectivefrom' => 0,
+                'effectiveto' => 0, 'active' => 1, 'timecreated' => $now, 'timemodified' => $now]);
+        }
+        $out['unit'] = $unit;
+    }
+    $out['removed'] = count($nodes);
 } else if ($phase === 'shell' && in_array($argv[3] ?? '', ['owned', 'legacy'], true)) {
     set_config('bms24_shell_mode', $argv[3], 'local_kbacompany');
     $out['mode'] = get_config('local_kbacompany', 'bms24_shell_mode');

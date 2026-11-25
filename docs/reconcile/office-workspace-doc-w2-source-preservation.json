@@ -1,20 +1,20 @@
 {
  "scope": "exact intentional source updates; not runtime or release acceptance",
- "base_sha": "62fdc4934b8b8a87fb8c7f21a52c56b64229e836",
+ "base_sha": "323f948c6cc670c34722f516118ca7426fd604f7 (main with the ADR-0011 monthly summary block, #173)",
  "normalization": "CRLF to LF only",
- "previous_evidence": "docs/reconcile/day-feed-added-earlier-source-preservation.json",
+ "previous_evidence": "docs/reconcile/daily-reports-summary-source-preservation.json (ADR-0011 block 1 monthly summary)",
  "decision": "docs/office/DOC_W2_OFFICE_WORKSPACE.md (owner task 2026-11-24: DOC-W2 Office workspace, BMS-12)",
- "change": "Append the DOC-W2 Office workspace block (officews_* keys) after the day feed \"Added earlier\" block. Retain all preceding keys byte-for-byte. No schema, version, capability or notification change; the workspace is behind local_kbacompany/office_workspace_enabled (default off).",
+ "change": "Append the DOC-W2 Office workspace block (officews_* keys) after the ADR-0011 monthly summary block. Retain all preceding keys byte-for-byte. No schema, version, capability or notification change; the workspace is behind local_kbacompany/office_workspace_enabled (default off).",
  "files": [
   {
    "path": "local/kbacompany/lang/en/local_kbacompany.php",
-   "before_sha256_lf": "9495d7e1467dbe67c7cb18be14cc4b19a3d33a40e632d528f77fb08788dbc803",
-   "after_sha256_lf": "e957b977732bba7209226388ea0e6c96e469e3ae57f3800a843a8ae76bf2737d"
+   "before_sha256_lf": "9a3fa3efb85ef6f9aeaf18202ba4377bf418787c4631b636dbf766f7a45c2f88",
+   "after_sha256_lf": "db00f5757a80b5447850642f912e5c83edb0a897743282f6b4f6f9761307a250"
   },
   {
    "path": "local/kbacompany/lang/ru/local_kbacompany.php",
-   "before_sha256_lf": "dc4772de7d84d31a80927bb13c8f97966f18ca9db9f4e8d759d3204365255226",
-   "after_sha256_lf": "bd7a89005f0fb7bb5d7949408716665b161f04bfbb17bea504e1844c3b1eb06f"
+   "before_sha256_lf": "81334038357d7bc9f79a2dfefca9c8022c088045919931fc54e78a939b82a858",
+   "after_sha256_lf": "fe8e902bb668a6538a6e67bbe2412e2e83daff18280593f4c788777484554deb"
   }
  ]
 }
