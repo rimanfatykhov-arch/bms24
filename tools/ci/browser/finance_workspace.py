@@ -50,7 +50,7 @@ PAGE_STATE = """() => {
       text: document.body.innerText};
 }"""
 MENU = """() => { const scopes = [...document.querySelectorAll('aside.bms24-sidebar, .bms24-mobilemenu nav')];
-  const links = scopes.flatMap(s => [...s.querySelectorAll('a.bms24-navitem')]);
+  const links = [...new Set(scopes.flatMap(s => [...s.querySelectorAll('a.bms24-navitem')]))];
   return links.filter(a => new URL(a.href).pathname.endsWith('/finance.php')).map(a => ({
       uuid: new URL(a.href).searchParams.get('uuid'), current: a.getAttribute('aria-current'),
       visible: a.getBoundingClientRect().width > 0})); }"""
