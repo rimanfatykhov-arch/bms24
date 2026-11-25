@@ -1901,6 +1901,12 @@ ADAPTIVE_NAV_ROUTES = ['communication_center.php', 'daily_report.php', 'battle_p
 ADAPTIVE_NAV_STRESS = {'label': 'Согласование очень длинного названия раздела управления подразделениями', 'count': '9999'}
 ADAPTIVE_NAV_MIN_TARGET = 44
 ADAPTIVE_NAV_MARKER = 'BMS24 adaptive navigation draft'
+# A browser may keep the owned_shell.css it cached before the adaptive navigation release (main fbf36ed). With that stale
+# stylesheet the mobile menu button must still stay hidden next to the desktop sidebar (hotfix #163). The fixture is that
+# exact file; its LF-normalised SHA-256 is pinned so the stale case cannot silently become the current stylesheet.
+ADAPTIVE_NAV_STALE_CSS = 'stale_owned_shell_pre_nav.css'
+ADAPTIVE_NAV_STALE_CSS_SHA256 = '6f0060b201a600fc47a264387c55cfc09941994ee8aec9cbe454e0a2c7070280'
+ADAPTIVE_NAV_STALE_CASES = [(1440, 900), (1024, 768), (375, 812)]
 
 
 def adaptive_nav_checks(obs, exitcode=None):
@@ -2164,7 +2170,50 @@ def adaptive_nav_checks(obs, exitcode=None):
             if r['js']:
                 require(r.get('server_errors') == [], '%s: HTTP 5xx: %r' % (r['id'], r.get('server_errors')))
 
+    def stale_css():
+        run()
+        st = obs.get('stale_css') if isinstance(obs, dict) else None
+        require(isinstance(st, dict) and not st.get('error'), 'stale stylesheet run missing or failed: %r' % ((st or {}).get('error'),))
+        require(st.get('fixture_sha256') == ADAPTIVE_NAV_STALE_CSS_SHA256, 'stale stylesheet fixture differs from the pre-release file')
+        rows = st.get('cases')
+        require(isinstance(rows, list) and [(r.get('width'), r.get('height')) for r in rows] == [tuple(c) for c in ADAPTIVE_NAV_STALE_CASES],
+                'stale stylesheet case list differs')
+        for r in rows:
+            w = r['width']
+            require(not r.get('error'), 'stale CSS %d px: %s' % (w, r.get('error')))
+            require(r.get('http') == 200 and isinstance(r.get('hits'), int) and r['hits'] >= 1,
+                    'stale CSS %d px: page not served or stylesheet request not replaced: %r' % (w, (r.get('http'), r.get('hits'))))
+            sh = r.get('sheet') or {}
+            require(sh.get('sheets', 0) >= 1 and sh.get('rules', 0) >= 1 and sh.get('menubutton') == 0,
+                    'stale CSS %d px: the pre-release stylesheet is not the one in effect: %r' % (w, sh))
+            lay = r.get('layout') or {}
+            require(lay.get('owned') is True and lay.get('inner') == w, 'stale CSS %d px: owned shell or viewport not active' % w)
+            b = lay.get('button')
+            require(isinstance(b, dict), 'stale CSS %d px: menu button not rendered' % w)
+            if w > ADAPTIVE_NAV_BREAKPOINT:
+                require(b.get('visible') is False and lay.get('summary_visible') is False and lay.get('drawer_visible') is False
+                        and lay.get('drawer_focusables') == 0,
+                        'stale CSS %d px: mobile menu trigger shown next to the sidebar: %r'
+                        % (w, {'button': b.get('visible'), 'summary': lay.get('summary_visible'), 'drawer': lay.get('drawer_visible')}))
+                require(lay.get('sidebar_visible') is True, 'stale CSS %d px: sidebar hidden' % w)
+            else:
+                require(b.get('visible') is True or lay.get('summary_visible') is True,
+                        'stale CSS %d px: no menu trigger left on the phone' % w)
+            violations = browser_event_violations(r.get('browser_events'))
+            require(not violations, 'stale CSS %d px: browser errors: %r' % (w, violations[:3]))
+
+    def css_cache_busted():
+        for r in run():
+            if r['shell'] != 'owned':
+                continue
+            hrefs = (r.get('layout') or {}).get('css_hrefs')
+            require(isinstance(hrefs, list) and len(hrefs) == 1, '%s: owned_shell.css stylesheet link not recorded once: %r' % (r['id'], hrefs))
+            v = [val for key, val in parse_qsl(urlparse(hrefs[0]).query, keep_blank_values=True) if key == 'v']
+            require(len(v) == 1 and v[0].strip() != '',
+                    '%s: owned_shell.css is not versioned, browsers keep a stale copy: %r' % (r['id'], hrefs[0]))
+
     return {'adaptive_nav_desktop_sidebar_unchanged': desktop, 'adaptive_nav_menu_button_accessible': button,
+            'adaptive_nav_stale_css_no_desktop_trigger': stale_css, 'adaptive_nav_shell_css_cache_busted': css_cache_busted,
             'adaptive_nav_drawer_modal_and_focus_trap': modal, 'adaptive_nav_no_horizontal_overflow': overflow,
             'adaptive_nav_groups_open_and_current': groups_current, 'adaptive_nav_labels_wrap_and_counters': labels_counts,
             'adaptive_nav_tap_targets_44': tap_targets, 'adaptive_nav_scroll_lock_page_stable': scroll_lock,

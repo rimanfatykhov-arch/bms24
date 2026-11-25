@@ -1319,7 +1319,8 @@ class ContractTest(unittest.TestCase):
                    'main': box(0, 74, r['width'], 2000) if narrow else box(258, 74, r['width'] - 258, 2000),
                    'sidebar_visible': wide_owned, 'summary_visible': False, 'drawer_visible': open_, 'drawer_focusables': 9 if open_ else 0,
                    'menu_roles': 0, 'button': None, 'html_overflow': 'hidden' if open_ else 'visible', 'body_overflow': 'visible',
-                   'main_inert': open_, 'backdrop_visible': open_, 'active': 'menubutton' if narrow else 'BODY', 'sidebar': None}
+                   'main_inert': open_, 'backdrop_visible': open_, 'active': 'menubutton' if narrow else 'BODY', 'sidebar': None,
+                   'css_hrefs': ['http://127.0.0.1:8080/local/kbacompany/bms_ui/owned_shell.css?v=2026112301-nav2'] if owned else []}
             if owned:
                 lay['button'] = {'tag': 'BUTTON', 'type': 'button', 'visible': narrow, 'w': 92 if narrow else 0, 'h': 44 if narrow else 0,
                                  'x': 10, 'y': 15, 'r': 102, 'b': 59, 'expanded': 'true' if open_ else 'false', 'controls': 'bms24-drawer',
@@ -1385,7 +1386,18 @@ class ContractTest(unittest.TestCase):
                     r.update(summary_visible=True, drawer=d, last_item={'found': True, 'hit': True, 'top': 600, 'bottom': 644})
                     r['layout']['summary_visible'] = True
             cases.append(r)
-        return {'status': 'PASS', 'company': 'a1b2c3d4-0000-4000-8000-00000000000a', 'cases': cases}
+        stale = []
+        for width, height in c.ADAPTIVE_NAV_STALE_CASES:
+            # The pre-release stylesheet with the current script: the button stays hidden on desktop, the phone keeps a trigger.
+            narrow = width <= c.ADAPTIVE_NAV_BREAKPOINT
+            r = {'id': 'stale', 'shell': 'owned', 'js': True, 'width': width, 'height': height}
+            lay = layout(r)
+            lay.update(sidebar_visible=not narrow, summary_visible=narrow)
+            lay['button'].update(visible=narrow)
+            stale.append({'width': width, 'height': height, 'http': 200, 'hits': 1, 'sheet': {'sheets': 1, 'rules': 212, 'menubutton': 0},
+                          'layout': lay, 'browser_events': []})
+        return {'status': 'PASS', 'company': 'a1b2c3d4-0000-4000-8000-00000000000a', 'cases': cases,
+                'stale_css': {'fixture_sha256': c.ADAPTIVE_NAV_STALE_CSS_SHA256, 'cases': stale}}
 
     def nav_case(self, obs, cid):
         return next(r for r in obs['cases'] if r['id'] == cid)
@@ -1393,7 +1405,7 @@ class ContractTest(unittest.TestCase):
     def test_adaptive_nav_genuine_run_passes(self):
         res = c.evaluate(c.adaptive_nav_checks(self.nav_obs(), 0))
         self.assertEqual({k: 'PASS' for k in res}, {k: v['status'] for k, v in res.items()})
-        self.assertEqual(16, len(res))
+        self.assertEqual(18, len(res))
         for k in res:
             self.assertIn(k, c.required_check_names())
 
@@ -1410,7 +1422,42 @@ class ContractTest(unittest.TestCase):
 
         def stress(o):
             n(o, 'owned-390-en')['stress']['report']['broken'] = ['подразделениями']
+        def stale(width, *path_value):
+            *path, value = path_value
+
+            def go(o):
+                t = next(x for x in o['stale_css']['cases'] if x['width'] == width)
+                for key in path[:-1]:
+                    t = t[key]
+                t[path[-1]] = value
+            return go
         cases = [
+            # Hotfix #163: the script unhid the button and only fresh CSS hid it again next to the desktop sidebar.
+            ('adaptive_nav_stale_css_no_desktop_trigger', stale(1440, 'layout', 'button', 'visible', True)),
+            ('adaptive_nav_stale_css_no_desktop_trigger', stale(1024, 'layout', 'summary_visible', True)),
+            ('adaptive_nav_stale_css_no_desktop_trigger', stale(1440, 'layout', 'drawer_focusables', 4)),
+            ('adaptive_nav_stale_css_no_desktop_trigger', stale(1024, 'layout', 'sidebar_visible', False)),
+            ('adaptive_nav_stale_css_no_desktop_trigger',
+             lambda o: (stale(375, 'layout', 'button', 'visible', False)(o), stale(375, 'layout', 'summary_visible', False)(o))),
+            ('adaptive_nav_stale_css_no_desktop_trigger', stale(375, 'layout', 'button', None)),
+            # The stale stylesheet must really be the one in effect, and the fixture must be the pre-release file.
+            ('adaptive_nav_stale_css_no_desktop_trigger', stale(1440, 'hits', 0)),
+            ('adaptive_nav_stale_css_no_desktop_trigger', stale(1440, 'sheet', 'menubutton', 3)),
+            ('adaptive_nav_stale_css_no_desktop_trigger', stale(1024, 'sheet', 'sheets', 0)),
+            ('adaptive_nav_stale_css_no_desktop_trigger', stale(375, 'http', 500)),
+            ('adaptive_nav_stale_css_no_desktop_trigger', stale(1440, 'layout', 'inner', 1424)),
+            ('adaptive_nav_stale_css_no_desktop_trigger', stale(1024, 'error', 'TimeoutError: page.goto')),
+            ('adaptive_nav_stale_css_no_desktop_trigger', stale(375, 'browser_events', [{'source': 'pageerror', 'name': 'Error', 'message': 'x'}])),
+            ('adaptive_nav_stale_css_no_desktop_trigger', lambda o: o['stale_css'].update(fixture_sha256='0' * 64)),
+            ('adaptive_nav_stale_css_no_desktop_trigger', lambda o: o['stale_css']['cases'].pop()),
+            ('adaptive_nav_stale_css_no_desktop_trigger', lambda o: o['stale_css'].update(error='TargetClosedError')),
+            ('adaptive_nav_stale_css_no_desktop_trigger', lambda o: o.pop('stale_css')),
+            ('adaptive_nav_shell_css_cache_busted', set_('owned-1440-en', ['layout', 'css_hrefs'],
+                                                         ['http://127.0.0.1:8080/local/kbacompany/bms_ui/owned_shell.css'])),
+            ('adaptive_nav_shell_css_cache_busted', set_('owned-375-ru', ['layout', 'css_hrefs'],
+                                                         ['http://127.0.0.1:8080/local/kbacompany/bms_ui/owned_shell.css?v='])),
+            ('adaptive_nav_shell_css_cache_busted', set_('nojs-375-ru', ['layout', 'css_hrefs'], [])),
+            ('adaptive_nav_shell_css_cache_busted', set_('owned-768-ru', ['layout', 'css_hrefs'], None)),
             # The pre-fix markup: no button, the old <details> summary used to open the menu.
             ('adaptive_nav_menu_button_accessible', set_('owned-375-ru', ['before_open', 'button'], None)),
             ('adaptive_nav_menu_button_accessible', set_('owned-375-ru', ['open_method'], 'summary')),
