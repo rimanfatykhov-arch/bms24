@@ -1,0 +1,25 @@
+{
+  "scope": "exact intentional source updates; not runtime or release acceptance",
+  "base_sha": "323f948",
+  "normalization": "CRLF to LF only",
+  "previous_evidence": "docs/reconcile/daily-reports-summary-source-preservation.json (ADR-0011 block 1)",
+  "decision": "docs/adr/ADR-0011-daily-report-monthly-summary.md (owner decisions 2026-11-25)",
+  "change": "Append the ADR-0011 block 2 strings (24 keys: summary period, working-day states, reminders) after the block 1 summary strings in both languages; add dailyreport_reminder and dailyreport_overdue to communication_service::NOTIFICATION_KINDS only.",
+  "files": [
+    {
+      "path": "local/kbacompany/lang/en/local_kbacompany.php",
+      "before_sha256_lf": "9a3fa3efb85ef6f9aeaf18202ba4377bf418787c4631b636dbf766f7a45c2f88",
+      "after_sha256_lf": "4679e48f746083775e973aa24979cbe6aa22c126fa15452f1bc66e3d5a02ec7d"
+    },
+    {
+      "path": "local/kbacompany/lang/ru/local_kbacompany.php",
+      "before_sha256_lf": "81334038357d7bc9f79a2dfefca9c8022c088045919931fc54e78a939b82a858",
+      "after_sha256_lf": "93f312a6ab69ed7f2d4f445e18732ed29d285439373691a237147f96680ab719"
+    },
+    {
+      "path": "local/kbacompany/classes/local/communication_service.php",
+      "before_sha256_lf": "f3c7ab27e4da9001673e6c60a72b18b8e5af604068b15b349c5c01a45de3ad05",
+      "after_sha256_lf": "188d085f9ba178d9929d26cc8f6e4ea6abbed054e5d6f691263768b555d92ad2"
+    }
+  ]
+}

@@ -36,5 +36,27 @@ if ($hassiteconfig) {
         5,
         PARAM_INT
     ));
+    // ADR-0011 S6 (owner decision 25.11.2026): reminders to the author and, when overdue, to the reviewer. Off by
+    // default; the operator turns them on. Times are HH:MM in each author's own time zone.
+    $settings->add(new admin_setting_configcheckbox(
+        'local_kbacompany/dailyreports_remind_enabled',
+        get_string('dailyreports_remind_enabled', 'local_kbacompany'),
+        get_string('dailyreports_remind_enabled_help', 'local_kbacompany'),
+        0
+    ));
+    $settings->add(new admin_setting_configtext(
+        'local_kbacompany/dailyreports_remind_time',
+        get_string('dailyreports_remind_time', 'local_kbacompany'),
+        get_string('dailyreports_remind_time_help', 'local_kbacompany'),
+        '18:00',
+        '/^([01]\d|2[0-3]):[0-5]\d$/'
+    ));
+    $settings->add(new admin_setting_configtext(
+        'local_kbacompany/dailyreports_overdue_time',
+        get_string('dailyreports_overdue_time', 'local_kbacompany'),
+        get_string('dailyreports_overdue_time_help', 'local_kbacompany'),
+        '10:00',
+        '/^([01]\d|2[0-3]):[0-5]\d$/'
+    ));
     $ADMIN->add('localplugins', $settings);
 }

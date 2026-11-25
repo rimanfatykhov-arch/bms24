@@ -6267,5 +6267,12 @@ function xmldb_local_kbacompany_upgrade(int $oldversion): bool {
         upgrade_plugin_savepoint(true, 2026112301, 'local', 'kbacompany');
     }
 
+    // ADR-0011 block 2 (owner decisions 25.11.2026): no schema change. The step only moves the version so that Moodle
+    // registers the send_daily_report_reminders scheduled task and the dailyreport_reminder/dailyreport_overdue
+    // message providers. Reminders stay off until local_kbacompany/dailyreports_remind_enabled is turned on.
+    if ($oldversion < 2026112501) {
+        upgrade_plugin_savepoint(true, 2026112501, 'local', 'kbacompany');
+    }
+
     return true;
 }

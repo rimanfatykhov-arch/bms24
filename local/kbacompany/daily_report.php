@@ -210,7 +210,8 @@ if ($tab === 'review') {
 
 if ($tab === 'summary') {
     echo reportui::summary($uuid, summary::grid($uuid, $actor, optional_param('month', '', PARAM_RAW_TRIMMED),
-        optional_param('scope', 'all', PARAM_ALPHA), optional_param('unit', '', PARAM_ALPHANUMEXT)));
+        optional_param('scope', 'all', PARAM_ALPHA), optional_param('unit', '', PARAM_ALPHANUMEXT),
+        optional_param('period', 'month', PARAM_ALPHA), optional_param('week', '', PARAM_RAW_TRIMMED)));
     bms_page_shell_service::finish($shell);
     exit;
 }

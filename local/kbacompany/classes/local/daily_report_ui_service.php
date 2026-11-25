@@ -531,14 +531,21 @@ final class daily_report_ui_service {
             return [$icon, self::str('status_accepted') . ($cell['rating'] !== 'none' ?
                 ', ' . self::str('summary_rating_' . $cell['rating']) : '')];
         }
+        if ($cell['state'] === 'weekend' || $cell['state'] === 'missed') {
+            // ADR-0011 S5: a day off needs no report; a past working day without a sent report is "not sent".
+            return [$cell['state'] === 'weekend' ? '–' : '✗', self::str('summary_state_' . $cell['state'])];
+        }
         return [self::ICONS[$cell['state']] ?? '·', self::str('status_' . $cell['state'])];
     }
 
-    /** Month navigation link of the summary, keeping the filters. */
+    /** Month or week navigation link of the summary, keeping the filters. */
     private static function summary_link(string $uuid, array $grid, int $delta, string $text, string $marker): string {
-        return html_writer::link(self::url($uuid, ['tab' => 'summary',
-            'month' => daily_report_summary_service::shift($grid['month'], $delta), 'scope' => $grid['scope'],
-            'unit' => $grid['unit']]), $text, ['class' => 'btn btn-sm btn-outline-secondary mr-2 mb-2', $marker => '1']);
+        $week = ($grid['period'] ?? 'month') === 'week';
+        $params = ['tab' => 'summary', 'scope' => $grid['scope'], 'unit' => $grid['unit']] + ($week ?
+            ['period' => 'week', 'week' => daily_report_summary_service::shift_week($grid['week'], $delta)] :
+            ['month' => daily_report_summary_service::shift($grid['month'], $delta)]);
+        return html_writer::link(self::url($uuid, $params), $text,
+            ['class' => 'btn btn-sm btn-outline-secondary mr-2 mb-2', $marker => '1']);
     }
 
     /** One labelled filter control of the summary form. */
@@ -553,16 +560,32 @@ final class daily_report_ui_service {
      */
     public static function summary(string $uuid, array $grid): string {
         $month = $grid['month'];
-        $label = userdate(make_timestamp((int)substr($month, 0, 4), (int)substr($month, 5, 2), 15, 12),
-            get_string('strftimemonthyear', 'langconfig'));
-        $nav = self::summary_link($uuid, $grid, -1, '‹ ' . s(self::str('summary_prev')), 'data-dailyreport-summary-prev') .
+        $isweek = ($grid['period'] ?? 'month') === 'week';
+        if ($isweek) {
+            $dates = array_keys($grid['days']);
+            $label = self::str('summary_week_label', (object)['from' => reset($dates), 'to' => end($dates)]);
+        } else {
+            $label = userdate(make_timestamp((int)substr($month, 0, 4), (int)substr($month, 5, 2), 15, 12),
+                get_string('strftimemonthyear', 'langconfig'));
+        }
+        $nav = self::summary_link($uuid, $grid, -1, '‹ ' . s(self::str($isweek ? 'summary_prev_week' : 'summary_prev')),
+                'data-dailyreport-summary-prev') .
             html_writer::tag('strong', s($label), ['class' => 'mr-2 mb-2 d-inline-block',
-                'data-dailyreport-summary-month' => $month]) .
-            self::summary_link($uuid, $grid, 1, s(self::str('summary_next')) . ' ›', 'data-dailyreport-summary-next');
+                'data-dailyreport-summary-month' => $month, 'data-dailyreport-summary-period' => $isweek ? 'week' : 'month',
+                'data-dailyreport-summary-week' => $isweek ? $grid['week'] : null]) .
+            self::summary_link($uuid, $grid, 1, s(self::str($isweek ? 'summary_next_week' : 'summary_next')) . ' ›',
+                'data-dailyreport-summary-next');
         $form = html_writer::start_tag('form', ['method' => 'get', 'class' => 'mb-3',
                 'data-dailyreport-summary-filter' => '1']) .
             html_writer::empty_tag('input', ['type' => 'hidden', 'name' => 'uuid', 'value' => $uuid]) .
             html_writer::empty_tag('input', ['type' => 'hidden', 'name' => 'tab', 'value' => 'summary']) .
+            self::summary_field('dailyreport-summary-period', self::str('summary_period'),
+                html_writer::select(['month' => self::str('summary_period_month'), 'week' => self::str('summary_period_week')],
+                    'period', $isweek ? 'week' : 'month', false,
+                    ['id' => 'dailyreport-summary-period', 'class' => 'custom-select'])) .
+            self::summary_field('dailyreport-summary-week', self::str('summary_week'),
+                html_writer::empty_tag('input', ['type' => 'date', 'id' => 'dailyreport-summary-week', 'name' => 'week',
+                    'value' => $grid['week'] ?? '', 'class' => 'form-control'])) .
             self::summary_field('dailyreport-summary-month', self::str('summary_month'),
                 html_writer::empty_tag('input', ['type' => 'month', 'id' => 'dailyreport-summary-month', 'name' => 'month',
                     'value' => $month, 'class' => 'form-control'])) .
@@ -576,12 +599,14 @@ final class daily_report_ui_service {
             html_writer::end_tag('form');
         $legend = '';
         foreach ([['accepted', 'positive'], ['accepted', 'negative'], ['accepted', 'none'], ['submitted', 'none'],
-                ['returned', 'none'], ['none', 'none']] as [$state, $rating]) {
+                ['returned', 'none'], ['missed', 'none'], ['weekend', 'none'], ['none', 'none']] as [$state, $rating]) {
             [$icon, $text] = self::summary_cell(['state' => $state, 'rating' => $rating]);
             $legend .= html_writer::span(html_writer::span($icon, '', ['aria-hidden' => 'true']) . ' ' . s($text),
                 'mr-3 d-inline-block');
         }
         $out = html_writer::tag('p', s(self::str('summary_intro')), ['class' => 'text-muted']) .
+            html_writer::tag('p', s(self::str('summary_schedule_note')), ['class' => 'small text-muted',
+                'data-dailyreport-summary-schedule' => '1']) .
             html_writer::div($nav, 'mb-2') . $form .
             html_writer::tag('p', $legend, ['class' => 'small', 'data-dailyreport-summary-legend' => '1']);
         if (!$grid['groups']) {
@@ -590,13 +615,14 @@ final class daily_report_ui_service {
         $sticky = 'position: sticky; left: 0; z-index: 1; background: #fff; min-width: 10rem;';
         $head = html_writer::tag('th', s(self::str('employee')), ['scope' => 'col', 'style' => $sticky]) .
             html_writer::tag('th', s(self::str('summary_ratedpct')), ['scope' => 'col', 'class' => 'text-right']) .
-            html_writer::tag('th', s(self::str('summary_positivepct')), ['scope' => 'col', 'class' => 'text-right']);
+            html_writer::tag('th', s(self::str('summary_positivepct')), ['scope' => 'col', 'class' => 'text-right']) .
+            html_writer::tag('th', s(self::str('summary_missed')), ['scope' => 'col', 'class' => 'text-right']);
         foreach ($grid['days'] as $day => $weekday) {
             $head .= html_writer::tag('th', (string)(int)substr($day, 8, 2), ['scope' => 'col',
                 'class' => 'text-center' . ($weekday >= 6 ? ' text-muted' : ''), 'title' => $day]);
         }
         $body = '';
-        $columns = 3 + count($grid['days']);
+        $columns = 4 + count($grid['days']);
         foreach ($grid['groups'] as $group) {
             $body .= html_writer::tag('tr', html_writer::tag('th', s($group['unit'] === '' ? self::str('summary_nounit') :
                 $group['name']), ['scope' => 'colgroup', 'colspan' => $columns, 'class' => 'bg-light']),
@@ -605,7 +631,9 @@ final class daily_report_ui_service {
                 $tr = html_writer::tag('th', s($row['name']), ['scope' => 'row', 'style' => $sticky]) .
                     html_writer::tag('td', $row['ratedpct'] === null ? '—' : $row['ratedpct'] . '%', ['class' => 'text-right']) .
                     html_writer::tag('td', $row['positivepct'] === null ? '—' : $row['positivepct'] . '%',
-                        ['class' => 'text-right']);
+                        ['class' => 'text-right']) .
+                    html_writer::tag('td', (string)(int)($row['missed'] ?? 0), ['class' => 'text-right',
+                        'data-dailyreport-summary-missed' => (int)($row['missed'] ?? 0)]);
                 foreach ($row['cells'] as $day => $cell) {
                     [$icon, $text] = self::summary_cell($cell);
                     $hidden = html_writer::span(s($day . ': ' . $text), 'sr-only');

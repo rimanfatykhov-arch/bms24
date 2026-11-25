@@ -4,6 +4,7 @@ Pure functions, no browser/DB/network. `require()` raises RuntimeError (never `a
 `python -O`. Every check needs positive evidence: missing, empty, unexpected or error observations FAIL.
 Note: the loopback check below constrains what the test scripts request; it is NOT OS-level network isolation.
 """
+import datetime
 import hashlib
 import json
 import ipaddress
@@ -1185,6 +1186,25 @@ def daily_reports_flow_checks(obs, exitcode=None):
             require(card.get('url_report') is True and isinstance(card.get('versions'), int) and card['versions'] >= 1,
                     'summary cell did not open the card')
             require(s.get('draft_leak') is False and s.get('hscroll') is True, 'draft text or horizontal scroll in the summary')
+            # ADR-0011 block 2: the weekly period of the case day; Saturday and Sunday are "not required" unless a report
+            # exists; EA's accepted cell is kept; the "not sent" column and the working-day note are present.
+            w = s.get('week') or {}
+            d = datetime.date.fromisoformat(str(r.get('day')))
+            monday = d - datetime.timedelta(days=d.weekday())
+            require(w.get('head') == ['week', monday.isoformat()] and w.get('period_select') == 'week',
+                    'weekly summary period wrong: %r' % (w.get('head'),))
+            require(w.get('prev') == ['week', (monday - datetime.timedelta(days=7)).isoformat()],
+                    'previous week link wrong: %r' % (w.get('prev'),))
+            states = w.get('states')
+            require(isinstance(states, list) and len(states) == 7 and states[d.weekday()] == 'accepted',
+                    'weekly cells wrong: %r' % (states,))
+            for i, state in enumerate(states):
+                if i != d.weekday():
+                    require(state == ('weekend' if i >= 5 else state) and state in ('missed', 'none', 'weekend', 'draft',
+                            'submitted', 'returned', 'accepted'), 'weekly cell %d wrong: %r' % (i, states))
+            require(isinstance(w.get('missed'), int) and w['missed'] == states.count('missed'), 'not sent count wrong: %r' % (w,))
+            require(w.get('note') == 1 and w.get('hscroll') is True and w.get('draft_leak') is False,
+                    'weekly summary note, scroll or draft leak wrong')
 
     def release_access_denied():
         # #168 + #173: an ordinary employee has no summary; a member of another company gets no list, summary or card.

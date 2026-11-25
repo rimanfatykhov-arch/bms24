@@ -59,6 +59,10 @@ NAV_MARKER=b'\n// Adaptive BMS24 navigation (2026-11-18): narrow-window menu but
 NAV_KEYS=[b'bms24_menu_button',b'bms24_menu_close']
 AE_MARKER=b'\n// Day feed "Added earlier" (2026-11-24): mark of a result already added to the report of the day.\n'
 SUM_MARKER=b'\n// ADR-0011 block 1: monthly summary of daily reports for managers and administrators.\n'
+SCH_MARKER=b'\n// ADR-0011 block 2: working days, weekly summary and reminders (owner decisions 2026-11-25).\n'
+_SCH=json.loads((ROOT/'docs/reconcile/daily-reports-schedule-source-preservation.json').read_text(encoding='utf-8'))
+SCH_BEFORE={lang:next(r['before_sha256_lf'] for r in _SCH['files'] if r['path']==f'local/kbacompany/lang/{lang}/local_kbacompany.php')
+            for lang in ('en','ru')}
 _SUM=json.loads((ROOT/'docs/reconcile/daily-reports-summary-source-preservation.json').read_text(encoding='utf-8'))
 SUM_BEFORE={lang:next(r['before_sha256_lf'] for r in _SUM['files'] if r['path']==f'local/kbacompany/lang/{lang}/local_kbacompany.php')
             for lang in ('en','ru')}
@@ -149,6 +153,15 @@ class Preservation(unittest.TestCase):
                                 if SUM_MARKER in r4:
                                     # Everything up to the ADR-0011 summary marker is the published R4 (#168) file; keys are new.
                                     r4,summ=r4.split(SUM_MARKER)
+                                    if SCH_MARKER in summ:
+                                        # Everything up to the block 2 marker is the block 1 file; block 2 keys are new.
+                                        summ,sch=summ.split(SCH_MARKER)
+                                        self.assertEqual(SCH_BEFORE[lang],hashlib.sha256(data.split(SCH_MARKER)[0]).hexdigest())
+                                        schkeys=keys(sch)
+                                        self.assertEqual(24,len(schkeys));self.assertEqual(len(schkeys),len(set(schkeys)))
+                                        self.assertTrue(all(k.startswith((b'dailyreports_',b'messageprovider:dailyreport_',
+                                                                          b'communication_notification_dailyreport_')) for k in schkeys))
+                                        self.assertFalse(set(schkeys)&set(keys(data.split(SCH_MARKER)[0])))
                                     self.assertEqual(SUM_BEFORE[lang],hashlib.sha256(data.split(SUM_MARKER)[0]).hexdigest())
                                     sumkeys=keys(summ)
                                     self.assertEqual(18,len(sumkeys));self.assertEqual(len(sumkeys),len(set(sumkeys)))

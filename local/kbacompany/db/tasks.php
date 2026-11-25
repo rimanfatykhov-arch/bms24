@@ -30,4 +30,14 @@ $tasks = [
         'month' => '*',
         'dayofweek' => '*',
     ],
+    [
+        // ADR-0011 S6: daily report reminders; does nothing until dailyreports_remind_enabled is on.
+        'classname' => 'local_kbacompany\\task\\send_daily_report_reminders',
+        'blocking' => 0,
+        'minute' => '*/15',
+        'hour' => '*',
+        'day' => '*',
+        'month' => '*',
+        'dayofweek' => '*',
+    ],
 ];

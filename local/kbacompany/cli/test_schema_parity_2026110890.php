@@ -257,6 +257,7 @@ foreach ([2026101645, 2026101879, 2026110802, 2026110804, 2026110890, 2026111100
         parity_check($oldversion >= 2026111100 || in_array(2026111100, $savepoints, true), 'repair checkpoint passed from ' . $oldversion);
         parity_check(in_array(2026111600, $savepoints, true), 'daily report table step passed from ' . $oldversion);
         parity_check(in_array(2026112301, $savepoints, true), 'ADR-0010 table step passed from ' . $oldversion);
+        parity_check(in_array(2026112501, $savepoints, true), 'ADR-0011 block 2 version step passed from ' . $oldversion);
         parity_check(new_tables_installed($DB), 'five R1 tables installed exactly as install.xml from ' . $oldversion);
         parity_check($DB->manager->installs === array_keys($newtables), 'each new table installed once, in order');
         foreach ($targets as $key => $metadata) {

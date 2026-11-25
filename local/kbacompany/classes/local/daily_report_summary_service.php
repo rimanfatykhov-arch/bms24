@@ -4,7 +4,7 @@ namespace local_kbacompany\local;
 defined('MOODLE_INTERNAL') || die();
 
 /**
- * ADR-0011 (block 1): monthly summary of daily reports for managers and company administrators.
+ * ADR-0011 (block 1, block 2 S5): monthly or weekly summary of daily reports for managers and company administrators.
  *
  * A read-only grid: unit -> employee -> day of the month, with the state of each report and two ratios per employee
  * (share of rated reports, share of positive ratings). Readers are the ADR-0010 D4 readers (administrators and managers
@@ -14,8 +14,13 @@ defined('MOODLE_INTERNAL') || die();
  */
 final class daily_report_summary_service {
     public const SCOPES = ['all', 'mine'];
-    /** Cell states; 'accepted' carries the rating of the latest decision on the current version. */
-    public const STATES = ['none', 'submitted', 'returned', 'accepted'];
+    /** ADR-0011 S5: a month or a Monday-to-Sunday week of daily reports (no separate period report). */
+    public const PERIODS = ['month', 'week'];
+    /**
+     * Cell states; 'accepted' carries the rating of the latest decision on the current version. Without a submitted
+     * report (S5): 'weekend' on a day off, 'missed' on a past working day, 'none' today and later.
+     */
+    public const STATES = ['none', 'submitted', 'returned', 'accepted', 'weekend', 'missed'];
     public const NO_UNIT = '';
 
     /** 'YYYY-MM' of the business day when the parameter is empty or malformed. */
@@ -35,6 +40,30 @@ final class daily_report_summary_service {
             $out[$d->format('Y-m-d')] = (int)$d->format('N');
         }
         return $out;
+    }
+
+    /** Monday of the week of 'YYYY-MM-DD'; the business day's week when the value is malformed. */
+    public static function week(string $day): string {
+        $date = \DateTimeImmutable::createFromFormat('!Y-m-d', $day, new \DateTimeZone('UTC'));
+        if (!$date || $date->format('Y-m-d') !== $day || (int)$date->format('Y') < 2000 || (int)$date->format('Y') > 2100) {
+            $date = new \DateTimeImmutable(business_date_service::day() . ' 00:00:00', new \DateTimeZone('UTC'));
+        }
+        return $date->modify('-' . ((int)$date->format('N') - 1) . ' days')->format('Y-m-d');
+    }
+
+    /** The seven days of the week starting on Monday $monday, with the ISO weekday. */
+    public static function week_days(string $monday): array {
+        $date = new \DateTimeImmutable(self::week($monday) . ' 00:00:00', new \DateTimeZone('UTC'));
+        $out = [];
+        for ($i = 0; $i < 7; $i++, $date = $date->modify('+1 day')) {
+            $out[$date->format('Y-m-d')] = (int)$date->format('N');
+        }
+        return $out;
+    }
+
+    public static function shift_week(string $monday, int $delta): string {
+        $date = new \DateTimeImmutable(self::week($monday) . ' 00:00:00', new \DateTimeZone('UTC'));
+        return $date->modify(($delta >= 0 ? '+' : '') . (7 * $delta) . ' days')->format('Y-m-d');
     }
 
     public static function shift(string $month, int $delta): string {
@@ -59,24 +88,28 @@ final class daily_report_summary_service {
     }
 
     /**
-     * The grid of one month.
-     * @return array ['month', 'days' => [day => weekday], 'scope', 'unit', 'units' => [uuid => name],
-     *   'groups' => [['unit' => uuid|'', 'name' => string, 'rows' => [row, ...]], ...]]
+     * The grid of one month or one week ($period 'week' takes the week of $week, any day of it).
+     * @return array ['period', 'month', 'week', 'today', 'days' => [day => weekday], 'scope', 'unit',
+     *   'units' => [uuid => name], 'groups' => [['unit' => uuid|'', 'name' => string, 'rows' => [row, ...]], ...]]
      *   row = ['userid', 'name', 'cells' => [day => ['state', 'rating', 'report']], 'total', 'rated', 'positive',
-     *          'ratedpct' => int|null, 'positivepct' => int|null]
+     *          'missed', 'ratedpct' => int|null, 'positivepct' => int|null]
      */
-    public static function grid(string $companyuuid, int $actor, string $month, string $scope = 'all', string $unit = ''): array {
+    public static function grid(string $companyuuid, int $actor, string $month, string $scope = 'all', string $unit = '',
+            string $period = 'month', string $week = ''): array {
         global $DB;
         $companyuuid = company_context_service::normalise_uuid($companyuuid);
         company_context_service::context($companyuuid, $actor);
         if (!daily_report_store_service::enabled() || !self::can_view($companyuuid, $actor)) {
             throw new \moodle_exception('dailyreports_notavailable', 'local_kbacompany');
         }
-        $month = self::month($month);
+        $period = in_array($period, self::PERIODS, true) ? $period : 'month';
+        $week = self::week($week);
+        $month = $period === 'week' ? substr($week, 0, 7) : self::month($month);
+        $today = business_date_service::day();
         $scope = in_array($scope, self::SCOPES, true) ? $scope : 'all';
         $units = self::units($companyuuid);
         $unit = isset($units[$unit]) ? $unit : '';
-        $days = self::days($month);
+        $days = $period === 'week' ? self::week_days($week) : self::days($month);
         $graph = daily_report_reviewer_service::graph($companyuuid, $actor);
         [$unitsof] = $graph;
 
@@ -152,7 +185,7 @@ final class daily_report_summary_service {
         $groups = [];
         $order = array_keys($units);
         foreach ($people as $uid => $name) {
-            $row = self::row($uid, $name, $days, $cells[$uid] ?? []);
+            $row = self::row($uid, $name, $days, $cells[$uid] ?? [], $today);
             $memberof = array_values(array_intersect($order, $unitsof[$uid] ?? []));
             if ($unit !== '') {
                 $memberof = [$unit];
@@ -171,18 +204,31 @@ final class daily_report_summary_service {
             });
             $out[] = ['unit' => $u, 'name' => $u === self::NO_UNIT ? '' : $units[$u], 'rows' => $groups[$u]];
         }
-        return ['month' => $month, 'days' => $days, 'scope' => $scope, 'unit' => $unit, 'units' => $units,
+        return ['period' => $period, 'month' => $month, 'week' => $week, 'today' => $today, 'days' => $days,
+            'scope' => $scope, 'unit' => $unit, 'units' => $units,
             'groups' => $out];
     }
 
-    /** One employee row with the two ratios: rated / submitted reports, positive / rated reports. */
-    private static function row(int $uid, string $name, array $days, array $cells): array {
-        $total = 0; $rated = 0; $positive = 0; $out = [];
+    /** State of a day without a submitted report (S5): day off, past working day, or not yet due. */
+    public static function empty_state(string $day, string $today): string {
+        if (!daily_report_schedule_service::required($day)) {
+            return 'weekend';
+        }
+        return strcmp($day, $today) < 0 ? 'missed' : 'none';
+    }
+
+    /**
+     * One employee row with the two ratios (rated / submitted reports, positive / rated reports) and the number of past
+     * working days without a submitted report. Days off never count.
+     */
+    private static function row(int $uid, string $name, array $days, array $cells, string $today): array {
+        $total = 0; $rated = 0; $positive = 0; $missed = 0; $out = [];
         foreach (array_keys($days) as $day) {
-            $cell = $cells[$day] ?? ['state' => 'none', 'rating' => 'none', 'report' => ''];
-            if ($cell['state'] !== 'none') {
+            $cell = $cells[$day] ?? ['state' => self::empty_state($day, $today), 'rating' => 'none', 'report' => ''];
+            if (in_array($cell['state'], ['submitted', 'returned', 'accepted'], true)) {
                 $total++;
             }
+            $missed += $cell['state'] === 'missed' ? 1 : 0;
             if ($cell['state'] === 'accepted' && in_array($cell['rating'], ['positive', 'negative'], true)) {
                 $rated++;
                 $positive += $cell['rating'] === 'positive' ? 1 : 0;
@@ -190,7 +236,7 @@ final class daily_report_summary_service {
             $out[$day] = $cell;
         }
         return ['userid' => $uid, 'name' => $name, 'cells' => $out, 'total' => $total, 'rated' => $rated,
-            'positive' => $positive, 'ratedpct' => $total ? (int)round(100 * $rated / $total) : null,
+            'positive' => $positive, 'missed' => $missed, 'ratedpct' => $total ? (int)round(100 * $rated / $total) : null,
             'positivepct' => $rated ? (int)round(100 * $positive / $rated) : null];
     }
 }

@@ -20,4 +20,11 @@ $messageproviders = [
     'dailyreport_copy' => [
         'capability' => 'local/kbacompany:viewowncompany',
     ],
+    // ADR-0011 S6: reminder to the author on a working day, and to the reviewer when the report is overdue.
+    'dailyreport_reminder' => [
+        'capability' => 'local/kbacompany:viewowncompany',
+    ],
+    'dailyreport_overdue' => [
+        'capability' => 'local/kbacompany:viewowncompany',
+    ],
 ];

@@ -283,6 +283,27 @@ with sync_playwright() as pw:
                 rp.wait_for_load_state('networkidle')
                 summ['card'] = {'url_report': ('report=' + report) in rp.url,
                                 'versions': rp.locator('[data-dailyreport-version]').count()}
+            # 13b. Weekly summary (ADR-0011 block 2): the week of the case day; days off are "not required", EA's
+            # accepted cell is kept, the "not sent" column and the working-day note are shown; previous week by link.
+            rp.goto(url(tab='summary', period='week', week=day), wait_until='networkidle')
+            head_js = ('() => { const e = document.querySelector("[data-dailyreport-summary-period]"); '
+                       'return e ? [e.dataset.dailyreportSummaryPeriod, e.dataset.dailyreportSummaryWeek || ""] : null; }')
+            ea_row = '[data-dailyreport-summary-user="%d"]' % f['actors']['EA']['userid']
+            week = {'head': rp.evaluate(head_js),
+                    'states': rp.evaluate('(sel) => { const r = document.querySelector(sel); return r ? Array.from('
+                                          'r.querySelectorAll("td[data-dailyreport-summary-cell]")).map('
+                                          'td => td.dataset.dailyreportSummaryCell) : null; }', ea_row),
+                    'missed': rp.evaluate('(sel) => { const c = document.querySelector(sel + " [data-dailyreport-summary-missed]");'
+                                          ' return c ? Number(c.dataset.dailyreportSummaryMissed) : null; }', ea_row),
+                    'note': rp.locator('[data-dailyreport-summary-schedule]').count(),
+                    'period_select': rp.evaluate('() => (document.querySelector("#dailyreport-summary-period") || {}).value'),
+                    'hscroll': rp.evaluate(HSCROLL), 'draft_leak': radraft in rp.content()}
+            rp.screenshot(path=str(root / ('daily-reports-summary-week-%s-%d.png' % (shell, width))), full_page=True)
+            with rp.expect_navigation():
+                rp.locator('a[data-dailyreport-summary-prev]').first.click()
+            rp.wait_for_load_state('networkidle')
+            week['prev'] = rp.evaluate(head_js)
+            summ['week'] = week
             case['summary'] = summ
             # 14. An ordinary employee (EA) and a member of another company (EB) get neither list nor summary.
             denied = {}

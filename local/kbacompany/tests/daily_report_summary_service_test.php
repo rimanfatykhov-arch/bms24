@@ -141,7 +141,7 @@ final class daily_report_summary_service_test extends \advanced_testcase {
         $this->assertSame('returned', $rows[(int)$f['head']->id]['cells'][$f['day']]['state']);
         // A draft is visible only to its author: the summary shows "no report" and counts nothing.
         $peer = $rows[(int)$f['peer']->id];
-        $this->assertSame(['state' => 'none', 'rating' => 'none', 'report' => ''], $peer['cells'][$f['day']]);
+        $this->assertSame(['state' => summary::empty_state($f['day'], $f['day']), 'rating' => 'none', 'report' => ''], $peer['cells'][$f['day']]);
         $this->assertSame([0, null], [$peer['total'], $peer['ratedpct']]);
         // Units in chart order; every employee under the unit they work in.
         $this->assertSame([$f['nodes']['root'], $f['nodes']['dept'], $f['nodes']['team'], $f['nodes']['sub'],

@@ -890,6 +890,13 @@ class ContractTest(unittest.TestCase):
             v2 = dict(v1, uuid='v2-' + shell, no=2, done=t['rework'])
             notes = [{'userid': MA, 'kind': 'dailyreport_submitted', 'title': 'Report ' + day}] * 2 + \
                     [{'userid': EA, 'kind': 'dailyreport_decision', 'title': 'Decision ' + day}] * 2
+            # ADR-0011 block 2: the week of the case day (Monday 16.11 -> week 16.11; Sunday 15.11 -> week 09.11).
+            monday = '2026-11-16' if day == '2026-11-16' else '2026-11-09'
+            states = ['missed'] * 5 + ['weekend'] * 2
+            states[0 if day == '2026-11-16' else 6] = 'accepted'
+            week = {'head': ['week', monday], 'period_select': 'week', 'states': states, 'missed': states.count('missed'),
+                    'note': 1, 'hscroll': True, 'draft_leak': False,
+                    'prev': ['week', '2026-11-09' if monday == '2026-11-16' else '2026-11-02']}
             accepted = [{'versionuuid': v1['uuid'], 'decision': 'returned', 'rating': ''},
                         {'versionuuid': v2['uuid'], 'decision': 'accepted', 'rating': 'positive'}]
             row = {'shell': shell, 'width': width, 'day': day, 'today': today, 'texts': t,
@@ -920,7 +927,7 @@ class ContractTest(unittest.TestCase):
                    'summary': {'month': day[:7], 'filters': 1, 'users_all': [EA, MA, RA], 'cell_links': 1,
                                'cell': ['accepted', 'positive'], 'draft_leak': False, 'prev_month': '2026-10',
                                'users_mine': [EA], 'scope_kept': 'mine', 'hscroll': True,
-                               'card': {'url_report': True, 'versions': 2}},
+                               'card': {'url_report': True, 'versions': 2}, 'week': week},
                    'release_denied': {'EA': {'summary': 0, 'summary_tab': 0},
                                       'EB_team': {'http': 200, 'team': 0, 'summary': 0, 'versions': 0, 'leak': False},
                                       'EB_summary': {'http': 200, 'team': 0, 'summary': 0, 'versions': 0, 'leak': False},
@@ -998,6 +1005,13 @@ class ContractTest(unittest.TestCase):
         fails('daily_report_monthly_summary', lambda o: o['cases'][1]['summary'].pop('card'))
         fails('daily_report_monthly_summary', lambda o: o['cases'][0]['summary'].update(draft_leak=True))
         fails('daily_report_monthly_summary', lambda o: o['cases'][1]['summary'].update(filters=0))
+        fails('daily_report_monthly_summary', lambda o: o['cases'][0]['summary'].pop('week'))
+        fails('daily_report_monthly_summary', lambda o: o['cases'][0]['summary']['week'].update(head=['month', '2026-11-16']))
+        fails('daily_report_monthly_summary', lambda o: o['cases'][1]['summary']['week'].update(prev=['week', '2026-11-09']))
+        fails('daily_report_monthly_summary', lambda o: o['cases'][0]['summary']['week']['states'].__setitem__(5, 'missed'))
+        fails('daily_report_monthly_summary', lambda o: o['cases'][1]['summary']['week']['states'].__setitem__(6, 'none'))
+        fails('daily_report_monthly_summary', lambda o: o['cases'][0]['summary']['week'].update(missed=0))
+        fails('daily_report_monthly_summary', lambda o: o['cases'][1]['summary']['week'].update(note=0))
         fails('daily_report_release_access_denied', lambda o: o['cases'][0]['release_denied']['EA'].update(summary=1))
         fails('daily_report_release_access_denied', lambda o: o['cases'][1]['release_denied']['EA'].update(summary_tab=1))
         fails('daily_report_release_access_denied', lambda o: o['cases'][0]['release_denied']['EB_team'].update(team=2))

@@ -494,7 +494,9 @@ if ($fresh) {
             // R4 (#168): team for the day, scope, filters, revoked members, drafts closed.
             'daily_report_team_service_test',
             // ADR-0011 block 1: monthly summary for managers, read-only, company-scoped.
-            'daily_report_summary_service_test'];
+            'daily_report_summary_service_test',
+            // ADR-0011 block 2: working days, weekly summary, author and overdue reminders.
+            'daily_report_schedule_service_test'];
     }
     foreach ($focused as $test) {
         if ($code !== 0) { $report['phpunit'][$test] = 'NOT RUN'; continue; }

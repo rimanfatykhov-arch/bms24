@@ -123,6 +123,11 @@ def check(root=ROOT):
     # R4 "Team for the day" block (#168). See docs/reconcile/daily-reports-summary-source-preservation.json.
     reviewed_followup['local/kbacompany/lang/en/local_kbacompany.php'] = '9a3fa3efb85ef6f9aeaf18202ba4377bf418787c4631b636dbf766f7a45c2f88'
     reviewed_followup['local/kbacompany/lang/ru/local_kbacompany.php'] = '81334038357d7bc9f79a2dfefca9c8022c088045919931fc54e78a939b82a858'
+    # ADR-0011 block 2 (owner decisions 2026-11-25): working days, weekly summary, reminders. RU/EN block appended
+    # after block 1; two notification kinds added. See docs/reconcile/daily-reports-schedule-source-preservation.json.
+    reviewed_followup['local/kbacompany/lang/en/local_kbacompany.php'] = '4679e48f746083775e973aa24979cbe6aa22c126fa15452f1bc66e3d5a02ec7d'
+    reviewed_followup['local/kbacompany/lang/ru/local_kbacompany.php'] = '93f312a6ab69ed7f2d4f445e18732ed29d285439373691a237147f96680ab719'
+    reviewed_followup['local/kbacompany/classes/local/communication_service.php'] = '188d085f9ba178d9929d26cc8f6e4ea6abbed054e5d6f691263768b555d92ad2'
     for row in plan['rows']:
         path=root/row['path']
         if not path.is_file() or path.is_symlink():
@@ -135,7 +140,7 @@ def check(root=ROOT):
         errors.append('one historical0902 release note was lost')
     upgrade=(root/'local/kbacompany/db/upgrade.php').read_text(encoding='utf-8')
     versions=[int(v) for v in re.findall(r'upgrade_plugin_savepoint\(true,\s*(\d+)',upgrade)]
-    if len(versions)!=486 or versions!=sorted(set(versions)) or versions[-4:]!=[2026111100,2026111600,2026111601,2026112301]:
+    if len(versions)!=487 or versions!=sorted(set(versions)) or versions[-5:]!=[2026111100,2026111600,2026111601,2026112301,2026112501]:
         errors.append('merged upgrade chronology/identity changed')
     driver=(root/'tools/tests/moodle_acceptance.php').read_text(encoding='utf-8')
     for ref in [plan['pr53_sha'],plan['pr56_sha']]:

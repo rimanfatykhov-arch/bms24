@@ -6,6 +6,9 @@ ADDITIONS = {
     (2026111100, 2026111601): NEW,
     (2026111100, 2026112301): NEW | ADR0010_TABLES,
     (2026111601, 2026112301): ADR0010_TABLES,
+    # ADR-0011 block 2: version-only step (scheduled task and message providers), no new table.
+    (2026111100, 2026112501): NEW | ADR0010_TABLES,
+    (2026111601, 2026112501): ADR0010_TABLES,
 }
 
 
@@ -35,7 +38,7 @@ def upgraded(before, after):
 
 def fresh_equal(fresh, upgrade):
     version = upgrade.get('version')
-    require(version in (2026111601, 2026112301) and fresh.get('version') == version, 'fresh/upgrade version mismatch')
+    require(version in (2026111601, 2026112301, 2026112501) and fresh.get('version') == version, 'fresh/upgrade version mismatch')
     require(fresh.get('schemas') and fresh['schemas'] == upgrade.get('schemas'), 'fresh/upgrade full domain schema differs')
 
 

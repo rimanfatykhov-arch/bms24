@@ -394,14 +394,14 @@ final class daily_report_review_service {
      * never reaches this point; the deterministic key also absorbs a concurrent duplicate.
      */
     public static function notify(string $companyuuid, int $userid, string $kind, array $keyparts, string $title,
-            \moodle_url $url): void {
+            \moodle_url $url): bool {
         global $CFG;
         if ($userid <= 0) {
-            return;
+            return false;
         }
         $key = hash('sha256', implode('|', array_merge([$kind, $companyuuid, (string)$userid], $keyparts)));
         if (!communication_service::ensure_system_notification($companyuuid, $userid, $kind, $key, $title)) {
-            return;
+            return false;
         }
         try {
             require_once($CFG->dirroot . '/message/lib.php');
@@ -423,5 +423,6 @@ final class daily_report_review_service {
             // The in-app notification is stored; a mail transport error must not undo the decision.
             debugging('Daily report notification failed: ' . get_class($e), DEBUG_DEVELOPER);
         }
+        return true;
     }
 }

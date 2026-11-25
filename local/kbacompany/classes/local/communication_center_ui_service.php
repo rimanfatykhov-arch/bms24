@@ -505,6 +505,14 @@ class communication_center_ui_service {
         if ($kind === 'dailyreport_decision') {
             return [daily_report_ui_service::url($company, ['tab' => 'history']), 'dailyreports_tab_history'];
         }
+        if ($kind === 'dailyreport_reminder') {
+            // ADR-0011 S6: the author's own report form.
+            return [daily_report_ui_service::url($company), 'dailyreports_tab_my'];
+        }
+        if ($kind === 'dailyreport_overdue') {
+            // ADR-0011 S6: the reviewer's "team for the day"; the page falls back to the own report without D4 rights.
+            return [daily_report_ui_service::url($company, ['tab' => 'review', 'queue' => 'team']), 'dailyreports_tab_review'];
+        }
         return null;
     }
 

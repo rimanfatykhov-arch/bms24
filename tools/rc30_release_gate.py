@@ -62,7 +62,7 @@ def evaluate(bundle, root):
             raise ValueError('artifact digest mismatch')
     except (OSError, KeyError, TypeError, ValueError):
         blockers.append('missing or mismatched actual artifact')
-    if (bundle.get('bms_version'), bundle.get('corporate_version')) not in ((2026111002, 2026102613), (2026111002, 2026111004), (2026111100, 2026111100), (2026111600, 2026111100), (2026111601, 2026111100), (2026112301, 2026111100)):
+    if (bundle.get('bms_version'), bundle.get('corporate_version')) not in ((2026111002, 2026102613), (2026111002, 2026111004), (2026111100, 2026111100), (2026111600, 2026111100), (2026111601, 2026111100), (2026112301, 2026111100), (2026112501, 2026111100)):
         blockers.append('unexpected dependency versions')
     if bundle.get('corporate_version') in (2026111004, 2026111100):
         try:
