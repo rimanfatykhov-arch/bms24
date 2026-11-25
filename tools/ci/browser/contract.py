@@ -1357,6 +1357,207 @@ def day_feed_checks(obs, exitcode=None):
             'day_feed_send_layout_and_browser_errors': submit_and_layout}
 
 
+# ---- Information Centre by divisions (#190, infocenter.py): board order, tiles, trends, drill-down chart, isolation.
+INFOCENTER_CASES = [('owned-1440', 'owned', 1440), ('owned-375', 'owned', 375), ('legacy-375', 'legacy', 375)]
+INFOCENTER_MOBILE = 768
+INFOCENTER_CODES = ('CIIC-M', 'CIIC-POS', 'CIIC-DEP', 'CIIC-NEG', 'CIIC-FLAT', 'CIIC-EMPTY', 'CIIC-LOOSE', 'CIIC-B')
+
+
+def infocenter_checks(obs, exitcode=None):
+    """Information Centre by divisions (infocenter.py). Expected periods and values come from the fixture output, never
+    from the page; the producer's PASS only means the run completed."""
+    def run():
+        require(exitcode == 0, 'information centre browser process failed or was not run')
+        require(isinstance(obs, dict) and obs.get('status') == 'PASS' and not obs.get('error'), 'information centre run incomplete')
+        rows = obs.get('cases')
+        require(isinstance(rows, list) and [(r.get('id'), r.get('shell'), r.get('width')) for r in rows]
+                == [tuple(c) for c in INFOCENTER_CASES], 'information centre case list differs')
+        metrics = (obs.get('fixture') or {}).get('metrics') or {}
+        require(all(isinstance(metrics.get(k), dict) for k in INFOCENTER_CODES), 'fixture metrics missing')
+        main = metrics['CIIC-M']
+        require(isinstance(main.get('periods'), list) and len(main['periods']) == 20
+                and isinstance(main.get('facts'), list) and len(main['facts']) == 20, 'main metric fixture periods missing')
+        for r in rows:
+            require(r.get('http') == 200 and r.get('owned') is (r['shell'] == 'owned'),
+                    '%s: page not served in the requested shell' % r['id'])
+        return rows, metrics
+
+    def code(t):
+        return (t.get('name') or '').split(' — ')[0]
+
+    def tiles(ov):
+        out = list(ov.get('main') or []) + list(ov.get('unbound') or [])
+        for col in ov.get('columns') or []:
+            for g in col.get('groups') or []:
+                out += g.get('tiles') or []
+        return {code(t): t for t in out if code(t).startswith('CIIC')}
+
+    def group_code(title):
+        # Group headings are "<code> <name>"; fixture codes are "CIIC 1.1" (unit) and "CIIC-P" (position).
+        parts = (title or '').split(' ')
+        return parts[0] if parts[0].startswith('CIIC-') else ' '.join(parts[:2])
+
+    def board():
+        for r in run()[0]:
+            ov = r.get('overview') or {}
+            cols = ov.get('columns') or []
+            require(ov.get('board_role') == 'list' and all(c.get('role') == 'listitem' for c in cols), '%s: board not a list' % r['id'])
+            require([(c.get('title') or '')[:6] for c in cols] == ['CIIC 1', 'CIIC 2', 'CIIC 3'],
+                    '%s: divisions not in board order: %r' % (r['id'], [c.get('title') for c in cols]))
+            shape = [[(group_code(g.get('title')), sorted(code(t) for t in g.get('tiles') or [])) for g in c.get('groups') or []]
+                     for c in cols]
+            require(shape == [[('CIIC 1.1', ['CIIC-DEP']), ('CIIC-P', ['CIIC-POS'])],
+                              [('CIIC 2', ['CIIC-EMPTY', 'CIIC-FLAT', 'CIIC-NEG'])], []],
+                    '%s: departments/positions or bound metrics differ: %r' % (r['id'], shape))
+            kinds = [g.get('kind') for g in cols[0]['groups']]
+            require(len(set(kinds)) == 2 and all(kinds), '%s: unit and position not labelled differently' % r['id'])
+            require(cols[2].get('empty') == 1, '%s: division without metrics not marked as empty' % r['id'])
+            require([code(t) for t in ov.get('main') or [] if code(t).startswith('CIIC')] == ['CIIC-M'],
+                    '%s: main company metric missing on top' % r['id'])
+            require([code(t) for t in ov.get('unbound') or [] if code(t).startswith('CIIC')] == ['CIIC-LOOSE'],
+                    '%s: unbound metric not listed separately' % r['id'])
+            require('CIIC-B' not in tiles(ov), '%s: company B metric shown' % r['id'])
+
+    def mini():
+        rows, metrics = run()
+        expect = {'CIIC-M': ('↑', True, 13, 2), 'CIIC-POS': ('↓', True, 8, 1), 'CIIC-FLAT': ('→', False, 6, 1),
+                  'CIIC-DEP': ('·', False, 1, 0), 'CIIC-EMPTY': ('·', False, 0, 0), 'CIIC-LOOSE': ('↑', True, 3, 1)}
+        for r in rows:
+            ts = tiles(r.get('overview') or {})
+            for c, (symbol, better, dots, lines) in expect.items():
+                t = ts.get(c) or {}
+                require(t.get('tag') == 'BUTTON' and t.get('type') == 'button' and t.get('haspopup') == 'dialog'
+                        and c in (t.get('aria') or ''), '%s %s: tile is not a named button' % (r['id'], c))
+                require(t.get('symbol') == symbol and len((t.get('trend') or '').replace(symbol, '').strip()) >= 3
+                        and t.get('better') is better and t.get('worse') is False,
+                        '%s %s: trend text/symbol/assessment wrong: %r' % (r['id'], c, (t.get('trend'), t.get('better'), t.get('worse'))))
+                require(t.get('dots') == dots and t.get('lines') == lines,
+                        '%s %s: mini chart dots/lines %r/%r, expected %r/%r' % (r['id'], c, t.get('dots'), t.get('lines'), dots, lines))
+                if dots:
+                    require(t.get('grid', 0) >= 2 and len(t.get('range') or '') >= 20 and not t.get('nodata'),
+                            '%s %s: mini chart without grid or period labels' % (r['id'], c))
+            require(ts['CIIC-EMPTY'].get('nodata') and ts['CIIC-EMPTY'].get('grid', 0) == 0, '%s: empty series not shown as no data' % r['id'])
+            require(ts['CIIC-DEP'].get('single') == 1, '%s: single point without note' % r['id'])
+            require(ts['CIIC-M'].get('points') == 21 and ts['CIIC-M'].get('gaps') == 1,
+                    '%s: missing week not kept as a gap in the chart data' % r['id'])
+            require(metrics['CIIC-M']['periods'][-1] in (ts['CIIC-M'].get('value') or ''), '%s: last value period missing' % r['id'])
+
+    def layout():
+        for r in run()[0]:
+            ov = r.get('overview') or {}
+            require(isinstance(ov.get('page_scroll'), int) and isinstance(ov.get('page_client'), int)
+                    and ov['page_scroll'] <= ov['page_client'] <= r['width'],
+                    '%s: page scrolls horizontally (%r > %r)' % (r['id'], ov.get('page_scroll'), ov.get('page_client')))
+            boxes = [c.get('box') or {} for c in ov.get('columns') or []]
+            require(len(boxes) == 3 and all(isinstance(b.get('x'), int) and isinstance(b.get('r'), int) and b['x'] >= 0
+                                            and b['r'] <= r['width'] for b in boxes),
+                    '%s: a division column is outside the viewport: %r' % (r['id'], boxes))
+            if r['width'] < INFOCENTER_MOBILE:
+                require(boxes[0]['y'] < boxes[1]['y'] < boxes[2]['y'], '%s: columns not stacked on the phone' % r['id'])
+            else:
+                require(boxes[0]['y'] == boxes[1]['y'] == boxes[2]['y'] and boxes[0]['x'] < boxes[1]['x'] < boxes[2]['x'],
+                        '%s: divisions not side by side on the desktop' % r['id'])
+
+    def chart_open():
+        rows, metrics = run()
+        p = metrics['CIIC-M']['periods']; facts = metrics['CIIC-M']['facts']
+        for r in rows:
+            s = (r.get('main_chart') or {}).get('open') or {}
+            require(s.get('open') is True and (s.get('title') or '').startswith('CIIC-M — ') and s.get('focus_in_chart') is True,
+                    '%s: chart dialog not opened with focus on the chart' % r['id'])
+            require(s.get('window') == '13' and s.get('start') == p[-13] and s.get('end') == p[-1] and s.get('span') == 13
+                    and s.get('selected') == p[-1],
+                    '%s: 13-period window wrong: %r' % (r['id'], {k: s.get(k) for k in ('start', 'end', 'span', 'selected')}))
+            require(s.get('gaps') == 1 and s.get('factlines') == 2 and s.get('dots') == 13,
+                    '%s: gap not drawn as a gap: %r' % (r['id'], (s.get('gaps'), s.get('factlines'), s.get('dots'))))
+            require(s.get('planlines', 0) >= 1 and s.get('trendlines') == 1 and s.get('trend_dash') and s.get('legend') == 4,
+                    '%s: plan, dashed trend or legend missing' % r['id'])
+            visible = facts[-13:]
+            require(isinstance(s.get('lo'), (int, float)) and isinstance(s.get('hi'), (int, float))
+                    and 0 < s['lo'] <= min(visible) and s['hi'] >= max(visible) + 3,
+                    '%s: value axis does not fit the visible range: %r' % (r['id'], (s.get('lo'), s.get('hi'))))
+            require(p[-1] in (s.get('readout') or '') and p[-1] in (s.get('texts') or []),
+                    '%s: exact value on the selected date or period axis missing' % r['id'])
+            require('↑' in (s.get('meta') or ''), '%s: trend text missing in the chart' % r['id'])
+
+    def chart_controls():
+        rows, metrics = run()
+        p = metrics['CIIC-M']['periods']
+        for r in rows:
+            m = r.get('main_chart') or {}
+
+            def g(k):
+                return m.get(k) or {}
+            w = g('window26')
+            require(w.get('window') == '26' and w.get('start') == p[0] and w.get('end') == p[-1] and w.get('span') == 20
+                    and w.get('dots') == 20, '%s: 26-period window wrong' % r['id'])
+            require(g('zoomin').get('span', 99) < 20, '%s: zoom in did not narrow the window' % r['id'])
+            require((g('panleft').get('start') or 'z') < (g('zoomin').get('start') or '')
+                    and (g('panright').get('start') or '') > (g('panleft').get('start') or 'z')
+                    and g('zoomout').get('span', 0) > g('panright').get('span', 99),
+                    '%s: zoom/pan buttons do not change the window' % r['id'])
+            for key in ('reset', 'key_reset', 'reset2'):
+                require((g(key).get('start'), g(key).get('end'), g(key).get('span')) == (p[0], p[-1], 20),
+                        '%s: %s does not restore the window' % (r['id'], key))
+            lefts = [g('left%d' % k).get('selected') for k in range(1, 6)]
+            require(lefts == [p[-2], p[-3], p[-4], p[-5], p[-6]],
+                    '%s: arrow keys do not step over real periods (gap skipped): %r' % (r['id'], lefts))
+            require(all(g('left%d' % k).get('selected') in (g('left%d' % k).get('readout') or '') for k in range(1, 6)),
+                    '%s: readout does not follow the selected date' % r['id'])
+            require(g('key_plus').get('span', 99) < 20 and (g('key_shift_left').get('start') or 'z') < (g('key_plus').get('start') or ''),
+                    '%s: keyboard zoom/pan failed' % r['id'])
+            require(g('key_home').get('selected') == p[0] and g('key_end').get('selected') == p[-1], '%s: Home/End failed' % r['id'])
+            require(g('wheel_in').get('span', 99) < 20 and (g('drag_right').get('start') or 'z') < (g('wheel_in').get('start') or ''),
+                    '%s: mouse wheel zoom or drag pan failed' % r['id'])
+            require(g('pinch_out').get('span', 99) < 20, '%s: two-pointer pinch did not zoom' % r['id'])
+            c = g('closed')
+            require(c.get('open') is False and (c.get('focus_tile') or '').startswith('CIIC-M — '),
+                    '%s: Escape did not close or focus not returned to the tile' % r['id'])
+
+    def chart_shapes():
+        rows, _ = run()
+        for r in rows:
+            ch = r.get('charts') or {}
+            flat, neg, dep, empty, pos = (ch.get(k) or {} for k in ('CIIC-FLAT', 'CIIC-NEG', 'CIIC-DEP', 'CIIC-EMPTY', 'CIIC-POS'))
+            require(isinstance(flat.get('lo'), (int, float)) and isinstance(flat.get('hi'), (int, float))
+                    and 500 < flat['lo'] < 1000 < flat['hi'] <= 1500 and flat.get('dots') == 6,
+                    '%s: flat series axis not padded around the value: %r' % (r['id'], (flat.get('lo'), flat.get('hi'))))
+            require(isinstance(neg.get('lo'), (int, float)) and isinstance(neg.get('hi'), (int, float)) and neg['lo'] <= -6
+                    and neg['hi'] >= 4 and '0' in (neg.get('texts') or []) and neg.get('dots') == 6,
+                    '%s: negative values or the real zero not on the axis' % r['id'])
+            require(dep.get('dots') == 1 and dep.get('factlines') == 0 and dep.get('trendlines') == 0,
+                    '%s: single point drawn with a line' % r['id'])
+            nodata = (tiles(r.get('overview') or {}).get('CIIC-EMPTY') or {}).get('nodata') or ''
+            require(empty.get('empty') is True and empty.get('dots') == 0 and nodata and empty.get('readout') == nodata,
+                    '%s: empty series not shown as no data in the chart' % r['id'])
+            require('↓' in (pos.get('meta') or '') and pos.get('dots') == 8, '%s: falling metric chart wrong' % r['id'])
+            require(len(ch) == 5 and all((v.get('closed') or {}).get('open') is False for v in ch.values()),
+                    '%s: a chart did not open or close' % r['id'])
+            box = ((r.get('main_chart') or {}).get('open') or {}).get('box') or {}
+            require(isinstance(box.get('x'), int) and isinstance(box.get('r'), int) and box['x'] >= 0 and box['r'] <= r['width'],
+                    '%s: chart dialog wider than the viewport: %r' % (r['id'], box))
+
+    def isolation_and_errors():
+        rows, _ = run()
+        foreign = obs.get('foreign') or {}
+        a, b = foreign.get('company_a') or {}, foreign.get('company_b') or {}
+        require(a.get('tiles') == 0 and a.get('a_codes_in_body') == [] and a.get('a_divisions_in_body') == [],
+                'company B user sees company A information centre: %r' % (a,))
+        require([n.split(' — ')[0] for n in b.get('names') or [] if n.startswith('CIIC')] == ['CIIC-B']
+                and b.get('a_codes_in_body') == [] and b.get('http') == 200, 'company B page not limited to company B: %r' % (b,))
+        require((obs.get('cleanup') or {}).get('clean') is True and not obs.get('cleanup_error'), 'fixture not cleaned up')
+        for r in rows:
+            violations = browser_event_violations(r.get('browser_events'))
+            require(not violations, '%s: browser errors: %r' % (r['id'], violations[:3]))
+            require(r.get('server_errors') == [], '%s: HTTP 5xx: %r' % (r['id'], r.get('server_errors')))
+
+    return {'infocenter_board_order_and_registry_bindings': board, 'infocenter_mini_charts_and_trend_text': mini,
+            'infocenter_layout_1440_and_375': layout, 'infocenter_chart_axes_gap_plan_trend': chart_open,
+            'infocenter_chart_window_zoom_pan_keyboard_touch': chart_controls,
+            'infocenter_chart_flat_negative_single_empty': chart_shapes,
+            'infocenter_company_isolation_and_browser_errors': isolation_and_errors}
+
+
 PLAN_CASES = [('owned', 1440, 'click'), ('legacy', 320, 'keyboard')]
 
 
@@ -2212,6 +2413,7 @@ def required_check_names():
             + list(communication_center_checks({})) + list(daily_reports_nav_checks({}))
             + list(daily_reports_flow_checks({})) + list(plan_discussion_checks({})) + list(communication_ux_checks({}))
             + list(day_feed_checks({}))
+            + list(infocenter_checks({}))
             + list(notification_bell_checks({}))
             + list(adaptive_nav_checks({})))
 
