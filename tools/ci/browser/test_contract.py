@@ -881,7 +881,7 @@ class ContractTest(unittest.TestCase):
                 self.assertTrue(all(v['status'] == 'FAIL' for v in res.values()))
 
     def daily_flow_obs(self):
-        MA, EA = 11, 12
+        MA, EA, RA, EB = 11, 12, 13, 14
         rows = []
         for (shell, width), today, day in zip(c.DAILY_REPORTS_FLOW_CASES, (True, False), ('2026-11-16', '2026-11-15')):
             t = {k: 'DR %s %s' % (shell, k) for k in ('draft', 'tab1', 'tab2', 'submit', 'rework', 'forged')}
@@ -892,7 +892,8 @@ class ContractTest(unittest.TestCase):
                     [{'userid': EA, 'kind': 'dailyreport_decision', 'title': 'Decision ' + day}] * 2
             accepted = [{'versionuuid': v1['uuid'], 'decision': 'returned', 'rating': ''},
                         {'versionuuid': v2['uuid'], 'decision': 'accepted', 'rating': 'positive'}]
-            row = {'shell': shell, 'width': width, 'day': day, 'today': today, 'texts': t, 'ids': {'MA': MA, 'EA': EA},
+            row = {'shell': shell, 'width': width, 'day': day, 'today': today, 'texts': t,
+                   'ids': {'MA': MA, 'EA': EA, 'RA': RA, 'EB': EB},
                    'relogin_draft': t['draft'], 'hscroll_form': True, 'hscroll_card': True,
                    'conflict': {'shown': 1, 'tab2_kept': True, 'tab1_saved': True},
                    'submit_http': [303] * 8, 'forged_http': [200], 'get_http': 200,
@@ -905,7 +906,34 @@ class ContractTest(unittest.TestCase):
                                     'notifications': notes},
                    'after_negatives': {'report': {'status': 'accepted'}, 'versions': [v1, v2], 'decisions': copy.deepcopy(accepted)},
                    'negatives': {'EB': {'http': [200]}, 'RA': {'http': [200]}}, 'notification_links': 1,
-                   'browser_events': list(ABORTED), 'server_errors': []}
+                   'browser_events': list(ABORTED), 'server_errors': [],
+                   'team': {'rows': [[EA, 'accepted'], [MA, 'none'], [RA, 'none']],
+                            'counts': {'none': 2, 'notsent': 0, 'submitted': 0, 'returned': 0, 'accepted': 1},
+                            'filters': 1, 'report_links': 1, 'hscroll': True},
+                   'team_employee_filters': 0,
+                   'team_scopes': {
+                       'team': {'rows': [[EA, 'accepted']], 'options': ['team', 'company'], 'selected': 'team',
+                                'draft_leak': False, 'hscroll': True},
+                       'company': {'rows': [[EA, 'accepted'], [MA, 'none'], [RA, 'notsent']], 'options': ['team', 'company'],
+                                   'selected': 'company', 'draft_leak': False, 'hscroll': True}},
+                   'team_open': {'link': 1, 'url_report': True, 'versions': 2, 'draft_leak': False},
+                   'summary': {'month': day[:7], 'filters': 1, 'users_all': [EA, MA, RA], 'cell_links': 1,
+                               'cell': ['accepted', 'positive'], 'draft_leak': False, 'prev_month': '2026-10',
+                               'users_mine': [EA], 'scope_kept': 'mine', 'hscroll': True,
+                               'card': {'url_report': True, 'versions': 2}},
+                   'release_denied': {'EA': {'summary': 0, 'summary_tab': 0},
+                                      'EB_team': {'http': 200, 'team': 0, 'summary': 0, 'versions': 0, 'leak': False},
+                                      'EB_summary': {'http': 200, 'team': 0, 'summary': 0, 'versions': 0, 'leak': False},
+                                      'EB_card': {'http': 404, 'team': 0, 'summary': 0, 'versions': 0, 'leak': False}}}
+            d = {k: 'DR %s discussion %s' % (shell, k) for k in ('author', 'reviewer', 'forged', 'RA', 'EB')}
+            row.update({'discussion_texts': d, 'discussion_author_composer': 1, 'discussion_reviewer_sections': 1,
+                        'discussion_reviewer_sees_author': True, 'discussion_injected_tags': 0,
+                        'discussion_forged_http': [200], 'hscroll_discussion': True,
+                        'discussion_negatives': {'EB': {'http': [200]}, 'RA': {'http': [303]}},
+                        'after_discussion': {'report': {'status': 'accepted'}, 'versions': [v1, v2],
+                                             'decisions': copy.deepcopy(accepted),
+                                             'discussion': [{'thread': 't-' + shell, 'authorid': EA, 'body': d['author']},
+                                                            {'thread': 't-' + shell, 'authorid': MA, 'body': d['reviewer']}]}})
             if today:
                 row['after_touch'] = {'report': {'status': 'submitted'}, 'versions': [dict(v1)], 'decisions': []}
             rows.append(row)
@@ -945,6 +973,71 @@ class ContractTest(unittest.TestCase):
         fails('daily_report_foreign_and_nonreviewer_denied', lambda o: o['cases'][0]['after_negatives']['decisions'].append(
             {'versionuuid': 'v2-owned', 'decision': 'accepted', 'rating': 'negative'}))
         fails('daily_report_foreign_and_nonreviewer_denied', lambda o: o['cases'][1]['negatives']['RA'].update(http=[500]))
+        # R4 team for the day
+        fails('daily_report_team_day_view', lambda o: o['cases'][0]['team'].update(rows=[]))
+        fails('daily_report_team_day_view', lambda o: o['cases'][1]['team']['rows'].append([12, 'accepted']))
+        fails('daily_report_team_day_view', lambda o: o['cases'][0]['team']['rows'].__setitem__(0, [12, 'submitted']))
+        fails('daily_report_team_day_view', lambda o: o['cases'][1]['team']['rows'].append([14, 'none']))
+        fails('daily_report_team_day_view', lambda o: o['cases'][0]['team']['rows'].pop())
+        fails('daily_report_team_day_view', lambda o: o['cases'][0]['team']['rows'].__setitem__(1, [11, 'missing']))
+        fails('daily_report_team_day_view', lambda o: o['cases'][1]['team']['counts'].update(none=5))
+        fails('daily_report_team_day_view', lambda o: o['cases'][0]['team']['counts'].pop('notsent'))
+        fails('daily_report_team_day_view', lambda o: o['cases'][1]['team'].update(filters=0))
+        fails('daily_report_team_day_view', lambda o: o['cases'][0]['team'].update(report_links=0))
+        fails('daily_report_team_day_view', lambda o: o['cases'][1]['team'].update(hscroll=False))
+        fails('daily_report_team_day_view', lambda o: o['cases'][0].update(team_employee_filters=1))
+        fails('daily_report_team_day_view', lambda o: o['cases'][1].pop('team'))
+        # Release #168 + #173: scopes, opening a report, monthly summary, access and draft privacy
+        fails('daily_report_team_scopes_and_open', lambda o: o['cases'][0]['team_scopes']['team'].update(options=['company']))
+        fails('daily_report_team_scopes_and_open', lambda o: o['cases'][1]['team_scopes']['company'].update(selected='team'))
+        fails('daily_report_team_scopes_and_open', lambda o: o['cases'][0]['team_scopes']['team']['rows'].append([14, 'none']))
+        fails('daily_report_team_scopes_and_open', lambda o: o['cases'][1]['team_scopes']['team'].update(rows=[]))
+        fails('daily_report_team_scopes_and_open', lambda o: o['cases'][0]['team_scopes']['company']['rows'].pop())
+        fails('daily_report_team_scopes_and_open', lambda o: o['cases'][1]['team_scopes']['company'].update(draft_leak=True))
+        fails('daily_report_team_scopes_and_open', lambda o: o['cases'][0]['team_open'].update(url_report=False))
+        fails('daily_report_team_scopes_and_open', lambda o: o['cases'][1]['team_open'].update(draft_leak=True))
+        fails('daily_report_team_scopes_and_open', lambda o: o['cases'][0].pop('team_scopes'))
+        fails('daily_report_monthly_summary', lambda o: o['cases'][0]['summary'].update(month='2026-10'))
+        fails('daily_report_monthly_summary', lambda o: o['cases'][1]['summary'].update(prev_month='2026-11'))
+        fails('daily_report_monthly_summary', lambda o: o['cases'][0]['summary']['users_all'].append(14))
+        fails('daily_report_monthly_summary', lambda o: o['cases'][1]['summary'].update(users_mine=[13]))
+        fails('daily_report_monthly_summary', lambda o: o['cases'][0]['summary'].update(scope_kept='all'))
+        fails('daily_report_monthly_summary', lambda o: o['cases'][1]['summary'].update(cell=['submitted', 'none']))
+        fails('daily_report_monthly_summary', lambda o: o['cases'][0]['summary'].update(cell_links=0))
+        fails('daily_report_monthly_summary', lambda o: o['cases'][1]['summary'].pop('card'))
+        fails('daily_report_monthly_summary', lambda o: o['cases'][0]['summary'].update(draft_leak=True))
+        fails('daily_report_monthly_summary', lambda o: o['cases'][1]['summary'].update(filters=0))
+        fails('daily_report_release_access_denied', lambda o: o['cases'][0]['release_denied']['EA'].update(summary=1))
+        fails('daily_report_release_access_denied', lambda o: o['cases'][1]['release_denied']['EA'].update(summary_tab=1))
+        fails('daily_report_release_access_denied', lambda o: o['cases'][0]['release_denied']['EB_team'].update(team=2))
+        fails('daily_report_release_access_denied', lambda o: o['cases'][1]['release_denied']['EB_summary'].update(summary=1))
+        fails('daily_report_release_access_denied', lambda o: o['cases'][0]['release_denied']['EB_card'].update(versions=1))
+        fails('daily_report_release_access_denied', lambda o: o['cases'][1]['release_denied']['EB_card'].update(http=500))
+        fails('daily_report_release_access_denied', lambda o: o['cases'][0]['release_denied']['EB_summary'].update(leak=True))
+        # R3 report discussion
+        disc = 'daily_report_discussion_author_and_reviewer'
+        fails(disc, lambda o: o['cases'][0].update(discussion_author_composer=0))
+        fails(disc, lambda o: o['cases'][1].update(discussion_reviewer_sees_author=False))
+        fails(disc, lambda o: o['cases'][0].update(discussion_reviewer_sections=2))
+        fails(disc, lambda o: o['cases'][1].update(discussion_injected_tags=1))
+        fails(disc, lambda o: o['cases'][0].update(discussion_forged_http=[303]))
+        fails(disc, lambda o: o['cases'][1].update(discussion_forged_http=[500]))
+        fails(disc, lambda o: o['cases'][0]['discussion_negatives']['RA'].update(http=[500]))
+        fails(disc, lambda o: o['cases'][1]['discussion_negatives'].pop('EB'))
+        fails(disc, lambda o: o['cases'][0]['after_discussion']['discussion'].append(
+            {'thread': 't-owned', 'authorid': 13, 'body': o['cases'][0]['discussion_texts']['RA']}))
+        fails(disc, lambda o: o['cases'][1]['after_discussion']['discussion'].append(
+            {'thread': 't-legacy', 'authorid': 12, 'body': o['cases'][1]['discussion_texts']['forged']}))
+        fails(disc, lambda o: o['cases'][0]['after_discussion']['discussion'].append(
+            dict(o['cases'][0]['after_discussion']['discussion'][1])))
+        fails(disc, lambda o: o['cases'][1]['after_discussion']['discussion'][1].update(thread='t-other'))
+        fails(disc, lambda o: o['cases'][0]['after_discussion']['discussion'].reverse())
+        fails(disc, lambda o: o['cases'][1]['after_discussion'].update(discussion=[]))
+        fails(disc, lambda o: o['cases'][0]['after_discussion']['report'].update(status='returned'))
+        fails(disc, lambda o: o['cases'][1]['after_discussion']['decisions'].append(
+            {'versionuuid': 'v2-legacy', 'decision': 'accepted', 'rating': 'negative'}))
+        fails(disc, lambda o: o['cases'][0].update(hscroll_discussion=False))
+        fails(disc, lambda o: o['cases'][1].pop('discussion_texts'))
         fails('daily_report_layout_and_browser_errors', lambda o: o['cases'][1].update(hscroll_form=False))
         fails('daily_report_layout_and_browser_errors', lambda o: o['cases'][0]['browser_events'].append(
             {'source': 'pageerror', 'name': 'Error', 'message': 'x'}))

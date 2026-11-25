@@ -8,6 +8,10 @@ use local_kbacompany\local\daily_report_store_service as store;
 use local_kbacompany\local\daily_report_ui_service as reportui;
 use local_kbacompany\local\daily_report_review_service as review;
 use local_kbacompany\local\daily_report_reviewer_service as reviewers;
+use local_kbacompany\local\daily_report_summary_service as summary;
+use local_kbacompany\local\daily_report_team_service as team;
+use local_kbacompany\local\daily_report_discussion_service as discussion;
+use local_kbacompany\local\daily_report_discussion_ui_service as discussionui;
 use local_kbacompany\local\bms_page_shell_service;
 use local_kbacompany\local\bms24_shell_service;
 use local_kbacompany\local\bms24_ui_kit_service;
@@ -23,12 +27,34 @@ $enabled = store::enabled();
 $tab = $enabled ? optional_param('tab', 'my', PARAM_ALPHA) : 'my';
 // R2/ADR-0010: the reviewer tab exists for administrators, managers, stored reviewers and copy recipients.
 $canreview = $enabled && review::has_review_access($uuid, $actor);
-if (!in_array($tab, ['my', 'history', 'review'], true) || ($tab === 'review' && !$canreview)) {
+// ADR-0011 block 1: the monthly summary is for the readers of every report (administrators and managers).
+$cansummary = $enabled && summary::can_view($uuid, $actor);
+if (!in_array($tab, ['my', 'history', 'review', 'summary'], true) || ($tab === 'review' && !$canreview) ||
+        ($tab === 'summary' && !$cansummary)) {
     $tab = 'my';
 }
 $data = daily_report_service::context($uuid, $actor, $day,
     optional_param('taskpage', 0, PARAM_INT), optional_param('resultpage', 0, PARAM_INT));
 $base = ['uuid' => $uuid, 'day' => $day];
+
+// ---- R3 report discussion: one text message by the author or the current reviewer (re-checked by the service).
+if ($enabled && $_SERVER['REQUEST_METHOD'] === 'POST' && optional_param('action', '', PARAM_ALPHA) === 'discuss') {
+    require_sesskey();
+    $discussreport = required_param('discussreport', PARAM_ALPHANUMEXT);
+    $discussback = reportui::url($uuid, []);
+    try {
+        $discussback = discussion::url($uuid, discussion::target($uuid, $actor, $discussreport));
+        discussion::post($uuid, $actor, $discussreport, optional_param('message', '', PARAM_RAW),
+            optional_param('replytouuid', '', PARAM_ALPHANUMEXT));
+    } catch (moodle_exception $e) {
+        if ($e->module !== 'local_kbacompany') {
+            throw $e;
+        }
+        // Unknown, foreign and unreadable reports fail the same way; nothing is stored on failure.
+        redirect($discussback, $e->getMessage(), null, \core\output\notification::NOTIFY_ERROR);
+    }
+    redirect($discussback);
+}
 
 // ---- writes: POST + sesskey only; the actor is the session user, never a request parameter.
 $posted = null; $error = ''; $conflict = false;
@@ -115,7 +141,8 @@ if ($canreview && $tab === 'review' && $_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 
 $PAGE->set_context($context);
-$PAGE->set_url(new moodle_url('/local/kbacompany/daily_report.php', $base + ($tab === 'history' ? ['tab' => 'history'] : [])));
+$PAGE->set_url(new moodle_url('/local/kbacompany/daily_report.php', $base + (in_array($tab, ['history', 'summary'], true) ?
+    ['tab' => $tab] : [])));
 $PAGE->set_title(get_string('dailyreports_nav', 'local_kbacompany'));
 $PAGE->set_heading(get_string('pluginname', 'local_kbacompany'));
 if ($enabled && $tab === 'my') {
@@ -138,6 +165,10 @@ if ($enabled) {
 if ($canreview) {
     $tabs[] = ['url' => reportui::url($uuid, ['tab' => 'review'])->out(false),
         'label' => get_string('dailyreports_tab_review', 'local_kbacompany'), 'active' => $tab === 'review'];
+}
+if ($cansummary) {
+    $tabs[] = ['url' => reportui::url($uuid, ['tab' => 'summary'])->out(false),
+        'label' => get_string('dailyreports_tab_summary', 'local_kbacompany'), 'active' => $tab === 'summary'];
 }
 $tablabel = get_string('dailyreports_tabs', 'local_kbacompany');
 if (bms24_shell_service::is_enabled()) {
@@ -167,6 +198,9 @@ if ($tab === 'review') {
         echo html_writer::link(reportui::url($uuid, ['tab' => 'review']), s(get_string('dailyreports_back_queue', 'local_kbacompany')));
         echo reportui::card($uuid, $actor, $card,
             $card['can_reassign'] ? review::reviewer_candidates($uuid, $actor, (int)$card['report']->userid) : []);
+        // R3: the report discussion, readable by everyone who opens this card.
+        echo discussionui::render($uuid, discussion::context($uuid, $actor, (string)$card['report']->uuid),
+            optional_param('reply', '', PARAM_ALPHANUMEXT));
     } else {
         $queue = optional_param('queue', 'pending', PARAM_ALPHA);
         $queues = review::queues($uuid, $actor);
@@ -179,13 +213,28 @@ if ($tab === 'review') {
             if (!in_array($queue, $queues, true)) {
                 $queue = 'pending';
             }
-            echo reportui::queue($uuid, review::queue($uuid, $actor, $queue, optional_param('page', 0, PARAM_INT)), $queues);
+            if ($queue === 'team') {
+                // R4: every current employee for one day (read-only); filters are typed GET parameters.
+                echo reportui::team($uuid, team::day($uuid, $actor, $day, optional_param('scope', '', PARAM_ALPHA),
+                    optional_param('unit', '', PARAM_ALPHANUMEXT), optional_param('status', '', PARAM_ALPHA),
+                    optional_param('page', 0, PARAM_INT)), $queues);
+            } else {
+                echo reportui::queue($uuid, review::queue($uuid, $actor, $queue, optional_param('page', 0, PARAM_INT)),
+                    $queues);
+            }
             if ($isadmin) {
                 echo html_writer::link(reportui::url($uuid, ['tab' => 'review', 'queue' => 'settings']),
                     s(get_string('dailyreports_settings_heading', 'local_kbacompany')), ['class' => 'btn btn-link px-0']);
             }
         }
     }
+    bms_page_shell_service::finish($shell);
+    exit;
+}
+
+if ($tab === 'summary') {
+    echo reportui::summary($uuid, summary::grid($uuid, $actor, optional_param('month', '', PARAM_RAW_TRIMMED),
+        optional_param('scope', 'all', PARAM_ALPHA), optional_param('unit', '', PARAM_ALPHANUMEXT)));
     bms_page_shell_service::finish($shell);
     exit;
 }
@@ -261,6 +310,11 @@ if ($enabled) {
         $current = $view['versions'][0] ?? null;
         $selfreview = $current && (string)$current->reviewersource === 'self_top' && (int)$current->reviewerid === $actor;
         echo reportui::revision_controls($uuid, $day, (string)$report->status, $selfreview ? (string)$report->uuid : '');
+    }
+    if ($report && (string)$report->currentversionuuid !== '') {
+        // R3: the discussion of this report with the reviewer (also while a returned report is being corrected).
+        echo discussionui::render($uuid, discussion::context($uuid, $actor, (string)$report->uuid),
+            optional_param('reply', '', PARAM_ALPHANUMEXT));
     }
     echo html_writer::end_tag('section');
     // The live summary below is the current state of BMS24 data, not part of any submitted version.
