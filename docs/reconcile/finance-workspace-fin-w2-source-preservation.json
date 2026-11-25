@@ -1,20 +1,20 @@
 {
  "scope": "exact intentional source updates; not runtime or release acceptance",
- "base_sha": "62fdc4934b8b8a87fb8c7f21a52c56b64229e836",
+ "base_sha": "323f948c6cc670c34722f516118ca7426fd604f7 (main with the ADR-0011 monthly summary block, #173)",
  "normalization": "CRLF to LF only",
- "previous_evidence": "docs/reconcile/day-feed-added-earlier-source-preservation.json",
+ "previous_evidence": "docs/reconcile/daily-reports-summary-source-preservation.json (ADR-0011 block 1 monthly summary)",
  "decision": "docs/finance/FIN_W2_FINANCE_WORKSPACE.md (owner task 2026-11-24: FIN-W2 Finance workspace, BMS-05)",
- "change": "Append the FIN-W2 Finance workspace block (financews_* keys) after the day feed \"Added earlier\" block. Retain all preceding keys byte-for-byte. No schema, version, capability, formula or notification change; the workspace is behind local_kbacompany/finance_workspace_enabled (default off).",
+ "change": "Append the FIN-W2 Finance workspace block (financews_* keys) after the ADR-0011 monthly summary block. Retain all preceding keys byte-for-byte. No schema, version, capability, formula or notification change; the workspace is behind local_kbacompany/finance_workspace_enabled (default off).",
  "files": [
   {
    "path": "local/kbacompany/lang/en/local_kbacompany.php",
-   "before_sha256_lf": "9495d7e1467dbe67c7cb18be14cc4b19a3d33a40e632d528f77fb08788dbc803",
-   "after_sha256_lf": "b7e219f66fc896f1c95e1ba161c184b6d6eaa6e7c3cbe782410da1a6abd31e39"
+   "before_sha256_lf": "9a3fa3efb85ef6f9aeaf18202ba4377bf418787c4631b636dbf766f7a45c2f88",
+   "after_sha256_lf": "aee92e57044b55fe1485cf6e2fc29fa1760d18a0263c9becf5266455cf9737f5"
   },
   {
    "path": "local/kbacompany/lang/ru/local_kbacompany.php",
-   "before_sha256_lf": "dc4772de7d84d31a80927bb13c8f97966f18ca9db9f4e8d759d3204365255226",
-   "after_sha256_lf": "692528576ef91a43be3b30e7af12cd279240255c8af28990768de7c23f64e352"
+   "before_sha256_lf": "81334038357d7bc9f79a2dfefca9c8022c088045919931fc54e78a939b82a858",
+   "after_sha256_lf": "6bb09c4531be02403aeafff16f5fc63e8790a8ecab3452de881cd8ce6df7ef79"
   }
  ]
 }

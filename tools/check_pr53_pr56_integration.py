@@ -115,10 +115,18 @@ def check(root=ROOT):
     # See docs/reconcile/DAY_FEED_ADDED_EARLIER.md.
     reviewed_followup['local/kbacompany/lang/en/local_kbacompany.php'] = '9495d7e1467dbe67c7cb18be14cc4b19a3d33a40e632d528f77fb08788dbc803'
     reviewed_followup['local/kbacompany/lang/ru/local_kbacompany.php'] = 'dc4772de7d84d31a80927bb13c8f97966f18ca9db9f4e8d759d3204365255226'
-    # FIN-W2 Finance workspace (owner task 2026-11-24): financews_* RU/EN block after "Added earlier"; read-only, default off.
+    # Daily reports R4 (owner decisions T1-T5, 24.11.2026): append the team-for-the-day block after "Added earlier" (#165).
+    # See docs/reconcile/daily-reports-r4-source-preservation.json.
+    reviewed_followup['local/kbacompany/lang/en/local_kbacompany.php'] = 'ff960b76019f947c522bcc2765e1247baa0cfbbd4db5e7de20c0531bd535f07d'
+    reviewed_followup['local/kbacompany/lang/ru/local_kbacompany.php'] = '6075cfd77ddcbf01f33d00a5501dda3c162d2ebe6ef49d52113b7c6ab6f805f5'
+    # ADR-0011 block 1: monthly summary of daily reports (read-only, no schema). RU/EN block appended after the
+    # R4 "Team for the day" block (#168). See docs/reconcile/daily-reports-summary-source-preservation.json.
+    reviewed_followup['local/kbacompany/lang/en/local_kbacompany.php'] = '9a3fa3efb85ef6f9aeaf18202ba4377bf418787c4631b636dbf766f7a45c2f88'
+    reviewed_followup['local/kbacompany/lang/ru/local_kbacompany.php'] = '81334038357d7bc9f79a2dfefca9c8022c088045919931fc54e78a939b82a858'
+    # FIN-W2 Finance workspace (owner task 2026-11-24): financews_* RU/EN block after the ADR-0011 monthly summary block (#173); read-only, default off.
     # See docs/finance/FIN_W2_FINANCE_WORKSPACE.md.
-    reviewed_followup['local/kbacompany/lang/en/local_kbacompany.php'] = 'b7e219f66fc896f1c95e1ba161c184b6d6eaa6e7c3cbe782410da1a6abd31e39'
-    reviewed_followup['local/kbacompany/lang/ru/local_kbacompany.php'] = '692528576ef91a43be3b30e7af12cd279240255c8af28990768de7c23f64e352'
+    reviewed_followup['local/kbacompany/lang/en/local_kbacompany.php'] = 'aee92e57044b55fe1485cf6e2fc29fa1760d18a0263c9becf5266455cf9737f5'
+    reviewed_followup['local/kbacompany/lang/ru/local_kbacompany.php'] = '6bb09c4531be02403aeafff16f5fc63e8790a8ecab3452de881cd8ce6df7ef79'
     for row in plan['rows']:
         path=root/row['path']
         if not path.is_file() or path.is_symlink():
