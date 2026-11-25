@@ -49,7 +49,11 @@ final class daily_report_summary_service_test extends \advanced_testcase {
         $this->assign($company, $nodes['team'], (int)$users['employee']->id, false);
         $this->assign($company, $nodes['sub'], (int)$users['worker']->id, false);
         $this->assign($company, $nodes['team'], (int)$users['peer']->id, false);
+        // "Today" in the employees' own time zone (Europe/Moscow), not the administrator's: the PHPUnit default
+        // (Australia/Perth) is already tomorrow from 16:00 UTC, and the report would be refused as a future day.
+        $this->setUser($users['employee']);
         $day = business_date_service::day();
+        $this->setAdminUser();
         return compact('admin', 'company', 'cid', 'nodes', 'day') + ['month' => substr($day, 0, 7)] + $users;
     }
 
