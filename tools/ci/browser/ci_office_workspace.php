@@ -57,6 +57,18 @@ if ($phase === 'switch' && in_array($argv[2] ?? '', ['0', '1'], true)) {
     };
     $a = $company('A'); $b = $company('B'); $ea = $actor('EA'); $eb = $actor('EB');
     $ma = $actor('MA'); $mb = $actor('MB');
+    // Earlier scenarios (access.py, communication_center.py) revoke and reopen EA: the canonical reopen lifts the
+    // revocation but keeps the closed membership row inactive, so EA is no longer an eligible document reviewer.
+    // Fixture only: give the employee a fresh active membership row (same shape as ci_fixtures.php). The office
+    // scenario's own revocation at the end closes it again, so later scenarios see the same state as before.
+    $member = static function(string $c, int $user): void {
+        global $DB;
+        if (\local_kbacompany\local\membership_access_service::is_revoked($c, $user)) { fwrite(STDERR, "revoked actor\n"); exit(1); }
+        if ($DB->record_exists('local_kbacompany_member', ['companyuuid' => $c, 'userid' => $user, 'active' => 1])) { return; }
+        $DB->insert_record('local_kbacompany_member', (object)['uuid' => \core\uuid::generate(), 'companyuuid' => $c,
+            'userid' => $user, 'membertype' => 'employee', 'active' => 1, 'isemployee' => 1]);
+    };
+    $member($a, $ea); $member($b, $eb);
     $titles = ['effective' => 'OFFICE CI EFFECTIVE A ' . $nonce, 'review' => 'OFFICE CI REVIEW A ' . $nonce,
         'task' => 'OFFICE CI OVERDUE A ' . $nonce, 'review_b' => 'OFFICE CI REVIEW B ' . $nonce,
         'task_b' => 'OFFICE CI OVERDUE B ' . $nonce];
