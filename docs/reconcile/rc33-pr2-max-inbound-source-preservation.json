@@ -1,8 +1,8 @@
 {
  "scope": "exact intentional source updates; not runtime, concurrency or release acceptance",
- "base_sha": "5aeb26ac1fd158ed45004e76c9d32c4d1002cf6d",
+ "base_sha": "9c9bc0cca8f9ed668c449180f43c16202503ec14",
  "normalization": "CRLF to LF only",
- "previous_evidence": "docs/reconcile/rc33-pr1-communication-write-gate-source-preservation.json",
+ "previous_evidence": "docs/reconcile/rc33-pr1-communication-write-gate-source-preservation.json; lang chain after docs/reconcile/daily-reports-summary-source-preservation.json (main #173)",
  "decision": "docs/reconcile/RC33_PR2_MAX_INBOUND_SERVER.md and docs/adr/ADR-0012-temporary-narrow-inbound-delegation.md (owner D1-D4 2026-11-24, PR #88 / issue #75; split approved 2026-11-24)",
  "change": "add_participant refuses to widen the audience of a discussion bound to an inbound import (communication_importaudience); one append-only RU/EN block for the capability, inbound refusal categories, registry errors and privacy metadata. Schema, services and version are additive and outside this chain.",
  "files": [
@@ -13,13 +13,13 @@
   },
   {
    "path": "local/kbacompany/lang/en/local_kbacompany.php",
-   "before_sha256_lf": "9495d7e1467dbe67c7cb18be14cc4b19a3d33a40e632d528f77fb08788dbc803",
-   "after_sha256_lf": "34095bffcaf317f32946da597b7e16a24b3be3e9f6555756d69b91141d8102be"
+   "before_sha256_lf": "9a3fa3efb85ef6f9aeaf18202ba4377bf418787c4631b636dbf766f7a45c2f88",
+   "after_sha256_lf": "164ca65f5f2500c3abc961831f0121ea7b28ed484ff29fe914a6c092cb5298d5"
   },
   {
    "path": "local/kbacompany/lang/ru/local_kbacompany.php",
-   "before_sha256_lf": "dc4772de7d84d31a80927bb13c8f97966f18ca9db9f4e8d759d3204365255226",
-   "after_sha256_lf": "5e27cb9da745157ce8c0d55a6e33b2f546715639bc2466b0eb2b855aa311b2a9"
+   "before_sha256_lf": "81334038357d7bc9f79a2dfefca9c8022c088045919931fc54e78a939b82a858",
+   "after_sha256_lf": "00996bbd1ab2d61d3844efd229914feef9ef8c40f86ae51d07f2aa33e01d729e"
   }
  ]
 }

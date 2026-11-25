@@ -1,0 +1,20 @@
+{
+  "scope": "exact intentional source updates; not runtime or release acceptance",
+  "base_sha": "62fdc4934b8b8a87fb8c7f21a52c56b64229e836",
+  "normalization": "CRLF to LF only",
+  "previous_evidence": "docs/reconcile/day-feed-added-earlier-source-preservation.json",
+  "decision": "docs/daily-reports/R4_TEAM_DAY_PROPOSAL.md (owner decisions T1-T5, 24.11.2026)",
+  "change": "Append the daily reports R4 block (team for the day: dailyreports_queue_team, dailyreports_status_notsent and dailyreports_team_*) after the day feed \"Added earlier\" block (#165). Retain all preceding keys.",
+  "files": [
+    {
+      "path": "local/kbacompany/lang/en/local_kbacompany.php",
+      "before_sha256_lf": "9495d7e1467dbe67c7cb18be14cc4b19a3d33a40e632d528f77fb08788dbc803",
+      "after_sha256_lf": "ff960b76019f947c522bcc2765e1247baa0cfbbd4db5e7de20c0531bd535f07d"
+    },
+    {
+      "path": "local/kbacompany/lang/ru/local_kbacompany.php",
+      "before_sha256_lf": "dc4772de7d84d31a80927bb13c8f97966f18ca9db9f4e8d759d3204365255226",
+      "after_sha256_lf": "6075cfd77ddcbf01f33d00a5501dda3c162d2ebe6ef49d52113b7c6ab6f805f5"
+    }
+  ]
+}
