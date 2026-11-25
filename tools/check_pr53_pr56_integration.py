@@ -116,6 +116,14 @@ def check(root=ROOT):
     # See docs/reconcile/DAY_FEED_ADDED_EARLIER.md.
     reviewed_followup['local/kbacompany/lang/en/local_kbacompany.php'] = '9495d7e1467dbe67c7cb18be14cc4b19a3d33a40e632d528f77fb08788dbc803'
     reviewed_followup['local/kbacompany/lang/ru/local_kbacompany.php'] = 'dc4772de7d84d31a80927bb13c8f97966f18ca9db9f4e8d759d3204365255226'
+    # Daily reports R4 (owner decisions T1-T5, 24.11.2026): append the team-for-the-day block after "Added earlier" (#165).
+    # See docs/reconcile/daily-reports-r4-source-preservation.json.
+    reviewed_followup['local/kbacompany/lang/en/local_kbacompany.php'] = 'ff960b76019f947c522bcc2765e1247baa0cfbbd4db5e7de20c0531bd535f07d'
+    reviewed_followup['local/kbacompany/lang/ru/local_kbacompany.php'] = '6075cfd77ddcbf01f33d00a5501dda3c162d2ebe6ef49d52113b7c6ab6f805f5'
+    # ADR-0011 block 1: monthly summary of daily reports (read-only, no schema). RU/EN block appended after the
+    # R4 "Team for the day" block (#168). See docs/reconcile/daily-reports-summary-source-preservation.json.
+    reviewed_followup['local/kbacompany/lang/en/local_kbacompany.php'] = '9a3fa3efb85ef6f9aeaf18202ba4377bf418787c4631b636dbf766f7a45c2f88'
+    reviewed_followup['local/kbacompany/lang/ru/local_kbacompany.php'] = '81334038357d7bc9f79a2dfefca9c8022c088045919931fc54e78a939b82a858'
     # RC33 PR-1 (owner D3 2026-11-24): shared communication write gate and notification eligibility; no lang,
     # schema or version change. See docs/reconcile/RC33_PR1_COMMUNICATION_WRITE_GATE.md.
     reviewed_followup['local/kbacompany/classes/local/communication_service.php'] = 'a483674056db868903e362b77d987d709f8547bc3fffc94fb8ca054445bfd85c'
@@ -123,8 +131,8 @@ def check(root=ROOT):
     # RC33 PR-2 (owner D1-D4 2026-11-24, ADR-0012): fixed import audience in add_participant and the append-only
     # inbound lang block. See docs/reconcile/RC33_PR2_MAX_INBOUND_SERVER.md.
     reviewed_followup['local/kbacompany/classes/local/communication_service.php'] = '2e8aeea888a21e88d592af8611445d36dbb43cf75b5fd2301f6960e90d4a8797'
-    reviewed_followup['local/kbacompany/lang/en/local_kbacompany.php'] = '34095bffcaf317f32946da597b7e16a24b3be3e9f6555756d69b91141d8102be'
-    reviewed_followup['local/kbacompany/lang/ru/local_kbacompany.php'] = '5e27cb9da745157ce8c0d55a6e33b2f546715639bc2466b0eb2b855aa311b2a9'
+    reviewed_followup['local/kbacompany/lang/en/local_kbacompany.php'] = '164ca65f5f2500c3abc961831f0121ea7b28ed484ff29fe914a6c092cb5298d5'
+    reviewed_followup['local/kbacompany/lang/ru/local_kbacompany.php'] = '00996bbd1ab2d61d3844efd229914feef9ef8c40f86ae51d07f2aa33e01d729e'
     for row in plan['rows']:
         path=root/row['path']
         if not path.is_file() or path.is_symlink():

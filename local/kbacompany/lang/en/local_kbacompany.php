@@ -9994,6 +9994,45 @@ $string['bms24_menu_close'] = 'Close menu';
 // Day feed "Added earlier" (2026-11-24): mark of a result already added to the report of the day.
 $string['dailyreports_feed_addedearlier'] = 'Added earlier';
 $string['dailyreports_feed_addedearlier_hint'] = 'This result was already added to the report for this day.';
+// Daily reports R4 (2026-11-24): team for the day, owner decisions T1-T5.
+$string['dailyreports_queue_team'] = 'Team for the day';
+$string['dailyreports_status_notsent'] = 'Not sent';
+$string['dailyreports_team_day'] = 'Day';
+$string['dailyreports_team_scope'] = 'Show';
+$string['dailyreports_team_scope_team'] = 'My team';
+$string['dailyreports_team_scope_company'] = 'Whole company';
+$string['dailyreports_team_unit'] = 'Unit';
+$string['dailyreports_team_unit_all'] = 'All units';
+$string['dailyreports_team_unit_none'] = 'No unit';
+$string['dailyreports_team_status_all'] = 'All statuses';
+$string['dailyreports_team_show'] = 'Show';
+$string['dailyreports_team_filters'] = 'Team for the day filters';
+$string['dailyreports_team_counts'] = 'Day totals by status';
+$string['dailyreports_team_reviewer'] = 'Reviewer';
+$string['dailyreports_team_open'] = 'Open';
+$string['dailyreports_team_open_for'] = 'Open report: {$a}';
+$string['dailyreports_team_empty'] = 'No employees match these filters.';
+$string['dailyreports_team_note'] = 'Current company members are shown. "No report" is not a violation: no reporting calendar is set yet. Drafts stay private.';
+
+// ADR-0011 block 1: monthly summary of daily reports for managers and administrators.
+$string['dailyreports_tab_summary'] = 'Monthly summary';
+$string['dailyreports_summary_intro'] = 'Reports of the month by unit and employee. Read-only: decisions are made in the report card by the assigned reviewer. Drafts are not shown.';
+$string['dailyreports_summary_prev'] = 'Previous month';
+$string['dailyreports_summary_next'] = 'Next month';
+$string['dailyreports_summary_month'] = 'Month';
+$string['dailyreports_summary_scope'] = 'Employees';
+$string['dailyreports_summary_scope_all'] = 'All employees';
+$string['dailyreports_summary_scope_mine'] = 'Only my subordinates';
+$string['dailyreports_summary_unit'] = 'Unit';
+$string['dailyreports_summary_unit_all'] = 'All units';
+$string['dailyreports_summary_nounit'] = 'Not placed in the organisation chart';
+$string['dailyreports_summary_ratedpct'] = 'Rated reports';
+$string['dailyreports_summary_positivepct'] = 'Positive ratings';
+$string['dailyreports_summary_caption'] = 'Daily reports of the month';
+$string['dailyreports_summary_empty'] = 'No employees match the filter.';
+$string['dailyreports_summary_rating_positive'] = 'positive rating';
+$string['dailyreports_summary_rating_negative'] = 'negative rating';
+$string['dailyreports_summary_show'] = 'Show';
 
 // RC33 MAX fake-provider inbound slice (2026-11-24): restricted import, registry and refusals.
 $string['kbacompany:importinbound'] = 'Import inbound messages as the company integration account (fake MAX slice)';
