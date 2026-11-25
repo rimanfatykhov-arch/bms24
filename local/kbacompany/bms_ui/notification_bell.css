@@ -39,6 +39,15 @@
 .bms24-app .bms24-bell-action {min-height:36px;padding:6px 11px;border:1px solid var(--bms24-border,#d6e2ea);border-radius:9px;background:#fff;color:#0B2B41;font-size:12px;font-weight:650;cursor:pointer;}
 .bms24-app .bms24-bell-action-primary {background:#0C6C52;border-color:#0C6C52;color:#fff;}
 .bms24-app .bms24-bell-all {display:block;margin-top:10px;padding:9px;border-radius:9px;background:#E4F2FB;color:#0B2B41;font-size:13px;font-weight:650;text-align:center;text-decoration:none;}
+/* Let the workspace controls wrap together as a single top-bar item. */
+.bms24-app .bms24-workspace-notifications {
+    display: inline-flex;
+    flex: 0 0 auto;
+    flex-wrap: nowrap;
+    align-items: center;
+    gap: inherit;
+}
+
 /* "Needs attention" flag next to the bell (bms_workspace.php, owned shell): the same button box and corner count,
    red when something is overdue. */
 .bms24-app .bms24-attention {position:relative;display:inline-flex;flex:0 0 auto;align-items:center;justify-content:center;box-sizing:border-box;width:40px;height:40px;min-width:40px;padding:0;border:1px solid var(--bms24-border,#d6e2ea);border-radius:10px;background:#fff;color:#0B2B41;text-decoration:none;}

@@ -49,4 +49,15 @@ final class bms_workspace_attention_target_test extends \basic_testcase {
         $this->assertStringContainsString('.bms24-app .bms24-attention {', $css);
         $this->assertStringContainsString('.bms24-app .bms24-attention-badge {', $css);
     }
+
+    public function test_owned_flag_and_bell_share_one_topbar_item(): void {
+        $source = file_get_contents(__DIR__ . '/../bms_workspace.php');
+        $this->assertStringContainsString(
+            "html_writer::div(\$notificationshtml, 'bms24-workspace-notifications')", $source);
+        $this->assertStringContainsString("'notificationshtml' => \$notificationshtml", $source);
+
+        $css = file_get_contents(__DIR__ . '/../bms_ui/notification_bell.css');
+        $this->assertMatchesRegularExpression(
+            '/\.bms24-app \.bms24-workspace-notifications\s*\{[^}]*flex-wrap:\s*nowrap;/', $css);
+    }
 }

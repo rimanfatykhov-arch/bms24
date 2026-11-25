@@ -767,6 +767,14 @@ $quickactions .= ' ' . html_writer::link($newmessageurl,
     get_string('bmsworkspace_quick_message', 'local_kbacompany'),
     ['class' => 'kba-bms-button']);
 
+$notificationshtml = $attentionhtml;
+if ($useowned) {
+    $notificationshtml .= \local_kbacompany\local\bms24_shell_service::notification_bell($uuid, (int)$USER->id);
+    if ($notificationshtml !== '') {
+        $notificationshtml = html_writer::div($notificationshtml, 'bms24-workspace-notifications');
+    }
+}
+
 $shell = [
     'sidebar' => [
         'arialabel' => get_string('bmsworkspace_sidebar_label', 'local_kbacompany'),
@@ -807,8 +815,7 @@ $shell = [
         'quickactionhtml' => $quickactions,
         'planhtml' => html_writer::link($planurl, get_string('bms_plan_title', 'local_kbacompany'),
             ['class' => 'kba-bms-button kba-bms-button--plan']),
-        'notificationshtml' => $attentionhtml . ($useowned
-            ? ' ' . \local_kbacompany\local\bms24_shell_service::notification_bell($uuid, (int)$USER->id) : ''),
+        'notificationshtml' => $notificationshtml,
         'usermenuhtml' => $OUTPUT->user_menu(),
     ],
     'header' => [
