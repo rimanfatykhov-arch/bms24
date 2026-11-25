@@ -1,6 +1,7 @@
 <?php
 // BMS24 read-only Information Centre (#190): main company metric on top, then divisions of the organizing board
 // as columns with their departments/positions, bound metrics, mini charts and trends. Drill-down chart in a dialog.
+// Mini charts and the drill-down chart are drawn with the local Apache ECharts module (#192, thirdpartylibs.xml).
 require_once(__DIR__ . '/../../config.php');
 use local_kbacompany\local\information_center_service;
 require_login();
@@ -36,8 +37,8 @@ $style = '.bmsic-main{max-width:1440px}' .
     '.bmsic-main-tile .bmsic-tile-value{font-size:1.5rem;font-weight:700}' .
     '.bmsic-trend{display:block;margin-top:2px;font-size:.92rem}.bmsic-trend-symbol{font-weight:700;margin-right:4px}' .
     '.bmsic-q-better{color:#0C6C52}.bmsic-q-worse{color:#a1271b}' .
-    '.bmsic-spark{display:block;width:100%;height:auto;margin-top:6px}' .
-    '.bmsic-main-tile .bmsic-spark{max-width:760px}' .
+    '.bmsic-mini{display:block;width:100%;height:72px;margin-top:6px;pointer-events:none;overflow:hidden}' .
+    '.bmsic-main-tile .bmsic-mini,.bmsic-main-tile .bmsic-range{max-width:760px}.bmsic-main-tile .bmsic-mini{height:140px}' .
     '.bmsic-range{display:flex;justify-content:space-between;color:#5b6f64;font-size:.8rem}' .
     '.bmsic-nodata{display:block;color:#5b6f64;font-style:italic;margin-top:6px}' .
     '.bmsic-board{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(260px,1fr);gap:12px;' .
@@ -57,32 +58,28 @@ $style = '.bmsic-main{max-width:1440px}' .
     '.bmsic-controls{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:10px 0}' .
     '.bmsic-chartbox{touch-action:none;outline:none;border:1px solid #e3ebe6;border-radius:8px}' .
     '.bmsic-chartbox:focus-visible{outline:3px solid #1777B5;outline-offset:2px}' .
-    '.bmsic-chartbox svg{display:block;width:100%;height:auto}' .
+    '.bmsic-chartbox{position:relative}.bmsic-canvas{width:100%;height:clamp(240px,52vh,420px)}' .
+    '.bmsic-empty{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#40564a;' .
+    'font-size:1.2rem}.bmsic-empty[hidden]{display:none}' .
     '.bmsic-legend{display:flex;flex-wrap:wrap;gap:14px;font-size:.88rem;margin-top:8px}' .
     '.bmsic-readout{min-height:1.5em;font-weight:600;margin-top:6px}';
 echo html_writer::tag('style', $style);
 
-/** Mini chart SVG with grid, fact segments (broken at gaps), real dots and a period range under it. */
+/**
+ * Mini chart: the period range and notes are server-rendered; the chart itself is drawn by local_kbacompany/infocenter_chart
+ * with the local ECharts module when the tile comes into view. An empty series shows "No data" and no chart.
+ */
 $spark = static function(array $card, bool $large) use ($str): string {
     $geo = information_center_service::mini_geometry($card['mini']);
     if ($geo['empty']) {
         return html_writer::tag('span', $str('infocenter2_nodata'), ['class' => 'bmsic-nodata']);
     }
-    $svg = '';
-    foreach ($geo['grid'] as $gy) {
-        $svg .= html_writer::empty_tag('line', ['x1' => 0, 'x2' => 240, 'y1' => $gy, 'y2' => $gy,
-            'stroke' => '#dfe9e3', 'stroke-width' => 1]);
-    }
-    foreach ($geo['segments'] as $points) {
-        $svg .= html_writer::empty_tag('polyline', ['points' => $points, 'fill' => 'none',
-            'stroke' => '#0C6C52', 'stroke-width' => 2]);
-    }
-    foreach ($geo['dots'] as $dot) {
-        $svg .= html_writer::empty_tag('circle', ['cx' => $dot['x'], 'cy' => $dot['y'], 'r' => 3, 'fill' => '#0C6C52']);
-    }
-    $out = html_writer::tag('svg', $svg, ['class' => 'bmsic-spark', 'viewBox' => '0 0 240 96',
-        'aria-hidden' => 'true', 'focusable' => 'false', 'preserveAspectRatio' => 'none',
-        'style' => $large ? 'height:140px' : 'height:72px']);
+    $points = array_map(static function(array $point): array {
+        return ['period' => $point['period'], 'fact' => $point['fact'], 'gap' => $point['gap']];
+    }, $card['mini']);
+    $out = html_writer::tag('span', '', ['class' => 'bmsic-mini' . ($large ? ' bmsic-mini-main' : ''),
+        'aria-hidden' => 'true', 'data-bmsic-mini' => json_encode($points,
+            JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT)]);
     $out .= html_writer::tag('span', html_writer::tag('span', s($geo['first'])) . html_writer::tag('span', s($geo['last'])),
         ['class' => 'bmsic-range']);
     if (count($geo['dots']) === 1) {

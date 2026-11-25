@@ -1358,9 +1358,13 @@ def day_feed_checks(obs, exitcode=None):
 
 
 # ---- Information Centre by divisions (#190, infocenter.py): board order, tiles, trends, drill-down chart, isolation.
+# #192: mini charts and the drill-down chart on the local Apache ECharts module; the view state published by the page
+# (data-*) must agree with the ECharts option read back from the instance, and both with the fixture.
 INFOCENTER_CASES = [('owned-1440', 'owned', 1440), ('owned-375', 'owned', 375), ('legacy-375', 'legacy', 375)]
 INFOCENTER_MOBILE = 768
 INFOCENTER_CODES = ('CIIC-M', 'CIIC-POS', 'CIIC-DEP', 'CIIC-NEG', 'CIIC-FLAT', 'CIIC-EMPTY', 'CIIC-LOOSE', 'CIIC-B')
+INFOCENTER_MODULE = '/local_kbacompany/echarts-lazy'
+INFOCENTER_VIEW_KEYS = ('start', 'end', 'span', 'selected', 'lo', 'hi', 'dots', 'factlines', 'planlines', 'gaps', 'trendlines')
 
 
 def infocenter_checks(obs, exitcode=None):
@@ -1391,6 +1395,25 @@ def infocenter_checks(obs, exitcode=None):
             for g in col.get('groups') or []:
                 out += g.get('tiles') or []
         return {code(t): t for t in out if code(t).startswith('CIIC')}
+
+    def drawn(s, what):
+        """An ECharts drawing whose published view state equals the option read back from the instance."""
+        o = s.get('opt')
+        require(s.get('engine') == 'echarts' and s.get('instance') is True and isinstance(o, dict),
+                '%s: not drawn by an ECharts instance' % what)
+        diff = {k: (s.get(k), o.get(k)) for k in INFOCENTER_VIEW_KEYS if s.get(k) != o.get(k)}
+        require(not diff, '%s: page view state differs from the ECharts option: %r' % (what, diff))
+        require(o.get('fact_connect') is False and o.get('plan_connect') is False and o.get('symbols') is True
+                and o.get('inside') is True and o.get('trend_type') == 'dashed'
+                and [x for x in o.get('series') or [] if x in ('fact', 'plan', 'trend')] == ['fact', 'plan', 'trend'],
+                '%s: series not fact/plan/dashed trend with breaks, real dots and inside zoom: %r' % (what, o))
+        require(isinstance(s.get('paths'), int) and s['paths'] >= s.get('dots', 0) + s.get('factlines', 0)
+                and isinstance(s.get('svg_w'), (int, float)) and s['svg_w'] > 0 and s['svg_w'] == s.get('canvas_w')
+                and s.get('texts'), '%s: SVG drawing missing or not sized to its box' % what)
+
+    def disposed(s, what):
+        require(s.get('open') is False and s.get('instance') is False and s.get('svg_w') == 0 and s.get('engine') is None,
+                '%s: chart instance not disposed on close' % what)
 
     def group_code(title):
         # Group headings are "<code> <name>"; fixture codes are "CIIC 1.1" (unit) and "CIIC-P" (position).
@@ -1436,7 +1459,30 @@ def infocenter_checks(obs, exitcode=None):
                 if dots:
                     require(t.get('grid', 0) >= 2 and len(t.get('range') or '') >= 20 and not t.get('nodata'),
                             '%s %s: mini chart without grid or period labels' % (r['id'], c))
-            require(ts['CIIC-EMPTY'].get('nodata') and ts['CIIC-EMPTY'].get('grid', 0) == 0, '%s: empty series not shown as no data' % r['id'])
+                    m = t.get('mini') or {}
+                    require(m.get('engine') == 'echarts' and m.get('instance') is True and m.get('svg') == 1
+                            and isinstance(m.get('paths'), int) and m['paths'] >= dots + lines
+                            and m.get('attr') == {'dots': dots, 'lines': lines, 'grid': t.get('grid')},
+                            '%s %s: mini chart not drawn by ECharts as published: %r' % (r['id'], c, m))
+                    require(m.get('datazoom') == 0 and m.get('silent') is True and m.get('pointer') == 'none'
+                            and m.get('connect') is False and m.get('symbols') is True
+                            and isinstance(m.get('svg_w'), (int, float)) and m['svg_w'] > 0 and m['svg_w'] == m.get('box_w'),
+                            '%s %s: mini chart interactive, joined over gaps or not sized to its tile: %r' % (r['id'], c, m))
+            require(ts['CIIC-EMPTY'].get('nodata') and ts['CIIC-EMPTY'].get('grid', 0) == 0
+                    and (ts['CIIC-EMPTY'].get('mini') or {}).get('engine') is None, '%s: empty series not shown as no data' % r['id'])
+            heights = {c: (ts[c].get('mini') or {}).get('height') or 0 for c in expect if expect[c][2]}
+            require(all(heights[c] >= 40 for c in heights) and all(heights['CIIC-M'] > heights[c] for c in heights if c != 'CIIC-M'),
+                    '%s: main and column mini charts do not keep their heights: %r' % (r['id'], heights))
+            initial, final = r.get('lazy_initial') or {}, r.get('lazy_final') or {}
+            drawn_tiles = sum(1 for c, m in metrics.items() if m.get('company') == 'A' and m.get('facts'))
+            require(final.get('total') == final.get('ready') == drawn_tiles and isinstance(initial.get('ready'), int)
+                    and 1 <= initial['ready'] <= drawn_tiles and initial.get('total') == drawn_tiles,
+                    '%s: mini charts not all initialised: %r -> %r' % (r['id'], initial, final))
+            if r['width'] < INFOCENTER_MOBILE:
+                require(initial['ready'] < drawn_tiles, '%s: mini charts initialised before they come into view: %r' % (r['id'], initial))
+            requests = r.get('module_requests')
+            require(isinstance(requests, list) and len(requests) == 1 and loopback_host(requests[0])
+                    and INFOCENTER_MODULE in requests[0], '%s: ECharts module not loaded exactly once from Moodle: %r' % (r['id'], requests))
             require(ts['CIIC-DEP'].get('single') == 1, '%s: single point without note' % r['id'])
             require(ts['CIIC-M'].get('points') == 21 and ts['CIIC-M'].get('gaps') == 1,
                     '%s: missing week not kept as a gap in the chart data' % r['id'])
@@ -1452,6 +1498,11 @@ def infocenter_checks(obs, exitcode=None):
             require(len(boxes) == 3 and all(isinstance(b.get('x'), int) and isinstance(b.get('r'), int) and b['x'] >= 0
                                             and b['r'] <= r['width'] for b in boxes),
                     '%s: a division column is outside the viewport: %r' % (r['id'], boxes))
+            size = r.get('resize') or {}
+            before, after = size.get('mini_before') or {}, size.get('mini_after') or {}
+            require(isinstance(before.get('svg_w'), (int, float)) and before['svg_w'] > 0 and before['svg_w'] == before.get('box_w')
+                    and isinstance(after.get('svg_w'), (int, float)) and 0 < after['svg_w'] < before['svg_w']
+                    and after['svg_w'] == after.get('box_w'), '%s: mini chart does not follow a resize: %r' % (r['id'], size))
             if r['width'] < INFOCENTER_MOBILE:
                 require(boxes[0]['y'] < boxes[1]['y'] < boxes[2]['y'], '%s: columns not stacked on the phone' % r['id'])
             else:
@@ -1479,6 +1530,7 @@ def infocenter_checks(obs, exitcode=None):
             require(p[-1] in (s.get('readout') or '') and p[-1] in (s.get('texts') or []),
                     '%s: exact value on the selected date or period axis missing' % r['id'])
             require('↑' in (s.get('meta') or ''), '%s: trend text missing in the chart' % r['id'])
+            drawn(s, '%s open' % r['id'])
 
     def chart_controls():
         rows, metrics = run()
@@ -1510,9 +1562,29 @@ def infocenter_checks(obs, exitcode=None):
             require(g('wheel_in').get('span', 99) < 20 and (g('drag_right').get('start') or 'z') < (g('wheel_in').get('start') or ''),
                     '%s: mouse wheel zoom or drag pan failed' % r['id'])
             require(g('pinch_out').get('span', 99) < 20, '%s: two-pointer pinch did not zoom' % r['id'])
+            require(g('pinch_out').get('pinch_mode') == ('touch' if r['width'] < INFOCENTER_MOBILE else 'pointer'),
+                    '%s: pinch not exercised through the expected input: %r' % (r['id'], g('pinch_out').get('pinch_mode')))
+            require(g('click').get('selected') == p[-4] and p[-4] in (g('click').get('readout') or ''),
+                    '%s: mouse click did not select the date: %r' % (r['id'], g('click').get('selected')))
+            for key in ('window26', 'zoomin', 'panleft', 'panright', 'zoomout', 'reset', 'left1', 'left5', 'key_plus',
+                        'key_shift_left', 'key_reset', 'key_home', 'key_end', 'click', 'wheel_in', 'drag_right', 'reset2',
+                        'pinch_out', 'resized', 'restored'):
+                drawn(g(key), '%s %s' % (r['id'], key))
+            require(0 < g('resized').get('svg_w', 0) < g('restored').get('svg_w', 0)
+                    and (g('resized').get('start'), g('resized').get('end')) == (p[0], p[-1]),
+                    '%s: large chart does not follow a resize' % r['id'])
             c = g('closed')
             require(c.get('open') is False and (c.get('focus_tile') or '').startswith('CIIC-M — '),
                     '%s: Escape did not close or focus not returned to the tile' % r['id'])
+            disposed(c, '%s main chart' % r['id'])
+            again = r.get('reopen') or {}
+            require(again.get('open') is True and (again.get('title') or '').startswith('CIIC-M — ') and again.get('window') == '13'
+                    and (again.get('start'), again.get('end'), again.get('span'), again.get('selected')) == (p[-13], p[-1], 13, p[-1]),
+                    '%s: re-opened chart does not start from a fresh 13-period view' % r['id'])
+            drawn(again, '%s reopen' % r['id'])
+            disposed(again.get('closed') or {}, '%s reopen' % r['id'])
+            require(((again.get('closed') or {}).get('focus_tile') or '').startswith('CIIC-M — '),
+                    '%s: focus not returned after re-opening' % r['id'])
 
     def chart_shapes():
         rows, _ = run()
@@ -1533,6 +1605,13 @@ def infocenter_checks(obs, exitcode=None):
             require('↓' in (pos.get('meta') or '') and pos.get('dots') == 8, '%s: falling metric chart wrong' % r['id'])
             require(len(ch) == 5 and all((v.get('closed') or {}).get('open') is False for v in ch.values()),
                     '%s: a chart did not open or close' % r['id'])
+            for k in ('CIIC-FLAT', 'CIIC-NEG', 'CIIC-DEP', 'CIIC-POS'):
+                drawn(ch[k], '%s %s' % (r['id'], k))
+            for k, v in ch.items():
+                disposed(v.get('closed') or {}, '%s %s' % (r['id'], k))
+            require((neg.get('opt') or {}).get('zero_line') is True, '%s: real zero not marked on the negative chart' % r['id'])
+            require(empty.get('instance') is False and empty.get('empty_text') == nodata and empty.get('texts') == [],
+                    '%s: empty series drew a chart instead of "no data"' % r['id'])
             box = ((r.get('main_chart') or {}).get('open') or {}).get('box') or {}
             require(isinstance(box.get('x'), int) and isinstance(box.get('r'), int) and box['x'] >= 0 and box['r'] <= r['width'],
                     '%s: chart dialog wider than the viewport: %r' % (r['id'], box))

@@ -1,39 +1,42 @@
-/* BMS24 Information Centre drill-down chart (#190).
+/* BMS24 Information Centre charts on Apache ECharts (#190, #192).
  *
  * Progressive enhancement over server-rendered tiles. Each tile carries its already company-scoped, read-only
- * series in data-bmsic-chart; nothing is fetched or written here.
- * - Fact line with real dots, broken at missing periods; plan line when a plan exists; dashed least-squares trend
- *   over the visible facts (3+ facts), drawn and labelled separately from fact and plan.
- * - Time window 13/26/52, zoom in/out and pan on the time axis, reset. Mouse wheel and drag, touch drag and pinch,
- *   buttons and keyboard (←/→ select date, Shift+←/→ pan, +/− zoom, 0 reset, Home/End).
- * - The value axis fits the visible range, keeps a real zero visible as a value and supports negative values; a
- *   flat series gets padding instead of a zero-height axis.
+ * series (data-bmsic-chart, and data-bmsic-mini for the mini chart); nothing is fetched or written here. One local
+ * ECharts module (local_kbacompany/echarts-lazy, loaded once per page) draws both.
+ * - Mini charts: initialised when the tile comes near the viewport (IntersectionObserver, immediate fallback), real
+ *   dots, line broken at missing periods, no interaction inside the tile (the tile button opens the large chart),
+ *   resized with their column.
+ * - Large chart: fact with real dots, broken at missing periods (connectNulls false); plan when a plan exists; dashed
+ *   least-squares trend over the visible facts (3+ facts) as a separate series. Window 13/26/52; inside data zoom
+ *   (mouse wheel, drag, touch pinch and drag) plus buttons and keyboard (←/→ select date, Shift+←/→ pan, +/− zoom,
+ *   0 reset, Home/End). The value axis fits the visible range, keeps a real zero visible as a value and supports
+ *   negative values; a flat series gets padding. The instance is disposed when the dialog closes.
+ * - Machine-readable view state (data-* on the chart container and on each mini chart) for keyboard/assistive QA and
+ *   the browser acceptance; it carries nothing beyond the tile's own data.
  */
-define([], function() {
+define(['local_kbacompany/echarts-lazy'], function(echarts) {
     'use strict';
 
+    var COLORS = {fact: '#0C6C52', plan: '#1777B5', trend: '#6B43B5', grid: '#e3ebe6', minigrid: '#dfe9e3', zero: '#0B2B41',
+        gap: '#FDF6ED', gapline: '#e8d9c3', text: '#40564a', select: '#0B2B41'};
     var NS = 'http://www.w3.org/2000/svg';
-    var W = 1000, H = 420, ML = 76, MR = 24, MT = 20, MB = 56;
-    var COLORS = {fact: '#0C6C52', plan: '#1777B5', trend: '#6B43B5', grid: '#e3ebe6', zero: '#0B2B41', gap: '#FDF6ED',
-        text: '#40564a', select: '#0B2B41'};
+    var GRID = {right: 20, top: 16, bottom: 34};
 
     var S = {};
     var state = null;
     var opener = null;
     var nodes = {};
+    var chart = null;
+    var layout = null;
     var pointers = {};
-    var drag = null;
-    var pinch = null;
-
-    function el(name, attrs, parent) {
-        var node = document.createElementNS(NS, name);
-        Object.keys(attrs || {}).forEach(function(key) { node.setAttribute(key, attrs[key]); });
-        if (parent) { parent.appendChild(node); }
-        return node;
-    }
+    var gesture = null;
+    var clickStart = null;
+    var minis = [];
+    var touchEvents = typeof window !== 'undefined' && 'ontouchstart' in window;
 
     function fmt(value) {
         if (value === null || value === undefined) { return ''; }
+        if (Math.abs(value) < 1e-9) { value = 0; }
         var lang = document.documentElement.lang || undefined;
         try {
             return new Intl.NumberFormat(lang, {maximumFractionDigits: 2}).format(value);
@@ -45,6 +48,117 @@ define([], function() {
     function withUnit(value) {
         return fmt(value) + (state && state.unit ? ' ' + state.unit : '');
     }
+
+    function esc(text) {
+        return String(text).replace(/[&<>"']/g, function(c) {
+            return {'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'}[c];
+        });
+    }
+
+    function isFact(p) { return !!p && !p.gap && p.fact !== null && p.fact !== undefined; }
+    function isPlan(p) { return !!p && !p.gap && p.plan !== null && p.plan !== undefined; }
+
+    /** Number of drawn line pieces: runs of 2+ consecutive values (a missing value breaks the line). */
+    function runs(values) {
+        var count = 0, run = 0;
+        values.forEach(function(v) {
+            if (v === null) { if (run > 1) { count++; } run = 0; } else { run++; }
+        });
+        return count + (run > 1 ? 1 : 0);
+    }
+
+    /** "Nice" ticks for a value range; a flat range gets padding instead of a zero-height axis. */
+    function ticks(low, high) {
+        if (high === low) {
+            var pad = low === 0 ? 1 : Math.abs(low) * 0.1;
+            low -= pad; high += pad;
+        }
+        var raw = (high - low) / 5;
+        var mag = Math.pow(10, Math.floor(Math.log(raw) / Math.LN10));
+        var stepv = [1, 2, 2.5, 5, 10].map(function(m) { return m * mag; }).filter(function(v) { return v >= raw; })[0];
+        var first = Math.floor(low / stepv) * stepv;
+        var last = Math.ceil(high / stepv) * stepv;
+        var out = [];
+        for (var v = first; v <= last + stepv / 2; v += stepv) { out.push(Math.round(v / stepv) * stepv); }
+        return {lo: out[0], hi: out[out.length - 1], step: stepv, count: out.length};
+    }
+
+    // ---------------------------------------------------------------- Mini charts.
+
+    function miniOption(points) {
+        var values = points.filter(isFact).map(function(p) { return p.fact; });
+        if (!values.length) { return null; }
+        var low = Math.min.apply(null, values), high = Math.max.apply(null, values);
+        if (high === low) {
+            var pad = low === 0 ? 1 : Math.abs(low) * 0.1;
+            low -= pad; high += pad;
+        }
+        var data = points.map(function(p) { return isFact(p) ? p.fact : null; });
+        return {
+            option: {
+                animation: false,
+                grid: {left: 8, right: 8, top: 8, bottom: 8},
+                xAxis: {type: 'category', show: false, boundaryGap: points.length === 1,
+                    data: points.map(function(p) { return p.period; })},
+                yAxis: {type: 'value', min: low, max: high, interval: (high - low) / 2, axisLabel: {show: false},
+                    axisLine: {show: false}, axisTick: {show: false},
+                    splitLine: {show: true, lineStyle: {color: COLORS.minigrid, width: 1}}},
+                series: [{id: 'fact', type: 'line', data: data, connectNulls: false, showSymbol: true, showAllSymbol: true,
+                    symbol: 'circle', symbolSize: 6, clip: false, silent: true, animation: false,
+                    lineStyle: {color: COLORS.fact, width: 2}, itemStyle: {color: COLORS.fact}}]
+            },
+            dots: values.length, lines: runs(data), gaps: points.filter(function(p) { return p.gap; }).length, grid: 3
+        };
+    }
+
+    function initMini(el) {
+        if (el.getAttribute('data-engine')) { return; }
+        var points;
+        try { points = JSON.parse(el.getAttribute('data-bmsic-mini')) || []; } catch (e) { return; }
+        var built = miniOption(points);
+        if (!built) { return; }
+        var instance = echarts.init(el, null, {renderer: 'svg'});
+        instance.setOption(built.option);
+        minis.push(instance);
+        el.setAttribute('data-engine', 'echarts');
+        el.setAttribute('data-dots', String(built.dots));
+        el.setAttribute('data-lines', String(built.lines));
+        el.setAttribute('data-gaps', String(built.gaps));
+        el.setAttribute('data-grid', String(built.grid));
+        observeSize(el, function() { instance.resize(); });
+    }
+
+    function initMinis() {
+        var els = Array.prototype.slice.call(document.querySelectorAll('[data-bmsic-mini]'));
+        if (typeof window.IntersectionObserver !== 'function') {
+            els.forEach(initMini);
+            return;
+        }
+        var observer = new window.IntersectionObserver(function(entries) {
+            entries.forEach(function(entry) {
+                if (entry.isIntersecting) {
+                    observer.unobserve(entry.target);
+                    initMini(entry.target);
+                }
+            });
+        }, {rootMargin: '100px 0px'});
+        els.forEach(function(el) { observer.observe(el); });
+    }
+
+    /** Resize callback for an element: ResizeObserver when available, window resize otherwise. */
+    function observeSize(el, callback) {
+        if (typeof window.ResizeObserver === 'function') {
+            var last = el.clientWidth + 'x' + el.clientHeight;
+            new window.ResizeObserver(function() {
+                var size = el.clientWidth + 'x' + el.clientHeight;
+                if (size !== last) { last = size; callback(); }
+            }).observe(el);
+        } else {
+            window.addEventListener('resize', callback);
+        }
+    }
+
+    // ---------------------------------------------------------------- Large chart: view state.
 
     /** Last n real periods, keeping gap markers inside the window (mirrors information_center_service::tail). */
     function tail(points, n) {
@@ -71,16 +185,18 @@ define([], function() {
 
     function lastFact(from, to) {
         for (var i = to; i >= from; i--) {
-            if (!state.points[i].gap && state.points[i].fact !== null) { return i; }
+            if (isFact(state.points[i])) { return i; }
         }
         return -1;
     }
 
     function span() { return state.end - state.start; }
 
+    function minSpan() { return Math.min(2, Math.max(0, state.points.length - 1)); }
+
     function clampView() {
         var max = state.points.length - 1;
-        var width = Math.min(Math.max(span(), Math.min(2, max)), max);
+        var width = Math.min(Math.max(span(), minSpan()), Math.max(0, max));
         if (state.start < 0) { state.start = 0; }
         if (state.start + width > max) { state.start = Math.max(0, max - width); }
         state.end = state.start + width;
@@ -93,7 +209,7 @@ define([], function() {
         var next = Math.round(current * factor);
         if (factor < 1 && next === current) { next = current - 1; }
         if (factor > 1 && next === current) { next = current + 1; }
-        next = Math.max(Math.min(2, max), Math.min(max, next));
+        next = Math.max(minSpan(), Math.min(max, next));
         var center = anchor === undefined ? (state.start + state.end) / 2 : anchor;
         var ratio = current === 0 ? 0.5 : (center - state.start) / current;
         state.start = Math.round(center - ratio * next);
@@ -125,160 +241,211 @@ define([], function() {
         select(i);
     }
 
-    /** "Nice" ticks for the visible value range. */
-    function ticks(low, high) {
-        if (high === low) {
-            var pad = low === 0 ? 1 : Math.abs(low) * 0.1;
-            low -= pad; high += pad;
-        }
-        var raw = (high - low) / 5;
-        var mag = Math.pow(10, Math.floor(Math.log(raw) / Math.LN10));
-        var stepv = [1, 2, 2.5, 5, 10].map(function(m) { return m * mag; }).filter(function(v) { return v >= raw; })[0];
-        var first = Math.floor(low / stepv) * stepv;
-        var last = Math.ceil(high / stepv) * stepv;
-        var out = [];
-        for (var v = first; v <= last + stepv / 2; v += stepv) { out.push(Math.round(v / stepv) * stepv); }
-        return out;
-    }
-
-    function trendLine(visible) {
+    function trendLine(from, to) {
         var xs = [], ys = [];
-        visible.forEach(function(p) {
-            if (!p.point.gap && p.point.fact !== null) { xs.push(p.index); ys.push(p.point.fact); }
-        });
+        for (var i = from; i <= to; i++) {
+            if (isFact(state.points[i])) { xs.push(i); ys.push(state.points[i].fact); }
+        }
         if (xs.length < 3) { return null; }
         var n = xs.length, sx = 0, sy = 0, sxy = 0, sxx = 0;
-        for (var i = 0; i < n; i++) { sx += xs[i]; sy += ys[i]; sxy += xs[i] * ys[i]; sxx += xs[i] * xs[i]; }
+        for (var k = 0; k < n; k++) { sx += xs[k]; sy += ys[k]; sxy += xs[k] * ys[k]; sxx += xs[k] * xs[k]; }
         var den = n * sxx - sx * sx;
         if (den === 0) { return null; }
         var slope = (n * sxy - sx * sy) / den;
-        var icept = (sy - slope * sx) / n;
-        return {x1: xs[0], y1: icept + slope * xs[0], x2: xs[n - 1], y2: icept + slope * xs[n - 1]};
+        return {from: xs[0], to: xs[n - 1], slope: slope, icept: (sy - slope * sx) / n};
+    }
+
+    // ---------------------------------------------------------------- Large chart: drawing.
+
+    function setAttrs(values) {
+        Object.keys(values).forEach(function(key) {
+            if (values[key] === null || values[key] === undefined) {
+                nodes.chart.removeAttribute('data-' + key);
+            } else {
+                nodes.chart.setAttribute('data-' + key, String(values[key]));
+            }
+        });
+    }
+
+    function showEmpty(empty) {
+        nodes.empty.hidden = !empty;
+        nodes.canvas.style.visibility = empty ? 'hidden' : '';
+    }
+
+    function ensureChart() {
+        if (chart) { return chart; }
+        chart = echarts.init(nodes.canvas, null, {renderer: 'svg'});
+        chart.on('datazoom', onDataZoom);
+        var zr = chart.getZr();
+        zr.on('mousedown', function(e) { clickStart = {x: e.offsetX, y: e.offsetY}; });
+        zr.on('click', function(e) {
+            var moved = !clickStart || Math.abs(clickStart.x - e.offsetX) > 4 || Math.abs(clickStart.y - e.offsetY) > 4;
+            clickStart = null;
+            if (!state || moved || !chart.containPixel('grid', [e.offsetX, e.offsetY])) { return; }
+            var index = indexAt(e.offsetX);
+            if (index >= 0) { select(index); }
+        });
+        return chart;
+    }
+
+    function disposeChart() {
+        if (chart) {
+            chart.dispose();
+            chart = null;
+        }
+        layout = null;
+        pointers = {};
+        gesture = null;
+    }
+
+    /** Native inside data zoom (wheel, drag, pinch) moved the window: adopt it and redraw the dependent parts. */
+    function onDataZoom() {
+        if (!state || !chart) { return; }
+        var option = chart.getOption();
+        var dz = option.dataZoom && option.dataZoom[0];
+        if (!dz) { return; }
+        var max = state.points.length - 1;
+        var start = typeof dz.startValue === 'number' ? dz.startValue : Math.round((dz.start || 0) * max / 100);
+        var end = typeof dz.endValue === 'number' ? dz.endValue : Math.round((dz.end === undefined ? 100 : dz.end) * max / 100);
+        start = Math.max(0, Math.min(max, Math.round(start)));
+        end = Math.max(start, Math.min(max, Math.round(end)));
+        if (start === state.start && end === state.end) { return; }
+        state.start = start;
+        state.end = end;
+        render();
+    }
+
+    function labelInterval(start, end, width) {
+        var count = end - start + 1;
+        var max = Math.max(2, Math.floor(width / 96));
+        var every = Math.max(1, Math.ceil(count / max));
+        return function(index) {
+            if (index < start || index > end) { return false; }
+            if (index === start || index === end) { return true; }
+            return (index - start) % every === 0 && end - index >= Math.ceil(every * 0.75);
+        };
     }
 
     function render() {
-        var box = nodes.chart;
-        box.innerHTML = '';
-        var svg = el('svg', {viewBox: '0 0 ' + W + ' ' + H, role: 'img', 'aria-label': state.name}, box);
+        var pts = state.points;
         var visible = [];
-        for (var i = state.start; i <= state.end && i < state.points.length; i++) {
-            visible.push({index: i, point: state.points[i]});
-        }
-        var facts = visible.filter(function(p) { return !p.point.gap && p.point.fact !== null; });
-        nodes.visible.textContent = S.visible.replace('{$a}', String(visible.filter(function(p) {
-            return !p.point.gap;
-        }).length));
-        // Machine-readable view state for keyboard/assistive QA and the browser acceptance (no data beyond the tile's).
-        svg.setAttribute('data-span', String(span()));
-        if (visible.length) {
-            svg.setAttribute('data-start', visible[0].point.period);
-            svg.setAttribute('data-end', visible[visible.length - 1].point.period);
-        }
-        if (!facts.length) {
-            svg.setAttribute('data-empty', '1');
-            el('text', {x: W / 2, y: H / 2, 'text-anchor': 'middle', fill: COLORS.text, 'font-size': 22}, svg)
-                .textContent = S.nodata;
+        for (var i = state.start; i <= state.end && i < pts.length; i++) { visible.push(i); }
+        var real = visible.filter(function(k) { return !pts[k].gap; }).length;
+        nodes.visible.textContent = S.visible.replace('{$a}', String(real));
+        var factsVisible = visible.filter(function(k) { return isFact(pts[k]); });
+        var selected = state.selected >= state.start && state.selected <= state.end && pts[state.selected] ?
+            pts[state.selected].period : null;
+        if (!factsVisible.length) {
+            setAttrs({engine: 'echarts', start: visible.length ? pts[visible[0]].period : null,
+                end: visible.length ? pts[visible[visible.length - 1]].period : null, span: span(), selected: null,
+                lo: null, hi: null, empty: '1', gaps: 0, factlines: 0, planlines: 0, trendlines: 0, dots: 0,
+                window: state.windowN});
+            showEmpty(true);
             nodes.readout.textContent = S.nodata;
             renderLegend(false, false, false);
+            if (chart) { chart.clear(); }
             return;
         }
-        var trend = trendLine(visible);
+        showEmpty(false);
+        var instance = ensureChart();
+        var trend = trendLine(state.start, state.end);
+        var hasPlan = visible.some(function(k) { return isPlan(pts[k]); });
         var values = [];
-        visible.forEach(function(p) {
-            if (p.point.fact !== null) { values.push(p.point.fact); }
-            if (p.point.plan !== null) { values.push(p.point.plan); }
+        visible.forEach(function(k) {
+            if (isFact(pts[k])) { values.push(pts[k].fact); }
+            if (isPlan(pts[k])) { values.push(pts[k].plan); }
         });
-        if (trend) { values.push(trend.y1, trend.y2); }
-        var yt = ticks(Math.min.apply(null, values), Math.max.apply(null, values));
-        var lo = yt[0], hi = yt[yt.length - 1];
-        svg.setAttribute('data-lo', String(lo));
-        svg.setAttribute('data-hi', String(hi));
-        var count = Math.max(1, state.end - state.start);
-        var x = function(index) {
-            return visible.length === 1 ? ML + (W - ML - MR) / 2 : ML + (index - state.start) * (W - ML - MR) / count;
-        };
-        var y = function(v) { return H - MB - (v - lo) * (H - MT - MB) / (hi - lo); };
-        state.geometry = {x: x, count: count};
+        if (trend) { values.push(trend.icept + trend.slope * trend.from, trend.icept + trend.slope * trend.to); }
+        var axis = ticks(Math.min.apply(null, values), Math.max.apply(null, values));
 
-        // Gaps first, as background bands.
-        visible.forEach(function(p) {
-            if (p.point.gap) {
-                var half = (W - ML - MR) / count / 2;
-                el('rect', {'class': 'bmsic-gap', x: x(p.index) - half, y: MT, width: half * 2, height: H - MT - MB, fill: COLORS.gap,
-                    stroke: '#e8d9c3', 'stroke-dasharray': '3 3'}, svg);
+        var factData = pts.map(function(p, k) {
+            if (!isFact(p)) { return null; }
+            return k === state.selected ? {value: p.fact, symbolSize: 13,
+                itemStyle: {color: COLORS.fact, borderColor: COLORS.select, borderWidth: 3}} : p.fact;
+        });
+        var planData = pts.map(function(p) { return isPlan(p) ? p.plan : null; });
+        var trendData = pts.map(function(p, k) {
+            return trend && k >= trend.from && k <= trend.to ? trend.icept + trend.slope * k : null;
+        });
+        var gapAreas = [];
+        pts.forEach(function(p, k) {
+            if (p.gap && k > 0 && k < pts.length - 1) {
+                gapAreas.push([{xAxis: pts[k - 1].period}, {xAxis: pts[k + 1].period}]);
             }
         });
-        // Value grid and axis.
-        yt.forEach(function(v) {
-            el('line', {x1: ML, x2: W - MR, y1: y(v), y2: y(v), stroke: v === 0 ? COLORS.zero : COLORS.grid,
-                'stroke-width': v === 0 ? 1.5 : 1}, svg);
-            el('text', {x: ML - 8, y: y(v) + 4, 'text-anchor': 'end', fill: COLORS.text, 'font-size': 13}, svg)
-                .textContent = fmt(v);
-        });
-        el('text', {x: 14, y: MT + (H - MT - MB) / 2, fill: COLORS.text, 'font-size': 13, 'text-anchor': 'middle',
-            transform: 'rotate(-90 14 ' + (MT + (H - MT - MB) / 2) + ')'}, svg)
-            .textContent = state.unit ? S.axis_value + ', ' + state.unit : S.axis_value;
-        // Period labels: at most 8, evenly spread, always first and last.
-        var every = Math.max(1, Math.ceil(visible.length / 8));
-        visible.forEach(function(p, k) {
-            if (k % every !== 0 && k !== visible.length - 1) { return; }
-            el('line', {x1: x(p.index), x2: x(p.index), y1: H - MB, y2: H - MB + 5, stroke: COLORS.text}, svg);
-            el('text', {x: x(p.index), y: H - MB + 22, 'text-anchor': 'middle', fill: COLORS.text, 'font-size': 12}, svg)
-                .textContent = p.point.period;
-        });
-        el('line', {x1: ML, x2: W - MR, y1: H - MB, y2: H - MB, stroke: COLORS.text}, svg);
+        var gapsVisible = visible.filter(function(k) { return pts[k].gap; }).length;
 
-        var hasPlan = false;
-        var drawSeries = function(key, color, dash, width) {
-            var current = [];
-            var flush = function() {
-                if (current.length > 1) {
-                    var attrs = {'class': 'bmsic-' + key + 'line', points: current.join(' '), fill: 'none', stroke: color,
-                        'stroke-width': width};
-                    if (dash) { attrs['stroke-dasharray'] = dash; }
-                    el('polyline', attrs, svg);
-                }
-                current = [];
-            };
-            visible.forEach(function(p) {
-                if (p.point.gap || p.point[key] === null) { flush(); return; }
-                current.push(x(p.index).toFixed(1) + ',' + y(p.point[key]).toFixed(1));
-            });
-            flush();
-        };
-        visible.forEach(function(p) { if (!p.point.gap && p.point.plan !== null) { hasPlan = true; } });
-        if (hasPlan) {
-            drawSeries('plan', COLORS.plan, '', 2);
-            visible.forEach(function(p) {
-                if (!p.point.gap && p.point.plan !== null) {
-                    el('rect', {x: x(p.index) - 3.5, y: y(p.point.plan) - 3.5, width: 7, height: 7, fill: COLORS.plan}, svg);
-                }
-            });
+        // Left margin fits the widest value label plus the rotated axis name.
+        var widest = 0;
+        for (var t = 0; t < axis.count; t++) { widest = Math.max(widest, fmt(axis.lo + t * axis.step).length); }
+        var left = 34 + widest * 7.5;
+        var width = instance.getWidth();
+        layout = {left: left, width: Math.max(1, width - left - GRID.right)};
+        var unitSuffix = state.unit ? ', ' + state.unit : '';
+
+        var markLines = selected ? [{xAxis: selected}] : [];
+        if (axis.lo < 0 && axis.hi > 0) {
+            // A real zero inside the range is emphasised as a value line.
+            markLines.push({yAxis: 0, lineStyle: {color: COLORS.zero, type: 'solid', width: 1.5}});
         }
-        if (trend) {
-            el('line', {'class': 'bmsic-trendline', x1: x(trend.x1), y1: y(trend.y1), x2: x(trend.x2), y2: y(trend.y2), stroke: COLORS.trend,
-                'stroke-width': 2, 'stroke-dasharray': '9 6'}, svg);
-        }
-        drawSeries('fact', COLORS.fact, '', 3);
-        facts.forEach(function(p) {
-            el('circle', {'class': 'bmsic-dot', cx: x(p.index), cy: y(p.point.fact), r: 4.5, fill: COLORS.fact}, svg);
-        });
-        // Selection.
-        if (state.selected >= state.start && state.selected <= state.end && state.points[state.selected]) {
-            var sp = state.points[state.selected];
-            svg.setAttribute('data-selected', sp.period);
-            el('line', {x1: x(state.selected), x2: x(state.selected), y1: MT, y2: H - MB, stroke: COLORS.select,
-                'stroke-dasharray': '2 3'}, svg);
-            if (!sp.gap && sp.fact !== null) {
-                el('circle', {cx: x(state.selected), cy: y(sp.fact), r: 8, fill: 'none', stroke: COLORS.select,
-                    'stroke-width': 2}, svg);
-            }
-        }
+        var series = [{
+            id: 'fact', name: S.legend_fact, type: 'line', data: factData, connectNulls: false, showSymbol: true,
+            showAllSymbol: true, symbol: 'circle', symbolSize: 8, z: 4, clip: false, lineStyle: {color: COLORS.fact, width: 3},
+            itemStyle: {color: COLORS.fact}, emphasis: {disabled: true},
+            markLine: {silent: true, symbol: 'none', animation: false, label: {show: false},
+                lineStyle: {color: COLORS.select, type: 'dotted', width: 1.5},
+                data: markLines},
+            markArea: {silent: true, animation: false, label: {show: false},
+                itemStyle: {color: COLORS.gap, borderColor: COLORS.gapline, borderWidth: 1, borderType: 'dashed'},
+                data: gapAreas}
+        }, {
+            id: 'plan', name: S.legend_plan, type: 'line', data: planData, connectNulls: false, showSymbol: true,
+            showAllSymbol: true, symbol: 'rect', symbolSize: 7, z: 3, clip: false, lineStyle: {color: COLORS.plan, width: 2},
+            itemStyle: {color: COLORS.plan}, emphasis: {disabled: true}
+        }, {
+            id: 'trend', name: S.legend_trend, type: 'line', data: trendData, connectNulls: false, showSymbol: false,
+            z: 2, silent: true, lineStyle: {color: COLORS.trend, width: 2, type: 'dashed'}, emphasis: {disabled: true},
+            tooltip: {show: false}
+        }];
+        instance.setOption({
+            animation: false,
+            grid: {left: left, right: GRID.right, top: GRID.top, bottom: GRID.bottom},
+            tooltip: {trigger: 'axis', confine: true, axisPointer: {type: 'line', lineStyle: {color: COLORS.select}},
+                formatter: tooltip},
+            xAxis: {type: 'category', boundaryGap: pts.length === 1, data: pts.map(function(p) { return p.period; }),
+                axisLine: {lineStyle: {color: COLORS.text}}, axisTick: {alignWithLabel: true},
+                axisLabel: {color: COLORS.text, fontSize: 12, hideOverlap: false,
+                    interval: labelInterval(state.start, state.end, layout.width)}},
+            yAxis: {type: 'value', min: axis.lo, max: axis.hi, interval: axis.step,
+                name: S.axis_value + unitSuffix, nameLocation: 'middle', nameGap: left - 20, nameRotate: 90,
+                nameTextStyle: {color: COLORS.text, fontSize: 13},
+                axisLabel: {color: COLORS.text, fontSize: 12, formatter: function(v) { return fmt(v); }},
+                splitLine: {lineStyle: {color: COLORS.grid}}},
+            dataZoom: [{type: 'inside', id: 'window', xAxisIndex: 0, filterMode: 'filter', startValue: state.start,
+                endValue: state.end, minValueSpan: minSpan(), zoomOnMouseWheel: true, moveOnMouseMove: true,
+                moveOnMouseWheel: false, preventDefaultMouseMove: true, throttle: 0}],
+            series: series
+        }, {replaceMerge: ['series']});
+        setAttrs({engine: 'echarts', start: pts[visible[0]].period, end: pts[visible[visible.length - 1]].period,
+            span: span(), selected: selected, lo: axis.lo, hi: axis.hi, empty: null, gaps: gapsVisible,
+            factlines: runs(visible.map(function(k) { return isFact(pts[k]) ? 1 : null; })),
+            planlines: runs(visible.map(function(k) { return isPlan(pts[k]) ? 1 : null; })),
+            trendlines: trend ? 1 : 0, dots: factsVisible.length, window: state.windowN});
         renderReadout();
-        renderLegend(hasPlan, !!trend, visible.some(function(p) { return p.point.gap; }));
-        if (facts.length === 1) {
+        renderLegend(hasPlan, !!trend, gapsVisible > 0);
+        if (factsVisible.length === 1) {
             nodes.readout.textContent += ' ' + S.single;
         }
+    }
+
+    function tooltip(params) {
+        var list = Array.isArray(params) ? params : [params];
+        if (!list.length || !state) { return ''; }
+        var p = state.points[list[0].dataIndex];
+        if (!p) { return ''; }
+        if (p.gap) { return esc(p.period + ' — ' + S.legend_gap); }
+        return esc(p.period) + '<br>' + esc(S.legend_fact + ': ' + (isFact(p) ? withUnit(p.fact) : S.nofact)) +
+            '<br>' + esc(S.legend_plan + ': ' + (isPlan(p) ? withUnit(p.plan) : S.noplan));
     }
 
     function renderReadout() {
@@ -286,20 +453,27 @@ define([], function() {
         if (!p) { nodes.readout.textContent = ''; return; }
         if (p.gap) { nodes.readout.textContent = p.period + ' — ' + S.legend_gap; return; }
         nodes.readout.textContent = p.period + ' — ' + S.legend_fact + ': ' +
-            (p.fact === null ? S.nofact : withUnit(p.fact)) + ' · ' + S.legend_plan + ': ' +
-            (p.plan === null ? S.noplan : withUnit(p.plan));
+            (isFact(p) ? withUnit(p.fact) : S.nofact) + ' · ' + S.legend_plan + ': ' +
+            (isPlan(p) ? withUnit(p.plan) : S.noplan);
+    }
+
+    function svgEl(name, attrs, parent) {
+        var node = document.createElementNS(NS, name);
+        Object.keys(attrs || {}).forEach(function(key) { node.setAttribute(key, attrs[key]); });
+        if (parent) { parent.appendChild(node); }
+        return node;
     }
 
     function swatch(kind) {
-        var svg = el('svg', {width: 28, height: 12, viewBox: '0 0 28 12', 'aria-hidden': 'true'});
+        var svg = svgEl('svg', {width: 28, height: 12, viewBox: '0 0 28 12', 'aria-hidden': 'true'});
         if (kind === 'gap') {
-            el('rect', {x: 1, y: 1, width: 26, height: 10, fill: COLORS.gap, stroke: '#e8d9c3', 'stroke-dasharray': '3 3'}, svg);
+            svgEl('rect', {x: 1, y: 1, width: 26, height: 10, fill: COLORS.gap, stroke: COLORS.gapline, 'stroke-dasharray': '3 3'}, svg);
         } else {
             var attrs = {x1: 1, x2: 27, y1: 6, y2: 6, stroke: COLORS[kind], 'stroke-width': kind === 'fact' ? 3 : 2};
             if (kind === 'trend') { attrs['stroke-dasharray'] = '6 4'; }
-            el('line', attrs, svg);
-            if (kind === 'fact') { el('circle', {cx: 14, cy: 6, r: 3.5, fill: COLORS.fact}, svg); }
-            if (kind === 'plan') { el('rect', {x: 11, y: 3, width: 6, height: 6, fill: COLORS.plan}, svg); }
+            svgEl('line', attrs, svg);
+            if (kind === 'fact') { svgEl('circle', {cx: 14, cy: 6, r: 3.5, fill: COLORS.fact}, svg); }
+            if (kind === 'plan') { svgEl('rect', {x: 11, y: 3, width: 6, height: 6, fill: COLORS.plan}, svg); }
         }
         return svg;
     }
@@ -319,71 +493,59 @@ define([], function() {
         if (gap) { add('gap', S.legend_gap); }
     }
 
-    /** Index under a client X coordinate (nearest visible period). */
-    function indexAt(clientX) {
-        var svg = nodes.chart.querySelector('svg');
-        if (!svg || !state.geometry) { return -1; }
-        var rect = svg.getBoundingClientRect();
-        var vx = (clientX - rect.left) * W / rect.width;
-        var raw = state.start + (vx - ML) * state.geometry.count / (W - ML - MR);
+    /** Nearest visible period under an x offset inside the chart. */
+    function indexAt(offsetX) {
+        if (!chart || !layout) { return -1; }
+        var raw = chart.convertFromPixel({xAxisIndex: 0}, offsetX);
+        if (typeof raw !== 'number' || isNaN(raw)) { return -1; }
         return Math.max(state.start, Math.min(state.end, Math.round(raw)));
     }
 
     function unitsPerPixel() {
-        var svg = nodes.chart.querySelector('svg');
-        if (!svg || !state.geometry) { return 0; }
-        return state.geometry.count / ((W - ML - MR) * svg.getBoundingClientRect().width / W);
+        return layout ? Math.max(1, span()) / layout.width : 0;
     }
 
-    function bindChart() {
+    /**
+     * Touch and pen pointers where the browser has no touch events (e.g. desktop Firefox on a touch screen): ECharts
+     * listens to touch events only, so one-pointer drag pans and two-pointer pinch zooms here. Where touch events
+     * exist, ECharts' inside data zoom handles drag and pinch itself and this stays idle.
+     */
+    function bindPointerFallback() {
         var box = nodes.chart;
-        box.addEventListener('wheel', function(e) {
-            if (!state) { return; }
-            e.preventDefault();
-            zoom(e.deltaY < 0 ? 0.75 : 1.35, indexAt(e.clientX));
-        }, {passive: false});
+        var tracked = function(e) { return !touchEvents && state && chart && e.pointerType !== 'mouse'; };
         box.addEventListener('pointerdown', function(e) {
-            if (!state) { return; }
+            if (!tracked(e)) { return; }
             pointers[e.pointerId] = e.clientX;
-            try { box.setPointerCapture(e.pointerId); } catch (err) { /* Pointer already released: drag still works. */ }
+            try { box.setPointerCapture(e.pointerId); } catch (err) { /* Pointer already released: gesture still works. */ }
             var ids = Object.keys(pointers);
-            if (ids.length === 2) {
-                pinch = {distance: Math.abs(pointers[ids[0]] - pointers[ids[1]]) || 1, span: span()};
-                drag = null;
-            } else {
-                drag = {x: e.clientX, start: state.start, moved: false};
-            }
+            gesture = ids.length === 2 ?
+                {pinch: true, distance: Math.abs(pointers[ids[0]] - pointers[ids[1]]) || 1, span: span()} :
+                {pinch: false, x: e.clientX, start: state.start, moved: false};
         });
         box.addEventListener('pointermove', function(e) {
-            if (!state) { return; }
-            if (pointers[e.pointerId] !== undefined) { pointers[e.pointerId] = e.clientX; }
+            if (!tracked(e) || pointers[e.pointerId] === undefined || !gesture) { return; }
+            pointers[e.pointerId] = e.clientX;
             var ids = Object.keys(pointers);
-            if (pinch && ids.length === 2) {
+            if (gesture.pinch && ids.length === 2) {
                 var distance = Math.abs(pointers[ids[0]] - pointers[ids[1]]) || 1;
-                var target = Math.round(pinch.span * pinch.distance / distance);
+                var target = Math.round(gesture.span * gesture.distance / distance);
                 if (target !== span()) { zoom(target / Math.max(1, span())); }
-                return;
-            }
-            if (drag) {
-                var delta = Math.round((drag.x - e.clientX) * unitsPerPixel());
-                if (Math.abs(drag.x - e.clientX) > 4) { drag.moved = true; }
-                if (drag.moved && drag.start + delta !== state.start) { pan(drag.start + delta - state.start); }
-                return;
-            }
-            if (e.pointerType === 'mouse') {
-                var i = indexAt(e.clientX);
-                if (i >= 0 && i !== state.selected) { state.selected = i; render(); }
+            } else if (!gesture.pinch) {
+                var delta = Math.round((gesture.x - e.clientX) * unitsPerPixel());
+                if (Math.abs(gesture.x - e.clientX) > 4) { gesture.moved = true; }
+                if (gesture.moved && gesture.start + delta !== state.start) { pan(gesture.start + delta - state.start); }
             }
         });
         var end = function(e) {
-            if (drag && !drag.moved && state) { select(indexAt(e.clientX)); }
             delete pointers[e.pointerId];
-            if (Object.keys(pointers).length < 2) { pinch = null; }
-            drag = null;
+            if (!Object.keys(pointers).length) { gesture = null; } else if (gesture && gesture.pinch) { gesture = null; }
         };
         box.addEventListener('pointerup', end);
-        box.addEventListener('pointercancel', function(e) { delete pointers[e.pointerId]; pinch = null; drag = null; });
-        box.addEventListener('keydown', function(e) {
+        box.addEventListener('pointercancel', end);
+    }
+
+    function bindKeyboard() {
+        nodes.chart.addEventListener('keydown', function(e) {
             if (!state) { return; }
             var handled = true;
             if (e.key === 'ArrowLeft' && e.shiftKey) { pan(-Math.max(1, Math.round(span() / 4))); }
@@ -408,12 +570,14 @@ define([], function() {
         nodes.title.textContent = data.name;
         nodes.meta.textContent = (data.unit ? S.unit.replace('{$a}', data.unit) + ' · ' : '') + data.trend;
         nodes.window.value = '13';
-        setWindow(13);
+        nodes.canvas.setAttribute('aria-label', data.name);
         if (typeof nodes.dialog.showModal === 'function') {
             nodes.dialog.showModal();
         } else {
             nodes.dialog.setAttribute('open', 'open');
         }
+        // The dialog is laid out now, so the chart gets its real size.
+        setWindow(13);
         nodes.chart.focus();
     }
 
@@ -421,9 +585,17 @@ define([], function() {
         if (typeof nodes.dialog.close === 'function') { nodes.dialog.close(); } else { nodes.dialog.removeAttribute('open'); }
     }
 
+    function onResize() {
+        if (chart && state) {
+            chart.resize();
+            render();
+        }
+    }
+
     return {
         init: function(strings) {
             S = strings || {};
+            initMinis();
             var dialog = document.getElementById('bmsic-dialog');
             if (!dialog) { return; }
             nodes.dialog = dialog;
@@ -432,7 +604,18 @@ define([], function() {
                 'readout', 'legend'].forEach(function(key) {
                 nodes[key] = dialog.querySelector('[data-bmsic="' + key + '"]');
             });
-            bindChart();
+            nodes.canvas = document.createElement('div');
+            nodes.canvas.className = 'bmsic-canvas';
+            nodes.canvas.setAttribute('role', 'img');
+            nodes.chart.appendChild(nodes.canvas);
+            nodes.empty = document.createElement('div');
+            nodes.empty.className = 'bmsic-empty';
+            nodes.empty.hidden = true;
+            nodes.empty.textContent = S.nodata;
+            nodes.chart.appendChild(nodes.empty);
+            bindKeyboard();
+            bindPointerFallback();
+            observeSize(nodes.chart, onResize);
             nodes.close.addEventListener('click', close);
             nodes.window.addEventListener('change', function() { setWindow(parseInt(nodes.window.value, 10) || 13); });
             nodes.zoomin.addEventListener('click', function() { zoom(0.75); });
@@ -442,6 +625,10 @@ define([], function() {
             nodes.reset.addEventListener('click', resetView);
             dialog.addEventListener('close', function() {
                 state = null;
+                disposeChart();
+                showEmpty(false);
+                setAttrs({engine: null, start: null, end: null, span: null, selected: null, lo: null, hi: null, empty: null,
+                    gaps: null, factlines: null, planlines: null, trendlines: null, dots: null, window: null});
                 if (opener) { opener.focus(); }
             });
             document.addEventListener('click', function(e) {
