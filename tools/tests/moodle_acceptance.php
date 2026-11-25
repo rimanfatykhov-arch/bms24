@@ -492,7 +492,11 @@ if ($fresh) {
             // ADR-0005 fresh default (PR #124 finding P1).
             'corporate_member_default_adr0005_test',
             // ADR-0010: reviewer by org chart, self review at the top, manager visibility, copies.
-            'daily_report_reviewer_service_test'];
+            'daily_report_reviewer_service_test',
+            // R4 (#168): team for the day, scope, filters, revoked members, drafts closed.
+            'daily_report_team_service_test',
+            // ADR-0011 block 1: monthly summary for managers, read-only, company-scoped.
+            'daily_report_summary_service_test'];
     }
     foreach ($focused as $test) {
         if ($code !== 0) { $report['phpunit'][$test] = 'NOT RUN'; continue; }
