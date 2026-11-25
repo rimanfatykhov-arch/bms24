@@ -1,20 +1,20 @@
 {
  "scope": "exact intentional source updates; not runtime or release acceptance",
- "base_sha": "323f948c6cc670c34722f516118ca7426fd604f7 (main with the ADR-0011 monthly summary block, #173)",
+ "base_sha": "a515a3851c1e89c2c39f7b41b34c954e693f2690 (main with the R3 report discussion block, #169)",
  "normalization": "CRLF to LF only",
- "previous_evidence": "docs/reconcile/daily-reports-summary-source-preservation.json (ADR-0011 block 1 monthly summary)",
+ "previous_evidence": "docs/reconcile/daily-reports-r3-source-preservation.json (R3 report discussion block, #169)",
  "decision": "docs/finance/FIN_W2_FINANCE_WORKSPACE.md (owner task 2026-11-24: FIN-W2 Finance workspace, BMS-05)",
- "change": "Append the FIN-W2 Finance workspace block (financews_* keys) after the ADR-0011 monthly summary block. Retain all preceding keys byte-for-byte. No schema, version, capability, formula or notification change; the workspace is behind local_kbacompany/finance_workspace_enabled (default off).",
+ "change": "Append the FIN-W2 Finance workspace block (financews_* keys) after the R3 report discussion block (#169). Retain all preceding keys byte-for-byte. No schema, version, capability, formula or notification change; the workspace is behind local_kbacompany/finance_workspace_enabled (default off).",
  "files": [
   {
    "path": "local/kbacompany/lang/en/local_kbacompany.php",
-   "before_sha256_lf": "9a3fa3efb85ef6f9aeaf18202ba4377bf418787c4631b636dbf766f7a45c2f88",
-   "after_sha256_lf": "aee92e57044b55fe1485cf6e2fc29fa1760d18a0263c9becf5266455cf9737f5"
+   "before_sha256_lf": "2a8007f42e8de2339927da3be2dcdc5aecf91534a634b5bd2bd21dadf17402eb",
+   "after_sha256_lf": "f5ea47e0aa17ded0fcb4fd183ed719fdf48767f60b4a301711c026ed9d1f9b4c"
   },
   {
    "path": "local/kbacompany/lang/ru/local_kbacompany.php",
-   "before_sha256_lf": "81334038357d7bc9f79a2dfefca9c8022c088045919931fc54e78a939b82a858",
-   "after_sha256_lf": "6bb09c4531be02403aeafff16f5fc63e8790a8ecab3452de881cd8ce6df7ef79"
+   "before_sha256_lf": "e2e51490b8c1f5988948b057ba93701ee4229bbc4ed9e0175da02f0a655fcfc9",
+   "after_sha256_lf": "139cf4a9608040a96c4333c702961ed249340b1bc1e0d9b2bd5f37f2e8bdab0e"
   }
  ]
 }

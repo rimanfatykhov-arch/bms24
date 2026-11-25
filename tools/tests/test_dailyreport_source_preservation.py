@@ -72,6 +72,11 @@ R4_KEYS=[b'dailyreports_queue_team',b'dailyreports_status_notsent',b'dailyreport
          b'dailyreports_team_unit_all',b'dailyreports_team_unit_none',b'dailyreports_team_status_all',b'dailyreports_team_show',
          b'dailyreports_team_filters',b'dailyreports_team_counts',b'dailyreports_team_reviewer',b'dailyreports_team_open',
          b'dailyreports_team_open_for',b'dailyreports_team_empty',b'dailyreports_team_note']
+R3_MARKER=(b'\n// Daily reports R3 (2026-11-24): report discussion, owner decision (read: report readers; '
+           b'write: author and current reviewer).\n')
+R3_KEYS=[b'communication_object_dailyreport',b'dailyreports_discussion_title',b'dailyreports_discussion_heading',
+         b'dailyreports_discussion_note',b'dailyreports_discussion_empty',b'dailyreports_discussion_readonly',
+         b'dailyreports_discussion_empty_message',b'dailyreports_discussion_files']
 FINANCE_MARKER=b'\n// FIN-W2 Finance workspace (2026-11-24): read-only overview over existing financial model, budgets and resource gates.\n'
 _FINANCE=json.loads((ROOT/'docs/reconcile/finance-workspace-fin-w2-source-preservation.json').read_text(encoding='utf-8'))
 FINANCE_BEFORE={lang:next(r['before_sha256_lf'] for r in _FINANCE['files'] if r['path']==f'local/kbacompany/lang/{lang}/local_kbacompany.php')
@@ -84,6 +89,9 @@ NAV_BEFORE={lang:next(r['before_sha256_lf'] for r in _NAV['files'] if r['path']=
             for lang in ('en','ru')}
 _R4=json.loads((ROOT/'docs/reconcile/daily-reports-r4-source-preservation.json').read_text(encoding='utf-8'))
 R4_BEFORE={lang:next(r['before_sha256_lf'] for r in _R4['files'] if r['path']==f'local/kbacompany/lang/{lang}/local_kbacompany.php')
+           for lang in ('en','ru')}
+_R3=json.loads((ROOT/'docs/reconcile/daily-reports-r3-source-preservation.json').read_text(encoding='utf-8'))
+R3_BEFORE={lang:next(r['before_sha256_lf'] for r in _R3['files'] if r['path']==f'local/kbacompany/lang/{lang}/local_kbacompany.php')
            for lang in ('en','ru')}
 _COMM=json.loads((ROOT/'docs/reconcile/communication-center-cleanup-source-preservation.json').read_text(encoding='utf-8'))
 COMM_AFTER={lang:next(r['after_sha256_lf'] for r in _COMM['files'] if r['path']==f'local/kbacompany/lang/{lang}/local_kbacompany.php')
@@ -145,6 +153,20 @@ class Preservation(unittest.TestCase):
                             nav,ae=nav.split(AE_MARKER)
                             if R4_MARKER in ae:
                                 ae,r4=ae.split(R4_MARKER)
+                                if R3_MARKER in r4:
+                                    r4,r3=r4.split(R3_MARKER)
+                                    if FINANCE_MARKER in r3:
+                                        # Everything up to the FIN-W2 Finance marker is the published R3 report discussion file (#169); its keys are new.
+                                        r3,finance=r3.split(FINANCE_MARKER)
+                                        self.assertEqual(FINANCE_BEFORE[lang],hashlib.sha256(data.split(FINANCE_MARKER)[0]).hexdigest())
+                                        financekeys=keys(finance)
+                                        self.assertEqual(83,len(financekeys));self.assertEqual(len(financekeys),len(set(financekeys)))
+                                        self.assertTrue(all(k.startswith(b'financews_') for k in financekeys))
+                                        self.assertFalse(set(financekeys)&set(keys(data.split(FINANCE_MARKER)[0])))
+                                    # The R4 file is byte-identical up to the R3 marker (its final newline starts the marker).
+                                    self.assertEqual(R3_BEFORE[lang],hashlib.sha256(data.split(R3_MARKER)[0]+b'\n').hexdigest())
+                                    self.assertEqual(R3_KEYS,keys(r3))
+                                    self.assertFalse(set(R3_KEYS)&set(keys(data.split(R3_MARKER)[0])))
                                 # The file released with "Added earlier" (#165) is byte-identical up to the R4 marker;
                                 # that file ended with a newline, which is the first byte of the marker.
                                 self.assertEqual(R4_BEFORE[lang],hashlib.sha256(data.split(R4_MARKER)[0]+b'\n').hexdigest())
@@ -153,14 +175,6 @@ class Preservation(unittest.TestCase):
                                 if SUM_MARKER in r4:
                                     # Everything up to the ADR-0011 summary marker is the published R4 (#168) file; keys are new.
                                     r4,summ=r4.split(SUM_MARKER)
-                                    if FINANCE_MARKER in summ:
-                                        # Everything up to the FIN-W2 Finance marker is the published ADR-0011 summary file; its keys are new.
-                                        summ,finance=summ.split(FINANCE_MARKER)
-                                        self.assertEqual(FINANCE_BEFORE[lang],hashlib.sha256(data.split(FINANCE_MARKER)[0]).hexdigest())
-                                        financekeys=keys(finance)
-                                        self.assertEqual(83,len(financekeys));self.assertEqual(len(financekeys),len(set(financekeys)))
-                                        self.assertTrue(all(k.startswith(b'financews_') for k in financekeys))
-                                        self.assertFalse(set(financekeys)&set(keys(data.split(FINANCE_MARKER)[0])))
                                     self.assertEqual(SUM_BEFORE[lang],hashlib.sha256(data.split(SUM_MARKER)[0]).hexdigest())
                                     sumkeys=keys(summ)
                                     self.assertEqual(18,len(sumkeys));self.assertEqual(len(sumkeys),len(set(sumkeys)))

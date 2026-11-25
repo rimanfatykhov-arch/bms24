@@ -215,6 +215,12 @@ class communication_center_service {
             $selected['can_join'] = battle_plan_discussion_service::can_post_for($companyuuid, $actor,
                 (string)$selected['context_uuid']);
         }
+        if ($selected && (string)$selected['context_kind'] === daily_report_discussion_service::KIND
+                && empty($selected['is_participant'])) {
+            // R3: a report reader joins only as the author or the reviewer of the current version.
+            $selected['can_join'] = daily_report_discussion_service::can_post_for($companyuuid, $actor,
+                (string)$selected['context_uuid']);
+        }
         $messages = self::with_attachment_sizes($companyuuid, $selected ? (string)$selected['uuid'] : '', $comm['messages']);
         // #145: per-section totals and unread counts for the section tabs. With the default "all" filter the
         // canonical projection already holds every visible thread; otherwise count with the same visibility rules.
