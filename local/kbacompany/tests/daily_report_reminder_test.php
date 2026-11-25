@@ -20,7 +20,7 @@ final class daily_report_reminder_test extends \advanced_testcase {
     /** Tuesday 24.11.2026 is the report day; its deadline is Wednesday 25.11.2026 12:00 Moscow time. */
     private const DAY = '2026-11-24';
 
-    private function at(string $local): int {
+    private function local_time(string $local): int {
         return (new \DateTimeImmutable($local, new \DateTimeZone('Europe/Moscow')))->getTimestamp();
     }
 
@@ -59,33 +59,33 @@ final class daily_report_reminder_test extends \advanced_testcase {
     public function test_window_follows_calendar_deadline_and_morning(): void {
         $f = $this->fixture();
         $cal = calendar::settings($f['company']);
-        $deadline = $this->at('2026-11-25 12:00');
-        $this->assertNull(reminder::window($f['company'], $cal, 'Europe/Moscow', $this->at('2026-11-25 07:59')));
+        $deadline = $this->local_time('2026-11-25 12:00');
+        $this->assertNull(reminder::window($f['company'], $cal, 'Europe/Moscow', $this->local_time('2026-11-25 07:59')));
         $this->assertSame([self::DAY, $deadline],
-            reminder::window($f['company'], $cal, 'Europe/Moscow', $this->at('2026-11-25 08:00')));
+            reminder::window($f['company'], $cal, 'Europe/Moscow', $this->local_time('2026-11-25 08:00')));
         $this->assertSame([self::DAY, $deadline],
-            reminder::window($f['company'], $cal, 'Europe/Moscow', $this->at('2026-11-25 11:59')));
+            reminder::window($f['company'], $cal, 'Europe/Moscow', $this->local_time('2026-11-25 11:59')));
         $this->assertNull(reminder::window($f['company'], $cal, 'Europe/Moscow', $deadline));
         // Weekend: Friday's deadline is Monday, so Saturday has no reminder and Monday morning has one for Friday.
-        $this->assertNull(reminder::window($f['company'], $cal, 'Europe/Moscow', $this->at('2026-11-28 09:00')));
-        $this->assertSame(['2026-11-27', $this->at('2026-11-30 12:00')],
-            reminder::window($f['company'], $cal, 'Europe/Moscow', $this->at('2026-11-30 09:00')));
+        $this->assertNull(reminder::window($f['company'], $cal, 'Europe/Moscow', $this->local_time('2026-11-28 09:00')));
+        $this->assertSame(['2026-11-27', $this->local_time('2026-11-30 12:00')],
+            reminder::window($f['company'], $cal, 'Europe/Moscow', $this->local_time('2026-11-30 09:00')));
         // A holiday on Wednesday moves Tuesday's deadline to Thursday.
         calendar::add_offday($f['company'], $f['admin'], '2026-11-25', 'holiday', 'Synthetic');
-        $this->assertNull(reminder::window($f['company'], $cal, 'Europe/Moscow', $this->at('2026-11-25 09:00')));
-        $this->assertSame([self::DAY, $this->at('2026-11-26 12:00')],
-            reminder::window($f['company'], $cal, 'Europe/Moscow', $this->at('2026-11-26 09:00')));
+        $this->assertNull(reminder::window($f['company'], $cal, 'Europe/Moscow', $this->local_time('2026-11-25 09:00')));
+        $this->assertSame([self::DAY, $this->local_time('2026-11-26 12:00')],
+            reminder::window($f['company'], $cal, 'Europe/Moscow', $this->local_time('2026-11-26 09:00')));
         // An early deadline opens the window one hour before it.
         $cal->deadlineminutes = 420;
-        $this->assertSame([self::DAY, $this->at('2026-11-26 07:00')],
-            reminder::window($f['company'], $cal, 'Europe/Moscow', $this->at('2026-11-26 06:00')));
+        $this->assertSame([self::DAY, $this->local_time('2026-11-26 07:00')],
+            reminder::window($f['company'], $cal, 'Europe/Moscow', $this->local_time('2026-11-26 06:00')));
     }
 
     public function test_one_reminder_only_to_members_without_a_sent_report(): void {
         $f = $this->fixture();
         $sink = $this->redirectMessages();
-        $this->assertSame(0, reminder::run_due($this->at('2026-11-25 07:00'))['sent']);
-        $stats = reminder::run_due($this->at('2026-11-25 09:00'));
+        $this->assertSame(0, reminder::run_due($this->local_time('2026-11-25 07:00'))['sent']);
+        $stats = reminder::run_due($this->local_time('2026-11-25 09:00'));
         $this->assertSame(2, $stats['sent']);
         $this->assertSame(0, $stats['failed']);
         $this->assertSame(1, $this->reminded((int)$f['peer']->id));
@@ -95,8 +95,8 @@ final class daily_report_reminder_test extends \advanced_testcase {
         $this->assertSame(0, $this->reminded($f['admin']), 'an administrator who is not a member is never reminded');
         $this->assertCount(2, $sink->get_messages());
         // Idempotent: the same morning again, and later before the deadline, sends nothing more.
-        $this->assertSame(0, reminder::run_due($this->at('2026-11-25 09:00'))['sent']);
-        $this->assertSame(0, reminder::run_due($this->at('2026-11-25 11:00'))['sent']);
+        $this->assertSame(0, reminder::run_due($this->local_time('2026-11-25 09:00'))['sent']);
+        $this->assertSame(0, reminder::run_due($this->local_time('2026-11-25 11:00'))['sent']);
         $this->assertSame(1, $this->reminded((int)$f['peer']->id));
         $this->assertCount(2, $sink->get_messages());
         $sink->close();
@@ -105,7 +105,7 @@ final class daily_report_reminder_test extends \advanced_testcase {
     public function test_title_link_and_language(): void {
         global $DB;
         $f = $this->fixture();
-        reminder::run_due($this->at('2026-11-25 09:00'));
+        reminder::run_due($this->local_time('2026-11-25 09:00'));
         $row = $DB->get_record('local_kbacompany_commnotif', ['userid' => (int)$f['peer']->id, 'kind' => reminder::KIND],
             '*', MUST_EXIST);
         $this->assertSame($f['company'], (string)$row->companyuuid);
@@ -121,21 +121,21 @@ final class daily_report_reminder_test extends \advanced_testcase {
         $f = $this->fixture();
         // The calendar started after the day (K5).
         $DB->set_field('local_kbacompany_dreportcal', 'enabledfrom', '2026-11-25', ['companyuuid' => $f['company']]);
-        $this->assertSame(0, reminder::run_due($this->at('2026-11-25 09:00'))['sent']);
+        $this->assertSame(0, reminder::run_due($this->local_time('2026-11-25 09:00'))['sent']);
         // The calendar is off (K6).
         $DB->set_field('local_kbacompany_dreportcal', 'enabledfrom', '2026-01-01', ['companyuuid' => $f['company']]);
         calendar::save_settings($f['company'], $f['admin'], false, '1111100', 720, 1);
         $this->assertSame(['companies' => 0, 'checked' => 0, 'sent' => 0, 'failed' => 0],
-            reminder::run_due($this->at('2026-11-25 09:00')));
+            reminder::run_due($this->local_time('2026-11-25 09:00')));
         // Daily reports switched off globally.
         calendar::save_settings($f['company'], $f['admin'], true, '1111100', 720, 2);
         $DB->set_field('local_kbacompany_dreportcal', 'enabledfrom', '2026-01-01', ['companyuuid' => $f['company']]);
         set_config('dailyreports_enabled', 0, 'local_kbacompany');
-        $this->assertSame(0, reminder::run_due($this->at('2026-11-25 09:00'))['sent']);
+        $this->assertSame(0, reminder::run_due($this->local_time('2026-11-25 09:00'))['sent']);
         set_config('dailyreports_enabled', 1, 'local_kbacompany');
         // A revoked member is not reminded; the others are.
         membership_access_service::change($f['company'], (int)$f['peer']->id, $f['admin']);
-        $this->assertSame(1, reminder::run_due($this->at('2026-11-25 09:00'))['sent']);
+        $this->assertSame(1, reminder::run_due($this->local_time('2026-11-25 09:00'))['sent']);
         $this->assertSame(0, $this->reminded((int)$f['peer']->id));
         $this->assertSame(1, $this->reminded((int)$f['drafter']->id));
     }
@@ -151,7 +151,7 @@ final class daily_report_reminder_test extends \advanced_testcase {
             'timecreated' => time(), 'timemodified' => time()]);
         // Company B has no calendar: its member gets nothing, company A members are not listed for B.
         $this->assertNotContains((int)$f['peer']->id, reminder::members($other));
-        reminder::run_due($this->at('2026-11-25 09:00'));
+        reminder::run_due($this->local_time('2026-11-25 09:00'));
         $this->assertSame(0, $this->reminded((int)$outsider->id));
         $this->assertSame(0, $DB->count_records('local_kbacompany_commnotif', ['companyuuid' => $other]));
     }
