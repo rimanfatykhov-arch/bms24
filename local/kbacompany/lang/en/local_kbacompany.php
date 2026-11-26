@@ -10043,6 +10043,47 @@ $string['dailyreports_discussion_readonly'] = 'Only the author and the reviewer 
 $string['dailyreports_discussion_empty_message'] = 'Write a message.';
 $string['dailyreports_discussion_files'] = 'This message has files. Open it in the Communication Center.';
 
+// Information Centre by divisions (#190): org-board columns, mini charts, trends and the drill-down chart.
+$string['infocenter2_intro'] = 'The main company metric and division metrics in organizing-board order. Select a metric to open the large chart.';
+$string['infocenter2_main_heading'] = 'Main company metric';
+$string['infocenter2_board_heading'] = 'Metrics by division';
+$string['infocenter2_division_count'] = 'Metrics: {$a}';
+$string['infocenter2_division_empty'] = 'No metrics are linked to the departments and positions of this division yet.';
+$string['infocenter2_kind_unit'] = 'Department';
+$string['infocenter2_kind_position'] = 'Position';
+$string['infocenter2_unbound_heading'] = 'Metrics not linked to the organizing board';
+$string['infocenter2_unbound_note'] = 'These active metrics are not linked to departments or positions of the current organizing board.';
+$string['infocenter2_nodata'] = 'No data';
+$string['infocenter2_single'] = 'Only one value so far; no trend yet.';
+$string['infocenter2_open'] = 'Open the large chart: {$a}';
+$string['infocenter2_trend_up'] = 'Rising';
+$string['infocenter2_trend_down'] = 'Falling';
+$string['infocenter2_trend_flat'] = 'No change';
+$string['infocenter2_trend_mixed'] = 'No clear trend';
+$string['infocenter2_trend_insufficient'] = 'Not enough data for a trend';
+$string['infocenter2_quality_better'] = 'better';
+$string['infocenter2_quality_worse'] = 'worse';
+$string['infocenter2_quality_neutral'] = 'no assessment set for this metric';
+$string['infocenter2_close'] = 'Close';
+$string['infocenter2_window'] = 'Period';
+$string['infocenter2_window_n'] = 'Last {$a}';
+$string['infocenter2_zoomin'] = 'Zoom in';
+$string['infocenter2_zoomout'] = 'Zoom out';
+$string['infocenter2_panleft'] = 'Earlier';
+$string['infocenter2_panright'] = 'Later';
+$string['infocenter2_reset'] = 'Reset zoom';
+$string['infocenter2_visible'] = 'Periods shown: {$a}';
+$string['infocenter2_legend_fact'] = 'Actual';
+$string['infocenter2_legend_plan'] = 'Plan';
+$string['infocenter2_legend_trend'] = 'Trend line over visible actuals';
+$string['infocenter2_legend_gap'] = 'Missing period';
+$string['infocenter2_nofact'] = 'no value';
+$string['infocenter2_noplan'] = 'not set';
+$string['infocenter2_axis_value'] = 'Value';
+$string['infocenter2_unit'] = 'Unit: {$a}';
+$string['infocenter2_readout'] = 'Selected date';
+$string['infocenter2_hint'] = 'Chart keys: ← and → select a date, Shift+← and Shift+→ move the window, + and − zoom, 0 resets. Mouse: wheel and drag. Touch: drag and pinch.';
+
 // DOC-W2 Office workspace (2026-11-24): read-only overview over existing documents, approvals and decisions.
 $string['officews_enabled'] = 'Enable the Office workspace';
 $string['officews_enabled_help'] = 'When on, the Management menu shows "Office": a read-only overview of the documents, approvals, acknowledgements and decision tasks the user can already open. When off, the page and the menu item do not exist. No data is created or changed.';

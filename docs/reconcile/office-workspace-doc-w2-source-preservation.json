@@ -1,20 +1,20 @@
 {
  "scope": "exact intentional source updates; not runtime or release acceptance",
- "base_sha": "a515a3851c1e89c2c39f7b41b34c954e693f2690 (main with the R3 report discussion block, #169)",
+ "base_sha": "391c8ea852a68c94e8517fd217cdeeb73331fd97 (main with the Information Centre by divisions block (#190))",
  "normalization": "CRLF to LF only",
- "previous_evidence": "docs/reconcile/daily-reports-r3-source-preservation.json (R3 report discussion block, #169)",
+ "previous_evidence": "docs/reconcile/information-centre-divisions-source-preservation.json (Information Centre by divisions block (#190))",
  "decision": "docs/office/DOC_W2_OFFICE_WORKSPACE.md (owner task 2026-11-24: DOC-W2 Office workspace, BMS-12)",
- "change": "Append the DOC-W2 Office workspace block (officews_* keys) after the R3 report discussion block (#169). Retain all preceding keys byte-for-byte. No schema, version, capability or notification change; the workspace is behind local_kbacompany/office_workspace_enabled (default off).",
+ "change": "Append the DOC-W2 Office workspace block (officews_* keys) after the Information Centre by divisions block (#190). Retain all preceding keys byte-for-byte. No schema, version, capability or notification change; the workspace is behind local_kbacompany/office_workspace_enabled (default off).",
  "files": [
   {
    "path": "local/kbacompany/lang/en/local_kbacompany.php",
-   "before_sha256_lf": "2a8007f42e8de2339927da3be2dcdc5aecf91534a634b5bd2bd21dadf17402eb",
-   "after_sha256_lf": "41c1b3df5c7fe4b964fb385a387c05b8cb028402c6311249d8b4c1c431882bbc"
+   "before_sha256_lf": "1d3d80ad9c985ff85091e126a0e14292ce3e6ab4531268f6f30228c47269509b",
+   "after_sha256_lf": "32402ab956d141c1cbb1b45c495cf8ddc2c6c95d09518995dba2c1473dfbc5cf"
   },
   {
    "path": "local/kbacompany/lang/ru/local_kbacompany.php",
-   "before_sha256_lf": "e2e51490b8c1f5988948b057ba93701ee4229bbc4ed9e0175da02f0a655fcfc9",
-   "after_sha256_lf": "63a851e6c654d3e026371a7381bdcad294bc6255efcaa1391ca8a7daffe6e874"
+   "before_sha256_lf": "f5ad4bdcc8edaebe4b8b444231432c117fedbb3530fc9b04a3c3316d85015c87",
+   "after_sha256_lf": "d5d534758b1c6c6cef4069d1dd6cbe233b9a6973a49f48c0ebc3f781ec51177f"
   }
  ]
 }

@@ -179,6 +179,9 @@ try:
     # Day feed -> report draft: feed of own results, add into a filled draft once, unsaved text kept, isolation, sending.
     feed_exit = timed('day_feed', lambda: browser('day_feed.py', 'verify'))
     record(contract.evaluate(contract.day_feed_checks(load('day-feed-result.json'), feed_exit)))
+    # Information Centre by divisions (#190): board order, mini charts, drill-down chart controls, isolation, 1440/375.
+    ic_exit = timed('infocenter', lambda: browser('infocenter.py', 'verify'))
+    record(contract.evaluate(contract.infocenter_checks(load('infocenter-result.json'), ic_exit)))
     # Adaptive navigation (docs/ui/ADAPTIVE_NAVIGATION.md): owned drawer <= 860 px / sidebar, legacy, no-JS, 16 cases.
     nav_exit = timed('adaptive_nav', lambda: browser('adaptive_nav.py', 'verify'))
     record(contract.evaluate(contract.adaptive_nav_checks(load('adaptive-nav-result.json'), nav_exit)))
