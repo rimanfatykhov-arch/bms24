@@ -1,6 +1,6 @@
 {
   "scope": "exact intentional source updates; not runtime or release acceptance",
-  "base_sha": "6a9613a5bbb51d1e38f8592fe27a94139907fc6a (#172 over #169 over the published #173 head)",
+  "base_sha": "2e6545ced48785241a238235848c7ad2f9504056 (#172 R5a head over main 4896810, the published #180 merge; R5a language files unchanged since 6a9613a)",
   "normalization": "CRLF to LF only",
   "previous_evidence": "docs/reconcile/daily-reports-r5a-source-preservation.json",
   "decision": "docs/daily-reports/R5_REPORTING_CALENDAR_PROPOSAL.md (owner decisions K3, K5, 24.11.2026; PR #170)",

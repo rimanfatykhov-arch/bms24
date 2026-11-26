@@ -82,7 +82,7 @@ final class daily_report_due_test extends \advanced_testcase {
         global $DB;
         $this->setAdminUser();
         calendar::save_settings($f['company'], $f['admin'], true, $workdays, 720, 0);
-        $DB->set_field('local_kbacompany_dreportcal', 'enabledfrom', '2026-01-01', ['companyuuid' => $f['company']]);
+        $DB->set_field('local_kbacompany_rptcalendar', 'enabledfrom', '2026-01-01', ['companyuuid' => $f['company']]);
     }
 
     private function submit(array $f, string $who, string $day): array {
