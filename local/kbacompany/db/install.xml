@@ -3757,7 +3757,7 @@
         <KEYS><KEY NAME="primary" TYPE="primary" FIELDS="id" /></KEYS>
         <INDEXES><INDEX NAME="company_uix" UNIQUE="true" FIELDS="companyuuid" /></INDEXES>
       </TABLE>
-        <TABLE NAME="local_kbacompany_dreportcal" COMMENT="R5 per-company reporting calendar: switch, start day, working weekdays, deadline">
+        <TABLE NAME="local_kbacompany_rptcalendar" COMMENT="R5 per-company reporting calendar: switch, start day, working weekdays, deadline">
         <FIELDS>
           <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true" />
           <FIELD NAME="companyuuid" TYPE="char" LENGTH="36" NOTNULL="true" />
