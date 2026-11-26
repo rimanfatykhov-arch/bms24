@@ -1116,10 +1116,125 @@ def daily_reports_flow_checks(obs, exitcode=None):
             require(not violations, 'browser errors: %r' % violations[:3])
             require(r.get('server_errors') == [], 'HTTP 5xx: %r' % (r.get('server_errors'),))
 
+    def team_day():
+        # R4 (owner decisions T1–T5): one row per current member of company A for the case day, the accepted report of EA
+        # linked, nobody from company B, counts equal to the rows, no horizontal scroll; an employee never gets the list.
+        for r in run():
+            ids, team = r.get('ids') or {}, r.get('team') or {}
+            rows = team.get('rows')
+            require(isinstance(rows, list) and rows and all(isinstance(x, list) and len(x) == 2 for x in rows),
+                    'team for the day rendered no rows at %s px' % r.get('width'))
+            users = [x[0] for x in rows]
+            require(len(users) == len(set(users)), 'a member is listed twice: %r' % (users,))
+            require([x[1] for x in rows if x[0] == ids.get('EA')] == ['accepted'], 'EA not listed once as accepted: %r' % (rows,))
+            require(ids.get('RA') in users, 'same-company employee RA missing from the team for the day')
+            require(ids.get('EB') not in users, 'a member of another company is listed')
+            states = set(x[1] for x in rows)
+            require(states <= {'none', 'notsent', 'submitted', 'returned', 'accepted'}, 'unknown day state: %r' % (states,))
+            counts = team.get('counts') or {}
+            require(set(counts) == {'none', 'notsent', 'submitted', 'returned', 'accepted'} and
+                    all(isinstance(v, int) for v in counts.values()) and sum(counts.values()) == len(rows) and
+                    all(counts[s] == sum(1 for x in rows if x[1] == s) for s in counts),
+                    'day counts do not match the rows: %r' % (counts,))
+            require(team.get('filters') == 1 and isinstance(team.get('report_links'), int) and team['report_links'] >= 1,
+                    'team filters or the link to the accepted report missing')
+            require(team.get('hscroll') is True, 'horizontal scroll on the team for the day at %s px' % r.get('width'))
+            require(r.get('team_employee_filters') == 0, 'an ordinary employee received the team for the day')
+
+    def users(rows):
+        require(isinstance(rows, list) and all(isinstance(x, list) and len(x) == 2 for x in rows), 'team rows malformed')
+        return [x[0] for x in rows]
+
+    def team_scopes_and_open():
+        # #168 with a synthetic unit (MA manages EA): "my team" lists EA and only people of the whole company; "whole
+        # company" lists EA and RA (RA only with a private draft, "not sent"); nobody of company B; the sent report opens
+        # from the list by a click; RA's draft text is never rendered.
+        for r in run():
+            ids, scopes = r.get('ids') or {}, r.get('team_scopes') or {}
+            team, comp = scopes.get('team') or {}, scopes.get('company') or {}
+            for name, s in (('team', team), ('company', comp)):
+                require(s.get('options') == ['team', 'company'] and s.get('selected') == name,
+                        'scope %s not offered or not kept: %r' % (name, s.get('options')))
+                require(s.get('draft_leak') is False and s.get('hscroll') is True, 'draft text or horizontal scroll on %s' % name)
+            tu, cu = users(team.get('rows')), users(comp.get('rows'))
+            require(ids.get('EA') in tu and ids.get('EB') not in tu and set(tu) <= set(cu) and len(tu) == len(set(tu)),
+                    'my team list wrong: %r' % (tu,))
+            require(ids.get('EA') in cu and ids.get('RA') in cu and ids.get('EB') not in cu and len(cu) == len(set(cu)),
+                    'whole company list wrong: %r' % (cu,))
+            require([x[1] for x in comp['rows'] if x[0] == ids.get('RA')] == ['notsent'], 'RA draft not shown as "not sent"')
+            o = r.get('team_open') or {}
+            require(o.get('link') == 1 and o.get('url_report') is True and isinstance(o.get('versions'), int)
+                    and o['versions'] >= 1 and o.get('draft_leak') is False, 'sent report did not open from the list: %r' % (o,))
+
+    def monthly_summary():
+        # #173: the case month, EA's accepted positive cell linked, previous month by link, "my subordinates" through the
+        # filter form, the cell opens the card, nobody of company B, no draft text, no horizontal scroll.
+        for r in run():
+            ids, s = r.get('ids') or {}, r.get('summary') or {}
+            month = str(r.get('day') or '')[:7]
+            require(len(month) == 7 and s.get('month') == month and s.get('filters') == 1, 'summary month or filters wrong')
+            y, m = int(month[:4]), int(month[5:7])
+            prev = '%04d-%02d' % ((y, m - 1) if m > 1 else (y - 1, 12))
+            require(s.get('prev_month') == prev, 'previous month link wrong: %r' % (s.get('prev_month'),))
+            ua, um = s.get('users_all'), s.get('users_mine')
+            require(isinstance(ua, list) and ids.get('EA') in ua and ids.get('EB') not in ua, 'summary rows wrong: %r' % (ua,))
+            require(isinstance(um, list) and ids.get('EA') in um and ids.get('EB') not in um and set(um) <= set(ua)
+                    and s.get('scope_kept') == 'mine', 'my subordinates filter wrong: %r' % (um,))
+            require(s.get('cell_links') == 1 and s.get('cell') == ['accepted', 'positive'], 'EA cell wrong: %r' % (s.get('cell'),))
+            card = s.get('card') or {}
+            require(card.get('url_report') is True and isinstance(card.get('versions'), int) and card['versions'] >= 1,
+                    'summary cell did not open the card')
+            require(s.get('draft_leak') is False and s.get('hscroll') is True, 'draft text or horizontal scroll in the summary')
+
+    def release_access_denied():
+        # #168 + #173: an ordinary employee has no summary; a member of another company gets no list, summary or card.
+        for r in run():
+            d = r.get('release_denied') or {}
+            ea = d.get('EA') or {}
+            require(ea.get('summary') == 0 and ea.get('summary_tab') == 0, 'an ordinary employee received the summary')
+            for key in ('EB_team', 'EB_summary', 'EB_card'):
+                x = d.get(key) or {}
+                require(isinstance(x.get('http'), int) and x['http'] < 500, '%s failed: %r' % (key, x.get('http')))
+                require(x.get('team') == 0 and x.get('summary') == 0 and x.get('versions') == 0 and x.get('leak') is False,
+                        'another company member reached %s: %r' % (key, x))
+
+    def discussion():
+        # R3 (owner decision 24.11.2026): one canonical thread; the author's and the reviewer's messages stored once, in order,
+        # markup kept as text; a forged sesskey, the same-company non-reader RA and the foreign EB store nothing.
+        for r in run():
+            ids, d = r.get('ids') or {}, r.get('discussion_texts') or {}
+            require(set(d) == {'author', 'reviewer', 'forged', 'RA', 'EB'} and len(set(d.values())) == 5,
+                    'discussion texts missing')
+            require(r.get('discussion_author_composer') == 1, 'the author has no discussion composer')
+            require(r.get('discussion_reviewer_sections') == 1 and r.get('discussion_reviewer_sees_author') is True,
+                    'the reviewer does not read the author message on the card')
+            require(r.get('discussion_injected_tags') == 0, 'message markup was rendered as HTML')
+            forged = r.get('discussion_forged_http') or []
+            require(len(forged) == 1 and isinstance(forged[0], int) and forged[0] != 303 and forged[0] < 500,
+                    'forged discussion sesskey redirected as success or failed with 5xx: %r' % (forged,))
+            for label in ('EB', 'RA'):
+                http = ((r.get('discussion_negatives') or {}).get(label) or {}).get('http') or []
+                require(len(http) == 1 and isinstance(http[0], int) and http[0] < 500,
+                        '%s discussion request failed unexpectedly: %r' % (label, http))
+            after = r.get('after_discussion') or {}
+            msgs = after.get('discussion')
+            require(isinstance(msgs, list) and msgs, 'discussion state missing')
+            require(len(set(m.get('thread') for m in msgs)) == 1, 'report discussion is not one canonical thread')
+            got = [(m.get('authorid'), m.get('body')) for m in msgs]
+            require(got == [(ids.get('EA'), d['author']), (ids.get('MA'), d['reviewer'])],
+                    'discussion messages wrong, duplicated or forged: %r' % (got,))
+            require(after.get('report') == (r.get('after_accept') or {}).get('report') and
+                    after.get('decisions') == (r.get('after_accept') or {}).get('decisions'),
+                    'a discussion message changed the report or its decisions')
+            require(r.get('hscroll_discussion') is True, 'horizontal scroll on the report discussion at %s px' % r.get('width'))
+
     return {'daily_report_draft_relogin_and_conflict': draft_and_conflict, 'daily_report_concurrent_submit_one_version': submit_once,
             'daily_report_csrf_and_get_rejected': csrf, 'daily_report_snapshot_immutable': snapshot,
             'daily_report_return_rework_accept_once': review_cycle, 'daily_report_notifications_once_with_link': notifications,
-            'daily_report_foreign_and_nonreviewer_denied': negatives, 'daily_report_layout_and_browser_errors': layout_and_events}
+            'daily_report_foreign_and_nonreviewer_denied': negatives, 'daily_report_layout_and_browser_errors': layout_and_events,
+            'daily_report_team_day_view': team_day, 'daily_report_team_scopes_and_open': team_scopes_and_open,
+            'daily_report_monthly_summary': monthly_summary, 'daily_report_release_access_denied': release_access_denied,
+            'daily_report_discussion_author_and_reviewer': discussion}
 
 
 DAY_FEED_CASES = [('owned', 1440), ('legacy', 375)]
