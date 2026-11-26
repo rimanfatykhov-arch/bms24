@@ -3,7 +3,7 @@ NEW = {'local_kbacompany_dreport', 'local_kbacompany_dreportver', 'local_kbacomp
        'local_kbacompany_dreportrev', 'local_kbacompany_dreportlog'}
 ADR0010_TABLES = {'local_kbacompany_dreportcc', 'local_kbacompany_dreportset'}
 # R5a (owner decisions K1-K6): reporting calendar, calendar exceptions, absence periods.
-R5A_TABLES = {'local_kbacompany_dreportcal', 'local_kbacompany_dreportoff', 'local_kbacompany_dreportabs'}
+R5A_TABLES = {'local_kbacompany_rptcalendar', 'local_kbacompany_dreportoff', 'local_kbacompany_dreportabs'}
 ADDITIONS = {
     (2026111100, 2026111601): NEW,
     (2026111100, 2026112301): NEW | ADR0010_TABLES,

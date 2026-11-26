@@ -128,7 +128,7 @@ final class daily_report_calendar_service_test extends \advanced_testcase {
         $this->setAdminUser();
         calendar::save_settings($f['company'], $f['admin'], true, '1111100', 720, 0);
         // Start the calendar in the past so that fixed test dates count.
-        $DB->set_field('local_kbacompany_dreportcal', 'enabledfrom', '2026-01-01', ['companyuuid' => $f['company']]);
+        $DB->set_field('local_kbacompany_rptcalendar', 'enabledfrom', '2026-01-01', ['companyuuid' => $f['company']]);
         $employee = (int)$f['employee']->id;
         // 2026-11-27 is a Friday, 2026-11-28 a Saturday, 2026-11-30 a Monday.
         $this->assertSame('workday', calendar::requirement($f['company'], $employee, '2026-11-27')['reason']);
@@ -161,7 +161,7 @@ final class daily_report_calendar_service_test extends \advanced_testcase {
         $f = $this->fixture();
         $this->setAdminUser();
         calendar::save_settings($f['company'], $f['admin'], true, '1111111', 720, 0);
-        $DB->set_field('local_kbacompany_dreportcal', 'enabledfrom', '2026-01-01', ['companyuuid' => $f['company']]);
+        $DB->set_field('local_kbacompany_rptcalendar', 'enabledfrom', '2026-01-01', ['companyuuid' => $f['company']]);
         $employee = (int)$f['employee']->id;
         // The nearest manager (lead) manages the team; the upper manager (head) and a peer do not.
         $this->setUser($f['lead']);
@@ -227,7 +227,7 @@ final class daily_report_calendar_service_test extends \advanced_testcase {
         $stranger = $this->getDataGenerator()->create_user();
         $this->member($othercid, (int)$stranger->id);
         calendar::save_settings($f['company'], $f['admin'], true, '1111100', 720, 0);
-        $DB->set_field('local_kbacompany_dreportcal', 'enabledfrom', '2026-01-01', ['companyuuid' => $f['company']]);
+        $DB->set_field('local_kbacompany_rptcalendar', 'enabledfrom', '2026-01-01', ['companyuuid' => $f['company']]);
         $absence = calendar::add_absence($f['company'], $f['admin'], (int)$f['employee']->id, 'sick', '2026-12-01', '2026-12-01');
         // A member of company B cannot touch company A, nor manage A's employee from B.
         $this->setUser($stranger);
@@ -298,7 +298,7 @@ final class daily_report_calendar_service_test extends \advanced_testcase {
             new \core_privacy\local\request\approved_contextlist($f['lead'], 'local_kbacompany', [$system->id]));
         $row = $DB->get_record('local_kbacompany_dreportabs', ['uuid' => $kept], '*', MUST_EXIST);
         $this->assertSame([0, 0, 'vacation'], [(int)$row->createdby, (int)$row->modifiedby, (string)$row->kind]);
-        $this->assertSame((int)$f['admin'], (int)$DB->get_field('local_kbacompany_dreportcal', 'modifiedby',
+        $this->assertSame((int)$f['admin'], (int)$DB->get_field('local_kbacompany_rptcalendar', 'modifiedby',
             ['companyuuid' => $f['company']]));
     }
 }

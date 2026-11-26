@@ -474,7 +474,7 @@ class provider implements
             'topreviewerid' => 'privacy:metadata:dailyreports', 'modifiedby' => 'privacy:metadata:dailyreports',
         ], 'privacy:metadata:dailyreports');
         // R5a: company reporting calendar, its exceptions and employee absence periods (type and dates only).
-        $collection->add_database_table('local_kbacompany_dreportcal', [
+        $collection->add_database_table('local_kbacompany_rptcalendar', [
             'modifiedby' => 'privacy:metadata:dailyreports',
         ], 'privacy:metadata:dailyreports');
         $collection->add_database_table('local_kbacompany_dreportoff', [
@@ -676,7 +676,7 @@ class provider implements
               OR EXISTS (SELECT 1 FROM {local_kbacompany_dreportcc} dc WHERE dc.userid = :drcopy)
               OR EXISTS (SELECT 1 FROM {local_kbacompany_dreportset} ds WHERE ds.topreviewerid = :drtop
                   OR ds.modifiedby = :drmodifier)
-              OR EXISTS (SELECT 1 FROM {local_kbacompany_dreportcal} dk WHERE dk.modifiedby = :drcal)
+              OR EXISTS (SELECT 1 FROM {local_kbacompany_rptcalendar} dk WHERE dk.modifiedby = :drcal)
               OR EXISTS (SELECT 1 FROM {local_kbacompany_dreportoff} dof WHERE dof.createdby = :droff)
               OR EXISTS (SELECT 1 FROM {local_kbacompany_dreportabs} da WHERE da.userid = :drabs
                   OR da.createdby = :drabscreator OR da.modifiedby = :drabsmodifier))',
@@ -1136,7 +1136,7 @@ class provider implements
         global $DB;
         if ($context->contextlevel === CONTEXT_SYSTEM) {
             self::forget_revocation_audit(null);
-            foreach (['local_kbacompany_dreportabs', 'local_kbacompany_dreportoff', 'local_kbacompany_dreportcal',
+            foreach (['local_kbacompany_dreportabs', 'local_kbacompany_dreportoff', 'local_kbacompany_rptcalendar',
                     'local_kbacompany_dreportcc', 'local_kbacompany_dreportset', 'local_kbacompany_dreportlog',
                     'local_kbacompany_dreportrev', 'local_kbacompany_dreportlink', 'local_kbacompany_dreportver',
                     'local_kbacompany_dreport'] as $table) {
@@ -1590,7 +1590,7 @@ class provider implements
         $absences = array_values($DB->get_records_select('local_kbacompany_dreportabs',
             'userid = :u OR createdby = :c OR modifiedby = :m', ['u' => $userid, 'c' => $userid, 'm' => $userid], 'id ASC',
             'id, companyuuid, userid, kind, startday, endday, status, createdby, modifiedby, timecreated, timemodified'));
-        $calendars = array_values($DB->get_records('local_kbacompany_dreportcal', ['modifiedby' => $userid], 'id ASC',
+        $calendars = array_values($DB->get_records('local_kbacompany_rptcalendar', ['modifiedby' => $userid], 'id ASC',
             'id, companyuuid, enabled, enabledfrom, workdays, deadlineminutes, timemodified'));
         $offdays = array_values($DB->get_records('local_kbacompany_dreportoff', ['createdby' => $userid], 'id ASC',
             'id, companyuuid, offday, kind, name, timecreated'));
@@ -1641,7 +1641,7 @@ class provider implements
         $DB->delete_records('local_kbacompany_dreportabs', ['userid' => $userid]);
         $DB->set_field('local_kbacompany_dreportabs', 'createdby', 0, ['createdby' => $userid]);
         $DB->set_field('local_kbacompany_dreportabs', 'modifiedby', 0, ['modifiedby' => $userid]);
-        $DB->set_field('local_kbacompany_dreportcal', 'modifiedby', 0, ['modifiedby' => $userid]);
+        $DB->set_field('local_kbacompany_rptcalendar', 'modifiedby', 0, ['modifiedby' => $userid]);
         $DB->set_field('local_kbacompany_dreportoff', 'createdby', 0, ['createdby' => $userid]);
     }
 

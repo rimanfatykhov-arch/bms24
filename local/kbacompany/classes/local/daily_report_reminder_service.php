@@ -34,7 +34,7 @@ final class daily_report_reminder_service {
             return $stats;
         }
         try {
-            foreach ($DB->get_fieldset_select('local_kbacompany_dreportcal', 'companyuuid', 'enabled = 1') as $company) {
+            foreach ($DB->get_fieldset_select('local_kbacompany_rptcalendar', 'companyuuid', 'enabled = 1') as $company) {
                 $stats['companies']++;
                 try {
                     self::company((string)$company, $now, $stats);

@@ -39,7 +39,7 @@ final class daily_report_reminder_test extends \advanced_testcase {
             $users[$name] = $u;
         }
         calendar::save_settings($company, $admin, true, '1111100', 720, 0);
-        $DB->set_field('local_kbacompany_dreportcal', 'enabledfrom', '2026-01-01', ['companyuuid' => $company]);
+        $DB->set_field('local_kbacompany_rptcalendar', 'enabledfrom', '2026-01-01', ['companyuuid' => $company]);
         calendar::add_absence($company, $admin, (int)$users['absent']->id, 'sick', self::DAY, self::DAY);
         $values = ['planned' => 'Plan', 'done' => 'Synthetic result', 'notdone' => '', 'blockers' => '', 'nextplan' => ''];
         $this->setUser($users['employee']);
@@ -75,8 +75,10 @@ final class daily_report_reminder_test extends \advanced_testcase {
         $this->assertNull(reminder::window($f['company'], $cal, 'Europe/Moscow', $this->local_time('2026-11-25 09:00')));
         $this->assertSame([self::DAY, $this->local_time('2026-11-26 12:00')],
             reminder::window($f['company'], $cal, 'Europe/Moscow', $this->local_time('2026-11-26 09:00')));
-        // An early deadline opens the window one hour before it.
-        $cal->deadlineminutes = 420;
+        // An early deadline opens the window one hour before it. Saved through the calendar service, because the
+        // deadline itself is always read from the stored company calendar (the same source the cron task uses).
+        $cal = calendar::save_settings($f['company'], $f['admin'], true, '1111100', 420, (int)$cal->revision);
+        $this->assertSame(420, (int)$cal->deadlineminutes);
         $this->assertSame([self::DAY, $this->local_time('2026-11-26 07:00')],
             reminder::window($f['company'], $cal, 'Europe/Moscow', $this->local_time('2026-11-26 06:00')));
     }
@@ -120,16 +122,16 @@ final class daily_report_reminder_test extends \advanced_testcase {
         global $DB;
         $f = $this->fixture();
         // The calendar started after the day (K5).
-        $DB->set_field('local_kbacompany_dreportcal', 'enabledfrom', '2026-11-25', ['companyuuid' => $f['company']]);
+        $DB->set_field('local_kbacompany_rptcalendar', 'enabledfrom', '2026-11-25', ['companyuuid' => $f['company']]);
         $this->assertSame(0, reminder::run_due($this->local_time('2026-11-25 09:00'))['sent']);
         // The calendar is off (K6).
-        $DB->set_field('local_kbacompany_dreportcal', 'enabledfrom', '2026-01-01', ['companyuuid' => $f['company']]);
+        $DB->set_field('local_kbacompany_rptcalendar', 'enabledfrom', '2026-01-01', ['companyuuid' => $f['company']]);
         calendar::save_settings($f['company'], $f['admin'], false, '1111100', 720, 1);
         $this->assertSame(['companies' => 0, 'checked' => 0, 'sent' => 0, 'failed' => 0],
             reminder::run_due($this->local_time('2026-11-25 09:00')));
         // Daily reports switched off globally.
         calendar::save_settings($f['company'], $f['admin'], true, '1111100', 720, 2);
-        $DB->set_field('local_kbacompany_dreportcal', 'enabledfrom', '2026-01-01', ['companyuuid' => $f['company']]);
+        $DB->set_field('local_kbacompany_rptcalendar', 'enabledfrom', '2026-01-01', ['companyuuid' => $f['company']]);
         set_config('dailyreports_enabled', 0, 'local_kbacompany');
         $this->assertSame(0, reminder::run_due($this->local_time('2026-11-25 09:00'))['sent']);
         set_config('dailyreports_enabled', 1, 'local_kbacompany');
