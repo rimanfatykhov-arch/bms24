@@ -8,6 +8,7 @@ Status: source candidate in a separate PR. Not accepted, not deployed. Productio
   - the main company metric is on top;
   - divisions of the default organizing-board branch are shown as columns in board order (sortorder, code, uuid);
   - each column lists its departments/sections and positions (depth-first) with the metrics bound to them in the indicator registry;
+  - each group is labelled with the board's own node-type name (Division, Department, Section...) or Position, using the existing `nodetype*` strings;
   - metrics without a binding are listed separately;
   - a division without metrics says so.
 - `classes/local/information_center_service.php` — the render model:

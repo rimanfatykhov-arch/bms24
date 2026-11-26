@@ -16,6 +16,13 @@ $PAGE->set_title(get_string('productinfocentertitle', 'local_kbacompany'));
 $PAGE->set_heading(get_string('pluginname', 'local_kbacompany'));
 
 $str = static function(string $key, $a = null): string { return get_string($key, 'local_kbacompany', $a); };
+// Group label: a position, else the board node type (division, department, section...), else a generic unit.
+$kindkey = static function(array $group): string {
+    if ($group['kind'] === 'position') { return 'infocenter2_kind_position'; }
+    $type = preg_replace('/[^a-z]/', '', (string)($group['nodetype'] ?? ''));
+    return ($type !== '' && get_string_manager()->string_exists('nodetype' . $type, 'local_kbacompany'))
+        ? 'nodetype' . $type : 'infocenter2_kind_unit';
+};
 $jsstrings = [];
 foreach (['close', 'window', 'zoomin', 'zoomout', 'panleft', 'panright', 'reset', 'legend_fact', 'legend_plan',
         'legend_trend', 'legend_gap', 'nofact', 'noplan', 'hint', 'axis_value', 'nodata', 'single', 'unit',
@@ -164,8 +171,7 @@ if (!$view['has_board']) {
         foreach ($division['groups'] as $group) {
             $depth = min(3, (int)$group['depth']);
             echo html_writer::start_tag('div', ['class' => 'bmsic-group bmsic-depth-' . $depth]);
-            echo html_writer::tag('div', $str($group['kind'] === 'position' ? 'infocenter2_kind_position' : 'infocenter2_kind_unit'),
-                ['class' => 'bmsic-kind']);
+            echo html_writer::tag('div', $str($kindkey($group)), ['class' => 'bmsic-kind']);
             echo html_writer::tag('h4', s(trim($group['code'] . ' ' . $group['name'])));
             foreach ($group['metrics'] as $card) {
                 echo $tile($card);

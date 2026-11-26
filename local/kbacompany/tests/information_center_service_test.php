@@ -107,6 +107,7 @@ final class information_center_service_test extends \advanced_testcase {
 
         $second = $view['divisions'][1];
         $this->assertSame('orgnode', $second['groups'][0]['kind']);
+        $this->assertSame('division', $second['groups'][0]['nodetype']);
         $this->assertSame([$f['divstat']], array_column($second['groups'][0]['metrics'], 'uuid'));
 
         $this->assertSame([$f['loose']], array_column($view['unbound'], 'uuid'));

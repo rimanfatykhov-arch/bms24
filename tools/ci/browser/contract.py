@@ -1434,6 +1434,8 @@ def infocenter_checks(obs, exitcode=None):
                     '%s: departments/positions or bound metrics differ: %r' % (r['id'], shape))
             kinds = [g.get('kind') for g in cols[0]['groups']]
             require(len(set(kinds)) == 2 and all(kinds), '%s: unit and position not labelled differently' % r['id'])
+            division = (cols[1]['groups'] or [{}])[0].get('kind')
+            require(division and division not in kinds, '%s: division group labelled like a department or position' % r['id'])
             require(cols[2].get('empty') == 1, '%s: division without metrics not marked as empty' % r['id'])
             require([code(t) for t in ov.get('main') or [] if code(t).startswith('CIIC')] == ['CIIC-M'],
                     '%s: main company metric missing on top' % r['id'])

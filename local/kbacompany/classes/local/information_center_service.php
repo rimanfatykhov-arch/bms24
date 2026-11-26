@@ -161,7 +161,8 @@ class information_center_service {
         $nodeuuid = (string)$node->uuid;
         $stats = $bound['orgnode'][$nodeuuid] ?? [];
         if ($stats) {
-            $groups[] = ['kind' => 'orgnode', 'uuid' => $nodeuuid, 'code' => (string)$node->code,
+            $groups[] = ['kind' => 'orgnode', 'nodetype' => (string)($node->nodetype ?? ''), 'uuid' => $nodeuuid,
+                'code' => (string)$node->code,
                 'name' => (string)$node->name, 'depth' => $depth, 'metrics' => array_map($card, $stats)];
         }
         foreach ($nodepositions[$nodeuuid] ?? [] as $position) {

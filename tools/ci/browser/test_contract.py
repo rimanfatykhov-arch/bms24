@@ -1803,7 +1803,7 @@ class ContractTest(unittest.TestCase):
         groups1 = [{'kind': 'Unit', 'title': 'CIIC 1.1 CI department',
                     'tiles': [tile('CIIC-DEP', 'CI single', '·', False, 1, 0, single=1)]},
                    {'kind': 'Position', 'title': 'CIIC-P CI quality lead', 'tiles': [tile('CIIC-POS', 'CI defects', '↓', True, 8, 1)]}]
-        groups2 = [{'kind': 'Unit', 'title': 'CIIC 2 CI second division',
+        groups2 = [{'kind': 'Division', 'title': 'CIIC 2 CI second division',
                     'tiles': [tile('CIIC-NEG', 'CI balance', '≈', False, 6, 1), tile('CIIC-FLAT', 'CI flat', '→', False, 6, 1),
                               tile('CIIC-EMPTY', 'CI empty', '·', False, 0, 0, nodata='No data')]}]
 
@@ -1909,6 +1909,8 @@ class ContractTest(unittest.TestCase):
         fails(board, lambda o: cols(o, 2)[1]['groups'][0]['tiles'].pop())
         fails(board, lambda o: cols(o)[1]['groups'][0]['tiles'].append(o['cases'][0]['overview']['unbound'][0]))
         fails(board, lambda o: cols(o)[0]['groups'][1].update(kind='Unit'))
+        fails(board, lambda o: cols(o)[1]['groups'][0].update(kind='Unit'))
+        fails(board, lambda o: cols(o)[1]['groups'][0].update(kind=''))
         fails(board, lambda o: cols(o)[2].update(empty=0))
         fails(board, lambda o: o['cases'][0]['overview'].update(main=[]))
         fails(board, lambda o: o['cases'][1]['overview'].update(unbound=[]))
