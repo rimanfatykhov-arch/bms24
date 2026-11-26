@@ -1923,7 +1923,8 @@ def communication_ux_checks(obs, exitcode=None):
     def frame():
         """Fixed frame like a messenger: at 900px height the page itself does not scroll (document and the window-bounded
         page container), the block ends inside the window, the list and the messages are the scroll containers and the
-        open conversation shows its composer on screen. Both shells, all five widths, list and open conversation."""
+        open conversation shows its composer on screen. Both shells, all five widths, list and open conversation, and the
+        open conversation again after a block above the page was there during a fit and then went away (frame_shift)."""
         require(exitcode == 0 and isinstance(obs, dict) and obs.get('status') == 'PASS'
                 and not obs.get('error'), 'UX browser run missing/failed')
         rows = obs.get('cases')
@@ -1932,7 +1933,7 @@ def communication_ux_checks(obs, exitcode=None):
         def integer(value):
             return isinstance(value, int) and not isinstance(value, bool)
         for row in rows:
-            for state in ['frame_list', 'frame_thread']:
+            for state in ['frame_list', 'frame_thread', 'frame_shift']:
                 where = '%s/%s/%s' % (row.get('shell'), row.get('width'), state)
                 f = row.get(state)
                 require(isinstance(f, dict), 'frame measurement missing: ' + where)
@@ -1946,7 +1947,7 @@ def communication_ux_checks(obs, exitcode=None):
                 feed = f.get('feed_overflow')
                 require(feed in ('auto', 'scroll') or (state == 'frame_list' and feed is None),
                         'messages are not a scroll container: ' + where)
-                if state == 'frame_thread':
+                if state != 'frame_list':
                     c = f.get('compose_bottom')
                     require(integer(c) and 0 < c <= f['view'] + 1, 'composer not on screen: ' + where)
     return {'communication_ux1_layout_and_navigation': verify, 'communication_ux2_primary_action_geometry': geometry,

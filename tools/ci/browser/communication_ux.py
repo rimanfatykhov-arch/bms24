@@ -82,8 +82,10 @@ GEOMETRY_JS = r'''() => {
 
 # Fixed frame (messenger layout): the page itself does not scroll at 900px height; the list and the messages are the
 # scroll containers and the composer is on screen. Page-level scroll containers bounded by the window (Moodle Boost
-# #page) count like the document.
-FRAME_JS = r'''() => {
+# #page) count like the document. Measured after three animation frames, i.e. once a scheduled re-fit has run: the
+# settled page, not a frame in the middle of the module's own requestAnimationFrame.
+FRAME_JS = r'''async () => {
+    for (let i = 0; i < 3; i++) { await new Promise((r) => requestAnimationFrame(r)); }
     const layout = document.querySelector('#bms24-comm-root .bms24-comm-layout');
     if (!layout) { return null; }
     const shown = (e) => !!e && e.checkVisibility() && e.getClientRects().length > 0;
@@ -100,6 +102,19 @@ FRAME_JS = r'''() => {
         list_overflow: oy('.bms24-comm-list'), feed_overflow: oy('.bms24-comm-feed')};
 }'''
 
+
+# Puts a 400px block above the whole page, lets the frame fit with it (a resize event, as a rotation would send), then
+# removes it again with no further window event. Only an observer of the page around the block can see the removal.
+SHIFT_JS = r'''async () => {
+    const frames = async (n) => { for (let i = 0; i < n; i++) { await new Promise((r) => requestAnimationFrame(r)); } };
+    const spacer = document.createElement('div');
+    spacer.id = 'bms-ci-frame-shift';
+    spacer.style.height = '400px';
+    document.body.prepend(spacer);
+    window.dispatchEvent(new Event('resize'));
+    await frames(3);
+    spacer.remove();
+}'''
 
 def url(**kwargs):
     return local_url(base + '/local/kbacompany/communication_center.php?' + urlencode({'uuid': company, **kwargs}))
@@ -148,6 +163,11 @@ with sync_playwright() as p:
                     case['focus_restored'] = toggle.evaluate('(e) => document.activeElement === e')
                     case['thread_overflow'] = page.evaluate('document.documentElement.scrollWidth > innerWidth + 1')
                     case['frame_thread'] = page.evaluate(FRAME_JS)
+                    # Late change above the block (Percona owned/320 run 45826995637: the shell's top bar settled after
+                    # the frame had measured, the frame stayed released). Fit once while a tall block sits above the
+                    # Center, then take it away without any window event: the frame must come back on its own.
+                    page.evaluate(SHIFT_JS)
+                    case['frame_shift'] = page.evaluate(FRAME_JS)
                 # Real clicks through the three sections and the filters of both list sections (UX_NAV_STEPS).
                 page.goto(url(), wait_until='networkidle')
                 case['frame_list'] = page.evaluate(FRAME_JS)

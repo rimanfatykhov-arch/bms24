@@ -92,11 +92,14 @@ define([], function() {
         if (window.visualViewport) {
             window.visualViewport.addEventListener('resize', schedule);
         }
-        // Content above the block may change after load (alerts, live notices, fonts).
+        // Content above the block may change after load (alerts, live notices, fonts, and the shell's own scripts:
+        // the owned top bar shows its menu button only once bms24_nav_drawer runs, which may be after this module).
+        // Watch the block and every ancestor up to <body>, so a change outside the block re-fits it as well; a fit
+        // that keeps the same height changes no size, so this settles after one pass.
         if (window.ResizeObserver) {
-            var root = document.querySelector('#bms24-comm-root');
-            if (root) {
-                new window.ResizeObserver(schedule).observe(root);
+            var observer = new window.ResizeObserver(schedule);
+            for (var n = document.querySelector('#bms24-comm-root'); n && n !== document.documentElement; n = n.parentElement) {
+                observer.observe(n);
             }
         }
         window.addEventListener('load', schedule);

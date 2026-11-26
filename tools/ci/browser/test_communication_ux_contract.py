@@ -55,7 +55,7 @@ class UXContractTest(unittest.TestCase):
             thread_available=True, panel_open=True, panel_closed=True, focus_restored=True,
             thread_overflow=False, notifications_http=200, notification_screen=True,
             no_conversation_area=True, notifications_overflow=False, browser_events=[], server_errors=[],
-            navigation=navigation(), geometry=geometry(w), frame_list=frame(False), frame_thread=frame(True))
+            navigation=navigation(), geometry=geometry(w), frame_list=frame(False), frame_thread=frame(True), frame_shift=frame(True))
             for s in ['owned','legacy'] for w in [320,375,390,768,1440]]}
 
     def test_primary_action_geometry_rejects_clipped_or_missing_button(self):
@@ -124,6 +124,12 @@ class UXContractTest(unittest.TestCase):
             lambda o: f(o, 4, 'frame_list').update(feed_overflow='visible'),
             lambda o: o['cases'][2].pop('frame_list'),
             lambda o: o['cases'][7].update(frame_thread=None),
+            # Percona owned/320: the frame released while the page above was taller and never came back.
+            lambda o: f(o, 0, 'frame_shift').update(framed=False, page_excess=265, layout_bottom=1130, compose_bottom=1130),
+            lambda o: f(o, 5, 'frame_shift').update(framed=False),
+            lambda o: f(o, 1, 'frame_shift').update(compose_bottom=None),
+            lambda o: f(o, 6, 'frame_shift').update(feed_overflow=None),
+            lambda o: o['cases'][3].pop('frame_shift'),
         ]
         for mutate in mutations:
             o = copy.deepcopy(good); mutate(o)
