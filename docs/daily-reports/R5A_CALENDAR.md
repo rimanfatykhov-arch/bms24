@@ -10,7 +10,7 @@
 | К2 отсутствия | Вид (`vacation` / `sick` / `other`) и даты, без диагнозов и комментариев. Вносит администратор компании или ближайший руководитель (ADR-0010 D2). Сам сотрудник, вышестоящий руководитель и коллега — нет. Периоды одного человека не пересекаются; длина до 366 дней. |
 | К3 срок сдачи | `deadline()` — время (по умолчанию 12:00) следующего рабочего дня в часовом поясе сотрудника. |
 | К5 с даты включения | При включении сохраняется `enabledfrom` = сегодня; дни раньше — `beforestart`. Выключение и повторное включение сдвигают дату. |
-| К6 свой выключатель | `local_kbacompany_dreportcal.enabled`, по умолчанию 0. Пока выключен, `requirement()` возвращает `disabled`. Глобальный `dailyreports_enabled` остаётся обязательным. |
+| К6 свой выключатель | `local_kbacompany_rptcalendar.enabled`, по умолчанию 0. Пока выключен, `requirement()` возвращает `disabled`. Глобальный `dailyreports_enabled` остаётся обязательным. |
 
 `requirement($company, $userid, $day)` — модель чтения для R5b/R5c: `disabled`, `beforestart`, `dayoff`, `absence`, `workday`. Обязанность вычисляется при чтении и не хранится.
 
@@ -29,7 +29,7 @@
 
 Шаг обновления 2026112400 добавляет три таблицы, существующие таблицы и строки не меняются, без backfill:
 
-- `local_kbacompany_dreportcal` — один календарь на компанию (уникальный `companyuuid`), `revision` для оптимистичной блокировки.
+- `local_kbacompany_rptcalendar` — один календарь на компанию (уникальный `companyuuid`), `revision` для оптимистичной блокировки.
 - `local_kbacompany_dreportoff` — исключения, уникальны по (`companyuuid`, `offday`).
 - `local_kbacompany_dreportabs` — периоды отсутствия, статус `active` / `cancelled`, `revision`.
 

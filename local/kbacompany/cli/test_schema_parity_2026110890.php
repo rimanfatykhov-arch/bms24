@@ -230,7 +230,7 @@ foreach ($dom->getElementsByTagName('TABLE') as $tablenode) {
     }
     $newtables[$name] = $structure;
 }
-// ADR-0009 R1 adds five tables, ADR-0010 two more (dreportcc, dreportset), R5a three (dreportcal, dreportoff, dreportabs).
+// ADR-0009 R1 adds five tables, ADR-0010 two more (dreportcc, dreportset), R5a three (rptcalendar, dreportoff, dreportabs).
 if (count($newtables) !== 10) { throw new RuntimeException('expected ten ADR-0009/ADR-0010/R5a daily report tables in install.xml'); }
 foreach ($newtables as $name => $structure) {
     if (!$structure['fields'] || !isset($structure['keys']['primary'])) { throw new RuntimeException('incomplete XMLDB fixture: ' . $name); }

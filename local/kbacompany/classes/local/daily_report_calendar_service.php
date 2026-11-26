@@ -45,7 +45,7 @@ final class daily_report_calendar_service {
     }
 
     private static function lock(string $key): \core\lock\lock {
-        $lock = \core\lock\lock_config::get_lock_factory('local_kbacompany')->get_lock('dreportcal:' . sha1($key), 10);
+        $lock = \core\lock\lock_config::get_lock_factory('local_kbacompany')->get_lock('rptcalendar:' . sha1($key), 10);
         if (!$lock) { self::fail('busy'); }
         return $lock;
     }
@@ -60,7 +60,7 @@ final class daily_report_calendar_service {
     /** Company calendar; safe defaults (switched off) when the company never saved one. No access check: read model. */
     public static function settings(string $companyuuid): \stdClass {
         global $DB;
-        $row = $DB->get_record('local_kbacompany_dreportcal', ['companyuuid' => $companyuuid]);
+        $row = $DB->get_record('local_kbacompany_rptcalendar', ['companyuuid' => $companyuuid]);
         return $row ?: (object)['id' => 0, 'companyuuid' => $companyuuid, 'enabled' => 0, 'enabledfrom' => '',
             'workdays' => self::DEFAULT_WORKDAYS, 'deadlineminutes' => self::DEFAULT_DEADLINE, 'revision' => 0,
             'modifiedby' => 0, 'timecreated' => 0, 'timemodified' => 0];
@@ -95,10 +95,10 @@ final class daily_report_calendar_service {
             try {
                 if ((int)$current->id > 0) {
                     $row->id = (int)$current->id;
-                    $DB->update_record('local_kbacompany_dreportcal', $row);
+                    $DB->update_record('local_kbacompany_rptcalendar', $row);
                 } else {
                     $row->timecreated = $now;
-                    $row->id = $DB->insert_record('local_kbacompany_dreportcal', $row);
+                    $row->id = $DB->insert_record('local_kbacompany_rptcalendar', $row);
                 }
                 self::log($companyuuid, $actor, 'calendar_changed', ['enabled' => (bool)$enabled, 'enabledfrom' => $from,
                     'workdays' => $workdays, 'deadlineminutes' => $deadlineminutes, 'revision' => (int)$row->revision]);

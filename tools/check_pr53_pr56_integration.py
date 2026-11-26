@@ -73,7 +73,7 @@ def check(root=ROOT):
     for name, expected in plan['unchanged_schema_hashes'].items():
         # ADR-0009 R1 appends five additive daily report tables, ADR-0010 two more (dreportcc, dreportset);
         # every earlier table definition is unchanged.
-        # R5a appends three more (dreportcal, dreportoff, dreportabs); see daily-reports-r5a-source-preservation.json.
+        # R5a appends three more (rptcalendar, dreportoff, dreportabs); see daily-reports-r5a-source-preservation.json.
         target = {'local/kbacompany/db/install.xml': '4b11d33cd64ae2b741d253662e2792575d6a7e15f58121075c32bb94e4be7cb9'}.get(name, expected)
         if digest(root/name)!=target:
             errors.append('shared schema/helper changed: '+name)
