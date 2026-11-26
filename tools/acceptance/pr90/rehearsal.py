@@ -10,6 +10,8 @@ BASELINE_VALIDATOR='f7b4c09e69b6fd10c293394b49c136c6dc200104'
 BASELINE_TREE='314bdd6bfecbe860168fc0d1875aeab429a1d787'
 PUBLISHED_R1R2='927a319c9d058cc9da8c1ddc94d45c97a6ef24fb'
 PUBLISHED_R1R2_PLUGIN_TREE='8b1d4d9ae9c22dc3f70ff4715ffd0863ab476bac'
+PUBLISHED_R5A_BASE='541df5a469b9be40a816ebd827d6aeea52d6ba56'
+PUBLISHED_R5A_BASE_PLUGIN_TREE='3ce556890b96f826ccf44d3487ecd2c1dba373e2'
 BASELINE_CHECKS=json.loads((cand/'docs/reconcile/r1r2-baseline-browser-checkset.json').read_text())['checks']
 if origins.get('baseline_validator')!=BASELINE_VALIDATOR:raise RuntimeError('baseline validator pin changed; independent review required')
 if os.environ.get('GITHUB_ACTIONS')!='true' or runner not in root.parents or os.environ.get('DBHOST')!='127.0.0.1':
@@ -150,6 +152,27 @@ set_config('dailyreports_enabled', 0, 'local_kbacompany');
     report['steps']['published_r1r2_baseline_with_report'] = 'PASS'
     return snapshot
 
+def reproduce_r5a_baseline(before):
+    from daily_reports_upgrade_policy import require, upgraded
+    require(git_ok('merge-base', '--is-ancestor', PUBLISHED_R5A_BASE, 'HEAD'),
+            'candidate does not contain the published R5a baseline')
+    require(git('rev-parse', PUBLISHED_R5A_BASE + ':local/kbacompany') == PUBLISHED_R5A_BASE_PLUGIN_TREE,
+            'published R5a baseline plugin tree mismatch')
+    plugin = core / 'local/kbacompany'
+    source = root / 'published-r5a-base'
+    cmd(['git', '-C', cand, 'worktree', 'add', '--detach', source, PUBLISHED_R5A_BASE], stdout=subprocess.DEVNULL)
+    shutil.rmtree(plugin)
+    shutil.copytree(source / 'local/kbacompany', plugin)
+    cmd(['php', core / 'admin/cli/upgrade.php', '--non-interactive'], stdout=subprocess.DEVNULL)
+    after = upgrade_probe('published180-before-r5a')
+    upgraded(before, after)
+    require(after['version'] == 2026112301, 'expected the published #180 version')
+    report['r5a_upgrade_baseline'] = {
+        'source': PUBLISHED_R5A_BASE, 'plugin_tree': PUBLISHED_R5A_BASE_PLUGIN_TREE, 'version': after['version'],
+    }
+    report['steps']['published180_upgrade_baseline_with_reports'] = 'PASS'
+    return after
+
 def fresh_upgrade_schema(upgrade):
     from daily_reports_upgrade_policy import fresh_equal
     fresh=root/'fresh-equivalent';data=root/'fresh-data'
@@ -182,7 +205,25 @@ def daily_reports_flow(phase):
     observed=json.loads(path.read_text()) if path.exists() else None
     checks=contract.evaluate(contract.daily_reports_flow_checks(observed,result.returncode))
     (public/(phase+'-daily-reports.json')).write_text(json.dumps({'observations':observed,'checks':checks},indent=1))
-    if len(checks)!=8 or any(c['status']!='PASS' for c in checks.values()):raise RuntimeError('daily report workflow failed')
+    required_checks = {
+        'daily_report_draft_relogin_and_conflict',
+        'daily_report_concurrent_submit_one_version',
+        'daily_report_csrf_and_get_rejected',
+        'daily_report_snapshot_immutable',
+        'daily_report_return_rework_accept_once',
+        'daily_report_notifications_once_with_link',
+        'daily_report_foreign_and_nonreviewer_denied',
+        'daily_report_layout_and_browser_errors',
+        'daily_report_team_day_view',
+        'daily_report_team_scopes_and_open',
+        'daily_report_monthly_summary',
+        'daily_report_release_access_denied',
+        'daily_report_discussion_author_and_reviewer',
+    }
+    missing = sorted(required_checks - checks.keys())
+    failed = sorted(name for name, check in checks.items() if check['status'] != 'PASS')
+    if missing or failed:
+        raise RuntimeError(f'daily report workflow failed: missing={missing}, failed={failed}')
     stop();before=upgrade_probe(phase+'-with-reports')
     cmd(['php',core/'admin/cli/upgrade.php','--non-interactive'],stdout=subprocess.DEVNULL)
     unchanged(before,upgrade_probe(phase+'-repeat-with-reports'))
@@ -399,6 +440,9 @@ try:
     adr0010 = report['components']['local/kbacompany']['version'] in (2026112301, 2026112400)
     if adr0010:
         upgrade_before = reproduce_r1r2_baseline(upgrade_before)
+    r5a = report['components']['local/kbacompany']['version'] == 2026112400
+    if r5a:
+        upgrade_before = reproduce_r5a_baseline(upgrade_before)
     before=state(); snapshot=root/'snapshot'; snapshot.mkdir()
     baseline_urls=(ev/'p02-urls.json').read_bytes()
     shutil.copytree(core,snapshot/'code'); shutil.copytree(root/'data',snapshot/'data')
@@ -413,7 +457,10 @@ try:
     cmd(['php',core/'admin/cli/upgrade.php','--non-interactive'],stdout=subprocess.DEVNULL)
     unchanged(upgrade_after,upgrade_probe('candidate-upgrade-repeat'))
     fresh_upgrade_schema(upgrade_after)
-    upgrade_step = 'published_r1r2_upgrade_repeat_fresh_schema' if adr0010 else 'published120_upgrade_repeat_fresh_schema'
+    if r5a:
+        upgrade_step = 'published180_upgrade_repeat_fresh_schema'
+    else:
+        upgrade_step = 'published_r1r2_upgrade_repeat_fresh_schema' if adr0010 else 'published120_upgrade_repeat_fresh_schema'
     report['steps'][upgrade_step] = 'PASS'
     try:smoke('candidate');report['steps']['candidate_install_smoke']='PASS'
     except Exception as e:report['steps']['candidate_install_smoke']='FAIL: '+str(e)[:160]

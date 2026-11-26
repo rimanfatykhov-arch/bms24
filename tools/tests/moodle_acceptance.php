@@ -275,9 +275,9 @@ $scenarios = ['fresh' => null, 'from1645' => $main, 'from1879' => $import,
         'frompr590905' => '2446347adf26ebb9e1520414a65c89e930dadba2',
         'frompr650906' => '4e5482df3d5bd8fd4cc604c070ed8728e7c0fc17',
         'frompr671001' => '34763fd4b8980d36bf6de0a309a7737693e9e3dc',
-        // Published production source (#173 head, local_kbacompany 2026112301): daily-report rows seeded there
+        // Published production source (#180 head, local_kbacompany 2026112301): daily-report rows seeded there
         // must survive the R5a/R5c upgrade unchanged, and the upgraded schema must equal a fresh install.
-        'fromprod2026112301' => '4c76f77050d921f7e6917744e9f010833638b642'];
+        'fromprod2026112301' => '541df5a469b9be40a816ebd827d6aeea52d6ba56'];
 if ($productionprofile) { $scenarios = ['fresh'=>null, 'fromprod1878'=>'a87252b642e5796c6d84105dd448d51d9a5b5241']; }
 if ($standard) {
     $report['not_covered'][] = 'historical upgrades and full PHPUnit suites (separate mandatory FULL)';
