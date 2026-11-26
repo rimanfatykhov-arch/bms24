@@ -1,0 +1,16 @@
+{{!
+    @template local_kbacompany/bms24_attention_flag
+
+    Owned shell top bar "Needs attention" flag: the same 40 px button as the bell, with the count in the corner.
+    Render-only: the count, the target and the label come from the scoped workspace model (bms_workspace.php).
+
+    Example context (json):
+    {"url": "/local/kbacompany/communication_center.php?tab=tasks&taskscope=overdue", "target": "overdue",
+     "label": "Needs attention: Overdue tasks: 2; New inbox items: 5", "count": 7, "danger": true}
+}}
+<a class="bms24-attention" href="{{url}}" data-bms-attention-target="{{target}}" title="{{label}}" aria-label="{{label}}">
+  <svg class="bms24-attention-icon" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" focusable="false">
+    <path fill="currentColor" d="M5 2.5a1 1 0 0 1 1 1V4h11.4a1 1 0 0 1 .8 1.6L16 8.5l2.2 2.9a1 1 0 0 1-.8 1.6H6v8.5a1 1 0 1 1-2 0v-18a1 1 0 0 1 1-1Z"/>
+  </svg>
+  <span class="bms24-attention-badge{{#danger}} bms24-attention-badge-danger{{/danger}}" aria-hidden="true">{{count}}</span>
+</a>

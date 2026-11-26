@@ -105,6 +105,15 @@ class communication_object_service {
             $title = (string)$target['title'];
             $url = new \moodle_url('/local/kbacompany/battle_plan.php', ['uuid' => $companyuuid, 'plan' => $objectuuid,
                 'view' => 'detail', 'tab' => 'discussion']);
+        } else if ($kind === 'dailyreport') {
+            // R3: the daily report read rule decides; unknown, foreign, unsent and unreadable reports look the same.
+            try {
+                $target = daily_report_discussion_service::target($companyuuid, $actor, $objectuuid);
+            } catch (\moodle_exception $e) {
+                self::fail();
+            }
+            $title = (string)$target['title'];
+            $url = daily_report_discussion_service::url($companyuuid, $target);
         } else if ($kind === 'kbaelement') {
             // Learning elements are resolved by their existing task provider. No raw DB access is exposed here.
             try {
