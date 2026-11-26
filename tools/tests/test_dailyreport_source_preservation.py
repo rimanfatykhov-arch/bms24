@@ -90,6 +90,10 @@ NAV_BEFORE={lang:next(r['before_sha256_lf'] for r in _NAV['files'] if r['path']=
 _R4=json.loads((ROOT/'docs/reconcile/daily-reports-r4-source-preservation.json').read_text(encoding='utf-8'))
 R4_BEFORE={lang:next(r['before_sha256_lf'] for r in _R4['files'] if r['path']==f'local/kbacompany/lang/{lang}/local_kbacompany.php')
            for lang in ('en','ru')}
+IC_MARKER=b'\n// Information Centre by divisions (#190): org-board columns, mini charts, trends and the drill-down chart.\n'
+_IC=json.loads((ROOT/'docs/reconcile/information-centre-divisions-source-preservation.json').read_text(encoding='utf-8'))
+IC_BEFORE={lang:next(r['before_sha256_lf'] for r in _IC['files'] if r['path']==f'local/kbacompany/lang/{lang}/local_kbacompany.php')
+           for lang in ('en','ru')}
 _R3=json.loads((ROOT/'docs/reconcile/daily-reports-r3-source-preservation.json').read_text(encoding='utf-8'))
 R3_BEFORE={lang:next(r['before_sha256_lf'] for r in _R3['files'] if r['path']==f'local/kbacompany/lang/{lang}/local_kbacompany.php')
            for lang in ('en','ru')}
@@ -155,14 +159,22 @@ class Preservation(unittest.TestCase):
                                 ae,r4=ae.split(R4_MARKER)
                                 if R3_MARKER in r4:
                                     r4,r3=r4.split(R3_MARKER)
-                                    if FINANCE_MARKER in r3:
-                                        # Everything up to the FIN-W2 Finance marker is the published R3 report discussion file (#169); its keys are new.
-                                        r3,finance=r3.split(FINANCE_MARKER)
-                                        self.assertEqual(FINANCE_BEFORE[lang],hashlib.sha256(data.split(FINANCE_MARKER)[0]).hexdigest())
-                                        financekeys=keys(finance)
-                                        self.assertEqual(83,len(financekeys));self.assertEqual(len(financekeys),len(set(financekeys)))
-                                        self.assertTrue(all(k.startswith(b'financews_') for k in financekeys))
-                                        self.assertFalse(set(financekeys)&set(keys(data.split(FINANCE_MARKER)[0])))
+                                    if IC_MARKER in r3:
+                                        # Everything up to the #190 marker is the R3 file; the Information Centre keys are new.
+                                        r3,ic=r3.split(IC_MARKER)
+                                        if FINANCE_MARKER in ic:
+                                            # Everything up to the FIN-W2 Finance marker is the published file ending with the Information Centre by divisions block (#190); its keys are new.
+                                            ic,finance=ic.split(FINANCE_MARKER)
+                                            self.assertEqual(FINANCE_BEFORE[lang],hashlib.sha256(data.split(FINANCE_MARKER)[0]).hexdigest())
+                                            financekeys=keys(finance)
+                                            self.assertEqual(83,len(financekeys));self.assertEqual(len(financekeys),len(set(financekeys)))
+                                            self.assertTrue(all(k.startswith(b'financews_') for k in financekeys))
+                                            self.assertFalse(set(financekeys)&set(keys(data.split(FINANCE_MARKER)[0])))
+                                        self.assertEqual(IC_BEFORE[lang],hashlib.sha256(data.split(IC_MARKER)[0]).hexdigest())
+                                        ickeys=keys(ic)
+                                        self.assertEqual(39,len(ickeys));self.assertEqual(len(ickeys),len(set(ickeys)))
+                                        self.assertTrue(all(k.startswith(b'infocenter2_') for k in ickeys))
+                                        self.assertFalse(set(ickeys)&set(keys(data.split(IC_MARKER)[0])))
                                     # The R4 file is byte-identical up to the R3 marker (its final newline starts the marker).
                                     self.assertEqual(R3_BEFORE[lang],hashlib.sha256(data.split(R3_MARKER)[0]+b'\n').hexdigest())
                                     self.assertEqual(R3_KEYS,keys(r3))

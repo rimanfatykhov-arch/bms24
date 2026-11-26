@@ -127,11 +127,15 @@ def check(root=ROOT):
     # 'dailyreport' discussion kind. See docs/reconcile/daily-reports-r3-source-preservation.json.
     reviewed_followup['local/kbacompany/lang/en/local_kbacompany.php'] = '2a8007f42e8de2339927da3be2dcdc5aecf91534a634b5bd2bd21dadf17402eb'
     reviewed_followup['local/kbacompany/lang/ru/local_kbacompany.php'] = 'e2e51490b8c1f5988948b057ba93701ee4229bbc4ed9e0175da02f0a655fcfc9'
-    reviewed_followup['local/kbacompany/classes/local/communication_service.php'] = '870b471dba39c867b5b13f8b04f55fb82f67ce484ea44cf929b5b9c4f93dae92'
-    # FIN-W2 Finance workspace (owner task 2026-11-24): financews_* RU/EN block after the R3 report discussion block (#169); read-only, default off.
+    # Information Centre by divisions (#190): append the infocenter2_* block after the daily reports R3 block.
+    # See docs/reconcile/information-centre-divisions-source-preservation.json.
+    reviewed_followup['local/kbacompany/lang/en/local_kbacompany.php'] = '1d3d80ad9c985ff85091e126a0e14292ce3e6ab4531268f6f30228c47269509b'
+    reviewed_followup['local/kbacompany/lang/ru/local_kbacompany.php'] = 'f5ad4bdcc8edaebe4b8b444231432c117fedbb3530fc9b04a3c3316d85015c87'
+    # FIN-W2 Finance workspace (owner task 2026-11-24): financews_* RU/EN block after the Information Centre by divisions block (#190); read-only, default off.
     # See docs/finance/FIN_W2_FINANCE_WORKSPACE.md.
-    reviewed_followup['local/kbacompany/lang/en/local_kbacompany.php'] = 'f5ea47e0aa17ded0fcb4fd183ed719fdf48767f60b4a301711c026ed9d1f9b4c'
-    reviewed_followup['local/kbacompany/lang/ru/local_kbacompany.php'] = '139cf4a9608040a96c4333c702961ed249340b1bc1e0d9b2bd5f37f2e8bdab0e'
+    reviewed_followup['local/kbacompany/lang/en/local_kbacompany.php'] = 'f499551b85ab7ef03c4dc17239bfccac444a9d5a9408ef41cd1389c6f4cf4a62'
+    reviewed_followup['local/kbacompany/lang/ru/local_kbacompany.php'] = '1c9837875b57ea15763174db77c06e36a38fd9828c195e9ef6c0367533f5d58e'
+    reviewed_followup['local/kbacompany/classes/local/communication_service.php'] = '870b471dba39c867b5b13f8b04f55fb82f67ce484ea44cf929b5b9c4f93dae92'
     for row in plan['rows']:
         path=root/row['path']
         if not path.is_file() or path.is_symlink():

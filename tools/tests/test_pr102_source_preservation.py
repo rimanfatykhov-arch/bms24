@@ -29,6 +29,7 @@ FOLLOWUPS = ['docs/reconcile/task-open-source-preservation.json',
              'docs/reconcile/daily-reports-r4-source-preservation.json',
              'docs/reconcile/daily-reports-summary-source-preservation.json',
              'docs/reconcile/daily-reports-r3-source-preservation.json',
+             'docs/reconcile/information-centre-divisions-source-preservation.json',
              'docs/reconcile/finance-workspace-fin-w2-source-preservation.json']
 
 
