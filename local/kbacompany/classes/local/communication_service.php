@@ -14,7 +14,7 @@ class communication_service {
     public const THREAD_TYPES = ['direct', 'group', 'object'];
     public const THREAD_STATUSES = ['active', 'archived'];
     public const CONTEXT_KINDS = ['company', 'task', 'project', 'process', 'document', 'goal', 'statistic',
-        'kbaelement', 'improvement', 'meeting', 'battleplan'];
+        'kbaelement', 'improvement', 'meeting', 'battleplan', 'dailyreport'];
     public const NOTIFICATION_KINDS = ['thread_invite', 'message', 'mention', 'task_created',
         'calendar_day', 'calendar_meeting_hour', 'calendar_task_due', 'calendar_checkpoint_tomorrow', 'bp_decision',
         'dailyreport_submitted', 'dailyreport_decision', 'dailyreport_copy'];
@@ -22,10 +22,10 @@ class communication_service {
     /**
      * Object kinds whose single canonical discussion is readable by everyone allowed to open the object.
      * Owner decisions: a task discussion is one conversation for all task viewers (Q1, 2026-11-15) and a Battle Plan
-     * discussion for all plan viewers (Q9, 2026-11-16).
+     * discussion for all plan viewers (Q9, 2026-11-16); a daily report discussion for all report readers (R3, 2026-11-24).
      * Writing still requires explicit participation; other kinds stay participant-scoped.
      */
-    public const VIEWER_READ_KINDS = ['task', 'battleplan'];
+    public const VIEWER_READ_KINDS = ['task', 'battleplan', 'dailyreport'];
 
     public static function contract(): array {
         $contract = [
@@ -55,6 +55,7 @@ class communication_service {
                 'group_members_may_leave_and_owner_may_remove',
                 'inline_mentions_resolve_only_active_participants',
                 'battle_plan_discussion_is_readable_by_plan_viewers_and_never_changes_the_plan',
+                'daily_report_discussion_is_readable_by_report_readers_and_writable_by_author_and_current_reviewer',
             ],
         ];
         $contract['schema_hash_algorithm'] = 'sha256';
@@ -521,6 +522,12 @@ class communication_service {
         $thread = self::thread($companyuuid, $threaduuid);
         self::require_thread_context($companyuuid, $actor, $thread);
         if ($thread->status !== 'active') { self::fail('state'); }
+        // R3: only the author and the current reviewer write to a daily report discussion, re-checked on every message
+        // (a reassigned reviewer or a copy recipient added as a participant stays a reader).
+        if ((string)$thread->threadtype === 'object' && (string)$thread->contextkind === daily_report_discussion_service::KIND
+                && !daily_report_discussion_service::can_post_for($companyuuid, $actor, (string)$thread->contextuuid)) {
+            self::fail('permission');
+        }
         $body = trim($body);
         if (($body === '' && !$withfile) || \core_text::strlen($body) > 20000) { self::fail('invalid'); }
         if ($replytouuid !== '') {

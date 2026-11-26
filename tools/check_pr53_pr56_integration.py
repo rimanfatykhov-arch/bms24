@@ -123,9 +123,15 @@ def check(root=ROOT):
     # R4 "Team for the day" block (#168). See docs/reconcile/daily-reports-summary-source-preservation.json.
     reviewed_followup['local/kbacompany/lang/en/local_kbacompany.php'] = '9a3fa3efb85ef6f9aeaf18202ba4377bf418787c4631b636dbf766f7a45c2f88'
     reviewed_followup['local/kbacompany/lang/ru/local_kbacompany.php'] = '81334038357d7bc9f79a2dfefca9c8022c088045919931fc54e78a939b82a858'
+    # Daily reports R3 (owner decision 24.11.2026): append the report discussion block after the ADR-0011 summary (#173) and register the
+    # 'dailyreport' discussion kind. See docs/reconcile/daily-reports-r3-source-preservation.json.
+    reviewed_followup['local/kbacompany/lang/en/local_kbacompany.php'] = '2a8007f42e8de2339927da3be2dcdc5aecf91534a634b5bd2bd21dadf17402eb'
+    reviewed_followup['local/kbacompany/lang/ru/local_kbacompany.php'] = 'e2e51490b8c1f5988948b057ba93701ee4229bbc4ed9e0175da02f0a655fcfc9'
+    reviewed_followup['local/kbacompany/classes/local/communication_service.php'] = '870b471dba39c867b5b13f8b04f55fb82f67ce484ea44cf929b5b9c4f93dae92'
     # RC33 PR-1 (owner D3 2026-11-24): shared communication write gate and notification eligibility; no lang,
     # schema or version change. See docs/reconcile/RC33_PR1_COMMUNICATION_WRITE_GATE.md.
-    reviewed_followup['local/kbacompany/classes/local/communication_service.php'] = 'a483674056db868903e362b77d987d709f8547bc3fffc94fb8ca054445bfd85c'
+    # Chained after daily reports R3 (#169): the communication_service.php hash is the merged R3 + PR-1 content.
+    reviewed_followup['local/kbacompany/classes/local/communication_service.php'] = 'c312947922c1c1af07f64f2fc6f45ab1270b7f08e2d3c76a348ae7b90cb15193'
     reviewed_followup['local/kbacompany/classes/local/employee_service.php'] = '80a5502f410dd618dc1b64988a7824343960145d3276a7d8e89e8cd0db5f48be'
     for row in plan['rows']:
         path=root/row['path']

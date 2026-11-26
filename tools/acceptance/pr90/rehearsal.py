@@ -182,7 +182,25 @@ def daily_reports_flow(phase):
     observed=json.loads(path.read_text()) if path.exists() else None
     checks=contract.evaluate(contract.daily_reports_flow_checks(observed,result.returncode))
     (public/(phase+'-daily-reports.json')).write_text(json.dumps({'observations':observed,'checks':checks},indent=1))
-    if len(checks)!=8 or any(c['status']!='PASS' for c in checks.values()):raise RuntimeError('daily report workflow failed')
+    required_checks = {
+        'daily_report_draft_relogin_and_conflict',
+        'daily_report_concurrent_submit_one_version',
+        'daily_report_csrf_and_get_rejected',
+        'daily_report_snapshot_immutable',
+        'daily_report_return_rework_accept_once',
+        'daily_report_notifications_once_with_link',
+        'daily_report_foreign_and_nonreviewer_denied',
+        'daily_report_layout_and_browser_errors',
+        'daily_report_team_day_view',
+        'daily_report_team_scopes_and_open',
+        'daily_report_monthly_summary',
+        'daily_report_release_access_denied',
+        'daily_report_discussion_author_and_reviewer',
+    }
+    missing = sorted(required_checks - checks.keys())
+    failed = sorted(name for name, check in checks.items() if check['status'] != 'PASS')
+    if missing or failed:
+        raise RuntimeError(f'daily report workflow failed: missing={missing}, failed={failed}')
     stop();before=upgrade_probe(phase+'-with-reports')
     cmd(['php',core/'admin/cli/upgrade.php','--non-interactive'],stdout=subprocess.DEVNULL)
     unchanged(before,upgrade_probe(phase+'-repeat-with-reports'))
