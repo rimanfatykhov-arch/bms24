@@ -473,6 +473,14 @@ class provider implements
         $collection->add_database_table('local_kbacompany_dreportset', [
             'topreviewerid' => 'privacy:metadata:dailyreports', 'modifiedby' => 'privacy:metadata:dailyreports',
         ], 'privacy:metadata:dailyreports');
+        // DOC-W3: incoming register cards are company correspondence; only the acting users are personal data.
+        $collection->add_database_table('local_kbacompany_offrec', [
+            'createdby' => 'privacy:metadata:officeincoming', 'registeredby' => 'privacy:metadata:officeincoming',
+            'cancelledby' => 'privacy:metadata:officeincoming', 'cancelreason' => 'privacy:metadata:officeincoming',
+        ], 'privacy:metadata:officeincoming');
+        $collection->add_database_table('local_kbacompany_offrev', [
+            'createdby' => 'privacy:metadata:officeincoming', 'reason' => 'privacy:metadata:officeincoming',
+        ], 'privacy:metadata:officeincoming');
         $collection->add_user_preference(\local_kbacompany\local\communication_center_ui_service::SOUND_PREFERENCE,
             'privacy:metadata:preference:notificationsound');
         $collection->add_user_preference(\local_kbacompany\local\notification_bell_service::SIGNALLED_PREFERENCE,
@@ -666,6 +674,12 @@ class provider implements
                   OR ds.modifiedby = :drmodifier))',
             ['drlevel' => CONTEXT_SYSTEM, 'druser' => $userid, 'drreviewer' => $userid, 'drdecider' => $userid,
              'dractor' => $userid, 'drcopy' => $userid, 'drtop' => $userid, 'drmodifier' => $userid]);
+        $contextlist->add_from_sql('SELECT ctx.id FROM {context} ctx WHERE ctx.contextlevel = :oflevel
+            AND (EXISTS (SELECT 1 FROM {local_kbacompany_offrec} orc WHERE orc.createdby = :ofcreator
+                  OR orc.registeredby = :ofregistrar OR orc.cancelledby = :ofcanceller)
+              OR EXISTS (SELECT 1 FROM {local_kbacompany_offrev} orv WHERE orv.createdby = :ofeditor))',
+            ['oflevel' => CONTEXT_SYSTEM, 'ofcreator' => $userid, 'ofregistrar' => $userid, 'ofcanceller' => $userid,
+             'ofeditor' => $userid]);
         return $contextlist;
     }
 
@@ -677,6 +691,7 @@ class provider implements
             return;
         }
         self::export_daily_reports((int)$contextlist->get_user()->id, $systemcontext);
+        self::export_office_incoming((int)$contextlist->get_user()->id, $systemcontext);
         $revocations = $DB->get_records_select('local_kbacompany_revoke',
             'userid = :subject OR revokedby = :revoker OR reopenedby = :opener',
             ['subject'=>$contextlist->get_user()->id,'revoker'=>$contextlist->get_user()->id,
@@ -1124,6 +1139,7 @@ class provider implements
                     'local_kbacompany_dreport'] as $table) {
                 $DB->delete_records($table);
             }
+            self::forget_office_incoming(null);
             $DB->delete_records('local_kbacompany_commrev');
             self::document_files_for_privacy(null, true);
             self::forget_workflow(null);
@@ -1264,6 +1280,7 @@ class provider implements
         if (in_array($systemcontext->id, $contextlist->get_contextids())) {
             self::forget_revocation_audit((int)$contextlist->get_user()->id);
             self::forget_daily_reports((int)$contextlist->get_user()->id);
+            self::forget_office_incoming((int)$contextlist->get_user()->id);
             self::document_files_for_privacy((int)$contextlist->get_user()->id, true);
             self::forget_workflow((int)$contextlist->get_user()->id);
             $where = ['actorid' => $contextlist->get_user()->id];
@@ -1605,6 +1622,45 @@ class provider implements
         $DB->set_field('local_kbacompany_dreportset', 'modifiedby', 0, ['modifiedby' => $userid]);
         $DB->set_field('local_kbacompany_dreportlog', 'details', null, ['actorid' => $userid]);
         $DB->set_field('local_kbacompany_dreportlog', 'actorid', 0, ['actorid' => $userid]);
+    }
+
+    /** DOC-W3: the cards this user created, registered, cancelled or revised, and the reasons they gave. */
+    private static function export_office_incoming(int $userid, \context $context): void {
+        global $DB;
+        $cards = array_values($DB->get_records_select('local_kbacompany_offrec',
+            'createdby = :c OR registeredby = :r OR cancelledby = :x', ['c' => $userid, 'r' => $userid, 'x' => $userid],
+            'id ASC', 'id, companyuuid, uuid, status, regnumber, registeredat, createdby, registeredby, cancelledby,
+                cancelreason, timecreated'));
+        $revisions = array_values($DB->get_records('local_kbacompany_offrev', ['createdby' => $userid], 'id ASC',
+            'id, companyuuid, recorduuid, revision, subject, correspondent, reason, timecreated'));
+        if ($cards || $revisions) {
+            writer::with_context($context)->export_data(
+                [get_string('privacy:metadata:officeincoming', 'local_kbacompany')],
+                (object)['cards' => $cards, 'revisions' => $revisions]);
+        }
+    }
+
+    /**
+     * DOC-W3: register cards are company correspondence and stay; the user's identity is removed from them and
+     * from their revisions, and the reasons this user wrote are cleared. Numbers and files are unchanged.
+     */
+    private static function forget_office_incoming(?int $userid): void {
+        global $DB;
+        if ($userid === null) {
+            foreach (['createdby', 'registeredby', 'cancelledby'] as $field) {
+                $DB->set_field_select('local_kbacompany_offrec', $field, 0, $field . ' <> 0');
+            }
+            $DB->set_field_select('local_kbacompany_offrec', 'cancelreason', null, 'cancelreason IS NOT NULL');
+            $DB->set_field_select('local_kbacompany_offrev', 'reason', null, 'reason IS NOT NULL');
+            $DB->set_field_select('local_kbacompany_offrev', 'createdby', 0, 'createdby <> 0');
+            return;
+        }
+        $DB->set_field('local_kbacompany_offrec', 'cancelreason', null, ['cancelledby' => $userid]);
+        foreach (['createdby', 'registeredby', 'cancelledby'] as $field) {
+            $DB->set_field('local_kbacompany_offrec', $field, 0, [$field => $userid]);
+        }
+        $DB->set_field('local_kbacompany_offrev', 'reason', null, ['createdby' => $userid]);
+        $DB->set_field('local_kbacompany_offrev', 'createdby', 0, ['createdby' => $userid]);
     }
 
     /** Erasure must not grant access: retain only active deny identity while an account can log in. */

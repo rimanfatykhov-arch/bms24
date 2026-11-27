@@ -43,5 +43,12 @@ if ($hassiteconfig) {
         get_string('officews_enabled_help', 'local_kbacompany'),
         0
     ));
+    // DOC-W3: the incoming register is off until explicitly enabled (and requires the Office workspace).
+    $settings->add(new admin_setting_configcheckbox(
+        'local_kbacompany/office_incoming_enabled',
+        get_string('officein_enabled', 'local_kbacompany'),
+        get_string('officein_enabled_help', 'local_kbacompany'),
+        0
+    ));
     $ADMIN->add('localplugins', $settings);
 }

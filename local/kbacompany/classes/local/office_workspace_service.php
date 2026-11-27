@@ -95,6 +95,9 @@ final class office_workspace_service {
             'overdue' => array_map([self::class, 'task_row'], array_slice($overdue['tasks'], 0, self::LIST_LIMIT)),
             'attention' => self::attention($counts),
             'planned' => self::PLANNED_SECTIONS,
+            // DOC-W3: the incoming register is linked only behind its own switch and for users with a right.
+            'incoming_link' => office_incoming_service::enabled()
+                && in_array(true, office_incoming_service::rights($companyuuid, $actor), true),
             'contract' => self::contract(),
         ];
     }

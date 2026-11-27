@@ -9,16 +9,20 @@ final class access_role_service {
     const GRANT_TABLE = 'local_kbacompany_aclgrant';
     const ASSIGN_TABLE = 'local_kbacompany_aclassign';
     const AUDIT_TABLE = 'local_kbacompany_aclaudit';
-    const ACTIONS = ['view', 'create', 'edit', 'comment', 'approve', 'delete', 'export'];
+    const ACTIONS = ['view', 'create', 'edit', 'comment', 'approve', 'delete', 'export', 'register'];
     const OBJECTS = [
         'management_cycle' => 'Управленческие циклы',
         'task' => 'Задачи', 'indicator' => 'Показатели', 'battle_plan' => 'Боевые планы',
         'process' => 'Процессы', 'org_structure' => 'Структура', 'employee' => 'Сотрудники',
         'document' => 'Документы', 'communication' => 'Коммуникации',
         'work_calendar' => 'Рабочий календарь', 'integration' => 'Интеграции',
+        'office_incoming' => 'Канцелярия: входящие',
     ];
     // Only management_cycle is enforced end to end by the first release.
-    const ENFORCED_OBJECTS = ['management_cycle', 'task', 'battle_plan'];
+    const ENFORCED_OBJECTS = ['management_cycle', 'task', 'battle_plan', 'office_incoming'];
+    // DOC-W3 (owner decision 27.11.2026): office_incoming has exactly two company-wide rights, 'create' (draft
+    // cards) and 'register' (registrar). There is no owner/manager fallback: only an explicit grant counts.
+    const OFFICE_INCOMING_ACTIONS = ['create', 'register'];
     // task/battle_plan: only company-wide 'edit' is wired to existing server manager predicates.
     // Other actions must not be exposed as functioning until object-scoped checks are completed.
 
@@ -190,6 +194,9 @@ final class access_role_service {
         if (!in_array($object, self::ENFORCED_OBJECTS, true) || !in_array($action, self::ACTIONS, true)) {
             return false;
         }
+        if ($object === 'office_incoming' && !in_array($action, self::OFFICE_INCOMING_ACTIONS, true)) {
+            return false;
+        }
         // Existing owner/manager semantics retained for backward compatibility.
         if ($object === 'management_cycle' && permission_service::can_manage_management($companyuuid, $actor)) {
             return true;
@@ -277,7 +284,11 @@ final class access_role_service {
                 && !($object === 'battle_plan' && $action === 'approve' && $scope === 'department')) {
             throw new \invalid_parameter_exception('Action/scope not enforced for this object');
         }
-        if (!in_array($action, ['view', 'create', 'edit', 'approve'], true) || !in_array($scope, ['company', 'department'], true)
+        if ($object === 'office_incoming') {
+            if (!in_array($action, self::OFFICE_INCOMING_ACTIONS, true) || $scope !== 'company') {
+                throw new \invalid_parameter_exception('Action/scope not enforced for this object');
+            }
+        } else if (!in_array($action, ['view', 'create', 'edit', 'approve'], true) || !in_array($scope, ['company', 'department'], true)
                 || ($object === 'management_cycle' && $scope !== 'company')) {
             throw new \invalid_parameter_exception('Action not yet supported for management cycles');
         }

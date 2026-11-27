@@ -5,7 +5,7 @@ define('CLI_SCRIPT', true);
 require '/var/www/html/config.php';
 require_once($CFG->dirroot.'/user/lib.php');
 if ($CFG->dbname !== 'recovery' || $CFG->wwwroot !== 'http://127.0.0.1:8080' ||
-    (int)get_config('local_kbacompany','version') !== 2026112301 ||
+    (int)get_config('local_kbacompany','version') !== 2026112700 ||
     (int)get_config('local_kbacorporate','version') !== 2026111100) { exit(3); }
 umask(0077);
 $dir='/recovery/evidence/s12'; $phase=$argv[1] ?? '';

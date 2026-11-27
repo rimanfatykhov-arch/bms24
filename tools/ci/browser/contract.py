@@ -2641,6 +2641,188 @@ def office_workspace_checks(obs, exitcode=None):
             'office_manager_view_and_company_isolation': manager_and_isolation,
             'office_revocation_closes_workspace': revocation, 'office_layout_and_browser_errors': layout}
 
+
+OFFICEIN_CASES = [('owned', 1440, 'en'), ('owned', 375, 'ru'), ('legacy', 1440, 'en'), ('legacy', 375, 'ru')]
+OFFICEIN_TITLES = {'en': 'Incoming', 'ru': 'Входящие'}
+OFFICEIN_RACE = 6
+_NO_RIGHTS = {'create': False, 'register': False}
+
+
+def office_incoming_checks(obs, exitcode=None):
+    """DOC-W3 incoming register (office_incoming.py): default-off switch and no manager fallback, author create with a
+    double submit and the original, server number with an idempotent repeat, correction with a reason, company
+    isolation of cards and files, a real parallel registration race, owned/legacy 1440/375 layout, revocation and
+    cancellation that keeps the number."""
+    def run():
+        require(exitcode == 0, 'incoming register browser process failed or was not run')
+        require(isinstance(obs, dict) and obs.get('status') == 'PASS' and not obs.get('error'), 'incoming register run incomplete')
+        author = obs.get('author') or {}
+        require(isinstance(author.get('card'), str) and len(author['card']) == 36, 'created card not recorded')
+        reg = obs.get('registrar') or {}
+        year = reg.get('year')
+        require(isinstance(year, str) and len(year) == 4 and year.isdigit(), 'server year not recorded')
+        number = (reg.get('truth') or {}).get('number')
+        require(isinstance(number, str) and number.startswith('Вх-' + year + '/') and len(number.split('/')[-1]) >= 4
+                and number.split('/')[-1].isdigit(), 'registration number %r is not Вх-%s/NNNN' % (number, year))
+        rows = obs.get('cases')
+        require(isinstance(rows, list) and [(r.get('shell'), r.get('width'), r.get('lang')) for r in rows] == OFFICEIN_CASES,
+                'owned/legacy x 1440 EN / 375 RU cases required')
+        for r in rows:
+            require(r.get('language_installed') is True, 'page language %s not active' % r.get('lang'))
+        return author, reg, number, rows
+
+    def switch_and_rights():
+        run()
+        require((obs.get('switch_off') or {}).get('workspace') is True and (obs.get('switch_off') or {}).get('enabled') is False
+                and (obs.get('switch_on') or {}).get('enabled') is True, 'register switch not toggled off/on')
+        off = obs.get('off') or {}
+        require(isinstance(off.get('http'), int) and off['http'] < 500 and off.get('list') is False and off.get('card') is None,
+                'register served while switched off: %r' % {k: off.get(k) for k in ('http', 'list')})
+        office = off.get('office') or {}
+        require(office.get('link') == 0 and 'incoming' in (office.get('planned') or []),
+                '"Incoming" must stay a planned section while the register is off')
+        rights = obs.get('rights_before') or {}
+        require(rights.get('MA') == _NO_RIGHTS and rights.get('EB') == _NO_RIGHTS,
+                'a manager or an employee got an incoming right without a grant: %r' % rights)
+        require(rights.get('EA') == {'create': True, 'register': False}
+                and rights.get('MB') == {'create': True, 'register': True}, 'seeded grants not effective: %r' % rights)
+        m = obs.get('manager_without_grant') or {}
+        require(m.get('http') == 200 and m.get('norights') is True and m.get('newaction') == 0 and m.get('rows') == [],
+                'manager without a grant sees the register: %r' % {k: m.get(k) for k in ('norights', 'newaction', 'rows')})
+        require((m.get('new_view') or {}).get('notfound') is True, 'manager without a grant opened the new-card form')
+        require(obs.get('granted') == {'create': True, 'register': True}, 'registrar role not granted to MA')
+
+    def author_creates():
+        author, _, _, _ = run()
+        require(author.get('office_link') == 1 and author.get('landed') is True,
+                'the Office menu must link "Incoming" for the author and open the register')
+        require(author.get('status') == 'received' and author.get('register_button') == 0,
+                'a new card must be a draft that the author cannot register')
+        require(author.get('double_submit_http') == 200 and isinstance(author.get('count_before'), int)
+                and author.get('count_after_double_submit') == author['count_before'] + 1,
+                'a repeated create form must not create a second card: %r' % {k: author.get(k) for k in (
+                    'count_before', 'count_after_double_submit', 'double_submit_http')})
+        require(author.get('upload_error') is False and 'original' in (author.get('journal') or [])
+                and 'created' in (author.get('journal') or []), 'original not added or not journalled')
+        d = author.get('download') or {}
+        require(d.get('http') == 200 and str(d.get('disposition', '')).startswith('attachment') and d.get('sha_matches') is True,
+                'the author must download the exact original as an attachment: %r' % d)
+
+    def registration():
+        author, reg, number, _ = run()
+        page = reg.get('registered') or {}
+        require(page.get('status') == 'registered' and page.get('number') == number and page.get('card') == author['card'],
+                'the card page does not show the registered number: %r' % {k: page.get(k) for k in ('status', 'number')})
+        require('registered' in (page.get('journal') or []), 'registration not shown in the journal')
+        require(page.get('register') == 0, 'a registered card still offers "Register"')
+        truth = reg.get('truth') or {}
+        require(truth.get('status') == 'registered' and isinstance(truth.get('registeredat'), int)
+                and truth.get('journal', []).count('registered') == 1, 'service state after registration: %r' % truth)
+        require(reg.get('repeat_http') == 200 and isinstance(reg.get('series_before'), int)
+                and reg.get('series_after') == reg['series_before'] + 1
+                and number.endswith('/%04d' % reg['series_after']),
+                'the repeated register command moved the series: %r' % {k: reg.get(k) for k in ('series_before', 'series_after')})
+        require(truth.get('original') == reg.get('original_sha') and truth.get('stored') == reg.get('original_sha'),
+                'the stored original differs from the uploaded bytes after registration')
+
+    def correction():
+        _, reg, number, _ = run()
+        before, after = reg.get('truth') or {}, reg.get('after_correction') or {}
+        require(after.get('status') == 'registered' and after.get('number') == number, 'correction changed the number or status')
+        require(isinstance(before.get('revision'), int) and after.get('revision') == before['revision'] + 1,
+                'correction must append exactly one revision')
+        entries = after.get('corrected') or []
+        require(len(entries) == 1, 'exactly one "corrected" journal entry expected: %r' % entries)
+        e = entries[0]
+        require((e.get('old') or {}).get('correspondent') == 'CI Sender LLC'
+                and (e.get('new') or {}).get('correspondent') == 'CI Sender LLC (corrected)'
+                and (e.get('new') or {}).get('reason') == 'Typo in the sender name',
+                'journal must keep the old and new value and the reason: %r' % e)
+
+    def isolation():
+        author, _, _, _ = run()
+        iso = obs.get('isolation') or {}
+        require(sorted(iso) == ['EB_B', 'MB_A', 'MB_B'], 'isolation actors missing: %r' % sorted(iso))
+        for key, x in iso.items():
+            for view in ('list', 'card'):
+                v = x.get(view) or {}
+                require(isinstance(v.get('http'), int) and v['http'] < 500 and v.get('card') is None and v.get('leaked') == []
+                        and author['card'] not in (v.get('rows') or []), '%s reached company A card data (%s)' % (key, view))
+            require(x.get('download_http') == 404 and x.get('download_leak') is False, '%s downloaded company A original' % key)
+        require((iso['MB_A'].get('list') or {}).get('list') is False, 'company B registrar opened company A register')
+        require((iso['MB_B'].get('list') or {}).get('list') is True and (iso['MB_B'].get('card') or {}).get('notfound') is True,
+                'company A card through company B must be "not found"')
+        require((iso['EB_B'].get('list') or {}).get('norights') is True, 'an employee without a grant sees company B cards')
+
+    def race():
+        run()
+        r = obs.get('race') or {}
+        drafts, results = r.get('drafts') or [], r.get('results') or []
+        require(len(drafts) == OFFICEIN_RACE and len(results) == OFFICEIN_RACE + 1, 'race size changed: %r' % len(results))
+        require(all(x.get('exit') == 0 and isinstance(x.get('number'), str) for x in results),
+                'a parallel registration failed: %r' % [x.get('err') for x in results if x.get('exit') != 0][:2])
+        start = r.get('start')
+        require(isinstance(start, int) and r.get('end') == start + OFFICEIN_RACE, 'series moved by %r' % (
+            (r.get('end') or 0) - (start or 0)))
+        by = {}
+        for x in results:
+            by.setdefault(x.get('uuid'), set()).add(x.get('number'))
+        require(sorted(by) == sorted(drafts) and all(len(v) == 1 for v in by.values()),
+                'a card got two numbers or a result was lost')
+        seqs = sorted(int(next(iter(v)).split('/')[-1]) for v in by.values())
+        require(seqs == list(range(start + 1, start + OFFICEIN_RACE + 1)), 'numbers are not distinct and gap-free: %r' % seqs)
+        require(sum(1 for x in results if x.get('repeated') is True) == 1, 'the duplicate command must return the same number')
+
+    def layout():
+        author, _, number, rows = run()
+        for r in rows:
+            for view in ('list', 'card'):
+                v = r.get(view) or {}
+                require(v.get('http') == 200, '%s %s/%s answered %r' % (view, r['shell'], r['width'], v.get('http')))
+                box = v.get('hscroll')
+                require(isinstance(box, dict) and isinstance(box.get('scroll'), int) and box.get('inner') == r['width']
+                        and box['scroll'] <= box['inner'], 'register %s scrolls horizontally at %s px: %r' % (view, r['width'], box))
+            lst, card = r['list'], r['card']
+            require(lst.get('list') is True and author['card'] in (lst.get('rows') or []), 'registrar list misses the card')
+            require(OFFICEIN_TITLES[r['lang']] in (lst.get('h1') or []), 'register heading must say %s' % OFFICEIN_TITLES[r['lang']])
+            require(lst.get('rowdisplay') == ('block' if r['width'] < 721 else 'table-row'),
+                    'register rows at %s px must be %s' % (r['width'], 'cards' if r['width'] < 721 else 'a table'))
+            require(card.get('card') == author['card'] and card.get('number') == number, 'card page lost the number')
+            violations = browser_event_violations(r.get('browser_events'))
+            require(not violations, 'browser errors: %r' % violations[:3])
+            require(r.get('server_errors') == [], 'HTTP 5xx: %r' % (r.get('server_errors'),))
+        for who in ('author', 'registrar'):
+            x = obs.get(who) or {}
+            require(not browser_event_violations(x.get('browser_events')) and x.get('server_errors') == [],
+                    'browser errors or HTTP 5xx in the %s flow' % who)
+
+    def revocation():
+        author, _, number, _ = run()
+        rv = obs.get('revocation') or {}
+        require((rv.get('before') or {}).get('card') == author['card'], 'the author could not open own card before revocation')
+        require(rv.get('role_revoked_rights') == _NO_RIGHTS, 'revoking the role left an incoming right')
+        a = rv.get('after_role') or {}
+        require(a.get('http') == 200 and a.get('notfound') is True and a.get('card') is None and a.get('leaked') == [],
+                'the author still opens the card after the role was revoked')
+        require((rv.get('role_restored_rights') or {}).get('create') is True, 'author role not restored')
+        m = rv.get('after_member') or {}
+        require(rv.get('member_revoked') is True and isinstance(m.get('http'), int) and m['http'] < 500
+                and m.get('list') is False and m.get('leaked') == [], 'a revoked member still opens the register')
+        require(rv.get('member_reopened') is True, 'membership not reopened after the check')
+        c = obs.get('cancelled') or {}
+        require(c.get('status') == 'cancelled' and c.get('number') == number and c.get('cancelreason') == 'Received by mistake (CI)'
+                and 'cancelled' in (c.get('journal') or []), 'cancellation must keep the number and the reason: %r' % c)
+
+    return {'officein_switch_off_and_no_manager_fallback': switch_and_rights,
+            'officein_author_creates_once_with_original': author_creates,
+            'officein_registration_number_and_idempotent_repeat': registration,
+            'officein_correction_with_reason_and_journal': correction,
+            'officein_company_isolation_cards_and_files': isolation,
+            'officein_parallel_registration_race': race,
+            'officein_layout_owned_legacy_mobile': layout,
+            'officein_revocation_and_cancellation': revocation}
+
+
 def required_check_names():
     """Every check a complete BROWSER report must contain (used by browser_acceptance.py and merge_gate.py)."""
     return (['moodle_install', 'fixtures_companies_A_B'] + list(task_tab_checks({})) + list(attachments_checks({}, {}))
@@ -2652,7 +2834,8 @@ def required_check_names():
             + list(infocenter_checks({}))
             + list(notification_bell_checks({}))
             + list(adaptive_nav_checks({}))
-            + list(office_workspace_checks({})))
+            + list(office_workspace_checks({}))
+            + list(office_incoming_checks({})))
 
 
 def evaluate(checks):

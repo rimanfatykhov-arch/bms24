@@ -1,0 +1,20 @@
+{
+ "scope": "exact intentional source updates; not runtime or release acceptance",
+ "base_sha": "ee0064a3d502dc1ae4f0b5cf4cd3c0fd1100189d (DOC-W2 Office workspace head published to production, #181)",
+ "normalization": "CRLF to LF only",
+ "previous_evidence": "docs/reconcile/office-workspace-doc-w2-source-preservation.json (DOC-W2 Office workspace block)",
+ "decision": "docs/office/DOC_W3_INCOMING_DECISIONS.md (owner decisions 27.11.2026, #196: DOC-W3 incoming register, BMS-12)",
+ "change": "Append the DOC-W3 incoming register block (112 officein_* keys and privacy:metadata:officeincoming) after the DOC-W2 Office workspace block. Retain all preceding keys byte-for-byte. Schema step 2026112700 adds three tables; the register is behind local_kbacompany/office_incoming_enabled (default off).",
+ "files": [
+  {
+   "path": "local/kbacompany/lang/en/local_kbacompany.php",
+   "before_sha256_lf": "32402ab956d141c1cbb1b45c495cf8ddc2c6c95d09518995dba2c1473dfbc5cf",
+   "after_sha256_lf": "3ebfb7edd6c23d1ada06c775d353a8c777a9502711f16c0e964cbf92c786de65"
+  },
+  {
+   "path": "local/kbacompany/lang/ru/local_kbacompany.php",
+   "before_sha256_lf": "d5d534758b1c6c6cef4069d1dd6cbe233b9a6973a49f48c0ebc3f781ec51177f",
+   "after_sha256_lf": "00ec7447456046f0ac951b1483d9b4ee9d4ac840866acf91e76978eea50f7a97"
+  }
+ ]
+}

@@ -14,8 +14,11 @@ final class office_workspace_ui_service {
         return get_string('officews_' . $key, 'local_kbacompany', $a);
     }
 
-    /** Quick menu inside the workspace. Planned sections are plain text with a "planned" mark, never links. */
-    public static function section_nav(string $companyuuid, string $active): string {
+    /**
+     * Quick menu inside the workspace. Planned sections are plain text with a "planned" mark, never links.
+     * DOC-W3: "Incoming" becomes a link only when the caller passes $incoming (switch on and the user has a right).
+     */
+    public static function section_nav(string $companyuuid, string $active, bool $incoming = false): string {
         $routes = office_workspace_service::routes($companyuuid);
         $items = '';
         foreach (['overview', 'documents', 'review', 'execution', 'meetings', 'policies'] as $key) {
@@ -25,7 +28,16 @@ final class office_workspace_ui_service {
                 'aria-current' => $current ? 'page' : null,
             ]));
         }
+        if ($incoming) {
+            $current = $active === 'incoming';
+            $items .= html_writer::tag('li', html_writer::link(office_incoming_service::url($companyuuid),
+                self::str('section_incoming'), [
+                    'class' => 'bms24-wsnav-link' . ($current ? ' is-active' : ''),
+                    'aria-current' => $current ? 'page' : null, 'data-office-section' => 'incoming',
+                ]));
+        }
         foreach (office_workspace_service::PLANNED_SECTIONS as $key) {
+            if ($incoming && $key === 'incoming') { continue; }
             $items .= html_writer::tag('li', html_writer::tag('span',
                 s(self::str('section_' . $key)) . ' ' .
                 html_writer::tag('small', s(self::str('planned')), ['class' => 'bms24-wsnav-plannedmark']), [
@@ -50,7 +62,7 @@ final class office_workspace_ui_service {
         $out .= html_writer::tag('p', s(self::str('intro', format_string($model['company']['name']))),
             ['class' => 'bms24-ws-lead']);
         $out .= html_writer::end_tag('header');
-        $out .= self::section_nav($uuid, 'overview');
+        $out .= self::section_nav($uuid, 'overview', !empty($model['incoming_link']));
 
         // Counters: every value is an authorized total with a link to the owning page.
         $cards = [

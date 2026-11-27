@@ -78,6 +78,11 @@ R3_KEYS=[b'communication_object_dailyreport',b'dailyreports_discussion_title',b'
          b'dailyreports_discussion_note',b'dailyreports_discussion_empty',b'dailyreports_discussion_readonly',
          b'dailyreports_discussion_empty_message',b'dailyreports_discussion_files']
 OFFICE_MARKER=b'\n// DOC-W2 Office workspace (2026-11-24): read-only overview over existing documents, approvals and decisions.\n'
+OFFICEIN_MARKER=(b'\n// DOC-W3 Office incoming register (2026-11-27): owner decisions #196, numbering, registrar rights, '
+                 b'journal.\n')
+_OFFICEIN=json.loads((ROOT/'docs/reconcile/office-incoming-doc-w3-source-preservation.json').read_text(encoding='utf-8'))
+OFFICEIN_BEFORE={lang:next(r['before_sha256_lf'] for r in _OFFICEIN['files']
+                           if r['path']==f'local/kbacompany/lang/{lang}/local_kbacompany.php') for lang in ('en','ru')}
 _OFFICE=json.loads((ROOT/'docs/reconcile/office-workspace-doc-w2-source-preservation.json').read_text(encoding='utf-8'))
 OFFICE_BEFORE={lang:next(r['before_sha256_lf'] for r in _OFFICE['files'] if r['path']==f'local/kbacompany/lang/{lang}/local_kbacompany.php')
                for lang in ('en','ru')}
@@ -166,6 +171,14 @@ class Preservation(unittest.TestCase):
                                             # Everything up to the DOC-W2 Office marker is the published file ending with the Information Centre by divisions block (#190); its keys are new.
                                             ic,office=ic.split(OFFICE_MARKER)
                                             self.assertEqual(OFFICE_BEFORE[lang],hashlib.sha256(data.split(OFFICE_MARKER)[0]).hexdigest())
+                                            if OFFICEIN_MARKER in office:
+                                                # Everything up to the DOC-W3 marker is the published DOC-W2 file; the incoming keys are new.
+                                                office,officein=office.split(OFFICEIN_MARKER)
+                                                self.assertEqual(OFFICEIN_BEFORE[lang],hashlib.sha256(data.split(OFFICEIN_MARKER)[0]).hexdigest())
+                                                inkeys=keys(officein)
+                                                self.assertEqual(112,len(inkeys));self.assertEqual(len(inkeys),len(set(inkeys)))
+                                                self.assertTrue(all(k.startswith((b'officein_',b'privacy:metadata:officeincoming')) for k in inkeys))
+                                                self.assertFalse(set(inkeys)&set(keys(data.split(OFFICEIN_MARKER)[0])))
                                             officekeys=keys(office)
                                             self.assertEqual(59,len(officekeys));self.assertEqual(len(officekeys),len(set(officekeys)))
                                             self.assertTrue(all(k.startswith(b'officews_') for k in officekeys))

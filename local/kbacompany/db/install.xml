@@ -3757,5 +3757,84 @@
         <KEYS><KEY NAME="primary" TYPE="primary" FIELDS="id" /></KEYS>
         <INDEXES><INDEX NAME="company_uix" UNIQUE="true" FIELDS="companyuuid" /></INDEXES>
       </TABLE>
+        <TABLE NAME="local_kbacompany_offseries" COMMENT="DOC-W3 office registration series: one counter per company, series code and period">
+        <FIELDS>
+          <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true" />
+          <FIELD NAME="companyuuid" TYPE="char" LENGTH="36" NOTNULL="true" />
+          <FIELD NAME="uuid" TYPE="char" LENGTH="36" NOTNULL="true" />
+          <FIELD NAME="code" TYPE="char" LENGTH="32" NOTNULL="true" />
+          <FIELD NAME="period" TYPE="char" LENGTH="8" NOTNULL="true" />
+          <FIELD NAME="prefix" TYPE="char" LENGTH="32" NOTNULL="true" />
+          <FIELD NAME="lastseq" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" />
+          <FIELD NAME="lockversion" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" />
+          <FIELD NAME="timecreated" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" />
+          <FIELD NAME="timemodified" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" />
+        </FIELDS>
+        <KEYS><KEY NAME="primary" TYPE="primary" FIELDS="id" /></KEYS>
+        <INDEXES>
+          <INDEX NAME="series_uix" UNIQUE="true" FIELDS="companyuuid,code,period" />
+          <INDEX NAME="uuid_uix" UNIQUE="true" FIELDS="companyuuid,uuid" />
+        </INDEXES>
+      </TABLE>
+        <TABLE NAME="local_kbacompany_offrec" COMMENT="DOC-W3 office record (incoming register card); registration number is unique per series and period">
+        <FIELDS>
+          <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true" />
+          <FIELD NAME="companyuuid" TYPE="char" LENGTH="36" NOTNULL="true" />
+          <FIELD NAME="uuid" TYPE="char" LENGTH="36" NOTNULL="true" />
+          <FIELD NAME="direction" TYPE="char" LENGTH="12" NOTNULL="true" DEFAULT="incoming" />
+          <FIELD NAME="kind" TYPE="char" LENGTH="32" NOTNULL="true" DEFAULT="letter" />
+          <FIELD NAME="subject" TYPE="char" LENGTH="255" NOTNULL="true" />
+          <FIELD NAME="status" TYPE="char" LENGTH="24" NOTNULL="true" DEFAULT="received" />
+          <FIELD NAME="currentrev" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="1" />
+          <FIELD NAME="lockversion" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" />
+          <FIELD NAME="createkey" TYPE="char" LENGTH="36" NOTNULL="true" />
+          <FIELD NAME="receivedon" TYPE="char" LENGTH="10" NOTNULL="false" />
+          <FIELD NAME="seriesuuid" TYPE="char" LENGTH="36" NOTNULL="false" />
+          <FIELD NAME="regperiod" TYPE="char" LENGTH="8" NOTNULL="false" />
+          <FIELD NAME="regseq" TYPE="int" LENGTH="10" NOTNULL="false" />
+          <FIELD NAME="regnumber" TYPE="char" LENGTH="80" NOTNULL="false" />
+          <FIELD NAME="registeredat" TYPE="int" LENGTH="10" NOTNULL="false" />
+          <FIELD NAME="registeredby" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" />
+          <FIELD NAME="registerkey" TYPE="char" LENGTH="36" NOTNULL="false" />
+          <FIELD NAME="originalmanifest" TYPE="text" NOTNULL="false" />
+          <FIELD NAME="cancelreason" TYPE="text" NOTNULL="false" />
+          <FIELD NAME="cancelledat" TYPE="int" LENGTH="10" NOTNULL="false" />
+          <FIELD NAME="cancelledby" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" />
+          <FIELD NAME="createdby" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" />
+          <FIELD NAME="timecreated" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" />
+          <FIELD NAME="timemodified" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" />
+        </FIELDS>
+        <KEYS><KEY NAME="primary" TYPE="primary" FIELDS="id" /></KEYS>
+        <INDEXES>
+          <INDEX NAME="uuid_uix" UNIQUE="true" FIELDS="companyuuid,uuid" />
+          <INDEX NAME="create_uix" UNIQUE="true" FIELDS="companyuuid,createdby,createkey" />
+          <INDEX NAME="regseq_uix" UNIQUE="true" FIELDS="companyuuid,seriesuuid,regperiod,regseq" />
+          <INDEX NAME="status_ix" UNIQUE="false" FIELDS="companyuuid,direction,status,timemodified" />
+          <INDEX NAME="creator_ix" UNIQUE="false" FIELDS="companyuuid,createdby" />
+        </INDEXES>
+      </TABLE>
+        <TABLE NAME="local_kbacompany_offrev" COMMENT="DOC-W3 office record metadata revisions; corrections append a revision, earlier revisions stay unchanged">
+        <FIELDS>
+          <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true" />
+          <FIELD NAME="companyuuid" TYPE="char" LENGTH="36" NOTNULL="true" />
+          <FIELD NAME="recorduuid" TYPE="char" LENGTH="36" NOTNULL="true" />
+          <FIELD NAME="revision" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="1" />
+          <FIELD NAME="subject" TYPE="char" LENGTH="255" NOTNULL="true" />
+          <FIELD NAME="correspondent" TYPE="char" LENGTH="255" NOTNULL="true" />
+          <FIELD NAME="externalnumber" TYPE="char" LENGTH="100" NOTNULL="false" />
+          <FIELD NAME="externaldate" TYPE="char" LENGTH="10" NOTNULL="false" />
+          <FIELD NAME="receivedon" TYPE="char" LENGTH="10" NOTNULL="false" />
+          <FIELD NAME="channel" TYPE="char" LENGTH="24" NOTNULL="true" DEFAULT="post" />
+          <FIELD NAME="summary" TYPE="text" NOTNULL="false" />
+          <FIELD NAME="reason" TYPE="text" NOTNULL="false" />
+          <FIELD NAME="contenthash" TYPE="char" LENGTH="64" NOTNULL="true" />
+          <FIELD NAME="createdby" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" />
+          <FIELD NAME="timecreated" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" />
+        </FIELDS>
+        <KEYS><KEY NAME="primary" TYPE="primary" FIELDS="id" /></KEYS>
+        <INDEXES>
+          <INDEX NAME="record_rev_uix" UNIQUE="true" FIELDS="companyuuid,recorduuid,revision" />
+        </INDEXES>
+      </TABLE>
   </TABLES>
 </XMLDB>

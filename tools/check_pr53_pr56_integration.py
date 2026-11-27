@@ -71,9 +71,9 @@ def check(root=ROOT):
     reviewed_followup['local/kbacorporate/db/upgrade.php'] = 'ef39434356106043292de20bf355165961ca07462e9ead6a79f19bbc4b6d5019'
     reviewed_metadata={'AGENTS.md','docs/00_MASTER_CONTEXT.md'}
     for name, expected in plan['unchanged_schema_hashes'].items():
-        # ADR-0009 R1 appends five additive daily report tables, ADR-0010 two more (dreportcc, dreportset);
-        # every earlier table definition is unchanged.
-        target = {'local/kbacompany/db/install.xml': '5e18cb8713fc65590e91d8b2526735e14a23eafd866de7c555ca5dd24291640e'}.get(name, expected)
+        # ADR-0009 R1 appends five additive daily report tables, ADR-0010 two more (dreportcc, dreportset),
+        # DOC-W3 three (offseries, offrec, offrev); every earlier table definition is unchanged.
+        target = {'local/kbacompany/db/install.xml': '61a3f185b0f63d39365e84bf7f9a7fd9aa59c979e41f7ccf3d4e9e663728e95b'}.get(name, expected)
         if digest(root/name)!=target:
             errors.append('shared schema/helper changed: '+name)
     # UX-1: exact append-only language/scoped CSS follow-up over E2.
@@ -135,6 +135,10 @@ def check(root=ROOT):
     # See docs/office/DOC_W2_OFFICE_WORKSPACE.md.
     reviewed_followup['local/kbacompany/lang/en/local_kbacompany.php'] = '32402ab956d141c1cbb1b45c495cf8ddc2c6c95d09518995dba2c1473dfbc5cf'
     reviewed_followup['local/kbacompany/lang/ru/local_kbacompany.php'] = 'd5d534758b1c6c6cef4069d1dd6cbe233b9a6973a49f48c0ebc3f781ec51177f'
+    # DOC-W3 incoming register (owner decisions 27.11.2026, #196): officein_* RU/EN block after the DOC-W2 Office block.
+    # See docs/reconcile/office-incoming-doc-w3-source-preservation.json.
+    reviewed_followup['local/kbacompany/lang/en/local_kbacompany.php'] = '3ebfb7edd6c23d1ada06c775d353a8c777a9502711f16c0e964cbf92c786de65'
+    reviewed_followup['local/kbacompany/lang/ru/local_kbacompany.php'] = '00ec7447456046f0ac951b1483d9b4ee9d4ac840866acf91e76978eea50f7a97'
     reviewed_followup['local/kbacompany/classes/local/communication_service.php'] = '870b471dba39c867b5b13f8b04f55fb82f67ce484ea44cf929b5b9c4f93dae92'
     for row in plan['rows']:
         path=root/row['path']
@@ -148,7 +152,7 @@ def check(root=ROOT):
         errors.append('one historical0902 release note was lost')
     upgrade=(root/'local/kbacompany/db/upgrade.php').read_text(encoding='utf-8')
     versions=[int(v) for v in re.findall(r'upgrade_plugin_savepoint\(true,\s*(\d+)',upgrade)]
-    if len(versions)!=486 or versions!=sorted(set(versions)) or versions[-4:]!=[2026111100,2026111600,2026111601,2026112301]:
+    if len(versions)!=487 or versions!=sorted(set(versions)) or versions[-5:]!=[2026111100,2026111600,2026111601,2026112301,2026112700]:
         errors.append('merged upgrade chronology/identity changed')
     driver=(root/'tools/tests/moodle_acceptance.php').read_text(encoding='utf-8')
     for ref in [plan['pr53_sha'],plan['pr56_sha']]:
