@@ -95,6 +95,12 @@ final class bmos_registry_test extends \advanced_testcase {
         return $uuid;
     }
 
+    /** The separate grant authority (A0_02 §4.2): until the owner decides, the site administrator. */
+    private function granter(): int {
+        $this->setAdminUser();
+        return (int)get_admin()->id;
+    }
+
     private function grant_spec(array $extra = []): array {
         return $extra + ['command' => 'task.read', 'objecttype' => 'task', 'action' => 'view', 'scope' => 'own',
             'risklimit' => 'R0', 'expiresat' => time() + 30 * DAYSECS];
@@ -110,6 +116,11 @@ final class bmos_registry_test extends \advanced_testcase {
         occupancy::approve($f['company'], $uuid, 1, $this->as($f['manager2']));
         occupancy::activate($f['company'], $uuid, 2, (int)$f['manager2']->id);
         return $uuid;
+    }
+
+    private function count_active_grants(string $principal): int {
+        global $DB;
+        return $DB->count_records('local_kbacompany_wpgrant', ['principaluuid' => $principal, 'status' => 'active']);
     }
 
     private function snapshot(array $tables): array {
@@ -151,6 +162,15 @@ final class bmos_registry_test extends \advanced_testcase {
         }
         $context = new principal_context($f['company'], $uuid, 'ai_agent', (int)$f['sponsor']->id, 1, time());
         $this->assertFalse(principal_permission::can($context, 'task', 'view'));
+        // The privacy path runs with the switch off too: every BMOS EXISTS predicate is valid SQL.
+        $system = \context_system::instance();
+        $this->assertInstanceOf(\core_privacy\local\request\contextlist::class,
+            provider::get_contexts_for_userid((int)$f['sponsor']->id));
+        writer::reset();
+        provider::export_user_data(new approved_contextlist($f['sponsor'], 'local_kbacompany', [$system->id]));
+        $this->assertFalse(writer::with_context($system)->has_any_data([get_string('bmos_privacy_registry',
+            'local_kbacompany')]));
+        provider::delete_data_for_user(new approved_contextlist($f['sponsor'], 'local_kbacompany', [$system->id]));
         foreach (self::TABLES as $table) {
             $this->assertSame(0, $DB->count_records($table), $table);
         }
@@ -252,7 +272,7 @@ final class bmos_registry_test extends \advanced_testcase {
     public function test_s03_company_isolation_without_existence_disclosure(): void {
         $f = $this->fixture();
         $uuid = $this->agent($f);
-        $grant = grants::grant($f['company'], $uuid, $this->grant_spec(), $this->as($f['manager1']));
+        $grant = grants::grant($f['company'], $uuid, $this->grant_spec(), $this->granter());
         $occupancy = $this->occupy($f, $uuid);
         $missing = '40000000-0000-4000-8000-00000000abcd';
         // Same error for a foreign principal and a principal that does not exist.
@@ -261,9 +281,13 @@ final class bmos_registry_test extends \advanced_testcase {
                 principal_context_service::context($f['other'], $ref);
             });
         }
+        // Even the grant authority cannot reach an A principal through the B company.
+        $admin = $this->granter();
+        $this->expect_error('notavailable', function() use ($f, $uuid, $admin) {
+            grants::grant($f['other'], $uuid, $this->grant_spec(), $admin);
+        });
         $other = $this->as($f['othermanager']);
         foreach ([
-            function() use ($f, $uuid, $other) { grants::grant($f['other'], $uuid, $this->grant_spec(), $other); },
             function() use ($f, $grant, $other) { grants::revoke($f['other'], $grant, $other); },
             function() use ($f, $occupancy, $other) { occupancy::suspend($f['other'], $occupancy, 3, $other); },
             function() use ($f, $uuid, $other) { registry::suspend($f['other'], $uuid, 2, $other); },
@@ -287,7 +311,8 @@ final class bmos_registry_test extends \advanced_testcase {
         $this->assertFalse(principal_permission::can($context, 'task', 'view',
             ['companyuuid' => $f['other'], 'uuid' => $missing, 'ownerprincipaluuid' => $uuid]));
         $this->assertTrue(principal_permission::can($context, 'task', 'view',
-            ['companyuuid' => $f['company'], 'uuid' => $missing, 'ownerprincipaluuid' => $uuid]));
+            ['companyuuid' => $f['company'], 'uuid' => $missing, 'ownerprincipaluuid' => $uuid,
+             'positionuuid' => $f['post']]));
         // A context naming company B for an A principal is not a context.
         $forged = new principal_context($f['other'], $uuid, 'ai_agent', (int)$f['sponsor']->id,
             $context->authzrevision(), time());
@@ -312,6 +337,20 @@ final class bmos_registry_test extends \advanced_testcase {
         $this->expect_error('denied', function() use ($f, $uuid) {
             grants::grant($f['company'], $uuid, $this->grant_spec(), 0);
         });
+        // Organisation rights are not grant rights: manager1 can manage the organisation but cannot issue or renew.
+        $manager = (int)$f['manager1']->id;
+        $this->assertTrue(\local_kbacompany\local\permission_service::can_manage_organization($f['company'], $manager));
+        $this->expect_error('grantauthority', function() use ($f, $uuid, $manager) {
+            grants::grant($f['company'], $uuid, $this->grant_spec(), $manager);
+        });
+        $grant = grants::grant($f['company'], $uuid, $this->grant_spec(), $this->granter());
+        $manager = $this->as($f['manager1']);
+        $this->expect_error('grantauthority', function() use ($f, $grant, $manager) {
+            grants::extend($f['company'], $grant, time() + 40 * DAYSECS, $manager);
+        });
+        // Removing a right never escalates: an organisation manager may revoke.
+        grants::revoke($f['company'], $grant, $manager);
+        $this->assertSame(0, $this->count_active_grants($uuid));
         // No public registry method accepts a principal context: principals cannot be writers.
         foreach ([registry::class, grants::class, occupancy::class] as $class) {
             foreach ((new \ReflectionClass($class))->getMethods(\ReflectionMethod::IS_PUBLIC) as $method) {
@@ -330,7 +369,7 @@ final class bmos_registry_test extends \advanced_testcase {
         $uuid = $this->agent($f);
         $context = principal_context_service::context($f['company'], $uuid);
         $this->assertFalse(principal_permission::can($context, 'task', 'view'));
-        $manager = $this->as($f['manager1']);
+        $manager = $this->granter();
         grants::grant($f['company'], $uuid, $this->grant_spec(), $manager);
         // The grant moved authzrevision: the earlier context is stale and denies until rebuilt.
         $this->assertFalse(principal_permission::can($context, 'task', 'view'));
@@ -341,8 +380,14 @@ final class bmos_registry_test extends \advanced_testcase {
         $this->assertFalse(principal_permission::can($context, 'agent', 'view'));
         $this->assertFalse(principal_permission::can($context, 'daily_report', 'view'));
         $this->assertFalse(principal_permission::can($context, 'task', 'run'));
-        $this->assertFalse(principal_permission::can($context, 'task', 'view', ['companyuuid' => $f['company'],
-            'uuid' => '40000000-0000-4000-8000-000000000002', 'ownerprincipaluuid' => '']));
+        // own: positive control on an allowed resource, negatives for another owner and a personal task.
+        $owned = ['companyuuid' => $f['company'], 'uuid' => '40000000-0000-4000-8000-000000000002',
+            'ownerprincipaluuid' => $uuid, 'positionuuid' => $f['post']];
+        $this->assertTrue(principal_permission::can($context, 'task', 'view', $owned), 'own positive control');
+        $this->assertFalse(principal_permission::can($context, 'task', 'view', ['ownerprincipaluuid' => ''] + $owned));
+        $this->assertFalse(principal_permission::can($context, 'task', 'view', ['positionuuid' => ''] + $owned),
+            'own personal task');
+        $this->assertFalse(principal_permission::can($context, 'task', 'view', ['personal' => true] + $owned));
         // Grants outside the A1 contract are not issued.
         foreach ([['scope' => 'delegated_team'], ['scope' => 'department'], ['scope' => 'company'],
                 ['risklimit' => 'R4'], ['objecttype' => 'agent'], ['action' => 'run'], ['command' => 'Task Read'],
@@ -356,22 +401,26 @@ final class bmos_registry_test extends \advanced_testcase {
         grants::grant($f['company'], $uuid, $this->grant_spec(['scope' => 'explicit_object', 'action' => 'comment',
             'objects' => [strtoupper($listed)]]), $manager);
         $context = principal_context_service::context($f['company'], $uuid);
-        $this->assertTrue(principal_permission::can($context, 'task', 'comment',
-            ['companyuuid' => $f['company'], 'uuid' => $listed]));
+        $object = ['companyuuid' => $f['company'], 'uuid' => $listed, 'positionuuid' => $f['post']];
+        $this->assertTrue(principal_permission::can($context, 'task', 'comment', $object), 'explicit positive control');
         $this->assertFalse(principal_permission::can($context, 'task', 'comment',
-            ['companyuuid' => $f['company'], 'uuid' => '50000000-0000-4000-8000-000000000002']));
+            ['uuid' => '50000000-0000-4000-8000-000000000002'] + $object));
+        // A personal task (no duty position) is denied even when it is listed explicitly.
+        $this->assertFalse(principal_permission::can($context, 'task', 'comment', ['positionuuid' => ''] + $object),
+            'explicit personal task');
+        $this->assertFalse(principal_permission::can($context, 'task', 'comment',
+            ['companyuuid' => $f['company'], 'uuid' => $listed]), 'explicit task without a duty position');
     }
 
     // S08.1: revocation of grant, occupancy, principal and sponsor membership.
     public function test_s08_revocation_denies_on_the_next_context_and_check(): void {
         $f = $this->fixture();
         $uuid = $this->agent($f);
-        $manager = $this->as($f['manager1']);
-        $own = grants::grant($f['company'], $uuid, $this->grant_spec(), $manager);
+        $own = grants::grant($f['company'], $uuid, $this->grant_spec(), $this->granter());
         $occupancyuuid = $this->occupy($f, $uuid);
-        $manager = $this->as($f['manager1']);
         grants::grant($f['company'], $uuid, $this->grant_spec(['scope' => 'position', 'action' => 'comment',
-            'occupancyuuid' => $occupancyuuid]), $manager);
+            'occupancyuuid' => $occupancyuuid]), $this->granter());
+        $manager = $this->as($f['manager1']);
         $context = principal_context_service::context($f['company'], $uuid);
         $object = ['companyuuid' => $f['company'], 'uuid' => '60000000-0000-4000-8000-000000000001',
             'positionuuid' => $f['post']];
@@ -388,7 +437,7 @@ final class bmos_registry_test extends \advanced_testcase {
         $context = principal_context_service::context($f['company'], $uuid);
         $this->assertFalse(principal_permission::can($context, 'task', 'comment', $object), 'ended occupancy');
         // Sponsor membership revoked (ADR-0006): the next context build fails closed.
-        grants::grant($f['company'], $uuid, $this->grant_spec(), $manager);
+        grants::grant($f['company'], $uuid, $this->grant_spec(), $this->granter());
         $context = principal_context_service::context($f['company'], $uuid);
         $this->assertTrue(principal_permission::can($context, 'task', 'view'));
         $this->setAdminUser();
@@ -413,7 +462,7 @@ final class bmos_registry_test extends \advanced_testcase {
         global $DB;
         $f = $this->fixture();
         $uuid = $this->agent($f);
-        $manager = $this->as($f['manager1']);
+        $manager = $this->granter();
         foreach ([time() - 1, time() + 91 * DAYSECS] as $expires) {
             $this->expect_error('invalid', function() use ($f, $uuid, $manager, $expires) {
                 grants::grant($f['company'], $uuid, $this->grant_spec(['expiresat' => $expires]), $manager);
@@ -424,7 +473,11 @@ final class bmos_registry_test extends \advanced_testcase {
         $this->expect_error('denied', function() use ($f, $grant, $employee) {
             grants::extend($f['company'], $grant, time() + 20 * DAYSECS, $employee);
         });
-        $manager = $this->as($f['manager2']);
+        $orgmanager = $this->as($f['manager2']);
+        $this->expect_error('grantauthority', function() use ($f, $grant, $orgmanager) {
+            grants::extend($f['company'], $grant, time() + 20 * DAYSECS, $orgmanager);
+        });
+        $manager = $this->granter();
         $this->expect_error('invalid', function() use ($f, $grant, $manager) {
             grants::extend($f['company'], $grant, time() + 91 * DAYSECS, $manager);
         });
@@ -435,7 +488,7 @@ final class bmos_registry_test extends \advanced_testcase {
         $this->assertSame('active', $new->status);
         $this->assertSame(2, (int)$new->revision);
         $this->assertSame($grant, $new->supersedesuuid);
-        $this->assertSame((int)$f['manager2']->id, (int)$new->grantedby);
+        $this->assertSame($manager, (int)$new->grantedby);
         $context = principal_context_service::context($f['company'], $uuid);
         $this->assertTrue(principal_permission::can($context, 'task', 'view'));
         // Time passes the expiry: the same now of the check denies, and an expired grant is never renewed.
@@ -450,7 +503,7 @@ final class bmos_registry_test extends \advanced_testcase {
         // Occupancy end date in the past stops the position grant.
         $occupancyuuid = $this->occupy($f, $uuid);
         grants::grant($f['company'], $uuid, $this->grant_spec(['scope' => 'position',
-            'occupancyuuid' => $occupancyuuid]), $this->as($f['manager1']));
+            'occupancyuuid' => $occupancyuuid]), $this->granter());
         $context = principal_context_service::context($f['company'], $uuid);
         $object = ['companyuuid' => $f['company'], 'uuid' => '60000000-0000-4000-8000-000000000002',
             'positionuuid' => $f['post']];
@@ -551,7 +604,7 @@ final class bmos_registry_test extends \advanced_testcase {
         $this->assertSame(self::TABLES, $found);
         $f = $this->fixture();
         $uuid = $this->agent($f);
-        grants::grant($f['company'], $uuid, $this->grant_spec(), $this->as($f['manager1']));
+        grants::grant($f['company'], $uuid, $this->grant_spec(), $this->granter());
         $this->occupy($f, $uuid);
         $row = $DB->get_record('local_kbacompany_wprincipal', ['uuid' => $uuid], '*', MUST_EXIST);
         $this->assertSame('', $row->credentialref);
@@ -568,7 +621,7 @@ final class bmos_registry_test extends \advanced_testcase {
         global $DB;
         $f = $this->fixture();
         $uuid = $this->agent($f);
-        $grant = grants::grant($f['company'], $uuid, $this->grant_spec(), $this->as($f['manager1']));
+        $grant = grants::grant($f['company'], $uuid, $this->grant_spec(), $this->granter());
         $occupancyuuid = $this->occupy($f, $uuid);
         $system = \context_system::instance();
         foreach (['sponsor', 'manager1', 'manager2', 'supervisor'] as $who) {
@@ -587,6 +640,9 @@ final class bmos_registry_test extends \advanced_testcase {
         $this->setAdminUser();
         provider::delete_data_for_user(new approved_contextlist($f['manager1'], 'local_kbacompany', [$system->id]));
         provider::delete_data_for_user(new approved_contextlist($f['sponsor'], 'local_kbacompany', [$system->id]));
+        $admin = (int)get_admin()->id;
+        $this->assertSame($admin, (int)$DB->get_field('local_kbacompany_wpgrant', 'grantedby', ['uuid' => $grant]));
+        provider::delete_data_for_user(new approved_contextlist(get_admin(), 'local_kbacompany', [$system->id]));
         $this->assertSame(0, (int)$DB->get_field('local_kbacompany_wpgrant', 'grantedby', ['uuid' => $grant]));
         $this->assertSame(0, (int)$DB->get_field('local_kbacompany_wprincipal', 'createdby', ['uuid' => $uuid]));
         $this->assertSame(0, (int)$DB->get_field('local_kbacompany_wprincipal', 'sponsoruserid', ['uuid' => $uuid]));

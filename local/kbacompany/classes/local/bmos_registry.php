@@ -93,6 +93,20 @@ final class bmos_registry {
     }
 
     /**
+     * Grant management is a separate authority from manageorganization (A0_02 §4.2, self-escalation protection).
+     * Until the owner chooses the permanent authority (open decision, docs/bmos/A1_1_REGISTRIES.md §2), only the site
+     * administrator issues and renews grants: an organisation manager alone cannot. No capability or role is
+     * created or changed. The writer rules of require_writer() apply in addition.
+     */
+    public static function require_grant_manager(string $companyuuid, int $actorid): string {
+        $companyuuid = self::require_writer($companyuuid, $actorid);
+        if (!is_siteadmin($actorid)) {
+            self::fail('grantauthority');
+        }
+        return $companyuuid;
+    }
+
+    /**
      * Whether a Moodle user is a current, not revoked member of the company. Site administrator or
      * viewallcompanies access is not membership. Reads fresh rows; no cache.
      */

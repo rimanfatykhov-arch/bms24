@@ -176,7 +176,7 @@ class Preservation(unittest.TestCase):
                                                 office,bmos=office.split(BMOS_MARKER)
                                                 self.assertEqual(BMOS_BEFORE[lang],hashlib.sha256(data.split(BMOS_MARKER)[0]).hexdigest())
                                                 bmoskeys=keys(bmos)
-                                                self.assertEqual(12,len(bmoskeys));self.assertEqual(len(bmoskeys),len(set(bmoskeys)))
+                                                self.assertEqual(13,len(bmoskeys));self.assertEqual(len(bmoskeys),len(set(bmoskeys)))
                                                 self.assertTrue(all(k.startswith(b'bmos_') for k in bmoskeys))
                                                 self.assertFalse(set(bmoskeys)&set(keys(data.split(BMOS_MARKER)[0])))
                                             officekeys=keys(office)

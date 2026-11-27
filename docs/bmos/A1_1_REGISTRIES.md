@@ -10,7 +10,7 @@
 |---|---|---|
 | Схема | `db/install.xml`, шаг `2026112800` в `db/upgrade.php` | Шесть новых таблиц из install.xml: `wprincipal`, `wpaudit`, `wpgrant`, `wpdeleg` (только схема, до A3 не используется), `posoccup`, `posoccuplog`. Существующие таблицы и строки не меняются, backfill нет |
 | Выключатель | `settings.php`, `local_kbacompany/bmos_enabled` | По умолчанию 0. При 0 любой вход в сервисы реестра и контекст принципала отвечает `bmos_error_disabled`, `principal_permission::can` — `false`. Остальной продукт работает как до BMOS |
-| Реестры | `principal_registry_service`, `principal_grant_service`, `position_occupancy_service` | Пишет только вошедший человек (`$USER->id` = actor) с `permission_service::can_manage_organization` в компании. Метода, принимающего `principal_context` как автора записи, нет |
+| Реестры | `principal_registry_service`, `principal_grant_service`, `position_occupancy_service` | Пишет только вошедший человек (`$USER->id` = actor) с `permission_service::can_manage_organization` в компании; выдача и продление грантов — дополнительно отдельное полномочие (§2 п. 10). Метода, принимающего `principal_context` как автора записи, нет |
 | Общие правила | `bmos_registry` | Фильтр компании в SQL; ссылка на чужую или несуществующую запись — одна ошибка `bmos_error_notavailable`; lock `bmos_principal_<uuid>` берётся первым, затем одна транзакция с изменением и `authzrevision + 1` (A0_03 §2) |
 | Контекст | `principal_context_service::context(companyuuid, principaluuid)`, `principal_context` | Параллельно `company_context_service`; human-путь не меняется. Нет `userid`, токена, сессии. Активный `ai_agent`, спонсор — действующий член компании, иначе отказ без раскрытия существования |
 | Право | `principal_permission::can(context, object_type, action, resource)` | Deny by default, форма RBAC 2.0. Каждый вызов заново строит контекст из БД и сравнивает `authzrevision`; гранты и занятость читаются с фильтром компании и одним `now` |
@@ -31,8 +31,10 @@
    `explicit_object` (явный список UUID в `constraintjson`, не больше 200). `delegated_team`, `department`, `subtree`,
    `company` и R4 отклоняются.
 6. **Объект.** Полный `principal_object_acl` для реальных объектов — A1-04. В A1.1 `resource` проверяется по явным
-   полям: компания, `ownerprincipaluuid` для `own`, `uuid` для `explicit_object`, `positionuuid` для `position`. Объект
-   без поста (личный) агенту недоступен всегда.
+   полям: компания, `ownerprincipaluuid` для `own`, `uuid` для `explicit_object`, `positionuuid` для `position`.
+   Общее условие для **всех** scopes (ревизия Codex 28.11): объект в компании принципала и не личный — задача без
+   поста (`positionuuid` пуст) или любой ресурс с `personal = true` запрещены и для `own`, и для `explicit_object`, и
+   для `position`.
 7. **Сроки.** `expiresat` > now и ≤ now + 90 дней. Продление — новая строка (новая ревизия, `supersedesuuid`), старая
    становится `superseded`; истёкший, отозванный или заменённый грант не продлевается. Задачи cron, проставляющей
    `expired`, в A1.1 нет: граница — время проверки (A0_03 §2).
@@ -42,6 +44,18 @@
 9. **Privacy.** Реестры — записи безопасности компании: удаление по человеку обнуляет его id и тексты его записей
    в журналах, строки остаются. Принципал, потерявший спонсора, и занятость без куратора закрываются (fail closed),
    `authzrevision` растёт.
+10. **Полномочие на гранты (A0_02 §4.2, ревизия Codex 28.11).** Управление грантами отделено от
+    `manageorganization`. Выдача и продление требуют правил автора записи **и** отдельного полномочия; пока владелец
+    его не выбрал, это только администратор сайта. Руководитель организации с `can_manage_organization` гранты не
+    выдаёт и не продлевает (`bmos_error_grantauthority`), но может **отозвать**: отзыв только сужает права. Новой
+    capability и изменения ролей нет: `db/access.php` закреплён gate `test_no_capability_change_against_base`, а
+    права не меняются без решения владельца.
+
+    **Открытое решение владельца (OD-A11-1).** Какое постоянное полномочие выдаёт гранты:
+    (а) новая capability `local/kbacompany:managebmosgrants` без archetypes, назначаемая явно, вместе с
+    `can_manage_organization` в компании — нужен отдельный OK на изменение `db/access.php` и gate capability;
+    (б) роль доступа RBAC 2.0 на новом объекте `agent` (пара `agent/approve`) — нужно решение по словарю;
+    (в) оставить только администратора сайта до A2. Рекомендация исполнителя — (а). Пока решения нет, действует (в).
 
 ## 3. Тесты → сценарии A0_09 §3
 

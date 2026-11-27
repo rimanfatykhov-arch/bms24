@@ -10158,3 +10158,4 @@ $string['bmos_error_lock'] = 'The record is being changed right now. Try again l
 $string['bmos_error_sponsor'] = 'The responsible person must be a current member of the company.';
 $string['bmos_error_twoperson'] = 'Occupancy in agent mode must be approved by a second person who is neither its creator nor the agent sponsor.';
 $string['bmos_privacy_registry'] = 'BMOS registries record the people who register, sponsor, approve, supervise, grant, revoke or delegate work principals and position occupancy, with the time of each action.';
+$string['bmos_error_grantauthority'] = 'Grants are issued and renewed by the separate grant authority, not by organisation management rights alone.';

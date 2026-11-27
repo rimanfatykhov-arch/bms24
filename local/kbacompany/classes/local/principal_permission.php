@@ -11,7 +11,8 @@ defined('MOODLE_INTERNAL') || die();
  * grant, an expired, revoked or superseded grant, a foreign company, delegated_team (A3) or any unexpected state
  * deny. The principal is never passed to human checks as a userid. Object ownership rules of the canonical services
  * (principal_object_acl for real objects) arrive with the first command in A1-04; here a resource is judged only by
- * the explicit fields below and a personal object (no duty position) is always denied.
+ * the explicit fields below. For every scope the object must be in the principal's company and not personal: a task
+ * without a duty position, or any resource marked personal, is always denied.
  */
 final class principal_permission {
     /**
@@ -35,7 +36,7 @@ final class principal_permission {
             return false;
         }
         $companyuuid = $fresh->companyuuid();
-        if ($resource !== null && (string)($resource['companyuuid'] ?? '') !== $companyuuid) {
+        if ($resource !== null && !self::resource_allowed($companyuuid, $objecttype, $resource)) {
             return false;
         }
         $now = time();
@@ -49,6 +50,17 @@ final class principal_permission {
             }
         }
         return false;
+    }
+
+    /**
+     * Prerequisites for every scope (A0_02 §4.3): the object is in the principal's company and is not personal.
+     * A task without a duty position is a personal task; any resource marked personal is denied as well.
+     */
+    private static function resource_allowed(string $companyuuid, string $objecttype, array $resource): bool {
+        if ((string)($resource['companyuuid'] ?? '') !== $companyuuid || !empty($resource['personal'])) {
+            return false;
+        }
+        return $objecttype !== 'task' || (string)($resource['positionuuid'] ?? '') !== '';
     }
 
     private static function grant_applies(principal_context $context, \stdClass $grant, ?array $resource,
@@ -88,7 +100,6 @@ final class principal_permission {
             return true;
         }
         $position = (string)($resource['positionuuid'] ?? '');
-        // A personal object (empty duty position) is never available to an agent.
         return $position !== '' && $position === (string)$occupancy->positionuuid;
     }
 }

@@ -137,8 +137,8 @@ def check(root=ROOT):
     reviewed_followup['local/kbacompany/lang/ru/local_kbacompany.php'] = 'd5d534758b1c6c6cef4069d1dd6cbe233b9a6973a49f48c0ebc3f781ec51177f'
     # BMOS-A1.1 (A0 PASS 68b1dd0): bmos_* RU/EN block after the DOC-W2 Office block; registries default off.
     # See docs/reconcile/bmos-a11-source-preservation.json.
-    reviewed_followup['local/kbacompany/lang/en/local_kbacompany.php'] = '6259ebac4bb8ee61cd9a2a87a68f91884b1a10352b4c7aaad8e29b73ff55e51e'
-    reviewed_followup['local/kbacompany/lang/ru/local_kbacompany.php'] = 'ad370955b0853def26646b74178246a60cb2b13bff229eb3bda6f3afc90dc509'
+    reviewed_followup['local/kbacompany/lang/en/local_kbacompany.php'] = '75cbdc1a704eb81c8ff9353264961953e8102d9dc1d00233d3ea54df4ee33cb9'
+    reviewed_followup['local/kbacompany/lang/ru/local_kbacompany.php'] = '9da4a27e1e4b23352e8ae44d2db300a0c314f02f7bd0d3bfe12a0edeea986b33'
     reviewed_followup['local/kbacompany/classes/local/communication_service.php'] = '870b471dba39c867b5b13f8b04f55fb82f67ce484ea44cf929b5b9c4f93dae92'
     for row in plan['rows']:
         path=root/row['path']

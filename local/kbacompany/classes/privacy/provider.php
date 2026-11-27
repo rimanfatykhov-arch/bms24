@@ -1568,15 +1568,18 @@ class provider implements
     private static function bmos_exists_sql(int $userid): array {
         $parts = [];
         $params = [];
+        $t = 0;
         $n = 0;
         foreach (self::BMOS_USER_FIELDS as $table => $fields) {
+            // One alias per table, one named parameter per field.
+            $alias = 'bt' . (++$t);
             $or = [];
             foreach ($fields as $field) {
                 $key = 'bmosu' . (++$n);
-                $or[] = "b{$n}.{$field} = :{$key}";
+                $or[] = "{$alias}.{$field} = :{$key}";
                 $params[$key] = $userid;
             }
-            $parts[] = "EXISTS (SELECT 1 FROM {{$table}} b{$n} WHERE " . implode(' OR ', $or) . ')';
+            $parts[] = "EXISTS (SELECT 1 FROM {{$table}} {$alias} WHERE " . implode(' OR ', $or) . ')';
         }
         return [implode(' OR ', $parts), $params];
     }

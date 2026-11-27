@@ -4,8 +4,9 @@ defined('MOODLE_INTERNAL') || die();
 
 /**
  * BMOS-A1.1 work principal grants in RBAC 2.0 form (A0_02 §4): (company, object_type, action, scope, constraint),
- * deny by default. Issued, revoked and extended only by an authorised human; a principal never grants, including to
- * itself. Pairs come from the existing access_role_service dictionary; project pairs are added by a later decision.
+ * deny by default. Issued and extended only by the separate grant authority (bmos_registry::require_grant_manager);
+ * revoked by that authority or by an organisation manager, because removing a right never escalates. A principal
+ * never grants, including to itself. Pairs come from the existing access_role_service dictionary; project pairs are added by a later decision.
  */
 final class principal_grant_service {
     /** Scopes issued in A1. delegated_team is reserved for A3; department, subtree and company are never issued. */
@@ -20,7 +21,7 @@ final class principal_grant_service {
      */
     public static function grant(string $companyuuid, string $principaluuid, array $spec, int $actorid): string {
         global $DB;
-        $companyuuid = bmos_registry::require_writer($companyuuid, $actorid);
+        $companyuuid = bmos_registry::require_grant_manager($companyuuid, $actorid);
         $principaluuid = bmos_registry::principal($companyuuid, $principaluuid)->uuid;
         $clean = self::normalise($spec);
         $uuid = bmos_registry::new_uuid();
@@ -72,7 +73,7 @@ final class principal_grant_service {
      */
     public static function extend(string $companyuuid, string $grantuuid, int $expiresat, int $actorid): string {
         global $DB;
-        $companyuuid = bmos_registry::require_writer($companyuuid, $actorid);
+        $companyuuid = bmos_registry::require_grant_manager($companyuuid, $actorid);
         $grant = self::load($companyuuid, $grantuuid);
         $uuid = bmos_registry::new_uuid();
         return bmos_registry::locked([(string)$grant->principaluuid], function(int $now) use ($DB, $companyuuid,
