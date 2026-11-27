@@ -1915,3 +1915,20 @@ body.bms-comm-page #bms24-comm-root .bms24-comm-dayfeed .bms24-comm-pager {
         width: 100%;
     }
 }
+
+/* ---------- fixed frame (messenger layout) ----------
+ * communication_frame.js sets the block height from the real page so that the page itself does not scroll; only
+ * the conversation list and the messages scroll inside it, the composer stays at the bottom. The guessed heights
+ * above (100vh - 210px, min-height 540px/520px) stay as the fallback without JavaScript or on a very short window. */
+body.bms-comm-page #bms24-comm-root .bms24-comm-layout.bms24-comm-framed {
+    min-height: 0;
+    max-height: none;
+}
+body.bms-comm-page #bms24-comm-root .bms24-comm-layout.bms24-comm-framed .bms24-comm-list,
+body.bms-comm-page #bms24-comm-root .bms24-comm-layout.bms24-comm-framed .bms24-comm-feed {
+    overscroll-behavior: contain;
+}
+/* While framed, the host footer is not drawn on this page (as on a messenger page); it returns with the fallback. */
+body.bms-comm-page.bms24-comm-framed-page #page-footer {
+    display: none;
+}
