@@ -36,6 +36,13 @@ if ($hassiteconfig) {
         5,
         PARAM_INT
     ));
+    // DOC-W2: the Office workspace (read-only overview over existing documents) is off until explicitly enabled.
+    $settings->add(new admin_setting_configcheckbox(
+        'local_kbacompany/office_workspace_enabled',
+        get_string('officews_enabled', 'local_kbacompany'),
+        get_string('officews_enabled_help', 'local_kbacompany'),
+        0
+    ));
     // FIN-W2: the Finance workspace (read-only overview over existing financial objects) is off until explicitly enabled.
     $settings->add(new admin_setting_configcheckbox(
         'local_kbacompany/finance_workspace_enabled',

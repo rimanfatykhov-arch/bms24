@@ -821,7 +821,7 @@ class bms_ui_service {
             'strategy' => 'target', 'financialmodel' => 'finance', 'financeworkspace' => 'finance', 'people' => 'users', 'employees' => 'employee', 'people_roles' => 'briefcase',
             'coverage' => 'briefcase', 'people_competencies' => 'award', 'culture' => 'heart', 'learning' => 'learning', 'management' => 'cycle', 'personalcycle' => 'clipboard-check', 'managementcycles' => 'cycle',
             'informationcenter' => 'chart', 'adminscale' => 'list', 'admincycle' => 'cycle', 'documents' => 'document',
-            'policies' => 'shield', 'deviations' => 'alert',
+            'policies' => 'shield', 'deviations' => 'alert', 'office' => 'document',
         ];
 
         $taskbadge = null;
@@ -1007,6 +1007,12 @@ class bms_ui_service {
                 'sidebar_label' => get_string('bmsnav_documents', 'local_kbacompany'),
                 'url' => $url('documents.php'), 'icon' => $defaulticon,
             ],
+            // DOC-W2 Office workspace: listed only while the site switch is on; office.php enforces it again.
+            'office' => [
+                'group' => 'management', 'sidebar' => office_workspace_service::enabled(), 'tree' => false,
+                'label' => get_string('officews_title', 'local_kbacompany'),
+                'url' => $url('office.php'), 'icon' => $defaulticon,
+            ],
             'execution' => [
                 // Legacy compatibility endpoint. Hidden from customer-facing BMS navigation.
                 'group' => 'legacy', 'sidebar' => false, 'tree' => false,
@@ -1133,7 +1139,7 @@ class bms_ui_service {
             ],
             'management' => [
                 'label' => get_string('bmsworkspace_group_management', 'local_kbacompany'),
-                'order' => ['personalcycle', 'management', 'informationcenter', 'managementcycles', 'products', 'documents', 'policies', 'deviations'],
+                'order' => ['personalcycle', 'management', 'informationcenter', 'managementcycles', 'products', 'office', 'documents', 'policies', 'deviations'],
             ],
         ];
         $groups = [];

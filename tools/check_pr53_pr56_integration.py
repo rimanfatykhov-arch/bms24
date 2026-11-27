@@ -131,10 +131,14 @@ def check(root=ROOT):
     # See docs/reconcile/information-centre-divisions-source-preservation.json.
     reviewed_followup['local/kbacompany/lang/en/local_kbacompany.php'] = '1d3d80ad9c985ff85091e126a0e14292ce3e6ab4531268f6f30228c47269509b'
     reviewed_followup['local/kbacompany/lang/ru/local_kbacompany.php'] = 'f5ad4bdcc8edaebe4b8b444231432c117fedbb3530fc9b04a3c3316d85015c87'
-    # FIN-W2 Finance workspace (owner task 2026-11-24): financews_* RU/EN block after the Information Centre by divisions block (#190); read-only, default off.
+    # DOC-W2 Office workspace (owner task 2026-11-24): officews_* RU/EN block after the Information Centre by divisions block (#190); read-only, default off.
+    # See docs/office/DOC_W2_OFFICE_WORKSPACE.md.
+    reviewed_followup['local/kbacompany/lang/en/local_kbacompany.php'] = '32402ab956d141c1cbb1b45c495cf8ddc2c6c95d09518995dba2c1473dfbc5cf'
+    reviewed_followup['local/kbacompany/lang/ru/local_kbacompany.php'] = 'd5d534758b1c6c6cef4069d1dd6cbe233b9a6973a49f48c0ebc3f781ec51177f'
+    # FIN-W2 Finance workspace (owner task 2026-11-24): financews_* RU/EN block after the DOC-W2 Office workspace block; read-only, default off.
     # See docs/finance/FIN_W2_FINANCE_WORKSPACE.md.
-    reviewed_followup['local/kbacompany/lang/en/local_kbacompany.php'] = 'f499551b85ab7ef03c4dc17239bfccac444a9d5a9408ef41cd1389c6f4cf4a62'
-    reviewed_followup['local/kbacompany/lang/ru/local_kbacompany.php'] = '1c9837875b57ea15763174db77c06e36a38fd9828c195e9ef6c0367533f5d58e'
+    reviewed_followup['local/kbacompany/lang/en/local_kbacompany.php'] = '70233e2e9bae380d9e0b114f4e4ad768db3229b4dd45c561ce2804c400e85ae5'
+    reviewed_followup['local/kbacompany/lang/ru/local_kbacompany.php'] = 'e00fd2ad118046cbb651a1428f9c603e1e63ca113c06ac7464c1758d482b7505'
     reviewed_followup['local/kbacompany/classes/local/communication_service.php'] = '870b471dba39c867b5b13f8b04f55fb82f67ce484ea44cf929b5b9c4f93dae92'
     for row in plan['rows']:
         path=root/row['path']

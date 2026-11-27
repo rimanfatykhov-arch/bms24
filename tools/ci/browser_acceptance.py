@@ -185,6 +185,9 @@ try:
     # Adaptive navigation (docs/ui/ADAPTIVE_NAVIGATION.md): owned drawer <= 860 px / sidebar, legacy, no-JS, 16 cases.
     nav_exit = timed('adaptive_nav', lambda: browser('adaptive_nav.py', 'verify'))
     record(contract.evaluate(contract.adaptive_nav_checks(load('adaptive-nav-result.json'), nav_exit)))
+    # DOC-W2 Office workspace: default-off switch, counters = service, menu/planned sections, A/B isolation, revocation.
+    office_exit = timed('office_workspace', lambda: browser('office_workspace.py', 'verify'))
+    record(contract.evaluate(contract.office_workspace_checks(load('office-workspace-result.json'), office_exit)))
     # FIN-W2 Finance workspace: default-off switch, figures = service, menu/planned sections, financial gate, A/B, revocation.
     finance_exit = timed('finance_workspace', lambda: browser('finance_workspace.py', 'verify'))
     record(contract.evaluate(contract.finance_workspace_checks(load('finance-workspace-result.json'), finance_exit)))

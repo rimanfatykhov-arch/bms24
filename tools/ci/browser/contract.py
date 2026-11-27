@@ -1920,7 +1920,88 @@ def communication_ux_checks(obs, exitcode=None):
                     field = number(search.get('input_width'), 'search input width')
                     require(box >= 200 and box >= 0.85 * side and field >= box - 64,
                             'list search too narrow (%r of %r, input %r): %s' % (box, side, field, where))
-    return {'communication_ux1_layout_and_navigation': verify, 'communication_ux2_primary_action_geometry': geometry}
+    def frame():
+        """Fixed frame like a messenger: at 900px height the page itself does not scroll (document and the window-bounded
+        page container), the block ends inside the window, the list and the messages are the scroll containers and the
+        open conversation shows its composer on screen. Both shells, all five widths, list and open conversation, and the
+        open conversation again after a block above the page was there during a fit and then went away (frame_shift)."""
+        require(exitcode == 0 and isinstance(obs, dict) and obs.get('status') == 'PASS'
+                and not obs.get('error'), 'UX browser run missing/failed')
+        rows = obs.get('cases')
+        require(isinstance(rows, list) and len(rows) == 10, 'UX matrix incomplete')
+
+        def integer(value):
+            return isinstance(value, int) and not isinstance(value, bool)
+        for row in rows:
+            for state in ['frame_list', 'frame_thread', 'frame_shift']:
+                where = '%s/%s/%s' % (row.get('shell'), row.get('width'), state)
+                f = row.get(state)
+                require(isinstance(f, dict), 'frame measurement missing: ' + where)
+                require(f.get('framed') is True, 'Center is not framed: ' + where)
+                for key in ['page_excess', 'layout_bottom', 'view']:
+                    require(integer(f.get(key)), 'frame %s missing: %s' % (key, where))
+                require(f['view'] >= 600, 'frame measured on a short window: ' + where)
+                require(f['page_excess'] <= 1, 'the page scrolls by %rpx: %s' % (f['page_excess'], where))
+                require(0 < f['layout_bottom'] <= f['view'] + 1, 'block ends outside the window: ' + where)
+                require(f.get('list_overflow') in ('auto', 'scroll'), 'list is not a scroll container: ' + where)
+                feed = f.get('feed_overflow')
+                require(feed in ('auto', 'scroll') or (state == 'frame_list' and feed is None),
+                        'messages are not a scroll container: ' + where)
+                if state != 'frame_list':
+                    c = f.get('compose_bottom')
+                    require(integer(c) and 0 < c <= f['view'] + 1, 'composer not on screen: ' + where)
+    def stable():
+        """The open conversation holds still with no input (Codex task in #145, owner's recording): the block, the
+        history, the composer and Send keep their place and size frame after frame, with a real scrollbar; the window
+        width does not flip (a scrollbar coming and going); the newest message is shown whole above the composer; reading
+        older messages keeps its scroll position. Both shells, 1440 and 375 px, a short and a long conversation."""
+        require(exitcode == 0 and isinstance(obs, dict) and obs.get('status') == 'PASS'
+                and not obs.get('error'), 'UX browser run missing/failed')
+        rows = obs.get('stability')
+        require(isinstance(rows, list) and len(rows) == 8, 'stability matrix incomplete')
+        seen = set()
+        for row in rows:
+            where = '%s/%s/%s' % (row.get('shell'), row.get('width'), row.get('kind'))
+            seen.add((row.get('shell'), row.get('width'), row.get('kind')))
+            require(row.get('http') == 200, 'conversation HTTP failure: ' + where)
+            require(row.get('server_errors') == [], 'server error evidence missing or HTTP500: ' + where)
+            require(isinstance(row.get('browser_events'), list), 'browser events missing: ' + where)
+            require(not browser_event_violations(row['browser_events']), 'unexpected browser/network errors: ' + where)
+            for state, frames in [('bottom', 120), ('reading', 60)]:
+                s = row.get(state)
+                at = '%s/%s' % (where, state)
+                require(isinstance(s, dict), 'stability samples missing: ' + at)
+                require(s.get('frames') == frames, 'too few frames sampled: ' + at)
+                for key in ['layout_span', 'feed_span', 'compose_span', 'send_span', 'scroll_span', 'width_span',
+                            'changes', 'view', 'send_bottom', 'feed_top', 'feed_bottom']:
+                    require(isinstance(s.get(key), int) and not isinstance(s.get(key), bool),
+                            'stability %s missing: %s' % (key, at))
+                require(s['width_span'] == 0, 'window width flips by %rpx (scrollbar comes and goes): %s'
+                        % (s['width_span'], at))
+                for key, label in [('layout_span', 'block'), ('feed_span', 'history'), ('compose_span', 'composer'),
+                                   ('send_span', 'Send button')]:
+                    require(s[key] == 0, '%s moves/resizes by %rpx with no input: %s' % (label, s[key], at))
+                require(s['scroll_span'] == 0, 'history scroll position drifts by %rpx: %s' % (s['scroll_span'], at))
+                require(s['changes'] == 0, 'geometry changed in %r of %r frames: %s' % (s['changes'], frames, at))
+                require(0 < s['send_bottom'] <= s['view'], 'Send button not on screen: ' + at)
+            b = row['bottom']
+            require(isinstance(b.get('messages'), int) and b['messages'] >= (2 if row.get('kind') == 'short' else 20),
+                    'conversation not rendered: ' + where)
+            require(b.get('at_bottom') is True, 'conversation did not open at the newest message: ' + where)
+            require(isinstance(b.get('last_top'), int) and isinstance(b.get('last_bottom'), int)
+                    and isinstance(b.get('feed_pad'), int) and 0 <= b['feed_pad'] <= 40,
+                    'newest message geometry missing: ' + where)
+            # Its lower edge is on screen above the composer; it is shown whole when it fits the history's visible
+            # area (a message taller than that can only show its end, like in any messenger).
+            require(b['feed_top'] < b['last_bottom'] <= b['feed_bottom'] + 1,
+                    'newest message cut at the bottom (%r > %r): %s' % (b['last_bottom'], b['feed_bottom'], where))
+            fits = b['last_bottom'] - b['last_top'] <= b['feed_bottom'] - b['feed_top'] - b['feed_pad']
+            require(not fits or b['last_top'] >= b['feed_top'] - 1,
+                    'newest message not shown whole (top %r above %r): %s' % (b['last_top'], b['feed_top'], where))
+        require(seen == {(m, w, k) for m in ('owned', 'legacy') for w in (1440, 375) for k in ('short', 'long')},
+                'stability matrix incomplete')
+    return {'communication_ux1_layout_and_navigation': verify, 'communication_ux2_primary_action_geometry': geometry,
+            'communication_ux3_fixed_frame': frame, 'communication_ux4_stable_thread': stable}
 
 
 BELL_WIDTHS = (1440, 768, 320)
@@ -2487,6 +2568,130 @@ def adaptive_nav_checks(obs, exitcode=None):
             'adaptive_nav_legacy_shell_unchanged': legacy, 'adaptive_nav_no_browser_errors': events}
 
 
+OFFICE_CASES = [('owned', 1440, 'en'), ('owned', 375, 'ru'), ('legacy', 1440, 'en'), ('legacy', 375, 'ru')]
+OFFICE_TITLES = {'en': 'Office', 'ru': 'Канцелярия'}
+OFFICE_PLANNED = ['incoming', 'outgoing', 'internal', 'orders', 'contracts', 'archive']
+OFFICE_ACTIVE = ['office.php', 'documents.php', 'documents.php', 'tasks.php', 'meetings.php', 'policies.php']
+OFFICE_COUNTS = ['acknowledge', 'decisions', 'directives', 'documents', 'execution', 'overdue', 'review']
+OFFICE_SHOWN = ['acknowledge', 'directives', 'documents', 'execution', 'overdue', 'review']
+
+
+def office_workspace_checks(obs, exitcode=None):
+    """DOC-W2 Office workspace (office_workspace.py): default-off switch, counters equal to the service ground truth,
+    menu and planned sections, canonical section pages, manager view, company isolation, revocation, layout/errors."""
+    def run():
+        require(exitcode == 0, 'office workspace browser process failed or was not run')
+        require(isinstance(obs, dict) and obs.get('status') == 'PASS' and not obs.get('error'), 'office workspace run incomplete')
+        require(isinstance(obs.get('company'), str) and len(obs['company']) >= 8, 'company reference not recorded')
+        rows = obs.get('cases')
+        require(isinstance(rows, list) and [(r.get('shell'), r.get('width'), r.get('lang')) for r in rows] == OFFICE_CASES,
+                'owned/legacy x 1440 EN / 375 RU cases required')
+        model = obs.get('model') or {}
+        for who in ('EA', 'MA', 'EB'):
+            m = model.get(who)
+            require(isinstance(m, dict) and sorted(m) == OFFICE_COUNTS and all(isinstance(v, int) and v >= 0 for v in m.values()),
+                    'service ground truth for %s not recorded: %r' % (who, m))
+        ea, eb = model['EA'], model['EB']
+        require(ea['acknowledge'] >= 1 and ea['review'] >= 1 and ea['overdue'] >= 1 and ea['execution'] >= ea['overdue'],
+                'seeded company A data not visible to EA in the service: %r' % (ea,))
+        require(eb['overdue'] >= 1 and eb['review'] >= 1, 'seeded company B data not visible to EB in the service: %r' % (eb,))
+        for r in rows:
+            require(r.get('language_installed') is True, 'page language %s not active' % r.get('lang'))
+            require((r.get('page') or {}).get('owned_shell') is (r['shell'] == 'owned'), 'shell mode %s not active' % r['shell'])
+        return rows, model
+
+    def shown(counts):
+        return {k: v for k, v in (counts or {}).items() if k in OFFICE_SHOWN}
+
+    def expected(m):
+        return {k: m[k] for k in OFFICE_SHOWN}
+
+    def switch_off():
+        run()
+        require((obs.get('switch_off') or {}).get('enabled') is False and (obs.get('switch_on') or {}).get('enabled') is True,
+                'site switch not toggled off/on')
+        off = obs.get('off') or {}
+        require(isinstance(off.get('http'), int) and off['http'] < 500, 'switched-off route answered %r' % off.get('http'))
+        require(off.get('workspace') is False and off.get('counts') == {}, 'workspace or counters shown while switched off')
+        require(off.get('menu') == [] and off.get('menu_on_documents') == [], 'Office menu item present while switched off')
+
+    def counters():
+        rows, model = run()
+        for r in rows:
+            pg = r.get('page') or {}
+            require(pg.get('http') == 200 and pg.get('workspace') is True, 'workspace not served at %s/%s' % (r['shell'], r['width']))
+            require(shown(pg.get('counts')) == expected(model['EA']),
+                    'counters differ from the service at %s/%s: %r vs %r' % (r['shell'], r['width'], pg.get('counts'), model['EA']))
+            require(OFFICE_TITLES[r['lang']] in (pg.get('h1') or []), 'page heading must say %s' % OFFICE_TITLES[r['lang']])
+            require(pg.get('create') == 0, 'employee sees the create-document action')
+            require(pg.get('leaked') == [], 'foreign or private titles visible: %r' % pg.get('leaked'))
+
+    def navigation():
+        rows, _ = run()
+        for r in rows:
+            pg = r.get('page') or {}
+            planned = pg.get('planned') or []
+            require([x.get('key') for x in planned] == OFFICE_PLANNED, 'planned sections missing: %r' % planned)
+            require(all(x.get('tag') == 'span' and x.get('inlink') is False and x.get('href') is None
+                        and x.get('disabled') == 'true' for x in planned), 'a planned section is a link or not disabled')
+            active = pg.get('active') or []
+            require([x.get('path') for x in active] == OFFICE_ACTIVE and all(x.get('uuid') == obs['company'] for x in active),
+                    'active sections must be the canonical pages of company A: %r' % active)
+            require([x.get('current') for x in active] == ['page'] + [None] * (len(OFFICE_ACTIVE) - 1),
+                    'only Overview may be current in the section menu')
+            if r['shell'] == 'owned':
+                menu = [x for x in pg.get('menu') or [] if x.get('visible')]
+                require(len(menu) == 1 and menu[0].get('uuid') == obs['company'] and menu[0].get('current') == 'page',
+                        'exactly one current Office item expected in the %s px owned menu: %r' % (r['width'], pg.get('menu')))
+
+    def sections():
+        rows, _ = run()
+        landing = rows[0].get('landing')
+        require(isinstance(landing, list) and [x.get('path') for x in landing] == OFFICE_ACTIVE,
+                'section links not followed: %r' % landing)
+        require(all(x.get('http') == 200 and not x.get('workspace_error') for x in landing),
+                'a section page failed for EA: %r' % landing)
+
+    def manager_and_isolation():
+        _, model = run()
+        m = obs.get('manager') or {}
+        require(m.get('http') == 200 and m.get('workspace') is True and shown(m.get('counts')) == expected(model['MA']),
+                'manager counters differ from the service: %r vs %r' % (m.get('counts'), model['MA']))
+        require(m.get('create') == 1 and m.get('leaked') == [], 'manager view must offer "New document" and no company B data')
+        x = obs.get('foreign') or {}
+        require(isinstance(x.get('http'), int) and x['http'] < 500 and x.get('workspace') is False and x.get('counts') == {}
+                and x.get('leaked') == [], 'company B actor reached company A workspace data: %r' % {k: x.get(k) for k in ('http', 'workspace', 'leaked')})
+        b = obs.get('own_b') or {}
+        require(b.get('http') == 200 and b.get('workspace') is True and shown(b.get('counts')) == expected(model['EB'])
+                and b.get('leaked') == [], 'company B workspace must show B counters only: %r' % (b.get('counts'),))
+
+    def revocation():
+        run()
+        rv = obs.get('revocation') or {}
+        before, after = rv.get('before') or {}, rv.get('after') or {}
+        require(before.get('workspace') is True and obs.get('revoked_flag') is True, 'revocation not applied after a baseline visit')
+        require(isinstance(after.get('http'), int) and after['http'] < 500 and after.get('workspace') is False
+                and after.get('counts') == {} and after.get('leaked') == [], 'revoked member still sees the workspace')
+        require(obs.get('reopened_flag') is True, 'membership not reopened after the check')
+
+    def layout():
+        rows, _ = run()
+        for r in rows:
+            box = (r.get('page') or {}).get('hscroll')
+            require(isinstance(box, dict) and isinstance(box.get('scroll'), int) and box.get('inner') == r['width']
+                    and box['scroll'] <= box['inner'], 'office page scrolls horizontally at %s px: %r' % (r['width'], box))
+            violations = browser_event_violations(r.get('browser_events'))
+            require(not violations, 'browser errors: %r' % violations[:3])
+            require(r.get('server_errors') == [], 'HTTP 5xx: %r' % (r.get('server_errors'),))
+        violations = browser_event_violations((obs.get('manager') or {}).get('browser_events'))
+        require(not violations, 'browser errors in the manager view: %r' % violations[:3])
+
+    return {'office_switch_off_hides_route_and_menu': switch_off, 'office_counters_equal_service_ground_truth': counters,
+            'office_menu_and_planned_sections': navigation, 'office_sections_open_canonical_pages': sections,
+            'office_manager_view_and_company_isolation': manager_and_isolation,
+            'office_revocation_closes_workspace': revocation, 'office_layout_and_browser_errors': layout}
+
+
 FINANCE_CASES = [('owned', 1440, 'en'), ('owned', 375, 'ru'), ('legacy', 1440, 'en'), ('legacy', 375, 'ru')]
 FINANCE_TITLES = {'en': 'Finance', 'ru': 'Финансы'}
 FINANCE_PLANNED = ['weekly', 'requests', 'council', 'calendar', 'treasury', 'reporting']
@@ -2623,6 +2828,7 @@ def required_check_names():
             + list(infocenter_checks({}))
             + list(notification_bell_checks({}))
             + list(adaptive_nav_checks({}))
+            + list(office_workspace_checks({}))
             + list(finance_workspace_checks({})))
 
 
