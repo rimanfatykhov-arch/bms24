@@ -77,6 +77,10 @@ R3_MARKER=(b'\n// Daily reports R3 (2026-11-24): report discussion, owner decisi
 R3_KEYS=[b'communication_object_dailyreport',b'dailyreports_discussion_title',b'dailyreports_discussion_heading',
          b'dailyreports_discussion_note',b'dailyreports_discussion_empty',b'dailyreports_discussion_readonly',
          b'dailyreports_discussion_empty_message',b'dailyreports_discussion_files']
+OFFICE_MARKER=b'\n// DOC-W2 Office workspace (2026-11-24): read-only overview over existing documents, approvals and decisions.\n'
+_OFFICE=json.loads((ROOT/'docs/reconcile/office-workspace-doc-w2-source-preservation.json').read_text(encoding='utf-8'))
+OFFICE_BEFORE={lang:next(r['before_sha256_lf'] for r in _OFFICE['files'] if r['path']==f'local/kbacompany/lang/{lang}/local_kbacompany.php')
+               for lang in ('en','ru')}
 R5A_MARKER=b'\n// Daily reports R5a (2026-11-24): reporting calendar and absences, owner decisions K1-K6.\n'
 _R5A=json.loads((ROOT/'docs/reconcile/daily-reports-r5a-source-preservation.json').read_text(encoding='utf-8'))
 R5A_BEFORE={lang:next(r['before_sha256_lf'] for r in _R5A['files'] if r['path']==f'local/kbacompany/lang/{lang}/local_kbacompany.php')
@@ -89,6 +93,10 @@ NAV_BEFORE={lang:next(r['before_sha256_lf'] for r in _NAV['files'] if r['path']=
             for lang in ('en','ru')}
 _R4=json.loads((ROOT/'docs/reconcile/daily-reports-r4-source-preservation.json').read_text(encoding='utf-8'))
 R4_BEFORE={lang:next(r['before_sha256_lf'] for r in _R4['files'] if r['path']==f'local/kbacompany/lang/{lang}/local_kbacompany.php')
+           for lang in ('en','ru')}
+IC_MARKER=b'\n// Information Centre by divisions (#190): org-board columns, mini charts, trends and the drill-down chart.\n'
+_IC=json.loads((ROOT/'docs/reconcile/information-centre-divisions-source-preservation.json').read_text(encoding='utf-8'))
+IC_BEFORE={lang:next(r['before_sha256_lf'] for r in _IC['files'] if r['path']==f'local/kbacompany/lang/{lang}/local_kbacompany.php')
            for lang in ('en','ru')}
 _R3=json.loads((ROOT/'docs/reconcile/daily-reports-r3-source-preservation.json').read_text(encoding='utf-8'))
 R3_BEFORE={lang:next(r['before_sha256_lf'] for r in _R3['files'] if r['path']==f'local/kbacompany/lang/{lang}/local_kbacompany.php')
@@ -155,15 +163,32 @@ class Preservation(unittest.TestCase):
                                 ae,r4=ae.split(R4_MARKER)
                                 if R3_MARKER in r4:
                                     r4,r3=r4.split(R3_MARKER)
-                                    if R5A_MARKER in r3:
-                                        r3,r5a=r3.split(R5A_MARKER)
-                                        # The R3 file is byte-identical up to the R5a marker.
-                                        self.assertEqual(R5A_BEFORE[lang],hashlib.sha256(data.split(R5A_MARKER)[0]+b'\n').hexdigest())
-                                        r5akeys=keys(r5a)
-                                        self.assertEqual(45,len(r5akeys));self.assertEqual(len(r5akeys),len(set(r5akeys)))
-                                        self.assertTrue(all(k.startswith((b'dailyreports_',b'privacy:metadata:dailyreportabsences'))
-                                                            for k in r5akeys))
-                                        self.assertFalse(set(r5akeys)&set(keys(data.split(R5A_MARKER)[0])))
+                                    if IC_MARKER in r3:
+                                        # Everything up to the #190 marker is the R3 file; the Information Centre keys are new.
+                                        r3,ic=r3.split(IC_MARKER)
+                                        if OFFICE_MARKER in ic:
+                                            # Everything up to the DOC-W2 Office marker is the published file ending with the Information Centre by divisions block (#190); its keys are new.
+                                            ic,office=ic.split(OFFICE_MARKER)
+                                            if R5A_MARKER in office:
+                                                # R5a follows the Office block: the published file is byte-identical up to the R5a marker.
+                                                office,r5a=office.split(R5A_MARKER)
+                                            # The R3 file is byte-identical up to the R5a marker.
+                                            self.assertEqual(R5A_BEFORE[lang],hashlib.sha256(data.split(R5A_MARKER)[0]+b'\n').hexdigest())
+                                            r5akeys=keys(r5a)
+                                            self.assertEqual(45,len(r5akeys));self.assertEqual(len(r5akeys),len(set(r5akeys)))
+                                            self.assertTrue(all(k.startswith((b'dailyreports_',b'privacy:metadata:dailyreportabsences'))
+                                                                for k in r5akeys))
+                                            self.assertFalse(set(r5akeys)&set(keys(data.split(R5A_MARKER)[0])))
+                                            self.assertEqual(OFFICE_BEFORE[lang],hashlib.sha256(data.split(OFFICE_MARKER)[0]).hexdigest())
+                                            officekeys=keys(office)
+                                            self.assertEqual(59,len(officekeys));self.assertEqual(len(officekeys),len(set(officekeys)))
+                                            self.assertTrue(all(k.startswith(b'officews_') for k in officekeys))
+                                            self.assertFalse(set(officekeys)&set(keys(data.split(OFFICE_MARKER)[0])))
+                                        self.assertEqual(IC_BEFORE[lang],hashlib.sha256(data.split(IC_MARKER)[0]).hexdigest())
+                                        ickeys=keys(ic)
+                                        self.assertEqual(39,len(ickeys));self.assertEqual(len(ickeys),len(set(ickeys)))
+                                        self.assertTrue(all(k.startswith(b'infocenter2_') for k in ickeys))
+                                        self.assertFalse(set(ickeys)&set(keys(data.split(IC_MARKER)[0])))
                                     # The R4 file is byte-identical up to the R3 marker (its final newline starts the marker).
                                     self.assertEqual(R3_BEFORE[lang],hashlib.sha256(data.split(R3_MARKER)[0]+b'\n').hexdigest())
                                     self.assertEqual(R3_KEYS,keys(r3))
