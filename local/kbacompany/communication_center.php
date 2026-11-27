@@ -9,6 +9,7 @@ use local_kbacompany\local\communication_object_service;
 use local_kbacompany\local\communication_service;
 use local_kbacompany\local\company_context_service;
 use local_kbacompany\local\business_date_service;
+use local_kbacompany\local\daily_report_discussion_service;
 use local_kbacompany\local\daily_report_feed_service;
 use local_kbacompany\local\daily_report_store_service;
 use local_kbacompany\local\task_ui_service;
@@ -90,6 +91,11 @@ if ($action !== '') {
             // The same for a Battle Plan discussion (Q9): reading follows the plan, joining needs the plan write right.
             if ($postkind === 'battleplan' &&
                     !battle_plan_discussion_service::can_post_for($uuid, $actor, $postuuid)) {
+                throw new moodle_exception('communication_permission', 'local_kbacompany');
+            }
+            // R3: a daily report discussion is read by report readers; only the author and current reviewer join.
+            if ($postkind === 'dailyreport' &&
+                    !daily_report_discussion_service::can_post_for($uuid, $actor, $postuuid)) {
                 throw new moodle_exception('communication_permission', 'local_kbacompany');
             }
             // create_thread resolves the canonical object and is also the safe, idempotent join operation.
@@ -247,6 +253,8 @@ $PAGE->set_url(ui::url($uuid, ['tab' => $tab, 'thread' => $selected] + ($feedday
 $PAGE->set_title(get_string('communicationcenter_title', 'local_kbacompany'));
 $PAGE->set_heading(get_string('pluginname', 'local_kbacompany'));
 $PAGE->add_body_class('bms-comm-page');
+// Fixed frame: the page fits the window, only the list and the messages scroll (progressive enhancement).
+$PAGE->requires->js_call_amd('local_kbacompany/communication_frame', 'init');
 $PAGE->requires->css(new moodle_url('/local/kbacompany/styles.css'));
 $PAGE->requires->css(new moodle_url('/local/kbacompany/bms_ui/communication_center.css'));
 // The centre renders bms24-* markup; without this sheet those components have no rules.

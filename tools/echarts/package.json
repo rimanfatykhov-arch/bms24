@@ -1,0 +1,14 @@
+{
+  "name": "bms24-echarts-build",
+  "private": true,
+  "description": "Reproducible custom Apache ECharts build for local_kbacompany (Information Centre charts).",
+  "license": "Apache-2.0",
+  "scripts": {
+    "build": "node build.mjs",
+    "check": "node build.mjs --check"
+  },
+  "devDependencies": {
+    "echarts": "6.1.0",
+    "esbuild": "0.28.2"
+  }
+}
