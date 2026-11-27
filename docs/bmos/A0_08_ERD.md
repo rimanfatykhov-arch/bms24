@@ -71,7 +71,7 @@ erDiagram
 | `aireserve` | `uuid`; `runuuid+stepno+attemptno+budgetuuid` | `status, expiresat` (включая `uncertain`) |
 | `aiusage` | `uuid`; `runuuid+stepno+attemptno` | `companyuuid, timecreated`; `companyuuid, status` |
 | `wpattr` | `uuid`; `logtable+logid` (если заполнено) | `companyuuid, objecttype, objectuuid`; `companyuuid, actorprincipaluuid, timecreated` |
-| `wprincipal` — поле `authzrevision` (ревизия 4: увеличивается fence отзыва, A0_03 §2) | — | — |
+| `wprincipal` — поле `authzrevision` (ревизия 4; ревизия 5: увеличивается в той же транзакции, что изменение права, под lock принципала, A0_03 §2) | — | — |
 | `cmdidem` (ключи идемпотентности команд: `intentdigest` (A0_03 §2.3), `status` `pending_approval`/`executed`/`failed`/`rejected`/`expired`/`cancelled`/`superseded`, `approvaluuid`, сохранённый результат, `expiresat` ≥ max(30 дней, горизонт повтора, срок approval)) | `companyuuid+principaluuid+idempotencykey` | `expiresat`; `approvaluuid` |
 | `local_kbaai_modelprofile` | `id+revision` | |
 

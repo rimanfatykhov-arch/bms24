@@ -6,6 +6,7 @@
 для R3, пары RBAC разделены на действующие и проектные, `task.read` описан семантикой.
 Ревизия 4 (27.11.2026): вторая проверка Codex — digest неизменяемого намерения, статусы `task/comment` и `task/create`,
 человеческие предикаты чтения, этапы `metrics.read`.
+Ревизия 5 (28.11.2026): третья проверка Codex — два человеческих маршрута `daily_report.read` (§4.1).
 
 ## 1. Имена и сверка с Public API v1
 
@@ -116,11 +117,37 @@
 | `task.propose_update` | ai_agent | R3 | `task/edit` (К) | грант + `principal_object_acl`, затем approval | A2 (в A1 — `approval_unavailable`) | Через approval |
 | `task.create_draft` | ai_agent | R1 | `task/create` (К) | грант + `position` | A1 (черновик) / A2 (превращение в задачу через approval) | Канонической задачи нет до утверждения |
 | `metrics.read` | ai_agent, human | R0 | `indicator/view` (С) | human — `indicator_registry_service::context` (как `public_api_service::indicators_snapshot`); принципал — грант + `position` (A1) или `delegated_team` (A3) | A1 (`position`), A3 (`delegated_team`) | `indicators_snapshot`, `stat*`; только метрики поста или делегированных постов |
-| `daily_report.read` | ai_agent (свои; команды — только `delegated_team`), human | R0 | `daily_report/view` (П) | human — `daily_report_review_service::can_read_report` / `can_read_all` (ADR-0009/0010); принципал — грант + `own` (A2) или `delegated_team` (A3) | A2 (свои), A3 (команда) | Права спонсора не используются (Q-11) |
+| `daily_report.read` | ai_agent (свои; команды — только `delegated_team`), human | R0 | `daily_report/view` (П) | human — два маршрута, §4.1: автор — компания + `dreport.userid == actor`; неавтор — `can_read_report` (внутри `can_read_all`) с фильтрацией версий; принципал — грант + `own` (A2) или `delegated_team` (A3) | A2 (свои), A3 (команда) | Права спонсора не используются (Q-11) |
 | `daily_report.create` / `daily_report.submit` | ai_agent (свой отчёт) | R2 (own) | `daily_report/create` (П) | грант + `own` | A2 | Отдельное хранение (Q-08); приёмка только человеком |
 | `daily_report.accept` / `daily_report.return` | **только human** | R4 | `daily_report/approve` (П) | правила проверки отчётов ADR-0009/0010 | A2 | Для отчётов агентов; human-отчёты — как сейчас |
 | `agent_runs.read` | спонсор, руководитель поста, менеджер; ai_agent — свои | R0 | `agent/view` (П) | human — спонсор, руководитель поста или `can_manage_organization`; принципал — `own` | A1 | Без промптов |
 | `feed.post` (из #76) | — | R4 до отдельного решения | `communication/create` (С) | — | — | Внешняя/массовая публикация |
+
+
+### 4.1 Человеческий `daily_report.read`: автор и неавтор
+
+Сверено с `main` 0884643: `daily_report_store_service.php` строки 110–123 (`history`), `daily_report_discussion_service.php`
+строки 30–42 (`target`), `daily_report_review_service.php` строки 60–86 (`can_read_all`, `readable_versions`,
+`can_read_report`).
+
+1. **Контекст компании.** `company_context_service::normalise_uuid`, затем `company_context_service::context(companyuuid,
+   actor)`: активное членство в компании, включая проверку отзыва. Без него — отказ, существование отчёта не
+   раскрывается.
+2. **Поиск отчёта по UUID внутри компании.** `local_kbacompany_dreport` по паре `companyuuid` + `uuid`; версии — по
+   `companyuuid` + `reportuuid`. Отчёт другой компании не находится (тот же ответ «не найдено»).
+3. **Маршрут автора.** `(int)dreport.userid === actor` → автор читает свой отчёт без роли проверяющего, включая свои
+   черновики по действующей политике (`daily_report_store_service::history` фильтрует по `companyuuid` + `userid`).
+   `can_read_report` для автора не вызывается.
+4. **Маршрут неавтора.** `daily_report_review_service::can_read_report(companyuuid, actor, report)`: доступ, если
+   есть хотя бы одна читаемая отправленная версия. Версии фильтруются в SQL (`state <> 'draft'`). Внутри предиката
+   `can_read_all` (администратор или менеджер, ADR-0010 D4) читает все отправленные версии; без этой роли читаются
+   только версии, где actor — сохранённый `reviewerid`, или получатель копии (`dreportcc`). Черновики чужих отчётов не
+   читаются никогда. Возвращаются только отфильтрованные версии, а не весь отчёт.
+5. Иначе — отказ без раскрытия существования.
+
+Для принципала этот маршрут не используется: `own` — свой отчёт агента (A2), `delegated_team` — по A0_02 §4.1 (A3);
+`userid` принципала, `0` и ID спонсора в эти предикаты не передаются (A0_02 §4.3). Сценарии — S38 (автор без роли
+проверяющего) и S39 (отказ по чужому отчёту).
 
 Проектные пары (`agent/*`, `daily_report/*`) добавляются в словарь `access_role_service` отдельным решением вместе
 с первой командой, которая их использует. До этого человеческие команды проверяются только колонкой «Проверка».
