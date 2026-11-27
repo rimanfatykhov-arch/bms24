@@ -1,0 +1,59 @@
+{
+  "_comment": "CAT-0 draft manifest. PROPOSED, not a DDL, not imported anywhere. No secrets, no company/user/position UUIDs, no live grants.",
+  "manifest_version": "0.1-draft",
+  "code": "BMS-AGENT-001",
+  "title": {"ru": "ИИ-помощник руководителя", "en": "AI management assistant"},
+  "category": "management",
+  "purpose": {"ru": "Подготовка проверяемых сведений для регулярного менеджмента без передачи агенту управления людьми."},
+  "template_owner_role": "methodology_owner",
+  "revision": 1,
+  "editorial_state": "draft",
+  "maturity": "DESIGNED",
+  "ckp": {"ru": "Своевременная, достоверная и принятая руководителем управленческая сводка о работе подразделения: факты, отклонения, риски, предложения."},
+  "results": [
+    {"id": "R1", "title": "Сводка поручений", "stage": {"position": "A1", "delegated_team": "A3"}},
+    {"id": "R2", "title": "План-факт по метрикам", "stage": {"position": "A1", "delegated_team": "A3"}},
+    {"id": "R3", "title": "Сводка ежедневной отчётности команды", "stage": {"own": "A2", "delegated_team": "A3"}},
+    {"id": "R4", "title": "Проект повестки координации", "stage": {"proposal_only": "A3"}},
+    {"id": "R5", "title": "Сданный результат и собственный отчёт", "stage": {"work": "A1", "own_report": "A2"}}
+  ],
+  "role_dna_ref": {"code": "BMS-AGENT-001/role_dna", "version": "0.1", "standard": "BMS-STD-DNA-001 v0.1"},
+  "aep_ref": {"code": "BMS-AGENT-001/aep", "version": "0.1", "standard": "BMS-STD-AEP-001 v0.1"},
+  "recognition_pack_ref": {"code": "BMS-AGENT-001/recognition", "version": "0.1", "standard": "BMS-STD-REC-001 v0.1", "cases": ["C01-C10", "B01-B12"], "status": "NOT_RUN"},
+  "required_tools": [
+    {"command": "task.read", "risk": "R0", "scope": ["position", "delegated_team"], "stage": {"position": "A1", "delegated_team": "A3"}},
+    {"command": "metrics.read", "risk": "R0", "scope": ["position", "delegated_team"], "stage": {"position": "A1", "delegated_team": "A3"}},
+    {"command": "daily_report.read", "risk": "R0", "scope": ["own", "delegated_team"], "stage": {"own": "A2", "delegated_team": "A3"}},
+    {"command": "work.list", "risk": "R0", "scope": ["own"], "stage": "A1"},
+    {"command": "work.propose", "risk": "R1", "scope": ["own", "position"], "stage": "A1"},
+    {"command": "work.complete", "risk": "R2", "scope": ["own"], "stage": "A1"},
+    {"command": "agent_runs.read", "risk": "R0", "scope": ["own"], "stage": "A1"},
+    {"command": "daily_report.create", "risk": "R2", "scope": ["own"], "stage": "A2"},
+    {"command": "daily_report.submit", "risk": "R2", "scope": ["own"], "stage": "A2"}
+  ],
+  "human_only_commands": ["work.assign", "work.accept", "work.return", "daily_report.accept", "daily_report.return"],
+  "excluded_commands": ["task.comment", "task.propose_update", "task.create_draft"],
+  "risk_classes": {"allowed": ["R0", "R1", "R2-own"], "excluded": ["R3", "R4"]},
+  "grant_requirements_note": "Requests only. Grants are issued separately by an authorised human (wizard step 10). delegated_team not before A3.",
+  "required_modules": [
+    {"component": "local_kbacompany", "contract": "A0_02 WorkPrincipal/Occupancy", "status": "not_implemented"},
+    {"component": "local_bmosruntime", "contract": "A0_04 Agent API v2, A0_06 AgentRun", "status": "not_implemented"},
+    {"component": "local_kbaai", "contract": "A0_05 model provider", "status": "partial"}
+  ],
+  "min_bmos_stage": "A3",
+  "model_requirements": {"structured_output": "json_schema", "locale": ["ru"], "profile_class": "management_assistant"},
+  "constraints": ["manual_run_only", "synthetic_data_only", "no_external_network", "no_real_keys", "human_acceptance_required", "no_write_to_existing_tasks", "no_calendar_or_battle_plan", "no_inter_agent_handoff", "no_messages_to_employees", "not_a_poscover_delegate"],
+  "occupancy_modes": {"preferred": "hybrid", "alternative": "agent_on_assistant_post", "decision": "OD-06 pending"},
+  "admission_criteria": ["A0..A3 gates PASS", "all mandatory C/B cases PASS", "no open CRITICAL_RISK", "owner decision AG-D06"],
+  "compatibility": [],
+  "adaptation_rules": {"must": ["select_existing_post", "map_results_to_functions", "assign_sponsor_supervisor_approver", "select_model_profile", "set_budget_limits", "issue_grants_separately"], "may_narrow": ["results", "context", "tools", "risk", "limits", "terms"], "may_not_expand": ["tools", "risk", "scope", "R3", "R4"]},
+  "owner_decisions": ["AG-D01", "AG-D02", "AG-D03", "AG-D04", "AG-D05", "AG-D06", "OD-06"],
+  "source_docs": [
+    "https://docs.google.com/document/d/1Tq4dPZhgXDL4YMpivAJLrhaVf5kmWHRLBMuuK4BM3SU/edit",
+    "https://docs.google.com/document/d/1w8ZUhSfGFHXxAkZyEKTZ7biu3n2-kMILOhscJ7WXZaY/edit",
+    "https://docs.google.com/document/d/1-z0TjBuu5hQJAarmwioLzronZQC4w9onQ9vA4bAFxNs/edit",
+    "https://docs.google.com/document/d/1-V_QyJU_atIm2fevUiEYJnRtlG0cdP1Dnc_5lreJ9nE/edit"
+  ],
+  "package_digest": null,
+  "change_log": [{"revision": 1, "state": "draft", "date": "2026-11-28", "note": "CAT-0 draft, commands aligned with A0_04 revision 5 (204e12e)"}]
+}
