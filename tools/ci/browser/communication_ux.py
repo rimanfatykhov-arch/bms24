@@ -231,7 +231,7 @@ with sync_playwright() as p:
         # Stability of the open conversation as a person sees it: a real (classic) scrollbar, which headless Chromium
         # hides by default, so a scrollbar that comes and goes changes the width exactly as on Windows/Linux desktops.
         seeded = json.loads(subprocess.run(['php', str(here / 'ci_comm_stability.php'), core, 'seed', company,
-                                            f['actors']['MA']['userid'], f['actors']['EA']['userid'], 'ux4'],
+                                            str(f['actors']['MA']['userid']), str(f['actors']['EA']['userid']), 'ux4'],
                                            check=True, capture_output=True, text=True).stdout)
         result['stability'] = []
         shown = p.chromium.launch(headless=True, ignore_default_args=['--hide-scrollbars'])
