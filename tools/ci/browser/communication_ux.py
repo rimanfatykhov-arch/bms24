@@ -150,6 +150,7 @@ STABILITY_JS = r'''async (frames) => {
         feed_top: Math.round(r(feed).top), feed_bottom: Math.round(r(feed).bottom),
         last_top: last ? Math.round(last.top) : null, last_bottom: last ? Math.round(last.bottom) : null,
         at_bottom: feed.scrollHeight - feed.clientHeight - feed.scrollTop <= 2,
+        feed_pad: Math.round(parseFloat(getComputedStyle(feed).paddingBottom) || 0),
         send_bottom: Math.round(r(send).bottom)};
 }'''
 

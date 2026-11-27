@@ -1988,11 +1988,16 @@ def communication_ux_checks(obs, exitcode=None):
             require(isinstance(b.get('messages'), int) and b['messages'] >= (2 if row.get('kind') == 'short' else 20),
                     'conversation not rendered: ' + where)
             require(b.get('at_bottom') is True, 'conversation did not open at the newest message: ' + where)
-            require(isinstance(b.get('last_top'), int) and isinstance(b.get('last_bottom'), int),
+            require(isinstance(b.get('last_top'), int) and isinstance(b.get('last_bottom'), int)
+                    and isinstance(b.get('feed_pad'), int) and 0 <= b['feed_pad'] <= 40,
                     'newest message geometry missing: ' + where)
-            require(b['last_bottom'] <= b['feed_bottom'] + 1 and b['last_top'] >= b['feed_top'] - 1
-                    or b['last_bottom'] - b['last_top'] > b['feed_bottom'] - b['feed_top'],
+            # Its lower edge is on screen above the composer; it is shown whole when it fits the history's visible
+            # area (a message taller than that can only show its end, like in any messenger).
+            require(b['feed_top'] < b['last_bottom'] <= b['feed_bottom'] + 1,
                     'newest message cut at the bottom (%r > %r): %s' % (b['last_bottom'], b['feed_bottom'], where))
+            fits = b['last_bottom'] - b['last_top'] <= b['feed_bottom'] - b['feed_top'] - b['feed_pad']
+            require(not fits or b['last_top'] >= b['feed_top'] - 1,
+                    'newest message not shown whole (top %r above %r): %s' % (b['last_top'], b['feed_top'], where))
         require(seen == {(m, w, k) for m in ('owned', 'legacy') for w in (1440, 375) for k in ('short', 'long')},
                 'stability matrix incomplete')
     return {'communication_ux1_layout_and_navigation': verify, 'communication_ux2_primary_action_geometry': geometry,

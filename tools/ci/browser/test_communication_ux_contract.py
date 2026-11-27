@@ -49,7 +49,7 @@ def still(frames, bottom):
             'send_span': 0, 'scroll_span': 0, 'width_span': 0, 'changes': 0, 'first': [640, 470, 690, 760, 0, 1425],
             'last_sample': [640, 470, 690, 760, 0, 1425], 'feed_top': 220, 'feed_bottom': 690,
             'last_top': 600 if bottom else 230, 'last_bottom': 680 if bottom else 300, 'at_bottom': bottom,
-            'send_bottom': 798}
+            'send_bottom': 798, 'feed_pad': 14}
 
 
 def stability():
@@ -170,6 +170,10 @@ class UXContractTest(unittest.TestCase):
             lambda o: s(o).update(feed_span=None),
             lambda o: s(o).update(changes=True),
             lambda o: s(o, 1).update(last_bottom=712),
+            # A message that fits the history must be whole: top under the edge is a cut.
+            lambda o: s(o, 1).update(last_top=180, last_bottom=400),
+            lambda o: s(o, 1).update(last_bottom=210),
+            lambda o: s(o, 1).update(feed_pad=None),
             lambda o: s(o, 1).update(at_bottom=False),
             lambda o: s(o, 1).update(messages=3),
             lambda o: s(o).update(send_bottom=930),
@@ -185,6 +189,13 @@ class UXContractTest(unittest.TestCase):
             o = copy.deepcopy(good); mutate(o)
             self.assertEqual(evaluate(communication_ux_checks(o, 0))[name]['status'], 'FAIL', mutate)
         self.assertEqual(evaluate(communication_ux_checks(good, 1))[name]['status'], 'FAIL')
+
+    def test_stable_thread_accepts_a_newest_message_taller_than_the_history(self):
+        # Percona legacy/1440/long (run 45967889030): a 253 px message in a 265 px history with 14 px bottom padding
+        # can only show its end; its bottom is on screen at the newest position.
+        o = self.observation()
+        o['stability'][5]['bottom'].update(feed_top=374, feed_bottom=639, last_top=372, last_bottom=625, feed_pad=14)
+        self.assertEqual(evaluate(communication_ux_checks(o, 0))['communication_ux4_stable_thread']['status'], 'PASS')
 
     def test_complete_evidence_passes_and_broken_evidence_fails(self):
         good=self.observation()
