@@ -37,6 +37,12 @@ def geometry(width):
     return out
 
 
+def frame(thread):
+    """What the browser measures on a framed Center at 900px height."""
+    return {'framed': True, 'page_excess': 0, 'layout_bottom': 874, 'view': 900,
+            'compose_bottom': 862 if thread else None, 'list_overflow': 'auto', 'feed_overflow': 'auto' if thread else None}
+
+
 class UXContractTest(unittest.TestCase):
     def observation(self):
         return {'status': 'PASS', 'companyuuid': 'A', 'cases': [dict(shell=s, width=w, http=200, sections=3,
@@ -49,7 +55,7 @@ class UXContractTest(unittest.TestCase):
             thread_available=True, panel_open=True, panel_closed=True, focus_restored=True,
             thread_overflow=False, notifications_http=200, notification_screen=True,
             no_conversation_area=True, notifications_overflow=False, browser_events=[], server_errors=[],
-            navigation=navigation(), geometry=geometry(w))
+            navigation=navigation(), geometry=geometry(w), frame_list=frame(False), frame_thread=frame(True), frame_shift=frame(True))
             for s in ['owned','legacy'] for w in [320,375,390,768,1440]]}
 
     def test_primary_action_geometry_rejects_clipped_or_missing_button(self):
@@ -92,6 +98,43 @@ class UXContractTest(unittest.TestCase):
         # Narrow screens may show the open conversation instead of the list: no search there is not a failure.
         o = copy.deepcopy(good); o['cases'][0]['geometry']['messages']['search'] = None
         self.assertEqual(evaluate(communication_ux_checks(o, 0))[name]['status'], 'PASS')
+
+    def test_fixed_frame_rejects_page_scroll_and_missing_measurements(self):
+        good = self.observation()
+        name = 'communication_ux3_fixed_frame'
+        self.assertEqual(evaluate(communication_ux_checks(good, 0))[name]['status'], 'PASS')
+        def f(o, case=9, state='frame_thread'):
+            return o['cases'][case][state]
+        mutations = [
+            lambda o: f(o).update(framed=False),
+            lambda o: f(o, 5, 'frame_list').update(framed=None),
+            lambda o: f(o).update(page_excess=2),
+            lambda o: f(o, 0, 'frame_list').update(page_excess=274),
+            lambda o: f(o).update(page_excess=None),
+            lambda o: f(o).update(page_excess=True),
+            lambda o: f(o).update(layout_bottom=950),
+            lambda o: f(o).update(layout_bottom=0),
+            lambda o: f(o).update(view=480),
+            lambda o: f(o).update(compose_bottom=None),
+            lambda o: f(o).update(compose_bottom=1032),
+            lambda o: f(o).update(list_overflow='visible'),
+            lambda o: f(o, 3, 'frame_list').update(list_overflow=None),
+            lambda o: f(o).update(feed_overflow='hidden'),
+            lambda o: f(o).update(feed_overflow=None),
+            lambda o: f(o, 4, 'frame_list').update(feed_overflow='visible'),
+            lambda o: o['cases'][2].pop('frame_list'),
+            lambda o: o['cases'][7].update(frame_thread=None),
+            # Percona owned/320: the frame released while the page above was taller and never came back.
+            lambda o: f(o, 0, 'frame_shift').update(framed=False, page_excess=265, layout_bottom=1130, compose_bottom=1130),
+            lambda o: f(o, 5, 'frame_shift').update(framed=False),
+            lambda o: f(o, 1, 'frame_shift').update(compose_bottom=None),
+            lambda o: f(o, 6, 'frame_shift').update(feed_overflow=None),
+            lambda o: o['cases'][3].pop('frame_shift'),
+        ]
+        for mutate in mutations:
+            o = copy.deepcopy(good); mutate(o)
+            self.assertEqual(evaluate(communication_ux_checks(o, 0))[name]['status'], 'FAIL', mutate)
+        self.assertEqual(evaluate(communication_ux_checks(good, 1))[name]['status'], 'FAIL')
 
     def test_complete_evidence_passes_and_broken_evidence_fails(self):
         good=self.observation()
