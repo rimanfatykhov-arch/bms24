@@ -103,14 +103,22 @@ FRAME_JS = r'''async () => {
 }'''
 
 
-# Puts a 400px block above the whole page, lets the frame fit with it (a resize event, as a rotation would send), then
-# removes it again with no further window event. Only an observer of the page around the block can see the removal.
+# Makes the page above the Center 400px taller where it really changes: inside the owned shell's top bar (what
+# bms24_nav_drawer changes in the Percona run), in the legacy shell right before the block. Lets the frame fit with it
+# (a resize event, as a rotation would send), then removes it with no further window event. Only an observer of the
+# page around the block can see the removal; the block itself keeps its size.
 SHIFT_JS = r'''async () => {
     const frames = async (n) => { for (let i = 0; i < n; i++) { await new Promise((r) => requestAnimationFrame(r)); } };
     const spacer = document.createElement('div');
     spacer.id = 'bms-ci-frame-shift';
-    spacer.style.height = '400px';
-    document.body.prepend(spacer);
+    spacer.style.cssText = 'height:400px;flex:0 0 100%';
+    const topbar = document.querySelector('.bms24-app .bms24-topbar');
+    if (topbar) {
+        topbar.prepend(spacer);
+    } else {
+        const root = document.querySelector('#bms24-comm-root');
+        root.parentElement.insertBefore(spacer, root);
+    }
     window.dispatchEvent(new Event('resize'));
     await frames(3);
     spacer.remove();
