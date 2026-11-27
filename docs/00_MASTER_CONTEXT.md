@@ -122,3 +122,16 @@ projection observed in tested native two-tenant/revocation cases; HTTP/browser/d
 stack NOT RUN. See [PR68 acceptance](reconcile/PR68_ACCEPTANCE.md) and evidence.
 RC30 HOLD with15 remaining failures. Next bounded priority: Word export/locale tests.
 No production/staging access, deployment or PR merge.
+
+
+## 13.11.2026 — BMOS Agent Platform архитектура (future releases; not RC30 runtime)
+
+По решению владельца: канонический функциональный пост в ОФС имеет независимые от исполнителя функции, ЦКП, метрики и ответственного руководителя. Исполнителем может быть человек, отдельный AI principal или гибрид; существующий `task.assigneeid` остаётся Moodle user, а `dutypositionuuid` — ответственностью поста. Новые AI-идентичности и назначения не должны изменять исторические членства, права и авторов задач.
+
+**SIPOC / BPMN:** выход поста А как валидированный, версионированный OutputArtifact через управляемый ProcessHandoff становится входом поста Б, с проверкой company/object ACL, ревизии, идемпотентности и качества; принимающий пост может принять/вернуть с причиной. Не передавать агенто-агентам полную память/контекст по умолчанию.
+
+**Двухуровневая AI-архитектура:** BMOS Agent Platform / AI Control Layer владеет агентами, функциональными постами, инструментами, доступом к данным компании, аудитом, маршрутизацией процесса, результатами и приёмкой. `ModelProviderInterface` с первым `Timeweb Cloud AI Gateway Adapter` предоставляет доступ к LLM; gateway не заменяет BMOS Agent Runtime. Отдельные ключи/лимиты и независимые запросы к моделям допустимы только после provider/PII/contract/security approval.
+
+**Documentation:** [BMOS AI Control Layer](architecture/BMOS_AI_CONTROL_LAYER.md), [ADR-0007 proposed](adr/ADR-0007-bmos-ai-control-layer-timeweb-provider-PROPOSED.md), [agent roadmap issue #76](https://github.com/rimanfatykhov-arch/bms24/issues/76), [feed/MAX/reports #75](https://github.com/rimanfatykhov-arch/bms24/issues/75). Operational roadmap in `local/kbacompany/ROADMAP.md`.
+
+**Release boundary:** The above is design-only; no new agent functionality, API v2 writes, Timeweb credentials or live provider traffic is included in RC30 by this document. Subsequent work must run through development → CI → private staging → exact versioned artifact → owner approval → production → smoke.
