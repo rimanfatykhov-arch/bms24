@@ -1,15 +1,15 @@
 {
  "scope": "exact intentional source updates; not runtime, concurrency or release acceptance",
- "base_sha": "62fdc4934b8b8a87fb8c7f21a52c56b64229e836",
+ "base_sha": "0884643590541fdd9b75b1414fd93d6120ded017",
  "normalization": "CRLF to LF only",
- "previous_evidence": "docs/reconcile/topbar-notification-bell-source-preservation.json",
+ "previous_evidence": "docs/reconcile/daily-reports-r3-source-preservation.json (main 0884643; R3 report discussion changed communication_service)",
  "decision": "docs/reconcile/RC33_PR1_COMMUNICATION_WRITE_GATE.md (owner D3 2026-11-24, PR #88 / issue #75; split approved 2026-11-24)",
  "change": "Shared company communication write gate (communication_write_gate) around create_thread, add_participant, append_message, send_message_with_attachments, leave_thread, remove_participant and change_message; author and recipients re-checked under the gate; notification eligibility (live account and company access); optional literal inline mentions. No schema, version, capability, lang or UI change.",
  "files": [
   {
    "path": "local/kbacompany/classes/local/communication_service.php",
-   "before_sha256_lf": "f3c7ab27e4da9001673e6c60a72b18b8e5af604068b15b349c5c01a45de3ad05",
-   "after_sha256_lf": "a483674056db868903e362b77d987d709f8547bc3fffc94fb8ca054445bfd85c"
+   "before_sha256_lf": "870b471dba39c867b5b13f8b04f55fb82f67ce484ea44cf929b5b9c4f93dae92",
+   "after_sha256_lf": "c312947922c1c1af07f64f2fc6f45ab1270b7f08e2d3c76a348ae7b90cb15193"
   }
  ],
  "outside_chain": [

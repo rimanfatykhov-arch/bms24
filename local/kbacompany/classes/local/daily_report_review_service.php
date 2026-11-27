@@ -78,6 +78,14 @@ final class daily_report_review_service {
             'versionno DESC')) : [];
     }
 
+    /**
+     * R3: whether a non-author may read this report (same SQL rule as the card): an administrator or a manager, a stored
+     * reviewer of any submitted version, or a copy recipient. The caller has already checked company membership.
+     */
+    public static function can_read_report(string $companyuuid, int $actor, \stdClass $report): bool {
+        return (bool)self::readable_versions($companyuuid, $report, $actor, self::can_read_all($companyuuid, $actor));
+    }
+
     /** Queues this actor may open: reviewer queues, copies, the company list (D4) and "without reviewer" (admin). */
     public static function queues(string $companyuuid, int $actor): array {
         $companyuuid = self::member($companyuuid, $actor);

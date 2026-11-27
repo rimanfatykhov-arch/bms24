@@ -11,7 +11,7 @@ defined('MOODLE_INTERNAL') || die();
  * serialized: a message whose checks ran before the revocation may commit, a later one fails.
  *
  * Fixed lock order; never acquire an earlier lock while holding a later one:
- *   1. object locks: taskdiscussion:*, bplandiscussion:* (object discussion posts)
+ *   1. object locks: taskdiscussion:*, bplandiscussion:*, dreportdiscussion:* (object discussion posts)
  *   2. member:sha1(company "\n" user)          employee_service::ensure_membership, membership_access_service::change
  *   3. communication:{company}                  this gate (the key predates PR-1: create_thread, leave_thread)
  *   4. commmsg:{company}:{message}              communication_service::change_message

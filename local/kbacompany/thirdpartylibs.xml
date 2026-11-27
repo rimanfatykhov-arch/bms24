@@ -1,0 +1,39 @@
+<?xml version="1.0"?>
+<libraries>
+  <library>
+    <location>amd/src/echarts-lazy.js</location>
+    <name>Apache ECharts</name>
+    <description>Custom build (line chart, grid, tooltip, inside data zoom, mark line, mark area, SVG renderer) with ZRender 6.1.0 (BSD 3-Clause) and tslib 2.3.0 (0BSD), used by the Information Centre charts. Built reproducibly by tools/echarts; licence texts and NOTICE in thirdparty/echarts.</description>
+    <version>6.1.0</version>
+    <license>Apache</license>
+    <licenseversion>2.0</licenseversion>
+    <repository>https://github.com/apache/echarts</repository>
+    <copyrights>
+      <copyright>2017-2026 The Apache Software Foundation</copyright>
+    </copyrights>
+  </library>
+  <library>
+    <location>amd/build/echarts-lazy.min.js</location>
+    <name>Apache ECharts (build copy)</name>
+    <description>Byte-identical copy of amd/src/echarts-lazy.js served by Moodle.</description>
+    <version>6.1.0</version>
+    <license>Apache</license>
+    <licenseversion>2.0</licenseversion>
+    <repository>https://github.com/apache/echarts</repository>
+    <copyrights>
+      <copyright>2017-2026 The Apache Software Foundation</copyright>
+    </copyrights>
+  </library>
+  <library>
+    <location>thirdparty/echarts</location>
+    <name>Apache ECharts licence files</name>
+    <description>LICENSE and NOTICE of Apache ECharts 6.1.0, LICENSE-d3 (portions of d3.js), LICENSE-zrender (ZRender 6.1.0), LICENSE-tslib (tslib 2.3.0).</description>
+    <version>6.1.0</version>
+    <license>Apache</license>
+    <licenseversion>2.0</licenseversion>
+    <repository>https://github.com/apache/echarts</repository>
+    <copyrights>
+      <copyright>2017-2026 The Apache Software Foundation</copyright>
+    </copyrights>
+  </library>
+</libraries>
