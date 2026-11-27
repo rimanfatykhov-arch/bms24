@@ -127,11 +127,19 @@ def check(root=ROOT):
     # 'dailyreport' discussion kind. See docs/reconcile/daily-reports-r3-source-preservation.json.
     reviewed_followup['local/kbacompany/lang/en/local_kbacompany.php'] = '2a8007f42e8de2339927da3be2dcdc5aecf91534a634b5bd2bd21dadf17402eb'
     reviewed_followup['local/kbacompany/lang/ru/local_kbacompany.php'] = 'e2e51490b8c1f5988948b057ba93701ee4229bbc4ed9e0175da02f0a655fcfc9'
+    # Information Centre by divisions (#190): append the infocenter2_* block after the daily reports R3 block.
+    # See docs/reconcile/information-centre-divisions-source-preservation.json.
+    reviewed_followup['local/kbacompany/lang/en/local_kbacompany.php'] = '1d3d80ad9c985ff85091e126a0e14292ce3e6ab4531268f6f30228c47269509b'
+    reviewed_followup['local/kbacompany/lang/ru/local_kbacompany.php'] = 'f5ad4bdcc8edaebe4b8b444231432c117fedbb3530fc9b04a3c3316d85015c87'
+    # DOC-W2 Office workspace (owner task 2026-11-24): officews_* RU/EN block after the Information Centre by divisions block (#190); read-only, default off.
+    # See docs/office/DOC_W2_OFFICE_WORKSPACE.md.
+    reviewed_followup['local/kbacompany/lang/en/local_kbacompany.php'] = '32402ab956d141c1cbb1b45c495cf8ddc2c6c95d09518995dba2c1473dfbc5cf'
+    reviewed_followup['local/kbacompany/lang/ru/local_kbacompany.php'] = 'd5d534758b1c6c6cef4069d1dd6cbe233b9a6973a49f48c0ebc3f781ec51177f'
     reviewed_followup['local/kbacompany/classes/local/communication_service.php'] = '870b471dba39c867b5b13f8b04f55fb82f67ce484ea44cf929b5b9c4f93dae92'
     # Terminology BMS-STD-TER-001 (#187, owner approval 2026-11-25): exact in-place RU/EN value replacements, same keys.
     # See docs/reconcile/terminology-cascade-std-source-preservation.json (line-by-line before/after).
-    reviewed_followup['local/kbacompany/lang/en/local_kbacompany.php'] = '07cb3d7b59099088b761860e81cc8aa484325ad6a3c617a8dda79fd5ec335d92'
-    reviewed_followup['local/kbacompany/lang/ru/local_kbacompany.php'] = 'ebef03ed9be8c857721c8b7f8daae1fe8893b6541f33e31e2de58fea9c7b5356'
+    reviewed_followup['local/kbacompany/lang/en/local_kbacompany.php'] = '7a5dec9890f6d005eae6afbd98c9771449860104672095ad31343a6309e28902'
+    reviewed_followup['local/kbacompany/lang/ru/local_kbacompany.php'] = '4a03d436e756d2c62e1e4c92d66450d74262528c650915f496d8d6bcccefb0ae'
     for row in plan['rows']:
         path=root/row['path']
         if not path.is_file() or path.is_symlink():

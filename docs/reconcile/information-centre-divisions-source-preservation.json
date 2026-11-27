@@ -1,0 +1,20 @@
+{
+  "scope": "exact intentional source updates; not runtime or release acceptance",
+  "base_sha": "a515a38 (main after #169)",
+  "normalization": "CRLF to LF only",
+  "previous_evidence": "docs/reconcile/daily-reports-r3-source-preservation.json (daily reports R3 discussion block)",
+  "decision": "Issue #190 (owner task): Information Centre by divisions with mini charts, trends and a zoomable drill-down chart.",
+  "change": "Append the #190 Information Centre block (39 keys, infocenter2_*) after the daily reports R3 block in both languages. No existing key is changed or overridden; no schema, capability or notification change.",
+  "files": [
+    {
+      "path": "local/kbacompany/lang/en/local_kbacompany.php",
+      "before_sha256_lf": "2a8007f42e8de2339927da3be2dcdc5aecf91534a634b5bd2bd21dadf17402eb",
+      "after_sha256_lf": "1d3d80ad9c985ff85091e126a0e14292ce3e6ab4531268f6f30228c47269509b"
+    },
+    {
+      "path": "local/kbacompany/lang/ru/local_kbacompany.php",
+      "before_sha256_lf": "e2e51490b8c1f5988948b057ba93701ee4229bbc4ed9e0175da02f0a655fcfc9",
+      "after_sha256_lf": "f5ad4bdcc8edaebe4b8b444231432c117fedbb3530fc9b04a3c3316d85015c87"
+    }
+  ]
+}
