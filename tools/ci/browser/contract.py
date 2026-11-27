@@ -1950,8 +1950,53 @@ def communication_ux_checks(obs, exitcode=None):
                 if state != 'frame_list':
                     c = f.get('compose_bottom')
                     require(integer(c) and 0 < c <= f['view'] + 1, 'composer not on screen: ' + where)
+    def stable():
+        """The open conversation holds still with no input (Codex task in #145, owner's recording): the block, the
+        history, the composer and Send keep their place and size frame after frame, with a real scrollbar; the window
+        width does not flip (a scrollbar coming and going); the newest message is shown whole above the composer; reading
+        older messages keeps its scroll position. Both shells, 1440 and 375 px, a short and a long conversation."""
+        require(exitcode == 0 and isinstance(obs, dict) and obs.get('status') == 'PASS'
+                and not obs.get('error'), 'UX browser run missing/failed')
+        rows = obs.get('stability')
+        require(isinstance(rows, list) and len(rows) == 8, 'stability matrix incomplete')
+        seen = set()
+        for row in rows:
+            where = '%s/%s/%s' % (row.get('shell'), row.get('width'), row.get('kind'))
+            seen.add((row.get('shell'), row.get('width'), row.get('kind')))
+            require(row.get('http') == 200, 'conversation HTTP failure: ' + where)
+            require(row.get('server_errors') == [], 'server error evidence missing or HTTP500: ' + where)
+            require(isinstance(row.get('browser_events'), list), 'browser events missing: ' + where)
+            require(not browser_event_violations(row['browser_events']), 'unexpected browser/network errors: ' + where)
+            for state, frames in [('bottom', 120), ('reading', 60)]:
+                s = row.get(state)
+                at = '%s/%s' % (where, state)
+                require(isinstance(s, dict), 'stability samples missing: ' + at)
+                require(s.get('frames') == frames, 'too few frames sampled: ' + at)
+                for key in ['layout_span', 'feed_span', 'compose_span', 'send_span', 'scroll_span', 'width_span',
+                            'changes', 'view', 'send_bottom', 'feed_top', 'feed_bottom']:
+                    require(isinstance(s.get(key), int) and not isinstance(s.get(key), bool),
+                            'stability %s missing: %s' % (key, at))
+                require(s['width_span'] == 0, 'window width flips by %rpx (scrollbar comes and goes): %s'
+                        % (s['width_span'], at))
+                for key, label in [('layout_span', 'block'), ('feed_span', 'history'), ('compose_span', 'composer'),
+                                   ('send_span', 'Send button')]:
+                    require(s[key] == 0, '%s moves/resizes by %rpx with no input: %s' % (label, s[key], at))
+                require(s['scroll_span'] == 0, 'history scroll position drifts by %rpx: %s' % (s['scroll_span'], at))
+                require(s['changes'] == 0, 'geometry changed in %r of %r frames: %s' % (s['changes'], frames, at))
+                require(0 < s['send_bottom'] <= s['view'], 'Send button not on screen: ' + at)
+            b = row['bottom']
+            require(isinstance(b.get('messages'), int) and b['messages'] >= (2 if row.get('kind') == 'short' else 40),
+                    'conversation not rendered: ' + where)
+            require(b.get('at_bottom') is True, 'conversation did not open at the newest message: ' + where)
+            require(isinstance(b.get('last_top'), int) and isinstance(b.get('last_bottom'), int),
+                    'newest message geometry missing: ' + where)
+            require(b['last_bottom'] <= b['feed_bottom'] + 1 and b['last_top'] >= b['feed_top'] - 1
+                    or b['last_bottom'] - b['last_top'] > b['feed_bottom'] - b['feed_top'],
+                    'newest message cut at the bottom (%r > %r): %s' % (b['last_bottom'], b['feed_bottom'], where))
+        require(seen == {(m, w, k) for m in ('owned', 'legacy') for w in (1440, 375) for k in ('short', 'long')},
+                'stability matrix incomplete')
     return {'communication_ux1_layout_and_navigation': verify, 'communication_ux2_primary_action_geometry': geometry,
-            'communication_ux3_fixed_frame': frame}
+            'communication_ux3_fixed_frame': frame, 'communication_ux4_stable_thread': stable}
 
 
 BELL_WIDTHS = (1440, 768, 320)

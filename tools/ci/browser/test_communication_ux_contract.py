@@ -43,6 +43,21 @@ def frame(thread):
             'compose_bottom': 862 if thread else None, 'list_overflow': 'auto', 'feed_overflow': 'auto' if thread else None}
 
 
+def still(frames, bottom):
+    """What the browser samples on an open conversation that holds still for `frames` frames."""
+    return {'frames': frames, 'messages': 42, 'view': 900, 'layout_span': 0, 'feed_span': 0, 'compose_span': 0,
+            'send_span': 0, 'scroll_span': 0, 'width_span': 0, 'changes': 0, 'first': [640, 470, 690, 760, 0, 1425],
+            'last_sample': [640, 470, 690, 760, 0, 1425], 'feed_top': 220, 'feed_bottom': 690,
+            'last_top': 600 if bottom else 230, 'last_bottom': 680 if bottom else 300, 'at_bottom': bottom,
+            'send_bottom': 798}
+
+
+def stability():
+    return [{'shell': m, 'width': w, 'kind': k, 'http': 200, 'bottom': still(120, True), 'reading': still(60, False),
+             'browser_events': [], 'server_errors': []}
+            for m in ['owned', 'legacy'] for w in [1440, 375] for k in ['short', 'long']]
+
+
 class UXContractTest(unittest.TestCase):
     def observation(self):
         return {'status': 'PASS', 'companyuuid': 'A', 'cases': [dict(shell=s, width=w, http=200, sections=3,
@@ -56,7 +71,7 @@ class UXContractTest(unittest.TestCase):
             thread_overflow=False, notifications_http=200, notification_screen=True,
             no_conversation_area=True, notifications_overflow=False, browser_events=[], server_errors=[],
             navigation=navigation(), geometry=geometry(w), frame_list=frame(False), frame_thread=frame(True), frame_shift=frame(True))
-            for s in ['owned','legacy'] for w in [320,375,390,768,1440]]}
+            for s in ['owned','legacy'] for w in [320,375,390,768,1440]], 'stability': stability()}
 
     def test_primary_action_geometry_rejects_clipped_or_missing_button(self):
         good = self.observation()
@@ -130,6 +145,41 @@ class UXContractTest(unittest.TestCase):
             lambda o: f(o, 1, 'frame_shift').update(compose_bottom=None),
             lambda o: f(o, 6, 'frame_shift').update(feed_overflow=None),
             lambda o: o['cases'][3].pop('frame_shift'),
+        ]
+        for mutate in mutations:
+            o = copy.deepcopy(good); mutate(o)
+            self.assertEqual(evaluate(communication_ux_checks(o, 0))[name]['status'], 'FAIL', mutate)
+        self.assertEqual(evaluate(communication_ux_checks(good, 1))[name]['status'], 'FAIL')
+
+    def test_stable_thread_rejects_geometry_that_moves_with_no_input(self):
+        good = self.observation()
+        name = 'communication_ux4_stable_thread'
+        self.assertEqual(evaluate(communication_ux_checks(good, 0))[name]['status'], 'PASS')
+        def s(o, row=0, state='bottom'):
+            return o['stability'][row][state]
+        mutations = [
+            # The owner's recording: the history shrinks and grows, the composer and Send move with it.
+            lambda o: s(o, 1).update(feed_span=34, compose_span=34, send_span=34, layout_span=0, changes=118),
+            lambda o: s(o).update(layout_span=17, changes=60),
+            lambda o: s(o, 3).update(width_span=17, changes=59),
+            lambda o: s(o, 5).update(send_span=1),
+            lambda o: s(o, 6).update(compose_span=2),
+            lambda o: s(o, 2, 'reading').update(scroll_span=40),
+            lambda o: s(o, 4, 'reading').update(changes=1),
+            lambda o: s(o, 7).update(frames=12),
+            lambda o: s(o).update(feed_span=None),
+            lambda o: s(o).update(changes=True),
+            lambda o: s(o, 1).update(last_bottom=712),
+            lambda o: s(o, 1).update(at_bottom=False),
+            lambda o: s(o, 1).update(messages=3),
+            lambda o: s(o).update(send_bottom=930),
+            lambda o: o['stability'][2].update(server_errors=[500]),
+            lambda o: o['stability'][2].update(http=500),
+            lambda o: o['stability'][3].update(browser_events=None),
+            lambda o: o['stability'][4].pop('reading'),
+            lambda o: o['stability'].pop(),
+            lambda o: o['stability'][7].update(kind='short'),
+            lambda o: o.pop('stability'),
         ]
         for mutate in mutations:
             o = copy.deepcopy(good); mutate(o)
