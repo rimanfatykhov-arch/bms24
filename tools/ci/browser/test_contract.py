@@ -1049,6 +1049,81 @@ class ContractTest(unittest.TestCase):
             self.assertTrue(all(v['status'] == 'FAIL' for v in r.values()), r)
         self.assertTrue(all(v['status'] == 'FAIL' for v in c.evaluate(c.daily_reports_flow_checks(None, None)).values()))
 
+    def a10_obs(self):
+        MA, RA, EA = 11, 13, 12
+        rows, shots = [], []
+        for (shell, width), day in zip(c.DAILY_REPORTS_A10_CASES, ('2026-11-20', '2026-11-19')):
+            top = {'uuid': 't-' + shell, 'state': 'submitted', 'done': 'top', 'reviewerid': MA, 'reviewersource': 'self_top'}
+            lead = {'uuid': 'l-' + shell, 'state': 'submitted', 'done': 'lead', 'reviewerid': MA, 'reviewersource': 'orgstructure'}
+            led = {'report': {'uuid': 'lr', 'status': 'submitted'}, 'versions': [lead], 'decisions': [],
+                   'copies': [{'versionuuid': lead['uuid'], 'userid': EA, 'source': 'manual'}],
+                   'copy_notifications': [{'userid': EA}], 'journal': []}
+            rows.append({'shell': shell, 'width': width, 'day': day, 'ids': {'MA': MA, 'RA': RA, 'EA': EA},
+                         'hscroll': {k: True for k in ('top_form', 'top_card', 'lead_form', 'copy_card', 'manager_card')},
+                         'top_preview': 'self_top', 'top_selflink': 1, 'top_card': {'badges': 2, 'decide_forms': 1},
+                         'top_after_decide': {'report': {'status': 'accepted'}, 'versions': [top],
+                                              'decisions': [{'versionuuid': top['uuid'], 'decision': 'accepted',
+                                                             'rating': 'positive', 'reviewerid': MA}],
+                                              'journal': [{'action': 'submitted', 'selfreview': True},
+                                                          {'action': 'decided', 'selfreview': True}]},
+                         'lead_preview': {'source': 'orgstructure', 'reviewerid': MA, 'names_reviewer': True},
+                         'lead_after_submit': led, 'lead_after_forged': copy.deepcopy(led),
+                         'copy_queue_links': 1, 'copy_card': {'readonly_note': 1, 'decide_forms': 0, 'text_shown': True},
+                         'copy_forged_http': 200, 'company_queue_links': 1,
+                         'manager_card': {'readonly_note': 1, 'decide_forms': 0}})
+            shots += ['adr10-%s-%s-%s.png' % (shell, width, k) for k in c.A10_SHOTS]
+        return {'status': 'PASS', 'setup': {'enabled': True}, 'cases': rows, 'screenshots': shots,
+                'browser_events': list(ABORTED), 'server_errors': [], 'teardown': {'removed': 3}}
+
+    def test_daily_reports_adr0010_valid_passes_and_mutations_fail(self):
+        obs = self.a10_obs()
+        res = c.evaluate(c.daily_reports_adr0010_checks(obs, 0))
+        self.assertEqual({k: 'PASS' for k in res}, {k: v['status'] for k, v in res.items()}, res)
+        for name in res:
+            self.assertIn(name, c.required_check_names())
+
+        def fails(check, mutate):
+            o = copy.deepcopy(obs); mutate(o)
+            r = c.evaluate(c.daily_reports_adr0010_checks(o, 0))
+            self.assertEqual('FAIL', r[check]['status'], (check, r[check]))
+        top = 'daily_report_a10_top_self_review_marked'
+        fails(top, lambda o: o['cases'][0].update(top_preview='none'))
+        fails(top, lambda o: o['cases'][1].update(top_selflink=0))
+        fails(top, lambda o: o['cases'][0]['top_card'].update(badges=0))
+        fails(top, lambda o: o['cases'][1]['top_after_decide']['versions'][0].update(reviewersource='orgstructure'))
+        fails(top, lambda o: o['cases'][0]['top_after_decide']['decisions'].append(
+            dict(o['cases'][0]['top_after_decide']['decisions'][0])))
+        fails(top, lambda o: o['cases'][1]['top_after_decide']['journal'][1].update(selfreview=None))
+        org = 'daily_report_a10_org_chart_reviewer_and_copy'
+        fails(org, lambda o: o['cases'][0]['lead_preview'].update(source='none'))
+        fails(org, lambda o: o['cases'][1]['lead_preview'].update(reviewerid=13))
+        fails(org, lambda o: o['cases'][0]['lead_after_submit']['versions'][0].update(reviewerid=13))
+        fails(org, lambda o: o['cases'][1]['lead_after_submit']['copies'].append({'versionuuid': 'l-legacy', 'userid': 11,
+                                                                                    'source': 'manual'}))
+        fails(org, lambda o: o['cases'][0]['lead_after_submit']['copy_notifications'].append({'userid': 12}))
+        cp = 'daily_report_a10_copy_read_only'
+        fails(cp, lambda o: o['cases'][0].update(copy_queue_links=0))
+        fails(cp, lambda o: o['cases'][1]['copy_card'].update(decide_forms=1))
+        fails(cp, lambda o: o['cases'][0]['copy_card'].update(readonly_note=0))
+        fails(cp, lambda o: o['cases'][1].update(copy_forged_http=500))
+        fails(cp, lambda o: o['cases'][0]['lead_after_forged']['decisions'].append({'decision': 'accepted'}))
+        mg = 'daily_report_a10_manager_reads_company'
+        fails(mg, lambda o: o['cases'][1].update(company_queue_links=0))
+        fails(mg, lambda o: o['cases'][0]['manager_card'].update(decide_forms=1))
+        lay = 'daily_report_a10_layout_errors_screenshots'
+        fails(lay, lambda o: o['cases'][1]['hscroll'].update(copy_card=False))
+        fails(lay, lambda o: o['screenshots'].pop())
+        fails(lay, lambda o: o['server_errors'].append({'url': 'u', 'status': 500}))
+        fails(lay, lambda o: o['browser_events'].append({'source': 'pageerror', 'name': 'Error', 'message': 'x'}))
+        fails(lay, lambda o: o.update(cleanup_error='boom'))
+        for mutate, code in ((lambda o: o['cases'].pop(), 0), (lambda o: o['cases'].reverse(), 0),
+                             (lambda o: o['setup'].update(enabled=False), 0), (lambda o: o.update(error='boom'), 0),
+                             (lambda o: o['cases'][1].update(day=o['cases'][0]['day']), 0), (lambda o: None, 1)):
+            o = copy.deepcopy(obs); mutate(o)
+            r = c.evaluate(c.daily_reports_adr0010_checks(o, code))
+            self.assertTrue(all(v['status'] == 'FAIL' for v in r.values()), r)
+        self.assertTrue(all(v['status'] == 'FAIL' for v in c.evaluate(c.daily_reports_adr0010_checks(None, None)).values()))
+
     @staticmethod
     def day_feed_obs():
         rows = []

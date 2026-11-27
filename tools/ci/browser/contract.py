@@ -1356,6 +1356,103 @@ def day_feed_checks(obs, exitcode=None):
             'day_feed_repeated_click_adds_nothing': no_duplicate, 'day_feed_foreign_and_forged_denied': isolation,
             'day_feed_send_layout_and_browser_errors': submit_and_layout}
 
+DAILY_REPORTS_A10_CASES = [('owned', 1440), ('legacy', 375)]
+A10_SHOTS = ('top-form', 'top-card', 'lead-form', 'copy-card', 'company-queue', 'manager-card')
+
+
+def daily_reports_adr0010_checks(obs, exitcode=None):
+    """ADR-0010 daily report review (daily_reports_adr0010.py): reviewer by organisation chart, self review only at the top,
+    manager reads the whole company, copies are read-only. Verdicts come from DB state and rendered markers; the producer's
+    PASS alone is never sufficient."""
+    def run():
+        require(exitcode == 0, 'ADR-0010 browser process failed or was not run')
+        require(isinstance(obs, dict) and obs.get('status') == 'PASS' and not obs.get('error'), 'ADR-0010 run incomplete')
+        require((obs.get('setup') or {}).get('enabled') is True, 'daily reports not enabled by the fixture')
+        rows = obs.get('cases')
+        require(isinstance(rows, list) and [(r.get('shell'), r.get('width')) for r in rows] == DAILY_REPORTS_A10_CASES,
+                'owned 1440 / legacy 375 cases required')
+        for r in rows:
+            ids = r.get('ids') or {}
+            require(all(isinstance(ids.get(k), int) and ids[k] > 0 for k in ('MA', 'RA', 'EA')) and len(set(ids.values())) == 3,
+                    'actor ids missing')
+        require(len({r.get('day') for r in rows}) == 2, 'each case needs its own day')
+        return rows
+
+    def submitted(st):
+        return [v for v in (st or {}).get('versions') or [] if v.get('state') != 'draft']
+
+    def top_self_review():
+        for r in run():
+            ma = r['ids']['MA']
+            require(r.get('top_preview') == 'self_top', 'author at the top did not see the self review before sending')
+            require(isinstance(r.get('top_selflink'), int) and r['top_selflink'] >= 1, 'no link from the own view to the self review')
+            card = r.get('top_card') or {}
+            require(isinstance(card.get('badges'), int) and card['badges'] >= 1 and card.get('decide_forms') == 1,
+                    'self review card not marked or without the decision form')
+            st = r.get('top_after_decide') or {}
+            vs = submitted(st)
+            require(len(vs) == 1 and vs[0].get('reviewerid') == ma and vs[0].get('reviewersource') == 'self_top',
+                    'self review not stored as self_top on the version')
+            require((st.get('report') or {}).get('status') == 'accepted' and
+                    [(d.get('versionuuid'), d.get('decision'), d.get('rating'), d.get('reviewerid')) for d in st.get('decisions') or []]
+                    == [(vs[0]['uuid'], 'accepted', 'positive', ma)], 'self review decision not recorded exactly once')
+            journal = [(j.get('action'), j.get('selfreview')) for j in st.get('journal') or []]
+            require(journal == [('submitted', True), ('decided', True)], 'journal lacks the self review flag: %r' % (journal,))
+
+    def org_chart_reviewer():
+        for r in run():
+            ma, ea = r['ids']['MA'], r['ids']['EA']
+            pv = r.get('lead_preview') or {}
+            require(pv.get('source') == 'orgstructure' and pv.get('reviewerid') == ma and pv.get('names_reviewer') is True,
+                    'unit manager did not see the org chart reviewer before sending: %r' % (pv,))
+            st = r.get('lead_after_submit') or {}
+            vs = submitted(st)
+            require(len(vs) == 1 and vs[0].get('reviewerid') == ma and vs[0].get('reviewersource') == 'orgstructure',
+                    'org chart reviewer not stored on the version')
+            require([(c.get('versionuuid'), c.get('userid'), c.get('source')) for c in st.get('copies') or []] ==
+                    [(vs[0]['uuid'], ea, 'manual')], 'copy not frozen on the version exactly once')
+            require([n.get('userid') for n in st.get('copy_notifications') or []] == [ea], 'copy notification missing or duplicated')
+
+    def copy_read_only():
+        for r in run():
+            require(isinstance(r.get('copy_queue_links'), int) and r['copy_queue_links'] >= 1, 'report not under "Copies to me"')
+            card = r.get('copy_card') or {}
+            require(card.get('readonly_note') == 1 and card.get('decide_forms') == 0 and card.get('text_shown') is True,
+                    'copy recipient card not read-only or report text missing: %r' % (card,))
+            http = r.get('copy_forged_http')
+            require(isinstance(http, int) and http < 500, 'forged decision by the copy recipient failed with %r' % (http,))
+            before, after = r.get('lead_after_submit') or {}, r.get('lead_after_forged') or {}
+            require(after.get('decisions') == [] and before.get('decisions') == [] and
+                    submitted(after) == submitted(before) and (after.get('report') or {}).get('status') == 'submitted',
+                    'a forged decision by the copy recipient changed the report')
+
+    def manager_reads_company():
+        for r in run():
+            require(isinstance(r.get('company_queue_links'), int) and r['company_queue_links'] >= 1,
+                    'manager does not see the report under "All company reports"')
+            card = r.get('manager_card') or {}
+            require(card.get('readonly_note') == 1 and card.get('decide_forms') == 0,
+                    'manager card not read-only: %r' % (card,))
+
+    def layout_and_events():
+        rows = run()
+        for r in rows:
+            h = r.get('hscroll') or {}
+            keys = ('top_form', 'top_card', 'lead_form', 'copy_card', 'manager_card')
+            require(all(h.get(k) is True for k in keys), 'horizontal scroll at %s px: %r' % (r.get('width'), h))
+        violations = browser_event_violations(obs.get('browser_events'))
+        require(not violations, 'browser errors: %r' % violations[:3])
+        require(obs.get('server_errors') == [], 'HTTP 5xx: %r' % (obs.get('server_errors'),))
+        expected = sorted('adr10-%s-%s-%s.png' % (r['shell'], r['width'], k) for r in rows for k in A10_SHOTS)
+        require(sorted(obs.get('screenshots') or []) == expected, 'screenshots missing')
+        require((obs.get('teardown') or {}).get('removed') == 3 and not obs.get('cleanup_error'), 'synthetic chart not removed')
+
+    return {'daily_report_a10_top_self_review_marked': top_self_review,
+            'daily_report_a10_org_chart_reviewer_and_copy': org_chart_reviewer,
+            'daily_report_a10_copy_read_only': copy_read_only,
+            'daily_report_a10_manager_reads_company': manager_reads_company,
+            'daily_report_a10_layout_errors_screenshots': layout_and_events}
+
 
 # ---- Information Centre by divisions (#190, infocenter.py): board order, tiles, trends, drill-down chart, isolation.
 # #192: mini charts and the drill-down chart on the local Apache ECharts module; the view state published by the page
@@ -2523,7 +2620,8 @@ def required_check_names():
             + list(access_checks({})) + list(oversize_checks({}, {})) + list(multiattachment_checks({}))
             + list(message_action_checks({})) + list(task_open_checks({}))
             + list(communication_center_checks({})) + list(daily_reports_nav_checks({}))
-            + list(daily_reports_flow_checks({})) + list(plan_discussion_checks({})) + list(communication_ux_checks({}))
+            + list(daily_reports_flow_checks({})) + list(daily_reports_adr0010_checks({}))
+            + list(plan_discussion_checks({})) + list(communication_ux_checks({}))
             + list(day_feed_checks({}))
             + list(infocenter_checks({}))
             + list(notification_bell_checks({}))
