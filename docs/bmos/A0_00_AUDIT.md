@@ -78,7 +78,11 @@
 ### 2.7 RBAC 2.0
 
 - **Владелец:** `permission_service` (политики owner/manager/hr), `acl*`: `aclrole`, `aclgrant` (`objecttype`, `actionname`, `scope`), `aclassign` (`roleid`, **`userid`**), `aclaudit`.
-- **Правила:** site-admin bypass, обязательный контекст компании, capability Moodle + роль компании, нет role-check внутри сервисов.
+- **Правила:** site-admin bypass, обязательный контекст компании, capability Moodle + роль компании.
+- **Действующие гранты (уточнено 27.11.2026 по проверке Codex):** `access_role_service` — словарь `OBJECTS`/`ACTIONS`;
+  для людей применяются `management_cycle`, `task`, `battle_plan` (`ENFORCED_OBJECTS`), в том числе scope `department`
+  для `task`/`battle_plan` по подразделениям, которыми человек управляет; `task_service` и `battle_plan_service`
+  применяют эти гранты при выборке и проверке объекта. Подробно — A0_02 §4.2.
 - **Точка расширения:** гранты принципала (A0_02 §4) — отдельно от `aclassign`. Агент **не** получает роли компании и capability Moodle.
 - **Риск:** `aclassign.userid` — только люди. Переиспользование таблицы для агентов смешало бы человеческие и машинные права.
 

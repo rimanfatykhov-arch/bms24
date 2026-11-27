@@ -2,6 +2,8 @@
 
 **Статус: PROPOSED.** Ни одной функции не создано. Public API v1 (`local_kbacompany_public_v1`, только чтение) не
 меняется. Ревизия 2 (25.11.2026): учтены решения Q-01–Q-18 и замечания REV-01, REV-05, REV-07, replay.
+Ревизия 3 (27.11.2026): блокеры 1 и 3 проверки Codex — R4 только для нечеловеческих принципалов, состояния повтора
+для R3, пары RBAC разделены на действующие и проектные, `task.read` описан семантикой.
 
 ## 1. Имена и сверка с Public API v1
 
@@ -51,7 +53,8 @@
 }
 ```
 
-Другие статусы: `pending_approval` (с `approval_uuid`, с A2), `rejected`.
+Другие статусы: `pending_approval` (с `approval_uuid`, с A2; повтор того же ключа возвращает тот же запрос),
+`rejected`. Ответы на повтор по состояниям ключа — A0_03 §2.1.
 
 Ответ ошибки (машинно-читаемый; текст без внутренних деталей):
 
@@ -70,7 +73,9 @@
 
 Классы: **R0** — чтение; **R1** — черновик/предложение в собственных таблицах BMOS, без изменения канонических
 данных; **R2** — обратимая запись в собственной зоне агента, видимая людям (свой рабочий элемент, свой отчёт,
-прямой комментарий); **R3** — изменение чужой работы; **R4** — запрещено агенту (A0_03 §4).
+прямой комментарий); **R3** — изменение чужой работы; **R4** — для нечеловеческих принципалов запрещено (A0_03 §4);
+для людей R4 означает «только human»: такие команды проверяются существующими человеческими правами
+(`permission_service::can_manage_organization` и предикатами сервисов), а не цепочкой A0_03 §2.
 
 **Решения, которые меняют каталог (Q-09, REV-01, REV-05):**
 - В A1 агенту разрешены только R0, R1 и R2 над **собственными** объектами (`work.complete`). R3 в A1 отклоняется
@@ -81,33 +86,36 @@
 - Собственный результат агента (`work.complete`, свой отчёт) не меняет каноническую задачу: ни статус, ни поля, ни
   `assigneeid`.
 
-| Команда | Кто может | Риск для агента | RBAC 2.0 `object_type/action` | Этап | Основа в коде / примечание |
-|---|---|---|---|---|---|
-| `positions.list` | human, ai_agent, service_integration | R0 | `position/view` | A1 | `public_api_service::positions_snapshot`; без ПДн людей |
-| `occupancy.read` | human, ai_agent (свой пост) | R0 | `position/view` | A1 | Новое `OccupancyView` |
-| `occupancy.assign` | **только human** (`can_manage_organization`; два лица для `mode=agent`) | R4 | `position/manage_permissions` | A1 | Назначает агента на пост |
-| `occupancy.revoke` | **только human** | R4 | `position/manage_permissions` | A1 | Немедленное действие |
-| `agents.register` | **только human** | R4 | `settings/manage_permissions` | A1 | Принципал `draft` + определение |
-| `agents.disable` | **только human** (спонсор или менеджер) | R4 | `settings/edit` | A1 | Kill switch уровня агента |
-| `agents.grants.read` | human; ai_agent — только свои | R0 | `role_access/view` | A1 | |
-| `work.list` | ai_agent (свои), human | R0 | `task/view` (own) | A1 | Новое `work` |
-| `work.assign` | **только human** | R4 | `task/edit` | A1 | Поручить агенту работу по задаче поста |
-| `work.propose` | ai_agent | R1 | `task/comment` (proposal) | A1 | Предложение: текст, черновик комментария, ссылки |
-| `work.complete` | ai_agent | R2 (own) | `task/edit` (own work item) | A1 | Сдаёт свой рабочий элемент на проверку; задача не меняется |
-| `work.accept` / `work.return` | **только human** (поручивший или руководитель поста) | R4 | `task/approve` | A1 | Приёмка результата |
-| `task.read` | ai_agent (`position`, `delegated_team`), human | R0 | `task/view` | A1 (`position`), A3 (`delegated_team`) | `task_service::can_view_task`; личные задачи недоступны |
-| `task.comment` | ai_agent | R2 | `task/comment` | После W1 и решения владельца | `task_service::post_discussion_message` + атрибуция; метка «ИИ», без упоминаний |
-| `task.propose_update` | ai_agent | R3 | `task/edit` | A2 (в A1 — `approval_unavailable`) | Через approval |
-| `task.create_draft` | ai_agent | R1 | `task/create` (draft) | A1 (черновик) / A2 (превращение в задачу через approval) | Канонической задачи нет до утверждения |
-| `metrics.read` | ai_agent, human | R0 | `indicator/view` | A1 | `indicators_snapshot`, `stat*`; только метрики поста/делегированные |
-| `daily_report.read` | ai_agent (свои; команды — только `delegated_team`), human | R0 | `daily_report/view` | A2 (свои), A3 (команда) | Права спонсора не используются (Q-11) |
-| `daily_report.create` / `daily_report.submit` | ai_agent (свой отчёт) | R2 (own) | `daily_report/create` | A2 | Отдельное хранение (Q-08); приёмка только человеком |
-| `daily_report.accept` / `daily_report.return` | **только human** | R4 | `daily_report/approve` | A2 | Для отчётов агентов; human-отчёты — как сейчас |
-| `agent_runs.read` | спонсор, руководитель поста, менеджер; ai_agent — свои | R0 | `settings/view` | A1 | Без промптов |
-| `feed.post` (из #76) | — | R4 до отдельного решения | `communication/create` | — | Внешняя/массовая публикация |
+Колонка **Пара** — `object_type/action` и её статус в коде (A0_02 §4.2): **К** применяется для людей, **С** есть в
+словаре, но не применяется, **П** проектная. Колонка **Проверка** — чем проверяется команда сейчас.
 
-`daily_report` в RBAC 2.0 отдельным `object_type` не перечислен; предлагается добавить его в словарь при A2
-(до этого доступ к отчётам людей определяют существующие правила ADR-0009/0010).
+| Команда | Кто может | Риск для агента | Пара | Проверка | Этап | Примечание |
+|---|---|---|---|---|---|---|
+| `positions.list` | human, ai_agent, service_integration | R0 | `org_structure/view` (С) | human — как Public API v1; принципал — грант | A1 | `public_api_service::positions_snapshot`; без ПДн людей |
+| `occupancy.read` | human, ai_agent (свой пост) | R0 | `org_structure/view` (С) | принципал — грант + `position` | A1 | Новое `OccupancyView` |
+| `occupancy.assign` | **только human** (два лица для `mode=agent`) | R4 | `org_structure/edit` (С) | `can_manage_organization` | A1 | Назначает агента на пост |
+| `occupancy.revoke` | **только human** | R4 | `org_structure/edit` (С) | `can_manage_organization` | A1 | Немедленное действие |
+| `agents.register` | **только human** | R4 | `agent/create` (П) | `can_manage_organization` | A1 | Принципал `draft` + определение |
+| `agents.disable` | **только human** (спонсор или менеджер) | R4 | `agent/edit` (П) | спонсор или `can_manage_organization` | A1 | Kill switch уровня агента |
+| `agents.grants.read` | human; ai_agent — только свои | R0 | `agent/view` (П) | human — `can_manage_organization` или спонсор; принципал — `own` | A1 | |
+| `work.list` | ai_agent (свои), human | R0 | `task/view` (К) | принципал — `own`; human — поручивший или руководитель поста | A1 | Новое `work` |
+| `work.assign` | **только human** | R4 | `task/edit` (К) | права человека на задачу поста | A1 | Поручить агенту работу по задаче поста |
+| `work.propose` | ai_agent | R1 | `task/comment` (С) | грант + `own`/`position` | A1 | Предложение: текст, черновик комментария, ссылки |
+| `work.complete` | ai_agent | R2 (own) | `task/edit` (К) | грант + `own` | A1 | Сдаёт свой рабочий элемент; задача не меняется |
+| `work.accept` / `work.return` | **только human** (поручивший или руководитель поста) | R4 | `task/approve` (К) | поручивший или руководитель поста | A1 | Приёмка результата |
+| `task.read` | ai_agent (`position`, `delegated_team`), human | R0 | `task/view` (К) | принципал — грант + `principal_object_acl` (A0_02 §4.3) | A1 (`position`), A3 (`delegated_team`) | Семантика: компания, пост задачи в scope, задача не личная; `task_service::can_view_task` для принципала не вызывается |
+| `task.comment` | ai_agent | R2 | `task/comment` (С) | грант + `principal_object_acl` | После W1 и решения владельца | `task_service::post_discussion_message` + атрибуция; метка «ИИ», без упоминаний |
+| `task.propose_update` | ai_agent | R3 | `task/edit` (К) | грант + `principal_object_acl`, затем approval | A2 (в A1 — `approval_unavailable`) | Через approval |
+| `task.create_draft` | ai_agent | R1 | `task/create` (С) | грант + `position` | A1 (черновик) / A2 (превращение в задачу через approval) | Канонической задачи нет до утверждения |
+| `metrics.read` | ai_agent, human | R0 | `indicator/view` (С) | принципал — грант + `position`/`delegated_team` | A1 | `indicators_snapshot`, `stat*`; только метрики поста/делегированные |
+| `daily_report.read` | ai_agent (свои; команды — только `delegated_team`), human | R0 | `daily_report/view` (П) | принципал — грант + `own`/`delegated_team` | A2 (свои), A3 (команда) | Права спонсора не используются (Q-11) |
+| `daily_report.create` / `daily_report.submit` | ai_agent (свой отчёт) | R2 (own) | `daily_report/create` (П) | грант + `own` | A2 | Отдельное хранение (Q-08); приёмка только человеком |
+| `daily_report.accept` / `daily_report.return` | **только human** | R4 | `daily_report/approve` (П) | правила проверки отчётов ADR-0009/0010 | A2 | Для отчётов агентов; human-отчёты — как сейчас |
+| `agent_runs.read` | спонсор, руководитель поста, менеджер; ai_agent — свои | R0 | `agent/view` (П) | human — спонсор, руководитель поста или `can_manage_organization`; принципал — `own` | A1 | Без промптов |
+| `feed.post` (из #76) | — | R4 до отдельного решения | `communication/create` (С) | — | — | Внешняя/массовая публикация |
+
+Проектные пары (`agent/*`, `daily_report/*`) добавляются в словарь `access_role_service` отдельным решением вместе
+с первой командой, которая их использует. До этого человеческие команды проверяются только колонкой «Проверка».
 
 ## 5. Work item (поручение агенту)
 
@@ -130,7 +138,7 @@
 1. Runtime: `task.read` (R0) → задача поста.
 2. Модель предлагает текст. Runtime: `work.propose` (`kind=comment_draft`, `expected_revision` рабочего элемента,
    ключ `run:R:step:2`).
-3. Gateway: шаги 1–14 (A0_03 §2) → запись предложения в собственную таблицу BMOS, атрибуция, outbox
+3. Gateway: шаги 1–15 (A0_03 §2) → запись предложения в собственную таблицу BMOS, атрибуция, outbox
    `bmos.proposal.created` (envelope 1.2). Задача и её обсуждение не меняются.
 4. Руководитель видит предложение с меткой «ИИ» и публикует его от своего имени или отклоняет.
 5. Повтор того же ключа (даже если рабочий элемент уже сменил ревизию) → тот же `proposal_uuid`,

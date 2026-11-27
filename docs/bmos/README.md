@@ -1,6 +1,6 @@
 # BMOS-A0 — Architecture Foundation (пакет документов)
 
-**Статус: PROPOSED, ревизия 2.** Направление BMS-09, issue #76, проверка #84. Исполнитель: Claude. 24–25.11.2026.
+**Статус: PROPOSED, ревизия 3** (блокеры проверки Codex 27.11.2026). Направление BMS-09, issue #76, проверка #84. Исполнитель: Claude. 24–25.11.2026.
 Направление условно утверждено владельцем 25.11.2026 (Q-01–Q-18); gate A0 закрывается после независимого PASS Codex.
 База: `main` 62fdc4934b8b8a87fb8c7f21a52c56b64229e836.
 
@@ -19,11 +19,11 @@
 | [A0_06_AGENT_RUN_AND_AUDIT_CONTRACT](A0_06_AGENT_RUN_AND_AUDIT_CONTRACT.md) | AgentDefinition, AgentRun, аудит, AI Billing |
 | [A0_07_HUMAN_APPROVAL_CONTRACT](A0_07_HUMAN_APPROVAL_CONTRACT.md) | Подтверждение человеком |
 | [A0_08_ERD](A0_08_ERD.md) | ERD и ключи |
-| [A0_09_ACCEPTANCE_MATRIX](A0_09_ACCEPTANCE_MATRIX.md) | Трассировка 22 исходных тестов, сценарии S01–S35 (все NOT RUN) |
+| [A0_09_ACCEPTANCE_MATRIX](A0_09_ACCEPTANCE_MATRIX.md) | Трассировка 22 исходных тестов, сценарии S01–S35, приёмка A1.1 (все NOT RUN) |
 | [A0_10_ROADMAP_BACKLOG_MIGRATIONS](A0_10_ROADMAP_BACKLOG_MIGRATIONS.md) | Этапы A0–A4, backlog, план миграций |
 | [A0_11_OWNER_DECISIONS](A0_11_OWNER_DECISIONS.md) | Решения владельца Q-01–Q-18 и история |
 | [A0_12_AGENT_RUNTIME](A0_12_AGENT_RUNTIME.md) | `local_bmosruntime`: границы доверия, kill switch, in-flight |
-| [A0_13_CLOSURE_MATRIX](A0_13_CLOSURE_MATRIX.md) | Закрытие REV-01–REV-10, replay и пунктов поручения |
+| [A0_13_CLOSURE_MATRIX](A0_13_CLOSURE_MATRIX.md) | Закрытие блокеров Codex, REV-01–REV-10, replay и пунктов поручения |
 | [prototype/index.html](prototype/index.html) | Статичные прототипы: занятость постов, карточка агента, подтверждения, отчёты команды |
 
 Связанные открытые PR, которые этот пакет продолжает, а не дублирует: #77 (ADR-0007, слой управления ИИ),
