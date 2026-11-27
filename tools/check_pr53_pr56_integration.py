@@ -124,15 +124,28 @@ def check(root=ROOT):
     # R4 "Team for the day" block (#168). See docs/reconcile/daily-reports-summary-source-preservation.json.
     reviewed_followup['local/kbacompany/lang/en/local_kbacompany.php'] = '9a3fa3efb85ef6f9aeaf18202ba4377bf418787c4631b636dbf766f7a45c2f88'
     reviewed_followup['local/kbacompany/lang/ru/local_kbacompany.php'] = '81334038357d7bc9f79a2dfefca9c8022c088045919931fc54e78a939b82a858'
+    # Daily reports R3 (owner decision 24.11.2026): append the report discussion block after the ADR-0011 summary (#173) and register the
+    # 'dailyreport' discussion kind. See docs/reconcile/daily-reports-r3-source-preservation.json.
+    reviewed_followup['local/kbacompany/lang/en/local_kbacompany.php'] = '2a8007f42e8de2339927da3be2dcdc5aecf91534a634b5bd2bd21dadf17402eb'
+    reviewed_followup['local/kbacompany/lang/ru/local_kbacompany.php'] = 'e2e51490b8c1f5988948b057ba93701ee4229bbc4ed9e0175da02f0a655fcfc9'
+    # Information Centre by divisions (#190): append the infocenter2_* block after the daily reports R3 block.
+    # See docs/reconcile/information-centre-divisions-source-preservation.json.
+    reviewed_followup['local/kbacompany/lang/en/local_kbacompany.php'] = '1d3d80ad9c985ff85091e126a0e14292ce3e6ab4531268f6f30228c47269509b'
+    reviewed_followup['local/kbacompany/lang/ru/local_kbacompany.php'] = 'f5ad4bdcc8edaebe4b8b444231432c117fedbb3530fc9b04a3c3316d85015c87'
+    # DOC-W2 Office workspace (owner task 2026-11-24): officews_* RU/EN block after the Information Centre by divisions block (#190); read-only, default off.
+    # See docs/office/DOC_W2_OFFICE_WORKSPACE.md.
+    reviewed_followup['local/kbacompany/lang/en/local_kbacompany.php'] = '32402ab956d141c1cbb1b45c495cf8ddc2c6c95d09518995dba2c1473dfbc5cf'
+    reviewed_followup['local/kbacompany/lang/ru/local_kbacompany.php'] = 'd5d534758b1c6c6cef4069d1dd6cbe233b9a6973a49f48c0ebc3f781ec51177f'
+    reviewed_followup['local/kbacompany/classes/local/communication_service.php'] = '870b471dba39c867b5b13f8b04f55fb82f67ce484ea44cf929b5b9c4f93dae92'
     # RC33 PR-1 (owner D3 2026-11-24): shared communication write gate and notification eligibility; no lang,
     # schema or version change. See docs/reconcile/RC33_PR1_COMMUNICATION_WRITE_GATE.md.
-    reviewed_followup['local/kbacompany/classes/local/communication_service.php'] = 'a483674056db868903e362b77d987d709f8547bc3fffc94fb8ca054445bfd85c'
+    reviewed_followup['local/kbacompany/classes/local/communication_service.php'] = 'c312947922c1c1af07f64f2fc6f45ab1270b7f08e2d3c76a348ae7b90cb15193'
     reviewed_followup['local/kbacompany/classes/local/employee_service.php'] = '80a5502f410dd618dc1b64988a7824343960145d3276a7d8e89e8cd0db5f48be'
     # RC33 PR-2 (owner D1-D4 2026-11-24, ADR-0012): fixed import audience in add_participant and the append-only
     # inbound lang block. See docs/reconcile/RC33_PR2_MAX_INBOUND_SERVER.md.
-    reviewed_followup['local/kbacompany/classes/local/communication_service.php'] = '2e8aeea888a21e88d592af8611445d36dbb43cf75b5fd2301f6960e90d4a8797'
-    reviewed_followup['local/kbacompany/lang/en/local_kbacompany.php'] = '164ca65f5f2500c3abc961831f0121ea7b28ed484ff29fe914a6c092cb5298d5'
-    reviewed_followup['local/kbacompany/lang/ru/local_kbacompany.php'] = '00996bbd1ab2d61d3844efd229914feef9ef8c40f86ae51d07f2aa33e01d729e'
+    reviewed_followup['local/kbacompany/classes/local/communication_service.php'] = '4de9260667db86b3505fda15a64b779cbd30797b06876fa7cf3b01b29a5ea6ad'
+    reviewed_followup['local/kbacompany/lang/en/local_kbacompany.php'] = '641a569531d40666336c4ccfc1f279d06743fa2fb217dc771d218d92b73459ed'
+    reviewed_followup['local/kbacompany/lang/ru/local_kbacompany.php'] = 'd8caf56f0fb082f9e2a2a33e8dfae983ee087e1d3fc386503d49d472abc7e5cd'
     for row in plan['rows']:
         path=root/row['path']
         if not path.is_file() or path.is_symlink():

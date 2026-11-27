@@ -1,25 +1,25 @@
 {
  "scope": "exact intentional source updates; not runtime, concurrency or release acceptance",
- "base_sha": "9c9bc0cca8f9ed668c449180f43c16202503ec14",
+ "base_sha": "0884643590541fdd9b75b1414fd93d6120ded017 (main 0884643 via PR-1 078b815; PR-2 first written on 9c9bc0cca8f9ed668c449180f43c16202503ec14)",
  "normalization": "CRLF to LF only",
- "previous_evidence": "docs/reconcile/rc33-pr1-communication-write-gate-source-preservation.json; lang chain after docs/reconcile/daily-reports-summary-source-preservation.json (main #173)",
+ "previous_evidence": "docs/reconcile/rc33-pr1-communication-write-gate-source-preservation.json; lang chain after docs/reconcile/office-workspace-doc-w2-source-preservation.json (main DOC-W2)",
  "decision": "docs/reconcile/RC33_PR2_MAX_INBOUND_SERVER.md and docs/adr/ADR-0012-temporary-narrow-inbound-delegation.md (owner D1-D4 2026-11-24, PR #88 / issue #75; split approved 2026-11-24)",
  "change": "add_participant refuses to widen the audience of a discussion bound to an inbound import (communication_importaudience); one append-only RU/EN block for the capability, inbound refusal categories, registry errors and privacy metadata. Schema, services and version are additive and outside this chain.",
  "files": [
   {
    "path": "local/kbacompany/classes/local/communication_service.php",
-   "before_sha256_lf": "a483674056db868903e362b77d987d709f8547bc3fffc94fb8ca054445bfd85c",
-   "after_sha256_lf": "2e8aeea888a21e88d592af8611445d36dbb43cf75b5fd2301f6960e90d4a8797"
+   "before_sha256_lf": "c312947922c1c1af07f64f2fc6f45ab1270b7f08e2d3c76a348ae7b90cb15193",
+   "after_sha256_lf": "4de9260667db86b3505fda15a64b779cbd30797b06876fa7cf3b01b29a5ea6ad"
   },
   {
    "path": "local/kbacompany/lang/en/local_kbacompany.php",
-   "before_sha256_lf": "9a3fa3efb85ef6f9aeaf18202ba4377bf418787c4631b636dbf766f7a45c2f88",
-   "after_sha256_lf": "164ca65f5f2500c3abc961831f0121ea7b28ed484ff29fe914a6c092cb5298d5"
+   "before_sha256_lf": "32402ab956d141c1cbb1b45c495cf8ddc2c6c95d09518995dba2c1473dfbc5cf",
+   "after_sha256_lf": "641a569531d40666336c4ccfc1f279d06743fa2fb217dc771d218d92b73459ed"
   },
   {
    "path": "local/kbacompany/lang/ru/local_kbacompany.php",
-   "before_sha256_lf": "81334038357d7bc9f79a2dfefca9c8022c088045919931fc54e78a939b82a858",
-   "after_sha256_lf": "00996bbd1ab2d61d3844efd229914feef9ef8c40f86ae51d07f2aa33e01d729e"
+   "before_sha256_lf": "d5d534758b1c6c6cef4069d1dd6cbe233b9a6973a49f48c0ebc3f781ec51177f",
+   "after_sha256_lf": "d8caf56f0fb082f9e2a2a33e8dfae983ee087e1d3fc386503d49d472abc7e5cd"
   }
  ]
 }
