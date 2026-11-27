@@ -124,6 +124,36 @@ SHIFT_JS = r'''async () => {
     spacer.remove();
 }'''
 
+# Open-conversation geometry over time (Codex task in #145: the open conversation shrank and grew in a loop with no input,
+# the composer and Send moved with it, the last message was cut). Samples every animation frame for `frames` frames:
+# the block, the history (feed), the composer and Send, the history scroll position and the window's inner width
+# (a classic scrollbar coming and going changes it). Nothing is clicked or typed while sampling.
+STABILITY_JS = r'''async (frames) => {
+    const q = (s) => document.querySelector(s);
+    const layout = q('#bms24-comm-root .bms24-comm-layout'), feed = q('#bms-comm2-history');
+    const compose = q('[data-bms-comm-compose]'), send = compose && compose.querySelector('.bms-comm3-send');
+    if (!layout || !feed || !compose || !send) { return null; }
+    const r = (e) => e.getBoundingClientRect();
+    const samples = [];
+    for (let i = 0; i < frames; i++) {
+        await new Promise((res) => requestAnimationFrame(res));
+        samples.push([Math.round(r(layout).height), Math.round(r(feed).height), Math.round(r(compose).top),
+            Math.round(r(send).top), Math.round(feed.scrollTop), document.documentElement.clientWidth]);
+    }
+    const msgs = feed.querySelectorAll('.bms24-comm-msg');
+    const last = msgs.length ? r(msgs[msgs.length - 1]) : null;
+    const span = (k) => Math.max(...samples.map((x) => x[k])) - Math.min(...samples.map((x) => x[k]));
+    return {frames: samples.length, messages: msgs.length, view: innerHeight,
+        layout_span: span(0), feed_span: span(1), compose_span: span(2), send_span: span(3), scroll_span: span(4),
+        width_span: span(5), changes: samples.filter((x, i) => i && x.join() !== samples[i - 1].join()).length,
+        first: samples[0], last_sample: samples[samples.length - 1],
+        feed_top: Math.round(r(feed).top), feed_bottom: Math.round(r(feed).bottom),
+        last_top: last ? Math.round(last.top) : null, last_bottom: last ? Math.round(last.bottom) : null,
+        at_bottom: feed.scrollHeight - feed.clientHeight - feed.scrollTop <= 2,
+        feed_pad: Math.round(parseFloat(getComputedStyle(feed).paddingBottom) || 0),
+        send_bottom: Math.round(r(send).bottom)};
+}'''
+
 def url(**kwargs):
     return local_url(base + '/local/kbacompany/communication_center.php?' + urlencode({'uuid': company, **kwargs}))
 
@@ -199,6 +229,45 @@ with sync_playwright() as p:
                 case['server_errors'] = errors
                 result['cases'].append(case)
                 ctx.close()
+        # Stability of the open conversation as a person sees it: a real (classic) scrollbar, which headless Chromium
+        # hides by default, so a scrollbar that comes and goes changes the width exactly as on Windows/Linux desktops.
+        seeded = json.loads(subprocess.run(['php', str(here / 'ci_comm_stability.php'), core, 'seed', company,
+                                            str(f['actors']['MA']['userid']), str(f['actors']['EA']['userid']), 'ux4'],
+                                           check=True, capture_output=True, text=True).stdout)
+        result['stability'] = []
+        shown = p.chromium.launch(headless=True, ignore_default_args=['--hide-scrollbars'])
+        try:
+            for mode in ['owned', 'legacy']:
+                shell(mode)
+                for width in [1440, 375]:
+                    for kind in ['short', 'long']:
+                        row = {'shell': mode, 'width': width, 'kind': kind}
+                        ctx = shown.new_context(viewport={'width': width, 'height': 900})
+                        rec = Recorder().install(ctx)
+                        page = ctx.new_page()
+                        errors = []
+                        page.on('response', lambda r: errors.append(r.status) if r.status >= 500 else None)
+                        page.goto(local_url(base + '/login/index.php'), wait_until='networkidle')
+                        actor = f['actors']['EA']
+                        page.locator('#username').fill(actor['username'])
+                        page.locator('#password').fill(actor['password'])
+                        page.locator('#loginbtn').click()
+                        page.wait_for_load_state('networkidle')
+                        response = page.goto(url(tab='messages', thread=seeded[kind]), wait_until='networkidle')
+                        row['http'] = response.status
+                        page.wait_for_timeout(700)
+                        # At the newest message, as the page opens; then while reading older messages.
+                        row['bottom'] = page.evaluate(STABILITY_JS, 120)
+                        page.evaluate("document.querySelector('#bms-comm2-history').scrollTop = 0")
+                        row['reading'] = page.evaluate(STABILITY_JS, 60)
+                        if width == 375 or kind == 'long':
+                            page.screenshot(path=str(root / ('ux4-%s-%s-%s.png' % (mode, width, kind))), full_page=False)
+                        row['browser_events'] = rec.events
+                        row['server_errors'] = errors
+                        result['stability'].append(row)
+                        ctx.close()
+        finally:
+            shown.close()
         result['status'] = 'PASS'
     except Exception as e:
         result['error'] = '%s: %s' % (type(e).__name__, str(e)[:300])
