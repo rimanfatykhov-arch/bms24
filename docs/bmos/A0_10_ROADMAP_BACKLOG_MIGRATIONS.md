@@ -31,7 +31,7 @@ A3 помощник руководителя → A4 смешанная кома�
 
 | ID | Задача | Размер | Режим |
 |---|---|---|---|
-| A1-03 | Command Gateway: 15 шагов в порядке A0_03 §2 (состояния повтора §2.1), lock-протокол, атомарная запись ключа, deny-audit; `cmdidem` | L | B / FULL |
+| A1-03 | Command Gateway: 15 шагов в порядке A0_03 §2 (состояния повтора §2.1, digest намерения §2.3), fence принципала при отзыве (S37), lock-протокол, атомарная запись ключа, deny-audit; `cmdidem` | L | B / FULL |
 | A1-04 | Команды R0: `positions.list`, `occupancy.read`, `task.read` (`position`), `metrics.read`, `agents.grants.read`, `agent_runs.read` | M | B |
 | A1-05 | `work.*` и `proposal`: `work.propose` (включая черновик комментария), `work.complete`, `work.accept/return`; R3 → `approval_unavailable` (REV-01, REV-05) | M | B |
 | A1-06 | UI реестра (только люди): регистрация агента, гранты, занятость (два лица для `mode=agent`), kill switch, функциональное покрытие отдельно от вакантности (REV-06) | L | A/B |

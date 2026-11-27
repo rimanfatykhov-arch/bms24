@@ -71,7 +71,8 @@ erDiagram
 | `aireserve` | `uuid`; `runuuid+stepno+attemptno+budgetuuid` | `status, expiresat` (включая `uncertain`) |
 | `aiusage` | `uuid`; `runuuid+stepno+attemptno` | `companyuuid, timecreated`; `companyuuid, status` |
 | `wpattr` | `uuid`; `logtable+logid` (если заполнено) | `companyuuid, objecttype, objectuuid`; `companyuuid, actorprincipaluuid, timecreated` |
-| `cmdidem` (ключи идемпотентности команд: digest, `status` `pending_approval`/`executed`/`failed`/`rejected`/`expired`/`cancelled`, `approvaluuid`, сохранённый результат, `expiresat` ≥ max(30 дней, горизонт повтора, срок approval)) | `companyuuid+principaluuid+idempotencykey` | `expiresat`; `approvaluuid` |
+| `wprincipal` — поле `authzrevision` (ревизия 4: увеличивается fence отзыва, A0_03 §2) | — | — |
+| `cmdidem` (ключи идемпотентности команд: `intentdigest` (A0_03 §2.3), `status` `pending_approval`/`executed`/`failed`/`rejected`/`expired`/`cancelled`/`superseded`, `approvaluuid`, сохранённый результат, `expiresat` ≥ max(30 дней, горизонт повтора, срок approval)) | `companyuuid+principaluuid+idempotencykey` | `expiresat`; `approvaluuid` |
 | `local_kbaai_modelprofile` | `id+revision` | |
 
 Все выборки — с `companyuuid` в условии SQL (AGENTS.md: не фильтровать в PHP после выборки всех компаний).

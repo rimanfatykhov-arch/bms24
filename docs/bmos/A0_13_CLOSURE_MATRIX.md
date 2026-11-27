@@ -1,15 +1,24 @@
 # BMOS-A0. Closure Matrix — замечания review и поручение владельца
 
-**Статус: ревизия 3, подготовлено исполнителем (Claude), 27.11.2026.** Это не независимая проверка. Ревизия 2
-(head `2376c03`) получила от Codex **A0 FAIL** ([#84](https://github.com/rimanfatykhov-arch/bms24/issues/84#issuecomment-7220025059)):
-четыре блокера. Их закрытие — §0. Каждая строка требует повторного подтверждения Codex в #84. До PASS Codex A1 не
-начинается.
+**Статус: ревизия 4, подготовлено исполнителем (Claude), 27.11.2026.** Это не независимая проверка.
+- Ревизия 2 (head `2376c03`) — **A0 FAIL**, четыре блокера ([#84](https://github.com/rimanfatykhov-arch/bms24/issues/84#issuecomment-7220025059)); закрытие — §0.
+- Ревизия 3 (head `fbf125d`) — **A0 FAIL**, блокеры 2 и 4 PASS, остались два блокера ([#84](https://github.com/rimanfatykhov-arch/bms24/issues/84#issuecomment-7227689553)); закрытие — §0a.
 
-Источники замечаний:
-- предварительный архитектурный review, head `5f73607` ([комментарий 7151006880](https://github.com/rimanfatykhov-arch/bms24/pull/183#issuecomment-7151006880));
-- решение и поручение владельца ([комментарий 7151212467](https://github.com/rimanfatykhov-arch/bms24/pull/183#issuecomment-7151212467)).
+Каждая строка требует повторного подтверждения Codex в #84. До PASS Codex A1 не начинается.
 
-Статус «Закрыто в документах» означает, что противоречие снято в архитектуре. Реализация и тесты — NOT RUN.
+## 0a. Вторая проверка Codex (ревизия 4)
+
+| Замечание | Строки FAIL | Что изменено | Где | Сценарии | Статус |
+|---|---|---|---|---|---|
+| 1a. Отзыв и команды с разными ключами | REV-01, REPLAY, Q-09 | Lock ключа заменён на **lock принципала**; отзыв любого источника права и kill switch проходят **fence**: берут lock каждого затронутого принципала по `uuid` и увеличивают `wprincipal.authzrevision`; отзыв завершается только после fence; `authzrevision` перечитывается в транзакции шага 15. Вызов модели — вне lock | A0_03 §2 (fence), §5; A0_07 §3 п. 5; A0_08 `wprincipal.authzrevision`; A0_10 A1-03 | **S37** (новый), S08 | Закрыто в документах |
+| 1b. Состав digest | REPLAY | `intentdigest` неизменяемого намерения: `api_version`, `command`, `company_uuid`, `principal_uuid`, `target`, исходная `expected_revision`, `payload`; поля доставки не входят; один digest в `cmdidem` и `approvalreq` | A0_03 §2 шаг 9, §2.3; A0_04 §3, §8; A0_07 §2; A0_08 `cmdidem` | S14, S30 | Закрыто в документах |
+| 1c. Исполнение сохранённого намерения и срок | REV-01, Q-09 | После `approved` исполняется намерение из `approvalreq`, не новый запрос; `expiresat` проверяется при решении и в транзакции исполнения; условие перехода `approved → executed` включает срок | A0_03 §2.2; A0_07 §2, §3 п. 4 | S16b, S30 | Закрыто в документах |
+| 1d. `superseded` | REPLAY | Добавлено состояние `cmdidem.superseded` и ответ на повтор: итог со ссылкой на новый запрос, без исполнения | A0_03 §2.1; A0_07 §2, §3 п. 6; A0_08 | S30 | Закрыто в документах |
+| 1e. R2 и `riskpolicy` | REV-01 | Подтверждение — только для R3. `riskpolicy` может лишь запретить R2 (`risk_forbidden`); отправка R2 на подтверждение — только отдельным решением владельца | A0_03 §2 шаг 10, §2.4; A0_06 `riskpolicy`; A0_07 §1 | S16a | Закрыто в документах |
+| 2a. Статусы `task/comment`, `task/create` | REV-08 | Помечены «К»: `task_service` проверяет их через `access_role_service::can` (company scope) | A0_04 §4 | — | Закрыто в документах |
+| 2b. Человеческие предикаты чтения | REV-08 | `occupancy.read` — `company_context_service::context` (как `position_service::positions_context`); `task.read` — `task_service::can_view_task`; `metrics.read` — `indicator_registry_service::context`; `daily_report.read` — `daily_report_review_service::can_read_report`/`can_read_all` | A0_04 §4 | — | Закрыто в документах |
+| 2c. Этапы `metrics.read` | Q-11 | `position` — A1, `delegated_team` — A3, как у `task.read` | A0_04 §4; A0_02 §4.1 | S32 | Закрыто в документах |
+| Попутно | — | T03 → S21 для MAX-части; O05 → S37 | A0_03 §3; A0_09 §1, S06 | S21, S37 | Закрыто в документах |
 
 ## 0. Блокеры проверки Codex (ревизия 3)
 
