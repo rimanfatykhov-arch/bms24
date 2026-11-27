@@ -40,27 +40,57 @@ define([], function() {
         layout.style.height = '';
     }
 
+    // The list and the history keep their reading position across a fit; a history read to the newest message stays
+    // there (its last message is not cut when the block gets shorter).
+    function keepScroll(layout) {
+        var panes = Array.prototype.map.call(layout.querySelectorAll('.bms24-comm-list, .bms24-comm-feed'), function(el) {
+            return {el: el, top: el.scrollTop, end: el.scrollHeight - el.clientHeight - el.scrollTop <= 2};
+        });
+        return function() {
+            panes.forEach(function(p) {
+                var top = p.end ? p.el.scrollHeight : p.top;
+                if (p.el.scrollTop !== top) {
+                    p.el.scrollTop = top;
+                }
+            });
+        };
+    }
+
+    // One fit gives the same height however often it runs (it is called again on every size change around the block, so
+    // a fit that moved the block by even a pixel would start a loop: the open conversation shrank and grew without
+    // input). The space below the block is measured with the block taller than the window, where nothing that only
+    // fills the window (the owned shell's min-height: 100vh) can hide it; the overflow is taken back only when that
+    // really shortens the page.
     function fit(layout) {
+        var restore = keepScroll(layout);
         document.body.classList.add(PAGE_CLASS);
+        layout.classList.add('bms24-comm-framed');
         var m = measure(layout);
+        layout.style.height = Math.ceil(2 * m.view) + 'px';
+        m = measure(layout);
         var below = Math.max(0, m.total - (m.top + layout.offsetHeight));
         var height = Math.floor(m.view - m.top - below);
         if (height < MIN_HEIGHT) {
             release(layout);
+            restore();
             return;
         }
-        layout.classList.add('bms24-comm-framed');
         layout.style.height = height + 'px';
-        // Margins and rounding the first pass could not see: take back whatever still overflows.
+        // Margins and rounding the first pass could not see: take back whatever still overflows, if it is ours.
         m = measure(layout);
         var excess = m.total - m.view;
         if (excess > 0) {
-            if (height - excess < MIN_HEIGHT) {
+            layout.style.height = (height - excess) + 'px';
+            var shorter = measure(layout);
+            if (shorter.total >= m.total) {
+                layout.style.height = height + 'px';
+            } else if (height - excess < MIN_HEIGHT) {
                 release(layout);
+                restore();
                 return;
             }
-            layout.style.height = (height - excess) + 'px';
         }
+        restore();
         if (m.scroll > 0) {
             if (m.el) {
                 m.el.scrollTop = 0;

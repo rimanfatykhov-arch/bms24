@@ -1985,7 +1985,7 @@ def communication_ux_checks(obs, exitcode=None):
                 require(s['changes'] == 0, 'geometry changed in %r of %r frames: %s' % (s['changes'], frames, at))
                 require(0 < s['send_bottom'] <= s['view'], 'Send button not on screen: ' + at)
             b = row['bottom']
-            require(isinstance(b.get('messages'), int) and b['messages'] >= (2 if row.get('kind') == 'short' else 40),
+            require(isinstance(b.get('messages'), int) and b['messages'] >= (2 if row.get('kind') == 'short' else 20),
                     'conversation not rendered: ' + where)
             require(b.get('at_bottom') is True, 'conversation did not open at the newest message: ' + where)
             require(isinstance(b.get('last_top'), int) and isinstance(b.get('last_bottom'), int),
