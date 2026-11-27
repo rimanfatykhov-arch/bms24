@@ -78,6 +78,11 @@ R3_KEYS=[b'communication_object_dailyreport',b'dailyreports_discussion_title',b'
          b'dailyreports_discussion_note',b'dailyreports_discussion_empty',b'dailyreports_discussion_readonly',
          b'dailyreports_discussion_empty_message',b'dailyreports_discussion_files']
 OFFICE_MARKER=b'\n// DOC-W2 Office workspace (2026-11-24): read-only overview over existing documents, approvals and decisions.\n'
+BMOS_MARKER=(b'\n// BMOS-A1.1 (2026-11-28): work principal, grant and position occupancy registries behind '
+             b'local_kbacompany/bmos_enabled (default off).\n')
+_BMOS=json.loads((ROOT/'docs/reconcile/bmos-a11-source-preservation.json').read_text(encoding='utf-8'))
+BMOS_BEFORE={lang:next(r['before_sha256_lf'] for r in _BMOS['files']
+                       if r['path']==f'local/kbacompany/lang/{lang}/local_kbacompany.php') for lang in ('en','ru')}
 _OFFICE=json.loads((ROOT/'docs/reconcile/office-workspace-doc-w2-source-preservation.json').read_text(encoding='utf-8'))
 OFFICE_BEFORE={lang:next(r['before_sha256_lf'] for r in _OFFICE['files'] if r['path']==f'local/kbacompany/lang/{lang}/local_kbacompany.php')
                for lang in ('en','ru')}
@@ -166,6 +171,14 @@ class Preservation(unittest.TestCase):
                                             # Everything up to the DOC-W2 Office marker is the published file ending with the Information Centre by divisions block (#190); its keys are new.
                                             ic,office=ic.split(OFFICE_MARKER)
                                             self.assertEqual(OFFICE_BEFORE[lang],hashlib.sha256(data.split(OFFICE_MARKER)[0]).hexdigest())
+                                            if BMOS_MARKER in office:
+                                                # Everything up to the BMOS-A1.1 marker is the published DOC-W2 file; the bmos_* keys are new.
+                                                office,bmos=office.split(BMOS_MARKER)
+                                                self.assertEqual(BMOS_BEFORE[lang],hashlib.sha256(data.split(BMOS_MARKER)[0]).hexdigest())
+                                                bmoskeys=keys(bmos)
+                                                self.assertEqual(12,len(bmoskeys));self.assertEqual(len(bmoskeys),len(set(bmoskeys)))
+                                                self.assertTrue(all(k.startswith(b'bmos_') for k in bmoskeys))
+                                                self.assertFalse(set(bmoskeys)&set(keys(data.split(BMOS_MARKER)[0])))
                                             officekeys=keys(office)
                                             self.assertEqual(59,len(officekeys));self.assertEqual(len(officekeys),len(set(officekeys)))
                                             self.assertTrue(all(k.startswith(b'officews_') for k in officekeys))

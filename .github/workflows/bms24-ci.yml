@@ -110,9 +110,9 @@ jobs:
       - name: Build and verify deterministic candidate
         run: |
           mkdir -p artifacts
-          python tools/build_install.py --output artifacts/INSTALL_local_kbacompany_1.1.0-rc29_build2026112301.zip --manifest artifacts/MANIFEST_build2026112301.json
+          python tools/build_install.py --output artifacts/INSTALL_local_kbacompany_1.1.0-rc29_build2026112800.zip --manifest artifacts/MANIFEST_build2026112800.json
           python tools/build_install.py --output artifacts/repeat.zip
-          cmp artifacts/INSTALL_local_kbacompany_1.1.0-rc29_build2026112301.zip artifacts/repeat.zip
-          python tools/verify_install.py --zip artifacts/INSTALL_local_kbacompany_1.1.0-rc29_build2026112301.zip --manifest artifacts/MANIFEST_build2026112301.json --expected-version 2026112301
-          sha256sum artifacts/INSTALL_local_kbacompany_1.1.0-rc29_build2026112301.zip > artifacts/SHA256SUMS.txt
+          cmp artifacts/INSTALL_local_kbacompany_1.1.0-rc29_build2026112800.zip artifacts/repeat.zip
+          python tools/verify_install.py --zip artifacts/INSTALL_local_kbacompany_1.1.0-rc29_build2026112800.zip --manifest artifacts/MANIFEST_build2026112800.json --expected-version 2026112800
+          sha256sum artifacts/INSTALL_local_kbacompany_1.1.0-rc29_build2026112800.zip > artifacts/SHA256SUMS.txt
           rm artifacts/repeat.zip

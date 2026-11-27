@@ -2,10 +2,16 @@
 NEW = {'local_kbacompany_dreport', 'local_kbacompany_dreportver', 'local_kbacompany_dreportlink',
        'local_kbacompany_dreportrev', 'local_kbacompany_dreportlog'}
 ADR0010_TABLES = {'local_kbacompany_dreportcc', 'local_kbacompany_dreportset'}
+# BMOS-A1.1 registries (A0 PASS 68b1dd0): six additive tables, never backfilled.
+BMOS_TABLES = {'local_kbacompany_wprincipal', 'local_kbacompany_wpaudit', 'local_kbacompany_wpgrant',
+               'local_kbacompany_wpdeleg', 'local_kbacompany_posoccup', 'local_kbacompany_posoccuplog'}
 ADDITIONS = {
     (2026111100, 2026111601): NEW,
     (2026111100, 2026112301): NEW | ADR0010_TABLES,
     (2026111601, 2026112301): ADR0010_TABLES,
+    (2026111100, 2026112800): NEW | ADR0010_TABLES | BMOS_TABLES,
+    (2026111601, 2026112800): ADR0010_TABLES | BMOS_TABLES,
+    (2026112301, 2026112800): BMOS_TABLES,
 }
 
 
@@ -19,8 +25,10 @@ def upgraded(before, after):
     require(transition in ADDITIONS, 'unsupported daily-report upgrade: %r -> %r' % transition)
     added = ADDITIONS[transition]
     old = set(before.get('tables', [])); current = set(after.get('tables', []))
-    if transition[0] == 2026111601:
+    if transition[0] in (2026111601, 2026112301):
         require(NEW <= old, 'R1/R2 baseline tables missing')
+    if transition[0] == 2026112301:
+        require(ADR0010_TABLES <= old, 'ADR-0010 baseline tables missing')
     require(old and not old & added and current == old | added, 'unexpected upgrade table inventory')
     require(isinstance(before.get('enabled'), bool) and before['enabled'] is after.get('enabled'),
             'feature switch changed during the upgrade')
@@ -35,7 +43,7 @@ def upgraded(before, after):
 
 def fresh_equal(fresh, upgrade):
     version = upgrade.get('version')
-    require(version in (2026111601, 2026112301) and fresh.get('version') == version, 'fresh/upgrade version mismatch')
+    require(version in (2026111601, 2026112301, 2026112800) and fresh.get('version') == version, 'fresh/upgrade version mismatch')
     require(fresh.get('schemas') and fresh['schemas'] == upgrade.get('schemas'), 'fresh/upgrade full domain schema differs')
 
 

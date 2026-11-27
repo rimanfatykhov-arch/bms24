@@ -473,6 +473,11 @@ class provider implements
         $collection->add_database_table('local_kbacompany_dreportset', [
             'topreviewerid' => 'privacy:metadata:dailyreports', 'modifiedby' => 'privacy:metadata:dailyreports',
         ], 'privacy:metadata:dailyreports');
+        // BMOS-A1.1: registries name the people who act on work principals, grants and position occupancy.
+        foreach (self::BMOS_USER_FIELDS as $table => $fields) {
+            $collection->add_database_table($table, array_fill_keys(array_merge($fields, ['timecreated']),
+                'bmos_privacy_registry'), 'bmos_privacy_registry');
+        }
         $collection->add_user_preference(\local_kbacompany\local\communication_center_ui_service::SOUND_PREFERENCE,
             'privacy:metadata:preference:notificationsound');
         $collection->add_user_preference(\local_kbacompany\local\notification_bell_service::SIGNALLED_PREFERENCE,
@@ -666,6 +671,9 @@ class provider implements
                   OR ds.modifiedby = :drmodifier))',
             ['drlevel' => CONTEXT_SYSTEM, 'druser' => $userid, 'drreviewer' => $userid, 'drdecider' => $userid,
              'dractor' => $userid, 'drcopy' => $userid, 'drtop' => $userid, 'drmodifier' => $userid]);
+        [$bmossql, $bmosparams] = self::bmos_exists_sql($userid);
+        $contextlist->add_from_sql('SELECT ctx.id FROM {context} ctx WHERE ctx.contextlevel = :bmoslevel AND (' .
+            $bmossql . ')', ['bmoslevel' => CONTEXT_SYSTEM] + $bmosparams);
         return $contextlist;
     }
 
@@ -677,6 +685,7 @@ class provider implements
             return;
         }
         self::export_daily_reports((int)$contextlist->get_user()->id, $systemcontext);
+        self::export_bmos_registries((int)$contextlist->get_user()->id, $systemcontext);
         $revocations = $DB->get_records_select('local_kbacompany_revoke',
             'userid = :subject OR revokedby = :revoker OR reopenedby = :opener',
             ['subject'=>$contextlist->get_user()->id,'revoker'=>$contextlist->get_user()->id,
@@ -1125,6 +1134,9 @@ class provider implements
                 $DB->delete_records($table);
             }
             $DB->delete_records('local_kbacompany_commrev');
+            foreach (array_keys(self::BMOS_USER_FIELDS) as $table) {
+                $DB->delete_records($table);
+            }
             self::document_files_for_privacy(null, true);
             self::forget_workflow(null);
             $DB->set_field_select('local_kbacompany_aclog', 'oldvalue', null, 'actorid <> 0');
@@ -1264,6 +1276,7 @@ class provider implements
         if (in_array($systemcontext->id, $contextlist->get_contextids())) {
             self::forget_revocation_audit((int)$contextlist->get_user()->id);
             self::forget_daily_reports((int)$contextlist->get_user()->id);
+            self::forget_bmos_registries((int)$contextlist->get_user()->id);
             self::document_files_for_privacy((int)$contextlist->get_user()->id, true);
             self::forget_workflow((int)$contextlist->get_user()->id);
             $where = ['actorid' => $contextlist->get_user()->id];
@@ -1540,6 +1553,76 @@ class provider implements
         }
         $records->close();
     }
+    /** BMOS-A1.1: the Moodle user fields of each registry table (agents have no Moodle user). */
+    private const BMOS_USER_FIELDS = [
+        'local_kbacompany_wprincipal' => ['userid', 'transportuserid', 'sponsoruserid', 'createdby', 'approvedby',
+            'revokedby'],
+        'local_kbacompany_wpaudit' => ['actoruserid'],
+        'local_kbacompany_wpgrant' => ['grantedby', 'revokedby'],
+        'local_kbacompany_wpdeleg' => ['delegatoruserid', 'approvedby', 'createdby'],
+        'local_kbacompany_posoccup' => ['supervisoruserid', 'approvedby', 'createdby'],
+        'local_kbacompany_posoccuplog' => ['actoruserid'],
+    ];
+
+    /** @return array [sql, params] true when any BMOS registry row names this user. */
+    private static function bmos_exists_sql(int $userid): array {
+        $parts = [];
+        $params = [];
+        $n = 0;
+        foreach (self::BMOS_USER_FIELDS as $table => $fields) {
+            $or = [];
+            foreach ($fields as $field) {
+                $key = 'bmosu' . (++$n);
+                $or[] = "b{$n}.{$field} = :{$key}";
+                $params[$key] = $userid;
+            }
+            $parts[] = "EXISTS (SELECT 1 FROM {{$table}} b{$n} WHERE " . implode(' OR ', $or) . ')';
+        }
+        return [implode(' OR ', $parts), $params];
+    }
+
+    /** Every BMOS registry row that names this user, by table; no secret is stored in these tables. */
+    private static function export_bmos_registries(int $userid, \context $context): void {
+        global $DB;
+        $data = [];
+        foreach (self::BMOS_USER_FIELDS as $table => $fields) {
+            $where = [];
+            $params = [];
+            foreach ($fields as $i => $field) {
+                $where[] = "{$field} = :u{$i}";
+                $params['u' . $i] = $userid;
+            }
+            $rows = $DB->get_records_select($table, implode(' OR ', $where), $params, 'id ASC');
+            if ($rows) {
+                $data[$table] = array_values($rows);
+            }
+        }
+        if ($data) {
+            writer::with_context($context)->export_data([get_string('bmos_privacy_registry', 'local_kbacompany')],
+                (object)$data);
+        }
+    }
+
+    /**
+     * Registries are company security records: the person is removed from every row and audit details written by
+     * them, the rows stay. A principal or occupancy that loses its sponsor or supervisor fails closed (the context
+     * requires a current member) and its authorisation revision moves on.
+     */
+    private static function forget_bmos_registries(int $userid): void {
+        global $DB;
+        $DB->execute('UPDATE {local_kbacompany_wprincipal} SET authzrevision = authzrevision + 1
+            WHERE sponsoruserid = :sponsor OR uuid IN (SELECT o.principaluuid FROM {local_kbacompany_posoccup} o
+                WHERE o.supervisoruserid = :supervisor)', ['sponsor' => $userid, 'supervisor' => $userid]);
+        $DB->set_field('local_kbacompany_wpaudit', 'details', null, ['actoruserid' => $userid]);
+        $DB->set_field('local_kbacompany_posoccuplog', 'details', null, ['actoruserid' => $userid]);
+        $DB->set_field('local_kbacompany_wprincipal', 'revokereason', null, ['revokedby' => $userid]);
+        foreach (self::BMOS_USER_FIELDS as $table => $fields) {
+            foreach ($fields as $field) {
+                $DB->set_field($table, $field, 0, [$field => $userid]);
+            }
+        }
+    }
+
     /** Own reports with every version, linked-task snapshot and decision; decisions this user made on others' reports. */
     private static function export_daily_reports(int $userid, \context $context): void {
         global $DB;

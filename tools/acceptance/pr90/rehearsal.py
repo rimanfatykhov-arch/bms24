@@ -10,6 +10,9 @@ BASELINE_VALIDATOR='f7b4c09e69b6fd10c293394b49c136c6dc200104'
 BASELINE_TREE='314bdd6bfecbe860168fc0d1875aeab429a1d787'
 PUBLISHED_R1R2='927a319c9d058cc9da8c1ddc94d45c97a6ef24fb'
 PUBLISHED_R1R2_PLUGIN_TREE='8b1d4d9ae9c22dc3f70ff4715ffd0863ab476bac'
+# DOC-W2 head published to production (plugin 2026112301); the BMOS-A1.1 candidate upgrades from it.
+PUBLISHED_DOCW2='ee0064a3d502dc1ae4f0b5cf4cd3c0fd1100189d'
+PUBLISHED_DOCW2_PLUGIN_TREE='82fbb6ad26bd632d7d1fe6cbdb0f09fa7bdab46c'
 BASELINE_CHECKS=json.loads((cand/'docs/reconcile/r1r2-baseline-browser-checkset.json').read_text())['checks']
 if origins.get('baseline_validator')!=BASELINE_VALIDATOR:raise RuntimeError('baseline validator pin changed; independent review required')
 if os.environ.get('GITHUB_ACTIONS')!='true' or runner not in root.parents or os.environ.get('DBHOST')!='127.0.0.1':
@@ -149,6 +152,25 @@ set_config('dailyreports_enabled', 0, 'local_kbacompany');
                                   'version': snapshot['version'], 'seeded_report': True}
     report['steps']['published_r1r2_baseline_with_report'] = 'PASS'
     return snapshot
+
+def reproduce_published_docw2(before):
+    """Upgrade the R1/R2 baseline (with its submitted report) to the published DOC-W2 plugin 2026112301."""
+    from daily_reports_upgrade_policy import require, upgraded
+    plugin = core / 'local/kbacompany'
+    source = root / 'published-docw2'
+    require(git('rev-parse', PUBLISHED_DOCW2 + ':local/kbacompany') == PUBLISHED_DOCW2_PLUGIN_TREE,
+            'published DOC-W2 plugin tree mismatch')
+    cmd(['git', '-C', cand, 'worktree', 'add', '--detach', source, PUBLISHED_DOCW2], stdout=subprocess.DEVNULL)
+    shutil.rmtree(plugin)
+    shutil.copytree(source / 'local/kbacompany', plugin)
+    cmd(['php', core / 'admin/cli/upgrade.php', '--non-interactive'], stdout=subprocess.DEVNULL)
+    after = upgrade_probe('published-docw2-upgraded')
+    upgraded(before, after)
+    require(after['version'] == 2026112301, 'expected the published DOC-W2 version')
+    report['upgrade_baseline'] = {'source': PUBLISHED_DOCW2, 'plugin_tree': PUBLISHED_DOCW2_PLUGIN_TREE,
+                                  'version': after['version'], 'seeded_report': True, 'via': PUBLISHED_R1R2}
+    report['steps']['published_docw2_baseline'] = 'PASS'
+    return after
 
 def fresh_upgrade_schema(upgrade):
     from daily_reports_upgrade_policy import fresh_equal
@@ -413,9 +435,12 @@ try:
     stop()
     elapsed('baseline_reproduction')
     upgrade_before=upgrade_probe('published120-before')
-    adr0010 = report['components']['local/kbacompany']['version'] == 2026112301
+    candidate_version = report['components']['local/kbacompany']['version']
+    adr0010 = candidate_version in (2026112301, 2026112800)
     if adr0010:
         upgrade_before = reproduce_r1r2_baseline(upgrade_before)
+    if candidate_version == 2026112800:
+        upgrade_before = reproduce_published_docw2(upgrade_before)
     before=state(); snapshot=root/'snapshot'; snapshot.mkdir()
     baseline_urls=(ev/'p02-urls.json').read_bytes()
     shutil.copytree(core,snapshot/'code'); shutil.copytree(root/'data',snapshot/'data')

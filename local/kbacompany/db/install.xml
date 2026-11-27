@@ -3757,5 +3757,159 @@
         <KEYS><KEY NAME="primary" TYPE="primary" FIELDS="id" /></KEYS>
         <INDEXES><INDEX NAME="company_uix" UNIQUE="true" FIELDS="companyuuid" /></INDEXES>
       </TABLE>
+        <TABLE NAME="local_kbacompany_wprincipal" COMMENT="BMOS-A1 work principal registry (human, ai_agent, service_integration); no secrets">
+        <FIELDS>
+          <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true" />
+          <FIELD NAME="uuid" TYPE="char" LENGTH="36" NOTNULL="true" />
+          <FIELD NAME="companyuuid" TYPE="char" LENGTH="36" NOTNULL="true" />
+          <FIELD NAME="principaltype" TYPE="char" LENGTH="20" NOTNULL="true" />
+          <FIELD NAME="userid" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" />
+          <FIELD NAME="memberuuid" TYPE="char" LENGTH="36" NOTNULL="true" DEFAULT="" />
+          <FIELD NAME="transportuserid" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" />
+          <FIELD NAME="displayname" TYPE="char" LENGTH="255" NOTNULL="true" />
+          <FIELD NAME="sponsoruserid" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" />
+          <FIELD NAME="status" TYPE="char" LENGTH="20" NOTNULL="true" DEFAULT="draft" />
+          <FIELD NAME="credentialref" TYPE="char" LENGTH="100" NOTNULL="true" DEFAULT="" />
+          <FIELD NAME="credfingerprint" TYPE="char" LENGTH="12" NOTNULL="true" DEFAULT="" />
+          <FIELD NAME="rotatedat" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" />
+          <FIELD NAME="revision" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="1" />
+          <FIELD NAME="authzrevision" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="1" />
+          <FIELD NAME="createdby" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" />
+          <FIELD NAME="approvedby" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" />
+          <FIELD NAME="approvedat" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" />
+          <FIELD NAME="revokedby" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" />
+          <FIELD NAME="revokedat" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" />
+          <FIELD NAME="revokereason" TYPE="text" NOTNULL="false" />
+          <FIELD NAME="timecreated" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" />
+          <FIELD NAME="timemodified" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" />
+        </FIELDS>
+        <KEYS><KEY NAME="primary" TYPE="primary" FIELDS="id" /></KEYS>
+        <INDEXES>
+          <INDEX NAME="uuid_uix" UNIQUE="true" FIELDS="uuid" />
+          <INDEX NAME="company_type_status_ix" UNIQUE="false" FIELDS="companyuuid,principaltype,status" />
+          <INDEX NAME="company_user_ix" UNIQUE="false" FIELDS="companyuuid,userid" />
+        </INDEXES>
+      </TABLE>
+        <TABLE NAME="local_kbacompany_wpaudit" COMMENT="BMOS-A1 immutable work principal audit journal; details never contain secrets">
+        <FIELDS>
+          <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true" />
+          <FIELD NAME="companyuuid" TYPE="char" LENGTH="36" NOTNULL="true" />
+          <FIELD NAME="principaluuid" TYPE="char" LENGTH="36" NOTNULL="true" />
+          <FIELD NAME="revision" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="1" />
+          <FIELD NAME="eventname" TYPE="char" LENGTH="40" NOTNULL="true" />
+          <FIELD NAME="actorprincipaluuid" TYPE="char" LENGTH="36" NOTNULL="true" DEFAULT="" />
+          <FIELD NAME="actoruserid" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" />
+          <FIELD NAME="details" TYPE="text" NOTNULL="false" />
+          <FIELD NAME="timecreated" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" />
+        </FIELDS>
+        <KEYS><KEY NAME="primary" TYPE="primary" FIELDS="id" /></KEYS>
+        <INDEXES>
+          <INDEX NAME="principal_revision_uix" UNIQUE="true" FIELDS="principaluuid,revision" />
+          <INDEX NAME="company_time_ix" UNIQUE="false" FIELDS="companyuuid,timecreated" />
+        </INDEXES>
+      </TABLE>
+        <TABLE NAME="local_kbacompany_wpgrant" COMMENT="BMOS-A1 work principal grant in RBAC 2.0 form, deny by default">
+        <FIELDS>
+          <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true" />
+          <FIELD NAME="uuid" TYPE="char" LENGTH="36" NOTNULL="true" />
+          <FIELD NAME="companyuuid" TYPE="char" LENGTH="36" NOTNULL="true" />
+          <FIELD NAME="principaluuid" TYPE="char" LENGTH="36" NOTNULL="true" />
+          <FIELD NAME="command" TYPE="char" LENGTH="100" NOTNULL="true" />
+          <FIELD NAME="objecttype" TYPE="char" LENGTH="40" NOTNULL="true" />
+          <FIELD NAME="action" TYPE="char" LENGTH="20" NOTNULL="true" />
+          <FIELD NAME="scope" TYPE="char" LENGTH="30" NOTNULL="true" />
+          <FIELD NAME="constraintjson" TYPE="text" NOTNULL="false" />
+          <FIELD NAME="occupancyuuid" TYPE="char" LENGTH="36" NOTNULL="true" DEFAULT="" />
+          <FIELD NAME="delegationuuid" TYPE="char" LENGTH="36" NOTNULL="true" DEFAULT="" />
+          <FIELD NAME="risklimit" TYPE="char" LENGTH="2" NOTNULL="true" DEFAULT="R0" />
+          <FIELD NAME="ratelimit" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" />
+          <FIELD NAME="expiresat" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" />
+          <FIELD NAME="status" TYPE="char" LENGTH="20" NOTNULL="true" DEFAULT="active" />
+          <FIELD NAME="grantedby" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" />
+          <FIELD NAME="supersedesuuid" TYPE="char" LENGTH="36" NOTNULL="true" DEFAULT="" />
+          <FIELD NAME="revision" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="1" />
+          <FIELD NAME="revokedby" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" />
+          <FIELD NAME="revokedat" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" />
+          <FIELD NAME="timecreated" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" />
+          <FIELD NAME="timemodified" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" />
+        </FIELDS>
+        <KEYS><KEY NAME="primary" TYPE="primary" FIELDS="id" /></KEYS>
+        <INDEXES>
+          <INDEX NAME="uuid_uix" UNIQUE="true" FIELDS="uuid" />
+          <INDEX NAME="company_principal_status_ix" UNIQUE="false" FIELDS="companyuuid,principaluuid,status" />
+        </INDEXES>
+      </TABLE>
+        <TABLE NAME="local_kbacompany_wpdeleg" COMMENT="BMOS-A1 reserved delegated team scope (unused until A3)">
+        <FIELDS>
+          <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true" />
+          <FIELD NAME="uuid" TYPE="char" LENGTH="36" NOTNULL="true" />
+          <FIELD NAME="companyuuid" TYPE="char" LENGTH="36" NOTNULL="true" />
+          <FIELD NAME="delegatoruserid" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" />
+          <FIELD NAME="principaluuid" TYPE="char" LENGTH="36" NOTNULL="true" />
+          <FIELD NAME="positions" TYPE="text" NOTNULL="false" />
+          <FIELD NAME="objecttypes" TYPE="text" NOTNULL="false" />
+          <FIELD NAME="actions" TYPE="text" NOTNULL="false" />
+          <FIELD NAME="expiresat" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" />
+          <FIELD NAME="status" TYPE="char" LENGTH="20" NOTNULL="true" DEFAULT="proposed" />
+          <FIELD NAME="approvedby" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" />
+          <FIELD NAME="approvedat" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" />
+          <FIELD NAME="revision" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="1" />
+          <FIELD NAME="createdby" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" />
+          <FIELD NAME="timecreated" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" />
+          <FIELD NAME="timemodified" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" />
+        </FIELDS>
+        <KEYS><KEY NAME="primary" TYPE="primary" FIELDS="id" /></KEYS>
+        <INDEXES>
+          <INDEX NAME="uuid_uix" UNIQUE="true" FIELDS="uuid" />
+          <INDEX NAME="company_principal_status_ix" UNIQUE="false" FIELDS="companyuuid,principaluuid,status" />
+          <INDEX NAME="company_delegator_status_ix" UNIQUE="false" FIELDS="companyuuid,delegatoruserid,status" />
+        </INDEXES>
+      </TABLE>
+        <TABLE NAME="local_kbacompany_posoccup" COMMENT="BMOS-A1 non-human position occupancy; people stay in posassign">
+        <FIELDS>
+          <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true" />
+          <FIELD NAME="uuid" TYPE="char" LENGTH="36" NOTNULL="true" />
+          <FIELD NAME="companyuuid" TYPE="char" LENGTH="36" NOTNULL="true" />
+          <FIELD NAME="revision" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="1" />
+          <FIELD NAME="positionuuid" TYPE="char" LENGTH="36" NOTNULL="true" />
+          <FIELD NAME="principaluuid" TYPE="char" LENGTH="36" NOTNULL="true" />
+          <FIELD NAME="occupancymode" TYPE="char" LENGTH="20" NOTNULL="true" DEFAULT="agent" />
+          <FIELD NAME="allowedfunctions" TYPE="text" NOTNULL="false" />
+          <FIELD NAME="workloadlimits" TYPE="text" NOTNULL="false" />
+          <FIELD NAME="supervisoruserid" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" />
+          <FIELD NAME="effectivefrom" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" />
+          <FIELD NAME="effectiveto" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" />
+          <FIELD NAME="status" TYPE="char" LENGTH="20" NOTNULL="true" DEFAULT="proposed" />
+          <FIELD NAME="approvedby" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" />
+          <FIELD NAME="approvedat" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" />
+          <FIELD NAME="createdby" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" />
+          <FIELD NAME="timecreated" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" />
+          <FIELD NAME="timemodified" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" />
+        </FIELDS>
+        <KEYS><KEY NAME="primary" TYPE="primary" FIELDS="id" /></KEYS>
+        <INDEXES>
+          <INDEX NAME="uuid_uix" UNIQUE="true" FIELDS="uuid" />
+          <INDEX NAME="company_position_status_ix" UNIQUE="false" FIELDS="companyuuid,positionuuid,status" />
+          <INDEX NAME="company_principal_status_ix" UNIQUE="false" FIELDS="companyuuid,principaluuid,status" />
+        </INDEXES>
+      </TABLE>
+        <TABLE NAME="local_kbacompany_posoccuplog" COMMENT="BMOS-A1 immutable position occupancy journal">
+        <FIELDS>
+          <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true" />
+          <FIELD NAME="companyuuid" TYPE="char" LENGTH="36" NOTNULL="true" />
+          <FIELD NAME="occupancyuuid" TYPE="char" LENGTH="36" NOTNULL="true" />
+          <FIELD NAME="revision" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="1" />
+          <FIELD NAME="eventname" TYPE="char" LENGTH="40" NOTNULL="true" />
+          <FIELD NAME="status" TYPE="char" LENGTH="20" NOTNULL="true" />
+          <FIELD NAME="actoruserid" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" />
+          <FIELD NAME="details" TYPE="text" NOTNULL="false" />
+          <FIELD NAME="timecreated" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" />
+        </FIELDS>
+        <KEYS><KEY NAME="primary" TYPE="primary" FIELDS="id" /></KEYS>
+        <INDEXES>
+          <INDEX NAME="occupancy_revision_uix" UNIQUE="true" FIELDS="occupancyuuid,revision" />
+          <INDEX NAME="company_time_ix" UNIQUE="false" FIELDS="companyuuid,timecreated" />
+        </INDEXES>
+      </TABLE>
   </TABLES>
 </XMLDB>
