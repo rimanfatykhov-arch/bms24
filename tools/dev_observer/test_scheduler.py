@@ -5,6 +5,7 @@ import unittest
 from unittest.mock import patch
 
 from scheduler import WEB, build_plan, main, timestamp
+from policy import classify
 
 
 NOW = timestamp("2026-11-28T12:00:00Z")
@@ -22,8 +23,8 @@ class SchedulerTests(unittest.TestCase):
         identity = dict(head=f"{n:040x}", tree="b" * 40, base=MAIN)
         record = dict(number=n, kind="pr", executor="Codex", **identity)
         self.snapshot["observations"].append(dict(record, changed=False))
-        self.snapshot["findings"].append(dict(record, status=status, dependencies=[],
-                                               reason="completion_confirmed" if status == "COMPLETE" else "test"))
+        reason = {"COMPLETE": "completion_confirmed", "HOLD": "recorded_hold"}.get(status, "test")
+        self.snapshot["findings"].append(dict(record, status=status, dependencies=[], reason=reason))
         row = dict(number=n, executor="Codex", action="continue_work", hold=False,
                    branch=f"feat/{n}", priority=1, dependencies=list(dependencies), **identity)
         row.update(overrides)
@@ -84,8 +85,36 @@ class SchedulerTests(unittest.TestCase):
     def test_independent_review_uses_a_separately_assigned_actor(self):
         self.task(1, action="independent_review", reviewer="Codex")
         self.task(2, action="independent_review", reviewer="Claude")
+        for observation in self.snapshot["observations"]:
+            observation.update(state="open", mergeable=True, merged=False)
+        for finding in self.snapshot["findings"]:
+            finding.update(status="HOLD", reason="pr_evidence_missing_or_failing",
+                           ci="PASS", independent_review="NOT RUN")
         self.assertEqual({1: "independent_reviewer_unconfirmed"}, self.blocked())
         self.assertEqual("Claude", self.plan()["recommendations"][0]["actor"])
+
+    def test_observer_output_distinguishes_pending_review_from_release_hold(self):
+        bundle = json.loads(Path(__file__).with_name("fixture.json").read_text(encoding="utf-8"))
+        raw = bundle["snapshot"]
+        original = classify(raw, bundle["evidence"], NOW)
+        observations = {row["number"]: row for row in original["observations"]}
+        self.queue["main"] = original["main"]
+        for n in (14, 17):
+            source = observations[n]
+            self.queue["tasks"].append(dict(number=n, executor=source["executor"], action="independent_review",
+                                           reviewer="Codex", hold=False, priority=1, dependencies=[],
+                                           head=source["head"], tree=source["tree"], base=source["base"]))
+        self.snapshot = original
+        self.assertEqual("pr_review_already_passed", self.blocked()[17])
+        self.assertEqual("docs_sync_hold", self.blocked()[14])
+        del bundle["evidence"]["tasks"]["17"]["review"]
+        self.snapshot = classify(raw, bundle["evidence"], NOW)
+        plan = self.plan()
+        self.assertEqual([17], [row["number"] for row in plan["recommendations"]])
+        self.assertEqual("pr_evidence_missing_or_failing", plan["recommendations"][0]["observer_reason"])
+        self.assertEqual([], plan["owner_decisions"])
+        self.queue["tasks"][1]["hold"] = True
+        self.assertEqual("hold", self.blocked()[17])
 
     def test_cli_has_no_network_or_process_calls_and_does_not_overwrite(self):
         self.task(1)

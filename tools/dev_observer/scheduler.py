@@ -17,6 +17,10 @@ WEB = "https://github.com/rimanfatykhov-arch/bms24"
 ACTIONS = {"continue_work", "independent_review", "owner_decision"}
 PRIORITY_LIMIT = 1000
 BRANCH = re.compile(r"[A-Za-z0-9][A-Za-z0-9_./-]{0,127}")
+OBSERVER_REASONS = {"recorded_hold", "docs_sync_hold", "pr_evidence_missing_or_failing", "candidate_not_ready",
+                    "source_changed_or_expired", "partial_snapshot", "assignment_unknown", "dependencies_unconfirmed",
+                    "dependency_not_confirmed_complete", "completion_confirmed", "observed_preconditions_met",
+                    "candidate_identity_or_state_unknown"}
 
 
 def source_ref(value, issue):
@@ -108,9 +112,18 @@ def build_plan(snapshot, queue, as_of):
         reviewer = row.get("reviewer")
         branch = row.get("branch")
         deps = graph.get(n, set())
+        observer_reason = finding.get("reason")
+        if not isinstance(observer_reason, str) or observer_reason not in OBSERVER_REASONS:
+            observer_reason = None
+        recorded_hold = (row.get("hold") is not False or observed.get("registry_status") == "HOLD"
+                         or observer_reason == "recorded_hold")
+        review_pending = (kind == "pr" and action == "independent_review" and observed.get("state") == "open"
+                          and observed.get("mergeable") is True and observed.get("merged") is False
+                          and finding.get("status") == "HOLD" and observer_reason == "pr_evidence_missing_or_failing"
+                          and finding.get("ci") == "PASS" and finding.get("independent_review") == "NOT RUN")
         record = {"number": n, "kind": kind if kind in ("issue", "pr") else None,
                   "executor": actor if isinstance(actor, str) and actor in ACTORS else None,
-                  **identity, "priority": priority, "dependencies": sorted(deps),
+                  **identity, "priority": priority, "dependencies": sorted(deps), "observer_reason": observer_reason,
                   "source": f"{WEB}/{'pull' if kind == 'pr' else 'issues'}/{n}"}
         reason = None
         if n in conflicts:
@@ -122,8 +135,10 @@ def build_plan(snapshot, queue, as_of):
                 or kind == "issue" and identity["head"] != main) or any(
                     row.get(key) != value or finding.get(key) != value for key, value in identity.items()):
             reason = "identity_mismatch"
-        elif row.get("hold") is not False or observed.get("registry_status") == "HOLD" or finding.get("status") == "HOLD":
+        elif recorded_hold:
             reason = "hold"
+        elif finding.get("status") == "HOLD" and not review_pending:
+            reason = observer_reason or "observer_not_ready"
         elif n in cycles:
             reason = "dependency_cycle"
         elif deps - findings.keys():
@@ -135,11 +150,15 @@ def build_plan(snapshot, queue, as_of):
             reason = "owner_decision_required"
         elif action == "independent_review" and (not isinstance(reviewer, str) or reviewer not in ACTORS or reviewer == actor):
             reason = "independent_reviewer_unconfirmed"
+        elif kind == "pr" and finding.get("independent_review") == "PASS":
+            reason = "pr_review_already_passed"
+        elif kind == "pr" and action == "independent_review" and not review_pending:
+            reason = "pr_review_preconditions_unconfirmed"
         elif action == "continue_work" and (not isinstance(branch, str) or not BRANCH.fullmatch(branch)
                 or branch.endswith(("/", ".", ".lock")) or ".." in branch or "//" in branch
                 or branch.casefold() in {"main", "master"}):
             reason = "branch_unconfirmed"
-        elif finding.get("status") != "READY":
+        elif finding.get("status") != "READY" and not review_pending:
             reason = "observer_not_ready"
         if reason:
             record["reason"] = reason
