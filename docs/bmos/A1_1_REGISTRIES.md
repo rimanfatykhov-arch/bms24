@@ -45,17 +45,17 @@
    в журналах, строки остаются. Принципал, потерявший спонсора, и занятость без куратора закрываются (fail closed),
    `authzrevision` растёт.
 10. **Полномочие на гранты (A0_02 §4.2, ревизия Codex 28.11).** Управление грантами отделено от
-    `manageorganization`. Выдача и продление требуют правил автора записи **и** отдельного полномочия; пока владелец
-    его не выбрал, это только администратор сайта. Руководитель организации с `can_manage_organization` гранты не
-    выдаёт и не продлевает (`bmos_error_grantauthority`), но может **отозвать**: отзыв только сужает права. Новой
-    capability и изменения ролей нет: `db/access.php` закреплён gate `test_no_capability_change_against_base`, а
-    права не меняются без решения владельца.
+    `manageorganization`. Выдача и продление требуют правил автора записи **и** capability
+    `local/kbacompany:managebmosgrants`. Руководитель организации без этой capability гранты не выдаёт и не продлевает
+    (`bmos_error_grantauthority`), но может **отозвать**: отзыв только сужает права. Обладатель capability без
+    `can_manage_organization` в компании получает `bmos_error_denied`; capability не открывает реестр другой компании.
 
-    **Открытое решение владельца (OD-A11-1).** Какое постоянное полномочие выдаёт гранты:
-    (а) новая capability `local/kbacompany:managebmosgrants` без archetypes, назначаемая явно, вместе с
-    `can_manage_organization` в компании — нужен отдельный OK на изменение `db/access.php` и gate capability;
-    (б) роль доступа RBAC 2.0 на новом объекте `agent` (пара `agent/approve`) — нужно решение по словарю;
-    (в) оставить только администратора сайта до A2. Рекомендация исполнителя — (а). Пока решения нет, действует (в).
+    **Решение владельца OD-A11-1 — вариант (а), 28.11.2026.** Новая capability `local/kbacompany:managebmosgrants`
+    (`RISK_CONFIG | RISK_PERSONAL`, `CONTEXT_SYSTEM`) **без archetypes**: ни одна роль не получает её при установке или
+    upgrade, её назначают явно. Gate `tools/tests/test_daily_reports_r0_entry.py::test_no_capability_change_against_base`
+    не снят, а сужен до точного содержимого: `db/access.php` должен совпадать с базой `881aac2` плюс ровно этот блок в
+    конце. Любое другое изменение capability по-прежнему FAIL. Отклонённые варианты: (б) роль RBAC 2.0 на объекте
+    `agent`; (в) только администратор сайта.
 
 ## 3. Тесты → сценарии A0_09 §3
 
@@ -68,7 +68,7 @@
 | `test_s01_registration_requires_authority_and_a_current_sponsor` | S01.1 |
 | `test_s04_agent_principal_has_no_moodle_identity` | S04.1 |
 | `test_s03_company_isolation_without_existence_disclosure` | S03.1 |
-| `test_s06_only_an_authorised_human_writes_registries` | S06.1 |
+| `test_s06_only_an_authorised_human_writes_registries` | S06.1 (+ OD-A11-1: без capability — отказ; capability без прав на оргструктуру — отказ; оба — выдача и продление; другая компания — отказ) |
 | `test_s36_deny_by_default_with_positive_control` | S36.1 |
 | `test_s08_revocation_denies_on_the_next_context_and_check` | S08.1 |
 | `test_s24_expiry_and_human_renewal_as_a_new_revision` | S24.1 |

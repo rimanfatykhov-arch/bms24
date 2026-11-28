@@ -22,6 +22,7 @@ final class bmos_registry {
     public const OCCUPANCYLOG = 'local_kbacompany_posoccuplog';
     /** Grant lifetime limit (owner decision Q-10). */
     public const MAX_GRANT_SECONDS = 90 * 86400;
+    public const CAPABILITY_MANAGE_GRANTS = 'local/kbacompany:managebmosgrants';
     private const LOCK_TIMEOUT = 10;
     private const UUID = '/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/D';
 
@@ -94,13 +95,13 @@ final class bmos_registry {
 
     /**
      * Grant management is a separate authority from manageorganization (A0_02 §4.2, self-escalation protection).
-     * Until the owner chooses the permanent authority (open decision, docs/bmos/A1_1_REGISTRIES.md §2), only the site
-     * administrator issues and renews grants: an organisation manager alone cannot. No capability or role is
-     * created or changed. The writer rules of require_writer() apply in addition.
+     * Owner decision OD-A11-1 (a): the capability local/kbacompany:managebmosgrants (no archetypes, assigned
+     * explicitly) in addition to the writer rules of require_writer(), i.e. manageorganization rights in the company.
+     * An organisation manager without the capability cannot issue or renew grants.
      */
     public static function require_grant_manager(string $companyuuid, int $actorid): string {
         $companyuuid = self::require_writer($companyuuid, $actorid);
-        if (!is_siteadmin($actorid)) {
+        if (!has_capability(self::CAPABILITY_MANAGE_GRANTS, \context_system::instance(), $actorid)) {
             self::fail('grantauthority');
         }
         return $companyuuid;

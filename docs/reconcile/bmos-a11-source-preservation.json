@@ -4,17 +4,17 @@
  "normalization": "CRLF to LF only",
  "previous_evidence": "docs/reconcile/office-workspace-doc-w2-source-preservation.json (DOC-W2 Office workspace block)",
  "decision": "BMOS-A0 PASS by Codex on 68b1dd07b1b75f1af94e6442e629d127f947b95b (#183, issue #84); owner order 28.11.2026 for BMOS-A1.1 (A1-01, A1-02), acceptance A0_09 section 3",
- "change": "Append the BMOS-A1.1 block (13 bmos_* keys: switch, registry errors including the separate grant authority, privacy description) after the DOC-W2 Office workspace block. Retain all preceding keys byte-for-byte. Schema step 2026112800 adds six registry tables; everything is behind local_kbacompany/bmos_enabled (default off).",
+ "change": "Append the BMOS-A1.1 block (13 bmos_* keys: switch, registry errors including the separate grant authority, privacy description; plus the capability name kbacompany:managebmosgrants, owner decision OD-A11-1 (a)) after the DOC-W2 Office workspace block. Retain all preceding keys byte-for-byte. Schema step 2026112800 adds six registry tables; everything is behind local_kbacompany/bmos_enabled (default off).",
  "files": [
   {
    "path": "local/kbacompany/lang/en/local_kbacompany.php",
    "before_sha256_lf": "32402ab956d141c1cbb1b45c495cf8ddc2c6c95d09518995dba2c1473dfbc5cf",
-   "after_sha256_lf": "75cbdc1a704eb81c8ff9353264961953e8102d9dc1d00233d3ea54df4ee33cb9"
+   "after_sha256_lf": "da1b2f8ccf8dd00bc44ea7203f024e04f5e4fd363726f47eac3a1583195a48e4"
   },
   {
    "path": "local/kbacompany/lang/ru/local_kbacompany.php",
    "before_sha256_lf": "d5d534758b1c6c6cef4069d1dd6cbe233b9a6973a49f48c0ebc3f781ec51177f",
-   "after_sha256_lf": "9da4a27e1e4b23352e8ae44d2db300a0c314f02f7bd0d3bfe12a0edeea986b33"
+   "after_sha256_lf": "b248c1b072ec51879cef1b010f7ce20a9b395c6b2047ca0fba0aa2cc2c037b34"
   }
  ]
 }

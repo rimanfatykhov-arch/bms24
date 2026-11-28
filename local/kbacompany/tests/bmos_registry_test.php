@@ -95,10 +95,20 @@ final class bmos_registry_test extends \advanced_testcase {
         return $uuid;
     }
 
-    /** The separate grant authority (A0_02 §4.2): until the owner decides, the site administrator. */
+    /** The site administrator holds every capability, including the separate grant authority (OD-A11-1 (a)). */
     private function granter(): int {
         $this->setAdminUser();
         return (int)get_admin()->id;
+    }
+
+    /** OD-A11-1 (a): assign the separate grant authority explicitly through a system role. */
+    private function grant_authority(\stdClass $user): void {
+        $this->setAdminUser();
+        $system = \context_system::instance();
+        $roleid = $this->getDataGenerator()->create_role(['shortname' => 'bmosgrants' . $user->id]);
+        assign_capability(bmos_registry::CAPABILITY_MANAGE_GRANTS, CAP_ALLOW, $roleid, $system->id, true);
+        role_assign($roleid, $user->id, $system->id);
+        accesslib_clear_all_caches_for_unit_testing();
     }
 
     private function grant_spec(array $extra = []): array {
@@ -118,6 +128,11 @@ final class bmos_registry_test extends \advanced_testcase {
         return $uuid;
     }
 
+    /** Context ids as integers: the DB returns strings and PHPUnit 9 assertContains is strict. */
+    private function context_ids(\stdClass $user): array {
+        return array_map('intval', provider::get_contexts_for_userid((int)$user->id)->get_contextids());
+    }
+
     private function count_active_grants(string $principal): int {
         global $DB;
         return $DB->count_records('local_kbacompany_wpgrant', ['principaluuid' => $principal, 'status' => 'active']);
@@ -127,7 +142,10 @@ final class bmos_registry_test extends \advanced_testcase {
         global $DB;
         $data = [];
         foreach ($tables as $table) {
-            $data[$table] = array_values($DB->get_records($table, null, 'id ASC'));
+            // Plain arrays: assertSame compares values, not object identity.
+            $data[$table] = array_map(function($row) {
+                return (array)$row;
+            }, array_values($DB->get_records($table, null, 'id ASC')));
         }
         return $data;
     }
@@ -351,6 +369,27 @@ final class bmos_registry_test extends \advanced_testcase {
         // Removing a right never escalates: an organisation manager may revoke.
         grants::revoke($f['company'], $grant, $manager);
         $this->assertSame(0, $this->count_active_grants($uuid));
+        // OD-A11-1 (a): the capability has no archetype; held alone it is not enough, with org rights it is.
+        global $DB;
+        $this->assertNotEmpty(get_capability_info(bmos_registry::CAPABILITY_MANAGE_GRANTS));
+        $this->assertFalse($DB->record_exists('role_capabilities',
+            ['capability' => bmos_registry::CAPABILITY_MANAGE_GRANTS]));
+        $this->grant_authority($f['employee']);
+        $employee = $this->as($f['employee']);
+        $this->assertFalse(\local_kbacompany\local\permission_service::can_manage_organization($f['company'], $employee));
+        $this->expect_error('denied', function() use ($f, $uuid, $employee) {
+            grants::grant($f['company'], $uuid, $this->grant_spec(), $employee);
+        });
+        $this->grant_authority($f['manager3']);
+        $holder = $this->as($f['manager3']);
+        $issued = grants::grant($f['company'], $uuid, $this->grant_spec(), $holder);
+        $this->assertSame(1, $this->count_active_grants($uuid));
+        grants::extend($f['company'], $issued, time() + 40 * DAYSECS, $holder);
+        $this->assertSame(1, $this->count_active_grants($uuid));
+        // The capability is not a company right: it does not open another company's registry.
+        $this->expect_error('denied', function() use ($f, $uuid, $holder) {
+            grants::grant($f['other'], $uuid, $this->grant_spec(), $holder);
+        });
         // No public registry method accepts a principal context: principals cannot be writers.
         foreach ([registry::class, grants::class, occupancy::class] as $class) {
             foreach ((new \ReflectionClass($class))->getMethods(\ReflectionMethod::IS_PUBLIC) as $method) {
@@ -625,8 +664,7 @@ final class bmos_registry_test extends \advanced_testcase {
         $occupancyuuid = $this->occupy($f, $uuid);
         $system = \context_system::instance();
         foreach (['sponsor', 'manager1', 'manager2', 'supervisor'] as $who) {
-            $this->assertContains($system->id, provider::get_contexts_for_userid((int)$f[$who]->id)->get_contextids(),
-                $who);
+            $this->assertContains((int)$system->id, $this->context_ids($f[$who]), $who);
         }
         writer::reset();
         provider::export_user_data(new approved_contextlist($f['sponsor'], 'local_kbacompany', [$system->id]));
@@ -651,8 +689,7 @@ final class bmos_registry_test extends \advanced_testcase {
         $this->assertSame(0, $DB->count_records('local_kbacompany_wpaudit', ['actoruserid' => (int)$f['manager1']->id]));
         $this->assertSame(0, $DB->count_records_select('local_kbacompany_posoccup', 'createdby = ?',
             [(int)$f['manager1']->id]));
-        $this->assertNotContains($system->id,
-            provider::get_contexts_for_userid((int)$f['manager1']->id)->get_contextids());
+        $this->assertNotContains((int)$system->id, $this->context_ids($f['manager1']));
         // Without its sponsor the agent fails closed.
         $this->expect_error('notavailable', function() use ($f, $uuid) {
             principal_context_service::context($f['company'], $uuid);
