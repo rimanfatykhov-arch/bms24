@@ -7,7 +7,7 @@ import tempfile
 import unittest
 from unittest.mock import patch
 
-from github import CollectionError, GitHub, collect, get_response, registry_assignments
+from github import REPO, CollectionError, GitHub, collect, get_response, registry_assignments
 from observer import OUTPUTS, main, read_json
 from policy import classify
 
@@ -168,6 +168,47 @@ class GitHubTests(unittest.TestCase):
         api = GitHub("test", request=lambda *_: (200, {}, b'{"total_count":2,"jobs":[{"id":1}]}'))
         with self.assertRaisesRegex(CollectionError, "incomplete_page"):
             api.list("/actions/runs/1/attempts/1/jobs", "jobs")
+
+    def test_malformed_keyed_page_produces_partial_cli_reports(self):
+        head, base, tree = "a" * 40, "b" * 40, "c" * 40
+        run = {"id": 1, "run_attempt": 1, "event": "pull_request", "head_sha": head}
+        workflow = "/actions/runs"
+        jobs = "/actions/runs/1/attempts/1/jobs"
+        artifacts = "/actions/runs/1/artifacts"
+        responses = {
+            "/commits/main": {"sha": base},
+            f"/commits/{head}": {"commit": {"tree": {"sha": tree}}},
+            "/issues/198": {"body": ""},
+            "/issues": [],
+            "/pulls": [{"id": 17, "number": 17}],
+            "/pulls/17": {"state": "open", "head": {"sha": head}, "base": {"sha": base, "ref": "main"}},
+            "/issues/17/comments": [],
+            "/pulls/17/reviews": [],
+            workflow: {"total_count": 1, "workflow_runs": [run]},
+            "/actions/runs/1": run,
+            jobs: {"total_count": 0, "jobs": []},
+            artifacts: {"total_count": 0, "artifacts": []},
+        }
+
+        for malformed_route in (workflow, jobs, artifacts):
+            with self.subTest(route=malformed_route), tempfile.TemporaryDirectory() as temp:
+                def request(path, _):
+                    route = path.removeprefix(f"/repos/{REPO}").partition("?")[0]
+                    page = [] if route == malformed_route else responses[route]
+                    return 200, {}, json.dumps(page).encode()
+
+                output = Path(temp) / "out"
+                stderr = StringIO()
+                with patch.dict("os.environ", {"BDO_GITHUB_READ_TOKEN": "github_pat_" + "a" * 20}), \
+                        patch("observer.GitHub", return_value=GitHub("test", request=request)), \
+                        contextlib.redirect_stderr(stderr):
+                    self.assertEqual(main(["--github", "--out", str(output)]), 1)
+                self.assertEqual(stderr.getvalue(), "")
+                self.assertEqual({path.name for path in output.iterdir()}, set(OUTPUTS))
+                snapshot = read_json(output / "snapshot.json")
+                self.assertFalse(snapshot["complete"])
+                self.assertEqual(snapshot["errors"], [{"endpoint": malformed_route, "reason": "invalid_page"}])
+                self.assertEqual(read_json(output / "ready-tasks.json")["findings"], [])
 
     def test_registry_hold_and_unrelated_hold_text(self):
         registry = """## Активные линии

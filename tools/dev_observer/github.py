@@ -91,7 +91,9 @@ class GitHub:
         records = {}
         for page in range(1, self.pages + 1):
             data, headers = self.get(route, per_page=100, page=page, **query)
-            items = data.get(key) if key and isinstance(data, dict) else data
+            if key and not isinstance(data, dict):
+                raise CollectionError("invalid_page")
+            items = data.get(key) if key else data
             if not isinstance(items, list):
                 raise CollectionError("invalid_page")
             for item in items:
