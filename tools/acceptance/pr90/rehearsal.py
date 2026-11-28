@@ -10,8 +10,8 @@ BASELINE_VALIDATOR='f7b4c09e69b6fd10c293394b49c136c6dc200104'
 BASELINE_TREE='314bdd6bfecbe860168fc0d1875aeab429a1d787'
 PUBLISHED_R1R2='927a319c9d058cc9da8c1ddc94d45c97a6ef24fb'
 PUBLISHED_R1R2_PLUGIN_TREE='8b1d4d9ae9c22dc3f70ff4715ffd0863ab476bac'
-PUBLISHED_R5A_BASE='541df5a469b9be40a816ebd827d6aeea52d6ba56'
-PUBLISHED_R5A_BASE_PLUGIN_TREE='3ce556890b96f826ccf44d3487ecd2c1dba373e2'
+PUBLISHED_R5A_BASE='48eba88dbccf37f826e57a35636e11bdade12b32'
+PUBLISHED_R5A_BASE_PLUGIN_TREE='1bd7f4ad768973a6e883d128b0f2a55ed2762f18'
 BASELINE_CHECKS=json.loads((cand/'docs/reconcile/r1r2-baseline-browser-checkset.json').read_text())['checks']
 if origins.get('baseline_validator')!=BASELINE_VALIDATOR:raise RuntimeError('baseline validator pin changed; independent review required')
 if os.environ.get('GITHUB_ACTIONS')!='true' or runner not in root.parents or os.environ.get('DBHOST')!='127.0.0.1':
@@ -164,13 +164,13 @@ def reproduce_r5a_baseline(before):
     shutil.rmtree(plugin)
     shutil.copytree(source / 'local/kbacompany', plugin)
     cmd(['php', core / 'admin/cli/upgrade.php', '--non-interactive'], stdout=subprocess.DEVNULL)
-    after = upgrade_probe('published180-before-r5a')
+    after = upgrade_probe('published197-before-r5a')
     upgraded(before, after)
-    require(after['version'] == 2026112301, 'expected the published #180 version')
+    require(after['version'] == 2026112301, 'expected the published #197 version')
     report['r5a_upgrade_baseline'] = {
         'source': PUBLISHED_R5A_BASE, 'plugin_tree': PUBLISHED_R5A_BASE_PLUGIN_TREE, 'version': after['version'],
     }
-    report['steps']['published180_upgrade_baseline_with_reports'] = 'PASS'
+    report['steps']['published197_upgrade_baseline_with_reports'] = 'PASS'
     return after
 
 def fresh_upgrade_schema(upgrade):
@@ -440,7 +440,7 @@ try:
     adr0010 = report['components']['local/kbacompany']['version'] in (2026112301, 2026112400, 2026112401)
     if adr0010:
         upgrade_before = reproduce_r1r2_baseline(upgrade_before)
-    # R5a and R5c (2026112400, 2026112401) both upgrade over the published #180 source (2026112301).
+    # R5a and R5c (2026112400, 2026112401) both upgrade over the published #197 source (2026112301).
     r5a = report['components']['local/kbacompany']['version'] in (2026112400, 2026112401)
     if r5a:
         upgrade_before = reproduce_r5a_baseline(upgrade_before)
@@ -459,7 +459,7 @@ try:
     unchanged(upgrade_after,upgrade_probe('candidate-upgrade-repeat'))
     fresh_upgrade_schema(upgrade_after)
     if r5a:
-        upgrade_step = 'published180_upgrade_repeat_fresh_schema'
+        upgrade_step = 'published197_upgrade_repeat_fresh_schema'
     else:
         upgrade_step = 'published_r1r2_upgrade_repeat_fresh_schema' if adr0010 else 'published120_upgrade_repeat_fresh_schema'
     report['steps'][upgrade_step] = 'PASS'

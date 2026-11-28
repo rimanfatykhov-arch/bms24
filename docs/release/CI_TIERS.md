@@ -61,8 +61,8 @@ NOT APPLICABLE only by the rules in the table. Small diff size never lowers the 
 - **Identity.** Every FAST/STANDARD/BROWSER artifact carries `identity.json` (`tools/ci/stamp_identity.py`): tier, target,
   head, base, profile, engine, run id/attempt, job and SHA256 of the report bytes. The gate compares it with the PR event
   head/base and this run id, the classification head/base with the event, and re-hashes the downloaded report.
-- **BROWSER completeness.** A BROWSER report must contain every name from `contract.required_check_names()` (101) with PASS,
-  carry the expected `dbtype` and overall PASS (85 checks: 42 before + 7 message-action + 7 task-opened + 8 Communication Center + 7 daily-reports entry + 8 saved daily reports R1/R2 + 5 Battle Plan discussion + 1 Communication Center UX-1 checks); a report with an unrelated single PASS is incomplete.
+- **BROWSER completeness.** A BROWSER report must contain every name from `contract.required_check_names()` (137) with PASS,
+  carry the expected `dbtype` and overall PASS (137 checks: 42 before + 7 message-action + 7 task-opened + 8 Communication Center + 7 daily-reports entry + 13 daily reports R1-R4/summary/discussion + 5 Battle Plan discussion + 4 Communication Center UX-1/UX-2/UX-3 fixed frame/UX-4 stable open conversation + 6 day feed + 8 notification bell + 16 adaptive navigation + 7 Information Centre + 7 Office (Канцелярия, DOC-W2) checks); a report with an unrelated single PASS is incomplete.
 - **FULL selection.** Per FULL workflow *file* (`pr48-moodle-acceptance.yml`, `rc30-schema-repair.yml`,
   `rc30-corporate2613-repair.yml`, `bms24-ci.yml`) the newest `pull_request` run for the same head SHA, PR number and base SHA
   at event time is used; its latest attempt must be `success`. An older successful run never masks a newer failure,
@@ -83,7 +83,7 @@ NOT APPLICABLE only by the rules in the table. Small diff size never lowers the 
   `task_tab_mobile_no_browser_errors` (re-evaluated from events, producer status not trusted), `attachments_no_browser_errors`,
   `oversize_no_browser_errors`, `access_no_browser_errors`. Runtime negative controls: `negative-browser-page-error`
   (pageerror) and `negative-browser-failed-request` (a local script on 127.0.0.1:8080 whose response is cut short; the failed
-  request must be the reported cause). BROWSER has 101 required checks (incl. 7 for editing/withdrawing task-discussion messages, 7 for the task-opened History event, 8 for the Communication Center cleanup, 7 for the daily reports entry, 8 for saved daily reports R1/R2, 5 for the Battle Plan discussion and 1 for the Communication Center UX-1 layout and 16 for the adaptive BMS24 navigation, `adaptive_nav.py`).
+  request must be the reported cause). BROWSER has 137 required checks (incl. 7 for editing/withdrawing task-discussion messages, 7 for the task-opened History event, 8 for the Communication Center cleanup, 7 for the daily reports entry, 13 for saved daily reports R1-R4, the monthly summary and the report discussion, 5 for the Battle Plan discussion, 4 for the Communication Center UX-1 layout, UX-2 primary action geometry, UX-3 fixed frame (`communication_ux3_fixed_frame`) and UX-4 stable open conversation (`communication_ux4_stable_thread`), 6 for the day feed, 8 for the notification bell, 16 for the adaptive BMS24 navigation (`adaptive_nav.py`) 7 for the Information Centre (`infocenter.py`) and 7 for the Office workspace (`office_*`, DOC-W2)).
 - **Re-run provenance (Codex review P2).** Artifacts are named `...-a<run_attempt>`. For every required job the gate computes
   the attempt in which it actually executed (on *Re-run failed jobs* GitHub copies successful jobs into the new attempt with
   the original `started_at`; verified on runs 43561610462 and 43561610550). It reads only that attempt's artifact and requires

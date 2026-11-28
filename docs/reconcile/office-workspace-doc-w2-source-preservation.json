@@ -1,0 +1,20 @@
+{
+ "scope": "exact intentional source updates; not runtime or release acceptance",
+ "base_sha": "391c8ea852a68c94e8517fd217cdeeb73331fd97 (main with the Information Centre by divisions block (#190))",
+ "normalization": "CRLF to LF only",
+ "previous_evidence": "docs/reconcile/information-centre-divisions-source-preservation.json (Information Centre by divisions block (#190))",
+ "decision": "docs/office/DOC_W2_OFFICE_WORKSPACE.md (owner task 2026-11-24: DOC-W2 Office workspace, BMS-12)",
+ "change": "Append the DOC-W2 Office workspace block (officews_* keys) after the Information Centre by divisions block (#190). Retain all preceding keys byte-for-byte. No schema, version, capability or notification change; the workspace is behind local_kbacompany/office_workspace_enabled (default off).",
+ "files": [
+  {
+   "path": "local/kbacompany/lang/en/local_kbacompany.php",
+   "before_sha256_lf": "1d3d80ad9c985ff85091e126a0e14292ce3e6ab4531268f6f30228c47269509b",
+   "after_sha256_lf": "32402ab956d141c1cbb1b45c495cf8ddc2c6c95d09518995dba2c1473dfbc5cf"
+  },
+  {
+   "path": "local/kbacompany/lang/ru/local_kbacompany.php",
+   "before_sha256_lf": "f5ad4bdcc8edaebe4b8b444231432c117fedbb3530fc9b04a3c3316d85015c87",
+   "after_sha256_lf": "d5d534758b1c6c6cef4069d1dd6cbe233b9a6973a49f48c0ebc3f781ec51177f"
+  }
+ ]
+}

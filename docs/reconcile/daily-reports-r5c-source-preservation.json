@@ -8,13 +8,13 @@
   "files": [
     {
       "path": "local/kbacompany/lang/en/local_kbacompany.php",
-      "before_sha256_lf": "78ca82d41e8954ba972a93f31c29c6a2329b4998c294c01f0a87348933b3e740",
-      "after_sha256_lf": "f05e83b9059b63ffd2795c6f8d43fbe315adfd80c22ac794864de4badd23c1b4"
+      "before_sha256_lf": "cd1c8d0f9dbfd8abb87d23c48ab266a28983c320829ecbf46fe0ef36a3afb56c",
+      "after_sha256_lf": "4ed320b2148b5cdac8b9d8b05291730b075339f94a6d2425b8e214bfe3caba98"
     },
     {
       "path": "local/kbacompany/lang/ru/local_kbacompany.php",
-      "before_sha256_lf": "cba6353c0fefe51e9577c8aec6a6eb17a7349b722cbc1c19907ee066c3c67ce5",
-      "after_sha256_lf": "427d05b0b693326c3dce32258eafda95d9a7bbbbbe3c8480e7567905ec5347f5"
+      "before_sha256_lf": "0d1f747918c95bb3a5eede5b58e5b2846cbf15b645045b93523d05570a408b70",
+      "after_sha256_lf": "66791413c6c14177d761cdce9ce340d4238d711e3a171aabaf49b25238ed2922"
     },
     {
       "path": "local/kbacompany/classes/local/communication_service.php",

@@ -8,13 +8,13 @@
   "files": [
     {
       "path": "local/kbacompany/lang/en/local_kbacompany.php",
-      "before_sha256_lf": "f05e83b9059b63ffd2795c6f8d43fbe315adfd80c22ac794864de4badd23c1b4",
-      "after_sha256_lf": "b9439468130973216d231b3a97d45e2b8c1720c7cbcd5851fc5aa322737dcf84"
+      "before_sha256_lf": "4ed320b2148b5cdac8b9d8b05291730b075339f94a6d2425b8e214bfe3caba98",
+      "after_sha256_lf": "d069e78b9295bed7016edbfadb44f0bce6734e29e888bc359298db8f9c16ce89"
     },
     {
       "path": "local/kbacompany/lang/ru/local_kbacompany.php",
-      "before_sha256_lf": "427d05b0b693326c3dce32258eafda95d9a7bbbbbe3c8480e7567905ec5347f5",
-      "after_sha256_lf": "c814e31017b2cfe540ceb4e6e20b327f8f5bd1449811ce07e55f240f04a52c5c"
+      "before_sha256_lf": "66791413c6c14177d761cdce9ce340d4238d711e3a171aabaf49b25238ed2922",
+      "after_sha256_lf": "a96186fc1080bb4e60ccddbfe1852cc7545820b84c388e24a320a8285e1fcb31"
     }
   ]
 }
