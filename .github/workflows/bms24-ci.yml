@@ -58,6 +58,10 @@ jobs:
           python tools/test_github_import_1877.py
           python tools/test_github_import_1879.py
           python tools/dev_ai_cycle.py validate --task dev_ai/templates/task.example.json
+      - name: Observer, Scheduler and Runner offline tests
+        run: |
+          python -B -m unittest discover -s tools/dev_observer
+          python -B -O -m unittest discover -s tools/dev_observer
       - name: Moodle static checks
         run: |
           python tools/check_reconcile_1879.py
