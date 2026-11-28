@@ -283,6 +283,9 @@ final class access_role_service {
         }
         $conditions = ['companyuuid' => $companyuuid, 'roleid' => $roleid,
             'objecttype' => $object, 'actionname' => $action];
+        // N28 (COORD-D05): hold the communication gate through this commit (lock order: object lock -> gate).
+        $gate = communication_write_gate::acquire($companyuuid);
+        try {
         $tx = $DB->start_delegated_transaction();
         $existing = $DB->get_record(self::GRANT_TABLE, $conditions);
         if ($enabled && !$existing) {
@@ -296,6 +299,12 @@ final class access_role_service {
         self::audit($companyuuid, $actor, $enabled ? 'grant_allowed' : 'grant_revoked', $roleid,
             $object . ':' . $action);
         $tx->allow_commit();
+        } catch (\Throwable $e) {
+            if (isset($tx)) { $tx->rollback($e); }
+            throw $e;
+        } finally {
+            $gate->release();
+        }
     }
 
     public static function role_grants(string $companyuuid, int $actor): array {
@@ -346,6 +355,9 @@ final class access_role_service {
             throw new \invalid_parameter_exception('User is not an active member of this company');
         }
         $conditions = ['companyuuid' => $companyuuid, 'roleid' => $roleid, 'userid' => $userid];
+        // N28 (COORD-D05): hold the communication gate through this commit (lock order: object lock -> gate).
+        $gate = communication_write_gate::acquire($companyuuid);
+        try {
         $tx = $DB->start_delegated_transaction();
         $existing = $DB->get_record(self::ASSIGN_TABLE, $conditions);
         if ($enabled && !$existing) {
@@ -361,6 +373,12 @@ final class access_role_service {
         self::audit($companyuuid, $actor, $enabled ? 'assignment_created' : 'assignment_revoked', $roleid,
             'userid=' . $userid);
         $tx->allow_commit();
+        } catch (\Throwable $e) {
+            if (isset($tx)) { $tx->rollback($e); }
+            throw $e;
+        } finally {
+            $gate->release();
+        }
     }
 
     public static function assigned_members(string $companyuuid, int $actor): array {

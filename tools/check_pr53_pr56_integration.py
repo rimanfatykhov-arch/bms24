@@ -142,8 +142,9 @@ def check(root=ROOT):
     reviewed_followup['local/kbacompany/lang/en/local_kbacompany.php'] = '62af4834f4441502e5ebc4b535b508d3369f46b35f61aca9a2f6edf8e77e76e6'
     reviewed_followup['local/kbacompany/lang/ru/local_kbacompany.php'] = '02c53ab3bafd6aa9fab2c2f8fd4475456a32cb2d96f17b7d9c7fc01179bc730f'
     # RC33 PR-1 (owner D3 2026-11-24): shared communication write gate and notification eligibility; no lang,
-    # schema or version change. See docs/reconcile/RC33_PR1_COMMUNICATION_WRITE_GATE.md.
-    reviewed_followup['local/kbacompany/classes/local/communication_service.php'] = 'c312947922c1c1af07f64f2fc6f45ab1270b7f08e2d3c76a348ae7b90cb15193'
+    # schema or version change; N28 (COORD-D05, #205 option A) re-checks the task and Battle Plan write right under the gate.
+    # See docs/reconcile/RC33_PR1_COMMUNICATION_WRITE_GATE.md.
+    reviewed_followup['local/kbacompany/classes/local/communication_service.php'] = '610d395738b1f39c8daa5ca0f37ff729299521839caa2dbeba15a75584e3cc38'
     reviewed_followup['local/kbacompany/classes/local/employee_service.php'] = '80a5502f410dd618dc1b64988a7824343960145d3276a7d8e89e8cd0db5f48be'
     for row in plan['rows']:
         path=root/row['path']
