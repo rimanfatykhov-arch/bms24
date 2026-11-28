@@ -263,6 +263,8 @@ class meeting_service {
             ->get_lock('meeting:' . $companyuuid, 10);
         if (!$lock) { self::fail('lock'); }
         try {
+            // N28 (COORD-D05): hold the communication gate through this commit (lock order: object lock -> gate).
+            $gate = communication_write_gate::acquire($companyuuid);
             $tx = $DB->start_delegated_transaction();
             $uuid = self::uuid();
             $now = time();
@@ -302,6 +304,7 @@ class meeting_service {
             if (isset($tx)) { $tx->rollback($e); }
             throw $e;
         } finally {
+            if (isset($gate)) { $gate->release(); }
             $lock->release();
         }
         } finally {
@@ -373,6 +376,15 @@ class meeting_service {
         self::require_employee($employees, $userid);
         $resourcelock = meeting_resource_service::acquire_booking_lock($companyuuid, (string)($meeting->resourceuuid ?? ''));
         try {
+            // N28 (COORD-D05): hold the communication gate through this commit (lock order: object lock -> gate).
+            $gate = communication_write_gate::acquire($companyuuid);
+            $tx = $DB->start_delegated_transaction();
+            // Re-check the organizer, meeting state and the new participant under the gate.
+            $meeting = self::meeting($companyuuid, $meetinguuid);
+            self::require_participant($companyuuid, $meetinguuid, $actor);
+            if ((int)$meeting->organizerid !== $actor) { self::fail('permission'); }
+            if (in_array($meeting->status, ['closed', 'cancelled'], true)) { self::fail('state'); }
+            self::require_employee(self::employees($companyuuid, $actor), $userid);
             $currentcount = $DB->count_records('local_kbacompany_meetpart', [
                 'companyuuid'=>$companyuuid, 'meetinguuid'=>$meetinguuid, 'active'=>1,
             ]);
@@ -401,7 +413,12 @@ class meeting_service {
         $meeting->revision = (int)$meeting->revision + 1; $meeting->timemodified = $now;
         $DB->update_record('local_kbacompany_meeting', $meeting);
         self::sync_thread($meeting);
+            $tx->allow_commit();
+        } catch (\Throwable $e) {
+            if (isset($tx)) { $tx->rollback($e); }
+            throw $e;
         } finally {
+            if (isset($gate)) { $gate->release(); }
             if ($resourcelock) { $resourcelock->release(); }
         }
     }

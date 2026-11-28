@@ -86,5 +86,81 @@ class CommunicationWriteGateProtocolTest(unittest.TestCase):
             self.assertLess(text.index('$gate->release()'), text.index('$lock->release()'), name)
 
 
+    # N28 (COORD-D05, owner option A in #205): object ACL writers commit under the same gate, and the write right
+    # to a task or Battle Plan discussion is re-checked under it for every message.
+    ACL_WRITERS = [
+        ('task_service.php', 'classify_duty', "'task:'"),
+        ('task_service.php', 'save', "'task:'"),
+        ('task_service.php', 'set_observer', "'task:'"),
+        ('task_service.php', 'transition', "'task:'"),
+        ('task_service.php', 'delete_task', "'task:'"),
+        ('battle_plan_service.php', 'set_observer', "'battleplan:'"),
+        ('battle_plan_service.php', 'remove_task', "'battleplan:'"),
+        ('battle_plan_service.php', 'save_settings', "'battleplan:'"),
+        ('battle_plan_service.php', 'transition', "'battleplan:'"),
+        ('battle_plan_service.php', 'review', "'battleplan:'"),
+        ('position_coverage_service.php', 'transition', "'position_coverage:'"),
+        ('meeting_service.php', 'create', "'meeting:'"),
+        ('meeting_service.php', 'add_participant', 'acquire_booking_lock('),
+        ('access_role_service.php', 'set_grant', None),
+        ('access_role_service.php', 'assign', None),
+    ]
+
+    def test_n28_object_acl_writers_hold_gate_through_their_commit(self):
+        for name, fn, lock in self.ACL_WRITERS:
+            text = body(read(name), fn)
+            where = name + '::' + fn
+            self.assertEqual(1, text.count(GATE), where)
+            gate = text.index(GATE)
+            if lock is not None:
+                self.assertLess(text.index(lock), gate, where + ': object lock before gate')
+            if 'start_delegated_transaction' in text:
+                self.assertLess(gate, text.index('start_delegated_transaction'), where + ': gate before transaction')
+            release = text.index('$gate->release()')
+            self.assertLess(gate, release, where)
+            for own in ['$lock->release()', '$resourcelock->release()']:
+                if lock is not None and own in text[release:]:
+                    self.assertLess(release, text.rindex(own), where + ': gate released before own lock')
+            self.assertIn('finally', text[gate:release], where + ': gate released in finally')
+
+    def test_n28_access_role_writers_roll_back_and_release_on_failure(self):
+        for fn in ['set_grant', 'assign']:
+            text = body(read('access_role_service.php'), fn)
+            gate = text.index(GATE)
+            self.assertLess(gate, text.index('start_delegated_transaction'), fn)
+            self.assertLess(text.index('allow_commit'), text.index('$tx->rollback($e)'), fn)
+            self.assertLess(text.index('$tx->rollback($e)'), text.index('$gate->release()'), fn)
+
+    def test_n28_meeting_participant_is_rechecked_under_the_gate(self):
+        text = body(read('meeting_service.php'), 'add_participant')
+        gate = text.index(GATE)
+        for check in ['self::require_participant(', "self::fail('permission')", 'self::require_employee(']:
+            self.assertGreater(text.rindex(check), gate, check)
+
+    def test_n28_object_write_right_is_rechecked_under_the_gate(self):
+        locked = body(read('communication_service.php'), 'append_message_locked')
+        tx = locked.index('start_delegated_transaction')
+        for check in ['task_service::can_post_discussion_for(', 'battle_plan_service::can_post_discussion_for(']:
+            self.assertIn(check, locked)
+            self.assertLess(locked.index(check), tx, check)
+        self.assertIn('public static function can_post_discussion_for(', read('task_service.php'))
+        self.assertIn('public static function can_post_discussion_for(', read('battle_plan_service.php'))
+        append = body(read('communication_service.php'), 'append_message')
+        self.assertLess(append.index(GATE), append.index('append_message_locked('))
+
+    def test_n28_acl_writer_locks_are_documented_before_member_locks(self):
+        gate = read('communication_write_gate.php')
+        doc = gate[gate.index('1. object locks'):gate.index('2. member:')]
+        for key in ['taskcenter:', 'task:', 'battleplan:', 'position_coverage:', 'meetingresource:', 'meeting:',
+                    'never held together']:
+            self.assertIn(key, doc, key)
+
+    def test_n28_gated_regions_take_no_further_named_lock(self):
+        for name, fn, lock in self.ACL_WRITERS:
+            text = body(read(name), fn)
+            region = text[text.index(GATE):text.index('$gate->release()')]
+            self.assertNotIn('get_lock(', region, name + '::' + fn)
+            self.assertNotIn('acquire_booking_lock(', region, name + '::' + fn)
+
 if __name__ == '__main__':
     unittest.main()

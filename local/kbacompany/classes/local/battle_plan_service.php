@@ -233,6 +233,16 @@ class battle_plan_service {
         ];
     }
 
+    /** N28 (COORD-D05): the current write right to the plan discussion, re-checked under the communication gate. */
+    public static function can_post_discussion_for(string $companyuuid, int $actor, string $planuuid): bool {
+        try {
+            $target = self::discussion_target($companyuuid, $actor, $planuuid);
+        } catch (\moodle_exception $e) {
+            return false;
+        }
+        return !empty($target['can_post']);
+    }
+
     /** Writing to the plan discussion: plan people and plan managers; read-only department viewers cannot write. */
     private static function can_post_discussion_row(\stdClass $row, int $actor): bool {
         $companyuuid = (string)$row->companyuuid;
@@ -467,13 +477,15 @@ class battle_plan_service {
         $lock = \core\lock\lock_config::get_lock_factory('local_kbacompany')->get_lock('battleplan:' . $companyuuid . ':' . $planuuid, 10);
         if (!$lock) { self::fail('lock'); }
         try {
+            // N28 (COORD-D05): hold the communication gate through this commit (lock order: object lock -> gate).
+            $gate = communication_write_gate::acquire($companyuuid);
             $plan = self::plan($companyuuid, $planuuid, $actor);
             if (!$canmanage && (int)$plan->userid !== $actor) { self::fail('permission'); }
             if ((string)$plan->status === 'closed') { self::fail('state'); }
             $plan->observerid = $observerid;
             $plan->timemodified = time();
             $DB->update_record('local_kbacompany_bplan', $plan);
-        } finally { $lock->release(); }
+        } finally { if (isset($gate)) { $gate->release(); } $lock->release(); }
     }
 
     /** Populate a draft plan from its pinned template revision. Repeated application is idempotent. */
@@ -831,13 +843,15 @@ class battle_plan_service {
         $lock = \core\lock\lock_config::get_lock_factory('local_kbacompany')->get_lock('battleplan:'.$companyuuid.':'.$planuuid,10);
         if (!$lock) { self::fail('lock'); }
         try {
+            // N28 (COORD-D05): hold the communication gate through this commit (lock order: object lock -> gate).
+            $gate = communication_write_gate::acquire($companyuuid);
             $plan=self::plan($companyuuid,$planuuid,$actor);
             self::assert_draft_access($companyuuid,$actor,$plan); self::assert_token($plan,$expected);
             $item=$DB->get_record('local_kbacompany_bplanitem',['companyuuid'=>$companyuuid,'planuuid'=>$planuuid,'uuid'=>$itemuuid]);
             if (!$item) { self::fail('reference'); }
             // Removing the link must not remove the task or a review-history row.
             $DB->delete_records('local_kbacompany_bplanitem',['companyuuid'=>$companyuuid,'planuuid'=>$planuuid,'uuid'=>$itemuuid]);
-        } finally { $lock->release(); }
+        } finally { if (isset($gate)) { $gate->release(); } $lock->release(); }
     }
 
     public static function add_from_admin_scale(string $companyuuid, int $actor, string $planuuid, string $sourceuuid): string {
@@ -909,6 +923,8 @@ class battle_plan_service {
         $lock = \core\lock\lock_config::get_lock_factory('local_kbacompany')->get_lock('battleplan:' . $companyuuid . ':' . $planuuid, 10);
         if (!$lock) { self::fail('lock'); }
         try {
+            // N28 (COORD-D05): hold the communication gate through this commit (lock order: object lock -> gate).
+            $gate = communication_write_gate::acquire($companyuuid);
             $tx = $DB->start_delegated_transaction();
             $plan = self::plan($companyuuid, $planuuid, $actor);
             self::assert_token($plan, $expected);
@@ -991,7 +1007,7 @@ class battle_plan_service {
         } catch (\Throwable $e) {
             if (isset($tx)) { $tx->rollback($e); }
             throw $e;
-        } finally { $lock->release(); }
+        } finally { if (isset($gate)) { $gate->release(); } $lock->release(); }
     }
 
     /** Review a submitted Battle Plan. Approval activates it; correction returns it to draft. */
@@ -1010,6 +1026,8 @@ class battle_plan_service {
             ->get_lock('battleplan:' . $companyuuid . ':' . $planuuid, 10);
         if (!$lock) { self::fail('lock'); }
         try {
+            // N28 (COORD-D05): hold the communication gate through this commit (lock order: object lock -> gate).
+            $gate = communication_write_gate::acquire($companyuuid);
             $tx = $DB->start_delegated_transaction();
             $plan = self::plan($companyuuid, $planuuid, $actor);
             self::assert_token($plan, $expected);
@@ -1067,6 +1085,7 @@ class battle_plan_service {
             if (isset($tx)) { $tx->rollback($e); }
             throw $e;
         } finally {
+            if (isset($gate)) { $gate->release(); }
             $lock->release();
         }
     }
@@ -1767,6 +1786,8 @@ class battle_plan_service {
         $lock = \core\lock\lock_config::get_lock_factory('local_kbacompany')->get_lock('battleplan:'.$companyuuid.':'.$planuuid, 10);
         if (!$lock) { self::fail('lock'); }
         try {
+            // N28 (COORD-D05): hold the communication gate through this commit (lock order: object lock -> gate).
+            $gate = communication_write_gate::acquire($companyuuid);
             $tx = $DB->start_delegated_transaction();
             $plan = self::plan($companyuuid, $planuuid, $actor);
             self::assert_token($plan, $expected);
@@ -1847,7 +1868,7 @@ class battle_plan_service {
             $DB->update_record('local_kbacompany_bplan',$plan);
             $tx->allow_commit();
         } catch (\Throwable $e) { if (isset($tx)) { $tx->rollback($e); } throw $e; }
-        finally { $lock->release(); }
+        finally { if (isset($gate)) { $gate->release(); } $lock->release(); }
     }
 
 

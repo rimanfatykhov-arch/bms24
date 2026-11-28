@@ -532,6 +532,16 @@ class communication_service {
                 && !daily_report_discussion_service::can_post_for($companyuuid, $actor, (string)$thread->contextuuid)) {
             self::fail('permission');
         }
+        // N28 (COORD-D05): task and Battle Plan discussions re-check the current write right under the gate; an object
+        // ACL writer that removed it holds the same gate through its commit, so no post lands after a revocation.
+        if ((string)$thread->threadtype === 'object' && (string)$thread->contextkind === 'task'
+                && !task_service::can_post_discussion_for($companyuuid, $actor, (string)$thread->contextuuid)) {
+            self::fail('permission');
+        }
+        if ((string)$thread->threadtype === 'object' && (string)$thread->contextkind === battle_plan_discussion_service::KIND
+                && !battle_plan_service::can_post_discussion_for($companyuuid, $actor, (string)$thread->contextuuid)) {
+            self::fail('permission');
+        }
         $body = trim($body);
         if (($body === '' && !$withfile) || \core_text::strlen($body) > 20000) { self::fail('invalid'); }
         if ($replytouuid !== '') {

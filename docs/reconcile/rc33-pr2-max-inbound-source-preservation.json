@@ -1,6 +1,6 @@
 {
  "scope": "exact intentional source updates; not runtime, concurrency or release acceptance",
- "base_sha": "74e00c4a63cbd5d37759e604753ebaa4b4fc7947 (main 74e00c4, R5a #172, via PR-1 cd1bcbb; previously synced on main 0884643; PR-2 first written on 9c9bc0cca8f9ed668c449180f43c16202503ec14)",
+ "base_sha": "79186e6b22afd0200a6b7a0e4e2f8ebbdffb6586 (main 79186e6, via PR-1 2c6e083 with N28; previously main 74e00c4 R5a #172 via PR-1 cd1bcbb, and main 0884643; PR-2 first written on 9c9bc0cca8f9ed668c449180f43c16202503ec14)",
  "normalization": "CRLF to LF only",
  "previous_evidence": "docs/reconcile/rc33-pr1-communication-write-gate-source-preservation.json; lang chain after docs/reconcile/daily-reports-r5a-source-preservation.json (main R5a #172)",
  "decision": "docs/reconcile/RC33_PR2_MAX_INBOUND_SERVER.md and docs/adr/ADR-0012-temporary-narrow-inbound-delegation.md (owner D1-D4 2026-11-24, PR #88 / issue #75; split approved 2026-11-24)",
@@ -8,8 +8,8 @@
  "files": [
   {
    "path": "local/kbacompany/classes/local/communication_service.php",
-   "before_sha256_lf": "c312947922c1c1af07f64f2fc6f45ab1270b7f08e2d3c76a348ae7b90cb15193",
-   "after_sha256_lf": "4de9260667db86b3505fda15a64b779cbd30797b06876fa7cf3b01b29a5ea6ad"
+   "before_sha256_lf": "610d395738b1f39c8daa5ca0f37ff729299521839caa2dbeba15a75584e3cc38",
+   "after_sha256_lf": "b002d918e9dcdb6ad39244e0bef04f74b8914d2e756b4766d4e78098235da64e"
   },
   {
    "path": "local/kbacompany/lang/en/local_kbacompany.php",
