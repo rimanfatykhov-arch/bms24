@@ -141,6 +141,10 @@ def check(root=ROOT):
     # See docs/reconcile/daily-reports-r5a-source-preservation.json.
     reviewed_followup['local/kbacompany/lang/en/local_kbacompany.php'] = '62af4834f4441502e5ebc4b535b508d3369f46b35f61aca9a2f6edf8e77e76e6'
     reviewed_followup['local/kbacompany/lang/ru/local_kbacompany.php'] = '02c53ab3bafd6aa9fab2c2f8fd4475456a32cb2d96f17b7d9c7fc01179bc730f'
+    # Terminology BMS-STD-TER-001 (#187, owner approval 2026-11-25): exact in-place RU/EN value replacements, same keys.
+    # See docs/reconcile/terminology-cascade-std-source-preservation.json (line-by-line before/after).
+    reviewed_followup['local/kbacompany/lang/en/local_kbacompany.php'] = 'e0d49c73c41b137f6d6927eda8afc128c30a0b30ac5917c24a443f201ca9bf47'
+    reviewed_followup['local/kbacompany/lang/ru/local_kbacompany.php'] = '07df4610a4549fe8a08b92107cdefb480796e15fe40ee371a4e36c2286cfa0e4'
     for row in plan['rows']:
         path=root/row['path']
         if not path.is_file() or path.is_symlink():
