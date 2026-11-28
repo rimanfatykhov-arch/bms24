@@ -1,6 +1,7 @@
-"""Offline tests for the CLOUD-1a contract validator (stdlib unittest only).
+"""Offline tests for the CLOUD-1a contract validator (stdlib unittest; PyYAML optional).
 
 Run: python -m unittest discover -s cloud/tests -v
+Optional: set BMS24_REG002_ZIP=<path to the original REG-002 ZIP> to re-verify the package.
 These tests prove contract and fixture consistency only; they are not runtime,
 restore (G3) or application ACL evidence.
 """
@@ -19,6 +20,11 @@ import zipfile
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, os.path.join(os.path.dirname(HERE), "tools"))
 import cloud_contracts as cc  # noqa: E402
+
+try:
+    import yaml
+except ImportError:  # optional; only for the YAML == JSON check
+    yaml = None
 
 
 def run_cli(*argv):
@@ -78,6 +84,11 @@ class SuiteTests(ContextMixin, unittest.TestCase):
             covered |= set(data["expect"].get("violations", []))
         self.assertFalse(wanted - covered)
 
+    def test_fixture_versions(self):
+        for data in self.fixtures.values():
+            self.assertEqual(data["fixture_version"], "0.1.1")
+            self.assertEqual(data["payload"]["payload_version"], "bms24.cloud.exchange/0.1.1")
+
     def test_json_output_is_stable(self):
         first = run_cli("--json", "validate")
         second = run_cli("--json", "validate")
@@ -88,40 +99,63 @@ class SuiteTests(ContextMixin, unittest.TestCase):
 
 
 class SemanticTests(ContextMixin, unittest.TestCase):
-    def test_shared_instance_must_not_own_workspace(self):
+    def test_registry_part_is_a_valid_reg002_exchange_document(self):
+        package_schema = cc.Schema(cc.load_json(cc.PKG_SCHEMA))
+        self.assertEqual(package_schema.validate(self.base_payload()["registry"]), [])
+
+    def test_package_required_field_enforced(self):
         payload = self.base_payload()
-        payload["state"]["application_instances"][0]["workspace_uuid"] = payload["state"]["workspaces"][0]["workspace_uuid"]
-        self.assertIn("INV_ISOLATION_RULE", self.codes_for(payload))
+        del payload["registry"]["customers"][0]["updated_at"]
+        self.assertEqual(self.codes_for(payload), ["SCHEMA_REQUIRED"])
+
+    def test_cloud1a_field_inside_registry_rejected(self):
+        payload = self.base_payload()
+        payload["registry"]["application_instances"][0]["isolation"] = "shared"
+        self.assertEqual(self.codes_for(payload), ["SCHEMA_ADDITIONAL_PROPERTY"])
+
+    def test_shared_only_application_cannot_be_workspace_bound(self):
+        payload = self.base_payload()
+        academy = [i for i in payload["registry"]["application_instances"] if i["application_code"] == "academy"][0]
+        academy["workspace_uuid"] = payload["registry"]["workspaces"][0]["workspace_uuid"]
+        self.assertEqual(self.codes_for(payload), ["INV_ISOLATION_RULE"])
 
     def test_job_idempotency_conflict_within_registry(self):
         payload = self.base_payload()
-        job = dict(payload["state"]["provisioning_jobs"][0])
-        job["job_uuid"] = "40000000-000b-4000-8000-000000000099"
-        job["request_hash"] = hashlib.sha256(b"different").hexdigest()
-        payload["state"]["provisioning_jobs"].append(job)
-        audit = dict(payload["state"]["audit_events"][0], audit_uuid="50000000-0000-4000-8000-000000000099",
-                     target_id=job["job_uuid"], target_type="provisioning_job", workspace_uuid=job["workspace_uuid"])
-        payload["state"]["audit_events"].append(audit)
+        jobs = payload["registry"]["provisioning_jobs"]
+        job = dict(jobs[0], job_uuid="40000000-000b-4000-8000-000000000099")
+        jobs.append(job)
+        first = payload["extensions"]["provisioning_jobs"][jobs[0]["job_uuid"]]
+        payload["extensions"]["provisioning_jobs"][job["job_uuid"]] = dict(first, request_hash=hashlib.sha256(b"different").hexdigest())
+        payload["registry"]["audit_events"].append(dict(
+            payload["registry"]["audit_events"][0], audit_uuid="50000000-0000-4000-8000-000000000099",
+            target_id=job["job_uuid"], target_type="provisioning_job", workspace_uuid=job["workspace_uuid"]))
         self.assertEqual(self.codes_for(payload), ["INV_IDEMPOTENCY_CONFLICT"])
 
     def test_private_key_value_detected(self):
         payload = self.base_payload()
-        payload["state"]["customers"][0]["metadata"] = {"note": "-----BEGIN RSA PRIVATE KEY-----"}
+        payload["registry"]["customers"][0]["metadata"] = {"note": "-----BEGIN RSA PRIVATE KEY-----"}
         self.assertEqual(self.codes_for(payload), ["INV_RAW_SECRET"])
 
-    def test_secretref_is_allowed(self):
+    def test_base_payload_clean(self):
         self.assertEqual(self.codes_for(self.base_payload()), [])
 
-    def test_raw_credential_reference_rejected_by_schema(self):
+    def test_extension_for_unknown_record_is_dangling(self):
         payload = self.base_payload()
-        payload["state"]["integration_connections"][0]["credential_reference"] = "plain-value"
-        self.assertEqual(self.codes_for(payload), ["SCHEMA_PATTERN"])
+        payload["extensions"]["entitlements"]["10000000-000b-4000-8000-000000000777"] = {"source_type": "trial"}
+        self.assertEqual(self.codes_for(payload), ["INV_DANGLING_REFERENCE"])
+
+    def test_timestamps_with_offsets_compare_by_instant(self):
+        payload = self.base_payload()
+        payload["as_of"] = "2026-11-01T11:00:00+02:00"
+        self.assertEqual(self.codes_for(payload), [])
+        payload["as_of"] = "2026-11-01T10:59:59+02:00"
+        self.assertIn("INV_SNAPSHOT_MISMATCH", self.codes_for(payload))
 
     def test_audit_in_other_workspace(self):
         payload = self.base_payload()
-        for event in payload["state"]["audit_events"]:
+        for event in payload["registry"]["audit_events"]:
             if event["target_type"] == "integration_connection":
-                event["workspace_uuid"] = payload["state"]["workspaces"][0]["workspace_uuid"]
+                event["workspace_uuid"] = payload["registry"]["workspaces"][0]["workspace_uuid"]
         self.assertEqual(self.codes_for(payload), ["INV_CROSS_WORKSPACE_REFERENCE"])
 
     def test_snapshot_rejects_non_mgmt_codes(self):
@@ -191,8 +225,11 @@ class CliTests(unittest.TestCase):
 
 class SchemaSubsetTests(unittest.TestCase):
     def test_unsupported_keyword_fails_closed(self):
-        schema = cc.Schema({"type": "object", "properties": {"a": {"type": "string", "format": "email"}}})
-        self.assertEqual(schema.keyword_errors(), [("#/properties/a", "format")])
+        schema = cc.Schema({"type": "object", "properties": {"a": {"type": "string", "oneOf": []}}})
+        self.assertEqual(schema.keyword_errors(), [("#/properties/a", "oneOf")])
+
+    def test_unknown_format_fails_closed(self):
+        self.assertEqual(cc.Schema({"type": "string", "format": "email"}).keyword_errors(), [("#", "format:email")])
 
     def test_nullable_pattern_applies_only_to_strings(self):
         schema = cc.Schema({"type": ["string", "null"], "pattern": "^x$"})
@@ -203,12 +240,90 @@ class SchemaSubsetTests(unittest.TestCase):
     def test_boolean_is_not_integer(self):
         self.assertEqual([e[0] for e in cc.Schema({"type": "integer"}).validate(True)], ["SCHEMA_TYPE"])
 
-    def test_schema_drift_against_registry_detected(self):
+    def test_any_of_format_and_bounds(self):
+        schema = cc.Schema({"anyOf": [{"type": "string", "format": "date-time"}, {"type": "null"}]})
+        self.assertEqual(schema.validate(None), [])
+        self.assertEqual(schema.validate("2026-11-28T10:00:00+03:00"), [])
+        self.assertEqual([e[0] for e in schema.validate("2026-11-28")], ["SCHEMA_ANY_OF"])
+        bounded = cc.Schema({"type": ["integer", "null"], "minimum": 0, "maximum": 100})
+        self.assertEqual([e[0] for e in bounded.validate(101)], ["SCHEMA_MAXIMUM"])
+        self.assertEqual([e[0] for e in bounded.validate(-1)], ["SCHEMA_MINIMUM"])
+        self.assertEqual(bounded.validate(None), [])
+
+    def test_additional_properties_schema(self):
+        schema = cc.Schema({"type": "object", "additionalProperties": {"type": "integer"}})
+        self.assertEqual([e[0] for e in schema.validate({"a": 1, "b": "x"})], ["SCHEMA_TYPE"])
+
+    def test_imported_schema_fully_supported(self):
+        self.assertEqual(cc.Schema(cc.load_json(cc.PKG_SCHEMA)).keyword_errors(), [])
+
+    def test_vocabulary_drift_detected(self):
         ctx = cc.build_context(cc.REPO_ROOT)
-        ctx["schema"].doc["$defs"]["workspace"]["properties"]["status"]["enum"].append("paused")
+        ctx["schema"].doc["$defs"]["entitlement_ext"]["properties"]["source_type"]["enum"].append("gift")
         report = cc.Report()
         cc.check_contracts(ctx, report)
         self.assertIn("MODEL_ENUM_DRIFT", report.codes())
+
+
+class PackageTests(unittest.TestCase):
+    def setUp(self):
+        self.ctx = cc.build_context(cc.REPO_ROOT)
+
+    def codes(self):
+        report = cc.Report()
+        cc.check_contracts(self.ctx, report)
+        return report.codes()
+
+    @unittest.skipUnless(yaml, "PyYAML not installed; YAML == JSON NOT RUN")
+    def test_yaml_equals_json(self):
+        with open(os.path.join(cc.IMPORTED, "bms_cloud_registry_mvp_v0.1.yaml"), encoding="utf-8") as handle:
+            self.assertEqual(yaml.safe_load(handle), cc.load_json(cc.PKG_MODEL))
+
+    def test_imported_bytes_match_manifest(self):
+        for member in self.ctx["manifest"]["selected_members"]:
+            self.assertEqual(cc.sha256_file(os.path.join(cc.REPO_ROOT, member["import_target"])), member["sha256"])
+
+    def test_hash_mismatch_detected(self):
+        self.ctx["manifest"]["selected_members"][0]["sha256"] = "0" * 64
+        self.assertIn("PKG_HASH_MISMATCH", self.codes())
+
+    def test_package_internal_drift_detected(self):
+        self.ctx["package_schema"]["$defs"]["cloudWorkspace"]["required"].remove("slug")
+        self.assertIn("PKG_MODEL_DRIFT", self.codes())
+
+    def test_overlay_must_map_nine_entities(self):
+        del self.ctx["overlay"]["entities"]["audit_event"]
+        self.ctx["model"] = cc.Model(self.ctx["package"], self.ctx["package_schema"], self.ctx["overlay"])
+        self.assertIn("MODEL_ENTITY_MAPPING", self.codes())
+
+    def test_reconciliation_resolution_checked(self):
+        self.ctx["reconciliation"]["transcription_differences"][0]["resolution"] = "ignored"
+        self.assertIn("RECON_RESOLUTION", self.codes())
+
+    def test_reconciliation_summary_consistent(self):
+        recon = cc.load_json(cc.RECONCILIATION)
+        rows = recon["transcription_differences"]
+        self.assertEqual(recon["summary"]["differences"], len(rows))
+        for resolution in cc.RESOLUTIONS:
+            self.assertEqual(recon["summary"][resolution], sum(1 for r in rows if r["resolution"] == resolution))
+        self.assertEqual(recon["summary"]["package_files_changed"], 0)
+
+    def test_manifest_records_import(self):
+        manifest = cc.load_json(cc.MANIFEST)
+        self.assertEqual(manifest["import"]["state"], "IMPORTED")
+        self.assertEqual(manifest["import"]["members_verified"], "PASS")
+        self.assertEqual(manifest["package"]["sha256"], "093fa2936bc9f32c2828f9acfb2459de37fc221701319d1b9a6e91a699da28f3")
+        self.assertEqual(len(manifest["selected_members"]), 4)
+
+    def test_zip_and_png_not_in_repository(self):
+        for folder, _, files in os.walk(cc.CLOUD_DIR):
+            for name in files:
+                self.assertFalse(name.lower().endswith((".zip", ".png")), os.path.join(folder, name))
+
+    @unittest.skipUnless(os.environ.get("BMS24_REG002_ZIP"), "set BMS24_REG002_ZIP to verify the original package")
+    def test_original_zip_verifies(self):
+        ok, lines = cc.verify_reg002(os.environ["BMS24_REG002_ZIP"], cc.load_json(cc.MANIFEST))
+        self.assertTrue(ok, lines)
 
 
 class MoodleCrossCheckTests(unittest.TestCase):
@@ -223,33 +338,30 @@ class MoodleCrossCheckTests(unittest.TestCase):
             mutate(tmp, mapping)
         return tmp
 
+    def _edit(self, root, rel, old, new):
+        path = os.path.join(root, rel)
+        with open(path, encoding="utf-8") as handle:
+            text = handle.read()
+        self.assertIn(old, text)
+        with open(path, "w", encoding="utf-8") as handle:
+            handle.write(text.replace(old, new))
+
     def test_drift_in_moodle_status_list_detected(self):
-        def mutate(root, mapping):
-            path = os.path.join(root, mapping["moodle_sources"]["workspace_mapping_service"])
-            with open(path, encoding="utf-8") as handle:
-                text = handle.read()
-            text = text.replace("['pending', 'active', 'degraded', 'suspended', 'closed', 'error']",
-                                "['pending', 'active', 'suspended', 'closed', 'error']")
-            with open(path, "w", encoding="utf-8") as handle:
-                handle.write(text)
-        tmp = self._fake_repo(mutate)
+        tmp = self._fake_repo(lambda root, m: self._edit(
+            root, m["moodle_sources"]["workspace_mapping_service"],
+            "['pending', 'active', 'degraded', 'suspended', 'closed', 'error']",
+            "['pending', 'active', 'suspended', 'closed', 'error']"))
         try:
-            ctx = cc.build_context(tmp)
             report = cc.Report()
-            cc.check_contracts(ctx, report)
+            cc.check_contracts(cc.build_context(tmp), report)
             self.assertIn("MAPPING_TARGET_UNKNOWN", report.codes())
         finally:
             shutil.rmtree(tmp)
 
     def test_new_legacy_tariff_code_needs_mapping(self):
-        def mutate(root, mapping):
-            path = os.path.join(root, mapping["moodle_sources"]["bms_tariff_catalog_service"])
-            with open(path, encoding="utf-8") as handle:
-                text = handle.read()
-            text = text.replace("'bms.ai_operations']", "'bms.ai_operations', 'bms.new_limit']")
-            with open(path, "w", encoding="utf-8") as handle:
-                handle.write(text)
-        tmp = self._fake_repo(mutate)
+        tmp = self._fake_repo(lambda root, m: self._edit(
+            root, m["moodle_sources"]["bms_tariff_catalog_service"],
+            "'bms.ai_operations']", "'bms.ai_operations', 'bms.new_limit']"))
         try:
             report = cc.Report()
             cc.check_contracts(cc.build_context(tmp), report)
@@ -266,7 +378,7 @@ class MoodleCrossCheckTests(unittest.TestCase):
 
 
 class Reg002Tests(unittest.TestCase):
-    """verify-reg002 is exercised with a synthetic ZIP and manifest; the real package is not in the repo."""
+    """verify-reg002 behaviour with a synthetic ZIP and manifest."""
 
     def setUp(self):
         self.tmp = tempfile.mkdtemp()
@@ -323,13 +435,8 @@ class Reg002Tests(unittest.TestCase):
         self.assertIn("FAIL member missing.json found 0 times", lines)
 
     def test_missing_zip_is_usage_error(self):
-        code, _, err = run_cli("verify-reg002", "--zip", os.path.join(self.tmp, "absent.zip"))
+        code, _, _ = run_cli("verify-reg002", "--zip", os.path.join(self.tmp, "absent.zip"))
         self.assertEqual(code, cc.EXIT_USAGE)
-
-    def test_real_manifest_pins_codex_verified_hash(self):
-        manifest = cc.load_json(cc.MANIFEST)
-        self.assertEqual(manifest["package"]["sha256"], "093fa2936bc9f32c2828f9acfb2459de37fc221701319d1b9a6e91a699da28f3")
-        self.assertEqual(len(manifest["selected_members"]), 4)
 
 
 if __name__ == "__main__":

@@ -1,6 +1,6 @@
 {
   "fixture_id": "P02_idempotent_replay",
-  "fixture_version": "0.1",
+  "fixture_version": "0.1.1",
   "description": "Replay of the same commercial delivery (same key and hash) resolves to the one existing job.",
   "expect": {
     "valid": true

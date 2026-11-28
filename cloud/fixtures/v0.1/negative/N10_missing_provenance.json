@@ -1,6 +1,6 @@
 {
   "fixture_id": "N10_missing_provenance",
-  "fixture_version": "0.1",
+  "fixture_version": "0.1.1",
   "description": "Manual beta SubscriptionReference without provenance.",
   "expect": {
     "valid": false,
@@ -12,7 +12,7 @@
   "patch": [
     {
       "op": "remove",
-      "path": "/state/subscriptions/0/provenance"
+      "path": "/extensions/subscriptions/f0000000-000b-4000-8000-000000000001"
     }
   ]
 }

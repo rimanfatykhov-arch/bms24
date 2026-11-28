@@ -1,7 +1,7 @@
 {
   "fixture_id": "N15_hard_delete",
-  "fixture_version": "0.1",
-  "description": "Mutation hard-deletes a company link instead of ending it.",
+  "fixture_version": "0.1.1",
+  "description": "Mutation hard-deletes a company link instead of closing it.",
   "expect": {
     "valid": false,
     "violations": [

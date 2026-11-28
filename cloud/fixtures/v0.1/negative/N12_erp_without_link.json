@@ -1,6 +1,6 @@
 {
   "fixture_id": "N12_erp_without_link",
-  "fixture_version": "0.1",
+  "fixture_version": "0.1.1",
   "description": "Active ERP instance of B is not bound to the primary company link.",
   "expect": {
     "valid": false,
@@ -12,7 +12,7 @@
   "patch": [
     {
       "op": "remove",
-      "path": "/state/application_instances/4/company_uuid"
+      "path": "/registry/application_instances/4/company_uuid"
     }
   ]
 }

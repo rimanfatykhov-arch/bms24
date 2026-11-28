@@ -1,6 +1,6 @@
 {
   "fixture_id": "N06_dependency_cycle",
-  "fixture_version": "0.1",
+  "fixture_version": "0.1.1",
   "description": "mgmt.core depends on mgmt.finance.budget, closing a cycle.",
   "expect": {
     "valid": false,

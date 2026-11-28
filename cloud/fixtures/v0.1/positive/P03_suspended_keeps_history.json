@@ -1,7 +1,7 @@
 {
   "fixture_id": "P03_suspended_keeps_history",
-  "fixture_version": "0.1",
-  "description": "Workspace B suspended: links, audit and commercial reference stay; effective entitlements become empty; projection shows suspended.",
+  "fixture_version": "0.1.1",
+  "description": "Workspace B suspended: links, audit and the commercial reference stay; effective entitlements become empty; projection shows suspended.",
   "expect": {
     "valid": true
   },
@@ -9,32 +9,32 @@
   "patch": [
     {
       "op": "replace",
-      "path": "/state/workspaces/1/status",
+      "path": "/registry/workspaces/1/status",
       "value": "suspended"
     },
     {
       "op": "add",
-      "path": "/state/workspaces/1/suspended_at",
+      "path": "/registry/workspaces/1/suspended_at",
       "value": "2026-11-10T00:00:00Z"
     },
     {
       "op": "replace",
-      "path": "/state/subscriptions/0/commercial_status",
+      "path": "/registry/subscriptions/0/commercial_status",
       "value": "suspended"
     },
     {
       "op": "add",
-      "path": "/state/audit_events/-",
+      "path": "/registry/audit_events/-",
       "value": {
-        "audit_uuid": "50000000-0000-4000-8000-000000000019",
-        "actor_type": "operator",
+        "audit_uuid": "50000000-0000-4000-8000-000000000034",
+        "actor_type": "user",
         "actor_id": "synthetic-operator-1",
         "action": "cloud.workspace.suspended",
         "target_type": "workspace",
         "target_id": "b0000000-000b-4000-8000-000000000001",
-        "workspace_uuid": "b0000000-000b-4000-8000-000000000001",
         "occurred_at": "2026-11-10T00:00:00Z",
-        "correlation_id": "corr-019"
+        "correlation_id": "corr-034",
+        "workspace_uuid": "b0000000-000b-4000-8000-000000000001"
       }
     },
     {

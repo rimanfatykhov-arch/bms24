@@ -1,0 +1,624 @@
+schema_version: '0.1'
+model: bms_cloud_registry_mvp
+status: draft_for_approval
+source_contract: BMS-ARC-REG-001 v0.1
+scope: Cloud Registry MVP only; no client business data
+external_references:
+  bms_company:
+    key: company_uuid
+    owner: BMS Management
+    storage: reference only
+  commercial_customer:
+    key: commercial_provider + commercial_customer_id
+    owner: Corporate Odoo BMS24
+    storage: reference only
+  commercial_subscription:
+    key: commercial_provider + subscription_id
+    owner: Corporate Odoo BMS24
+    storage: reference only
+  provider_environment:
+    key: provider_type + provider_environment_id
+    owner: Runtime provider
+    storage: reference only
+  entitlement_catalog:
+    key: entitlement_code
+    owner: BMS Product Entitlement Catalog
+    storage: reference only
+enums:
+  workspace_status:
+  - draft
+  - provisioning
+  - active
+  - degraded
+  - suspended
+  - closing
+  - closed
+  workspace_company_role:
+  - primary
+  - subsidiary
+  - holding_member
+  - sandbox_test
+  link_status:
+  - active
+  - closed
+  entitlement_state:
+  - pending
+  - enabled
+  - suspended
+  - expired
+  - revoked
+  application_code:
+  - mgmt
+  - academy
+  - cloud
+  - erp
+  - int
+  - api
+  application_instance_state:
+  - draft
+  - provisioning
+  - ready
+  - active
+  - degraded
+  - maintenance
+  - suspended
+  - failed
+  - retiring
+  - retired
+  integration_state:
+  - provisioning
+  - healthy
+  - degraded
+  - failed
+  - blocked
+  - suspended
+  - closed
+  provisioning_job_state:
+  - queued
+  - running
+  - waiting_external
+  - retry_scheduled
+  - succeeded
+  - failed
+  - blocked
+  - cancelled
+  - rollback
+  actor_type:
+  - user
+  - service
+  - system
+entities:
+  CloudCustomer:
+    primary_key: customer_uuid
+    fields:
+      customer_uuid:
+        type: uuid
+        required: true
+        immutable: true
+      commercial_provider:
+        type: string
+        required: true
+      commercial_customer_id:
+        type: string
+        required: true
+      display_name:
+        type: string
+        required: true
+      status:
+        type: string
+        required: true
+      created_at:
+        type: timestamp_tz
+        required: true
+      updated_at:
+        type: timestamp_tz
+        required: true
+      metadata:
+        type: object
+        required: false
+    unique_constraints:
+    - - commercial_provider
+      - commercial_customer_id
+    indexes:
+    - - status
+    - - display_name
+  CloudWorkspace:
+    primary_key: workspace_uuid
+    fields:
+      workspace_uuid:
+        type: uuid
+        required: true
+        immutable: true
+      customer_uuid:
+        type: uuid
+        required: true
+      slug:
+        type: string
+        required: true
+        pattern: ^[a-z0-9]+(?:-[a-z0-9]+)*$
+      display_name:
+        type: string
+        required: true
+      status:
+        type: enum
+        required: true
+        enum: workspace_status
+      primary_company_uuid:
+        type: uuid
+        required: false
+        note: optional denormalized pointer; canonical relation is WorkspaceCompanyLink
+      default_region:
+        type: string
+        required: false
+      release_channel:
+        type: string
+        required: false
+      created_at:
+        type: timestamp_tz
+        required: true
+      activated_at:
+        type: timestamp_tz
+        required: false
+      suspended_at:
+        type: timestamp_tz
+        required: false
+      closed_at:
+        type: timestamp_tz
+        required: false
+      metadata:
+        type: object
+        required: false
+    foreign_keys:
+    - field: customer_uuid
+      entity: CloudCustomer
+      target: customer_uuid
+      on_delete: restrict
+    unique_constraints:
+    - - slug
+    indexes:
+    - - customer_uuid
+    - - status
+  WorkspaceCompanyLink:
+    primary_key: link_uuid
+    fields:
+      link_uuid:
+        type: uuid
+        required: true
+        immutable: true
+      workspace_uuid:
+        type: uuid
+        required: true
+      company_uuid:
+        type: uuid
+        required: true
+        note: external canonical BMS Company UUID
+      role:
+        type: enum
+        required: true
+        enum: workspace_company_role
+      status:
+        type: enum
+        required: true
+        enum: link_status
+      effective_from:
+        type: timestamp_tz
+        required: true
+      effective_to:
+        type: timestamp_tz
+        required: false
+      created_at:
+        type: timestamp_tz
+        required: true
+    foreign_keys:
+    - field: workspace_uuid
+      entity: CloudWorkspace
+      target: workspace_uuid
+      on_delete: restrict
+    unique_constraints:
+    - - workspace_uuid
+      - company_uuid
+      - status
+    indexes:
+    - - company_uuid
+    - - workspace_uuid
+      - role
+      - status
+    conditional_invariants:
+    - at most one active role=primary per workspace in v0.1
+  SubscriptionReference:
+    primary_key: subscription_ref_uuid
+    fields:
+      subscription_ref_uuid:
+        type: uuid
+        required: true
+        immutable: true
+      workspace_uuid:
+        type: uuid
+        required: true
+      commercial_provider:
+        type: string
+        required: true
+      subscription_id:
+        type: string
+        required: true
+      product_bundle_code:
+        type: string
+        required: true
+      commercial_status:
+        type: string
+        required: true
+      effective_from:
+        type: timestamp_tz
+        required: false
+      effective_to:
+        type: timestamp_tz
+        required: false
+      last_synced_at:
+        type: timestamp_tz
+        required: true
+      source_revision:
+        type: string
+        required: false
+    foreign_keys:
+    - field: workspace_uuid
+      entity: CloudWorkspace
+      target: workspace_uuid
+      on_delete: restrict
+    unique_constraints:
+    - - commercial_provider
+      - subscription_id
+    indexes:
+    - - workspace_uuid
+    - - commercial_status
+  EntitlementAssignment:
+    primary_key: assignment_uuid
+    fields:
+      assignment_uuid:
+        type: uuid
+        required: true
+        immutable: true
+      workspace_uuid:
+        type: uuid
+        required: true
+      entitlement_code:
+        type: string
+        required: true
+      state:
+        type: enum
+        required: true
+        enum: entitlement_state
+      source_reference:
+        type: string
+        required: true
+      effective_from:
+        type: timestamp_tz
+        required: false
+      effective_to:
+        type: timestamp_tz
+        required: false
+      value:
+        type: json_scalar
+        required: false
+      revision:
+        type: integer
+        required: true
+        minimum: 1
+      created_at:
+        type: timestamp_tz
+        required: true
+      updated_at:
+        type: timestamp_tz
+        required: true
+    foreign_keys:
+    - field: workspace_uuid
+      entity: CloudWorkspace
+      target: workspace_uuid
+      on_delete: restrict
+    indexes:
+    - - workspace_uuid
+      - entitlement_code
+    - - state
+    - - source_reference
+    notes:
+    - multiple assignment sources are allowed; effective entitlement is resolved by Entitlement Service
+  ApplicationInstance:
+    primary_key: instance_uuid
+    fields:
+      instance_uuid:
+        type: uuid
+        required: true
+        immutable: true
+      application_code:
+        type: enum
+        required: true
+        enum: application_code
+      workspace_uuid:
+        type: uuid
+        required: false
+        note: null for shared platform runtime; required for isolated ERP
+      company_uuid:
+        type: uuid
+        required: false
+      provider_type:
+        type: string
+        required: true
+      provider_environment_id:
+        type: string
+        required: false
+      state:
+        type: enum
+        required: true
+        enum: application_instance_state
+      canonical_url:
+        type: string
+        required: false
+      release_channel:
+        type: string
+        required: false
+      current_release:
+        type: string
+        required: false
+      created_at:
+        type: timestamp_tz
+        required: true
+      activated_at:
+        type: timestamp_tz
+        required: false
+      suspended_at:
+        type: timestamp_tz
+        required: false
+      metadata:
+        type: object
+        required: false
+    foreign_keys:
+    - field: workspace_uuid
+      entity: CloudWorkspace
+      target: workspace_uuid
+      on_delete: restrict
+      nullable: true
+    indexes:
+    - - workspace_uuid
+      - application_code
+      - state
+    - - provider_type
+      - provider_environment_id
+    conditional_invariants:
+    - application_code=erp requires workspace_uuid before activation
+    - shared mgmt/academy runtime may have workspace_uuid=null
+  IntegrationConnection:
+    primary_key: connection_uuid
+    fields:
+      connection_uuid:
+        type: uuid
+        required: true
+        immutable: true
+      workspace_uuid:
+        type: uuid
+        required: true
+      company_uuid:
+        type: uuid
+        required: false
+      provider_type:
+        type: string
+        required: true
+      provider_environment:
+        type: string
+        required: true
+      purpose:
+        type: string
+        required: true
+      state:
+        type: enum
+        required: true
+        enum: integration_state
+      contract_version:
+        type: string
+        required: true
+      adapter_version:
+        type: string
+        required: true
+      credential_reference:
+        type: string
+        required: true
+        note: reference only; never raw secret
+      last_success_at:
+        type: timestamp_tz
+        required: false
+      last_failure_at:
+        type: timestamp_tz
+        required: false
+      last_reconciliation_at:
+        type: timestamp_tz
+        required: false
+      metadata:
+        type: object
+        required: false
+    foreign_keys:
+    - field: workspace_uuid
+      entity: CloudWorkspace
+      target: workspace_uuid
+      on_delete: restrict
+    unique_constraints:
+    - - workspace_uuid
+      - provider_type
+      - provider_environment
+      - purpose
+    indexes:
+    - - workspace_uuid
+      - state
+    - - provider_type
+      - state
+  ProvisioningJob:
+    primary_key: job_uuid
+    fields:
+      job_uuid:
+        type: uuid
+        required: true
+        immutable: true
+      workspace_uuid:
+        type: uuid
+        required: true
+      target_type:
+        type: string
+        required: true
+      target_id:
+        type: string
+        required: false
+      operation:
+        type: string
+        required: true
+      idempotency_key:
+        type: string
+        required: true
+      state:
+        type: enum
+        required: true
+        enum: provisioning_job_state
+      step:
+        type: string
+        required: false
+      progress:
+        type: integer
+        required: false
+        minimum: 0
+        maximum: 100
+      attempt_count:
+        type: integer
+        required: true
+        minimum: 0
+      requested_by:
+        type: string
+        required: true
+      started_at:
+        type: timestamp_tz
+        required: false
+      completed_at:
+        type: timestamp_tz
+        required: false
+      last_error:
+        type: string
+        required: false
+      correlation_id:
+        type: string
+        required: true
+      created_at:
+        type: timestamp_tz
+        required: true
+    foreign_keys:
+    - field: workspace_uuid
+      entity: CloudWorkspace
+      target: workspace_uuid
+      on_delete: restrict
+    unique_constraints:
+    - - workspace_uuid
+      - operation
+      - idempotency_key
+    indexes:
+    - - workspace_uuid
+      - state
+    - - correlation_id
+  AuditEvent:
+    primary_key: audit_uuid
+    fields:
+      audit_uuid:
+        type: uuid
+        required: true
+        immutable: true
+      workspace_uuid:
+        type: uuid
+        required: false
+      actor_type:
+        type: enum
+        required: true
+        enum: actor_type
+      actor_id:
+        type: string
+        required: true
+      action:
+        type: string
+        required: true
+      target_type:
+        type: string
+        required: true
+      target_id:
+        type: string
+        required: true
+      before_summary:
+        type: object
+        required: false
+      after_summary:
+        type: object
+        required: false
+      reason:
+        type: string
+        required: false
+      correlation_id:
+        type: string
+        required: false
+      occurred_at:
+        type: timestamp_tz
+        required: true
+    foreign_keys:
+    - field: workspace_uuid
+      entity: CloudWorkspace
+      target: workspace_uuid
+      on_delete: set_null
+      nullable: true
+    indexes:
+    - - workspace_uuid
+      - occurred_at
+    - - target_type
+      - target_id
+    - - correlation_id
+    notes:
+    - append-only; no update/delete in normal operation
+relationships:
+- from: CloudCustomer
+  to: CloudWorkspace
+  cardinality: 1:N
+  via: CloudWorkspace.customer_uuid
+- from: CloudWorkspace
+  to: WorkspaceCompanyLink
+  cardinality: 1:N
+  via: WorkspaceCompanyLink.workspace_uuid
+- from: WorkspaceCompanyLink
+  to: BMS Company (external)
+  cardinality: N:1
+  via: company_uuid
+- from: CloudWorkspace
+  to: SubscriptionReference
+  cardinality: 1:N
+  via: SubscriptionReference.workspace_uuid
+- from: CloudWorkspace
+  to: EntitlementAssignment
+  cardinality: 1:N
+  via: EntitlementAssignment.workspace_uuid
+- from: CloudWorkspace
+  to: ApplicationInstance
+  cardinality: 1:N for isolated apps; shared apps may be global
+  via: ApplicationInstance.workspace_uuid
+- from: CloudWorkspace
+  to: IntegrationConnection
+  cardinality: 1:N
+  via: IntegrationConnection.workspace_uuid
+- from: CloudWorkspace
+  to: ProvisioningJob
+  cardinality: 1:N
+  via: ProvisioningJob.workspace_uuid
+- from: CloudWorkspace
+  to: AuditEvent
+  cardinality: 1:N optional
+  via: AuditEvent.workspace_uuid
+invariants:
+- workspace_uuid is immutable
+- CloudCustomer and BMS Company are different entities
+- CloudWorkspace and BMS Company are linked only through WorkspaceCompanyLink in canonical relations
+- v0.1 allows exactly one active Primary WorkspaceCompanyLink per Workspace
+- No raw secrets are stored in Registry
+- All Control Plane mutations create AuditEvent records
+- Repeated commercial/provisioning triggers must be idempotent
+- Closed Workspace cannot create a new ProvisioningJob until explicitly reactivated
+- Shared Moodle runtime is not provisioned per customer; access is represented by entitlement + shared application availability
+- ERP ApplicationInstance requires workspace_uuid and a BMS Company link before activation
+- Human-readable slug/display_name/provider IDs are not canonical identity
+- Lifecycle suspension/closure must not cascade-delete BMS Company or historical Registry records

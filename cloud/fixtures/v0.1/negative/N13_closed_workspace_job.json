@@ -1,7 +1,7 @@
 {
   "fixture_id": "N13_closed_workspace_job",
-  "fixture_version": "0.1",
-  "description": "Job created after closure without recorded reactivation.",
+  "fixture_version": "0.1.1",
+  "description": "Job created after closure without an audited reactivation.",
   "expect": {
     "valid": false,
     "violations": [
@@ -12,7 +12,7 @@
   "patch": [
     {
       "op": "remove",
-      "path": "/state/workspaces/0/reactivated_at"
+      "path": "/registry/audit_events/34"
     }
   ]
 }

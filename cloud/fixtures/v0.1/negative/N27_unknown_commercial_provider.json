@@ -1,0 +1,19 @@
+{
+  "fixture_id": "N27_unknown_commercial_provider",
+  "fixture_version": "0.1.1",
+  "description": "Customer uses a commercial provider outside the CLOUD-1a vocabulary.",
+  "expect": {
+    "valid": false,
+    "violations": [
+      "INV_VOCABULARY"
+    ]
+  },
+  "base": "P01_hybrid_ab",
+  "patch": [
+    {
+      "op": "replace",
+      "path": "/registry/customers/0/commercial_provider",
+      "value": "unknown_provider"
+    }
+  ]
+}

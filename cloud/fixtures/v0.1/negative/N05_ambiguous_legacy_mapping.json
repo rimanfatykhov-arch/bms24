@@ -1,6 +1,6 @@
 {
   "fixture_id": "N05_ambiguous_legacy_mapping",
-  "fixture_version": "0.1",
+  "fixture_version": "0.1.1",
   "description": "Legacy management.tasks mapped to two canonical codes.",
   "expect": {
     "valid": false,

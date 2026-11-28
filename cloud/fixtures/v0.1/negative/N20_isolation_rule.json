@@ -1,7 +1,7 @@
 {
   "fixture_id": "N20_isolation_rule",
-  "fixture_version": "0.1",
-  "description": "ERP declared as a shared instance.",
+  "fixture_version": "0.1.1",
+  "description": "ERP instance without workspace (shared ERP) is not allowed.",
   "expect": {
     "valid": false,
     "violations": [
@@ -12,8 +12,8 @@
   "patch": [
     {
       "op": "replace",
-      "path": "/state/application_instances/2/isolation",
-      "value": "shared"
+      "path": "/registry/application_instances/2/workspace_uuid",
+      "value": null
     }
   ]
 }

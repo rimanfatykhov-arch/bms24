@@ -1,0 +1,104 @@
+{
+  "contract": "bms24.cloud.registry_overlay",
+  "contract_version": "0.1.1",
+  "status": "PROPOSED",
+  "authority": {
+    "logical_model": "cloud/contracts/registry/v0.1/imported/bms_cloud_registry_mvp_v0.1.json",
+    "logical_model_yaml": "cloud/contracts/registry/v0.1/imported/bms_cloud_registry_mvp_v0.1.yaml",
+    "exchange_schema": "cloud/contracts/registry/v0.1/imported/bms_cloud_registry_mvp_exchange_v0.1.schema.json",
+    "erd": "cloud/contracts/registry/v0.1/imported/bms_cloud_registry_mvp_erd_v0.1.mmd",
+    "rule": "The imported REG-002 v0.1 package is the authority for the nine entities, their fields, required flags, enums, primary keys, unique constraints and foreign keys. This overlay only maps short names to package entities and adds CLOUD-1a vocabulary, extensions and invariants. Every addition is listed in reg002_reconciliation.json; none changes a package file."
+  },
+  "provenance": {
+    "source": "REG-002 package (verified import, see cloud/contracts/provenance/reg002_package_manifest.json); BMS-ARC-REG-001 v0.1; BMS-ARC-ENT-001 v0.1; owner decisions OD-1/6/8",
+    "source_urls": [
+      "https://docs.google.com/document/d/12DvSqybN58QFcxWFziJfmwCCENZW9Fo5zQ7f_7rIYig/edit",
+      "https://docs.google.com/document/d/1mC6aEAWzMnBuE2ovZpfumG-T5LHj2Y8XDcZadQpaLsk/edit",
+      "https://github.com/rimanfatykhov-arch/bms24/pull/207#issuecomment-7236311964"
+    ],
+    "supersedes": "registry_mvp.json at f30cbae (hand transcription from document text); differences are recorded in reg002_reconciliation.json"
+  },
+  "entities": {
+    "customer": {"reg002_entity": "CloudCustomer", "immutable_extension": []},
+    "workspace": {"reg002_entity": "CloudWorkspace", "immutable_extension": ["customer_uuid"]},
+    "company_link": {"reg002_entity": "WorkspaceCompanyLink", "immutable_extension": ["workspace_uuid", "company_uuid"]},
+    "subscription": {"reg002_entity": "SubscriptionReference", "immutable_extension": ["workspace_uuid", "commercial_provider", "subscription_id"]},
+    "entitlement_assignment": {"reg002_entity": "EntitlementAssignment", "immutable_extension": ["workspace_uuid"]},
+    "application_instance": {"reg002_entity": "ApplicationInstance", "immutable_extension": ["application_code", "workspace_uuid"]},
+    "integration_connection": {"reg002_entity": "IntegrationConnection", "immutable_extension": ["workspace_uuid", "company_uuid"]},
+    "provisioning_job": {"reg002_entity": "ProvisioningJob", "immutable_extension": ["workspace_uuid", "operation", "idempotency_key"]},
+    "audit_event": {"reg002_entity": "AuditEvent", "immutable_extension": ["*"], "append_only": true}
+  },
+  "vocabularies": {
+    "commercial_provider": ["odoo_corporate", "manual_beta"],
+    "subscription_source_type": ["manual_registration", "commercial_sync"],
+    "assignment_source_type": ["commercial_subscription", "commercial_order", "manual_admin_grant", "pilot", "trial", "internal_demo", "migration", "support_override"],
+    "mutation_op": ["update", "delete"]
+  },
+  "vocabulary_provenance": {
+    "commercial_provider": "CLOUD-1a extension X03 per OD-8; the package keeps commercial_provider a free string",
+    "subscription_source_type": "CLOUD-1a extension X01 per OD-8",
+    "assignment_source_type": "CLOUD-1a extension X02, values from ENT-001 §6",
+    "mutation_op": "CLOUD-1a fixtures only (REG-001 §47 soft delete)"
+  },
+  "derived_rules": {
+    "isolation": "derived, not stored: ApplicationInstance.workspace_uuid null = shared platform runtime, set = isolated (package conditional_invariants)",
+    "reactivation": "derived: a workspace with closed_at is reactivated only by an audit event action cloud.workspace.reactivated, target the workspace, occurred after closed_at; status must no longer be closed",
+    "manual_grant_reason": "derived: AuditEvent.reason of an audit event targeting the assignment"
+  },
+  "application_definitions": {
+    "mgmt": {"runtime_type": "moodle", "isolation_allowed": ["shared", "isolated"], "owner": "local_kbacompany", "note": "isolated per OD-1, clarification C2"},
+    "academy": {"runtime_type": "moodle", "isolation_allowed": ["shared"], "owner": "moodle_core_and_local_kbacorporate"},
+    "cloud": {"runtime_type": "control_plane", "isolation_allowed": ["shared"], "owner": "bms_cloud_control_plane"},
+    "erp": {"runtime_type": "odoo", "isolation_allowed": ["isolated"], "owner": "odoo_erp"},
+    "int": {"runtime_type": "integration_hub", "isolation_allowed": ["shared"], "owner": "integration_hub"},
+    "api": {"runtime_type": "public_api", "isolation_allowed": ["shared"], "owner": "local_kbacompany"}
+  },
+  "provisioning_handlers": [
+    "operator_checklist.mgmt_isolated_space",
+    "operator_checklist.erp_environment",
+    "operator_checklist.integration_connection",
+    "operator_checklist.workspace_activation"
+  ],
+  "invariants": [
+    {"id": "INV_DUPLICATE_ID", "source": "package primary_key", "text": "every registry object id is unique within its collection"},
+    {"id": "INV_DUPLICATE_UNIQUE_KEY", "source": "package unique_constraints (incl. CloudWorkspace.slug, WorkspaceCompanyLink workspace+company+status)", "text": "declared unique keys are unique"},
+    {"id": "INV_DANGLING_REFERENCE", "source": "package foreign_keys; extension keys", "text": "every internal reference and every extension key resolves"},
+    {"id": "INV_PRIMARY_LINK", "source": "package invariant 'exactly one active Primary WorkspaceCompanyLink'; CloudWorkspace.primary_company_uuid note", "text": "at most one active primary link per workspace; exactly one for provisioning/active/degraded/suspended/closing; primary_company_uuid, when set, equals it"},
+    {"id": "INV_CROSS_WORKSPACE_REFERENCE", "source": "REG-001 §48, CLOUD-001 §21", "text": "a company referenced by a workspace-scoped object is actively linked to that workspace; a company is active primary in at most one workspace; audit workspace matches target workspace"},
+    {"id": "INV_IMMUTABLE_FIELD", "source": "package immutable primary keys; package invariant 'workspace_uuid is immutable'; overlay immutable_extension (X07)", "text": "immutable fields are never changed by a mutation"},
+    {"id": "INV_SOFT_DELETE_ONLY", "source": "package invariant 'must not cascade-delete ... historical Registry records'; REG-001 §47", "text": "registry records are never deleted"},
+    {"id": "INV_AUDIT_MISSING", "source": "package invariant 'All Control Plane mutations create AuditEvent records'", "text": "every registry object has at least one audit event targeting it"},
+    {"id": "INV_AUDIT_APPEND_ONLY", "source": "package AuditEvent note 'append-only'", "text": "audit events are never updated or deleted"},
+    {"id": "INV_IDEMPOTENCY_CONFLICT", "source": "package invariant 'Repeated ... triggers must be idempotent'; extension X04 request_hash", "text": "one idempotency scope key never carries different request content"},
+    {"id": "INV_IDEMPOTENT_DUPLICATE_RESULT", "source": "package unique (workspace_uuid, operation, idempotency_key)", "text": "a repeated trigger with the same scope key yields exactly one resulting object"},
+    {"id": "INV_CLOSED_WORKSPACE_JOB", "source": "package invariant 'Closed Workspace cannot create a new ProvisioningJob until explicitly reactivated'", "text": "no job created after closed_at unless an audited reactivation precedes it"},
+    {"id": "INV_ERP_REQUIRES_COMPANY_LINK", "source": "package invariant 'ERP ApplicationInstance requires workspace_uuid and a BMS Company link before activation'", "text": "an ERP instance beyond draft has a workspace and the company of its active primary link"},
+    {"id": "INV_ISOLATION_RULE", "source": "package ApplicationInstance conditional_invariants; OD-1", "text": "derived isolation is allowed by the application definition"},
+    {"id": "INV_DUPLICATE_INSTANCE", "source": "REG-001 §62", "text": "no two non-retired isolated instances for the same workspace and application"},
+    {"id": "INV_DUPLICATE_PROVIDER_ENV", "source": "package external_references provider_environment key provider_type + provider_environment_id", "text": "an isolated provider environment is used by one instance"},
+    {"id": "INV_HISTORY_REQUIRED", "source": "package invariant 'suspension/closure must not cascade-delete'", "text": "a suspended or closed workspace keeps its links and audit history"},
+    {"id": "INV_RAW_SECRET", "source": "package invariant 'No raw secrets are stored in Registry'; credential_reference note; extension X08 secretref form", "text": "no secret-like keys or private key material; credential_reference is a secretref:// reference"},
+    {"id": "INV_PROVENANCE_MISSING", "source": "OD-8; extension X01", "text": "every SubscriptionReference has provenance with an audit event about it; manual_beta requires manual_registration"},
+    {"id": "INV_EXTENSION_MISSING", "source": "extensions X02, X04, X05", "text": "every assignment has source_type and every job has handler and request_hash"},
+    {"id": "INV_VOCABULARY", "source": "extension X03", "text": "commercial_provider and source types use the CLOUD-1a vocabularies"},
+    {"id": "INV_UNKNOWN_CODE", "source": "ENT-001 §10, §43; package external_references entitlement_catalog", "text": "unknown entitlement or bundle code is rejected (fail-closed)"},
+    {"id": "INV_BUNDLE_SCOPE", "source": "ENT-001 §12; package SubscriptionReference.product_bundle_code", "text": "a commercial_subscription assignment grants only a code contained in the subscription's product bundle"},
+    {"id": "INV_UNKNOWN_HANDLER", "source": "ENT-001 §49", "text": "jobs and provisioning entitlements reference a declared handler"},
+    {"id": "INV_MANUAL_GRANT_REASON", "source": "ENT-001 §6; derived from AuditEvent.reason", "text": "manual_admin_grant and support_override have an audit event with a reason"},
+    {"id": "INV_DEPENDENCY_MISSING", "source": "ENT-001 §29", "text": "an effective entitlement has all dependencies effective"},
+    {"id": "INV_PROJECTION_MISMATCH", "source": "workspace_mapping_service 0.6.8, REG-001 §57", "text": "the Moodle cloudmap projection agrees with the registry via WorkspaceCompanyLink and the status mapping"},
+    {"id": "INV_SNAPSHOT_MISMATCH", "source": "entitlement_snapshot_service 0.6.7, ENT-001 §14", "text": "a Moodle snapshot contains exactly the effective mgmt.* codes of its workspace"}
+  ],
+  "clarifications": [
+    {"id": "C1", "topic": "ERP not-provisioned state", "detail": "REG-001 §60 uses 'Not Provisioned'; the package application_instance_state has no such value. v0.1 uses 'draft' and maps it to cloudmap 'not_provisioned'. Needs REG v0.2 decision."},
+    {"id": "C2", "topic": "isolated mgmt", "detail": "The package allows shared mgmt/academy with workspace_uuid=null and does not forbid a workspace-bound mgmt instance. OD-1 requires isolated spaces, so v0.1 allows mgmt with a workspace. Needs REG v0.2 confirmation."},
+    {"id": "C3", "topic": "values superseded by the package", "detail": "The f30cbae transcription authored link_status [active, ended] and actor_type incl. 'operator'. The package defines link_status [active, closed] and actor_type [user, service, system]; v0.1.1 uses the package values (operators act as 'user')."},
+    {"id": "C4", "topic": "manual beta subscription", "detail": "OD-8 manual registration is modelled by extension X01 (provenance) and vocabulary X03 (commercial_provider manual_beta); the package fields stay unchanged."},
+    {"id": "C5", "topic": "ERP entitlement state models", "detail": "MIG-001 §6 (Requested..Closed) and ENT-001 §5 (Pending..Revoked) differ. v0.1 keeps the package entitlement_state for assignments and application_instance_state for operations (ENT-001 §26)."},
+    {"id": "C6", "topic": "customer and commercial status", "detail": "The package keeps CloudCustomer.status and SubscriptionReference.commercial_status free strings; v0.1.1 no longer restricts commercial_status (f30cbae did)."},
+    {"id": "C7", "topic": "Hire", "detail": "Hire product and hire.* codes remain OPEN (OD-6); no canonical code is assigned."},
+    {"id": "C8", "topic": "assignment granularity", "detail": "The package requires EntitlementAssignment.entitlement_code (one code per row). f30cbae allowed a bundle_code alternative; v0.1.1 drops it, expands bundles into one assignment per code, and checks them against SubscriptionReference.product_bundle_code (INV_BUNDLE_SCOPE)."},
+    {"id": "C9", "topic": "format assertion", "detail": "The package exchange schema uses format uuid/date-time/uri. The CLOUD-1a validator asserts these formats (fail-closed) although Draft 2020-12 treats format as annotation by default."}
+  ]
+}

@@ -1,6 +1,6 @@
 {
   "fixture_id": "N03_dangling_reference",
-  "fixture_version": "0.1",
+  "fixture_version": "0.1.1",
   "description": "Workspace B refers to a customer that does not exist.",
   "expect": {
     "valid": false,
@@ -12,7 +12,7 @@
   "patch": [
     {
       "op": "replace",
-      "path": "/state/workspaces/1/customer_uuid",
+      "path": "/registry/workspaces/1/customer_uuid",
       "value": "c0000000-000b-4000-8000-000000000099"
     }
   ]

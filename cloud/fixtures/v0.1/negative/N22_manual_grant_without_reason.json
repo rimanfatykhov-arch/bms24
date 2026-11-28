@@ -1,7 +1,7 @@
 {
   "fixture_id": "N22_manual_grant_without_reason",
-  "fixture_version": "0.1",
-  "description": "Manual admin grant without a reason.",
+  "fixture_version": "0.1.1",
+  "description": "Manual admin grant whose audit event has no reason.",
   "expect": {
     "valid": false,
     "violations": [
@@ -12,7 +12,7 @@
   "patch": [
     {
       "op": "remove",
-      "path": "/state/entitlement_assignments/2/reason"
+      "path": "/registry/audit_events/24/reason"
     }
   ]
 }

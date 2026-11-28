@@ -1,6 +1,6 @@
 {
   "fixture_id": "N08_idempotency_conflict",
-  "fixture_version": "0.1",
+  "fixture_version": "0.1.1",
   "description": "Same idempotency key re-delivered with a different request hash.",
   "expect": {
     "valid": false,

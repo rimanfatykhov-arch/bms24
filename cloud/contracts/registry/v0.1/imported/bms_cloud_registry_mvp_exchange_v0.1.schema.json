@@ -1,0 +1,844 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://bms24.online/schemas/cloud-registry-mvp/0.1.json",
+  "title": "BMS Cloud Registry MVP Data Exchange Schema",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "workspaces"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "0.1"
+    },
+    "customers": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/cloudCustomer"
+      }
+    },
+    "workspaces": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/cloudWorkspace"
+      }
+    },
+    "workspace_company_links": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/workspaceCompanyLink"
+      }
+    },
+    "subscriptions": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/subscriptionReference"
+      }
+    },
+    "entitlements": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/entitlementAssignment"
+      }
+    },
+    "application_instances": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/applicationInstance"
+      }
+    },
+    "integration_connections": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/integrationConnection"
+      }
+    },
+    "provisioning_jobs": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/provisioningJob"
+      }
+    },
+    "audit_events": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/auditEvent"
+      }
+    }
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "cloudCustomer": {
+      "type": "object",
+      "required": [
+        "customer_uuid",
+        "commercial_provider",
+        "commercial_customer_id",
+        "display_name",
+        "status",
+        "created_at",
+        "updated_at"
+      ],
+      "properties": {
+        "customer_uuid": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "commercial_provider": {
+          "type": "string",
+          "minLength": 1
+        },
+        "commercial_customer_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "display_name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "status": {
+          "type": "string",
+          "minLength": 1
+        },
+        "created_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updated_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "metadata": {
+          "type": [
+            "object",
+            "null"
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "cloudWorkspace": {
+      "type": "object",
+      "required": [
+        "workspace_uuid",
+        "customer_uuid",
+        "slug",
+        "display_name",
+        "status",
+        "created_at"
+      ],
+      "properties": {
+        "workspace_uuid": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "customer_uuid": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "slug": {
+          "type": "string",
+          "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+        },
+        "display_name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "status": {
+          "enum": [
+            "draft",
+            "provisioning",
+            "active",
+            "degraded",
+            "suspended",
+            "closing",
+            "closed"
+          ]
+        },
+        "primary_company_uuid": {
+          "anyOf": [
+            {
+              "type": "string",
+              "format": "uuid"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "default_region": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "release_channel": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "created_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "activated_at": {
+          "anyOf": [
+            {
+              "type": "string",
+              "format": "date-time"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "suspended_at": {
+          "anyOf": [
+            {
+              "type": "string",
+              "format": "date-time"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "closed_at": {
+          "anyOf": [
+            {
+              "type": "string",
+              "format": "date-time"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "metadata": {
+          "type": [
+            "object",
+            "null"
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "workspaceCompanyLink": {
+      "type": "object",
+      "required": [
+        "link_uuid",
+        "workspace_uuid",
+        "company_uuid",
+        "role",
+        "status",
+        "effective_from",
+        "created_at"
+      ],
+      "properties": {
+        "link_uuid": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "workspace_uuid": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "company_uuid": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "role": {
+          "enum": [
+            "primary",
+            "subsidiary",
+            "holding_member",
+            "sandbox_test"
+          ]
+        },
+        "status": {
+          "enum": [
+            "active",
+            "closed"
+          ]
+        },
+        "effective_from": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "effective_to": {
+          "anyOf": [
+            {
+              "type": "string",
+              "format": "date-time"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "created_at": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "additionalProperties": false
+    },
+    "subscriptionReference": {
+      "type": "object",
+      "required": [
+        "subscription_ref_uuid",
+        "workspace_uuid",
+        "commercial_provider",
+        "subscription_id",
+        "product_bundle_code",
+        "commercial_status",
+        "last_synced_at"
+      ],
+      "properties": {
+        "subscription_ref_uuid": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "workspace_uuid": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "commercial_provider": {
+          "type": "string"
+        },
+        "subscription_id": {
+          "type": "string"
+        },
+        "product_bundle_code": {
+          "type": "string"
+        },
+        "commercial_status": {
+          "type": "string"
+        },
+        "effective_from": {
+          "anyOf": [
+            {
+              "type": "string",
+              "format": "date-time"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "effective_to": {
+          "anyOf": [
+            {
+              "type": "string",
+              "format": "date-time"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "last_synced_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "source_revision": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "entitlementAssignment": {
+      "type": "object",
+      "required": [
+        "assignment_uuid",
+        "workspace_uuid",
+        "entitlement_code",
+        "state",
+        "source_reference",
+        "revision",
+        "created_at",
+        "updated_at"
+      ],
+      "properties": {
+        "assignment_uuid": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "workspace_uuid": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "entitlement_code": {
+          "type": "string",
+          "pattern": "^[a-z0-9]+(?:[._][a-z0-9]+)*$"
+        },
+        "state": {
+          "enum": [
+            "pending",
+            "enabled",
+            "suspended",
+            "expired",
+            "revoked"
+          ]
+        },
+        "source_reference": {
+          "type": "string"
+        },
+        "effective_from": {
+          "anyOf": [
+            {
+              "type": "string",
+              "format": "date-time"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "effective_to": {
+          "anyOf": [
+            {
+              "type": "string",
+              "format": "date-time"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "value": {},
+        "revision": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "created_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updated_at": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "additionalProperties": false
+    },
+    "applicationInstance": {
+      "type": "object",
+      "required": [
+        "instance_uuid",
+        "application_code",
+        "provider_type",
+        "state",
+        "created_at"
+      ],
+      "properties": {
+        "instance_uuid": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "application_code": {
+          "enum": [
+            "mgmt",
+            "academy",
+            "cloud",
+            "erp",
+            "int",
+            "api"
+          ]
+        },
+        "workspace_uuid": {
+          "anyOf": [
+            {
+              "type": "string",
+              "format": "uuid"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "company_uuid": {
+          "anyOf": [
+            {
+              "type": "string",
+              "format": "uuid"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "provider_type": {
+          "type": "string"
+        },
+        "provider_environment_id": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "state": {
+          "enum": [
+            "draft",
+            "provisioning",
+            "ready",
+            "active",
+            "degraded",
+            "maintenance",
+            "suspended",
+            "failed",
+            "retiring",
+            "retired"
+          ]
+        },
+        "canonical_url": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "uri"
+        },
+        "release_channel": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "current_release": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "created_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "activated_at": {
+          "anyOf": [
+            {
+              "type": "string",
+              "format": "date-time"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "suspended_at": {
+          "anyOf": [
+            {
+              "type": "string",
+              "format": "date-time"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "metadata": {
+          "type": [
+            "object",
+            "null"
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "integrationConnection": {
+      "type": "object",
+      "required": [
+        "connection_uuid",
+        "workspace_uuid",
+        "provider_type",
+        "provider_environment",
+        "purpose",
+        "state",
+        "contract_version",
+        "adapter_version",
+        "credential_reference"
+      ],
+      "properties": {
+        "connection_uuid": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "workspace_uuid": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "company_uuid": {
+          "anyOf": [
+            {
+              "type": "string",
+              "format": "uuid"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "provider_type": {
+          "type": "string"
+        },
+        "provider_environment": {
+          "type": "string"
+        },
+        "purpose": {
+          "type": "string"
+        },
+        "state": {
+          "enum": [
+            "provisioning",
+            "healthy",
+            "degraded",
+            "failed",
+            "blocked",
+            "suspended",
+            "closed"
+          ]
+        },
+        "contract_version": {
+          "type": "string"
+        },
+        "adapter_version": {
+          "type": "string"
+        },
+        "credential_reference": {
+          "type": "string"
+        },
+        "last_success_at": {
+          "anyOf": [
+            {
+              "type": "string",
+              "format": "date-time"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "last_failure_at": {
+          "anyOf": [
+            {
+              "type": "string",
+              "format": "date-time"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "last_reconciliation_at": {
+          "anyOf": [
+            {
+              "type": "string",
+              "format": "date-time"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "metadata": {
+          "type": [
+            "object",
+            "null"
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "provisioningJob": {
+      "type": "object",
+      "required": [
+        "job_uuid",
+        "workspace_uuid",
+        "target_type",
+        "operation",
+        "idempotency_key",
+        "state",
+        "attempt_count",
+        "requested_by",
+        "correlation_id",
+        "created_at"
+      ],
+      "properties": {
+        "job_uuid": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "workspace_uuid": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "target_type": {
+          "type": "string"
+        },
+        "target_id": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "operation": {
+          "type": "string"
+        },
+        "idempotency_key": {
+          "type": "string"
+        },
+        "state": {
+          "enum": [
+            "queued",
+            "running",
+            "waiting_external",
+            "retry_scheduled",
+            "succeeded",
+            "failed",
+            "blocked",
+            "cancelled",
+            "rollback"
+          ]
+        },
+        "step": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "progress": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 0,
+          "maximum": 100
+        },
+        "attempt_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "requested_by": {
+          "type": "string"
+        },
+        "started_at": {
+          "anyOf": [
+            {
+              "type": "string",
+              "format": "date-time"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "completed_at": {
+          "anyOf": [
+            {
+              "type": "string",
+              "format": "date-time"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "last_error": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "correlation_id": {
+          "type": "string"
+        },
+        "created_at": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "additionalProperties": false
+    },
+    "auditEvent": {
+      "type": "object",
+      "required": [
+        "audit_uuid",
+        "actor_type",
+        "actor_id",
+        "action",
+        "target_type",
+        "target_id",
+        "occurred_at"
+      ],
+      "properties": {
+        "audit_uuid": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "workspace_uuid": {
+          "anyOf": [
+            {
+              "type": "string",
+              "format": "uuid"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "actor_type": {
+          "enum": [
+            "user",
+            "service",
+            "system"
+          ]
+        },
+        "actor_id": {
+          "type": "string"
+        },
+        "action": {
+          "type": "string"
+        },
+        "target_type": {
+          "type": "string"
+        },
+        "target_id": {
+          "type": "string"
+        },
+        "before_summary": {
+          "type": [
+            "object",
+            "null"
+          ]
+        },
+        "after_summary": {
+          "type": [
+            "object",
+            "null"
+          ]
+        },
+        "reason": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "correlation_id": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "occurred_at": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "additionalProperties": false
+    }
+  }
+}

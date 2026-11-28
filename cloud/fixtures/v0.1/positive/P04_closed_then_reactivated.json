@@ -1,7 +1,7 @@
 {
   "fixture_id": "P04_closed_then_reactivated",
-  "fixture_version": "0.1",
-  "description": "Workspace A was closed and explicitly reactivated with audit; a job created after reactivation is allowed.",
+  "fixture_version": "0.1.1",
+  "description": "Workspace A was closed and explicitly reactivated by an audited event; a job created after reactivation is allowed.",
   "expect": {
     "valid": true
   },
@@ -9,76 +9,78 @@
   "patch": [
     {
       "op": "add",
-      "path": "/state/workspaces/0/closed_at",
+      "path": "/registry/workspaces/0/closed_at",
       "value": "2026-11-05T00:00:00Z"
     },
     {
       "op": "add",
-      "path": "/state/workspaces/0/reactivated_at",
-      "value": "2026-11-12T00:00:00Z"
-    },
-    {
-      "op": "add",
-      "path": "/state/audit_events/-",
+      "path": "/registry/audit_events/-",
       "value": {
-        "audit_uuid": "50000000-0000-4000-8000-000000000019",
-        "actor_type": "operator",
+        "audit_uuid": "50000000-0000-4000-8000-000000000034",
+        "actor_type": "user",
         "actor_id": "synthetic-operator-1",
         "action": "cloud.workspace.closed",
         "target_type": "workspace",
         "target_id": "a0000000-000a-4000-8000-000000000001",
-        "workspace_uuid": "a0000000-000a-4000-8000-000000000001",
         "occurred_at": "2026-11-05T00:00:00Z",
-        "correlation_id": "corr-019"
+        "correlation_id": "corr-034",
+        "workspace_uuid": "a0000000-000a-4000-8000-000000000001"
       }
     },
     {
       "op": "add",
-      "path": "/state/audit_events/-",
+      "path": "/registry/audit_events/-",
       "value": {
-        "audit_uuid": "50000000-0000-4000-8000-000000000020",
-        "actor_type": "operator",
+        "audit_uuid": "50000000-0000-4000-8000-000000000035",
+        "actor_type": "user",
         "actor_id": "synthetic-operator-1",
         "action": "cloud.workspace.reactivated",
         "target_type": "workspace",
         "target_id": "a0000000-000a-4000-8000-000000000001",
-        "workspace_uuid": "a0000000-000a-4000-8000-000000000001",
         "occurred_at": "2026-11-12T00:00:00Z",
-        "correlation_id": "corr-020"
+        "correlation_id": "corr-035",
+        "workspace_uuid": "a0000000-000a-4000-8000-000000000001",
+        "reason": "customer renewed"
       }
     },
     {
       "op": "add",
-      "path": "/state/audit_events/-",
+      "path": "/registry/audit_events/-",
       "value": {
-        "audit_uuid": "50000000-0000-4000-8000-000000000021",
-        "actor_type": "operator",
+        "audit_uuid": "50000000-0000-4000-8000-000000000036",
+        "actor_type": "user",
         "actor_id": "synthetic-operator-1",
         "action": "cloud.provisioning_job.created",
         "target_type": "provisioning_job",
         "target_id": "40000000-000a-4000-8000-000000000001",
-        "workspace_uuid": "a0000000-000a-4000-8000-000000000001",
         "occurred_at": "2026-11-15T00:00:00Z",
-        "correlation_id": "corr-021"
+        "correlation_id": "corr-036",
+        "workspace_uuid": "a0000000-000a-4000-8000-000000000001"
       }
     },
     {
       "op": "add",
-      "path": "/state/provisioning_jobs/-",
+      "path": "/registry/provisioning_jobs/-",
       "value": {
         "job_uuid": "40000000-000a-4000-8000-000000000001",
         "workspace_uuid": "a0000000-000a-4000-8000-000000000001",
         "target_type": "workspace",
         "target_id": "a0000000-000a-4000-8000-000000000001",
         "operation": "reactivate_workspace",
-        "handler": "operator_checklist.workspace_activation",
         "idempotency_key": "SYN-A-reactivate-1",
-        "request_hash": "529ba57c6197380009b91e2a0c83550dd0ed5c2e41b4a07e24edc26c5bc6bde5",
         "state": "succeeded",
         "attempt_count": 1,
         "requested_by": "synthetic-operator-1",
         "correlation_id": "corr-job-a1",
         "created_at": "2026-11-15T00:00:00Z"
+      }
+    },
+    {
+      "op": "add",
+      "path": "/extensions/provisioning_jobs/40000000-000a-4000-8000-000000000001",
+      "value": {
+        "handler": "operator_checklist.workspace_activation",
+        "request_hash": "529ba57c6197380009b91e2a0c83550dd0ed5c2e41b4a07e24edc26c5bc6bde5"
       }
     }
   ]

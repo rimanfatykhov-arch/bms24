@@ -1,6 +1,6 @@
 {
   "fixture_id": "N23_unknown_handler",
-  "fixture_version": "0.1",
+  "fixture_version": "0.1.1",
   "description": "Provisioning job names an undeclared handler.",
   "expect": {
     "valid": false,
@@ -12,7 +12,7 @@
   "patch": [
     {
       "op": "replace",
-      "path": "/state/provisioning_jobs/0/handler",
+      "path": "/extensions/provisioning_jobs/40000000-000b-4000-8000-000000000001/handler",
       "value": "script.run_anything"
     }
   ]

@@ -1,6 +1,6 @@
 {
   "fixture_id": "N02_immutable_workspace_uuid",
-  "fixture_version": "0.1",
+  "fixture_version": "0.1.1",
   "description": "Mutation tries to change workspace_uuid of workspace A.",
   "expect": {
     "valid": false,

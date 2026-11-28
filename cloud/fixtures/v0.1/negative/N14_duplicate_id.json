@@ -1,6 +1,6 @@
 {
   "fixture_id": "N14_duplicate_id",
-  "fixture_version": "0.1",
+  "fixture_version": "0.1.1",
   "description": "Two customer records share one customer_uuid.",
   "expect": {
     "valid": false,
@@ -12,14 +12,15 @@
   "patch": [
     {
       "op": "add",
-      "path": "/state/customers/-",
+      "path": "/registry/customers/-",
       "value": {
         "customer_uuid": "c0000000-000a-4000-8000-000000000001",
         "commercial_provider": "odoo_corporate",
         "commercial_customer_id": "SYN-ODOO-A-COPY",
         "display_name": "Synthetic Customer A",
         "status": "active",
-        "created_at": "2026-11-01T09:00:00Z"
+        "created_at": "2026-11-01T09:00:00Z",
+        "updated_at": "2026-11-01T09:00:00Z"
       }
     }
   ]

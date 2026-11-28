@@ -1,6 +1,6 @@
 {
   "fixture_id": "N09_replay_second_result",
-  "fixture_version": "0.1",
+  "fixture_version": "0.1.1",
   "description": "Replay of identical content produced a second result.",
   "expect": {
     "valid": false,

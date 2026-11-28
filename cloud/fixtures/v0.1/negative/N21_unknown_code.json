@@ -1,6 +1,6 @@
 {
   "fixture_id": "N21_unknown_code",
-  "fixture_version": "0.1",
+  "fixture_version": "0.1.1",
   "description": "Assignment uses a code that is not in the catalog (fail-closed).",
   "expect": {
     "valid": false,
@@ -12,7 +12,7 @@
   "patch": [
     {
       "op": "replace",
-      "path": "/state/entitlement_assignments/2/entitlement_code",
+      "path": "/registry/entitlements/17/entitlement_code",
       "value": "mgmt.unknown_feature"
     }
   ]

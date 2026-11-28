@@ -1,6 +1,6 @@
 {
   "fixture_id": "N16_projection_mismatch",
-  "fixture_version": "0.1",
+  "fixture_version": "0.1.1",
   "description": "cloudmap projection for A disagrees with the registry workspace status.",
   "expect": {
     "valid": false,

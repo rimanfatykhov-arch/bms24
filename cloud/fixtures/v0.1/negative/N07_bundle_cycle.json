@@ -1,6 +1,6 @@
 {
   "fixture_id": "N07_bundle_cycle",
-  "fixture_version": "0.1",
+  "fixture_version": "0.1.1",
   "description": "bms_start inherits bms_erp, closing a bundle cycle.",
   "expect": {
     "valid": false,
