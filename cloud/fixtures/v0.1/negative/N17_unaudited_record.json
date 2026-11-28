@@ -1,0 +1,18 @@
+{
+  "fixture_id": "N17_unaudited_record",
+  "fixture_version": "0.1.1",
+  "description": "Integration connection has no audit event.",
+  "expect": {
+    "valid": false,
+    "violations": [
+      "INV_AUDIT_MISSING"
+    ]
+  },
+  "base": "P01_hybrid_ab",
+  "patch": [
+    {
+      "op": "remove",
+      "path": "/registry/audit_events/30"
+    }
+  ]
+}

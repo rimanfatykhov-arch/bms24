@@ -1,0 +1,110 @@
+erDiagram
+    CLOUD_CUSTOMER ||--o{ CLOUD_WORKSPACE : owns
+    CLOUD_WORKSPACE ||--o{ WORKSPACE_COMPANY_LINK : links
+    CLOUD_WORKSPACE ||--o{ SUBSCRIPTION_REFERENCE : references
+    CLOUD_WORKSPACE ||--o{ ENTITLEMENT_ASSIGNMENT : receives
+    CLOUD_WORKSPACE ||--o{ APPLICATION_INSTANCE : provisions
+    CLOUD_WORKSPACE ||--o{ INTEGRATION_CONNECTION : connects
+    CLOUD_WORKSPACE ||--o{ PROVISIONING_JOB : orchestrates
+    CLOUD_WORKSPACE ||--o{ AUDIT_EVENT : audits
+    WORKSPACE_COMPANY_LINK }o--|| BMS_COMPANY_EXTERNAL : references
+    SUBSCRIPTION_REFERENCE }o--|| CORPORATE_ODOO_EXTERNAL : references
+    ENTITLEMENT_ASSIGNMENT }o--|| ENTITLEMENT_CATALOG_EXTERNAL : references
+    APPLICATION_INSTANCE }o--o| PROVIDER_ENVIRONMENT_EXTERNAL : runs_on
+
+    CLOUD_CUSTOMER {
+      uuid customer_uuid PK
+      string commercial_provider
+      string commercial_customer_id
+      string display_name
+      string status
+    }
+    CLOUD_WORKSPACE {
+      uuid workspace_uuid PK
+      uuid customer_uuid FK
+      string slug UK
+      string display_name
+      string status
+      uuid primary_company_uuid OPTIONAL
+      string release_channel OPTIONAL
+    }
+    WORKSPACE_COMPANY_LINK {
+      uuid link_uuid PK
+      uuid workspace_uuid FK
+      uuid company_uuid EXTERNAL
+      string role
+      string status
+      datetime effective_from
+      datetime effective_to OPTIONAL
+    }
+    SUBSCRIPTION_REFERENCE {
+      uuid subscription_ref_uuid PK
+      uuid workspace_uuid FK
+      string commercial_provider
+      string subscription_id UK
+      string product_bundle_code
+      string commercial_status
+    }
+    ENTITLEMENT_ASSIGNMENT {
+      uuid assignment_uuid PK
+      uuid workspace_uuid FK
+      string entitlement_code EXTERNAL
+      string state
+      string source_reference
+      int revision
+    }
+    APPLICATION_INSTANCE {
+      uuid instance_uuid PK
+      string application_code
+      uuid workspace_uuid FK_OPTIONAL
+      uuid company_uuid OPTIONAL
+      string provider_type
+      string provider_environment_id OPTIONAL
+      string state
+      string canonical_url OPTIONAL
+    }
+    INTEGRATION_CONNECTION {
+      uuid connection_uuid PK
+      uuid workspace_uuid FK
+      uuid company_uuid OPTIONAL
+      string provider_type
+      string provider_environment
+      string purpose
+      string state
+      string credential_reference
+    }
+    PROVISIONING_JOB {
+      uuid job_uuid PK
+      uuid workspace_uuid FK
+      string target_type
+      string target_id OPTIONAL
+      string operation
+      string idempotency_key UK
+      string state
+      string correlation_id
+    }
+    AUDIT_EVENT {
+      uuid audit_uuid PK
+      uuid workspace_uuid FK_OPTIONAL
+      string actor_type
+      string actor_id
+      string action
+      string target_type
+      string target_id
+      string correlation_id OPTIONAL
+      datetime occurred_at
+    }
+    BMS_COMPANY_EXTERNAL {
+      uuid company_uuid PK
+    }
+    CORPORATE_ODOO_EXTERNAL {
+      string commercial_customer_id
+      string subscription_id
+    }
+    ENTITLEMENT_CATALOG_EXTERNAL {
+      string entitlement_code PK
+    }
+    PROVIDER_ENVIRONMENT_EXTERNAL {
+      string provider_type
+      string provider_environment_id
+    }

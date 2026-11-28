@@ -101,6 +101,13 @@ jobs:
         run: python tools/test_battleplan_date_1875.py
       - name: Machine-date ISO regression (week, dates, calendar)
         run: python tools/test_business_dates_1876.py
+      - name: CLOUD-1a offline contracts (validator and unit tests)
+        if: hashFiles('cloud/tools/cloud_contracts.py') != ''
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -B cloud/tools/cloud_contracts.py validate
+          python -B -m unittest discover -s cloud/tests
       - name: PHP 8.1 syntax
         run: find local/kbacompany -name '*.php' -type f -print0 | xargs -0 -n1 -P8 php -l > /tmp/bms-php-lint.txt
       - name: JavaScript syntax

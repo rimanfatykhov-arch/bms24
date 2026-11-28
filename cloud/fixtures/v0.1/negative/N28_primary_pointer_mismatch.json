@@ -1,0 +1,19 @@
+{
+  "fixture_id": "N28_primary_pointer_mismatch",
+  "fixture_version": "0.1.1",
+  "description": "Denormalized primary_company_uuid of B points at company A.",
+  "expect": {
+    "valid": false,
+    "violations": [
+      "INV_PRIMARY_LINK"
+    ]
+  },
+  "base": "P01_hybrid_ab",
+  "patch": [
+    {
+      "op": "replace",
+      "path": "/registry/workspaces/1/primary_company_uuid",
+      "value": "d0000000-000a-4000-8000-000000000001"
+    }
+  ]
+}

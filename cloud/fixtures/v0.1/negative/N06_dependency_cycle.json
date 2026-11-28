@@ -1,0 +1,21 @@
+{
+  "fixture_id": "N06_dependency_cycle",
+  "fixture_version": "0.1.1",
+  "description": "mgmt.core depends on mgmt.finance.budget, closing a cycle.",
+  "expect": {
+    "valid": false,
+    "violations": [
+      "INV_DEPENDENCY_CYCLE"
+    ]
+  },
+  "base": "P01_hybrid_ab",
+  "catalog_patch": [
+    {
+      "op": "replace",
+      "path": "/definitions/0/depends_on",
+      "value": [
+        "mgmt.finance.budget"
+      ]
+    }
+  ]
+}

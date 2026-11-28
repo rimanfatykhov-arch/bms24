@@ -1,0 +1,18 @@
+{
+  "fixture_id": "N26_extension_missing",
+  "fixture_version": "0.1.1",
+  "description": "Provisioning job without its handler/request_hash extension.",
+  "expect": {
+    "valid": false,
+    "violations": [
+      "INV_EXTENSION_MISSING"
+    ]
+  },
+  "base": "P01_hybrid_ab",
+  "patch": [
+    {
+      "op": "remove",
+      "path": "/extensions/provisioning_jobs/40000000-000b-4000-8000-000000000002"
+    }
+  ]
+}

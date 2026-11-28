@@ -1,0 +1,19 @@
+{
+  "fixture_id": "N04_invalid_enum",
+  "fixture_version": "0.1.1",
+  "description": "Workspace status outside the REG-002 workspace_status enum.",
+  "expect": {
+    "valid": false,
+    "violations": [
+      "SCHEMA_ENUM"
+    ]
+  },
+  "base": "P01_hybrid_ab",
+  "patch": [
+    {
+      "op": "replace",
+      "path": "/registry/workspaces/0/status",
+      "value": "paused"
+    }
+  ]
+}

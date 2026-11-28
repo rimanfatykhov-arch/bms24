@@ -1,0 +1,18 @@
+{
+  "fixture_id": "N10_missing_provenance",
+  "fixture_version": "0.1.1",
+  "description": "Manual beta SubscriptionReference without provenance.",
+  "expect": {
+    "valid": false,
+    "violations": [
+      "INV_PROVENANCE_MISSING"
+    ]
+  },
+  "base": "P01_hybrid_ab",
+  "patch": [
+    {
+      "op": "remove",
+      "path": "/extensions/subscriptions/f0000000-000b-4000-8000-000000000001"
+    }
+  ]
+}

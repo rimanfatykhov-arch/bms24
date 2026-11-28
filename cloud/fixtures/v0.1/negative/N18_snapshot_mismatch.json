@@ -1,0 +1,27 @@
+{
+  "fixture_id": "N18_snapshot_mismatch",
+  "fixture_version": "0.1.1",
+  "description": "Snapshot for B omits an effective mgmt.* code.",
+  "expect": {
+    "valid": false,
+    "violations": [
+      "INV_SNAPSHOT_MISMATCH"
+    ]
+  },
+  "base": "P01_hybrid_ab",
+  "patch": [
+    {
+      "op": "replace",
+      "path": "/entitlement_snapshots/0/codes",
+      "value": [
+        "mgmt.battle_plans",
+        "mgmt.calendar",
+        "mgmt.core",
+        "mgmt.finance.budget",
+        "mgmt.finance.core",
+        "mgmt.indicators",
+        "mgmt.processes"
+      ]
+    }
+  ]
+}

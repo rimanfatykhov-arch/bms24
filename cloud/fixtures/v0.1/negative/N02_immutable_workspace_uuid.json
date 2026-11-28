@@ -1,0 +1,28 @@
+{
+  "fixture_id": "N02_immutable_workspace_uuid",
+  "fixture_version": "0.1.1",
+  "description": "Mutation tries to change workspace_uuid of workspace A.",
+  "expect": {
+    "valid": false,
+    "violations": [
+      "INV_IMMUTABLE_FIELD"
+    ]
+  },
+  "base": "P01_hybrid_ab",
+  "patch": [
+    {
+      "op": "add",
+      "path": "/mutations",
+      "value": [
+        {
+          "op": "update",
+          "entity": "workspace",
+          "id": "a0000000-000a-4000-8000-000000000001",
+          "set": {
+            "workspace_uuid": "a0000000-000a-4000-8000-000000000099"
+          }
+        }
+      ]
+    }
+  ]
+}

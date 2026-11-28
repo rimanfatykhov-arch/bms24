@@ -1,0 +1,25 @@
+{
+  "fixture_id": "N15_hard_delete",
+  "fixture_version": "0.1.1",
+  "description": "Mutation hard-deletes a company link instead of closing it.",
+  "expect": {
+    "valid": false,
+    "violations": [
+      "INV_SOFT_DELETE_ONLY"
+    ]
+  },
+  "base": "P01_hybrid_ab",
+  "patch": [
+    {
+      "op": "add",
+      "path": "/mutations",
+      "value": [
+        {
+          "op": "delete",
+          "entity": "company_link",
+          "id": "e0000000-000a-4000-8000-000000000001"
+        }
+      ]
+    }
+  ]
+}

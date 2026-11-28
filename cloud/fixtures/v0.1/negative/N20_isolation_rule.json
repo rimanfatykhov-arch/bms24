@@ -1,0 +1,19 @@
+{
+  "fixture_id": "N20_isolation_rule",
+  "fixture_version": "0.1.1",
+  "description": "ERP instance without workspace (shared ERP) is not allowed.",
+  "expect": {
+    "valid": false,
+    "violations": [
+      "INV_ISOLATION_RULE"
+    ]
+  },
+  "base": "P01_hybrid_ab",
+  "patch": [
+    {
+      "op": "replace",
+      "path": "/registry/application_instances/2/workspace_uuid",
+      "value": null
+    }
+  ]
+}

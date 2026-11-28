@@ -1,0 +1,97 @@
+{
+  "contract": "bms24.cloud.projection_mapping",
+  "contract_version": "0.1.1",
+  "status": "PROPOSED",
+  "provenance": {
+    "source": "CLOUD-0 audit §§4.3, 6, 6.1, 6.2 (#207 b030331, Codex PASS); local_kbacompany 1.1.0-rc29 2026112400 on main 74e00c4",
+    "method": "authored; every target value is cross-checked by the validator against the read-only Moodle sources listed in moodle_sources",
+    "source_enums": "source values are the imported REG-002 package enums workspace_status, application_instance_state, integration_state (cloud/contracts/registry/v0.1/imported/bms_cloud_registry_mvp_v0.1.json)"
+  },
+  "moodle_sources": {
+    "workspace_mapping_service": "local/kbacompany/classes/local/workspace_mapping_service.php",
+    "entitlement_snapshot_service": "local/kbacompany/classes/local/entitlement_snapshot_service.php",
+    "bms_tariff_catalog_service": "local/kbacompany/classes/local/bms_tariff_catalog_service.php"
+  },
+  "workspace_to_cloudmap": {
+    "join": "REG-002 workspace_company_links (role=primary, status=active) company_uuid -> cloudmap.companyuuid; workspace_uuid -> cloudmap.workspaceuuid; CloudWorkspace.primary_company_uuid, when set, must equal it",
+    "cardinality": "1 workspace : 1 primary company in v0.1 (cloudmap unique companyuuid and unique workspaceuuid)",
+    "fields": {
+      "workspace_uuid": "workspaceuuid",
+      "company_uuid": "companyuuid",
+      "cloud_status": "cloudstatus",
+      "entitlement_mode": "entitlementmode",
+      "snapshot_revision": "snapshotrevision",
+      "projection_revision": "cloudrevision",
+      "erp_application_state": "erpappstate",
+      "integration_health": "integrationhealth"
+    }
+  },
+  "cloud_status": {
+    "draft": "pending",
+    "provisioning": "pending",
+    "active": "active",
+    "degraded": "degraded",
+    "suspended": "suspended",
+    "closing": "suspended",
+    "closed": "closed"
+  },
+  "cloud_status_local_only": [
+    "error"
+  ],
+  "erp_application_state": {
+    "_none": "not_provisioned",
+    "draft": "not_provisioned",
+    "provisioning": "provisioning",
+    "ready": "ready",
+    "active": "active",
+    "degraded": "degraded",
+    "maintenance": "degraded",
+    "suspended": "suspended",
+    "failed": "failed",
+    "retiring": "active",
+    "retired": "retired"
+  },
+  "erp_application_state_notes": {
+    "draft": "clarification C1",
+    "maintenance": "cloudmap has no maintenance value; shown as degraded (lossy, documented)",
+    "retiring": "cloudmap has no retiring value; instance still serves until retired (lossy, documented)"
+  },
+  "integration_health": {
+    "_none": "unknown",
+    "provisioning": "unknown",
+    "healthy": "healthy",
+    "degraded": "degraded",
+    "failed": "failed",
+    "blocked": "blocked",
+    "suspended": "suspended",
+    "closed": "closed"
+  },
+  "integration_health_aggregation": "worst of active connections in order failed > blocked > degraded > suspended > unknown > healthy > closed; not enforced in v0.1 fixtures",
+  "entitlement_mode": {
+    "values": [
+      "legacy_compatibility",
+      "cloud_snapshot",
+      "suspended"
+    ],
+    "rules": [
+      "existing shared companies keep legacy_compatibility until an explicit per-company cutover (L1, L4)",
+      "applying a snapshot never changes the mode (L2)",
+      "rollback is a new projection revision with legacy_compatibility (L5)"
+    ]
+  },
+  "snapshot": {
+    "accepted_namespace": "mgmt",
+    "content": "effective mgmt.* codes of the workspace resolved from enabled assignments, bundle inheritance and dependency closure",
+    "workspace_inactive_statuses": [
+      "suspended",
+      "closing",
+      "closed"
+    ]
+  },
+  "state_separation": {
+    "commercial": "EntitlementAssignment.state (package entitlement_state, ENT-001 §5) and SubscriptionReference.commercial_status",
+    "operational": "ApplicationInstance.state (package application_instance_state) -> cloudmap erpappstate",
+    "rule": "has_entitlement answers the commercial right; is_operational answers runtime readiness (ENT-001 §26)"
+  },
+  "acl_separation": "Entitlements never grant Moodle capabilities or BMS RBAC; check order entitlement -> company scope -> capability -> business rule (entitlement_service 0.6.7)"
+}

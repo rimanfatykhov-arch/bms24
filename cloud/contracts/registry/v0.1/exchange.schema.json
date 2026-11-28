@@ -1,0 +1,128 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://bms24.invalid/cloud/contracts/registry/v0.1/exchange.schema.json",
+  "title": "BMS Cloud CLOUD-1a validation envelope v0.1.1 (PROPOSED)",
+  "description": "Envelope for offline validation. 'registry' is a REG-002 exchange document validated by the imported, unmodified REG-002 schema. CLOUD-1a additions live only in 'extensions' and the envelope arrays; see reg002_reconciliation.json.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["payload_version", "as_of", "registry", "extensions"],
+  "properties": {
+    "payload_version": {"const": "bms24.cloud.exchange/0.1.1"},
+    "as_of": {"$ref": "#/$defs/timestamp"},
+    "registry": {"x-bms-external-schema": "imported/bms_cloud_registry_mvp_exchange_v0.1.schema.json"},
+    "extensions": {"$ref": "#/$defs/extensions"},
+    "commercial_events": {"type": "array", "items": {"$ref": "#/$defs/commercial_event"}},
+    "mutations": {"type": "array", "items": {"$ref": "#/$defs/mutation"}},
+    "moodle_projections": {"type": "array", "items": {"$ref": "#/$defs/moodle_projection"}},
+    "entitlement_snapshots": {"type": "array", "items": {"$ref": "#/$defs/entitlement_snapshot"}}
+  },
+  "$defs": {
+    "uuid": {"type": "string", "format": "uuid"},
+    "timestamp": {"type": "string", "format": "date-time"},
+    "code": {"type": "string", "pattern": "^[a-z][a-z0-9_]*(\\.[a-z0-9_]+)+$"},
+    "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "text": {"type": "string", "minLength": 1},
+    "extensions": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["subscriptions", "entitlements", "provisioning_jobs"],
+      "properties": {
+        "subscriptions": {"type": "object", "additionalProperties": {"$ref": "#/$defs/subscription_ext"}},
+        "entitlements": {"type": "object", "additionalProperties": {"$ref": "#/$defs/entitlement_ext"}},
+        "provisioning_jobs": {"type": "object", "additionalProperties": {"$ref": "#/$defs/provisioning_job_ext"}}
+      }
+    },
+    "subscription_ext": {
+      "description": "X01 OD-8 provenance, keyed by subscription_ref_uuid",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["provenance"],
+      "properties": {"provenance": {"$ref": "#/$defs/provenance"}}
+    },
+    "provenance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["source_type", "recorded_by", "recorded_at", "evidence_ref", "audit_uuid"],
+      "properties": {
+        "source_type": {"enum": ["manual_registration", "commercial_sync"], "x-bms-vocabulary": "subscription_source_type"},
+        "recorded_by": {"$ref": "#/$defs/text"},
+        "recorded_at": {"$ref": "#/$defs/timestamp"},
+        "evidence_ref": {"$ref": "#/$defs/text"},
+        "audit_uuid": {"$ref": "#/$defs/uuid"}
+      }
+    },
+    "entitlement_ext": {
+      "description": "X02 ENT-001 §6 assignment source type, keyed by assignment_uuid",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["source_type"],
+      "properties": {
+        "source_type": {"enum": ["commercial_subscription", "commercial_order", "manual_admin_grant", "pilot", "trial", "internal_demo", "migration", "support_override"], "x-bms-vocabulary": "assignment_source_type"}
+      }
+    },
+    "provisioning_job_ext": {
+      "description": "X04 request content hash and X05 declared handler, keyed by job_uuid",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["handler", "request_hash"],
+      "properties": {
+        "handler": {"$ref": "#/$defs/text"},
+        "request_hash": {"$ref": "#/$defs/sha256"}
+      }
+    },
+    "commercial_event": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["delivery_id", "source_system", "event_id", "workspace_uuid", "operation", "idempotency_key", "request_hash", "result_type", "result_uuid"],
+      "properties": {
+        "delivery_id": {"$ref": "#/$defs/text"},
+        "source_system": {"enum": ["odoo_corporate", "manual_beta"], "x-bms-vocabulary": "commercial_provider"},
+        "event_id": {"$ref": "#/$defs/text"},
+        "workspace_uuid": {"$ref": "#/$defs/uuid"},
+        "operation": {"$ref": "#/$defs/text"},
+        "idempotency_key": {"$ref": "#/$defs/text"},
+        "request_hash": {"$ref": "#/$defs/sha256"},
+        "result_type": {"enum": ["provisioning_job", "subscription", "workspace"]},
+        "result_uuid": {"$ref": "#/$defs/uuid"}
+      }
+    },
+    "mutation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["op", "entity", "id"],
+      "properties": {
+        "op": {"enum": ["update", "delete"], "x-bms-vocabulary": "mutation_op"},
+        "entity": {"enum": ["customer", "workspace", "company_link", "subscription", "entitlement_assignment", "application_instance", "integration_connection", "provisioning_job", "audit_event"]},
+        "id": {"$ref": "#/$defs/uuid"},
+        "set": {"type": "object"}
+      }
+    },
+    "moodle_projection": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["company_uuid", "workspace_uuid", "runtime_instance_uuid", "cloud_status", "entitlement_mode", "erp_application_state", "integration_health"],
+      "properties": {
+        "company_uuid": {"$ref": "#/$defs/uuid"},
+        "workspace_uuid": {"$ref": "#/$defs/uuid"},
+        "runtime_instance_uuid": {"$ref": "#/$defs/uuid"},
+        "projection_revision": {"type": "integer", "minimum": 1},
+        "cloud_status": {"enum": ["pending", "active", "degraded", "suspended", "closed", "error"], "x-moodle-enum": "cloud_status"},
+        "entitlement_mode": {"enum": ["legacy_compatibility", "cloud_snapshot", "suspended"], "x-moodle-enum": "entitlement_mode"},
+        "erp_application_state": {"enum": ["not_provisioned", "provisioning", "ready", "active", "degraded", "suspended", "failed", "retired"], "x-moodle-enum": "erp_application_state"},
+        "integration_health": {"enum": ["unknown", "healthy", "degraded", "failed", "blocked", "suspended", "closed"], "x-moodle-enum": "integration_health"}
+      }
+    },
+    "entitlement_snapshot": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["workspace_uuid", "company_uuid", "snapshot_revision", "catalog_version", "codes"],
+      "properties": {
+        "workspace_uuid": {"$ref": "#/$defs/uuid"},
+        "company_uuid": {"$ref": "#/$defs/uuid"},
+        "snapshot_revision": {"$ref": "#/$defs/text"},
+        "catalog_version": {"$ref": "#/$defs/text"},
+        "codes": {"type": "array", "items": {"$ref": "#/$defs/code"}}
+      }
+    }
+  }
+}

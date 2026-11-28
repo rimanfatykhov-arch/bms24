@@ -1,0 +1,19 @@
+{
+  "fixture_id": "N29_duplicate_slug",
+  "fixture_version": "0.1.1",
+  "description": "Two workspaces share one slug (package unique constraint).",
+  "expect": {
+    "valid": false,
+    "violations": [
+      "INV_DUPLICATE_UNIQUE_KEY"
+    ]
+  },
+  "base": "P01_hybrid_ab",
+  "patch": [
+    {
+      "op": "replace",
+      "path": "/registry/workspaces/0/slug",
+      "value": "synthetic-b"
+    }
+  ]
+}
