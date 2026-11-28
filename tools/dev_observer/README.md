@@ -40,3 +40,19 @@ Exit status **0** means the report was produced from a complete, fresh snapshot.
 ## Validation boundary
 
 D01/D02/D07/D08/D17/D18 run against offline fixtures and mocked HTTP. Live GitHub read and live Drive comparison require authorized sources. TEST, staging, production, automatic orchestration and BDO-2+ scenarios are outside this implementation. A next proposal can standardize machine-readable registry and attestation inputs before adding more integrations.
+
+## BDO-2 Scheduler dry-run
+
+Run manually from the repository root against local inputs:
+
+```console
+python -B tools/dev_observer/scheduler.py --snapshot /local/snapshot.json --queue /local/verified-queue.json --as-of 2026-11-28T12:00:00Z --out /local/new-plan
+python -B -m unittest discover -s tools/dev_observer
+python -B -O -m unittest discover -s tools/dev_observer
+```
+
+The queue has `schema_version: 1`, `main` (the currently verified main SHA), `registry_ref` (a repository #198 issue or comment URL), `priorities_ref` (#205 issue or comment URL), and `tasks`. A task has `number`, `executor`, exact `head`, `tree`, and `base`, numeric `priority` (0 is highest), `dependencies` (task numbers), explicit `hold` (boolean) and `action`. An issue uses the snapshot main for `head` and `null` for `tree` and `base`. Supported actions are `continue_work` (also supply `branch`), `independent_review`, and `owner_decision`. To avoid simultaneous writes, recommendations with a shared branch are blocked. Use a queue prepared from verified assignments and priorities. GitHub prose or a PR label cannot supply an assignment or authority.
+
+For `independent_review`, supply the independently appointed `reviewer`; an author is not eligible to review their own work. An open PR waiting solely for review can receive a read-only review recommendation when BDO-1 has current CI `PASS` and review `NOT RUN`. A recorded HOLD or a documentation HOLD still blocks it. The output preserves BDO-1's reason separately from the scheduler's decision.
+
+The output directory contains `plan.json` and `summary.md`. The same inputs and evaluation time produce the same bytes. A prerequisite must have its own matching task record and a BDO-1 `COMPLETE` finding with reason `completion_confirmed`. A stale, incomplete or inconsistent snapshot produces diagnostics with no recommendations. Exit 0 means the input was usable, even if some tasks are blocked. Exit 1 means diagnostic plan only. Exit 2 means invalid input or a local write failure. The CLI never executes the plan.
