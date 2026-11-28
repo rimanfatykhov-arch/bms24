@@ -1,20 +1,20 @@
 {
  "scope": "exact intentional source updates; not runtime or release acceptance",
- "base_sha": "74e00c4a63cbd5d37759e604753ebaa4b4fc7947 (main with the published daily reports R5a block, plugin 2026112400; #172)",
+ "base_sha": "cfc4cf6ab1a979ccfa75b9593c4c539f58c90eaf (main after #187 terminology BMS-STD-TER-001 over R5a #172, plugin 2026112400)",
  "normalization": "CRLF to LF only",
- "previous_evidence": "docs/reconcile/daily-reports-r5a-source-preservation.json (daily reports R5a block)",
+ "previous_evidence": "docs/reconcile/terminology-cascade-std-source-preservation.json (#187 terminology, in-place replacements)",
  "decision": "BMOS-A0 PASS by Codex on 68b1dd07b1b75f1af94e6442e629d127f947b95b (#183, issue #84); owner order 28.11.2026 for BMOS-A1.1 (A1-01, A1-02), acceptance A0_09 section 3",
  "change": "Append the BMOS-A1.1 block (13 bmos_* keys: switch, registry errors including the separate grant authority, privacy description; plus the capability name kbacompany:managebmosgrants, owner decision OD-A11-1 (a)) after the daily reports R5a block. Retain all preceding keys byte-for-byte. Schema step 2026112800 adds six registry tables; everything is behind local_kbacompany/bmos_enabled (default off).",
  "files": [
   {
    "path": "local/kbacompany/lang/en/local_kbacompany.php",
-   "before_sha256_lf": "62af4834f4441502e5ebc4b535b508d3369f46b35f61aca9a2f6edf8e77e76e6",
-   "after_sha256_lf": "18cb43be8f42e87a65c0e8a8ca4698164ce9344802d2e23056a0c9b31c935ed3"
+   "before_sha256_lf": "e0d49c73c41b137f6d6927eda8afc128c30a0b30ac5917c24a443f201ca9bf47",
+   "after_sha256_lf": "144c747a7c6a5249e99ac19c0cc5a0d89d74549a0654e374a9d874427301165e"
   },
   {
    "path": "local/kbacompany/lang/ru/local_kbacompany.php",
-   "before_sha256_lf": "02c53ab3bafd6aa9fab2c2f8fd4475456a32cb2d96f17b7d9c7fc01179bc730f",
-   "after_sha256_lf": "aaf5432c779433f01f394ff73460530a64b0c7697c61f77a5dcfd0bc9afa78a2"
+   "before_sha256_lf": "07df4610a4549fe8a08b92107cdefb480796e15fe40ee371a4e36c2286cfa0e4",
+   "after_sha256_lf": "4c60cc583fbd2219f2e03c4c5f460305dde17d2af3ea379d113e8b1cd537abc5"
   }
  ]
 }

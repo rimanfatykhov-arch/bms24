@@ -142,10 +142,14 @@ def check(root=ROOT):
     # See docs/reconcile/daily-reports-r5a-source-preservation.json.
     reviewed_followup['local/kbacompany/lang/en/local_kbacompany.php'] = '62af4834f4441502e5ebc4b535b508d3369f46b35f61aca9a2f6edf8e77e76e6'
     reviewed_followup['local/kbacompany/lang/ru/local_kbacompany.php'] = '02c53ab3bafd6aa9fab2c2f8fd4475456a32cb2d96f17b7d9c7fc01179bc730f'
-    # BMOS-A1.1 (A0 PASS 68b1dd0): bmos_* RU/EN block after the R5a block; registries default off.
+    # Terminology BMS-STD-TER-001 (#187, owner approval 2026-11-25): exact in-place RU/EN value replacements, same keys.
+    # See docs/reconcile/terminology-cascade-std-source-preservation.json (line-by-line before/after).
+    reviewed_followup['local/kbacompany/lang/en/local_kbacompany.php'] = 'e0d49c73c41b137f6d6927eda8afc128c30a0b30ac5917c24a443f201ca9bf47'
+    reviewed_followup['local/kbacompany/lang/ru/local_kbacompany.php'] = '07df4610a4549fe8a08b92107cdefb480796e15fe40ee371a4e36c2286cfa0e4'
+    # BMOS-A1.1 (A0 PASS 68b1dd0): bmos_* RU/EN block after the R5a block, over the #187 terminology; registries default off.
     # See docs/reconcile/bmos-a11-source-preservation.json.
-    reviewed_followup['local/kbacompany/lang/en/local_kbacompany.php'] = '18cb43be8f42e87a65c0e8a8ca4698164ce9344802d2e23056a0c9b31c935ed3'
-    reviewed_followup['local/kbacompany/lang/ru/local_kbacompany.php'] = 'aaf5432c779433f01f394ff73460530a64b0c7697c61f77a5dcfd0bc9afa78a2'
+    reviewed_followup['local/kbacompany/lang/en/local_kbacompany.php'] = '144c747a7c6a5249e99ac19c0cc5a0d89d74549a0654e374a9d874427301165e'
+    reviewed_followup['local/kbacompany/lang/ru/local_kbacompany.php'] = '4c60cc583fbd2219f2e03c4c5f460305dde17d2af3ea379d113e8b1cd537abc5'
     for row in plan['rows']:
         path=root/row['path']
         if not path.is_file() or path.is_symlink():
