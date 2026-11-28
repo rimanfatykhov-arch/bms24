@@ -1,0 +1,28 @@
+{
+  "schema": "bms24.release_operator.request.v0",
+  "release_id": "BMS24-R1R2-20261119",
+  "repository": "rimanfatykhov-arch/bms24",
+  "environment": "production",
+  "mode": "read_only_preflight",
+  "production_baseline": {
+    "source_sha": "9736452cd91145f3bfd6467cfecfca1ba7ceadce",
+    "plugin_version": 2026111100
+  },
+  "candidate": {
+    "pr_number": 124,
+    "head_sha": "30a720c18f231a70bdb08cd65e8cba8206d62f7b",
+    "ci_checkout_sha": "a04a818cdedb0699abe408918876ad60cb32d20a",
+    "plugin_version": 2026111601,
+    "zip_sha256": "07a0c7f71b4246e08d19683449dacd18da5b79914f7aac8849aa1ad60a69c69e",
+    "manifest_sha256": "152cbf3857d1d4ad4433f9a5efe6075a490a90c4e66745de3f11920cbe204780"
+  },
+  "migration": {
+    "required": true,
+    "expected_new_tables": 5,
+    "recovery": "feature_off_forward_fix_or_separately_approved_restore"
+  },
+  "authorization": {
+    "owner_approval": "NOT_GRANTED",
+    "deployment_window": null
+  }
+}
