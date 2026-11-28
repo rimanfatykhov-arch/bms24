@@ -2,7 +2,7 @@
 
 Status: implementation candidate, **acceptance HOLD** until Moodle PHPUnit on MariaDB and Percona and the parallel
 harness of PR-3 pass. First written on `main` 62fdc4934b8b8a87fb8c7f21a52c56b64229e836; now synced with `main`
-79186e6b22afd0200a6b7a0e4e2f8ebbdffb6586, plugin 2026112400 (R5a), release 1.1.0-rc29.
+cfc4cf6ab1a979ccfa75b9593c4c539f58c90eaf (terminology #187), plugin 2026112400 (R5a), release 1.1.0-rc29.
 Executor: Claude.
 
 ## Decision and scope
