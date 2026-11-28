@@ -1,0 +1,31 @@
+name: CI-CANCEL-01 isolated runner proof
+on:
+  push:
+    branches: [test/ci-cancel-01-probe]
+    paths: [.github/workflows/ci-cancel-01-probe.yml]
+permissions:
+  contents: read
+concurrency:
+  group: ci-cancel-01-isolated-proof
+  cancel-in-progress: true
+jobs:
+  prerequisite:
+    runs-on: ubuntu-22.04
+    steps:
+      - run: echo "Synthetic prerequisite passed."
+  probe:
+    name: CI-CANCEL-01 wait probe
+    runs-on: ubuntu-22.04
+    timeout-minutes: 5
+    needs: [prerequisite]
+    if: always()
+    steps:
+      - name: Synthetic FULL wait
+        id: verdict
+        if: ${{ !cancelled() && success() && !contains(needs.*.result, 'cancelled') }}
+        run: sleep 170
+      - name: Require successful verdict
+        if: ${{ always() && (cancelled() || steps.verdict.outcome != 'success') }}
+        run: |
+          echo '::error::Merge gate verdict did not complete successfully.'
+          exit 1
