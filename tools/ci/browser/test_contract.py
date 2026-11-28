@@ -1871,6 +1871,102 @@ class ContractTest(unittest.TestCase):
             self.assertTrue(all(x['status'] == 'FAIL' for x in r.values()), r)
         self.assertTrue(all(x['status'] == 'FAIL' for x in c.evaluate(c.office_workspace_checks(None, None)).values()))
 
+    def finance_obs(self):
+        company = 'a1b2c3d4-0000-4000-8000-00000000000a'
+        ma = {'counts': {'budgetsapproved': 2, 'budgetssubmitted': 1, 'centers': 0, 'gatesblocked': 0, 'gatesready': 0,
+                         'scenarios': 2, 'statements': 1},
+              'plan': {'RUB': '1500', 'USD': '200'}, 'facts': {'confirmed': 1, 'none': 1},
+              'attention': ['budgetsubmitted', 'budgetnofact', 'gatepending']}
+        mb = {'counts': {'budgetsapproved': 1, 'budgetssubmitted': 0, 'centers': 0, 'gatesblocked': 0, 'gatesready': 0,
+                         'scenarios': 1, 'statements': 0},
+              'plan': {'EUR': '777'}, 'facts': {'confirmed': 0, 'none': 1}, 'attention': ['budgetnofact']}
+        figures = lambda m: {k: copy.deepcopy(m[k]) for k in ('counts', 'plan', 'facts', 'attention')}
+        planned = [{'key': k, 'tag': 'span', 'inlink': False, 'href': None, 'disabled': 'true'} for k in c.FINANCE_PLANNED]
+        active = [{'path': p, 'uuid': company, 'href': 'http://127.0.0.1:8080/local/kbacompany/' + p, 'current': None}
+                  for p in c.FINANCE_ACTIVE]
+        active[0]['current'] = 'page'
+        cases = []
+        for shell, width, lang in c.FINANCE_CASES:
+            page = dict(figures(ma), workspace=True, http=200, planned=copy.deepcopy(planned), active=copy.deepcopy(active),
+                        h1=[c.FINANCE_TITLES[lang]], empty=[], owned_shell=shell == 'owned', leaked=[],
+                        shown=['a', 'b', 'c', 'd'], hscroll={'scroll': width, 'inner': width},
+                        menu=[{'uuid': company, 'current': 'page', 'visible': True}] if shell == 'owned' else [])
+            case = {'shell': shell, 'width': width, 'lang': lang, 'language_installed': True, 'page': page,
+                    'browser_events': [], 'server_errors': []}
+            if shell == 'owned' and width == 1440:
+                case['landing'] = [{'path': p, 'http': 200, 'workspace_error': False} for p in c.FINANCE_ACTIVE]
+            cases.append(case)
+        denied = {'workspace': False, 'http': 404, 'counts': {}, 'plan': {}, 'leaked': [], 'menu': []}
+        return {'status': 'PASS', 'company': company, 'cases': cases,
+                'switch_off': {'enabled': False}, 'switch_on': {'enabled': True},
+                'off': dict(denied, menu_on_model=[]), 'model': {'MA': ma, 'MB': mb},
+                'employee': dict(denied, menu_on_tasks=[]), 'foreign': dict(denied),
+                'own_b': dict(figures(mb), workspace=True, http=200, leaked=[]),
+                'revoked_flag': True, 'reopened_flag': True,
+                'revocation': {'before': {'workspace': True, 'http': 200}, 'after': dict(denied)}}
+
+    def test_finance_workspace_genuine_run_passes(self):
+        res = c.evaluate(c.finance_workspace_checks(self.finance_obs(), 0))
+        self.assertEqual({k: 'PASS' for k in res}, {k: v['status'] for k, v in res.items()})
+        self.assertEqual(7, len(res))
+        for k in res:
+            self.assertIn(k, c.required_check_names())
+
+    def test_finance_workspace_regressions_fail(self):
+        mutations = [
+            ('finance_switch_off_hides_route_and_menu', lambda o: o['off'].update(workspace=True)),
+            ('finance_switch_off_hides_route_and_menu', lambda o: o['off'].update(menu_on_model=[{'uuid': 'x'}])),
+            ('finance_switch_off_hides_route_and_menu', lambda o: o['switch_off'].update(enabled=True)),
+            ('finance_switch_off_hides_route_and_menu', lambda o: o['off'].update(http=500)),
+            ('finance_figures_equal_service_ground_truth', lambda o: o['cases'][1]['page']['counts'].update(budgetsapproved=5)),
+            ('finance_figures_equal_service_ground_truth', lambda o: o['cases'][2]['page']['plan'].update(RUB='1700')),
+            ('finance_figures_equal_service_ground_truth', lambda o: o['cases'][0]['page'].update(plan={'ALL': '1700'})),
+            ('finance_figures_equal_service_ground_truth', lambda o: o['cases'][3]['page']['facts'].update(none=0, confirmed=2)),
+            ('finance_figures_equal_service_ground_truth', lambda o: o['cases'][0]['page']['attention'].pop()),
+            ('finance_figures_equal_service_ground_truth', lambda o: o['cases'][0]['page'].update(leaked=['FINANCE CI BUDGET B'])),
+            ('finance_figures_equal_service_ground_truth', lambda o: o['cases'][1]['page'].update(h1=['Finance'])),
+            ('finance_figures_equal_service_ground_truth', lambda o: o['cases'][2]['page']['shown'].pop()),
+            ('finance_menu_and_planned_sections', lambda o: o['cases'][0]['page']['planned'][2].update(tag='a')),
+            ('finance_menu_and_planned_sections', lambda o: o['cases'][0]['page']['planned'][0].update(inlink=True)),
+            ('finance_menu_and_planned_sections', lambda o: o['cases'][1]['page']['planned'].pop()),
+            ('finance_menu_and_planned_sections', lambda o: o['cases'][0]['page']['active'][3].update(uuid='other')),
+            ('finance_menu_and_planned_sections', lambda o: o['cases'][0]['page']['active'][2].update(current='page')),
+            ('finance_menu_and_planned_sections', lambda o: o['cases'][1]['page'].update(menu=[])),
+            ('finance_menu_and_planned_sections', lambda o: o['cases'][0]['page']['menu'][0].update(current=None)),
+            ('finance_sections_open_canonical_pages', lambda o: o['cases'][0]['landing'][4].update(http=403)),
+            ('finance_sections_open_canonical_pages', lambda o: o['cases'][0].pop('landing')),
+            ('finance_gate_and_company_isolation', lambda o: o['employee'].update(workspace=True)),
+            ('finance_gate_and_company_isolation', lambda o: o['employee'].update(menu_on_tasks=[{'uuid': 'x'}])),
+            ('finance_gate_and_company_isolation', lambda o: o['employee'].update(counts={'scenarios': 2})),
+            ('finance_gate_and_company_isolation', lambda o: o['foreign'].update(workspace=True)),
+            ('finance_gate_and_company_isolation', lambda o: o['foreign'].update(leaked=['FINANCE CI FACT A'])),
+            ('finance_gate_and_company_isolation', lambda o: o['foreign'].update(plan={'RUB': '1500'})),
+            ('finance_gate_and_company_isolation', lambda o: o['own_b']['plan'].update(RUB='1500')),
+            ('finance_revocation_closes_workspace', lambda o: o['revocation']['after'].update(workspace=True)),
+            ('finance_revocation_closes_workspace', lambda o: o.update(revoked_flag=False)),
+            ('finance_revocation_closes_workspace', lambda o: o.update(reopened_flag=False)),
+            ('finance_layout_and_browser_errors', lambda o: o['cases'][1]['page'].update(hscroll={'scroll': 420, 'inner': 375})),
+            ('finance_layout_and_browser_errors', lambda o: o['cases'][2].update(server_errors=[{'url': 'x', 'status': 500}])),
+            ('finance_layout_and_browser_errors',
+             lambda o: o['cases'][3].update(browser_events=[{'source': 'pageerror', 'name': 'Error', 'message': 'boom'}])),
+        ]
+        for name, mutate in mutations:
+            with self.subTest(check=name):
+                o = self.finance_obs(); mutate(o)
+                res = c.evaluate(c.finance_workspace_checks(o, 0))
+                self.assertEqual('FAIL', res[name]['status'], res[name])
+
+    def test_finance_workspace_incomplete_runs_fail_every_check(self):
+        obs = self.finance_obs()
+        for mutate, code in ((lambda o: o.update(error='boom'), 0), (lambda o: o.update(status='FAIL'), 0),
+                             (lambda o: o['cases'].pop(), 0), (lambda o: o['model'].pop('MB'), 0),
+                             (lambda o: o['model']['MA']['facts'].update(confirmed=0), 0),
+                             (lambda o: o['model']['MA']['plan'].update(EUR='1'), 0), (lambda o: None, 1)):
+            o = copy.deepcopy(obs); mutate(o)
+            r = c.evaluate(c.finance_workspace_checks(o, code))
+            self.assertTrue(all(x['status'] == 'FAIL' for x in r.values()), r)
+        self.assertTrue(all(x['status'] == 'FAIL' for x in c.evaluate(c.finance_workspace_checks(None, None)).values()))
+
     def test_required_check_names_complete(self):
         names = c.required_check_names()
         self.assertEqual(len(names), len(set(names)))

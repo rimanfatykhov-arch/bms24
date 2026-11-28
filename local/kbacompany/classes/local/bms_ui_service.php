@@ -818,7 +818,7 @@ class bms_ui_service {
         $navicons = [
             'workspace' => 'home', 'calendar' => 'calendar', 'communications' => 'message', 'tasks' => 'tasks', 'dailyreports' => 'report', 'recurring' => 'cycle', 'battleplan' => 'flag', 'products' => 'chart',
             'architecturecenter' => 'grid', 'owner' => 'user', 'philosophy' => 'book', 'market' => 'globe', 'businessmodel' => 'layout',
-            'strategy' => 'target', 'financialmodel' => 'finance', 'people' => 'users', 'employees' => 'employee', 'people_roles' => 'briefcase',
+            'strategy' => 'target', 'financialmodel' => 'finance', 'financeworkspace' => 'finance', 'people' => 'users', 'employees' => 'employee', 'people_roles' => 'briefcase',
             'coverage' => 'briefcase', 'people_competencies' => 'award', 'culture' => 'heart', 'learning' => 'learning', 'management' => 'cycle', 'personalcycle' => 'clipboard-check', 'managementcycles' => 'cycle',
             'informationcenter' => 'chart', 'adminscale' => 'list', 'admincycle' => 'cycle', 'documents' => 'document',
             'policies' => 'shield', 'deviations' => 'alert', 'office' => 'document',
@@ -932,6 +932,13 @@ class bms_ui_service {
                 'group' => 'architecture', 'sidebar' => $canmanagement, 'tree' => true,
                 'label' => get_string('financialmodel_title', 'local_kbacompany'),
                 'url' => $url('financial_model.php'), 'icon' => $defaulticon,
+            ],
+            // FIN-W2 Finance workspace: listed only while the site switch is on and for the existing financial gate;
+            // finance.php enforces both again.
+            'financeworkspace' => [
+                'group' => 'architecture', 'sidebar' => $canmanagement && finance_workspace_service::enabled(), 'tree' => false,
+                'label' => get_string('financews_title', 'local_kbacompany'),
+                'url' => $url('finance.php'), 'icon' => $defaulticon,
             ],
             'people' => [
                 'group' => 'people', 'sidebar' => true, 'tree' => false,
@@ -1124,7 +1131,7 @@ class bms_ui_service {
             ],
             'architecture' => [
                 'label' => get_string('bmsworkspace_group_architecture_short', 'local_kbacompany'),
-                'order' => ['architecturecenter', 'owner', 'philosophy', 'market', 'businessmodel', 'financialmodel', 'strategy', 'adminscale'],
+                'order' => ['architecturecenter', 'owner', 'philosophy', 'market', 'businessmodel', 'financeworkspace', 'financialmodel', 'strategy', 'adminscale'],
             ],
             'people' => [
                 'label' => get_string('bmsworkspace_group_people_short', 'local_kbacompany'),
