@@ -55,10 +55,19 @@ class ClassifierTest(unittest.TestCase):
             self.write(path, text)
         return classify(self.repo, self.base, self.commit('change'))
 
-    def test_css_only_is_fast(self):
+    def test_bms_css_is_standard_with_security_gates(self):
+        # RC32 unification: CSS semantics (opacity/visibility, resource URLs) need the CSS UI contract,
+        # the always-on security gates and the BROWSER tier — FAST no longer covers CSS.
         r = self.change({'local/kbacompany/bms_ui/task_center.css': '.a{color:blue}\n'})
-        self.assertEqual('FAST', r['profile'])
-        self.assertEqual([], r['security_gates'])
+        self.assertEqual('STANDARD', r['profile'])
+        self.assertIn('pr48_tenant_isolation_test', r['security_gates'])
+        self.assertEqual([], r['focused_phpunit'])
+        self.assertTrue(any('CSS presentation semantics' in x['reason'] for x in r['reasons']))
+
+    def test_foreign_css_stays_full(self):
+        r = self.change({'vendor/other/theme.css': '.a{color:blue}\n'})
+        self.assertEqual('FULL', r['profile'])
+        self.assertTrue(any('unknown path' in x['reason'] for x in r['reasons']))
 
     def test_lang_and_docs_are_fast(self):
         r = self.change({'local/kbacompany/lang/en/local_kbacompany.php': "<?php\n$string['a'] = 'B';\n", 'docs/guide.md': '# G2\n'})
