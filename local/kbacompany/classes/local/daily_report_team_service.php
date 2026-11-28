@@ -16,6 +16,10 @@ defined('MOODLE_INTERNAL') || die();
  *
  * Employees come from the authorised organisation snapshot of this company (organization_service), each one re-checked
  * against company membership and revocation; reports are read with the company and the day in SQL. Nothing is written.
+ *
+ * R5b (owner decisions K3, K5): once the company reporting calendar is on, every row also carries a due state
+ * (daily_report_calendar_service::due) and the deadline in the employee's time zone; before the calendar start and
+ * while it is off the due state is "neutral" and the R4 view is unchanged (T3).
  */
 final class daily_report_team_service {
     public const PAGE_SIZE = 50;
@@ -50,10 +54,11 @@ final class daily_report_team_service {
      * One page of the team for the day.
      * @return array ['day', 'scope', 'scopes', 'unit', 'units' => [uuid => name], 'status', 'counts' => [state => int],
      *                'total', 'page', 'items' => [['userid', 'name', 'unit', 'state', 'reportuuid', 'submittedat', 'late',
-     *                'reviewerid', 'reviewersource', 'rating']]]
+     *                'reviewerid', 'reviewersource', 'rating', 'due', 'deadline']], 'due' => filter,
+     *                'duecounts' => [due => int], 'calendar' => bool]
      */
     public static function day(string $companyuuid, int $actor, string $day, string $scope = '', string $unit = '',
-            string $status = '', int $page = 0): array {
+            string $status = '', int $page = 0, string $due = ''): array {
         global $DB;
         $companyuuid = company_context_service::normalise_uuid($companyuuid);
         company_context_service::context($companyuuid, $actor);
@@ -65,7 +70,8 @@ final class daily_report_team_service {
         if (strcmp($day, business_date_service::day()) > 0) {
             throw new \moodle_exception('dailyreports_futureday', 'local_kbacompany');
         }
-        if ($page < 0 || $page > 100000 || ($status !== '' && !in_array($status, self::STATUSES, true))) {
+        if ($page < 0 || $page > 100000 || ($status !== '' && !in_array($status, self::STATUSES, true)) ||
+                ($due !== '' && !in_array($due, daily_report_calendar_service::DUE, true))) {
             throw new \moodle_exception('invalidparameter');
         }
         $graph = daily_report_reviewer_service::graph($companyuuid, $actor);
@@ -123,14 +129,18 @@ final class daily_report_team_service {
                 ['c' => $companyuuid, 'day' => $day] + $inparams);
         }
         $ratings = self::ratings($companyuuid, $reports);
+        $schedule = self::schedule($companyuuid, array_keys($people), $day, $reports);
 
         $counts = array_fill_keys(self::STATUSES, 0);
+        $duecounts = array_fill_keys(daily_report_calendar_service::DUE, 0);
         $rows = [];
         foreach ($people as $id => $person) {
             $report = $reports[$id] ?? null;
             $state = self::state($report);
+            [$duestate, $deadline] = $schedule[$id];
             $counts[$state]++;
-            if ($status !== '' && $state !== $status) {
+            $duecounts[$duestate]++;
+            if (($status !== '' && $state !== $status) || ($due !== '' && $duestate !== $due)) {
                 continue;
             }
             $sent = $report && !in_array($state, ['none', 'notsent'], true);
@@ -140,10 +150,14 @@ final class daily_report_team_service {
                 // Drafts stay private (T2): no card link, no reviewer, no time.
                 'reportuuid' => $sent ? (string)$report->uuid : '',
                 'submittedat' => $submittedat,
-                'late' => $submittedat > 0 && strcmp(business_date_service::day($submittedat), $day) > 0,
+                // With the calendar on, lateness is judged by the deadline (K3), otherwise by the report day (R1).
+                'late' => in_array($duestate, ['ontime', 'late'], true) ? $duestate === 'late' :
+                    $submittedat > 0 && strcmp(business_date_service::day($submittedat), $day) > 0,
                 'reviewerid' => $sent ? (int)$report->reviewerid : 0,
                 'reviewersource' => $sent ? (string)$report->reviewersource : '',
                 'rating' => $state === 'accepted' ? ($ratings[(string)$report->currentversionuuid] ?? '') : '',
+                'due' => $duestate,
+                'deadline' => $deadline,
             ];
         }
         usort($rows, static function(array $left, array $right): int {
@@ -151,6 +165,7 @@ final class daily_report_team_service {
         });
         return ['day' => $day, 'scope' => $scope, 'scopes' => $scopes, 'unit' => $unit, 'units' => $units,
             'status' => $status, 'counts' => $counts, 'total' => count($rows), 'page' => $page,
+            'due' => $due, 'duecounts' => $duecounts, 'calendar' => $duecounts['neutral'] < count($people),
             'items' => array_slice($rows, $page * self::PAGE_SIZE, self::PAGE_SIZE)];
     }
 
@@ -183,6 +198,54 @@ final class daily_report_team_service {
         }
         \core_collator::asort($names);
         return $names;
+    }
+
+    /**
+     * R5b: [userid => [due state, deadline]] for the listed people. Lateness counts from the first submitted version
+     * of the report (company and reports in SQL); the deadline uses each employee's own time zone.
+     */
+    private static function schedule(string $companyuuid, array $userids, string $day, array $reports): array {
+        global $DB;
+        $reasons = daily_report_calendar_service::requirements($companyuuid, $userids, $day);
+        $first = [];
+        $uuids = [];
+        foreach ($reports as $report) {
+            $uuids[] = (string)$report->uuid;
+        }
+        if ($uuids && in_array('workday', $reasons, true)) {
+            [$insql, $inparams] = $DB->get_in_or_equal($uuids, SQL_PARAMS_NAMED, 'tf');
+            foreach ($DB->get_records_sql("SELECT reportuuid, MIN(submittedat) AS firstsubmitted
+                    FROM {local_kbacompany_dreportver}
+                   WHERE companyuuid = :c AND submittedat > 0 AND reportuuid {$insql}
+                GROUP BY reportuuid", ['c' => $companyuuid] + $inparams) as $row) {
+                $first[(string)$row->reportuuid] = (int)$row->firstsubmitted;
+            }
+        }
+        $zones = [];
+        $required = array_keys(array_filter($reasons, static function(string $reason): bool {
+            return $reason === 'workday';
+        }));
+        if ($required) {
+            foreach ($DB->get_records_list('user', 'id', $required, '', 'id, timezone') as $user) {
+                $zones[(int)$user->id] = \core_date::get_user_timezone($user);
+            }
+        }
+        $deadlines = [];
+        $now = time();
+        $out = [];
+        foreach ($userids as $userid) {
+            $reason = $reasons[$userid] ?? 'disabled';
+            $deadline = 0;
+            if ($reason === 'workday') {
+                $zone = $zones[$userid] ?? \core_date::get_server_timezone();
+                $deadline = $deadlines[$zone] ?? ($deadlines[$zone] = daily_report_calendar_service::deadline($companyuuid,
+                    $day, $zone));
+            }
+            $report = $reports[$userid] ?? null;
+            $firstsubmitted = $report ? ($first[(string)$report->uuid] ?? 0) : 0;
+            $out[$userid] = [daily_report_calendar_service::due($reason, $firstsubmitted, $deadline, $now), $deadline];
+        }
+        return $out;
     }
 
     /** Rating of the last decision on each accepted current version (append-only rows, the latest wins). */

@@ -10190,3 +10190,16 @@ $string['dailyreports_absence_empty'] = 'No absences.';
 $string['dailyreports_absence_invalid'] = 'Check the absence: type, dates in order, at most one year.';
 $string['dailyreports_absence_overlap'] = 'This person already has an absence on these dates.';
 $string['privacy:metadata:dailyreportabsences'] = 'Absence periods of an employee for daily reports: type (vacation, sick leave, other) and dates, who entered and changed them.';
+// Daily reports R5b (2026-11-24): due states and "due by", owner decisions K3 and K5.
+$string['dailyreports_due_neutral'] = 'No reporting schedule';
+$string['dailyreports_due_notrequired'] = 'Not required';
+$string['dailyreports_due_expected'] = 'Expected';
+$string['dailyreports_due_missed'] = 'Not submitted';
+$string['dailyreports_due_ontime'] = 'Submitted on time';
+$string['dailyreports_due_late'] = 'Submitted late';
+$string['dailyreports_due_filter'] = 'Reporting schedule';
+$string['dailyreports_due_all'] = 'Any';
+$string['dailyreports_due_counts'] = 'Day totals by the reporting schedule';
+$string['dailyreports_due_by'] = 'Due by {$a}';
+$string['dailyreports_due_own_missed'] = 'The deadline has passed: {$a}. Submit the report as soon as possible.';
+$string['dailyreports_due_own_notrequired'] = 'A report for this day is not required by the company reporting schedule.';
