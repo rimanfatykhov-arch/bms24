@@ -106,7 +106,21 @@ granularity) and C9 (format assertion).
 | Stable diagnostics, exit codes 0/1/2 | `CliTests`, JSON-stability test |
 | Versioned schema and fixtures | `v0.1` folders, `payload_version` / `fixture_version` 0.1.1, `catalog_version` |
 
-## CI
+## CI (COORD-D04, #205)
 
-Not wired. `.github/workflows/bms24-ci.yml` runs an explicit list of Python tests, so these
-tests do not run in CI until a workflow change is agreed separately. Codex will put the steps up for agreement.
+The existing `checks` job of `.github/workflows/bms24-ci.yml` (Python 3.11) has one step,
+*CLOUD-1a offline contracts*. It runs only when `cloud/tools/cloud_contracts.py` exists:
+
+```
+python -B cloud/tools/cloud_contracts.py validate
+python -B -m unittest discover -s cloud/tests
+```
+
+Any non-zero exit fails the job. The step is offline: no ZIP, secrets, network or package
+installation. Without PyYAML and `BMS24_REG002_ZIP` on the runner, the YAML == JSON and
+original-ZIP tests are skipped and reported. The imported members are still re-hashed by `validate`.
+
+Negative control (not run by CI): `bash cloud/tools/ci_negative_control.sh [commit]` runs the exact
+step script in a disposable worktree. NC0 must exit 0. NC1–NC5 must fail: broken fixture
+expectation, one byte appended to an imported REG-002 file, a failing unit test with a passing
+validator, an unreadable Moodle source (exit 2), and contract drift.
