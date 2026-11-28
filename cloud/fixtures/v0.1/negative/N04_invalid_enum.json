@@ -1,0 +1,19 @@
+{
+  "fixture_id": "N04_invalid_enum",
+  "fixture_version": "0.1",
+  "description": "Workspace status outside the registry enum.",
+  "expect": {
+    "valid": false,
+    "violations": [
+      "SCHEMA_ENUM"
+    ]
+  },
+  "base": "P01_hybrid_ab",
+  "patch": [
+    {
+      "op": "replace",
+      "path": "/state/workspaces/0/status",
+      "value": "paused"
+    }
+  ]
+}

@@ -1,0 +1,28 @@
+{
+  "fixture_id": "N19_audit_append_only",
+  "fixture_version": "0.1",
+  "description": "Mutation edits an audit event.",
+  "expect": {
+    "valid": false,
+    "violations": [
+      "INV_AUDIT_APPEND_ONLY"
+    ]
+  },
+  "base": "P01_hybrid_ab",
+  "patch": [
+    {
+      "op": "add",
+      "path": "/mutations",
+      "value": [
+        {
+          "op": "update",
+          "entity": "audit_event",
+          "id": "50000000-0000-4000-8000-000000000001",
+          "set": {
+            "reason": "rewritten"
+          }
+        }
+      ]
+    }
+  ]
+}

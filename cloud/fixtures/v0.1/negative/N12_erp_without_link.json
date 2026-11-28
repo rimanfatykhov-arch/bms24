@@ -1,0 +1,18 @@
+{
+  "fixture_id": "N12_erp_without_link",
+  "fixture_version": "0.1",
+  "description": "Active ERP instance of B is not bound to the primary company link.",
+  "expect": {
+    "valid": false,
+    "violations": [
+      "INV_ERP_REQUIRES_COMPANY_LINK"
+    ]
+  },
+  "base": "P01_hybrid_ab",
+  "patch": [
+    {
+      "op": "remove",
+      "path": "/state/application_instances/4/company_uuid"
+    }
+  ]
+}

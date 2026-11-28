@@ -1,0 +1,24 @@
+{
+  "fixture_id": "N05_ambiguous_legacy_mapping",
+  "fixture_version": "0.1",
+  "description": "Legacy management.tasks mapped to two canonical codes.",
+  "expect": {
+    "valid": false,
+    "violations": [
+      "INV_LEGACY_MAPPING_AMBIGUOUS"
+    ]
+  },
+  "base": "P01_hybrid_ab",
+  "catalog_patch": [
+    {
+      "op": "add",
+      "path": "/legacy_aliases/-",
+      "value": {
+        "legacy_code": "management.tasks",
+        "kind": "feature",
+        "canonical": "mgmt.calendar",
+        "source": "synthetic"
+      }
+    }
+  ]
+}

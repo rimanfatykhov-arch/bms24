@@ -1,0 +1,29 @@
+{
+  "fixture_id": "N08_idempotency_conflict",
+  "fixture_version": "0.1",
+  "description": "Same idempotency key re-delivered with a different request hash.",
+  "expect": {
+    "valid": false,
+    "violations": [
+      "INV_IDEMPOTENCY_CONFLICT"
+    ]
+  },
+  "base": "P01_hybrid_ab",
+  "patch": [
+    {
+      "op": "add",
+      "path": "/commercial_events/-",
+      "value": {
+        "delivery_id": "delivery-2",
+        "source_system": "manual_beta",
+        "event_id": "SYN-EVT-B-1",
+        "workspace_uuid": "b0000000-000b-4000-8000-000000000001",
+        "operation": "provision_isolated_mgmt",
+        "idempotency_key": "SYN-BETA-SUB-B-1:mgmt",
+        "request_hash": "7f3b7f07a40e9c3a3e1de8c4448c80f02e2a9a09d091e9bb793c6ed18a11f5a5",
+        "result_type": "provisioning_job",
+        "result_uuid": "40000000-000b-4000-8000-000000000001"
+      }
+    }
+  ]
+}

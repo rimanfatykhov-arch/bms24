@@ -1,0 +1,57 @@
+{
+  "contract": "bms24.cloud.entitlement_catalog",
+  "catalog_version": "0.1",
+  "status": "PROPOSED",
+  "provenance": {
+    "source": "BMS-ARC-ENT-001 v0.1 §§4, 6, 10, 12, 14, 22, 27-31, 49, 52-53; OD-6",
+    "source_urls": [
+      "https://docs.google.com/document/d/1D6BBA1_12rkRiXu2sM6y5A6gJQR_ggUCWHe1ujg1hx4/edit",
+      "https://github.com/rimanfatykhov-arch/bms24/pull/207#issuecomment-7236311964"
+    ],
+    "method": "authored for CLOUD-1a from contract text; no prices, no seat values, no enforcement"
+  },
+  "namespaces": ["mgmt", "academy", "erp", "integration", "cloud", "limit", "support"],
+  "definitions": [
+    {"code": "mgmt.core", "type": "feature", "layer": "management", "owner": "local_kbacompany", "capability_class": "CACHED_ALLOW", "depends_on": [], "provisioning_effect": "none", "status": "active", "introduced_in": "0.1"},
+    {"code": "mgmt.tasks", "type": "feature", "layer": "management", "owner": "local_kbacompany", "capability_class": "CACHED_ALLOW", "depends_on": ["mgmt.core"], "provisioning_effect": "none", "status": "active", "introduced_in": "0.1"},
+    {"code": "mgmt.calendar", "type": "feature", "layer": "management", "owner": "local_kbacompany", "capability_class": "CACHED_ALLOW", "depends_on": ["mgmt.core"], "provisioning_effect": "none", "status": "active", "introduced_in": "0.1"},
+    {"code": "mgmt.battle_plans", "type": "feature", "layer": "management", "owner": "local_kbacompany", "capability_class": "CACHED_ALLOW", "depends_on": ["mgmt.tasks"], "provisioning_effect": "none", "status": "active", "introduced_in": "0.1"},
+    {"code": "mgmt.indicators", "type": "feature", "layer": "management", "owner": "local_kbacompany", "capability_class": "CACHED_ALLOW", "depends_on": ["mgmt.core"], "provisioning_effect": "none", "status": "active", "introduced_in": "0.1"},
+    {"code": "mgmt.processes", "type": "feature", "layer": "management", "owner": "local_kbacompany", "capability_class": "CACHED_ALLOW", "depends_on": ["mgmt.core"], "provisioning_effect": "none", "status": "active", "introduced_in": "0.1"},
+    {"code": "mgmt.finance.core", "type": "feature", "layer": "management", "owner": "local_kbacompany", "capability_class": "CACHED_ALLOW", "depends_on": ["mgmt.core"], "provisioning_effect": "none", "status": "active", "introduced_in": "0.1"},
+    {"code": "mgmt.finance.budget", "type": "feature", "layer": "management", "owner": "local_kbacompany", "capability_class": "CACHED_ALLOW", "depends_on": ["mgmt.finance.core"], "provisioning_effect": "none", "status": "active", "introduced_in": "0.1"},
+    {"code": "academy.learning", "type": "feature", "layer": "academy", "owner": "local_kbacorporate", "capability_class": "CACHED_ALLOW", "depends_on": [], "provisioning_effect": "none", "status": "active", "introduced_in": "0.1"},
+    {"code": "erp.application", "type": "application", "layer": "erp", "owner": "bms_cloud_control_plane", "capability_class": "PROVISIONING", "depends_on": ["mgmt.core"], "provisioning_effect": "provision_application", "handler": "operator_checklist.erp_environment", "status": "active", "introduced_in": "0.1"},
+    {"code": "cloud.isolated_space", "type": "application", "layer": "cloud", "owner": "bms_cloud_control_plane", "capability_class": "PROVISIONING", "depends_on": ["mgmt.core"], "provisioning_effect": "provision_application", "handler": "operator_checklist.mgmt_isolated_space", "status": "active", "introduced_in": "0.1"},
+    {"code": "integration.bitrix", "type": "integration", "layer": "integration", "owner": "integration_hub", "capability_class": "PROVISIONING", "depends_on": [], "provisioning_effect": "create_connection", "handler": "operator_checklist.integration_connection", "status": "active", "introduced_in": "0.1"},
+    {"code": "limit.users", "type": "limit", "layer": "limit", "owner": "bms_cloud_control_plane", "capability_class": "LIMIT", "unit": "users", "depends_on": [], "provisioning_effect": "none", "status": "active", "introduced_in": "0.1"},
+    {"code": "limit.storage_bytes", "type": "limit", "layer": "limit", "owner": "bms_cloud_control_plane", "capability_class": "LIMIT", "unit": "bytes", "depends_on": [], "provisioning_effect": "none", "status": "active", "introduced_in": "0.1"},
+    {"code": "limit.ai_operations", "type": "limit", "layer": "limit", "owner": "bms_cloud_control_plane", "capability_class": "LIMIT", "unit": "operations", "depends_on": [], "provisioning_effect": "none", "status": "active", "introduced_in": "0.1"},
+    {"code": "limit.academy_seats", "type": "limit", "layer": "limit", "owner": "local_kbacorporate", "capability_class": "LIMIT", "unit": "seats", "depends_on": [], "provisioning_effect": "none", "status": "active", "introduced_in": "0.1"}
+  ],
+  "bundles": [
+    {"code": "bms_start", "inherits": [], "items": ["mgmt.core", "mgmt.tasks", "mgmt.calendar"], "status": "proposed"},
+    {"code": "bms_professional", "inherits": ["bms_start"], "items": ["mgmt.battle_plans", "mgmt.indicators", "mgmt.processes", "mgmt.finance.core", "mgmt.finance.budget"], "status": "proposed"},
+    {"code": "bms_erp", "inherits": ["bms_professional"], "items": ["erp.application"], "status": "proposed"},
+    {"code": "bms_academy", "inherits": [], "items": ["academy.learning"], "status": "proposed"},
+    {"code": "bms_legacy_compat", "inherits": [], "items": ["mgmt.core", "mgmt.tasks", "mgmt.calendar", "mgmt.battle_plans", "mgmt.indicators", "mgmt.processes", "mgmt.finance.core", "mgmt.finance.budget"], "status": "candidate", "note": "L3 grandfather bundle; per-company comparison 'available now vs by snapshot' is required before any cutover"}
+  ],
+  "legacy_aliases": [
+    {"legacy_code": "management", "kind": "product", "canonical": "mgmt", "source": "bms_tariff_catalog_service::PRODUCTS"},
+    {"legacy_code": "academy", "kind": "product", "canonical": "academy", "source": "bms_tariff_catalog_service::PRODUCTS"},
+    {"legacy_code": "erp", "kind": "product", "canonical": "erp", "source": "bms_tariff_catalog_service::PRODUCTS"},
+    {"legacy_code": "hire", "kind": "product", "canonical": null, "state": "open", "source": "bms_tariff_catalog_service::PRODUCTS", "note": "OD-6: Hire decided separately"},
+    {"legacy_code": "management.tasks", "kind": "feature", "canonical": "mgmt.tasks", "source": "bms_tariff_catalog_service::PRODUCTS"},
+    {"legacy_code": "management.calendar", "kind": "feature", "canonical": "mgmt.calendar", "source": "bms_tariff_catalog_service::PRODUCTS"},
+    {"legacy_code": "management.battle_plans", "kind": "feature", "canonical": "mgmt.battle_plans", "source": "bms_tariff_catalog_service::PRODUCTS"},
+    {"legacy_code": "management.indicators", "kind": "feature", "canonical": "mgmt.indicators", "source": "bms_tariff_catalog_service::PRODUCTS"},
+    {"legacy_code": "management.processes", "kind": "feature", "canonical": "mgmt.processes", "source": "bms_tariff_catalog_service::PRODUCTS"},
+    {"legacy_code": "hire.vacancies", "kind": "feature", "canonical": null, "state": "open", "source": "bms_tariff_catalog_service::PRODUCTS"},
+    {"legacy_code": "hire.candidates", "kind": "feature", "canonical": null, "state": "open", "source": "bms_tariff_catalog_service::PRODUCTS"},
+    {"legacy_code": "academy.learning", "kind": "feature", "canonical": "academy.learning", "source": "bms_tariff_catalog_service::PRODUCTS"},
+    {"legacy_code": "erp.operations", "kind": "feature", "canonical": "erp.application", "source": "bms_tariff_catalog_service::PRODUCTS", "note": "ENT-001 §10 names erp.application; confirm in catalog review"},
+    {"legacy_code": "bms.company_members", "kind": "limit", "canonical": "limit.users", "source": "bms_tariff_catalog_service::LIMITS"},
+    {"legacy_code": "bms.storage_bytes", "kind": "limit", "canonical": "limit.storage_bytes", "source": "bms_tariff_catalog_service::LIMITS"},
+    {"legacy_code": "bms.ai_operations", "kind": "limit", "canonical": "limit.ai_operations", "source": "bms_tariff_catalog_service::LIMITS"}
+  ]
+}

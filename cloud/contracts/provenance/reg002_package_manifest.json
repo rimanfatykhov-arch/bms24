@@ -1,0 +1,66 @@
+{
+  "manifest": "bms24.cloud.reg002_package_manifest",
+  "manifest_version": "0.1",
+  "source_document": {
+    "id": "BMS-ARC-REG-002",
+    "version": "0.1",
+    "status": "PROPOSED",
+    "url": "https://docs.google.com/document/d/12DvSqybN58QFcxWFziJfmwCCENZW9Fo5zQ7f_7rIYig/edit",
+    "checksum_section": "§18 SHA-256"
+  },
+  "package": {
+    "drive_file_id": "1y0CAa4nHhnSRxMRJHSIpWACRdC8C2cX6",
+    "title": "BMS-ARC-REG-002 — Cloud Registry MVP — Schema Package v0.1.zip",
+    "size_bytes": 151666,
+    "drive_modified_time": "2026-09-20T04:17:24.814Z",
+    "sha256": "093fa2936bc9f32c2828f9acfb2459de37fc221701319d1b9a6e91a699da28f3",
+    "sha256_verification": {
+      "state": "PASS",
+      "verified_by": "codex",
+      "posted_from_account": "owner",
+      "evidence": "https://github.com/rimanfatykhov-arch/bms24/issues/204#issuecomment-7236624093",
+      "attribution_evidence": "https://github.com/rimanfatykhov-arch/bms24/pull/207#issuecomment-7237057682"
+    }
+  },
+  "selected_members": [
+    {
+      "name": "bms_cloud_registry_mvp_v0.1.yaml",
+      "role": "canonical logical schema",
+      "sha256": "dc4a77a01ff9849a5229cbd3ba367b541a8bba745d85199b7b2a1662265644b1",
+      "import_target": "cloud/contracts/registry/v0.1/imported/bms_cloud_registry_mvp_v0.1.yaml"
+    },
+    {
+      "name": "bms_cloud_registry_mvp_v0.1.json",
+      "role": "JSON representation of the same logical schema",
+      "sha256": "118e8c74bbf85ce15dd7c102f06e48cc39ade3e23d7e5c23e899d71d2118c47f",
+      "import_target": "cloud/contracts/registry/v0.1/imported/bms_cloud_registry_mvp_v0.1.json"
+    },
+    {
+      "name": "bms_cloud_registry_mvp_exchange_v0.1.schema.json",
+      "role": "exchange payload JSON Schema",
+      "sha256": "18332150e37e6cbd490bb6686c2088faf29087c5c3e954de0280e39e442be7f2",
+      "import_target": "cloud/contracts/registry/v0.1/imported/bms_cloud_registry_mvp_exchange_v0.1.schema.json"
+    },
+    {
+      "name": "bms_cloud_registry_mvp_erd_v0.1.mmd",
+      "role": "Mermaid ERD source",
+      "sha256": "0d6093db6ace839a29ccee847f11eb55e4cdc4446478a3f1802cfe43d7a5fd7f",
+      "import_target": "cloud/contracts/registry/v0.1/imported/bms_cloud_registry_mvp_erd_v0.1.mmd"
+    }
+  ],
+  "excluded_members": [
+    {
+      "name": "bms_cloud_registry_mvp_erd_v0.1.png",
+      "sha256": "f629048c579917b43e30fb71b26ea7844a48673142f320cd9f65b58685caca2f",
+      "reason": "rendered image; not needed for validation, the Mermaid source is imported instead"
+    }
+  ],
+  "member_path_matching": "basename; exactly one archive member per selected name, otherwise FAIL",
+  "import": {
+    "state": "HOLD",
+    "blocker": "The package exists only as a ZIP in Google Drive (no separate member files in folder 11u93mCie7_T0LZ7gihQHY7m0MhU73Xg2). The CLOUD-1a session's Drive connector returns file bytes only as base64 inside the model context and cannot write them to disk; no authenticated shell download path exists. Member SHA-256 could therefore not be verified and nothing was imported.",
+    "unblock": "Place the original ZIP at any local path and run: python cloud/tools/cloud_contracts.py verify-reg002 --zip <path> --extract cloud/contracts/registry/v0.1/imported . The command extracts only if the ZIP and every selected member match this manifest.",
+    "members_verified": "NOT_RUN",
+    "transcribed_model": "cloud/contracts/registry/v0.1/registry_mvp.json is transcribed from the REG-002 document text and is not a substitute for the package; after import the two must be reconciled without silent contract changes."
+  }
+}

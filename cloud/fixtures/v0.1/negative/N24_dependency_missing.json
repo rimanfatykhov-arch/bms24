@@ -1,0 +1,23 @@
+{
+  "fixture_id": "N24_dependency_missing",
+  "fixture_version": "0.1",
+  "description": "A has mgmt.battle_plans without its dependency mgmt.tasks.",
+  "expect": {
+    "valid": false,
+    "violations": [
+      "INV_DEPENDENCY_MISSING"
+    ]
+  },
+  "base": "P01_hybrid_ab",
+  "patch": [
+    {
+      "op": "remove",
+      "path": "/state/entitlement_assignments/0/bundle_code"
+    },
+    {
+      "op": "add",
+      "path": "/state/entitlement_assignments/0/entitlement_code",
+      "value": "mgmt.battle_plans"
+    }
+  ]
+}

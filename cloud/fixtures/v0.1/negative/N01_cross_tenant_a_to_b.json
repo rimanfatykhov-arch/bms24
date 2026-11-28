@@ -1,0 +1,19 @@
+{
+  "fixture_id": "N01_cross_tenant_a_to_b",
+  "fixture_version": "0.1",
+  "description": "B integration connection points at company A (A->B leak).",
+  "expect": {
+    "valid": false,
+    "violations": [
+      "INV_CROSS_WORKSPACE_REFERENCE"
+    ]
+  },
+  "base": "P01_hybrid_ab",
+  "patch": [
+    {
+      "op": "replace",
+      "path": "/state/integration_connections/0/company_uuid",
+      "value": "d0000000-000a-4000-8000-000000000001"
+    }
+  ]
+}

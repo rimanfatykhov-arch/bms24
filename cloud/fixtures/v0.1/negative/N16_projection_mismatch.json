@@ -1,0 +1,19 @@
+{
+  "fixture_id": "N16_projection_mismatch",
+  "fixture_version": "0.1",
+  "description": "cloudmap projection for A disagrees with the registry workspace status.",
+  "expect": {
+    "valid": false,
+    "violations": [
+      "INV_PROJECTION_MISMATCH"
+    ]
+  },
+  "base": "P01_hybrid_ab",
+  "patch": [
+    {
+      "op": "replace",
+      "path": "/moodle_projections/0/cloud_status",
+      "value": "suspended"
+    }
+  ]
+}

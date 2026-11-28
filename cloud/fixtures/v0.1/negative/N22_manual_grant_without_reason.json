@@ -1,0 +1,18 @@
+{
+  "fixture_id": "N22_manual_grant_without_reason",
+  "fixture_version": "0.1",
+  "description": "Manual admin grant without a reason.",
+  "expect": {
+    "valid": false,
+    "violations": [
+      "INV_MANUAL_GRANT_REASON"
+    ]
+  },
+  "base": "P01_hybrid_ab",
+  "patch": [
+    {
+      "op": "remove",
+      "path": "/state/entitlement_assignments/2/reason"
+    }
+  ]
+}

@@ -1,0 +1,485 @@
+{
+  "fixture_id": "P01_hybrid_ab",
+  "fixture_version": "0.1",
+  "description": "Independent A/B: A shared (existing company, legacy_compatibility, ERP draft), B isolated mgmt + ERP with manual_beta SubscriptionReference and provenance, cloud_snapshot projection and mgmt.* snapshot.",
+  "expect": {
+    "valid": true
+  },
+  "payload": {
+    "payload_version": "bms24.cloud.exchange/0.1",
+    "as_of": "2026-11-20T00:00:00Z",
+    "state": {
+      "customers": [
+        {
+          "customer_uuid": "c0000000-000a-4000-8000-000000000001",
+          "commercial_provider": "odoo_corporate",
+          "commercial_customer_id": "SYN-ODOO-A",
+          "display_name": "Synthetic Customer A",
+          "status": "active",
+          "created_at": "2026-11-01T09:00:00Z"
+        },
+        {
+          "customer_uuid": "c0000000-000b-4000-8000-000000000001",
+          "commercial_provider": "manual_beta",
+          "commercial_customer_id": "SYN-BETA-B",
+          "display_name": "Synthetic Customer B",
+          "status": "active",
+          "created_at": "2026-11-01T09:00:00Z"
+        }
+      ],
+      "workspaces": [
+        {
+          "workspace_uuid": "a0000000-000a-4000-8000-000000000001",
+          "customer_uuid": "c0000000-000a-4000-8000-000000000001",
+          "slug": "synthetic-a",
+          "display_name": "Workspace A (shared)",
+          "status": "active",
+          "release_channel": "stable",
+          "created_at": "2026-11-01T09:00:00Z",
+          "activated_at": "2026-11-01T09:00:00Z",
+          "metadata": {
+            "hosting_mode": "shared",
+            "note": "existing shared company keeps its binding"
+          }
+        },
+        {
+          "workspace_uuid": "b0000000-000b-4000-8000-000000000001",
+          "customer_uuid": "c0000000-000b-4000-8000-000000000001",
+          "slug": "synthetic-b",
+          "display_name": "Workspace B (isolated)",
+          "status": "active",
+          "release_channel": "early_access",
+          "created_at": "2026-11-01T09:00:00Z",
+          "activated_at": "2026-11-01T09:00:00Z",
+          "metadata": {
+            "hosting_mode": "isolated"
+          }
+        }
+      ],
+      "company_links": [
+        {
+          "link_uuid": "e0000000-000a-4000-8000-000000000001",
+          "workspace_uuid": "a0000000-000a-4000-8000-000000000001",
+          "company_uuid": "d0000000-000a-4000-8000-000000000001",
+          "role": "primary",
+          "status": "active",
+          "effective_from": "2026-11-01T09:00:00Z"
+        },
+        {
+          "link_uuid": "e0000000-000b-4000-8000-000000000001",
+          "workspace_uuid": "b0000000-000b-4000-8000-000000000001",
+          "company_uuid": "d0000000-000b-4000-8000-000000000001",
+          "role": "primary",
+          "status": "active",
+          "effective_from": "2026-11-01T09:00:00Z"
+        }
+      ],
+      "subscriptions": [
+        {
+          "subscription_ref_uuid": "f0000000-000b-4000-8000-000000000001",
+          "workspace_uuid": "b0000000-000b-4000-8000-000000000001",
+          "commercial_provider": "manual_beta",
+          "subscription_id": "SYN-BETA-SUB-B-1",
+          "bundle_code": "bms_erp",
+          "commercial_status": "active",
+          "effective_from": "2026-11-01T09:00:00Z",
+          "source_revision": "1",
+          "provenance": {
+            "source_type": "manual_registration",
+            "recorded_by": "synthetic-operator-1",
+            "recorded_at": "2026-11-01T09:00:00Z",
+            "evidence_ref": "synthetic://beta-order/B-1",
+            "audit_uuid": "50000000-0000-4000-8000-000000000007"
+          }
+        }
+      ],
+      "entitlement_assignments": [
+        {
+          "assignment_uuid": "10000000-000a-4000-8000-000000000001",
+          "workspace_uuid": "a0000000-000a-4000-8000-000000000001",
+          "bundle_code": "bms_legacy_compat",
+          "state": "enabled",
+          "source_type": "migration",
+          "source_reference": "legacy_compatibility:d0000000-000a-4000-8000-000000000001",
+          "effective_from": "2026-11-01T09:00:00Z",
+          "revision": 1
+        },
+        {
+          "assignment_uuid": "10000000-000b-4000-8000-000000000001",
+          "workspace_uuid": "b0000000-000b-4000-8000-000000000001",
+          "bundle_code": "bms_erp",
+          "state": "enabled",
+          "source_type": "commercial_subscription",
+          "source_reference": "f0000000-000b-4000-8000-000000000001",
+          "effective_from": "2026-11-01T09:00:00Z",
+          "revision": 1
+        },
+        {
+          "assignment_uuid": "10000000-000b-4000-8000-000000000002",
+          "workspace_uuid": "b0000000-000b-4000-8000-000000000001",
+          "entitlement_code": "cloud.isolated_space",
+          "state": "enabled",
+          "source_type": "manual_admin_grant",
+          "source_reference": "synthetic://beta-order/B-1",
+          "effective_from": "2026-11-01T09:00:00Z",
+          "reason": "beta isolated space agreed with customer",
+          "revision": 1
+        }
+      ],
+      "application_instances": [
+        {
+          "instance_uuid": "20000000-0000-4000-8000-000000000001",
+          "application_code": "mgmt",
+          "isolation": "shared",
+          "workspace_uuid": null,
+          "provider_type": "moodle",
+          "provider_environment_id": "shared-moodle-synthetic",
+          "state": "active",
+          "release_channel": "stable",
+          "created_at": "2026-11-01T09:00:00Z"
+        },
+        {
+          "instance_uuid": "20000000-0000-4000-8000-000000000002",
+          "application_code": "academy",
+          "isolation": "shared",
+          "workspace_uuid": null,
+          "provider_type": "moodle",
+          "provider_environment_id": "shared-moodle-synthetic",
+          "state": "active",
+          "release_channel": "stable",
+          "created_at": "2026-11-01T09:00:00Z"
+        },
+        {
+          "instance_uuid": "20000000-000a-4000-8000-000000000001",
+          "application_code": "erp",
+          "isolation": "isolated",
+          "workspace_uuid": "a0000000-000a-4000-8000-000000000001",
+          "provider_type": "odoo",
+          "provider_environment_id": "odoo-synthetic-a",
+          "state": "draft",
+          "release_channel": "stable",
+          "created_at": "2026-11-01T09:00:00Z"
+        },
+        {
+          "instance_uuid": "20000000-000b-4000-8000-000000000001",
+          "application_code": "mgmt",
+          "isolation": "isolated",
+          "workspace_uuid": "b0000000-000b-4000-8000-000000000001",
+          "company_uuid": "d0000000-000b-4000-8000-000000000001",
+          "provider_type": "moodle",
+          "provider_environment_id": "moodle-synthetic-b",
+          "state": "active",
+          "release_channel": "early_access",
+          "created_at": "2026-11-01T09:00:00Z"
+        },
+        {
+          "instance_uuid": "20000000-000b-4000-8000-000000000002",
+          "application_code": "erp",
+          "isolation": "isolated",
+          "workspace_uuid": "b0000000-000b-4000-8000-000000000001",
+          "company_uuid": "d0000000-000b-4000-8000-000000000001",
+          "provider_type": "odoo",
+          "provider_environment_id": "odoo-synthetic-b",
+          "state": "active",
+          "release_channel": "early_access",
+          "created_at": "2026-11-01T09:00:00Z"
+        }
+      ],
+      "integration_connections": [
+        {
+          "connection_uuid": "30000000-000b-4000-8000-000000000001",
+          "workspace_uuid": "b0000000-000b-4000-8000-000000000001",
+          "company_uuid": "d0000000-000b-4000-8000-000000000001",
+          "provider_type": "bitrix24",
+          "provider_environment": "synthetic-portal-b",
+          "purpose": "crm_sync",
+          "state": "healthy",
+          "contract_version": "0.1",
+          "credential_reference": "secretref://synthetic/b/bitrix"
+        }
+      ],
+      "provisioning_jobs": [
+        {
+          "job_uuid": "40000000-000b-4000-8000-000000000001",
+          "workspace_uuid": "b0000000-000b-4000-8000-000000000001",
+          "target_type": "application_instance",
+          "target_id": "20000000-000b-4000-8000-000000000001",
+          "operation": "provision_isolated_mgmt",
+          "handler": "operator_checklist.mgmt_isolated_space",
+          "idempotency_key": "SYN-BETA-SUB-B-1:mgmt",
+          "request_hash": "6378beaa1147868f44b0bd190e7b2ccd40f479e99c9bada7e8a31d9ec0acaff6",
+          "state": "succeeded",
+          "attempt_count": 1,
+          "requested_by": "synthetic-operator-1",
+          "correlation_id": "corr-job-b1",
+          "created_at": "2026-11-01T09:00:00Z"
+        },
+        {
+          "job_uuid": "40000000-000b-4000-8000-000000000002",
+          "workspace_uuid": "b0000000-000b-4000-8000-000000000001",
+          "target_type": "application_instance",
+          "target_id": "20000000-000b-4000-8000-000000000002",
+          "operation": "provision_erp",
+          "handler": "operator_checklist.erp_environment",
+          "idempotency_key": "SYN-BETA-SUB-B-1:erp",
+          "request_hash": "e2a95b22cad9209aecd4dd4b58f7ab98dfd2e7450264d279a0cb77bc8f82e06b",
+          "state": "succeeded",
+          "attempt_count": 1,
+          "requested_by": "synthetic-operator-1",
+          "correlation_id": "corr-job-b2",
+          "created_at": "2026-11-01T09:00:00Z"
+        }
+      ],
+      "audit_events": [
+        {
+          "audit_uuid": "50000000-0000-4000-8000-000000000001",
+          "actor_type": "operator",
+          "actor_id": "synthetic-operator-1",
+          "action": "cloud.customer.registered",
+          "target_type": "customer",
+          "target_id": "c0000000-000a-4000-8000-000000000001",
+          "occurred_at": "2026-11-01T09:00:00Z",
+          "correlation_id": "corr-001"
+        },
+        {
+          "audit_uuid": "50000000-0000-4000-8000-000000000002",
+          "actor_type": "operator",
+          "actor_id": "synthetic-operator-1",
+          "action": "cloud.customer.registered",
+          "target_type": "customer",
+          "target_id": "c0000000-000b-4000-8000-000000000001",
+          "occurred_at": "2026-11-01T09:00:00Z",
+          "correlation_id": "corr-002"
+        },
+        {
+          "audit_uuid": "50000000-0000-4000-8000-000000000003",
+          "actor_type": "operator",
+          "actor_id": "synthetic-operator-1",
+          "action": "cloud.workspace.created",
+          "target_type": "workspace",
+          "target_id": "a0000000-000a-4000-8000-000000000001",
+          "occurred_at": "2026-11-01T09:00:00Z",
+          "correlation_id": "corr-003",
+          "workspace_uuid": "a0000000-000a-4000-8000-000000000001"
+        },
+        {
+          "audit_uuid": "50000000-0000-4000-8000-000000000004",
+          "actor_type": "operator",
+          "actor_id": "synthetic-operator-1",
+          "action": "cloud.workspace.created",
+          "target_type": "workspace",
+          "target_id": "b0000000-000b-4000-8000-000000000001",
+          "occurred_at": "2026-11-01T09:00:00Z",
+          "correlation_id": "corr-004",
+          "workspace_uuid": "b0000000-000b-4000-8000-000000000001"
+        },
+        {
+          "audit_uuid": "50000000-0000-4000-8000-000000000005",
+          "actor_type": "operator",
+          "actor_id": "synthetic-operator-1",
+          "action": "cloud.company_link.created",
+          "target_type": "company_link",
+          "target_id": "e0000000-000a-4000-8000-000000000001",
+          "occurred_at": "2026-11-01T09:00:00Z",
+          "correlation_id": "corr-005",
+          "workspace_uuid": "a0000000-000a-4000-8000-000000000001"
+        },
+        {
+          "audit_uuid": "50000000-0000-4000-8000-000000000006",
+          "actor_type": "operator",
+          "actor_id": "synthetic-operator-1",
+          "action": "cloud.company_link.created",
+          "target_type": "company_link",
+          "target_id": "e0000000-000b-4000-8000-000000000001",
+          "occurred_at": "2026-11-01T09:00:00Z",
+          "correlation_id": "corr-006",
+          "workspace_uuid": "b0000000-000b-4000-8000-000000000001"
+        },
+        {
+          "audit_uuid": "50000000-0000-4000-8000-000000000007",
+          "actor_type": "operator",
+          "actor_id": "synthetic-operator-1",
+          "action": "cloud.subscription.registered",
+          "target_type": "subscription",
+          "target_id": "f0000000-000b-4000-8000-000000000001",
+          "occurred_at": "2026-11-01T09:00:00Z",
+          "correlation_id": "corr-007",
+          "workspace_uuid": "b0000000-000b-4000-8000-000000000001",
+          "reason": "manual beta registration before Odoo commercial sync"
+        },
+        {
+          "audit_uuid": "50000000-0000-4000-8000-000000000008",
+          "actor_type": "operator",
+          "actor_id": "synthetic-operator-1",
+          "action": "cloud.entitlement.assigned",
+          "target_type": "entitlement_assignment",
+          "target_id": "10000000-000a-4000-8000-000000000001",
+          "occurred_at": "2026-11-01T09:00:00Z",
+          "correlation_id": "corr-008",
+          "workspace_uuid": "a0000000-000a-4000-8000-000000000001"
+        },
+        {
+          "audit_uuid": "50000000-0000-4000-8000-000000000009",
+          "actor_type": "operator",
+          "actor_id": "synthetic-operator-1",
+          "action": "cloud.entitlement.assigned",
+          "target_type": "entitlement_assignment",
+          "target_id": "10000000-000b-4000-8000-000000000001",
+          "occurred_at": "2026-11-01T09:00:00Z",
+          "correlation_id": "corr-009",
+          "workspace_uuid": "b0000000-000b-4000-8000-000000000001"
+        },
+        {
+          "audit_uuid": "50000000-0000-4000-8000-000000000010",
+          "actor_type": "operator",
+          "actor_id": "synthetic-operator-1",
+          "action": "cloud.entitlement.assigned",
+          "target_type": "entitlement_assignment",
+          "target_id": "10000000-000b-4000-8000-000000000002",
+          "occurred_at": "2026-11-01T09:00:00Z",
+          "correlation_id": "corr-010",
+          "workspace_uuid": "b0000000-000b-4000-8000-000000000001"
+        },
+        {
+          "audit_uuid": "50000000-0000-4000-8000-000000000011",
+          "actor_type": "operator",
+          "actor_id": "synthetic-operator-1",
+          "action": "cloud.application_instance.registered",
+          "target_type": "application_instance",
+          "target_id": "20000000-0000-4000-8000-000000000001",
+          "occurred_at": "2026-11-01T09:00:00Z",
+          "correlation_id": "corr-011"
+        },
+        {
+          "audit_uuid": "50000000-0000-4000-8000-000000000012",
+          "actor_type": "operator",
+          "actor_id": "synthetic-operator-1",
+          "action": "cloud.application_instance.registered",
+          "target_type": "application_instance",
+          "target_id": "20000000-0000-4000-8000-000000000002",
+          "occurred_at": "2026-11-01T09:00:00Z",
+          "correlation_id": "corr-012"
+        },
+        {
+          "audit_uuid": "50000000-0000-4000-8000-000000000013",
+          "actor_type": "operator",
+          "actor_id": "synthetic-operator-1",
+          "action": "cloud.application_instance.registered",
+          "target_type": "application_instance",
+          "target_id": "20000000-000a-4000-8000-000000000001",
+          "occurred_at": "2026-11-01T09:00:00Z",
+          "correlation_id": "corr-013",
+          "workspace_uuid": "a0000000-000a-4000-8000-000000000001"
+        },
+        {
+          "audit_uuid": "50000000-0000-4000-8000-000000000014",
+          "actor_type": "operator",
+          "actor_id": "synthetic-operator-1",
+          "action": "cloud.application_instance.registered",
+          "target_type": "application_instance",
+          "target_id": "20000000-000b-4000-8000-000000000001",
+          "occurred_at": "2026-11-01T09:00:00Z",
+          "correlation_id": "corr-014",
+          "workspace_uuid": "b0000000-000b-4000-8000-000000000001"
+        },
+        {
+          "audit_uuid": "50000000-0000-4000-8000-000000000015",
+          "actor_type": "operator",
+          "actor_id": "synthetic-operator-1",
+          "action": "cloud.application_instance.registered",
+          "target_type": "application_instance",
+          "target_id": "20000000-000b-4000-8000-000000000002",
+          "occurred_at": "2026-11-01T09:00:00Z",
+          "correlation_id": "corr-015",
+          "workspace_uuid": "b0000000-000b-4000-8000-000000000001"
+        },
+        {
+          "audit_uuid": "50000000-0000-4000-8000-000000000016",
+          "actor_type": "operator",
+          "actor_id": "synthetic-operator-1",
+          "action": "cloud.integration_connection.registered",
+          "target_type": "integration_connection",
+          "target_id": "30000000-000b-4000-8000-000000000001",
+          "occurred_at": "2026-11-01T09:00:00Z",
+          "correlation_id": "corr-016",
+          "workspace_uuid": "b0000000-000b-4000-8000-000000000001"
+        },
+        {
+          "audit_uuid": "50000000-0000-4000-8000-000000000017",
+          "actor_type": "operator",
+          "actor_id": "synthetic-operator-1",
+          "action": "cloud.provisioning_job.created",
+          "target_type": "provisioning_job",
+          "target_id": "40000000-000b-4000-8000-000000000001",
+          "occurred_at": "2026-11-01T09:00:00Z",
+          "correlation_id": "corr-017",
+          "workspace_uuid": "b0000000-000b-4000-8000-000000000001"
+        },
+        {
+          "audit_uuid": "50000000-0000-4000-8000-000000000018",
+          "actor_type": "operator",
+          "actor_id": "synthetic-operator-1",
+          "action": "cloud.provisioning_job.created",
+          "target_type": "provisioning_job",
+          "target_id": "40000000-000b-4000-8000-000000000002",
+          "occurred_at": "2026-11-01T09:00:00Z",
+          "correlation_id": "corr-018",
+          "workspace_uuid": "b0000000-000b-4000-8000-000000000001"
+        }
+      ]
+    },
+    "commercial_events": [
+      {
+        "delivery_id": "delivery-1",
+        "source_system": "manual_beta",
+        "event_id": "SYN-EVT-B-1",
+        "workspace_uuid": "b0000000-000b-4000-8000-000000000001",
+        "operation": "provision_isolated_mgmt",
+        "idempotency_key": "SYN-BETA-SUB-B-1:mgmt",
+        "request_hash": "6378beaa1147868f44b0bd190e7b2ccd40f479e99c9bada7e8a31d9ec0acaff6",
+        "result_type": "provisioning_job",
+        "result_uuid": "40000000-000b-4000-8000-000000000001"
+      }
+    ],
+    "moodle_projections": [
+      {
+        "company_uuid": "d0000000-000a-4000-8000-000000000001",
+        "workspace_uuid": "a0000000-000a-4000-8000-000000000001",
+        "runtime_instance_uuid": "20000000-0000-4000-8000-000000000001",
+        "projection_revision": 1,
+        "cloud_status": "active",
+        "entitlement_mode": "legacy_compatibility",
+        "erp_application_state": "not_provisioned",
+        "integration_health": "unknown"
+      },
+      {
+        "company_uuid": "d0000000-000b-4000-8000-000000000001",
+        "workspace_uuid": "b0000000-000b-4000-8000-000000000001",
+        "runtime_instance_uuid": "20000000-000b-4000-8000-000000000001",
+        "projection_revision": 1,
+        "cloud_status": "active",
+        "entitlement_mode": "cloud_snapshot",
+        "erp_application_state": "active",
+        "integration_health": "healthy"
+      }
+    ],
+    "entitlement_snapshots": [
+      {
+        "workspace_uuid": "b0000000-000b-4000-8000-000000000001",
+        "company_uuid": "d0000000-000b-4000-8000-000000000001",
+        "snapshot_revision": "1",
+        "catalog_version": "0.1",
+        "codes": [
+          "mgmt.battle_plans",
+          "mgmt.calendar",
+          "mgmt.core",
+          "mgmt.finance.budget",
+          "mgmt.finance.core",
+          "mgmt.indicators",
+          "mgmt.processes",
+          "mgmt.tasks"
+        ]
+      }
+    ]
+  }
+}

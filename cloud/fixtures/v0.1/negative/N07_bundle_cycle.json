@@ -1,0 +1,21 @@
+{
+  "fixture_id": "N07_bundle_cycle",
+  "fixture_version": "0.1",
+  "description": "bms_start inherits bms_erp, closing a bundle cycle.",
+  "expect": {
+    "valid": false,
+    "violations": [
+      "INV_BUNDLE_CYCLE"
+    ]
+  },
+  "base": "P01_hybrid_ab",
+  "catalog_patch": [
+    {
+      "op": "replace",
+      "path": "/bundles/0/inherits",
+      "value": [
+        "bms_erp"
+      ]
+    }
+  ]
+}

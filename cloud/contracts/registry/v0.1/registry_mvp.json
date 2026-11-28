@@ -1,0 +1,179 @@
+{
+  "contract": "bms24.cloud.registry_mvp",
+  "contract_version": "0.1",
+  "status": "PROPOSED",
+  "provenance": {
+    "source": "BMS-ARC-REG-002 v0.1 document text §§1-15 and BMS-ARC-REG-001 v0.1 §§3-34, 51, 60-62",
+    "source_urls": [
+      "https://docs.google.com/document/d/12DvSqybN58QFcxWFziJfmwCCENZW9Fo5zQ7f_7rIYig/edit",
+      "https://docs.google.com/document/d/1mC6aEAWzMnBuE2ovZpfumG-T5LHj2Y8XDcZadQpaLsk/edit"
+    ],
+    "method": "transcribed by hand from document text on 2026-11-28; NOT imported from the REG-002 schema package",
+    "package_import": "HOLD, see cloud/contracts/provenance/reg002_package_manifest.json",
+    "owner_decisions": "https://github.com/rimanfatykhov-arch/bms24/pull/207#issuecomment-7236311964"
+  },
+  "entities": {
+    "customer": {
+      "reg002_name": "CloudCustomer",
+      "collection": "customers",
+      "id": "customer_uuid",
+      "unique": [["commercial_provider", "commercial_customer_id"]],
+      "immutable": ["customer_uuid"],
+      "references": {}
+    },
+    "workspace": {
+      "reg002_name": "CloudWorkspace",
+      "collection": "workspaces",
+      "id": "workspace_uuid",
+      "unique": [],
+      "immutable": ["workspace_uuid", "customer_uuid"],
+      "references": {"customer_uuid": "customer"}
+    },
+    "company_link": {
+      "reg002_name": "WorkspaceCompanyLink",
+      "collection": "company_links",
+      "id": "link_uuid",
+      "unique": [],
+      "immutable": ["link_uuid", "workspace_uuid", "company_uuid"],
+      "references": {"workspace_uuid": "workspace"},
+      "external_references": {"company_uuid": "BMS Company (local_kbacompany)"}
+    },
+    "subscription": {
+      "reg002_name": "SubscriptionReference",
+      "collection": "subscriptions",
+      "id": "subscription_ref_uuid",
+      "unique": [["commercial_provider", "subscription_id"]],
+      "immutable": ["subscription_ref_uuid", "workspace_uuid", "commercial_provider", "subscription_id"],
+      "references": {"workspace_uuid": "workspace"}
+    },
+    "entitlement_assignment": {
+      "reg002_name": "EntitlementAssignment",
+      "collection": "entitlement_assignments",
+      "id": "assignment_uuid",
+      "unique": [],
+      "immutable": ["assignment_uuid", "workspace_uuid"],
+      "references": {"workspace_uuid": "workspace"},
+      "external_references": {"entitlement_code": "Product Entitlement Catalog", "bundle_code": "Product Entitlement Catalog"}
+    },
+    "application_instance": {
+      "reg002_name": "ApplicationInstance",
+      "collection": "application_instances",
+      "id": "instance_uuid",
+      "unique": [],
+      "immutable": ["instance_uuid", "application_code", "isolation", "workspace_uuid"],
+      "references": {"workspace_uuid": "workspace"}
+    },
+    "integration_connection": {
+      "reg002_name": "IntegrationConnection",
+      "collection": "integration_connections",
+      "id": "connection_uuid",
+      "unique": [["workspace_uuid", "provider_type", "provider_environment", "purpose"]],
+      "immutable": ["connection_uuid", "workspace_uuid", "company_uuid"],
+      "references": {"workspace_uuid": "workspace"}
+    },
+    "provisioning_job": {
+      "reg002_name": "ProvisioningJob",
+      "collection": "provisioning_jobs",
+      "id": "job_uuid",
+      "unique": [["workspace_uuid", "operation", "idempotency_key"]],
+      "immutable": ["job_uuid", "workspace_uuid", "operation", "idempotency_key", "request_hash"],
+      "references": {"workspace_uuid": "workspace"}
+    },
+    "audit_event": {
+      "reg002_name": "AuditEvent",
+      "collection": "audit_events",
+      "id": "audit_uuid",
+      "unique": [],
+      "immutable": ["*"],
+      "append_only": true,
+      "references": {}
+    }
+  },
+  "enums": {
+    "workspace_status": ["draft", "provisioning", "active", "degraded", "suspended", "closing", "closed"],
+    "application_instance_state": ["draft", "provisioning", "ready", "active", "degraded", "maintenance", "suspended", "failed", "retiring", "retired"],
+    "integration_connection_state": ["provisioning", "healthy", "degraded", "failed", "blocked", "suspended", "closed"],
+    "provisioning_job_state": ["queued", "running", "waiting_external", "retry_scheduled", "succeeded", "failed", "blocked", "cancelled", "rollback"],
+    "entitlement_assignment_state": ["pending", "enabled", "suspended", "expired", "revoked"],
+    "company_link_role": ["primary", "subsidiary", "holding_member", "sandbox_test"],
+    "company_link_status": ["active", "ended"],
+    "application_code": ["mgmt", "academy", "cloud", "erp", "int", "api"],
+    "isolation": ["shared", "isolated"],
+    "release_channel": ["stable", "early_access", "development"],
+    "commercial_provider": ["odoo_corporate", "manual_beta"],
+    "subscription_commercial_status": ["active", "suspended", "cancelled", "expired"],
+    "subscription_source_type": ["manual_registration", "commercial_sync"],
+    "assignment_source_type": ["commercial_subscription", "commercial_order", "manual_admin_grant", "pilot", "trial", "internal_demo", "migration", "support_override"],
+    "actor_type": ["user", "operator", "service", "system"],
+    "mutation_op": ["update", "delete"]
+  },
+  "enum_provenance": {
+    "workspace_status": "REG-002 §14",
+    "application_instance_state": "REG-002 §14",
+    "integration_connection_state": "REG-002 §14",
+    "provisioning_job_state": "REG-002 §14",
+    "entitlement_assignment_state": "REG-002 §14",
+    "company_link_role": "REG-001 §6 examples",
+    "company_link_status": "AUTHORED v0.1 (REG-001 §6 names the field without values) — clarification C3",
+    "application_code": "REG-001 §10 (auth omitted until introduced)",
+    "isolation": "REG-001 §10 shared_or_isolated; isolated mgmt per OD-1 — clarification C2",
+    "release_channel": "CLOUD-001 §12",
+    "commercial_provider": "AUTHORED v0.1 per OD-8 (manual beta registration) — clarification C4",
+    "subscription_commercial_status": "AUTHORED v0.1 (REG-001 §8 names the field without values) — clarification C3",
+    "subscription_source_type": "AUTHORED v0.1 per OD-8 — clarification C4",
+    "assignment_source_type": "ENT-001 §6",
+    "actor_type": "AUTHORED v0.1 (REG-001 §34 names the field without values) — clarification C3",
+    "mutation_op": "AUTHORED v0.1 for fixtures only (REG-001 §47 soft delete)"
+  },
+  "application_definitions": {
+    "mgmt": {"runtime_type": "moodle", "isolation_allowed": ["shared", "isolated"], "owner": "local_kbacompany"},
+    "academy": {"runtime_type": "moodle", "isolation_allowed": ["shared"], "owner": "moodle_core_and_local_kbacorporate"},
+    "cloud": {"runtime_type": "control_plane", "isolation_allowed": ["shared"], "owner": "bms_cloud_control_plane"},
+    "erp": {"runtime_type": "odoo", "isolation_allowed": ["isolated"], "owner": "odoo_erp"},
+    "int": {"runtime_type": "integration_hub", "isolation_allowed": ["shared"], "owner": "integration_hub"},
+    "api": {"runtime_type": "public_api", "isolation_allowed": ["shared"], "owner": "local_kbacompany"}
+  },
+  "provisioning_handlers": [
+    "operator_checklist.mgmt_isolated_space",
+    "operator_checklist.erp_environment",
+    "operator_checklist.integration_connection",
+    "operator_checklist.workspace_activation"
+  ],
+  "invariants": [
+    {"id": "INV_DUPLICATE_ID", "source": "REG-002 §15, REG-001 §62", "text": "every registry object id is unique within its collection"},
+    {"id": "INV_DUPLICATE_UNIQUE_KEY", "source": "REG-002 §4, §7, §10", "text": "declared unique keys are unique"},
+    {"id": "INV_DUPLICATE_SLUG", "source": "REG-001 §62", "text": "slug unique among non-closed workspaces"},
+    {"id": "INV_DANGLING_REFERENCE", "source": "REG-002 §17", "text": "every internal reference resolves"},
+    {"id": "INV_PRIMARY_LINK", "source": "REG-002 §6, REG-001 §62", "text": "at most one active primary link per workspace; exactly one for provisioning/active/degraded/suspended/closing workspaces"},
+    {"id": "INV_CROSS_WORKSPACE_REFERENCE", "source": "REG-001 §48, CLOUD-001 §21", "text": "a company referenced by a workspace-scoped object is actively linked to that workspace; a company has an active primary link in at most one workspace; audit workspace matches target workspace"},
+    {"id": "INV_IMMUTABLE_FIELD", "source": "REG-002 §5, §15", "text": "immutable fields are never changed by a mutation"},
+    {"id": "INV_SOFT_DELETE_ONLY", "source": "REG-001 §47", "text": "registry records are archived or retired, never deleted"},
+    {"id": "INV_AUDIT_MISSING", "source": "REG-002 §15, REG-001 §62", "text": "every registry object has at least one audit event targeting it"},
+    {"id": "INV_AUDIT_APPEND_ONLY", "source": "REG-002 §12", "text": "audit events are never updated or deleted"},
+    {"id": "INV_IDEMPOTENCY_CONFLICT", "source": "REG-001 §24, ENT-001 §39-40", "text": "one idempotency scope key never carries different request content"},
+    {"id": "INV_IDEMPOTENT_DUPLICATE_RESULT", "source": "REG-002 §11, §15", "text": "a repeated trigger with the same idempotency scope key yields exactly one resulting object"},
+    {"id": "INV_CLOSED_WORKSPACE_JOB", "source": "REG-002 §15, REG-001 §62", "text": "a closed workspace has no provisioning job created after closure unless explicitly reactivated with audit"},
+    {"id": "INV_ERP_REQUIRES_COMPANY_LINK", "source": "REG-002 §15, REG-001 §13", "text": "an ERP instance beyond draft requires an active primary link whose company equals the instance company"},
+    {"id": "INV_ISOLATION_RULE", "source": "REG-002 §9, REG-001 §12-13, OD-1", "text": "shared instances have no workspace; isolated instances have one; isolation allowed by the application definition"},
+    {"id": "INV_DUPLICATE_INSTANCE", "source": "REG-001 §62", "text": "no two non-retired instances for the same workspace and application"},
+    {"id": "INV_DUPLICATE_PROVIDER_ENV", "source": "REG-001 §13", "text": "provider_environment_id unique among isolated instances"},
+    {"id": "INV_HISTORY_REQUIRED", "source": "REG-002 §15, REG-001 §37", "text": "suspension or closure keeps links, subscriptions and audit history"},
+    {"id": "INV_RAW_SECRET", "source": "REG-002 §10, §15, REG-001 §20", "text": "no raw secret values; credential_reference is a reference only"},
+    {"id": "INV_PROVENANCE_MISSING", "source": "OD-8, REG-001 §8", "text": "every SubscriptionReference carries provenance with an audit event; manual_beta requires manual_registration"},
+    {"id": "INV_UNKNOWN_CODE", "source": "ENT-001 §10, §43", "text": "unknown entitlement or bundle code is rejected (fail-closed)"},
+    {"id": "INV_UNKNOWN_HANDLER", "source": "ENT-001 §49", "text": "provisioning jobs and provisioning entitlements reference a declared handler"},
+    {"id": "INV_MANUAL_GRANT_REASON", "source": "ENT-001 §6", "text": "manual_admin_grant and support_override carry a reason"},
+    {"id": "INV_DEPENDENCY_MISSING", "source": "ENT-001 §29", "text": "an effective entitlement has all dependencies effective"},
+    {"id": "INV_PROJECTION_MISMATCH", "source": "workspace_mapping_service 0.6.8, REG-001 §57", "text": "the Moodle cloudmap projection agrees with the registry via WorkspaceCompanyLink and the status mapping"},
+    {"id": "INV_SNAPSHOT_MISMATCH", "source": "entitlement_snapshot_service 0.6.7, ENT-001 §14", "text": "a Moodle snapshot contains exactly the effective mgmt.* codes of its workspace"}
+  ],
+  "clarifications": [
+    {"id": "C1", "topic": "ERP not-provisioned state", "detail": "REG-001 §60 uses 'Not Provisioned' for ERP instances, REG-002 §14 enum has no such value. v0.1 uses 'draft' for a registered but not provisioned instance and maps it to cloudmap 'not_provisioned'. Needs REG v0.2 decision."},
+    {"id": "C2", "topic": "isolated mgmt", "detail": "REG-002 §9 describes mgmt/academy only as shared. OD-1 requires isolated spaces as an option, so v0.1 allows isolation=isolated for mgmt. Needs REG v0.2 confirmation."},
+    {"id": "C3", "topic": "enums without values in REG", "detail": "company_link.status, subscription commercial_status and audit actor_type are named in REG-001 without values; v0.1 values are authored and marked in enum_provenance."},
+    {"id": "C4", "topic": "manual beta subscription", "detail": "OD-8 allows manual registration with audit and provenance; commercial_provider 'manual_beta' and provenance.source_type are authored v0.1 values."},
+    {"id": "C5", "topic": "ERP entitlement state models", "detail": "MIG-001 §6 (Requested..Closed) and ENT-001 §5 (Pending..Revoked) differ. v0.1 keeps ENT-001 states for assignments and ApplicationInstance states for operations (ENT-001 §26)."},
+    {"id": "C6", "topic": "customer status", "detail": "REG-001 §3 names CloudCustomer.status without values; v0.1 accepts any non-empty string."},
+    {"id": "C7", "topic": "Hire", "detail": "Hire product and hire.* codes remain OPEN (OD-6); no canonical code is assigned."}
+  ]
+}

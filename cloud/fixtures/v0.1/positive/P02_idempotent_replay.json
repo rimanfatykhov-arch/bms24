@@ -1,0 +1,26 @@
+{
+  "fixture_id": "P02_idempotent_replay",
+  "fixture_version": "0.1",
+  "description": "Replay of the same commercial delivery (same key and hash) resolves to the one existing job.",
+  "expect": {
+    "valid": true
+  },
+  "base": "P01_hybrid_ab",
+  "patch": [
+    {
+      "op": "add",
+      "path": "/commercial_events/-",
+      "value": {
+        "delivery_id": "delivery-1-retry",
+        "source_system": "manual_beta",
+        "event_id": "SYN-EVT-B-1",
+        "workspace_uuid": "b0000000-000b-4000-8000-000000000001",
+        "operation": "provision_isolated_mgmt",
+        "idempotency_key": "SYN-BETA-SUB-B-1:mgmt",
+        "request_hash": "6378beaa1147868f44b0bd190e7b2ccd40f479e99c9bada7e8a31d9ec0acaff6",
+        "result_type": "provisioning_job",
+        "result_uuid": "40000000-000b-4000-8000-000000000001"
+      }
+    }
+  ]
+}
