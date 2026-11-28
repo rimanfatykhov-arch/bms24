@@ -58,6 +58,9 @@ NOT APPLICABLE only by the rules in the table. Small diff size never lowers the 
 - **Job roles.** `this-pr` = the candidate (required). `negative-*` (planted defects, only planned when the tier machinery
   changes) = required when planned: the job succeeds only if the defect was detected. The historical #80 and #81 replays
   were pilot evidence and are no longer scheduled in PR CI.
+- **Cancellation.** The required `Merge gate` job still evaluates failed dependencies. Its verdict step stops on workflow
+  cancellation and never starts the FULL wait if a dependency was cancelled. A missing or cancelled verdict cannot
+  pass the job. For a current FULL candidate, the same FULL checks and deadline apply.
 - **Identity.** Every FAST/STANDARD/BROWSER artifact carries `identity.json` (`tools/ci/stamp_identity.py`): tier, target,
   head, base, profile, engine, run id/attempt, job and SHA256 of the report bytes. The gate compares it with the PR event
   head/base and this run id, the classification head/base with the event, and re-hashes the downloaded report.
