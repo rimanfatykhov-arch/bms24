@@ -1,15 +1,15 @@
 {
   "scope": "exact intentional source updates; not runtime or release acceptance",
-  "base_sha": "0884643 (main after #171, #181 Office DOC-W2, #190/#193 Information Centre, #197; previously a515a38, originally 323f948c6cc670c34722f516118ca7426fd604f7)",
+  "base_sha": "74e00c4 (main after #172 R5a calendar; previously 0884643, a515a38, originally 323f948c6cc670c34722f516118ca7426fd604f7)",
   "normalization": "CRLF to LF only",
-  "previous_evidence": "docs/reconcile/office-workspace-doc-w2-source-preservation.json (DOC-W2 Office workspace, #181)",
-  "decision": "BMS-STD-TER-001 v1.0 and BMS-ADM-000 changes 2.6/2.7; owner approved explicit hash update for PR #187 on 2026-11-25 (recomputed on main 0884643: same before/after line pairs, only line numbers and file hashes moved with the appended main blocks)",
+  "previous_evidence": "docs/reconcile/daily-reports-r5a-source-preservation.json (Daily reports R5a calendar, #172)",
+  "decision": "BMS-STD-TER-001 v1.0 and BMS-ADM-000 changes 2.6/2.7; owner approved explicit hash update for PR #187 on 2026-11-25 (recomputed on main 74e00c4 after R5a: same before/after line pairs, only line numbers and file hashes moved with the appended main blocks)",
   "change": "In-place value replacement of existing RU/EN strings (terminology only): Administrative Scale -> Administrative Cascade, Ideal state -> Target state, Org policy -> Organizational policy, Decision/order -> Management decision; legacy cascade module labelled as legacy. Same line count; no key added, removed or renamed; no schema, capability or notification change.",
   "files": [
     {
       "path": "local/kbacompany/lang/en/local_kbacompany.php",
-      "before_sha256_lf": "32402ab956d141c1cbb1b45c495cf8ddc2c6c95d09518995dba2c1473dfbc5cf",
-      "after_sha256_lf": "7a5dec9890f6d005eae6afbd98c9771449860104672095ad31343a6309e28902",
+      "before_sha256_lf": "62af4834f4441502e5ebc4b535b508d3369f46b35f61aca9a2f6edf8e77e76e6",
+      "after_sha256_lf": "e0d49c73c41b137f6d6927eda8afc128c30a0b30ac5917c24a443f201ca9bf47",
       "line_replacements": [
         {
           "line": 65,
@@ -310,8 +310,8 @@
     },
     {
       "path": "local/kbacompany/lang/ru/local_kbacompany.php",
-      "before_sha256_lf": "d5d534758b1c6c6cef4069d1dd6cbe233b9a6973a49f48c0ebc3f781ec51177f",
-      "after_sha256_lf": "4a03d436e756d2c62e1e4c92d66450d74262528c650915f496d8d6bcccefb0ae",
+      "before_sha256_lf": "02c53ab3bafd6aa9fab2c2f8fd4475456a32cb2d96f17b7d9c7fc01179bc730f",
+      "after_sha256_lf": "07df4610a4549fe8a08b92107cdefb480796e15fe40ee371a4e36c2286cfa0e4",
       "line_replacements": [
         {
           "line": 65,
