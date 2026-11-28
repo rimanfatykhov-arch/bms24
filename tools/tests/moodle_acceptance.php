@@ -532,7 +532,9 @@ if ($fresh) {
             // ADR-0011 block 1: monthly summary for managers, read-only, company-scoped.
             'daily_report_summary_service_test',
             // R5a: reporting calendar, exceptions, absences (owner decisions K1-K6).
-            'daily_report_calendar_service_test'];
+            'daily_report_calendar_service_test',
+            // DOC-W2 Office workspace (the "Incoming" link) and DOC-W3 incoming register.
+            'office_workspace_service_test', 'office_incoming_service_test'];
     }
     foreach ($focused as $test) {
         if ($code !== 0) { $report['phpunit'][$test] = 'NOT RUN'; continue; }

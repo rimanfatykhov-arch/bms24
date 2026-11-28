@@ -78,6 +78,11 @@ R3_KEYS=[b'communication_object_dailyreport',b'dailyreports_discussion_title',b'
          b'dailyreports_discussion_note',b'dailyreports_discussion_empty',b'dailyreports_discussion_readonly',
          b'dailyreports_discussion_empty_message',b'dailyreports_discussion_files']
 OFFICE_MARKER=b'\n// DOC-W2 Office workspace (2026-11-24): read-only overview over existing documents, approvals and decisions.\n'
+OFFICEIN_MARKER=(b'\n// DOC-W3 Office incoming register (2026-11-27): owner decisions #196, numbering, registrar rights, '
+                 b'journal.\n')
+_OFFICEIN=json.loads((ROOT/'docs/reconcile/office-incoming-doc-w3-source-preservation.json').read_text(encoding='utf-8'))
+OFFICEIN_BEFORE={lang:next(r['before_sha256_lf'] for r in _OFFICEIN['files']
+                           if r['path']==f'local/kbacompany/lang/{lang}/local_kbacompany.php') for lang in ('en','ru')}
 _OFFICE=json.loads((ROOT/'docs/reconcile/office-workspace-doc-w2-source-preservation.json').read_text(encoding='utf-8'))
 OFFICE_BEFORE={lang:next(r['before_sha256_lf'] for r in _OFFICE['files'] if r['path']==f'local/kbacompany/lang/{lang}/local_kbacompany.php')
                for lang in ('en','ru')}
@@ -122,7 +127,7 @@ def lang_bytes(lang):
     name=f'local/kbacompany/lang/{lang}/local_kbacompany.php'
     data=(ROOT/name).read_bytes().replace(b'\r\n',b'\n')
     row=next(r for r in _TER['files'] if r['path']==name)
-    # Blocks appended after #187 (FIN-W2) are not part of the terminology file: bind #187 to the prefix before them.
+    # Blocks appended after #187 (FIN-W2, then DOC-W3) are not part of the terminology file: bind #187 to the prefix before them.
     tail=b''
     if FINANCE_MARKER in data:
         data,tail=data.split(FINANCE_MARKER,1); tail=FINANCE_MARKER+tail
@@ -205,6 +210,14 @@ class Preservation(unittest.TestCase):
                                                     raw=(ROOT/f'local/kbacompany/lang/{lang}/local_kbacompany.php').read_bytes().replace(b'\r\n',b'\n')
                                                     # FIN-W2 is appended to the #187 file as installed (terminology applied).
                                                     self.assertEqual(FINANCE_BEFORE[lang],hashlib.sha256(raw.split(FINANCE_MARKER)[0]).hexdigest())
+                                                    if OFFICEIN_MARKER in finance:
+                                                        # DOC-W3 is appended after the FIN-W2 block: everything up to its marker is the file as merged with FIN-W2.
+                                                        finance,officein=finance.split(OFFICEIN_MARKER)
+                                                        self.assertEqual(OFFICEIN_BEFORE[lang],hashlib.sha256(raw.split(OFFICEIN_MARKER)[0]).hexdigest())
+                                                        inkeys=keys(officein)
+                                                        self.assertEqual(112,len(inkeys));self.assertEqual(len(inkeys),len(set(inkeys)))
+                                                        self.assertTrue(all(k.startswith((b'officein_',b'privacy:metadata:officeincoming')) for k in inkeys))
+                                                        self.assertFalse(set(inkeys)&set(keys(raw.split(OFFICEIN_MARKER)[0])))
                                                     financekeys=keys(finance)
                                                     self.assertEqual(83,len(financekeys));self.assertEqual(len(financekeys),len(set(financekeys)))
                                                     self.assertTrue(all(k.startswith(b'financews_') for k in financekeys))

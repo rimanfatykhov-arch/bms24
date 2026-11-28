@@ -74,7 +74,8 @@ def check(root=ROOT):
         # ADR-0009 R1 appends five additive daily report tables, ADR-0010 two more (dreportcc, dreportset);
         # every earlier table definition is unchanged.
         # R5a appends three more (rptcalendar, dreportoff, dreportabs); see daily-reports-r5a-source-preservation.json.
-        target = {'local/kbacompany/db/install.xml': '7ab700a0459af874deaa2bef392636bd07b5a788db59d3c50773e7a54ef9dedf'}.get(name, expected)
+        # DOC-W3 appends three more (offseries, offrec, offrev); see docs/office/DOC_W3_INCOMING_DECISIONS.md.
+        target = {'local/kbacompany/db/install.xml': 'f15d9bcb95e103d1eae5b4f2ed7147d753af9ad49cef46681b06d0301c3042c8'}.get(name, expected)
         if digest(root/name)!=target:
             errors.append('shared schema/helper changed: '+name)
     # UX-1: exact append-only language/scoped CSS follow-up over E2.
@@ -149,6 +150,10 @@ def check(root=ROOT):
     # See docs/finance/FIN_W2_FINANCE_WORKSPACE.md.
     reviewed_followup['local/kbacompany/lang/en/local_kbacompany.php'] = '2d98947bc7704184d2a31887380d087f6266449f9ef3c8d813b6234096ad804e'
     reviewed_followup['local/kbacompany/lang/ru/local_kbacompany.php'] = '6b60dd6f8a4b278fe9027d05790304ba708e7addbd3ea8a35ce403910b6cda19'
+    # DOC-W3 incoming register (owner decisions 27.11.2026, #196): officein_* RU/EN block after the FIN-W2 #186 block.
+    # See docs/reconcile/office-incoming-doc-w3-source-preservation.json.
+    reviewed_followup['local/kbacompany/lang/en/local_kbacompany.php'] = '751a7100efb3c6943526ff8e32f04aa0357ea8df102e8b7f0a25fedd7357fbf9'
+    reviewed_followup['local/kbacompany/lang/ru/local_kbacompany.php'] = 'd47d59258a28dd94aaae6c02c4daadc4667f8940d1a6698a902f199a541148f0'
     for row in plan['rows']:
         path=root/row['path']
         if not path.is_file() or path.is_symlink():
@@ -161,7 +166,7 @@ def check(root=ROOT):
         errors.append('one historical0902 release note was lost')
     upgrade=(root/'local/kbacompany/db/upgrade.php').read_text(encoding='utf-8')
     versions=[int(v) for v in re.findall(r'upgrade_plugin_savepoint\(true,\s*(\d+)',upgrade)]
-    if len(versions)!=487 or versions!=sorted(set(versions)) or versions[-5:]!=[2026111100,2026111600,2026111601,2026112301,2026112400]:
+    if len(versions)!=488 or versions!=sorted(set(versions)) or versions[-6:]!=[2026111100,2026111600,2026111601,2026112301,2026112400,2026112700]:
         errors.append('merged upgrade chronology/identity changed')
     driver=(root/'tools/tests/moodle_acceptance.php').read_text(encoding='utf-8')
     for ref in [plan['pr53_sha'],plan['pr56_sha']]:

@@ -88,7 +88,7 @@ $enforcementtable->head = [get_string('bmsacl_object', 'local_kbacompany'),
     get_string('bmsacl_enforcement_status', 'local_kbacompany')];
 foreach (roles::OBJECTS as $objectkey => $objectlabel) {
     $active = in_array($objectkey, roles::ENFORCED_OBJECTS, true);
-    $enforcementtable->data[] = [s($objectlabel), $active && $objectkey !== 'management_cycle' ? get_string('bmsacl_partial', 'local_kbacompany') : ($active ?
+    $enforcementtable->data[] = [s($objectlabel), $active && !in_array($objectkey, ['management_cycle', 'office_incoming'], true) ? get_string('bmsacl_partial', 'local_kbacompany') : ($active ?
         get_string('bmsacl_enforced', 'local_kbacompany') :
         get_string('bmsacl_notenforced', 'local_kbacompany'))];
 }
@@ -137,6 +137,10 @@ if ($inspectusers) {
             roles::can($uuid, $inspectid, $objectkey, 'create') ? get_string('yes') : get_string('no'),
             roles::can($uuid, $inspectid, $objectkey, 'edit') ? get_string('yes') : get_string('no')];
     }
+    $effective->data[] = [s(roles::OBJECTS['office_incoming']), '—',
+        roles::can($uuid, $inspectid, 'office_incoming', 'create') ? get_string('yes') : get_string('no'),
+        get_string('officein_acl_register', 'local_kbacompany') . ': ' .
+        (roles::can($uuid, $inspectid, 'office_incoming', 'register') ? get_string('yes') : get_string('no'))];
     echo html_writer::table($effective);
 } else {
     echo html_writer::div(get_string('bmsacl_noinspect','local_kbacompany'), 'alert alert-secondary');
@@ -290,6 +294,23 @@ if (!$all) {
             ['type'=>'submit','class'=>'btn btn-sm ' . ($approveenabled ? 'btn-success' : 'btn-outline-secondary')]) .
         html_writer::end_tag('form');
     echo html_writer::div($approvecontrol, 'mb-3');
+    // DOC-W3: incoming register rights (company-wide only, explicit grant, no manager fallback).
+    $officecells = [s(roles::OBJECTS['office_incoming']), '—'];
+    foreach (['create' => 'officein_acl_create', 'register' => 'officein_acl_register'] as $right => $langkey) {
+        $enabled = (($rolegrants['office_incoming'][$right] ?? '') === 'company');
+        $officecells[] = $formstart('d-inline-block') . $hidden . $actionfield('grant') .
+            html_writer::empty_tag('input', ['type'=>'hidden','name'=>'roleid','value'=>$roleid]) .
+            html_writer::empty_tag('input', ['type'=>'hidden','name'=>'objecttype','value'=>'office_incoming']) .
+            html_writer::empty_tag('input', ['type'=>'hidden','name'=>'actionname','value'=>$right]) .
+            html_writer::empty_tag('input', ['type'=>'hidden','name'=>'scope','value'=>'company']) .
+            html_writer::empty_tag('input', ['type'=>'hidden','name'=>'enabled','value'=>$enabled ? 0 : 1]) .
+            html_writer::tag('button', get_string($langkey, 'local_kbacompany') . ': ' .
+                ($enabled ? get_string('yes') : get_string('no')),
+                ['type'=>'submit','class'=>'btn btn-sm ' . ($enabled ? 'btn-success' : 'btn-outline-secondary'),
+                 'data-office-acl'=>$right]) .
+            html_writer::end_tag('form');
+    }
+    $table->data[] = [$officecells[0], $officecells[1], $officecells[2], $officecells[3]];
     echo html_writer::table($table);
     echo html_writer::div(get_string('bmsacl_coming','local_kbacompany'), 'alert alert-secondary');
 

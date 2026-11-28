@@ -33,7 +33,8 @@ FOLLOWUPS = ['docs/reconcile/task-open-source-preservation.json',
              'docs/reconcile/office-workspace-doc-w2-source-preservation.json',
              'docs/reconcile/daily-reports-r5a-source-preservation.json',
              'docs/reconcile/terminology-cascade-std-source-preservation.json',
-             'docs/reconcile/finance-workspace-fin-w2-source-preservation.json']
+             'docs/reconcile/finance-workspace-fin-w2-source-preservation.json',
+             'docs/reconcile/office-incoming-doc-w3-source-preservation.json']
 
 
 class SourcePreservationTest(unittest.TestCase):

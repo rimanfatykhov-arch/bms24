@@ -6278,5 +6278,16 @@ function xmldb_local_kbacompany_upgrade(int $oldversion): bool {
         upgrade_plugin_savepoint(true, 2026112400, 'local', 'kbacompany');
     }
 
+    // DOC-W3 incoming register (owner decisions 27.11.2026, BMS-TECH-DOC-001 v0.1 approved for W3): three additive
+    // tables from install.xml. Existing tables and rows are untouched; ISO documents are not copied or backfilled.
+    if ($oldversion < 2026112700) {
+        foreach (['local_kbacompany_offseries', 'local_kbacompany_offrec', 'local_kbacompany_offrev'] as $name) {
+            if (!$dbman->table_exists($name)) {
+                $dbman->install_one_table_from_xmldb_file(__DIR__ . '/install.xml', $name);
+            }
+        }
+        upgrade_plugin_savepoint(true, 2026112700, 'local', 'kbacompany');
+    }
+
     return true;
 }

@@ -191,6 +191,9 @@ try:
     # FIN-W2 Finance workspace: default-off switch, figures = service, menu/planned sections, financial gate, A/B, revocation.
     finance_exit = timed('finance_workspace', lambda: browser('finance_workspace.py', 'verify'))
     record(contract.evaluate(contract.finance_workspace_checks(load('finance-workspace-result.json'), finance_exit)))
+    # DOC-W3 incoming register: switch/rights, create once, number + repeat, correction, A/B isolation, parallel race.
+    officein_exit = timed('office_incoming', lambda: browser('office_incoming.py', 'verify'))
+    record(contract.evaluate(contract.office_incoming_checks(load('office-incoming-result.json'), officein_exit)))
     timed('server_restart_64k', lambda: start_server(['-d', 'upload_max_filesize=64K', '-d', 'post_max_size=8M']))
     timed('oversize', lambda: browser('attachments.py', 'oversize'))
     timed('db_state_oversize', lambda: php_state('oversize'))

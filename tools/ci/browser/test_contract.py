@@ -1966,6 +1966,144 @@ class ContractTest(unittest.TestCase):
             r = c.evaluate(c.finance_workspace_checks(o, code))
             self.assertTrue(all(x['status'] == 'FAIL' for x in r.values()), r)
         self.assertTrue(all(x['status'] == 'FAIL' for x in c.evaluate(c.finance_workspace_checks(None, None)).values()))
+    def officein_obs(self):
+        card = '0b1d2c3e-4f50-4a61-8b72-93a4b5c6d7e8'
+        drafts = ['%08d-0000-4000-8000-000000000000' % i for i in range(1, 7)]
+        number = 'Вх-2026/0001'
+        page = lambda **kw: dict({'http': 200, 'list': False, 'card': None, 'number': None, 'status': None, 'rows': [],
+                                  'norights': False, 'notfound': False, 'newaction': 0, 'register': 0, 'journal': [],
+                                  'error': False, 'link': 0, 'planned': [], 'h1': [], 'rowdisplay': None,
+                                  'hscroll': {'scroll': 1440, 'inner': 1440}, 'leaked': []}, **kw)
+        cases = []
+        for shell, width, lang in c.OFFICEIN_CASES:
+            box = {'scroll': width, 'inner': width}
+            title = c.OFFICEIN_TITLES[lang]
+            cases.append({'shell': shell, 'width': width, 'lang': lang, 'language_installed': True,
+                          'list': page(list=True, rows=[card], h1=[title], hscroll=box,
+                                       rowdisplay='block' if width < 721 else 'table-row'),
+                          'card': page(card=card, number=number, status='registered', hscroll=box),
+                          'browser_events': [], 'server_errors': []})
+        truth = {'status': 'registered', 'number': number, 'lockversion': 3, 'revision': 1, 'registeredat': 1795000000,
+                 'journal': ['created', 'original', 'registered'], 'corrected': [], 'original': 'a' * 64,
+                 'stored': 'a' * 64, 'attachments': 0, 'cancelreason': None}
+        corrected = dict(truth, revision=2, lockversion=4, journal=truth['journal'] + ['corrected'],
+                         corrected=[{'action': 'corrected', 'old': {'correspondent': 'CI Sender LLC'},
+                                     'new': {'correspondent': 'CI Sender LLC (corrected)', 'reason': 'Typo in the sender name',
+                                             'revision': 2}}])
+        denied = page(http=200, notfound=True)
+        results = [{'exit': 0, 'uuid': d, 'number': 'Вх-2026/%04d' % (i + 2), 'repeated': False, 'err': []}
+                   for i, d in enumerate(drafts)]
+        results.append({'exit': 0, 'uuid': drafts[0], 'number': 'Вх-2026/0002', 'repeated': True, 'err': []})
+        return {'status': 'PASS', 'company': 'company-a-uuid', 'cases': cases,
+                'switch_off': {'workspace': True, 'enabled': False}, 'switch_on': {'workspace': True, 'enabled': True},
+                'off': page(http=200, office=page(planned=['incoming', 'outgoing'], link=0)),
+                'rights_before': {'MA': {'create': False, 'register': False}, 'EA': {'create': True, 'register': False},
+                                  'EB': {'create': False, 'register': False}, 'MB': {'create': True, 'register': True}},
+                'manager_without_grant': page(list=True, norights=True, new_view=page(notfound=True)),
+                'granted': {'create': True, 'register': True},
+                'author': {'office_link': 1, 'landed': True, 'count_before': 0, 'card': card, 'status': 'received',
+                           'register_button': 0, 'double_submit_http': 200, 'count_after_double_submit': 1,
+                           'journal': ['original', 'created'], 'upload_error': False,
+                           'download': {'http': 200, 'disposition': 'attachment; filena', 'sha_matches': True},
+                           'server_errors': [], 'browser_events': []},
+                'registrar': {'list': page(list=True, rows=[card]), 'year': '2026', 'series_before': 0, 'series_after': 1,
+                              'registered': page(card=card, number=number, status='registered',
+                                                 journal=['registered', 'original', 'created']),
+                              'repeat_http': 200, 'truth': truth, 'original_sha': 'a' * 64, 'after_correction': corrected,
+                              'server_errors': [], 'browser_events': []},
+                'isolation': {'MB_A': {'list': page(http=200), 'card': page(http=200), 'download_http': 404, 'download_leak': False},
+                              'MB_B': {'list': page(list=True), 'card': denied, 'download_http': 404, 'download_leak': False},
+                              'EB_B': {'list': page(list=True, norights=True), 'card': denied, 'download_http': 404,
+                                       'download_leak': False}},
+                'race': {'start': 1, 'end': 7, 'drafts': drafts, 'results': results},
+                'revocation': {'before': page(card=card), 'role_revoked_rights': {'create': False, 'register': False},
+                               'after_role': page(notfound=True), 'role_restored_rights': {'create': True, 'register': False},
+                               'member_revoked': True, 'after_member': page(http=200), 'member_reopened': True},
+                'cancelled': dict(corrected, status='cancelled', cancelreason='Received by mistake (CI)',
+                                  journal=corrected['journal'] + ['cancelled'])}
+
+    def test_office_incoming_genuine_run_passes(self):
+        res = c.evaluate(c.office_incoming_checks(self.officein_obs(), 0))
+        self.assertEqual({k: 'PASS' for k in res}, {k: v['status'] for k, v in res.items()})
+        self.assertEqual(8, len(res))
+        for k in res:
+            self.assertIn(k, c.required_check_names())
+
+    def test_office_incoming_regressions_fail(self):
+        sw, au, rg = ('officein_switch_off_and_no_manager_fallback', 'officein_author_creates_once_with_original',
+                      'officein_registration_number_and_idempotent_repeat')
+        co, iso, race = ('officein_correction_with_reason_and_journal', 'officein_company_isolation_cards_and_files',
+                         'officein_parallel_registration_race')
+        lay, rev = 'officein_layout_owned_legacy_mobile', 'officein_revocation_and_cancellation'
+        mutations = [
+            (sw, lambda o: o['off'].update(list=True)),
+            (sw, lambda o: o['off'].update(http=500)),
+            (sw, lambda o: o['off']['office'].update(link=1)),
+            (sw, lambda o: o['rights_before']['MA'].update(register=True)),
+            (sw, lambda o: o['rights_before']['EB'].update(create=True)),
+            (sw, lambda o: o['manager_without_grant'].update(newaction=1)),
+            (sw, lambda o: o['manager_without_grant'].update(rows=['x'])),
+            (sw, lambda o: o['manager_without_grant']['new_view'].update(notfound=False)),
+            (sw, lambda o: o['switch_off'].update(enabled=True)),
+            (au, lambda o: o['author'].update(count_after_double_submit=2)),
+            (au, lambda o: o['author'].update(register_button=1)),
+            (au, lambda o: o['author'].update(status='registered')),
+            (au, lambda o: o['author'].update(office_link=0)),
+            (au, lambda o: o['author']['download'].update(sha_matches=False)),
+            (au, lambda o: o['author']['download'].update(disposition='inline')),
+            (au, lambda o: o['author'].update(journal=['created'])),
+            (rg, lambda o: o['registrar'].update(series_after=2)),
+            (rg, lambda o: o['registrar']['registered'].update(number='Вх-2026/0009')),
+            (rg, lambda o: o['registrar']['registered'].update(register=1)),
+            (rg, lambda o: o['registrar']['truth'].update(stored='b' * 64)),
+            (rg, lambda o: o['registrar']['truth'].update(journal=['created', 'registered', 'registered'])),
+            (rg, lambda o: o['registrar'].update(repeat_http=500)),
+            (co, lambda o: o['registrar']['after_correction'].update(revision=4)),
+            (co, lambda o: o['registrar']['after_correction'].update(number='Вх-2026/0002')),
+            (co, lambda o: o['registrar']['after_correction']['corrected'][0]['new'].update(reason='')),
+            (co, lambda o: o['registrar']['after_correction']['corrected'][0].update(old={})),
+            (iso, lambda o: o['isolation']['MB_A']['card'].update(card='0b1d2c3e-4f50-4a61-8b72-93a4b5c6d7e8')),
+            (iso, lambda o: o['isolation']['MB_B']['list'].update(rows=['0b1d2c3e-4f50-4a61-8b72-93a4b5c6d7e8'])),
+            (iso, lambda o: o['isolation']['EB_B']['card'].update(leaked=['DOC-W3 CI letter'])),
+            (iso, lambda o: o['isolation']['MB_A'].update(download_http=200)),
+            (iso, lambda o: o['isolation']['EB_B'].update(download_leak=True)),
+            (iso, lambda o: o['isolation']['MB_A']['list'].update(list=True)),
+            (iso, lambda o: o['isolation']['MB_B']['card'].update(notfound=False)),
+            (iso, lambda o: o['isolation'].pop('EB_B')),
+            (race, lambda o: o['race']['results'][3].update(number='Вх-2026/0002')),
+            (race, lambda o: o['race']['results'][6].update(number='Вх-2026/0008', repeated=False)),
+            (race, lambda o: o['race'].update(end=8)),
+            (race, lambda o: o['race']['results'][2].update(exit=1, number=None)),
+            (race, lambda o: o['race']['results'].pop()),
+            (lay, lambda o: o['cases'][1]['card'].update(hscroll={'scroll': 420, 'inner': 375})),
+            (lay, lambda o: o['cases'][1]['list'].update(rowdisplay='table-row')),
+            (lay, lambda o: o['cases'][0]['list'].update(rows=[])),
+            (lay, lambda o: o['cases'][2].update(server_errors=[{'url': 'x', 'status': 500}])),
+            (lay, lambda o: o['cases'][3].update(browser_events=[{'source': 'pageerror', 'name': 'Error', 'message': 'boom'}])),
+            (lay, lambda o: o['registrar'].update(server_errors=[{'url': 'x', 'status': 502}])),
+            (lay, lambda o: o['cases'][3]['list'].update(h1=['Incoming'])),
+            (rev, lambda o: o['revocation']['after_role'].update(notfound=False, card='x')),
+            (rev, lambda o: o['revocation'].update(role_revoked_rights={'create': True, 'register': False})),
+            (rev, lambda o: o['revocation']['after_member'].update(list=True)),
+            (rev, lambda o: o['revocation'].update(member_reopened=False)),
+            (rev, lambda o: o['cancelled'].update(number='Вх-2026/0099')),
+            (rev, lambda o: o['cancelled'].update(cancelreason=None)),
+        ]
+        for name, mutate in mutations:
+            with self.subTest(check=name):
+                o = self.officein_obs(); mutate(o)
+                res = c.evaluate(c.office_incoming_checks(o, 0))
+                self.assertEqual('FAIL', res[name]['status'], res[name])
+
+    def test_office_incoming_incomplete_runs_fail_every_check(self):
+        obs = self.officein_obs()
+        for mutate, code in ((lambda o: o.update(error='boom'), 0), (lambda o: o.update(status='FAIL'), 0),
+                             (lambda o: o['cases'].pop(), 0), (lambda o: o['registrar']['truth'].update(number='IN-1'), 0),
+                             (lambda o: o['author'].pop('card'), 0), (lambda o: None, 1)):
+            o = copy.deepcopy(obs); mutate(o)
+            r = c.evaluate(c.office_incoming_checks(o, code))
+            self.assertTrue(all(x['status'] == 'FAIL' for x in r.values()), r)
+        self.assertTrue(all(x['status'] == 'FAIL' for x in c.evaluate(c.office_incoming_checks(None, None)).values()))
 
     def test_required_check_names_complete(self):
         names = c.required_check_names()
