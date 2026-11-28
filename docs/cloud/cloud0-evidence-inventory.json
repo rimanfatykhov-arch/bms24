@@ -1,63 +1,514 @@
 {
   "schema": "bms24.cloud0.evidence_inventory",
-  "version": "0.1",
+  "version": "0.2",
   "status": "PROPOSED",
   "captured_at": "2026-11-28",
   "baseline": {
     "repository": "rimanfatykhov-arch/bms24",
     "ref": "main",
-    "commit": "0884643590541fdd9b75b1414fd93d6120ded017",
-    "tree": "a576c5976485b95acd8666bca93824c459ea8e76",
-    "plugin": {"component": "local_kbacompany", "release": "1.1.0-rc29", "version": 2026112301}
+    "commit": "74e00c4a63cbd5d37759e604753ebaa4b4fc7947",
+    "tree": "de454b208e0bac07ff960f80ec1de0da87418253",
+    "plugin": {
+      "component": "local_kbacompany",
+      "release": "1.1.0-rc29",
+      "version": 2026112400
+    },
+    "previous_baseline": {
+      "commit": "0884643590541fdd9b75b1414fd93d6120ded017",
+      "plugin_version": 2026112301,
+      "pr_head": "4575a1e41f3cfd68383cfdcf9dc91ddf7c7b39dc"
+    },
+    "audited_files_unchanged_between_baselines": true
   },
-  "states": ["EXISTING", "PROPOSED", "UNKNOWN", "NOT_RUN"],
+  "states": [
+    "EXISTING",
+    "PROPOSED",
+    "ACCEPTED",
+    "UNKNOWN",
+    "NOT_RUN",
+    "HOLD"
+  ],
   "components": [
-    {"id": "workspace_projection", "state": "EXISTING", "path": "local/kbacompany/classes/local/workspace_mapping_service.php", "contract_version": "0.6.8", "storage": "local_kbacompany_cloudmap", "role": "projection_cache", "owner": "bms_cloud_control_plane", "tests": ["local/kbacompany/tests/workspace_mapping_service_test.php"]},
-    {"id": "entitlement_resolver", "state": "EXISTING", "path": "local/kbacompany/classes/local/entitlement_service.php", "contract_version": "0.6.7", "modes": ["legacy_compatibility", "cloud_snapshot", "suspended"], "enforcement_call_sites": [], "diagnostic_call_sites": ["local/kbacompany/classes/local/platform_boundary_service.php"]},
-    {"id": "entitlement_snapshot_cache", "state": "EXISTING", "path": "local/kbacompany/classes/local/entitlement_snapshot_service.php", "contract_version": "0.6.7", "storage": "local_kbacompany_entsnap", "accepted_namespace": "mgmt.*", "hash": "sha256", "stale_grace_seconds": 86400, "tests": ["local/kbacompany/tests/entitlement_snapshot_service_test.php"]},
-    {"id": "tariff_catalog_contract", "state": "EXISTING", "path": "local/kbacompany/classes/local/bms_tariff_catalog_service.php", "page": "local/kbacompany/tariff_catalog.php", "contract_version": "1.1", "read_only": true, "feature_namespace": ["management.*", "hire.*", "academy.*", "erp.*"], "limit_namespace": "bms.*", "tests": ["local/kbacompany/tests/bms_commercial_catalog_contract_test.php"]},
-    {"id": "cloud_web_service", "state": "EXISTING", "path": "local/kbacompany/classes/external/cloud_api.php", "service_shortname": "local_kbacompany_cloud_v1", "enabled_by_default": false, "restricted_users": true, "capability": "local/kbacompany:cloudsync", "functions": ["local_kbacompany_cloud_workspace_contract", "local_kbacompany_cloud_apply_workspace_projection", "local_kbacompany_cloud_workspace_status", "local_kbacompany_cloud_contract", "local_kbacompany_cloud_apply_entitlement_snapshot", "local_kbacompany_cloud_entitlement_status"]},
-    {"id": "platform_boundary", "state": "EXISTING", "path": "local/kbacompany/classes/local/platform_boundary_service.php", "contract_version": "0.6.9"},
-    {"id": "company_registry", "state": "EXISTING", "path": "local/kbacompany/classes/local/company_registry_service.php", "storage": "local_kbacompany_company", "canonical_owner": "local_kbacompany"},
-    {"id": "external_identity", "state": "EXISTING", "path": "local/kbacompany/classes/local/identity_registry.php", "storage": "local_kbacompany_extmap"},
-    {"id": "client_odoo_actual_adapter", "state": "EXISTING", "path": "local/kbacompany/classes/local/odoo_adapter_service.php", "contract_version": "0.9.1.3", "note": "client ERP actuals, not corporate commercial Odoo"},
-    {"id": "academy_licenses", "state": "EXISTING", "path": "local/kbacorporate/classes/local/licenses.php", "canonical_owner": "local_kbacorporate"},
-    {"id": "cloud_control_plane_service", "state": "UNKNOWN", "note": "no repository, service or PostgreSQL database found in accessible sources"},
-    {"id": "product_registry", "state": "PROPOSED", "source": "MR3-D71, ENT-001"},
-    {"id": "subscription_registry", "state": "PROPOSED", "source": "MR3-D72, REG-001 §8"},
-    {"id": "corporate_odoo_commerce", "state": "UNKNOWN", "source": "MR3-D70, CLOUD-001 §3"},
-    {"id": "secrets_manager", "state": "UNKNOWN", "source": "CLOUD-001 §16"}
+    {
+      "id": "workspace_projection",
+      "state": "EXISTING",
+      "path": "local/kbacompany/classes/local/workspace_mapping_service.php",
+      "contract_version": "0.6.8",
+      "storage": "local_kbacompany_cloudmap",
+      "role": "projection_cache",
+      "owner": "bms_cloud_control_plane",
+      "tests": [
+        "local/kbacompany/tests/workspace_mapping_service_test.php"
+      ]
+    },
+    {
+      "id": "entitlement_resolver",
+      "state": "EXISTING",
+      "path": "local/kbacompany/classes/local/entitlement_service.php",
+      "contract_version": "0.6.7",
+      "modes": [
+        "legacy_compatibility",
+        "cloud_snapshot",
+        "suspended"
+      ],
+      "enforcement_call_sites": [],
+      "diagnostic_call_sites": [
+        "local/kbacompany/classes/local/platform_boundary_service.php"
+      ],
+      "legacy_policy_verified": [
+        "L1",
+        "L2",
+        "L4_mechanism",
+        "L5_mechanism",
+        "L7_no_guards"
+      ]
+    },
+    {
+      "id": "entitlement_snapshot_cache",
+      "state": "EXISTING",
+      "path": "local/kbacompany/classes/local/entitlement_snapshot_service.php",
+      "contract_version": "0.6.7",
+      "storage": "local_kbacompany_entsnap",
+      "accepted_namespace": "mgmt.*",
+      "hash": "sha256",
+      "stale_grace_seconds": 86400,
+      "tests": [
+        "local/kbacompany/tests/entitlement_snapshot_service_test.php"
+      ]
+    },
+    {
+      "id": "tariff_catalog_contract",
+      "state": "EXISTING",
+      "path": "local/kbacompany/classes/local/bms_tariff_catalog_service.php",
+      "page": "local/kbacompany/tariff_catalog.php",
+      "contract_version": "1.1",
+      "read_only": true,
+      "feature_namespace": [
+        "management.*",
+        "hire.*",
+        "academy.*",
+        "erp.*"
+      ],
+      "limit_namespace": "bms.*",
+      "tests": [
+        "local/kbacompany/tests/bms_commercial_catalog_contract_test.php"
+      ]
+    },
+    {
+      "id": "cloud_web_service",
+      "state": "EXISTING",
+      "path": "local/kbacompany/classes/external/cloud_api.php",
+      "service_shortname": "local_kbacompany_cloud_v1",
+      "enabled_by_default": false,
+      "restricted_users": true,
+      "capability": "local/kbacompany:cloudsync",
+      "functions": [
+        "local_kbacompany_cloud_workspace_contract",
+        "local_kbacompany_cloud_apply_workspace_projection",
+        "local_kbacompany_cloud_workspace_status",
+        "local_kbacompany_cloud_contract",
+        "local_kbacompany_cloud_apply_entitlement_snapshot",
+        "local_kbacompany_cloud_entitlement_status"
+      ]
+    },
+    {
+      "id": "platform_boundary",
+      "state": "EXISTING",
+      "path": "local/kbacompany/classes/local/platform_boundary_service.php",
+      "contract_version": "0.6.9"
+    },
+    {
+      "id": "company_registry",
+      "state": "EXISTING",
+      "path": "local/kbacompany/classes/local/company_registry_service.php",
+      "storage": "local_kbacompany_company",
+      "canonical_owner": "local_kbacompany"
+    },
+    {
+      "id": "external_identity",
+      "state": "EXISTING",
+      "path": "local/kbacompany/classes/local/identity_registry.php",
+      "storage": "local_kbacompany_extmap"
+    },
+    {
+      "id": "client_odoo_actual_adapter",
+      "state": "EXISTING",
+      "path": "local/kbacompany/classes/local/odoo_adapter_service.php",
+      "contract_version": "0.9.1.3",
+      "note": "client ERP actuals, not corporate commercial Odoo"
+    },
+    {
+      "id": "academy_licenses",
+      "state": "EXISTING",
+      "path": "local/kbacorporate/classes/local/licenses.php",
+      "canonical_owner": "local_kbacorporate"
+    },
+    {
+      "id": "cloud_control_plane_service",
+      "state": "UNKNOWN",
+      "note": "no repository, service or PostgreSQL database found in accessible sources"
+    },
+    {
+      "id": "product_registry",
+      "state": "PROPOSED",
+      "source": "MR3-D71, ENT-001"
+    },
+    {
+      "id": "subscription_registry",
+      "state": "PROPOSED",
+      "source": "MR3-D72, REG-001 §8"
+    },
+    {
+      "id": "corporate_odoo_commerce",
+      "state": "UNKNOWN",
+      "source": "MR3-D70, CLOUD-001 §3"
+    },
+    {
+      "id": "secrets_manager",
+      "state": "UNKNOWN",
+      "source": "CLOUD-001 §16"
+    },
+    {
+      "id": "company_level_restore_shared_moodle",
+      "state": "UNKNOWN",
+      "note": "not implemented; CLOUD-001 §18 future capability; shared restore plus export is not independent restore (OD-1)"
+    }
   ],
   "environments": [
-    {"host": "edu.kzn.mba", "role": "production", "state": "EXISTING", "verified": "NOT_RUN"},
-    {"host": "test.bms24.online", "role": "test", "state": "EXISTING", "verified": "NOT_RUN"},
-    {"host": "stage41.bms24.online", "role": "historical_staging", "state": "UNKNOWN", "verified": "NOT_RUN"},
-    {"host": "app.bms24.online", "role": "management_cloud", "state": "PROPOSED", "source": "MR3-D66"},
-    {"host": "cloud.bms24.online", "role": "control_plane", "state": "PROPOSED", "source": "MR3-D67"},
-    {"host": "academy.bms24.online", "role": "academy_entry", "state": "PROPOSED", "source": "MR3-D68"}
+    {
+      "host": "edu.kzn.mba",
+      "role": "production",
+      "state": "EXISTING",
+      "verified": "NOT_RUN"
+    },
+    {
+      "host": "test.bms24.online",
+      "role": "test",
+      "state": "EXISTING",
+      "verified": "NOT_RUN"
+    },
+    {
+      "host": "stage41.bms24.online",
+      "role": "historical_staging",
+      "state": "UNKNOWN",
+      "verified": "NOT_RUN"
+    },
+    {
+      "host": "app.bms24.online",
+      "role": "management_cloud",
+      "state": "PROPOSED",
+      "source": "MR3-D66"
+    },
+    {
+      "host": "cloud.bms24.online",
+      "role": "control_plane",
+      "state": "PROPOSED",
+      "source": "MR3-D67"
+    },
+    {
+      "host": "academy.bms24.online",
+      "role": "academy_entry",
+      "state": "PROPOSED",
+      "source": "MR3-D68"
+    }
   ],
   "contracts": [
-    {"id": "BMS-ARC-CLOUD-001", "version": "0.1", "state": "PROPOSED", "read": true, "url": "https://docs.google.com/document/d/1fGSKD4tDUzzjumYwxAgAZl3u3hZD78ebNAPLTo7zqZc/edit"},
-    {"id": "BMS-ARC-REG-001", "version": "0.1", "state": "PROPOSED", "read": true, "url": "https://docs.google.com/document/d/1mC6aEAWzMnBuE2ovZpfumG-T5LHj2Y8XDcZadQpaLsk/edit"},
-    {"id": "BMS-ARC-REG-002", "version": "0.1", "state": "PROPOSED", "read": true, "schema_package_checksums_verified": "NOT_RUN", "url": "https://docs.google.com/document/d/12DvSqybN58QFcxWFziJfmwCCENZW9Fo5zQ7f_7rIYig/edit"},
-    {"id": "BMS-ARC-ENT-001", "version": "0.1", "state": "PROPOSED", "read": true, "url": "https://docs.google.com/document/d/1D6BBA1_12rkRiXu2sM6y5A6gJQR_ggUCWHe1ujg1hx4/edit"},
-    {"id": "BMS-ARC-MIG-001", "version": "0.1", "state": "PROPOSED", "read": true, "url": "https://docs.google.com/document/d/19-a39u5U4yI73svjBVyQTafAxWtmTxbNe47D-peIThQ/edit"},
-    {"id": "BMS-ARC-DOM-001", "state": "UNKNOWN", "read": false},
-    {"id": "BMS-PRD-EDT-001", "state": "UNKNOWN", "read": false},
-    {"id": "BMS-ARC-INT-001", "state": "UNKNOWN", "read": false},
-    {"id": "BMS-ARC-ERP-001", "state": "UNKNOWN", "read": false}
+    {
+      "id": "BMS-ARC-CLOUD-001",
+      "version": "0.1",
+      "state": "PROPOSED",
+      "read": true,
+      "url": "https://docs.google.com/document/d/1fGSKD4tDUzzjumYwxAgAZl3u3hZD78ebNAPLTo7zqZc/edit"
+    },
+    {
+      "id": "BMS-ARC-REG-001",
+      "version": "0.1",
+      "state": "PROPOSED",
+      "read": true,
+      "url": "https://docs.google.com/document/d/1mC6aEAWzMnBuE2ovZpfumG-T5LHj2Y8XDcZadQpaLsk/edit"
+    },
+    {
+      "id": "BMS-ARC-REG-002",
+      "version": "0.1",
+      "state": "PROPOSED",
+      "read": true,
+      "url": "https://docs.google.com/document/d/12DvSqybN58QFcxWFziJfmwCCENZW9Fo5zQ7f_7rIYig/edit",
+      "schema_package": {
+        "drive_file_id": "1y0CAa4nHhnSRxMRJHSIpWACRdC8C2cX6",
+        "title": "BMS-ARC-REG-002 — Cloud Registry MVP — Schema Package v0.1.zip",
+        "size_bytes": 151666,
+        "drive_modified_time": "2026-09-20T04:17:24.814Z",
+        "sha256_expected_reg002_s18": "093fa2936bc9f32c2828f9acfb2459de37fc221701319d1b9a6e91a699da28f3",
+        "sha256_zip_bytes": {
+          "state": "PASS",
+          "verified_by": "owner",
+          "evidence": "https://github.com/rimanfatykhov-arch/bms24/issues/204#issuecomment-7236624093"
+        },
+        "metadata_check_by_claude": {
+          "state": "PASS",
+          "checked": [
+            "size_bytes",
+            "drive_modified_time"
+          ]
+        },
+        "sha256_zip_bytes_rehash_by_claude": "NOT_RUN",
+        "inner_files_sha256": {
+          "state": "NOT_RUN",
+          "expected": {
+            "bms_cloud_registry_mvp_v0.1.yaml": "dc4a77a01ff9849a5229cbd3ba367b541a8bba745d85199b7b2a1662265644b1",
+            "bms_cloud_registry_mvp_v0.1.json": "118e8c74bbf85ce15dd7c102f06e48cc39ade3e23d7e5c23e899d71d2118c47f",
+            "bms_cloud_registry_mvp_exchange_v0.1.schema.json": "18332150e37e6cbd490bb6686c2088faf29087c5c3e954de0280e39e442be7f2",
+            "bms_cloud_registry_mvp_erd_v0.1.mmd": "0d6093db6ace839a29ccee847f11eb55e4cdc4446478a3f1802cfe43d7a5fd7f",
+            "bms_cloud_registry_mvp_erd_v0.1.png": "f629048c579917b43e30fb71b26ea7844a48673142f320cd9f65b58685caca2f"
+          }
+        },
+        "import": "HOLD (CLOUD-1a)"
+      }
+    },
+    {
+      "id": "BMS-ARC-ENT-001",
+      "version": "0.1",
+      "state": "PROPOSED",
+      "read": true,
+      "url": "https://docs.google.com/document/d/1D6BBA1_12rkRiXu2sM6y5A6gJQR_ggUCWHe1ujg1hx4/edit"
+    },
+    {
+      "id": "BMS-ARC-MIG-001",
+      "version": "0.1",
+      "state": "PROPOSED",
+      "read": true,
+      "url": "https://docs.google.com/document/d/19-a39u5U4yI73svjBVyQTafAxWtmTxbNe47D-peIThQ/edit"
+    },
+    {
+      "id": "BMS-ARC-DOM-001",
+      "state": "UNKNOWN",
+      "read": false
+    },
+    {
+      "id": "BMS-PRD-EDT-001",
+      "state": "UNKNOWN",
+      "read": false
+    },
+    {
+      "id": "BMS-ARC-INT-001",
+      "state": "UNKNOWN",
+      "read": false
+    },
+    {
+      "id": "BMS-ARC-ERP-001",
+      "state": "UNKNOWN",
+      "read": false
+    }
   ],
   "related_open_prs": [
-    {"number": 95, "head": "9e80ee55dd27718171d266a017a217f7f231409a", "relation": "ADR-SAAS-001 PROPOSED isolated instance per tenant; conflicts with CLOUD-001 §6 / MR3-D10"},
-    {"number": 97, "head": "696b5b356bc5d9ac1b1a9ce8d586338856dae43a", "relation": "cross-stream SaaS backlog; content not reviewed in detail"},
-    {"number": 184, "head": "96fb84a464caccdaeb1be0d00dc63ac11dc24f69", "relation": "MASTER ROADMAP 3.0 mirror (MR3-D10-D13, D64-D79, S0-S6)"}
+    {
+      "number": 95,
+      "head": "9e80ee55dd27718171d266a017a217f7f231409a",
+      "relation": "ADR-SAAS-001 PROPOSED isolated instance per tenant; kept as alternative per OD-7; unified ADR-SAAS-002 PROPOSED in #207"
+    },
+    {
+      "number": 97,
+      "head": "696b5b356bc5d9ac1b1a9ce8d586338856dae43a",
+      "relation": "cross-stream SaaS backlog; content not reviewed in detail"
+    },
+    {
+      "number": 184,
+      "head": "96fb84a464caccdaeb1be0d00dc63ac11dc24f69",
+      "relation": "MASTER ROADMAP 3.0 mirror (MR3-D10-D13, D64-D79, S0-S6)"
+    }
   ],
   "divergences": [
-    {"id": "D1", "summary": "catalog feature codes management.*/bms.* vs snapshot and ENT-001 mgmt.*/limit.*", "severity": "high_on_enforcement"},
-    {"id": "D2", "summary": "product codes management/hire/academy/erp vs REG-001 mgmt/academy/cloud/erp/int/api", "severity": "medium"},
-    {"id": "D3", "summary": "workspace status enum differs between cloudmap and REG-002", "severity": "medium"},
-    {"id": "D4", "summary": "no audit event on projection/snapshot mutations in Moodle", "severity": "medium"},
-    {"id": "D5", "summary": "cloudmap enforces 1:1 company-workspace; REG-001 allows many companies later", "severity": "low"},
-    {"id": "D6", "summary": "Drive contracts mutually inconsistent on ERP states and snapshot signature", "severity": "low_medium"}
-  ]
+    {
+      "id": "D1",
+      "summary": "catalog feature codes management.*/bms.* vs snapshot and ENT-001 mgmt.*/limit.*",
+      "severity": "high_on_enforcement",
+      "decision": "OD-6 ACCEPTED; documented mapping only"
+    },
+    {
+      "id": "D2",
+      "summary": "product codes management/hire/academy/erp vs REG-001 mgmt/academy/cloud/erp/int/api",
+      "severity": "medium"
+    },
+    {
+      "id": "D3",
+      "summary": "workspace status enum differs between cloudmap and REG-002",
+      "severity": "medium"
+    },
+    {
+      "id": "D4",
+      "summary": "no audit event on projection/snapshot mutations in Moodle",
+      "severity": "medium"
+    },
+    {
+      "id": "D5",
+      "summary": "cloudmap enforces 1:1 company-workspace; REG-001 allows many companies later",
+      "severity": "low"
+    },
+    {
+      "id": "D6",
+      "summary": "Drive contracts mutually inconsistent on ERP states and snapshot signature",
+      "severity": "low_medium"
+    }
+  ],
+  "revision": 2,
+  "owner_decisions": {
+    "source": "https://github.com/rimanfatykhov-arch/bms24/pull/207#issuecomment-7236311964",
+    "date": "2026-11-28",
+    "closure": [
+      {
+        "id": "OD-1",
+        "state": "ACCEPTED",
+        "summary": "hybrid; shared Moodle kept; isolated spaces provided; G3 not weakened; no migration of shared companies; restore mechanism OPEN"
+      },
+      {
+        "id": "OD-2",
+        "state": "OPEN",
+        "summary": "Control Plane stack"
+      },
+      {
+        "id": "OD-3",
+        "state": "ACCEPTED",
+        "summary": "CLOUD-1a in cloud/ of bms24, no Moodle change; placement only, not GO; CI only with Codex agreement"
+      },
+      {
+        "id": "OD-4",
+        "state": "OPEN",
+        "summary": "hosting, PostgreSQL, environment"
+      },
+      {
+        "id": "OD-5",
+        "state": "OPEN",
+        "summary": "secrets manager"
+      },
+      {
+        "id": "OD-6",
+        "state": "ACCEPTED",
+        "summary": "mgmt.* and limit.* per ENT-001; mapping documented only; runtime unchanged; Hire OPEN"
+      },
+      {
+        "id": "OD-7",
+        "state": "ACCEPTED",
+        "summary": "keep ADR-SAAS-001 (#95) as alternative; unified ADR-SAAS-002 PROPOSED considering #184"
+      },
+      {
+        "id": "OD-8",
+        "state": "ACCEPTED",
+        "summary": "beta: manual SubscriptionReference with audit and provenance; Odoo target master; Odoo and billing protocol UNKNOWN; no real payments now"
+      },
+      {
+        "id": "OD-9",
+        "state": "ACCEPTED",
+        "summary": "independent reviewer Codex; Claude owns #207"
+      }
+    ],
+    "still_open": [
+      "OD-2",
+      "OD-4",
+      "OD-5",
+      "hire",
+      "independent_restore_mechanism",
+      "commercial_terms"
+    ]
+  },
+  "gates": {
+    "G3": {
+      "state": "HOLD",
+      "criterion": "docs/cloud/CLOUD-0_SAAS_ARCHITECTURE_AUDIT.md §5.2",
+      "shared_restore_plus_export_counts": false
+    },
+    "CLOUD-1a": {
+      "state": "HOLD",
+      "requires": [
+        "CLOUD-0 PASS by Codex on exact head",
+        "separate owner GO"
+      ]
+    }
+  },
+  "code_mapping_od6": [
+    {
+      "from": "management",
+      "to": "mgmt",
+      "kind": "application"
+    },
+    {
+      "from": "academy",
+      "to": "academy",
+      "kind": "application"
+    },
+    {
+      "from": "erp",
+      "to": "erp",
+      "kind": "application"
+    },
+    {
+      "from": "hire",
+      "to": null,
+      "kind": "application",
+      "state": "OPEN"
+    },
+    {
+      "from": "management.tasks",
+      "to": "mgmt.tasks"
+    },
+    {
+      "from": "management.calendar",
+      "to": "mgmt.calendar"
+    },
+    {
+      "from": "management.battle_plans",
+      "to": "mgmt.battle_plans"
+    },
+    {
+      "from": "management.indicators",
+      "to": "mgmt.indicators"
+    },
+    {
+      "from": "management.processes",
+      "to": "mgmt.processes"
+    },
+    {
+      "from": "hire.vacancies",
+      "to": null,
+      "state": "OPEN"
+    },
+    {
+      "from": "hire.candidates",
+      "to": null,
+      "state": "OPEN"
+    },
+    {
+      "from": "academy.learning",
+      "to": "academy.learning",
+      "state": "reconcile_with_academy.corporate"
+    },
+    {
+      "from": "erp.operations",
+      "to": "erp.*",
+      "state": "reconcile_with_erp.application"
+    },
+    {
+      "from": "bms.company_members",
+      "to": "limit.users"
+    },
+    {
+      "from": "bms.storage_bytes",
+      "to": "limit.storage_bytes",
+      "state": "new_catalog_code"
+    },
+    {
+      "from": "bms.ai_operations",
+      "to": "limit.ai_operations",
+      "state": "new_catalog_code"
+    }
+  ],
+  "status_mapping_d3": {
+    "draft": "pending",
+    "provisioning": "pending",
+    "active": "active",
+    "degraded": "degraded",
+    "suspended": "suspended",
+    "closing": "suspended",
+    "closed": "closed",
+    "_local_only": "error"
+  }
 }

@@ -1,28 +1,29 @@
 # CLOUD-0 — SaaS Architecture & Audit
 
-**Статус: PROPOSED / на согласование владельца и независимую проверку.** Только аудит и проект. Документ не разрешает CLOUD-1, DDL, DNS, provisioning, подключение платных сервисов, merge, TEST/staging/production или deployment.
+**Статус: PROPOSED, ревизия 2 (закрытие handoff #204).** Ожидает независимой проверки Codex (OD-9) по exact head. Только аудит и проект. Документ не разрешает CLOUD-1a, DDL, DNS, provisioning, подключение платных сервисов, оплату, merge, TEST/staging/production или deployment.
 
 | Поле | Значение |
 | --- | --- |
-| Линия | BMS-10 Cloud / SaaS (P0), поручение [#204](https://github.com/rimanfatykhov-arch/bms24/issues/204), реестр [#198](https://github.com/rimanfatykhov-arch/bms24/issues/198) |
-| Исполнитель | Claude, отдельная сессия «CLOUD-0 — SaaS Architecture & Audit» |
-| Дата среза | 28.11.2026 |
-| Baseline | `main` = `0884643590541fdd9b75b1414fd93d6120ded017`, tree `a576c5976485b95acd8666bca93824c459ea8e76` |
-| Версия плагина на baseline | `local_kbacompany` `1.1.0-rc29`, `$plugin->version = 2026112301` |
-| Изменённые пути | `docs/cloud/CLOUD-0_SAAS_ARCHITECTURE_AUDIT.md`, `docs/cloud/cloud0-evidence-inventory.json` (только новые документы) |
-| Влияние на БД / ACL / privacy / интеграции | Нет. Код, схема, языковые строки, CI и настройки не изменяются |
+| Линия | BMS-10 Cloud / SaaS (P0), поручение [#204](https://github.com/rimanfatykhov-arch/bms24/issues/204), реестр [#198](https://github.com/rimanfatykhov-arch/bms24/issues/198), PR [#207](https://github.com/rimanfatykhov-arch/bms24/pull/207) |
+| Исполнитель / reviewer | Claude (ownership #207) / Codex (OD-9, не пушит в ветку автора) |
+| Решение владельца | [PR #207, комментарий 7236311964](https://github.com/rimanfatykhov-arch/bms24/pull/207#issuecomment-7236311964), 28.11.2026 |
+| Baseline ревизии 2 | `main` = `74e00c4a63cbd5d37759e604753ebaa4b4fc7947`, tree `de454b208e0bac07ff960f80ec1de0da87418253`; `local_kbacompany` `1.1.0-rc29`, `$plugin->version = 2026112400` |
+| Baseline ревизии 1 | `main` = `0884643590541fdd9b75b1414fd93d6120ded017`, `2026112301` (head #207 `4575a1e4…`) |
+| Изменения main между ревизиями | 36 файлов (R5a #172: календарь отчётности, privacy provider, 3 новые таблицы). Аудированные файлы (`workspace_mapping_service`, `entitlement_service`, `entitlement_snapshot_service`, `bms_tariff_catalog_service`, `platform_boundary_service`, `company_registry_service`, `identity_registry`, `odoo_adapter_service`, `cloud_api`, `db/services.php`, `db/access.php`, `tariff_catalog.php`, определения `cloudmap`/`entsnap`) не изменились — проверено `git diff 0884643 74e00c4` |
+| Изменённые пути PR | `docs/cloud/CLOUD-0_SAAS_ARCHITECTURE_AUDIT.md`, `docs/cloud/cloud0-evidence-inventory.json`, `docs/adr/ADR-SAAS-002-hybrid-cloud-isolation-PROPOSED.md` (только документы) |
+| Влияние на БД / ACL / privacy / интеграции | Нет. Код, схема, lang, CI и настройки не изменяются |
 
-Обозначения состояния: **EXISTING** — есть в `main` на baseline (указан путь); **PROPOSED** — описано в контрактах или PR, не реализовано; **UNKNOWN** — источник недоступен или доказательства нет; **NOT RUN** — проверка не выполнялась.
+Обозначения состояния: **EXISTING** — есть в `main` на baseline (указан путь); **PROPOSED** — описано в контрактах или PR, не реализовано; **ACCEPTED** — решение владельца; **UNKNOWN** — источник недоступен или доказательства нет; **NOT RUN** — проверка не выполнялась; **HOLD** — gate закрыт до доказательства.
 
 ---
 
 ## 1. Итоги для владельца
 
-1. **Дубля Cloud Control Plane нет, но в Moodle уже есть его клиентская сторона.** В `local_kbacompany` есть проекция Workspace (`workspace_mapping_service`, таблица `local_kbacompany_cloudmap`), кеш entitlement snapshot (`entitlement_snapshot_service`, `local_kbacompany_entsnap`), resolver (`entitlement_service`), контракт тарифного каталога (`bms_tariff_catalog_service`) и закрытый web service `local_kbacompany_cloud_v1` (по умолчанию выключен). Отдельного сервиса Cloud, репозитория Cloud, PostgreSQL, Product Registry, Subscription Registry и корпоративного Odoo **в доступных источниках нет**. CLOUD-1 нужно строить как внешний Control Plane, который пишет в уже существующие проекции. Второй реестр компаний или вторую проекцию в Moodle создавать нельзя.
-2. **Текущим компаниям ничего не грозит.** `entitlement_service::has()` в `main` не вызывается ни в одном guard, а `explain()` используется только для диагностики (`platform_boundary_service`). Компании без проекции и компании в режиме `legacy_compatibility` получают `allowed = true` (`LEGACY_COMPATIBILITY`). Применение snapshot само режим не переключает. Эту политику предлагается закрепить (раздел 6).
-3. **Главное открытое решение — что считать «двумя изолированными пространствами» для S3/G3.** Контракты Drive (CLOUD-001 §6, REG-001 §12), MR3-D10 и `docs/12` исходят из общего Moodle. Открытый PROPOSED [ADR-SAAS-001 в PR #95](https://github.com/rimanfatykhov-arch/bms24/pull/95) предлагает отдельный экземпляр Moodle на tenant. В общем Moodle нет восстановления одной компании (CLOUD-001 §18 откладывает его на будущее), поэтому критерий G3 «независимое восстановление» на общей модели сейчас недостижим. Варианты и рекомендация — в разделе 5.
-4. **Найдены пять расхождений между кодом и контрактами.** Их нужно согласовать до CLOUD-2 (раздел 4.3). Самое важное: каталог тарифов использует коды `management.*` и `bms.*`, а snapshot принимает только `mgmt.*` (как и ENT-001). Если включить enforcement без согласования кодов, существующие функции закроются.
-5. **Первый PR (CLOUD-1a) предлагается без runtime:** машиночитаемые контракты Registry и Entitlements в репозитории, offline-валидатор, синтетические фикстуры A/B и CI-проверка. Без DDL, без сервиса, без изменения `local/` (раздел 9).
+1. **Дубля Cloud Control Plane нет, но в Moodle уже есть его клиентская сторона.** В `local_kbacompany` есть проекция Workspace (`workspace_mapping_service`, таблица `local_kbacompany_cloudmap`), кеш entitlement snapshot (`entitlement_snapshot_service`, `local_kbacompany_entsnap`), resolver (`entitlement_service`), контракт тарифного каталога (`bms_tariff_catalog_service`) и закрытый web service `local_kbacompany_cloud_v1` (по умолчанию выключен). Отдельного сервиса Cloud, PostgreSQL, Product/Subscription Registry и корпоративного Odoo **в доступных источниках нет**. CLOUD-1 строится как внешний Control Plane, пишущий в существующие проекции; второй реестр компаний или вторая проекция в Moodle запрещены.
+2. **Текущим компаниям ничего не грозит.** `entitlement_service::has()` в `main` не вызывается ни в одном guard; `explain()` используется только диагностикой (`platform_boundary_service`). Без проекции и в режиме `legacy_compatibility` — `allowed = true` (`LEGACY_COMPATIBILITY`); snapshot режим не переключает. Политика L1–L7 (раздел 6) сверена с кодом.
+3. **Изоляция — гибрид (OD-1 ACCEPTED).** Действующий общий Moodle сохраняется, существующие shared-компании не мигрируют, архитектура предусматривает отдельные изолированные пространства. **G3 остаётся HOLD**: восстановление общей платформы плюс экспорт компании **не** считается независимым восстановлением. Нужно доказать восстановление одного пространства без воздействия на другое (критерий — раздел 5.2). Для беты нужны изолированные пространства либо доказанное company-level восстановление; механизм и среда — отдельное решение.
+4. **Коды каталога (OD-6 ACCEPTED):** канон `mgmt.*` / `limit.*` по ENT-001. Mapping текущих `management.*` / `bms.*` зафиксирован в разделе 6.1 только как документ; runtime, доступы и legacy enforcement не меняются. Судьба Hire открыта.
+5. **CLOUD-1a** размещается в `cloud/` репозитория `bms24` (OD-3 ACCEPTED), ТЗ утверждено, но **HOLD до CLOUD-0 PASS и отдельного GO владельца**. CI — только по согласованию с Codex.
 
 ---
 
@@ -30,20 +31,21 @@
 
 | Источник | Версия / SHA | Результат |
 | --- | --- | --- |
-| `AGENTS.md`, `docs/12_CLOUD_ERP_BOUNDARIES.md`, `docs/deploy/BMS24_RELEASE_CONVEYOR_V1.md`, [#63](https://github.com/rimanfatykhov-arch/bms24/issues/63), #198, #204 | `main` 0884643 | Прочитано |
-| [BMS-ARC-CLOUD-001](https://docs.google.com/document/d/1fGSKD4tDUzzjumYwxAgAZl3u3hZD78ebNAPLTo7zqZc/edit) v0.1 PROPOSED | Google Drive, прочитано 28.11.2026 | Прочитано полностью |
+| `AGENTS.md`, `docs/12_CLOUD_ERP_BOUNDARIES.md`, `docs/deploy/BMS24_RELEASE_CONVEYOR_V1.md`, [#63](https://github.com/rimanfatykhov-arch/bms24/issues/63), #198, #204 | `main` 0884643, сверено на 74e00c4 | Прочитано |
+| [BMS-ARC-CLOUD-001](https://docs.google.com/document/d/1fGSKD4tDUzzjumYwxAgAZl3u3hZD78ebNAPLTo7zqZc/edit) v0.1 PROPOSED | Google Drive, 28.11.2026 | Прочитано полностью |
 | [BMS-ARC-REG-001](https://docs.google.com/document/d/1mC6aEAWzMnBuE2ovZpfumG-T5LHj2Y8XDcZadQpaLsk/edit) v0.1 PROPOSED | то же | Прочитано полностью |
-| [BMS-ARC-REG-002](https://docs.google.com/document/d/12DvSqybN58QFcxWFziJfmwCCENZW9Fo5zQ7f_7rIYig/edit) v0.1 PROPOSED | то же | Текст прочитан. Пакет схем (YAML/JSON/Mermaid/PNG/ZIP) и SHA-256 из §18 **NOT RUN**: файлы не скачивались, контрольные суммы не сверены |
+| [BMS-ARC-REG-002](https://docs.google.com/document/d/12DvSqybN58QFcxWFziJfmwCCENZW9Fo5zQ7f_7rIYig/edit) v0.1 PROPOSED | то же | Прочитано полностью |
+| [REG-002 Schema Package v0.1.zip](https://drive.google.com/file/d/1y0CAa4nHhnSRxMRJHSIpWACRdC8C2cX6/view) | Drive id `1y0CAa4nHhnSRxMRJHSIpWACRdC8C2cX6`, 151 666 байт, `modifiedTime` 2026-09-20T04:17:24Z | **SHA-256 ZIP `093fa2936bc9f32c2828f9acfb2459de37fc221701319d1b9a6e91a699da28f3` совпадает с §18** — подтвердил владелец, скачав байты ([#204, комментарий 7236624093](https://github.com/rimanfatykhov-arch/bms24/issues/204#issuecomment-7236624093)). Claude независимо проверил метаданные Drive: размер 151 666 байт и дата изменения (не менялся с 20.09.2026) совпадают. Повторный хеш байтов Claude: NOT RUN (содержимое не скачивалось в сессию). Внутренние файлы (YAML/JSON/Mermaid/PNG) и их SHA-256: NOT RUN; импорт: не выполнялся (CLOUD-1a HOLD) |
 | [BMS-ARC-ENT-001](https://docs.google.com/document/d/1D6BBA1_12rkRiXu2sM6y5A6gJQR_ggUCWHe1ujg1hx4/edit) v0.1 PROPOSED | то же | Прочитано полностью |
 | [BMS-ARC-MIG-001](https://docs.google.com/document/d/19-a39u5U4yI73svjBVyQTafAxWtmTxbNe47D-peIThQ/edit) v0.1 PROPOSED | то же | Прочитано полностью |
 | [RELEASE ROADMAP 3.1](https://docs.google.com/document/d/1pHuELJWEXaynqZqI0uzm8brzoLnq2lNnW6u9CCPY85s/edit) | изменён 28.11.2026 07:38 UTC | Прочитано (RR31-D01–D07, CLOUD-0…5, G0–G5) |
-| MASTER ROADMAP 3.0 (зеркало в [PR #184](https://github.com/rimanfatykhov-arch/bms24/pull/184), `docs/product/MASTER_ROADMAP_3.md`) | head `96fb84a464caccdaeb1be0d00dc63ac11dc24f69` | Прочитаны MR3-D10–D19, D64–D79, S0–S6, BMS-10. Сам Google-документ MR3 не открывался: использовано зеркало |
-| [PR #95](https://github.com/rimanfatykhov-arch/bms24/pull/95): `ADR-SAAS-001`, `SAAS_MVP.md` | head `9e80ee55dd27718171d266a017a217f7f231409a` | Прочитано, это возможный дубль/конфликт (раздел 3) |
-| [PR #97](https://github.com/rimanfatykhov-arch/bms24/pull/97) | head `696b5b356bc5d9ac1b1a9ce8d586338856dae43a` | Изучен только список файлов; содержимое детально не проверялось |
-| Репозиторий `bms24-context` (приватный) | HEAD `a4d3ef1f`, 19.11.2026 | Поиск по дереву: единственный Cloud-материал — `sessions/2026-11-14-saas-plan-pr95.md` и записи в `DECISIONS.md` о PR #95/#97 |
-| Другие репозитории владельца (`biznes-akademiya-marketing`, `sites`, `ba-chats`, `kzn.mba`) | — | По названиям и описаниям к Cloud не относятся. Содержимое **NOT RUN** |
-| BMS-ARC-DOM-001, BMS-PRD-EDT-001, BMS-ARC-INT-001, BMS-ARC-ERP-001, ADR Odoo Hosting | — | **UNKNOWN**: на них ссылаются контракты, но ссылок на документы нет |
-| Корпоративный Odoo BMS24, хостинг Cloud, DNS `*.bms24.online`, production inventory | — | **UNKNOWN**: доступа нет, серверные проверки запрещены поручением |
+| MASTER ROADMAP 3.0 (зеркало в [PR #184](https://github.com/rimanfatykhov-arch/bms24/pull/184), `docs/product/MASTER_ROADMAP_3.md`) | head `96fb84a464caccdaeb1be0d00dc63ac11dc24f69` | Прочитаны MR3-D10–D19, D64–D79, S0–S6, BMS-10. Сам Google-документ MR3 не открывался |
+| [PR #95](https://github.com/rimanfatykhov-arch/bms24/pull/95): `ADR-SAAS-001`, `SAAS_MVP.md` | head `9e80ee55dd27718171d266a017a217f7f231409a` | Прочитано. Сохраняется как альтернатива (OD-7), не изменяется |
+| [PR #97](https://github.com/rimanfatykhov-arch/bms24/pull/97) | head `696b5b356bc5d9ac1b1a9ce8d586338856dae43a` | Изучен только список файлов |
+| Репозиторий `bms24-context` (приватный) | HEAD `a4d3ef1f`, 19.11.2026 | Cloud-материал — только `sessions/2026-11-14-saas-plan-pr95.md` и записи в `DECISIONS.md` о #95/#97 |
+| Другие репозитории владельца (`biznes-akademiya-marketing`, `sites`, `ba-chats`, `kzn.mba`) | — | По названиям к Cloud не относятся; содержимое NOT RUN |
+| BMS-ARC-DOM-001, BMS-PRD-EDT-001, BMS-ARC-INT-001, BMS-ARC-ERP-001, ADR Odoo Hosting | — | **UNKNOWN**: ссылки на документы не предоставлены |
+| Корпоративный Odoo BMS24, хостинг Cloud, DNS `*.bms24.online`, production inventory | — | **UNKNOWN**: доступа нет, серверные проверки запрещены |
 
 ---
 
@@ -51,15 +53,15 @@
 
 | Кандидат | Где | Вывод |
 | --- | --- | --- |
-| Проекция Workspace в Moodle | `workspace_mapping_service` 0.6.8, `local_kbacompany_cloudmap` | EXISTING. Это *проекция* (`moodle_role = projection_cache`), а не Registry. CLOUD-1 должен в неё писать, а не создавать вторую |
-| Entitlement runtime | `entitlement_service` 0.6.7, `entitlement_snapshot_service` 0.6.7, `local_kbacompany_entsnap` | EXISTING. Совпадает с ENT-001 §13–16, §51 этап 1. В Cloud нужен только resolver/выдача snapshot; второй resolver в Moodle не нужен |
-| Тарифный каталог | `bms_tariff_catalog_service` 1.1, `tariff_catalog.php` | EXISTING, только для чтения, константы в коде. Пересекается с будущим Product Registry (CLOUD-2): после CLOUD-2 его нужно превратить в проекцию, иначе будет два каталога |
-| Реестр компаний | `company_registry_service`, `local_kbacompany_company` | EXISTING, канонический владелец BMS Company. Cloud не создаёт копию, только `WorkspaceCompanyLink` по UUID |
-| Внешние идентичности | `identity_registry`, `local_kbacompany_extmap` | EXISTING. Это provider-neutral mapping компаний и пользователей (Bitrix24, Odoo-клиента). Его нельзя путать с CloudCustomer ↔ коммерческий Odoo |
-| Odoo | `odoo_adapter_service` 0.9.1.3, `odoo_json2_transport`, `odoo_actual_*` | EXISTING, но это **ERP клиента** (импорт факта), а не корпоративный коммерческий Odoo (MR3-D70). Корпоративного Odoo-коннектора нет |
-| Лицензии Academy | `local/kbacorporate/classes/local/licenses.php`, `local/bitrixsync/.../license_*` | EXISTING, владелец — KBA Corporate (ENT-001 §22). Cloud не копирует учёт мест |
-| SaaS MVP / изоляция | PR #95 (`ADR-SAAS-001`, `SAAS_MVP.md`), PR #97 | PROPOSED, не смержены. Расходятся с контрактами Drive по модели изоляции (раздел 5). Этот документ их **не заменяет**: он даёт сравнение для решения владельца и предлагает согласовать #95 и CLOUD-0 одним решением |
-| Сервис Cloud / Control Plane | — | Отсутствует (UNKNOWN вне доступных репозиториев). Дубля нет |
+| Проекция Workspace в Moodle | `workspace_mapping_service` 0.6.8, `local_kbacompany_cloudmap` | EXISTING, *проекция* (`moodle_role = projection_cache`), не Registry. CLOUD-1 пишет в неё |
+| Entitlement runtime | `entitlement_service` 0.6.7, `entitlement_snapshot_service` 0.6.7, `local_kbacompany_entsnap` | EXISTING, соответствует ENT-001 §13–16, §51 этап 1. В Cloud — resolver и выдача snapshot; второй resolver в Moodle не нужен |
+| Тарифный каталог | `bms_tariff_catalog_service` 1.1, `tariff_catalog.php` | EXISTING, только чтение, константы в коде. После CLOUD-2 — проекция Product Registry, иначе два каталога |
+| Реестр компаний | `company_registry_service`, `local_kbacompany_company` | EXISTING, канонический владелец BMS Company. Cloud хранит только `WorkspaceCompanyLink` по UUID |
+| Внешние идентичности | `identity_registry`, `local_kbacompany_extmap` | EXISTING, mapping компаний/пользователей у провайдеров (Bitrix24, Odoo клиента). Не путать с CloudCustomer ↔ коммерческий Odoo |
+| Odoo | `odoo_adapter_service` 0.9.1.3, `odoo_json2_transport`, `odoo_actual_*` | EXISTING, но это **ERP клиента**, а не корпоративный коммерческий Odoo (MR3-D70) |
+| Лицензии Academy | `local/kbacorporate/classes/local/licenses.php`, `local/bitrixsync/.../license_*` | EXISTING, владелец — KBA Corporate (ENT-001 §22) |
+| SaaS MVP / изоляция | PR #95 (`ADR-SAAS-001`, `SAAS_MVP.md`), PR #97 | PROPOSED, не смержены. По OD-7 #95 сохраняется как альтернатива; единый ADR — [`ADR-SAAS-002`](../adr/ADR-SAAS-002-hybrid-cloud-isolation-PROPOSED.md) в этом PR, без изменения чужих PR |
+| Сервис Cloud / Control Plane | — | Отсутствует в доступных источниках. Дубля нет |
 
 ---
 
@@ -71,72 +73,130 @@
 
 | Компонент | Путь | Контракт | Состояние | Тесты |
 | --- | --- | --- | --- | --- |
-| Workspace projection | `local/kbacompany/classes/local/workspace_mapping_service.php` | 0.6.8, projection schema 1.0 | EXISTING. 1:1 Company ↔ Workspace, монотонная `projection_revision`, привязка неизменна, без provider ID | `tests/workspace_mapping_service_test.php` (3 теста) |
-| Entitlement resolver | `local/kbacompany/classes/local/entitlement_service.php` | 0.6.7 | EXISTING. Режимы `legacy_compatibility` / `cloud_snapshot` / `suspended`. Порядок проверки: entitlement → company scope → capability → business rule | через тесты snapshot и `platform_boundary_service_test.php` |
-| Snapshot cache | `local/kbacompany/classes/local/entitlement_snapshot_service.php` | 0.6.7, schema 1.0 | EXISTING. SHA-256 hash, last-known-good, grace 86400 с, принимает только `mgmt.*`, fail-closed после grace | `tests/entitlement_snapshot_service_test.php` (5) |
-| Tariff catalog | `local/kbacompany/classes/local/bms_tariff_catalog_service.php`, `tariff_catalog.php` | 1.1 | EXISTING, только для чтения. Цен, лимитов и enforcement нет | `tests/bms_commercial_catalog_contract_test.php` (2) |
-| Cloud API | `local/kbacompany/classes/external/cloud_api.php`, `db/services.php` | `local_kbacompany_cloud_v1` | EXISTING. 6 функций (3 read, 2 write, contract), `restrictedusers=1`, `enabled=0`, capability `local/kbacompany:cloudsync` (system, RISK_CONFIG, без archetypes) | NOT RUN (отдельного теста API нет) |
+| Workspace projection | `local/kbacompany/classes/local/workspace_mapping_service.php` | 0.6.8, projection schema 1.0 | EXISTING. 1:1 Company ↔ Workspace, монотонная `projection_revision`, привязка неизменна, без provider ID | `tests/workspace_mapping_service_test.php` (3) |
+| Entitlement resolver | `local/kbacompany/classes/local/entitlement_service.php` | 0.6.7 | EXISTING. Режимы `legacy_compatibility` / `cloud_snapshot` / `suspended`. Порядок: entitlement → company scope → capability → business rule | через тесты snapshot и `platform_boundary_service_test.php` |
+| Snapshot cache | `local/kbacompany/classes/local/entitlement_snapshot_service.php` | 0.6.7, schema 1.0 | EXISTING. SHA-256 hash, last-known-good, grace 86400 с, только `mgmt.*`, fail-closed после grace | `tests/entitlement_snapshot_service_test.php` (5) |
+| Tariff catalog | `local/kbacompany/classes/local/bms_tariff_catalog_service.php`, `tariff_catalog.php` | 1.1 | EXISTING, только чтение; цен, лимитов, enforcement нет | `tests/bms_commercial_catalog_contract_test.php` (2) |
+| Cloud API | `local/kbacompany/classes/external/cloud_api.php`, `db/services.php` | `local_kbacompany_cloud_v1` | EXISTING. 6 функций, `restrictedusers=1`, `enabled=0`, capability `local/kbacompany:cloudsync` (system, RISK_CONFIG, без archetypes) | NOT RUN (отдельного теста нет) |
 | Platform boundary | `local/kbacompany/classes/local/platform_boundary_service.php` | 0.6.9 | EXISTING. Владельцы и запрещённые зависимости, в т. ч. `cloud_registry_tables_inside_bms_business_model` | `tests/platform_boundary_service_test.php` |
-| Таблицы | `db/install.xml`: `local_kbacompany_cloudmap`, `local_kbacompany_entsnap`; `db/upgrade.php` (шаги около строк 2808, 2869, 2903) | — | EXISTING. `cloudmap`: уникальные `companyuuid` **и** `workspaceuuid` | — |
-| Изоляция компаний | `docs/04_SECURITY_COMPANY_ISOLATION.md`, `tests/pr48_tenant_isolation_test.php` | — | EXISTING на уровне Company UUID в общем Moodle | 2 теста |
+| Таблицы | `db/install.xml`: `local_kbacompany_cloudmap`, `local_kbacompany_entsnap`; `db/upgrade.php` (строки 2808, 2869, 2903) | — | EXISTING. `cloudmap`: уникальные `companyuuid` **и** `workspaceuuid` | — |
+| Изоляция компаний | `docs/04_SECURITY_COMPANY_ISOLATION.md`, `tests/pr48_tenant_isolation_test.php` | — | EXISTING на уровне Company UUID в общем Moodle | 2 |
+| Company-level restore в общем Moodle | — | CLOUD-001 §18 («будущая возможность») | **Отсутствует** | — |
 
 ### 4.2 Среды и домены
 
 | Объект | Доказательство | Состояние |
 | --- | --- | --- |
-| Production BMS | `edu.kzn.mba` (73 упоминания в репозитории; MR3: build2026112301 по отчёту PR #165) | EXISTING по документам. Текущий inventory **UNKNOWN** / NOT RUN |
-| Test | `test.bms24.online` (3 упоминания) | EXISTING по документам, не проверялся |
-| Stage41 | `stage41.bms24.online` (PR серии 1892–1897) | Историческое, текущее состояние UNKNOWN |
-| `app.` / `cloud.` / `academy.bms24.online` | MR3-D64–D68, CLOUD-001 §14 | PROPOSED; DNS **UNKNOWN**; DNS не создавать |
-| Корпоративный Odoo | MR3-D70, CLOUD-001 §3 | **UNKNOWN**: экземпляр, версия, хостинг и API не подтверждены |
+| Production BMS | `edu.kzn.mba` (упоминания в репозитории; MR3: build2026112301 по отчёту PR #165) | EXISTING по документам; inventory UNKNOWN / NOT RUN |
+| Test | `test.bms24.online` | EXISTING по документам, не проверялся |
+| Stage41 | `stage41.bms24.online` (PR 1892–1897) | Историческое, текущее состояние UNKNOWN |
+| `app.` / `cloud.` / `academy.bms24.online` | MR3-D64–D68, CLOUD-001 §14 | PROPOSED; DNS UNKNOWN; DNS не создавать |
+| Корпоративный Odoo | MR3-D70, CLOUD-001 §3 | **UNKNOWN** |
 
 ### 4.3 Расхождения кода и контрактов
 
-| # | Расхождение | Где | Риск | Предложение |
+| # | Расхождение | Где | Риск | Решение / предложение |
 | --- | --- | --- | --- | --- |
-| D1 | Коды функций: каталог — `management.tasks` и др., лимиты `bms.*`; snapshot и ENT-001 — `mgmt.*`, `limit.*` | `bms_tariff_catalog_service::PRODUCTS/LIMITS` и `entitlement_snapshot_service` (стр. 150, 244) | Высокий при включении `cloud_snapshot`: коды каталога snapshot не примет, функции закроются | Канон — `mgmt.*` / `limit.*` по ENT-001. Каталог исправить отдельным малым PR после решения владельца (OD-6) |
-| D2 | Коды продуктов: `management/hire/academy/erp` против `mgmt/academy/cloud/erp/int/api` в REG-001 §10. `hire` в контрактах Drive нет | каталог против REG-001 | Средний | Утвердить единый список application codes в CLOUD-1a; `hire` — решение владельца |
-| D3 | Статусы Workspace: `pending/active/degraded/suspended/closed/error` против `draft/provisioning/active/degraded/suspended/closing/closed` | `workspace_mapping_service::validate_status` против REG-002 §14 | Средний | В CLOUD-1a — явная таблица соответствия Registry → проекция, без изменения кода Moodle |
-| D4 | Мутации проекции и snapshot не пишут audit event (есть только `createdby/modifiedby`, у snapshot — история строк) | `workspace_mapping_service::bind`, `entitlement_snapshot_service::apply` | Средний: REG-001 §34 и ENT-001 §36 требуют append-only аудит | Канонический аудит ведёт Cloud. В Moodle — Moodle event на apply (будущий PR, вне CLOUD-1) |
-| D5 | Кардинальность 1:1 (уникальный `companyuuid`) против many-company в REG-001 §7 | `install.xml` cloudmap | Низкий для беты (v0.1 default — одна primary Company) | Не менять до решения по холдингам (MR3-D79) |
-| D6 | Контракты Drive расходятся между собой: состояние ERP `Not Provisioned` (REG-001 §60) отсутствует в enum REG-002; статусы ERP entitlement в MIG-001 §6 (`Requested…Closed`) отличаются от ENT-001 §5 (`Pending…Revoked`); подпись snapshot (ENT-001 §13) против hash в коде | Drive | Низкий / средний | Отметить в v0.2 контрактов: commercial state ≠ operational state (ENT-001 §26). Локальный `not_provisioned` оставить |
+| D1 | Коды функций: каталог — `management.*`, лимиты `bms.*`; snapshot и ENT-001 — `mgmt.*`, `limit.*` | `bms_tariff_catalog_service::PRODUCTS/LIMITS` против `entitlement_snapshot_service` (стр. 150, 244) | Высокий при включении `cloud_snapshot` | OD-6 ACCEPTED: канон `mgmt.*`/`limit.*`. Mapping — раздел 6.1. Код не меняется в CLOUD-0/1a |
+| D2 | Коды продуктов `management/hire/academy/erp` против `mgmt/academy/cloud/erp/int/api` (REG-001 §10) | каталог против REG-001 | Средний | OD-6: application codes по REG-001; `hire` — OPEN (раздел 6.1) |
+| D3 | Статусы Workspace: `pending/active/degraded/suspended/closed/error` против `draft/provisioning/active/degraded/suspended/closing/closed` | `workspace_mapping_service::validate_status` против REG-002 §14 | Средний | Таблица соответствия — раздел 6.2 (PROPOSED, без изменения кода) |
+| D4 | Мутации проекции и snapshot не пишут audit event (только `createdby/modifiedby`, у snapshot — история строк) | `workspace_mapping_service::bind`, `entitlement_snapshot_service::apply` | Средний (REG-001 §34, ENT-001 §36) | Канонический аудит — в Cloud; Moodle event — отдельный будущий PR |
+| D5 | Кардинальность 1:1 против many-company (REG-001 §7) | `install.xml` cloudmap | Низкий для беты | Не менять до решения по холдингам (MR3-D79) |
+| D6 | Расхождения контрактов Drive: `Not Provisioned` (REG-001 §60) нет в enum REG-002; статусы ERP entitlement MIG-001 §6 против ENT-001 §5; подпись snapshot ENT-001 §13 против hash в коде | Drive | Низкий / средний | Учесть в v0.2: commercial state ≠ operational state (ENT-001 §26); локальный `not_provisioned` оставить |
 
 ---
 
-## 5. Shared и isolated: сравнение
+## 5. Изоляция: shared, isolated, гибрид
 
-| Критерий | A. Общий Moodle, изоляция по Company UUID | B. Отдельный Moodle на tenant (ADR-SAAS-001, PR #95) | H. Гибрид: A по умолчанию, B для повышенных требований |
+### 5.1 Сравнение и принятое решение
+
+| Критерий | A. Общий Moodle, изоляция по Company UUID | B. Отдельный экземпляр на пространство (ADR-SAAS-001, #95) | H. Гибрид (OD-1 ACCEPTED) |
 | --- | --- | --- | --- |
-| Соответствие решениям | CLOUD-001 §6, REG-001 §12, MR3-D10, `docs/12` | Противоречит CLOUD-001 §6 и MR3-D10 без отдельного решения | MR3-D10 + MR3-D11 («выделенные среды при повышенных требованиях») |
-| Готовность кода | Высокая: Company scope, ACL, проекции и snapshot уже есть | Код BMS тот же, но нужны автоматизация экземпляров, конфигурации, cron и обновлений — сейчас её нет | Как A, плюс B позже |
-| Граница безопасности | Логическая. Ошибка scope затрагивает соседей. Нужен аудит глобальных сущностей Moodle: пользователи, файлы, сессии, кеш, cron, поиск, экспорт | БД, файлы и учётные данные раздельны. Общий хост и Control Plane остаются общей зоной | Выбирается для каждого Workspace |
-| Независимое восстановление одной компании | **Нет**: backup на уровне платформы, restore одной компании не реализован (CLOUD-001 §18) | Да, это штатный restore экземпляра | A — нет, B — да |
-| Независимые версии и rollout | Нет: одна версия на всех. Канал — feature rollout (CLOUD-001 §12) | Да: staged rollout по экземплярам | Частично |
-| Стоимость и эксплуатация | Ниже | Выше: N экземпляров, обновлений и проверок restore | Средняя |
-| Release Conveyor (один ZIP) | Подходит как есть | Тот же ZIP, но N установок и N квитанций | Подходит |
-| Существующие клиенты | Без изменений | Перенос из общей установки — отдельный workstream (не разрешён) | Без изменений |
-| Модель Registry | `ApplicationInstance` shared, `workspace_uuid = null` | `ApplicationInstance` на Workspace | REG-001 поддерживает обе (`shared_or_isolated`) |
+| Соответствие решениям | CLOUD-001 §6, REG-001 §12, MR3-D10, `docs/12` | Альтернатива из #95, сохраняется (OD-7) | MR3-D10 + MR3-D11 + OD-1 |
+| Готовность кода | Высокая: Company scope, ACL, проекции и snapshot есть | Код BMS тот же; автоматизации экземпляров, конфигурации, cron, обновлений нет | A есть; изолированный вариант — проект |
+| Граница безопасности | Логическая; ошибка scope затрагивает соседей | БД, файлы, учётные данные раздельны; общий хост и Control Plane остаются общей зоной | Выбирается на пространство |
+| **Независимое восстановление одного пространства** | **Нет.** Backup — на уровне платформы; company-level restore не реализован (CLOUD-001 §18). Restore платформы плюс экспорт компании **не** является независимым восстановлением (OD-1) | Да, штатный restore экземпляра (нужно доказать) | Только для изолированных пространств или после доказанного company-level restore |
+| Независимые версии / rollout | Нет | Да | Частично |
+| Стоимость и эксплуатация | Ниже | Выше | Средняя |
+| Release Conveyor (один ZIP) | Подходит | Тот же ZIP, N установок и квитанций | Подходит |
+| Существующие клиенты | Без изменений | Миграция не разрешена | **Без миграции** (OD-1) |
+| Модель Registry | `ApplicationInstance` shared, `workspace_uuid = null` | `ApplicationInstance` на Workspace | Обе (`shared_or_isolated`, REG-001) |
 
-**Рекомендация (PROPOSED):** H.
-- Registry и Entitlements проектировать с поддержкой обоих режимов. REG-001 и REG-002 это уже позволяют.
-- Закрытую бету запускать на A, если владелец принимает такую трактовку G3: две компании в общем Moodle изолированы, есть отрицательные cross-tenant проверки, а «независимое восстановление» — это восстановление платформы плюс проверенный экспорт компании.
-- Если владелец требует восстанавливать пространство A, не затрагивая B, то на A это сейчас невозможно. Тогда бета требует либо B хотя бы для одного пилота, либо отдельной реализации company-level export/restore (это большая работа, MR3 её не планирует).
+**Решение владельца OD-1 (ACCEPTED 28.11.2026):** гибридная архитектура.
+- Действующий общий Moodle сохраняется; существующие shared-компании не мигрируют.
+- Registry и Entitlements поддерживают оба режима с первого среза.
+- Для беты нужны изолированные пространства **либо** доказанное company-level восстановление. Конкретный механизм и среда — отдельное решение (OPEN: механизм восстановления, OD-4).
+- Требование независимого восстановления G3 не ослабляется. Ревизия 1 этого документа ошибочно допускала бету на общей платформе с восстановлением платформы и экспортом компании. Эта трактовка **отменена** (раздел 14).
 
-Это решение OD-1, его принимает владелец. Оно не меняет текущий Moodle.
+### 5.2 Проверяемый критерий G3 (HOLD до доказательства)
+
+G3 = PASS только если все пункты выполнены на двух пространствах A и B с синтетическими данными, в согласованной среде, с evidence (exact SHA/ZIP, журнал команд, контрольные суммы):
+
+1. **Исходное состояние B зафиксировано:** контрольные суммы данных B (записи БД в границах B, файлы B, конфигурация B, entitlements/проекция B) и доступность B до операции.
+2. **Восстановление A:** A восстанавливается на точку T; после восстановления состояние A совпадает с эталоном T.
+3. **Отсутствие воздействия на B:** после операции контрольные суммы B идентичны п. 1, записи B, сделанные во время восстановления A, не потеряны, B оставался доступным (без простоя сверх согласованного), сессии и кеш B не сброшены и не смешаны.
+4. **Отрицательные tenant-сценарии:** одинаковые локальные ID в A и B не открывают чужие объекты; прямые URL/API/файлы/экспорт/поиск/кеш/cron A недоступны из B и наоборот; отзыв доступа действует в открытой сессии.
+5. **Восстановление общей платформы плюс экспорт компании не засчитывается** как выполнение п. 2–3.
+
+Для общего Moodle (вариант A) пп. 2–3 сейчас невыполнимы: company-level restore отсутствует. Поэтому G3 — **HOLD**, пока не будет либо изолированных пространств, либо реализованного и доказанного company-level restore. Выбор механизма — отдельное решение.
 
 ---
 
 ## 6. Политика для legacy-компаний (entitlements)
 
-Основание: ENT-001 §51–53, текущий код `entitlement_service`.
+Основание: ENT-001 §51–53, код `entitlement_service`. Сверка с кодом на baseline 74e00c4 — в последнем столбце.
 
-1. **L1 — по умолчанию ничего не меняется.** Компания без проекции, или с `entitlement_mode = legacy_compatibility`, получает `allowed = true`, `reason_code = LEGACY_COMPATIBILITY`. CLOUD-1 и CLOUD-2 это поведение не меняют.
-2. **L2 — snapshot не включает enforcement.** Применение snapshot сохраняет его, но режим не переключает (правило `snapshot_apply_does_not_enable_cloud_enforcement_automatically`).
-3. **L3 — grandfather bundle.** До перевода любой существующей компании в `cloud_snapshot` в каталоге утверждается bundle `bms_legacy_compat`. Он включает все `mgmt.*` коды, которые фактически доступны сегодня. Для каждой компании сравнивается «доступно сейчас» и «будет доступно по snapshot»; при любом отличии — HOLD.
-4. **L4 — переключение по одной компании.** Режим меняется только проекцией с более высокой `projection_revision`, для одной компании, с записью в аудите Cloud, по решению владельца. Массовое переключение запрещено.
-5. **L5 — откат.** Новая проекция с `entitlement_mode = legacy_compatibility` и следующей ревизией. Данные и история не удаляются (ENT-001 §34–35).
-6. **L6 — новые компании беты** создаются сразу через edition bundle. Старые компании переводятся в коммерческие подписки отдельной контролируемой миграцией после беты.
-7. **L7 — enforcement-guards** (navigation → read → write) вводятся отдельными PR. Каждый guard — по capability class (ENT-001 §12), с тестами legacy/cloud/suspended и без изменения ACL.
+| # | Правило | Проверка по коду |
+| --- | --- | --- |
+| L1 | По умолчанию ничего не меняется: без проекции или с `legacy_compatibility` — `allowed = true`, `LEGACY_COMPATIBILITY`. CLOUD-1/2 это не меняют | Подтверждено: `workspace_mapping_service::unmapped()` возвращает `MODE_LEGACY`; `entitlement_service::explain()` возвращает allow для `MODE_LEGACY` |
+| L2 | Snapshot не включает enforcement | Подтверждено: `apply()` меняет только `snapshotrevision` через `record_snapshot_revision()`; `entitlementmode` не трогается |
+| L3 | До перевода существующей компании в `cloud_snapshot` — утверждённый bundle `bms_legacy_compat` со всеми фактически доступными `mgmt.*` (включая `mgmt.core`, используемый диагностикой); сравнение «доступно сейчас / по snapshot», при отличии HOLD | PROPOSED (каталога нет) |
+| L4 | Переключение по одной компании проекцией с более высокой `projection_revision`, с аудитом Cloud и решением владельца; массовое запрещено | Механизм есть: `bind()` обновляет режим; старая ревизия отклоняется. Аудит в Moodle отсутствует (D4) |
+| L5 | Откат — новая проекция с `legacy_compatibility` и следующей ревизией; данные не удаляются | Механизм есть (тот же `bind()`) |
+| L6 | Новые компании беты — сразу через edition bundle; старые — отдельная контролируемая миграция после беты | PROPOSED |
+| L7 | Guards (navigation → read → write) — отдельными PR, по capability class (ENT-001 §12), с тестами legacy/cloud/suspended, без изменения ACL | Guards отсутствуют (`has()` не вызывается) — подтверждено `git grep` |
+
+Автоматический enforcement не вводится ни в CLOUD-0, ни в CLOUD-1a.
+
+### 6.1 Mapping кодов (OD-6, только документ)
+
+Канон — ENT-001 (`mgmt.*`, `limit.*`); application codes — REG-001 §10. Runtime, доступы и legacy enforcement не меняются; исправление `bms_tariff_catalog_service` — отдельный PR по отдельному решению.
+
+| Текущий код (`bms_tariff_catalog_service` 1.1) | Канонический код | Статус |
+| --- | --- | --- |
+| продукт `management` | application `mgmt` | PROPOSED mapping |
+| продукт `academy` | application `academy` | Совпадает |
+| продукт `erp` | application `erp` | Совпадает |
+| продукт `hire` | — | **OPEN** (судьба Hire отдельно) |
+| `management.tasks` | `mgmt.tasks` | PROPOSED mapping |
+| `management.calendar` | `mgmt.calendar` | PROPOSED mapping |
+| `management.battle_plans` | `mgmt.battle_plans` | PROPOSED mapping |
+| `management.indicators` | `mgmt.indicators` | PROPOSED mapping |
+| `management.processes` | `mgmt.processes` | PROPOSED mapping |
+| `hire.vacancies`, `hire.candidates` | — | **OPEN** |
+| `academy.learning` | `academy.learning` (ENT-001 §22 упоминает `academy.corporate`; согласовать в каталоге) | Namespace совпадает, код уточнить |
+| `erp.operations` | `erp.*` (ENT-001 §10 называет `erp.application`; согласовать в каталоге) | Namespace совпадает, код уточнить |
+| `bms.company_members` | `limit.users` (ENT-001 §31) | PROPOSED mapping |
+| `bms.storage_bytes` | `limit.storage_bytes` (нет в примерах ENT-001) | PROPOSED, новый код каталога |
+| `bms.ai_operations` | `limit.ai_operations` (нет в примерах ENT-001) | PROPOSED, новый код каталога |
+| — (используется диагностикой) | `mgmt.core` | Обязателен в `bms_legacy_compat` (L3) |
+
+Application codes REG-001: `mgmt`, `academy`, `cloud`, `erp`, `int`, `api`, `auth` (при появлении).
+
+### 6.2 Соответствие статусов Registry → проекция (D3, PROPOSED)
+
+| REG-002 Workspace | `cloudmap.cloudstatus` | Примечание |
+| --- | --- | --- |
+| `draft` | `pending` | Проекция обычно ещё не создаётся |
+| `provisioning` | `pending` | |
+| `active` | `active` | |
+| `degraded` | `degraded` | |
+| `suspended` | `suspended` | Resolver возвращает `WORKSPACE_SUSPENDED` |
+| `closing` | `suspended` | Новые действия запрещены, данные сохраняются |
+| `closed` | `closed` | |
+| — | `error` | Только локальное диагностическое состояние проекции |
+
+Проверка таблицы — задача reviewer и валидатора CLOUD-1a; код Moodle не меняется.
 
 ---
 
@@ -144,48 +204,50 @@
 
 | Сущность | Канонический владелец | Система | Роль Cloud | Роль Moodle (`local_kbacompany`) | Состояние |
 | --- | --- | --- | --- | --- | --- |
-| Коммерческий клиент, сделка, заказ, счёт, подписка | Корпоративный Odoo BMS24 (MR3-D70) | Odoo | `CloudCustomer` и `SubscriptionReference` — только ссылки | Нет | Odoo UNKNOWN, Cloud PROPOSED |
+| Коммерческий клиент, сделка, заказ, счёт, подписка | Корпоративный Odoo BMS24 — целевой master (MR3-D70, OD-8) | Odoo | `CloudCustomer`, `SubscriptionReference` — ссылки; в бете ручная регистрация с аудитом и provenance (OD-8) | Нет | Odoo UNKNOWN, Cloud PROPOSED |
 | Product / bundle / entitlement catalog | Product/Cloud architecture (ENT-001 §55) | Cloud | Владелец (CLOUD-2) | Проекция для чтения (`bms_tariff_catalog_service`, сейчас константы) | Moodle EXISTING, Cloud PROPOSED |
-| Workspace, ApplicationInstance, Environment, Domain, ProvisioningJob, AuditEvent Cloud | BMS Cloud Control Plane | Cloud (PostgreSQL, MR3-D13) | Владелец | Проекция `cloudmap`: статус, режим, ERP state, health | Moodle EXISTING, Cloud PROPOSED |
-| Назначенные entitlements и snapshot | Cloud / Entitlement Service | Cloud | Владелец, выдаёт snapshot | Last-known-good кеш `entsnap`, resolver | Moodle EXISTING |
-| BMS Company, memberships, OFS, должности, стратегия, задачи и т. д. | `local_kbacompany` | Moodle | Только `company_uuid` в `WorkspaceCompanyLink` | Владелец | EXISTING |
-| Пользователь | Moodle User (CLOUD-001 §15) | Moodle | Только административные ссылки | Владелец | EXISTING |
-| Права пользователя (RBAC) | Приложение (Moodle capability + BMS RBAC) | Moodle | Нет | Владелец | EXISTING |
-| Feature flags | Приложение, в разрезе компании | Moodle | Нет (ENT-001: flag ≠ entitlement) | Владелец (`bms24_shell_mode`, `*_enabled`) | EXISTING |
+| Workspace, ApplicationInstance, Environment, Domain, ProvisioningJob, AuditEvent | BMS Cloud Control Plane | Cloud (PostgreSQL, MR3-D13) | Владелец | Проекция `cloudmap` | Moodle EXISTING, Cloud PROPOSED |
+| Назначенные entitlements и snapshot | Cloud / Entitlement Service | Cloud | Владелец, выдаёт snapshot | Кеш `entsnap`, resolver | Moodle EXISTING |
+| BMS Company, memberships, OFS, должности, стратегия, задачи | `local_kbacompany` | Moodle | Только `company_uuid` в `WorkspaceCompanyLink` | Владелец | EXISTING |
+| Пользователь | Moodle User (CLOUD-001 §15) | Moodle | Административные ссылки | Владелец | EXISTING |
+| Права пользователя (RBAC) | Приложение (capability + BMS RBAC) | Moodle | Нет; entitlement ≠ ACL | Владелец | EXISTING |
+| Feature flags | Приложение, в разрезе компании | Moodle | Нет (flag ≠ entitlement) | Владелец | EXISTING |
 | Места и зачисления Academy | KBA Corporate | Moodle | `academy.*` entitlement и лимит | `local_kbacorporate` | EXISTING |
-| Операционный факт ERP клиента | Odoo клиента | Odoo | `ApplicationInstance` / `IntegrationConnection` | Импорт факта через `odoo_adapter_service` и `extmap` | Адаптер EXISTING, provisioning PROPOSED |
-| Секреты интеграций | Secrets manager (UNKNOWN) | — | Только `credential_reference` | Секреты не хранит | Механизм UNKNOWN |
+| Операционный факт ERP клиента | Odoo клиента | Odoo | `ApplicationInstance` / `IntegrationConnection` | Импорт через `odoo_adapter_service` и `extmap` | Адаптер EXISTING, provisioning PROPOSED |
+| Секреты интеграций | Secrets manager (OD-5 OPEN) | — | Только `credential_reference` | Не хранит | UNKNOWN |
 
 ---
 
 ## 8. Предлагаемая физическая архитектура (без DDL)
 
 ```
-Корпоративный Odoo (commerce master, UNKNOWN)
-   │  идемпотентные коммерческие события (customer/order/subscription approved)
+Корпоративный Odoo (целевой commerce master; наличие UNKNOWN)
+   │  бета: ручная регистрация SubscriptionReference с аудитом и provenance (OD-8)
+   │  позже: идемпотентные коммерческие события
    ▼
-BMS Cloud Control Plane — отдельный сервис, модульный монолит (MR3-D12/13)
-   ├─ registry      : Customer, Workspace, WorkspaceCompanyLink, ApplicationInstance, IntegrationConnection
+BMS Cloud Control Plane — отдельный сервис, модульный монолит (MR3-D12/13); стек OD-2 OPEN
+   ├─ registry      : Customer, Workspace, WorkspaceCompanyLink, ApplicationInstance (shared | isolated), IntegrationConnection
    ├─ catalog       : Product, Bundle, EntitlementDefinition (versioned)
    ├─ entitlements  : WorkspaceEntitlement, resolver, explain, snapshot issuer
    ├─ provisioning  : ProvisioningJob (idempotency key, state machine), operator checklist
    ├─ audit         : AuditEvent append-only
-   └─ PostgreSQL (своя БД; не БД Moodle)
+   └─ PostgreSQL (своя БД; не БД Moodle); хостинг OD-4 OPEN
    │  restricted service user, web service local_kbacompany_cloud_v1 (EXISTING, disabled)
    ▼
-Общий Moodle — BMS Management + Academy (shared ApplicationInstance)
-   ├─ local_kbacompany_cloudmap  (проекция Workspace)
-   └─ local_kbacompany_entsnap   (last-known-good snapshot)
+Общий Moodle (shared ApplicationInstance)            Изолированные пространства (isolated ApplicationInstance)
+   ├─ local_kbacompany_cloudmap                        механизм и среда — отдельное решение (OD-1, OD-4)
+   └─ local_kbacompany_entsnap                         тот же ZIP BMS, отдельные БД/файлы/учётные данные
 ```
 
 Принципы:
-- P1. Cloud не читает и не пишет таблицы Moodle напрямую — только через `local_kbacompany_cloud_v1` (`external_consumers_reading_moodle_or_bms_tables_directly` запрещено в `platform_boundary_service`).
-- P2. Moodle не обращается к Cloud синхронно в page request (ENT-001 §44): обмен идёт push-проекциями и snapshot.
-- P3. Создание BMS Company для нового Workspace — только через сервис BMS (REG-001 §39), идемпотентно по коммерческому событию.
-- P4. Секреты Registry не хранит (только ссылки). Выбор secrets manager — OD-5.
-- P5. Для isolated-режима (вариант B) `ApplicationInstance` получает `workspace_uuid`, а provisioning описывается отдельным контрактом. В бету это не входит без решения OD-1.
+- P1. Cloud не читает и не пишет таблицы Moodle напрямую — только через `local_kbacompany_cloud_v1`.
+- P2. Moodle не обращается к Cloud синхронно в page request (ENT-001 §44): push-проекции и snapshot.
+- P3. BMS Company для нового Workspace создаётся только сервисом BMS (REG-001 §39), идемпотентно.
+- P4. Секреты Registry не хранит (только ссылки); secrets manager — OD-5 OPEN.
+- P5. `ApplicationInstance` поддерживает shared и isolated с первого среза (OD-1). Существующие shared-компании остаются в shared без миграции.
+- P6. Реальная оплата и автоматические подписки сейчас не включаются (OD-8).
 
-Не решено и **не выбирается в CLOUD-0**: язык и framework сервиса, хостинг, расположение кода (отдельный репозиторий или каталог `cloud/` в `bms24`), конвейер выпуска Cloud (Release Conveyor v1 описывает Moodle ZIP), DNS и TLS.
+Не выбирается в CLOUD-0: стек (OD-2), хостинг и среда (OD-4), secrets manager (OD-5), механизм независимого восстановления, DNS/TLS, конвейер выпуска Cloud.
 
 ---
 
@@ -193,35 +255,34 @@ BMS Cloud Control Plane — отдельный сервис, модульный 
 
 | Срез | Содержание | Gate до старта | Gate S/G |
 | --- | --- | --- | --- |
-| **CLOUD-1a** (предлагаемый первый PR) | Контракты в репозитории + offline-валидатор + синтетические фикстуры A/B. Без runtime, без DDL | Утверждение CLOUD-0 владельцем и независимый review | — |
-| CLOUD-1b | Скелет Control Plane: модули registry и audit, миграции PostgreSQL только в одноразовой CI-БД, синтетические данные | OD-2/OD-3 (стек, расположение кода, конвейер) | — |
-| CLOUD-2 | Product/Subscription Registry, catalog, resolver, snapshot issuer, quotas; legacy bundle (L3); каталог Moodle как проекция (D1/D2) | CLOUD-1b PASS, OD-6 | Часть S3 |
-| CLOUD-3 | Операторский provisioning (идемпотентное activation/suspension/offboarding), monitoring, два изолированных пространства по OD-1, backup/restore, отрицательные cross-tenant проверки | OD-1, OD-4, разрешение на среду | S3 / G3 |
-| CLOUD-4 | Закрытая платная бета: оператор, оплата по счёту (MR3-D75/76) | S0–S3 PASS, коммерческое GO (G4) | S5 |
+| **CLOUD-1a** (ТЗ утверждено, **HOLD**) | `cloud/` в `bms24`: контракты, offline-валидатор, синтетические фикстуры A/B. Без runtime, без DDL, без изменения Moodle (OD-3) | CLOUD-0 PASS от Codex на exact head **и** отдельное GO владельца | — |
+| CLOUD-1b | Скелет Control Plane: registry и audit, миграции PostgreSQL только в одноразовой CI-БД | OD-2, OD-5, согласование CI с Codex | — |
+| CLOUD-2 | Product/Subscription Registry, catalog, resolver, snapshot issuer, quotas; `bms_legacy_compat` (L3); каталог Moodle как проекция (D1/D2) | CLOUD-1b PASS, решение по Hire | Часть S3 |
+| CLOUD-3 | Операторский provisioning (идемпотентные activation/suspension/offboarding), monitoring, два изолированных пространства, backup/restore, отрицательные cross-tenant проверки | Механизм независимого восстановления и среда (OD-1/OD-4), разрешение на среду | **S3 / G3 по критерию 5.2** |
+| CLOUD-4 | Закрытая платная бета: оператор, ручная регистрация подписок и оплата по счёту (MR3-D75/76, OD-8) | S0–S3 PASS, G3 PASS, коммерческое GO (G4) | S5 |
 | CLOUD-5 | Self-service, онлайн-оплата, масштабирование | Результаты беты (G5) | S6 |
 
-### 9.1 CLOUD-1a — предлагаемый scope
+### 9.1 CLOUD-1a — утверждённое ТЗ (реализация HOLD)
 
-Предлагаемые новые пути (уточняются при утверждении OD-3):
-- `cloud/contracts/registry/v0.1/registry_mvp.yaml` и `.json` — импорт пакета REG-002 после сверки SHA-256 из §18, плюс таблица соответствия статусов Registry → `cloudmap` (D3).
+Пути (OD-3: каталог `cloud/` репозитория `bms24`):
+- `cloud/contracts/registry/v0.1/registry_mvp.yaml` и `.json` — импорт пакета REG-002. SHA-256 ZIP подтверждён (`093fa293…f28f3`); при импорте валидатор обязан сверить SHA-256 внутренних файлов с REG-002 §18 (YAML `dc4a77a0…44b1`, JSON `118e8c74…c47f`, JSON Schema `18332150…7f2`, Mermaid `0d6093db…fd7f`). Несовпадение — FAIL, импорт не выполняется.
 - `cloud/contracts/registry/v0.1/exchange.schema.json` — JSON Schema обмена (REG-002 §16).
-- `cloud/contracts/entitlements/v0.1/catalog.yaml` — EntitlementDefinition, bundles `bms_start` → `bms_professional` → `bms_erp`, `bms_academy`, `bms_legacy_compat`; без цен.
-- `cloud/contracts/projection/workspace_projection_1.0.schema.json` и `entitlement_snapshot_1.0.schema.json` — формализация **существующих** payload Moodle (без изменения кода Moodle).
-- `cloud/fixtures/synthetic/{workspace_a,workspace_b}.json` — только синтетические UUID.
-- `tools/cloud/validate_contracts.py` и `tools/cloud/test_validate_contracts.py`.
-- Шаг CI в существующем workflow (Dev AI / static) — по согласованию с Codex.
+- `cloud/contracts/registry/v0.1/status_mapping.yaml` — таблица раздела 6.2.
+- `cloud/contracts/entitlements/v0.1/catalog.yaml` — EntitlementDefinition, bundles `bms_start` → `bms_professional` → `bms_erp`, `bms_academy`, `bms_legacy_compat`; без цен; mapping раздела 6.1 как `legacy_aliases` (только документ).
+- `cloud/contracts/projection/workspace_projection_1.0.schema.json`, `entitlement_snapshot_1.0.schema.json` — формализация **существующих** payload Moodle.
+- `cloud/fixtures/synthetic/{workspace_a,workspace_b}.json` — только синтетические UUID; A shared, B isolated.
+- `cloud/tools/validate_contracts.py` и тесты рядом (точное место тестов согласуется с Codex).
+- CI — **только по отдельному согласованию с Codex** (OD-3); до него валидатор запускается вручную.
 
 Критерии приёмки:
-1. Валидатор проверяет инварианты REG-002 §15 и §62 и catalog QA ENT-001 §49: уникальность кодов, namespace, зависимости без циклов, наследование bundles без циклов, у provisioning-кодов есть handler, у deprecated-кодов есть migration metadata.
-2. Валидатор проверяет, что коды catalog `mgmt.*` принимаются правилами `entitlement_snapshot_service`, и **фиксирует** расхождение D1 с текущим `bms_tariff_catalog_service` как известное отклонение (не исправляет).
-3. Фикстуры A/B: одинаковые локальные ID в A и B не дают пересечения, повторное событие не создаёт дубль, у закрытого Workspace нет нового job.
-4. В `local/`, `theme/`, `db/` ничего не меняется; Moodle ZIP побайтно идентичен baseline (кроме служебных файлов сборки, если они есть).
-5. Нет реальных клиентов, доменов, ключей и персональных данных.
-6. `python scripts/qa_local.py`, `python tools/check_reconcile_1879.py`, `git diff --check` — PASS; новые тесты PASS.
+1. Валидатор проверяет инварианты REG-002 §15 и §62 и catalog QA ENT-001 §49 (уникальность кодов, namespace, зависимости и наследование без циклов, handler у provisioning-кодов, migration metadata у deprecated).
+2. Валидатор подтверждает, что коды каталога `mgmt.*` принимаются правилами `entitlement_snapshot_service`, и **фиксирует** D1 как известное отклонение (не исправляет).
+3. Фикстуры A/B: одинаковые локальные ID не пересекаются; повторное событие не создаёт дубль; закрытый Workspace не получает новый job; `bms_legacy_compat` содержит `mgmt.core`.
+4. В `local/`, `theme/`, `db/` ничего не меняется.
+5. Нет реальных клиентов, доменов, ключей, подписок, оплаты и персональных данных.
+6. `python scripts/qa_local.py`, `python tools/check_reconcile_1879.py`, `git diff --check` — PASS (PHP lint — в окружении с PHP); новые тесты PASS.
 
-Зависимости: утверждение CLOUD-0; скачивание пакета REG-002 из Drive и сверка SHA-256; согласование шага CI с Codex. Номер версии плагина не нужен: код Moodle не меняется.
-
-Оценка ресурсов (без сроков): CLOUD-1a — один PR небольшого объёма (контракты, около 300–600 строк валидатора и тестов), один исполнитель плюс независимый reviewer. CLOUD-1b–CLOUD-3 — по 2–4 PR на срез; CLOUD-3 требует серверного оператора и решения по среде. Даты и бюджет не оцениваются, пока нет решений OD-1–OD-5.
+Оценка ресурсов (без сроков): CLOUD-1a — один PR небольшого объёма, один исполнитель и независимый reviewer. CLOUD-1b–CLOUD-3 — по 2–4 PR на срез; CLOUD-3 требует серверного оператора и решения по среде и механизму восстановления.
 
 ---
 
@@ -229,51 +290,68 @@ BMS Cloud Control Plane — отдельный сервис, модульный 
 
 | ID | Риск | Вероятность | Влияние | Снижение | Gate |
 | --- | --- | --- | --- | --- | --- |
-| R1 | Ошибка company scope в общем Moodle раскрывает данные соседнего Workspace | Средняя | Критическое | Аудит глобальных сущностей Moodle; отрицательные A/B тесты URL/API/files/cache/cron/export; без fetch-then-filter | G1, G3 |
-| R2 | Включение `cloud_snapshot` закрывает существующие функции (D1, неполный bundle) | Высокая без L3 | Высокое | L1–L5; сравнение «до/после» по компании; одна компания за раз | CLOUD-2 |
-| R3 | Требование независимого восстановления невыполнимо на общем Moodle | Высокая | Высокое для G3 | Решение OD-1 до CLOUD-3 | G3 |
-| R4 | Два каталога или два реестра (Moodle-константы против Cloud) | Средняя | Среднее | Каталог Moodle — только проекция с `catalog_version`; правило «одна сущность — один owner» (MR3-D17) | CLOUD-2 |
-| R5 | Повтор коммерческого события создаёт дубль Company, Workspace или ERP | Средняя | Высокое | Idempotency key (REG-001 §24, ENT-001 §39); уникальные ключи REG-002; тесты в фикстурах | CLOUD-1a / 3 |
-| R6 | Корпоративный Odoo не готов или его нет | UNKNOWN | Высокое для автоматизации | В бете — операторский ввод `SubscriptionReference` с аудитом (MR3-D76) | CLOUD-4 |
-| R7 | Секреты в Registry или в коде | Низкая | Критическое | Только `credential_reference`; secrets manager — OD-5; проверка в валидаторе | CLOUD-1b+ |
-| R8 | Учётная запись web service `cloud_v1` с широкими правами | Средняя | Высокое | Restricted user, только `cloudsync`, токен по IP, ротация; сервис включается только решением владельца | CLOUD-3 |
-| R9 | Moodle запрашивает Cloud синхронно и падает вместе с ним | Низкая | Среднее | P2, last-known-good, grace | CLOUD-2 |
-| R10 | Нет аудита мутаций проекции в Moodle (D4) | Высокая | Среднее | Канонический аудит в Cloud; Moodle event — отдельный PR | CLOUD-2 |
-| R11 | Конфликт CLOUD-0 с PR #95 / #184 и двойная документация | Средняя | Среднее | Решение владельца OD-7; этот PR не правит `docs/00`, `ROADMAP` и `AGENTS.md` | Review |
-| R12 | Миграция isolated (B) для действующих установок без плана | Низкая (запрещено) | Высокое | Отдельный workstream; не входит в бету | — |
+| R1 | Ошибка company scope в общем Moodle раскрывает данные соседа | Средняя | Критическое | Аудит глобальных сущностей Moodle; отрицательные A/B тесты (5.2 п. 4); без fetch-then-filter | G1, G3 |
+| R2 | Включение `cloud_snapshot` закрывает существующие функции (D1, неполный bundle) | Высокая без L3 | Высокое | L1–L7; mapping 6.1; одна компания за раз | CLOUD-2 |
+| R3 | Независимое восстановление невозможно на общем Moodle; соблазн засчитать restore платформы плюс экспорт | Высокая | Высокое | OD-1: такая трактовка запрещена; G3 HOLD по 5.2 до изолированных пространств или доказанного company-level restore | G3 |
+| R4 | Два каталога или два реестра | Средняя | Среднее | Каталог Moodle — проекция с `catalog_version` (MR3-D17) | CLOUD-2 |
+| R5 | Повтор события создаёт дубль Company, Workspace или ERP | Средняя | Высокое | Idempotency key (REG-001 §24, ENT-001 §39); тесты в фикстурах | CLOUD-1a / 3 |
+| R6 | Корпоративного Odoo нет или он не готов | UNKNOWN | Высокое для автоматизации | OD-8: ручная регистрация `SubscriptionReference` с аудитом и provenance | CLOUD-4 |
+| R7 | Секреты в Registry или в коде | Низкая | Критическое | Только `credential_reference`; OD-5; проверка валидатором | CLOUD-1b+ |
+| R8 | Учётная запись `cloud_v1` с широкими правами | Средняя | Высокое | Restricted user, только `cloudsync`, токен по IP, ротация; включение только решением владельца | CLOUD-3 |
+| R9 | Синхронная зависимость Moodle от Cloud | Низкая | Среднее | P2, last-known-good, grace | CLOUD-2 |
+| R10 | Нет аудита мутаций проекции в Moodle (D4) | Высокая | Среднее | Аудит в Cloud; Moodle event — отдельный PR | CLOUD-2 |
+| R11 | Расхождение CLOUD-0 с #95 / #184 | Средняя | Среднее | OD-7: ADR-SAAS-002 PROPOSED, #95 сохраняется как альтернатива; чужие PR не изменяются | Review |
+| R12 | Миграция существующих shared-компаний в изолированные пространства | Низкая (запрещено OD-1) | Высокое | Не выполняется; отдельный workstream только по решению | — |
+| R13 | Импорт REG-002 из файлов, не совпадающих с §18 | Низкая | Среднее | ZIP подтверждён; внутренние SHA-256 сверяет валидатор при импорте | CLOUD-1a |
 
 ---
 
-## 11. Открытые решения (владелец)
+## 11. Матрица закрытия решений (OD)
 
-| ID | Решение | Варианты | Рекомендация | Ответственный |
+| ID | Решение | Статус | Решение владельца / текущее состояние | Где отражено |
 | --- | --- | --- | --- | --- |
-| OD-1 | Модель изоляции для беты и трактовка G3 «два изолированных пространства / независимое восстановление» | A / B / H (раздел 5) | H; бета на A, если владелец принимает восстановление на уровне платформы плюс экспорт компании | Владелец |
-| OD-2 | Стек Control Plane | Например PHP (переиспользование), Python, TypeScript | Не выбирать в CLOUD-0; критерии — REG-002 §20 | Владелец + архитектор |
-| OD-3 | Расположение кода Cloud и конвейер выпуска | Отдельный репозиторий / `cloud/` в `bms24` | `cloud/` в `bms24` для CLOUD-1a (одни контракты, один CI); выделение — позже | Владелец |
-| OD-4 | Хостинг Cloud, PostgreSQL, среда для CLOUD-3 | — | Не выбирать без отдельного разрешения | Владелец |
-| OD-5 | Secrets manager | — | Отдельный ADR до CLOUD-1b | Владелец + Codex |
-| OD-6 | Канон кодов entitlement и продуктов (D1/D2), судьба `hire` | `mgmt.*` по ENT-001 / `management.*` | `mgmt.*`, `limit.*`, application codes по REG-001 | Владелец |
-| OD-7 | Связь с PR #95 (ADR-SAAS-001, SAAS_MVP) и #184 | Объединить / оставить #95 как альтернативу B / закрыть | Сохранить ADR-SAAS-001 как описание варианта B; итог зафиксировать одним ADR после OD-1 | Владелец, координатор #198 |
-| OD-8 | Есть ли корпоративный Odoo и протокол billing → Cloud | — | Для беты — ручной `SubscriptionReference` с аудитом | Владелец |
-| OD-9 | Независимый reviewer CLOUD-0 | — | Назначает владелец (RR31) | Владелец |
+| OD-1 | Модель изоляции и трактовка G3 | **ACCEPTED** 28.11.2026 | Гибрид: shared Moodle сохраняется, изолированные пространства предусмотрены; G3 не ослабляется, restore платформы + экспорт ≠ независимое восстановление; G3 HOLD; shared-компании не мигрируют; для беты — изолированные пространства или доказанный company-level restore. **Механизм и среда — OPEN** | §1, §5, §8 P5, §9, §10 R3/R12, ADR-SAAS-002 |
+| OD-2 | Стек Control Plane | OPEN | Не выбирается | §8, §9 (gate CLOUD-1b) |
+| OD-3 | Расположение кода и конвейер | **ACCEPTED** | CLOUD-1a в `cloud/` репозитория `bms24`, без изменения Moodle; утверждение места, не разрешение начать; CI — по согласованию с Codex | §9, §9.1 |
+| OD-4 | Хостинг, PostgreSQL, среда CLOUD-3 | OPEN | Не выбирается без разрешения | §8, §9 |
+| OD-5 | Secrets manager | OPEN | Отдельный ADR до CLOUD-1b | §7, §8, R7 |
+| OD-6 | Канон кодов | **ACCEPTED** | `mgmt.*` / `limit.*` по ENT-001; mapping `management.*`/`bms.*` зафиксирован; runtime, доступы, legacy enforcement не меняются; product/application codes — по REG-001. **Hire — OPEN** | §4.3 D1/D2, §6.1 |
+| OD-7 | Связь с #95 и #184 | **ACCEPTED** | ADR-SAAS-001 (#95) сохраняется как альтернатива; единый согласованный ADR с учётом #184 — [`ADR-SAAS-002`](../adr/ADR-SAAS-002-hybrid-cloud-isolation-PROPOSED.md) (PROPOSED); чужие PR не закрываются и не переписываются | §3, R11, ADR-SAAS-002 |
+| OD-8 | Корпоративный Odoo и протокол billing → Cloud | **ACCEPTED** | Бета: ручная регистрация подписок с аудитом, `SubscriptionReference` и provenance; Odoo — целевой commercial master; наличие Odoo и billing protocol — UNKNOWN; реальные оплата/подписки сейчас не включаются | §7, §8 P6, §9, R6 |
+| OD-9 | Независимый reviewer CLOUD-0 | **ACCEPTED** | Codex; Claude сохраняет ownership #207; reviewer не пушит в ветку автора | шапка, §13 |
+| — | Судьба Hire | OPEN | — | §6.1 |
+| — | Механизм независимого восстановления | OPEN | — | §5.1, §5.2 |
+| — | Коммерческие условия (тариф, поддержка, себестоимость) | OPEN | — | §9 (G4) |
 
 ---
 
-## 12. Проверки
+## 12. Проверки ревизии 2
 
 | Проверка | Результат |
 | --- | --- |
-| Сверка `main` (`git fetch`, HEAD = origin/main 0884643) | RUN, PASS |
-| Чтение пяти контрактов Drive | RUN, PASS |
-| Поиск дублей (код, open PR, репозитории владельца) | RUN; результат — в разделе 3 |
-| `python scripts/qa_local.py`, `python tools/check_reconcile_1879.py`, `git diff --check` | Результат — в описании PR |
-| Сверка SHA-256 пакета REG-002 | NOT RUN |
-| Moodle PHPUnit, реальная установка или upgrade, cron, security acceptance | NOT RUN (docs-only) |
-| Серверный inventory, DNS, корпоративный Odoo | NOT RUN, запрещено поручением / нет доступа |
+| Синхронизация с `main` 74e00c4 (merge, без конфликтов); аудированные файлы не изменились | RUN, PASS |
+| Повторный `git grep` вызовов `entitlement_service::has/explain` вне тестов | RUN: только `platform_boundary_service.php:55` (`explain`, диагностика) |
+| Сверка L1–L7 с кодом | RUN (чтение кода), результаты в §6 |
+| Метаданные ZIP REG-002 в Drive (размер, дата) | RUN, совпадают с подтверждением владельца |
+| SHA-256 байтов ZIP REG-002 | Подтверждено владельцем; повторный хеш Claude NOT RUN |
+| SHA-256 внутренних файлов REG-002, импорт | NOT RUN (CLOUD-1a HOLD) |
+| `git diff --check`, `python tools/check_reconcile_1879.py`, `python scripts/qa_local.py`, разбор JSON | Результаты — в handoff-комментарии #207 |
+| Moodle PHPUnit, upgrade, cron, browser, security acceptance | NOT RUN (docs-only) |
+| Серверный inventory, DNS, корпоративный Odoo | NOT RUN (запрещено / нет доступа) |
 
 ## 13. Следующие действия
 
-1. Владелец: решения OD-1, OD-6, OD-7, OD-9; назначение независимого reviewer.
-2. Reviewer: проверить этот документ по exact SHA PR и источникам раздела 2.
-3. После утверждения — отдельное поручение на CLOUD-1a и запись в #198. До этого CLOUD-1 не начинается.
+1. Codex (OD-9): независимая проверка exact head #207 по поручению владельца; вердикт PASS/FAIL/HOLD в #207 и #204.
+2. Claude: исправления по замечаниям reviewer в своей ветке #207.
+3. Владелец: после PASS — отдельное GO на CLOUD-1a; решения OD-2, OD-4, OD-5, Hire, механизм восстановления.
+4. До GO CLOUD-1a не начинается; merge и deployment не выполняются.
+
+## 14. История решений
+
+| Дата | Ревизия / событие | Изменение |
+| --- | --- | --- |
+| 28.11.2026 | Ревизия 1, head `4575a1e4`, base `0884643` | Аудит, рекомендация H, OD-1…OD-9 как открытые вопросы. В §5 и §11 допускалась бета на общей платформе с трактовкой G3 «restore платформы + экспорт компании» |
+| 28.11.2026 | [Решение владельца 7236311964](https://github.com/rimanfatykhov-arch/bms24/pull/207#issuecomment-7236311964) | Приняты OD-1, OD-3, OD-6, OD-7, OD-8, OD-9; OD-2/4/5, Hire, механизм восстановления, коммерческие условия — открыты |
+| 28.11.2026 | [Предварительная сверка 7236606204](https://github.com/rimanfatykhov-arch/bms24/pull/207#issuecomment-7236606204) | Строка OD-1 в §11 противоречила решению; требуется проверяемый критерий G3 |
+| 28.11.2026 | [Контрольная сумма REG-002 7236624093](https://github.com/rimanfatykhov-arch/bms24/issues/204#issuecomment-7236624093) | SHA-256 ZIP подтверждён |
+| 28.11.2026 | Ревизия 2, base `74e00c4` | Трактовка G3 ревизии 1 отменена; §5 переписан, добавлен критерий 5.2; §11 — матрица закрытия OD; mapping кодов 6.1 и статусов 6.2; ADR-SAAS-002; обновлён evidence inventory |
