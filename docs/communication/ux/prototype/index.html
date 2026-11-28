@@ -1,0 +1,728 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+</head>
+<body>
+<title>Коммуникационный центр BMS24 — прототип</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<style>
+/* Layout: BMS24 owned shell (navy menu) + center: section bar, conversation list, conversation, slide-in context drawer.
+   Single deliberate light look = the real BMS24 product palette (docs/17, bms_ui/tokens.css). */
+:root {
+  --navy: #0B2B41; --navy-800: #163A50; --emerald: #0C6C52; --emerald-hover: #095741; --blue: #1777B5;
+  --violet: #6B43B5; --sky: #E4F2FB; --mint: #ECF7F3; --sand: #FDF6ED; --white: #FFFFFF;
+  --text: #1D2937; --muted: #526673; --border: #D9E5E9; --line: #E8F0F3; --warning: #B15F00; --danger: #BC3030;
+  --danger-bg: #FBEDED; --warn-bg: #FFF4E5; --hover: #F3F8FA; --selected: #E6F3EE;
+  --font: Inter, system-ui, -apple-system, "Segoe UI", Arial, sans-serif;
+  --r-card: 14px; --r-ctl: 9px;
+  color-scheme: light;
+}
+* { box-sizing: border-box; }
+html, body { height: 100%; }
+body { margin: 0; background: var(--sky); color: var(--text); font: 14px/1.45 var(--font); }
+button, input, textarea, select { font: inherit; color: inherit; }
+button { cursor: pointer; }
+:focus-visible { outline: 3px solid var(--blue); outline-offset: 2px; }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+/* ---------- prototype control bar (not product UI) ---------- */
+.proto { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 50; background: #2B1F3A; color: #fff;
+  padding-block: 8px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center; font-size: 13px; }
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 60; background: #2B1F3A; }
+.proto b.tag { background: #FFD24D; color: #2B1F3A; border-radius: 6px; padding: 2px 8px; letter-spacing: .04em; }
+.proto label { display: inline-flex; gap: 6px; align-items: center; }
+.proto select { background: #fff; color: #1D2937; border: 0; border-radius: 6px; padding: 4px 6px; max-width: 100%; }
+.proto .seg { display: inline-flex; flex-wrap: wrap; gap: 4px; }
+.proto .seg button { background: transparent; color: #fff; border: 1px solid rgba(255,255,255,.35); border-radius: 6px; padding: 3px 9px; }
+.proto .seg button[aria-pressed="true"] { background: #fff; color: #2B1F3A; border-color: #fff; }
+.proto .note { opacity: .85; }
+
+/* ---------- app shell ---------- */
+.app { display: grid; grid-template-columns: 232px minmax(0, 1fr); min-height: calc(100% - 46px); }
+.menu { background: var(--navy); color: #DCE8EF; padding: 18px 12px; display: flex; flex-direction: column; gap: 4px; }
+.brand { font-weight: 800; font-size: 22px; color: #fff; letter-spacing: .01em; padding: 0 8px 12px; }
+.brand small { display: block; font-size: 11px; font-weight: 600; color: #9FB8C7; letter-spacing: 0; }
+.menu .grp { margin: 12px 8px 4px; font-size: 11px; font-weight: 700; letter-spacing: .08em; color: #9FB8C7; text-transform: uppercase; }
+.menu a { display: flex; align-items: center; gap: 10px; padding: 9px 10px; border-radius: 10px; color: inherit; text-decoration: none;
+  /* Fix: wrap between words only; never break inside a word. */
+  overflow-wrap: break-word; word-break: normal; hyphens: manual; }
+.menu a span.lbl { min-width: 0; flex: 1; }
+.menu a.on { background: var(--emerald); color: #fff; font-weight: 600; }
+.menu a .cnt { background: #fff; color: var(--navy); border-radius: 999px; font-size: 12px; font-weight: 700; padding: 0 7px; min-width: 22px; text-align: center; }
+.main { min-width: 0; padding: 16px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); display: flex; flex-direction: column; gap: 12px; }
+.crumbs { color: var(--muted); font-size: 13px; }
+
+/* ---------- center ---------- */
+.center { background: var(--white); border: 1px solid var(--border); border-radius: var(--r-card); display: grid;
+  grid-template-columns: 340px minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr);
+  height: min(780px, calc(100vh - 150px)); min-height: 540px; overflow: hidden; position: relative; }
+.top { grid-column: 1 / -1; display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px; padding: 12px 16px; border-bottom: 1px solid var(--line); }
+.top h1 { margin-right: auto; }
+.top .sections { flex: 0 1 auto; display: flex; overflow-x: auto; scrollbar-width: none; }
+.top .sections button { white-space: nowrap; padding: 6px 12px; }
+.center.notif { grid-template-columns: minmax(0, 1fr); }
+.center.notif .nwrap { min-height: 0; }
+.side { border-right: 1px solid var(--line); display: flex; flex-direction: column; min-height: 0; }
+.side-head { padding: 14px 14px 10px; display: flex; flex-direction: column; gap: 10px; border-bottom: 1px solid var(--line); }
+.row { display: flex; align-items: center; gap: 8px; }
+.row.between { justify-content: space-between; }
+h1, h2, h3 { margin: 0; text-wrap: balance; }
+h1 { font-size: 18px; }
+h2 { font-size: 16px; }
+.sections { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 4px; background: var(--hover); border-radius: 10px; padding: 3px; }
+.sections button { border: 0; background: transparent; border-radius: 8px; padding: 6px 4px; font-weight: 600; color: var(--muted); display: inline-flex; gap: 6px; justify-content: center; align-items: center; min-width: 0; }
+.sections button[aria-selected="true"] { background: var(--white); color: var(--text); box-shadow: 0 1px 2px rgba(11,43,65,.12); }
+.badge { display: inline-block; min-width: 20px; padding: 0 6px; border-radius: 999px; background: var(--emerald); color: #fff; font-size: 12px; font-weight: 700; text-align: center; line-height: 20px; }
+.badge.blue { background: var(--blue); }
+.badge.soft { background: var(--line); color: var(--muted); }
+.search { display: flex; align-items: center; gap: 8px; border: 1px solid var(--border); border-radius: var(--r-ctl); padding: 0 10px; background: var(--white); }
+.search input { border: 0; outline: 0; padding: 8px 0; width: 100%; min-width: 0; background: transparent; }
+.search:focus-within { outline: 3px solid var(--blue); outline-offset: 1px; }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip { border: 1px solid var(--border); background: var(--white); border-radius: 999px; padding: 3px 10px; font-size: 13px; color: var(--muted); }
+.chip[aria-pressed="true"] { background: var(--selected); border-color: var(--emerald); color: var(--emerald); font-weight: 600; }
+.btn { border: 1px solid var(--border); background: var(--white); border-radius: var(--r-ctl); padding: 7px 12px; font-weight: 600; display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
+.btn:hover { background: var(--hover); }
+.btn.primary { background: var(--emerald); border-color: var(--emerald); color: #fff; }
+.btn.primary:hover { background: var(--emerald-hover); }
+.btn.ghost { border-color: transparent; background: transparent; }
+.btn.small { padding: 4px 9px; font-size: 13px; }
+.btn.danger { color: var(--danger); border-color: #EBC5C5; }
+.btn[disabled] { opacity: .55; cursor: not-allowed; }
+.icon { width: 18px; height: 18px; flex: none; }
+
+.list { overflow-y: auto; min-height: 0; flex: 1; }
+.item { width: 100%; text-align: left; border: 0; border-bottom: 1px solid var(--line); background: var(--white); padding: 10px 14px; display: grid; grid-template-columns: 38px minmax(0, 1fr) auto; gap: 10px; align-items: start; }
+.item:hover { background: var(--hover); }
+.item[aria-current="true"] { background: var(--selected); box-shadow: inset 3px 0 0 var(--emerald); }
+.ava { width: 38px; height: 38px; border-radius: 50%; display: grid; place-items: center; font-weight: 700; font-size: 13px; color: #fff; background: var(--navy-800); }
+.ava.obj { border-radius: 10px; background: var(--blue); }
+.ava.grp { background: var(--emerald); }
+.ava.ai { background: var(--violet); }
+.item .t, .item .k, .item .p { display: block; }
+a.btn { color: var(--text); text-decoration: none; }
+.item .t { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.item .k { font-size: 12px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.item .p { font-size: 13px; color: var(--muted); overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow-wrap: anywhere; }
+.item.unread .t, .item.unread .p { color: var(--text); }
+.item .meta { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.at { color: var(--blue); font-weight: 800; }
+
+/* conversation */
+.conv { display: flex; flex-direction: column; min-width: 0; min-height: 0; }
+.conv-head { padding: 12px 16px; border-bottom: 1px solid var(--line); display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+.conv-head .ttl { min-width: 0; flex: 1 1 260px; }
+.conv-head .ttl h2 { overflow-wrap: anywhere; }
+.kind { display: inline-flex; gap: 6px; align-items: center; font-size: 12px; color: var(--muted); flex-wrap: wrap; }
+.pill { display: inline-block; border-radius: 999px; padding: 1px 8px; font-size: 12px; font-weight: 600; background: var(--sky); color: #155F91; }
+.pill.mint { background: var(--mint); color: var(--emerald); }
+.pill.sand { background: var(--sand); color: var(--warning); }
+.pill.violet { background: #EFE9F8; color: var(--violet); }
+.back { display: none; }
+.feed { flex: 1; min-height: 0; overflow-y: auto; padding: 14px 16px; display: flex; flex-direction: column; gap: 10px; background: #FAFCFD; }
+.day { align-self: center; font-size: 12px; color: var(--muted); background: var(--white); border: 1px solid var(--line); border-radius: 999px; padding: 1px 10px; }
+.newline { display: flex; align-items: center; gap: 8px; color: var(--blue); font-size: 12px; font-weight: 700; }
+.newline::before, .newline::after { content: ""; flex: 1; height: 1px; background: var(--blue); opacity: .4; }
+.msg { max-width: min(640px, 88%); background: var(--white); border: 1px solid var(--line); border-radius: 12px; padding: 8px 12px; display: flex; flex-direction: column; gap: 4px; }
+.msg.own { align-self: flex-end; background: #EEF7F2; border-color: #D3EBDD; }
+.msg .who { display: flex; gap: 8px; align-items: baseline; flex-wrap: wrap; font-size: 13px; }
+.msg .who b { color: var(--navy); }
+.msg .who .tm { color: var(--muted); font-size: 12px; font-variant-numeric: tabular-nums; }
+.msg .body { white-space: pre-wrap; overflow-wrap: anywhere; }
+.msg .mention { color: var(--blue); font-weight: 600; background: var(--sky); border-radius: 4px; padding: 0 3px; }
+.msg.mentioned { box-shadow: inset 3px 0 0 var(--blue); }
+.quote { border-left: 3px solid var(--blue); background: var(--sky); border-radius: 6px; padding: 4px 8px; font-size: 13px; color: var(--muted); }
+.quote b { color: var(--text); display: block; font-size: 12px; }
+.files { display: flex; flex-direction: column; gap: 4px; }
+.file { display: grid; grid-template-columns: 18px minmax(0, 1fr) auto; gap: 6px; align-items: center; border: 1px solid var(--line); border-radius: 8px; padding: 4px 8px; background: var(--white); text-decoration: none; color: var(--text); font-size: 13px; }
+.file .nm { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.file .sz { color: var(--muted); font-size: 12px; font-variant-numeric: tabular-nums; }
+.msg .acts { display: flex; gap: 4px; flex-wrap: wrap; }
+.msg .acts button { border: 0; background: transparent; color: var(--muted); font-size: 12px; padding: 2px 6px; border-radius: 6px; }
+.msg .acts button:hover { background: var(--hover); color: var(--text); }
+.msg .state { font-size: 12px; color: var(--muted); }
+.msg .state.err { color: var(--danger); font-weight: 600; }
+.msg.withdrawn .body { color: var(--muted); font-style: italic; }
+.confirm { border: 1px solid #EBC5C5; background: var(--danger-bg); border-radius: 8px; padding: 6px 8px; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; font-size: 13px; }
+.event { align-self: center; display: inline-flex; gap: 6px; align-items: center; flex-wrap: wrap; justify-content: center; font-size: 12px; color: var(--muted); padding: 2px 10px; max-width: 92%; }
+.event .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--muted); }
+.event b { color: var(--text); font-weight: 600; }
+.chan { font-size: 11px; font-weight: 700; border-radius: 4px; padding: 0 5px; background: #E7F1FA; color: var(--blue); }
+.chan.ai { background: #EFE9F8; color: var(--violet); }
+.future { border: 1px dashed var(--violet); border-radius: 10px; padding: 6px 10px; color: var(--violet); background: #F7F3FD; font-size: 12px; }
+
+.compose { border-top: 1px solid var(--line); padding: 10px 16px; display: flex; flex-direction: column; gap: 8px; background: var(--white); }
+.compose textarea { width: 100%; min-height: 44px; max-height: 160px; resize: vertical; border: 1px solid var(--border); border-radius: var(--r-ctl); padding: 8px 10px; }
+.compose .bar { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.compose .bar .grow { flex: 1; min-width: 0; font-size: 12px; color: var(--muted); }
+.pending-files { display: flex; flex-wrap: wrap; gap: 6px; }
+.pf { display: inline-flex; gap: 6px; align-items: center; max-width: 100%; border: 1px solid var(--border); border-radius: 999px; padding: 2px 4px 2px 10px; font-size: 12px; }
+.pf span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 220px; }
+.pf button { border: 0; background: var(--hover); border-radius: 50%; width: 22px; height: 22px; line-height: 1; }
+.replying { display: flex; gap: 8px; align-items: center; }
+.replying .quote { flex: 1; min-width: 0; }
+.alert { border-radius: 10px; padding: 8px 12px; font-size: 13px; display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.alert.err { background: var(--danger-bg); color: var(--danger); border: 1px solid #EBC5C5; }
+.alert.info { background: var(--sky); color: var(--navy); border: 1px solid #C9E1F1; }
+.alert.warn { background: var(--warn-bg); color: var(--warning); border: 1px solid #F1D8B5; }
+
+/* drawer: context and participants on demand, never an empty permanent column */
+.scrim { position: absolute; inset: 0; background: rgba(11,43,65,.25); z-index: 5; }
+.drawer { position: absolute; top: 0; right: 0; bottom: 0; width: min(360px, 100%); background: var(--white); border-left: 1px solid var(--border); z-index: 6; display: flex; flex-direction: column; box-shadow: -12px 0 24px rgba(11,43,65,.12); }
+.drawer header { padding: 12px 16px; border-bottom: 1px solid var(--line); display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.drawer .body { padding: 14px 16px; overflow-y: auto; display: flex; flex-direction: column; gap: 14px; }
+.kv { display: grid; grid-template-columns: 110px minmax(0, 1fr); gap: 4px 10px; font-size: 13px; }
+.kv dt { color: var(--muted); }
+.kv dd { margin: 0; overflow-wrap: anywhere; }
+.people { display: flex; flex-direction: column; gap: 6px; }
+.person { display: grid; grid-template-columns: 30px minmax(0, 1fr) auto; gap: 8px; align-items: center; }
+.person .ava { width: 30px; height: 30px; font-size: 11px; }
+.person small { color: var(--muted); }
+
+/* empty / loading states */
+.empty { margin: auto; text-align: center; max-width: 360px; padding: 24px; display: flex; flex-direction: column; gap: 8px; align-items: center; color: var(--muted); }
+.empty h3 { color: var(--text); font-size: 16px; }
+.skel { height: 54px; margin: 8px 14px; border-radius: 10px; background: linear-gradient(90deg, var(--line), #F6FAFB, var(--line)); background-size: 200% 100%; animation: sh 1.2s infinite linear; }
+@keyframes sh { to { background-position: -200% 0; } }
+
+/* notifications */
+.nwrap { display: flex; flex-direction: column; min-height: 0; }
+.ntools { padding: 12px 16px; border-bottom: 1px solid var(--line); display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.nlist { overflow-y: auto; padding: 8px 16px 16px; display: flex; flex-direction: column; gap: 4px; }
+.nday { font-size: 12px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; margin: 12px 0 4px; }
+.notif-row { display: grid; grid-template-columns: 10px 34px minmax(0, 1fr) auto; gap: 10px; align-items: center; padding: 8px 10px; border-radius: 10px; border: 1px solid transparent; }
+.notif-row:hover { background: var(--hover); }
+.notif-row .ud { width: 8px; height: 8px; border-radius: 50%; background: var(--blue); }
+.notif-row.read .ud { background: transparent; }
+.notif-row .ic { width: 34px; height: 34px; border-radius: 10px; display: grid; place-items: center; background: var(--sky); color: var(--blue); }
+.notif-row .ic.mint { background: var(--mint); color: var(--emerald); }
+.notif-row .ic.sand { background: var(--sand); color: var(--warning); }
+.notif-row .tx { min-width: 0; }
+.notif-row .tx .h { font-weight: 600; overflow-wrap: anywhere; }
+.notif-row.read .tx .h { font-weight: 500; color: var(--muted); }
+.notif-row .tx .s { font-size: 13px; color: var(--muted); overflow-wrap: anywhere; }
+.notif-row .tx a { color: var(--blue); font-weight: 600; text-decoration: none; }
+.notif-row .rt { display: flex; gap: 8px; align-items: center; font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; flex-wrap: wrap; justify-content: flex-end; }
+.state-read { color: var(--muted); font-size: 12px; display: inline-flex; gap: 4px; align-items: center; }
+.collapse { border: 1px dashed var(--border); border-radius: 10px; padding: 8px 10px; display: flex; gap: 10px; align-items: center; flex-wrap: wrap; font-size: 13px; color: var(--muted); }
+.proposal { font-size: 11px; font-weight: 700; color: var(--warning); background: var(--warn-bg); border-radius: 4px; padding: 0 5px; }
+
+/* modal: new conversation */
+.modal { position: absolute; inset: 0; z-index: 8; display: grid; place-items: center; background: rgba(11,43,65,.3); padding: 16px; }
+.dialog { background: var(--white); border-radius: var(--r-card); width: min(520px, 100%); max-height: 100%; display: flex; flex-direction: column; box-shadow: 0 20px 40px rgba(11,43,65,.25); }
+.dialog header { padding: 14px 16px; border-bottom: 1px solid var(--line); display: flex; justify-content: space-between; gap: 8px; align-items: center; }
+.dialog .body { padding: 14px 16px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; }
+.dialog footer { padding: 12px 16px; border-top: 1px solid var(--line); display: flex; justify-content: flex-end; gap: 8px; flex-wrap: wrap; }
+.res { display: flex; flex-direction: column; gap: 2px; }
+.res .lbl { font-size: 12px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; margin-top: 6px; }
+.res button { border: 0; background: transparent; text-align: left; padding: 6px 8px; border-radius: 8px; display: grid; grid-template-columns: 30px minmax(0, 1fr) auto; gap: 8px; align-items: center; }
+.res button:hover, .res button[aria-pressed="true"] { background: var(--selected); }
+.res .ava { width: 30px; height: 30px; font-size: 11px; }
+.selected { display: flex; flex-wrap: wrap; gap: 6px; }
+.field { display: flex; flex-direction: column; gap: 4px; }
+.field input { border: 1px solid var(--border); border-radius: var(--r-ctl); padding: 8px 10px; }
+
+/* mobile screen: three real phone-width frames of the same components */
+.phones { display: flex; flex-wrap: wrap; gap: 20px; align-items: flex-start; }
+.phone { width: 375px; max-width: 100%; height: 720px; border: 8px solid #1D2937; border-radius: 32px; overflow: hidden; background: var(--white); display: flex; flex-direction: column; position: relative; }
+.phone .cap { position: absolute; top: -28px; left: 0; font-size: 12px; color: var(--muted); font-weight: 600; }
+.phone-wrap { position: relative; padding-top: 28px; max-width: 100%; }
+.phone .center { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr); height: 100%; min-height: 0; border: 0; border-radius: 0; }
+.phone .center:not(:has(.top)) { grid-template-rows: minmax(0, 1fr); }
+.phone .top { padding: 10px; gap: 8px; }
+.phone .top h1 { font-size: 16px; }
+.phone .top .sections { order: 3; width: 100%; }
+.phone .side { grid-row: 2; }
+.phone .back { display: inline-flex; }
+.phone .side { border-right: 0; }
+.phone .conv-head { padding: 8px 10px; }
+.phone .msg { max-width: 92%; }
+.phone .btn.wide-only { display: none; }
+.phone .compose { position: sticky; bottom: 0; }
+.legend { max-width: 760px; color: var(--muted); font-size: 13px; }
+
+@media (max-width: 600px) {
+  .notif-row { grid-template-columns: 10px 34px minmax(0, 1fr); }
+  .notif-row .rt { grid-column: 3; justify-content: flex-start; }
+  .ntools .btn, .notif-row .btn { white-space: normal; text-align: left; }
+}
+@media (max-width: 900px) {
+  .app { grid-template-columns: minmax(0, 1fr); }
+  .menu { display: none; }
+  .center { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr); height: calc(100vh - 120px); min-height: 520px; }
+  .center:not(:has(.top:not(.hide-narrow))) { grid-template-rows: minmax(0, 1fr); }
+  .center .side.hide-narrow, .center .conv.hide-narrow, .center .top.hide-narrow { display: none; }
+  .top .sections { order: 3; width: 100%; }
+  .back { display: inline-flex; }
+}
+</style>
+
+<div class="proto" role="region" aria-label="Панель прототипа">
+  <b class="tag">ПРОТОТИП</b>
+  <span class="note">Синтетические данные. Не подключён к BMS24 и реальным сообщениям.</span>
+  <span class="seg" role="group" aria-label="Экран">
+    <button data-screen="A" aria-pressed="true">А. Разговор</button>
+    <button data-screen="B" aria-pressed="false">Б. Обсуждение задачи</button>
+    <button data-screen="C" aria-pressed="false">В. Уведомления</button>
+    <button data-screen="D" aria-pressed="false">Г. Новый разговор</button>
+    <button data-screen="E" aria-pressed="false">Д. Телефон</button>
+  </span>
+  <label for="stateSel">Состояние
+    <select id="stateSel">
+      <option value="normal">Обычное</option>
+      <option value="noconv">Нет разговоров</option>
+      <option value="nosearch">Поиск ничего не нашёл</option>
+      <option value="allread">Всё прочитано</option>
+      <option value="loading">Загрузка</option>
+      <option value="senderr">Ошибка отправки</option>
+      <option value="noaccess">Нет доступа</option>
+      <option value="long">Длинное содержимое</option>
+    </select>
+  </label>
+  <label for="futureChk"><input type="checkbox" id="futureChk"> Будущее: каналы и ИИ</label>
+</div>
+
+<div class="app">
+  <nav class="menu" aria-label="Главное меню BMS24">
+    <div class="brand">BMS24<small>Система управления бизнесом</small></div>
+    <div class="grp">Рабочее пространство</div>
+    <a href="#A"><span class="lbl">Рабочее пространство</span></a>
+    <a href="#A"><span class="lbl">Календарь</span></a>
+    <a href="#A"><span class="lbl">Задачи</span></a>
+    <a href="#A"><span class="lbl">Отчёты за день</span></a>
+    <a href="#A"><span class="lbl">Боевой план</span></a>
+    <a href="#A" class="on" aria-current="page"><span class="lbl">Коммуникационный центр</span><span class="cnt" id="menuCnt" title="Непрочитанные разговоры и обсуждения">4</span></a>
+  </nav>
+  <div class="main">
+    <div class="crumbs">Моя компания / ООО «Пример» / Коммуникационный центр</div>
+    <div id="screen"></div>
+  </div>
+</div>
+
+<script>
+(function () {
+  'use strict';
+  var esc = function (s) { return String(s).replace(/[&<>"']/g, function (c) { return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); };
+  var ME = 'Ирина Соколова';
+  var LONGNAME = 'Регламент_согласования_бюджета_отдела_продаж_на_IV_квартал_2026_года_с_приложениями_и_комментариями_финансового_директора_v7_final.docx';
+  var state = { screen: 'A', mode: 'normal', future: false, section: 'conv', filter: 'all', q: '', sel: 'd1', drawer: false,
+    reply: null, files: [], editing: null, confirmDel: null, sending: false, sendError: false, draft: '', newOpen: false,
+    newType: 'direct', newQ: '', newPick: [], phoneView: 'list', onlyUnread: false, expanded: false };
+
+  var data = {
+    conv: [
+      { id: 'd1', kind: 'direct', title: 'Анна Смирнова', ini: 'АС', unread: 2, mention: false, time: '10:42',
+        msgs: [
+          { day: 'Вчера' },
+          { id: 'm1', who: 'Анна Смирнова', t: '17:05', body: 'Ирина, пришлите, пожалуйста, итоговый план закупок на неделю.' },
+          { id: 'm2', who: ME, t: '17:20', body: 'Пришлю завтра до обеда, ждём цены от поставщика.', own: true },
+          { day: 'Сегодня' }, { newline: true },
+          { id: 'm3', who: 'Анна Смирнова', t: '10:40', body: 'Поставщик прислал цены. Прикладываю оба файла.',
+            files: [{ n: 'Цены_поставщика_ноябрь.xlsx', s: '84 КБ' }, { n: LONGNAME, s: '1,2 МБ' }] },
+          { id: 'm4', who: 'Анна Смирнова', t: '10:42', body: 'Если удобнее, обсудим голосом после 14:00.', reply: { who: ME, text: 'Пришлю завтра до обеда, ждём цены от поставщика.' } }
+        ] },
+      { id: 'g1', kind: 'group', title: 'Отдел продаж — планёрка', ini: 'ОП', unread: 1, mention: true, time: '09:15', members: 6,
+        msgs: [
+          { day: 'Сегодня' }, { newline: true },
+          { id: 'g1m1', who: 'Олег Демин', t: '09:15', body: '@Ирина Соколова, добавьте, пожалуйста, итоги звонков в общий файл.', mention: true }
+        ] },
+      { id: 'd2', kind: 'direct', title: 'Илья Котов', ini: 'ИК', unread: 0, mention: false, time: 'Пн',
+        msgs: [{ day: 'Понедельник' }, { id: 'd2m1', who: 'Илья Котов', t: '12:00', body: 'Спасибо, получил.' }] }
+    ],
+    disc: [
+      { id: 't1', kind: 'task', title: 'Подготовить коммерческое предложение для «Стройресурса»', ini: 'З', unread: 1, mention: false, time: '11:30',
+        objType: 'Задача', status: 'В работе', due: '18.11.2026', owner: 'Мария Лебедева', reviewer: ME,
+        msgs: [
+          { day: 'Пятница' },
+          { event: 'Задача создана', who: 'Илья Котов', t: '09:02' },
+          { id: 't1m1', who: 'Илья Котов', t: '09:05', body: 'Мария, нужен вариант с отсрочкой платежа 30 дней.' },
+          { event: 'Работа начата', who: 'Мария Лебедева', t: '10:12', status: 'В работе' },
+          { day: 'Сегодня' }, { newline: true },
+          { id: 't1m2', who: 'Мария Лебедева', t: '11:30', body: 'Черновик готов, посмотрите расчёт скидки.', files: [{ n: 'КП_Стройресурс_черновик.pdf', s: '312 КБ' }] }
+        ] },
+      { id: 'b1', kind: 'plan', title: 'Боевой план 16–22 ноября · Мария Лебедева', ini: 'БП', unread: 0, mention: false, time: 'Вчера',
+        objType: 'Боевой план', status: 'На согласовании', due: '22.11.2026', owner: 'Мария Лебедева', reviewer: ME,
+        msgs: [{ day: 'Вчера' }, { id: 'b1m1', who: 'Мария Лебедева', t: '18:40', body: 'Добавила две задачи по ключевым клиентам.' }] },
+      { id: 'mt1', kind: 'meeting', title: 'Встреча: планёрка отдела продаж 17.11', ini: 'В', unread: 0, mention: false, time: 'Пт',
+        objType: 'Встреча', status: 'Запланирована', due: '17.11.2026 09:00', owner: 'Олег Демин', reviewer: '',
+        msgs: [{ day: 'Пятница' }, { id: 'mt1m1', who: 'Олег Демин', t: '16:00', body: 'Повестка в карточке встречи.' }] }
+    ],
+    notif: [
+      { day: 'Сегодня', items: [
+        { id: 'n1', type: 'Упоминание', ic: '@', cls: '', h: 'Олег Демин упомянул вас', s: 'Отдел продаж — планёрка', link: 'Открыть разговор', t: '09:15', read: false, action: true },
+        { id: 'n2', type: 'Задача', ic: '✓', cls: 'mint', h: 'Вам назначена проверка результата', s: 'Подготовить коммерческое предложение для «Стройресурса»', link: 'Открыть задачу', t: '08:30', read: false, action: true },
+        { id: 'n3', type: 'План дня', ic: '◷', cls: 'sand', h: 'Напоминание о плане дня', s: 'Сегодня: задач со сроком — 2, встреч — 1, завтра контрольных точек — 0', link: 'Открыть календарь', t: '08:00', read: false }
+      ] },
+      { day: 'Предыдущие дни', zeroDigest: { count: 3, range: '13–15 ноября' }, items: [
+        { id: 'n4', type: 'Решение по плану', ic: '⚑', cls: 'mint', h: 'Боевой план согласован', s: 'Боевой план 9–15 ноября · Мария Лебедева', link: 'Открыть план', t: '14 нояб., 17:20', read: true }
+      ] }
+    ]
+  };
+  var people = [
+    { n: 'Анна Смирнова', p: 'Менеджер по закупкам', ini: 'АС', existing: 'd1' }, { n: 'Илья Котов', p: 'Руководитель продаж', ini: 'ИК', existing: 'd2' },
+    { n: 'Мария Лебедева', p: 'Менеджер по продажам', ini: 'МЛ' }, { n: 'Олег Демин', p: 'Коммерческий директор', ini: 'ОД' },
+    { n: 'Павел Ершов', p: 'Логист', ini: 'ПЕ' }
+  ];
+
+  function all() { return data.conv.concat(data.disc); }
+  function find(id) { return all().filter(function (c) { return c.id === id; })[0]; }
+  function unreadConvs() { return all().filter(function (c) { return c.unread > 0; }).length; }
+  function unreadNotifs() { var n = 0; data.notif.forEach(function (g) { g.items.forEach(function (i) { if (!i.read) n++; }); }); return n; }
+  function icon(name) {
+    var p = { search: '<circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/>', plus: '<path d="M12 5v14M5 12h14"/>',
+      info: '<circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/>', back: '<path d="m15 18-6-6 6-6"/>', x: '<path d="M18 6 6 18M6 6l12 12"/>',
+      clip: '<path d="m21 11-8.5 8.5a5 5 0 0 1-7-7L14 4a3.5 3.5 0 0 1 5 5l-8.5 8.5a2 2 0 0 1-3-3L15 7"/>', send: '<path d="m4 12 16-8-6 16-2-7z"/>',
+      file: '<path d="M14 3H6v18h12V7z"/><path d="M14 3v4h4"/>', ext: '<path d="M14 4h6v6M10 14 20 4M19 14v6H4V5h6"/>', lock: '<rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/>',
+      check: '<path d="m5 12 4 4 10-10"/>', people: '<circle cx="9" cy="8" r="3"/><path d="M3 20a6 6 0 0 1 12 0M16 11a3 3 0 1 0 0-6M21 20a5 5 0 0 0-4-5"/>' }[name];
+    return '<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + p + '</svg>';
+  }
+
+  /* ---------- list ---------- */
+  function listItems() {
+    var src = state.section === 'disc' ? data.disc : data.conv;
+    if (state.mode === 'noconv') src = [];
+    return src.filter(function (c) {
+      if (state.filter === 'unread' && !c.unread) return false;
+      if (state.filter === 'mentions' && !c.mention) return false;
+      if (state.mode === 'allread' && state.filter === 'unread') return false;
+      if (state.q && c.title.toLowerCase().indexOf(state.q.toLowerCase()) < 0) return false;
+      if (state.mode === 'nosearch' && state.q) return false;
+      return true;
+    });
+  }
+  function kindPill(c) {
+    if (c.kind === 'task') return '<span class="pill">Задача</span>';
+    if (c.kind === 'plan') return '<span class="pill mint">Боевой план</span>';
+    if (c.kind === 'meeting') return '<span class="pill sand">Встреча</span>';
+    if (c.kind === 'group') return '<span class="pill mint">Группа · ' + c.members + '</span>';
+    return '';
+  }
+  function renderTop(hideNarrow) {
+    var convU = data.conv.filter(function (c) { return c.unread && state.mode !== 'allread'; }).length;
+    var discU = data.disc.filter(function (c) { return c.unread && state.mode !== 'allread'; }).length;
+    var nU = state.mode === 'allread' ? 0 : unreadNotifs();
+    return '<div class="top' + (hideNarrow ? ' hide-narrow' : '') + '"><h1>Коммуникационный центр</h1>' +
+      '<div class="sections" role="tablist" aria-label="Раздел">' +
+      sectionBtn('conv', 'Разговоры', convU, 'непрочитанных разговоров') + sectionBtn('disc', 'Обсуждения', discU, 'обсуждений с непрочитанным') +
+      sectionBtn('notif', 'Уведомления', nU, 'непрочитанных уведомлений', true) + '</div>' +
+      '<button class="btn primary small" id="newBtn">' + icon('plus') + 'Новый разговор</button></div>';
+  }
+  function renderSide(narrowHide) {
+    var h = '<aside class="side' + (narrowHide ? ' hide-narrow' : '') + '" aria-label="Список разговоров"><div class="side-head">';
+    if (state.section !== 'notif') {
+      h += '<label class="search">' + icon('search') + '<span class="sr">Поиск</span><input id="q" placeholder="' +
+        (state.section === 'disc' ? 'Поиск по названию объекта' : 'Поиск по имени или названию') + '" value="' + esc(state.q) + '"></label>' +
+        '<div class="chips" role="group" aria-label="Отбор">' + chip('all', 'Все') + chip('unread', 'Непрочитанные') + chip('mentions', '@ Упоминания') + '</div>';
+    }
+    h += '</div>';
+    if (state.section !== 'notif') h += '<div class="list" id="list">' + renderList() + '</div>';
+    return h + '</aside>';
+  }
+  function sectionBtn(key, label, n, what, blue) {
+    return '<button role="tab" data-sec="' + key + '" aria-selected="' + (state.section === key) + '">' + label +
+      (n ? ' <span class="badge' + (blue ? ' blue' : '') + '" title="' + n + ' ' + what + '">' + n + '</span>' : '') + '</button>';
+  }
+  function chip(key, label) { return '<button class="chip" data-filter="' + key + '" aria-pressed="' + (state.filter === key) + '">' + label + '</button>'; }
+  function renderList() {
+    if (state.mode === 'loading') return '<div class="skel"></div><div class="skel"></div><div class="skel"></div>';
+    var items = listItems();
+    if (!items.length) {
+      if (state.q) return '<div class="empty"><h3>Ничего не найдено</h3><p>По запросу «' + esc(state.q) + '» нет разговоров. Проверьте написание или начните новый разговор.</p><button class="btn" data-clearq>Сбросить поиск</button></div>';
+      if (state.filter === 'unread') return '<div class="empty"><h3>Всё прочитано</h3><p>Новых сообщений нет.</p><button class="btn" data-filter="all">Показать все</button></div>';
+      if (state.section === 'disc') return '<div class="empty"><h3>Обсуждений пока нет</h3><p>Обсуждение появится, когда вы или коллеги напишете в карточке задачи или боевого плана.</p></div>';
+      return '<div class="empty"><h3>Разговоров пока нет</h3><p>Напишите коллеге или создайте группу.</p><button class="btn primary" id="newBtn2">' + icon('plus') + 'Новый разговор</button></div>';
+    }
+    return items.map(function (c) {
+      var last = c.msgs.filter(function (m) { return m.body; }).slice(-1)[0];
+      var unread = state.mode === 'allread' ? 0 : c.unread;
+      var title = state.mode === 'long' && c.id === 't1' ? c.title + ' — с расчётом отсрочки платежа, вариантами скидки и согласованием с юридическим отделом' : c.title;
+      return '<button class="item' + (unread ? ' unread' : '') + '" data-open="' + c.id + '" aria-current="' + (state.sel === c.id) + '">' +
+        '<span class="ava' + (c.kind === 'group' ? ' grp' : (c.kind === 'direct' ? '' : ' obj')) + '" aria-hidden="true">' + esc(c.ini) + '</span>' +
+        '<span style="min-width:0"><span class="t" title="' + esc(title) + '">' + esc(title) + '</span>' +
+        (kindPill(c) ? '<span class="k">' + kindPill(c) + '</span>' : '') +
+        '<span class="p">' + (last ? (last.own ? 'Вы: ' : (c.kind !== 'direct' ? esc(last.who.split(' ')[0]) + ': ' : '')) + esc(last.body) : '') + '</span></span>' +
+        '<span class="meta"><span>' + c.time + '</span>' + (c.mention && unread ? '<span class="at" title="Вас упомянули">@</span>' : '') +
+        (unread ? '<span class="badge" title="' + unread + ' непрочитанных сообщения">' + unread + '</span>' : '') + '</span></button>';
+    }).join('');
+  }
+
+  /* ---------- conversation ---------- */
+  function renderConv(narrowHide) {
+    var c = find(state.sel);
+    if (!c || (state.section === 'disc' && data.disc.indexOf(c) < 0) || (state.section === 'conv' && data.conv.indexOf(c) < 0) || state.mode === 'noconv') {
+      return '<section class="conv' + (narrowHide ? ' hide-narrow' : '') + '"><div class="empty"><h3>Выберите разговор</h3><p>Слева — ваши разговоры. Непрочитанные отмечены числом.</p></div></section>';
+    }
+    if (state.mode === 'noaccess' && c.kind === 'task') {
+      return '<section class="conv' + (narrowHide ? ' hide-narrow' : '') + '"><div class="conv-head">' + backBtn() + '<div class="ttl"><h2>Обсуждение недоступно</h2></div></div>' +
+        '<div class="empty">' + icon('lock') + '<h3>Нет доступа к обсуждению</h3><p>У вас больше нет доступа к этой задаче, поэтому её обсуждение и файлы скрыты. Если доступ нужен, обратитесь к руководителю.</p></div></section>';
+    }
+    var isObj = c.kind === 'task' || c.kind === 'plan' || c.kind === 'meeting';
+    var openLabel = { task: 'Открыть задачу', plan: 'Открыть план', meeting: 'Открыть встречу' }[c.kind];
+    var title = state.mode === 'long' && c.id === 't1' ? c.title + ' — с расчётом отсрочки платежа, вариантами скидки и согласованием с юридическим отделом' : c.title;
+    var h = '<section class="conv' + (narrowHide ? ' hide-narrow' : '') + '" aria-label="Разговор"><div class="conv-head">' + backBtn() +
+      '<div class="ttl"><h2>' + esc(title) + '</h2><div class="kind">' +
+      (isObj ? '<span class="pill' + (c.kind === 'plan' ? ' mint' : c.kind === 'meeting' ? ' sand' : '') + '">' + c.objType + '</span><span>' + esc(c.status) + '</span><span>·</span><span>срок ' + esc(c.due) + '</span>'
+        : (c.kind === 'group' ? '<span>Группа · ' + c.members + ' участников</span>' : '<span>Личный разговор</span>')) + '</div></div>' +
+      (isObj ? '<a class="btn" href="#B" onclick="return false">' + icon('ext') + openLabel + '</a>' : '') +
+      '<button class="btn ghost" id="ctxBtn" aria-expanded="' + state.drawer + '" aria-controls="drawer">' + icon(isObj ? 'info' : 'people') + (isObj ? 'Подробнее' : 'Участники') + '</button></div>';
+    h += '<div class="feed" id="feed" tabindex="0" aria-label="Сообщения">' + (state.mode === 'loading' ? '<div class="skel"></div><div class="skel" style="width:60%"></div>' : c.msgs.map(function (m) { return renderMsg(m, c); }).join('')) + '</div>';
+    h += renderCompose(c) + '</section>';
+    return h;
+  }
+  function backBtn() { return '<button class="btn ghost back" data-back aria-label="Назад к списку">' + icon('back') + '</button>'; }
+  function renderMsg(m, c) {
+    if (m.day) return '<div class="day">' + m.day + '</div>';
+    if (m.newline) return state.mode === 'allread' ? '' : '<div class="newline" id="newline">Новые сообщения</div>';
+    if (m.event) {
+      if (state.future && false) return '';
+      return '<div class="event" role="note"><span class="dot" aria-hidden="true"></span><b>' + esc(m.event) + '</b>' + (m.status ? ' <span class="pill">' + esc(m.status) + '</span>' : '') + '<span>· ' + esc(m.who) + ' · ' + m.t + '</span></div>';
+    }
+    var own = m.own || m.who === ME;
+    var withdrawn = m.withdrawn;
+    var body = withdrawn ? 'Сообщение удалено автором.' : esc(m.body).replace(/@([А-ЯЁ][а-яё]+ [А-ЯЁ][а-яё]+)/g, '<span class="mention">@$1</span>');
+    if (state.mode === 'long' && m.id === 'm3') body += '\n\n' + esc('Дополнительно: в файле с ценами три листа — базовые цены, цены при объёме от 500 единиц и условия доставки по регионам. На листе с доставкой есть исключения для Казани и Набережных Челнов, где действует собственный склад поставщика, поэтому срок поставки сокращается до двух рабочих дней.');
+    var future = '';
+    if (state.future && m.id === 'm4') future = ' <span class="chan" title="Будущий вариант: сообщение пришло через подключённый мессенджер">из Telegram</span>';
+    var h = '<article class="msg' + (own ? ' own' : '') + (m.mention ? ' mentioned' : '') + (withdrawn ? ' withdrawn' : '') + '" id="' + m.id + '">' +
+      '<div class="who"><b>' + esc(own ? 'Вы' : m.who) + '</b><span class="tm">' + m.t + '</span>' + (m.edited ? '<span class="tm">изменено</span>' : '') + future + '</div>';
+    if (m.reply && !withdrawn) h += '<div class="quote"><b>' + esc(m.reply.who === ME ? 'Вы' : m.reply.who) + '</b>' + esc(m.reply.text) + '</div>';
+    if (state.editing === m.id) {
+      h += '<label class="sr" for="edit-' + m.id + '">Текст сообщения</label><textarea id="edit-' + m.id + '" style="width:100%;border:1px solid var(--border);border-radius:8px;padding:6px">' + esc(m.body) + '</textarea>' +
+        '<div class="acts"><button class="btn small primary" data-saveedit="' + m.id + '">Сохранить</button><button class="btn small" data-canceledit>Отмена</button></div>';
+    } else {
+      h += '<div class="body">' + body + '</div>';
+    }
+    if (m.files && !withdrawn) {
+      h += '<div class="files">' + m.files.map(function (f) { return '<a class="file" href="#A" onclick="return false" title="' + esc(f.n) + '">' + icon('file') + '<span class="nm">' + esc(f.n) + '</span><span class="sz">' + f.s + '</span></a>'; }).join('') + '</div>';
+    }
+    if (m.pending) h += '<div class="state">Отправляется…</div>';
+    if (m.failed) h += '<div class="state err">Не отправлено. Текст сохранён в поле ввода.</div>';
+    if (state.confirmDel === m.id) {
+      h += '<div class="confirm" role="alertdialog" aria-label="Удалить сообщение">Удалить сообщение? Текст и файлы будут скрыты у всех участников.<button class="btn small danger" data-dodel="' + m.id + '">Удалить</button><button class="btn small" data-canceldel>Отмена</button></div>';
+    } else if (!withdrawn && !m.pending && state.editing !== m.id && state.mode !== 'noaccess') {
+      h += '<div class="acts"><button data-reply="' + m.id + '">Ответить</button>' + (own ? '<button data-edit="' + m.id + '">Изменить</button><button data-del="' + m.id + '">Удалить</button>' : '') + '</div>';
+    }
+    return h + '</article>';
+  }
+  function renderCompose(c) {
+    if (state.mode === 'noaccess') return '<div class="compose"><div class="alert warn">' + icon('lock') + 'Писать в этот разговор нельзя: участие отозвано.</div></div>';
+    var h = '<form class="compose" id="compose" novalidate>';
+    if (state.sendError) h += '<div class="alert err" role="alert">Сообщение не отправлено: нет соединения с сервером. Текст и файлы сохранены. <button type="button" class="btn small" data-retry>Повторить отправку</button></div>';
+    if (state.reply) {
+      var r = c.msgs.filter(function (m) { return m.id === state.reply; })[0];
+      if (r) h += '<div class="replying"><div class="quote"><b>Ответ: ' + esc(r.who === ME ? 'вам' : r.who) + '</b>' + esc(r.body.slice(0, 120)) + '</div><button type="button" class="btn ghost small" data-cancelreply aria-label="Отменить ответ">' + icon('x') + '</button></div>';
+    }
+    if (state.files.length) h += '<div class="pending-files">' + state.files.map(function (f, i) { return '<span class="pf" title="' + esc(f) + '"><span>' + esc(f) + '</span><button type="button" data-rmfile="' + i + '" aria-label="Убрать файл ' + esc(f) + '">×</button></span>'; }).join('') + '</div>';
+    h += '<label class="sr" for="msg">Сообщение</label><textarea id="msg" placeholder="Сообщение… Упомянуть: @Имя Фамилия"' + (state.sending ? ' disabled' : '') + '>' + esc(state.draft) + '</textarea>' +
+      '<div class="bar"><label class="btn ghost small" for="filein">' + icon('clip') + 'Файлы</label><input type="file" id="filein" multiple class="sr">' +
+      '<span class="grow">' + (c.kind === 'task' ? 'Сообщение увидят все, у кого есть доступ к задаче.' : '') + '</span>' +
+      '<button class="btn primary" type="submit"' + (state.sending ? ' disabled' : '') + '>' + icon('send') + (state.sending ? 'Отправляется…' : 'Отправить') + '</button></div></form>';
+    return h;
+  }
+  function renderDrawer() {
+    var c = find(state.sel); if (!c || !state.drawer) return '';
+    var isObj = c.kind === 'task' || c.kind === 'plan' || c.kind === 'meeting';
+    var ppl = isObj ? [[c.owner, 'Исполнитель'], [ME, c.kind === 'task' ? 'Проверяющий' : 'Согласующий'], ['Илья Котов', 'Постановщик']] :
+      c.kind === 'group' ? [['Олег Демин', 'Владелец'], [ME, 'Участник'], ['Анна Смирнова', 'Участник'], ['Илья Котов', 'Участник']] : [[c.title, 'Собеседник'], [ME, 'Вы']];
+    var h = '<div class="scrim" data-closedrawer></div><aside class="drawer" id="drawer" role="dialog" aria-modal="true" aria-label="Подробности разговора"><header><h2>' + (isObj ? 'О ' + (c.kind === 'task' ? 'задаче' : c.kind === 'plan' ? 'плане' : 'встрече') : 'Участники') + '</h2><button class="btn ghost small" data-closedrawer aria-label="Закрыть">' + icon('x') + '</button></header><div class="body">';
+    if (isObj) h += '<dl class="kv"><dt>Тип</dt><dd>' + c.objType + '</dd><dt>Состояние</dt><dd>' + esc(c.status) + '</dd><dt>Срок</dt><dd>' + esc(c.due) + '</dd></dl><a class="btn" href="#B" onclick="return false">' + icon('ext') + ({ task: 'Открыть задачу', plan: 'Открыть план', meeting: 'Открыть встречу' })[c.kind] + '</a><div class="alert info">Обсуждение видят все, кто может открыть ' + (c.kind === 'task' ? 'задачу' : 'объект') + '. Писать могут участники. Открытия задачи записываются в «Историю» задачи, а не сюда.</div>';
+    h += '<div><h3 style="font-size:14px;margin-bottom:6px">Участники · ' + ppl.length + '</h3><div class="people">' + ppl.map(function (p) {
+      return '<div class="person"><span class="ava" aria-hidden="true">' + esc(p[0].split(' ').map(function (w) { return w[0]; }).join('')) + '</span><span>' + esc(p[0]) + '<br><small>' + p[1] + '</small></span>' +
+        (c.kind === 'group' && p[1] === 'Участник' && p[0] !== ME ? '<button class="btn small ghost" title="Действие владельца группы">Исключить</button>' : '<span></span>') + '</div>';
+    }).join('') + '</div></div>';
+    if (c.kind === 'group') h += '<button class="btn danger">Выйти из группы</button><p style="font-size:12px;color:var(--muted);margin:0">Если выйдет владелец, владельцем станет самый давний участник. История сохраняется.</p>';
+    if (state.future) h += '<div class="future"><b>Будущий вариант (не подключено):</b> каналы участника — MAX, Telegram; ИИ-участник «Аналитик продаж» с ответственным сотрудником; доставка отмечается, только если канал её подтверждает.</div>';
+    return h + '</div></aside>';
+  }
+
+  /* ---------- notifications ---------- */
+  function renderNotif() {
+    var nU = state.mode === 'allread' ? 0 : unreadNotifs();
+    var h = '<section class="nwrap" aria-label="Уведомления"><div class="ntools"><h2 style="flex:1;min-width:160px">Уведомления' + (nU ? ' <span class="badge blue" title="' + nU + ' непрочитанных уведомлений">' + nU + '</span>' : '') + '</h2>' +
+      '<button class="chip" id="onlyUnread" aria-pressed="' + state.onlyUnread + '">Только непрочитанные</button>' +
+      '<button class="btn small" id="markAll"' + (nU ? '' : ' disabled') + '>Отметить все прочитанными <span class="proposal">предложение</span></button>' +
+      '<a class="btn small ghost" href="#C" onclick="return false">Настройки уведомлений</a></div><div class="nlist">';
+    if (state.mode === 'loading') return h + '<div class="skel"></div><div class="skel"></div></div></section>';
+    if (state.mode === 'noconv' || (state.mode === 'allread' && state.onlyUnread)) return h + '<div class="empty"><h3>Новых уведомлений нет</h3><p>Здесь появятся упоминания, назначения и напоминания.</p></div></div></section>';
+    data.notif.forEach(function (g) {
+      var items = g.items.filter(function (i) { return !(state.onlyUnread && (i.read || state.mode === 'allread')); });
+      if (!items.length && !g.zeroDigest) return;
+      h += '<div class="nday">' + g.day + '</div>';
+      items.forEach(function (i) {
+        var read = i.read || state.mode === 'allread';
+        h += '<div class="notif-row' + (read ? ' read' : '') + '"><span class="ud" aria-hidden="true"></span><span class="ic ' + i.cls + '" aria-hidden="true">' + i.ic + '</span>' +
+          '<span class="tx"><span class="pill' + (i.cls === 'mint' ? ' mint' : i.cls === 'sand' ? ' sand' : '') + '">' + i.type + '</span> <span class="h">' + esc(i.h) + '</span><div class="s">' + esc(i.s) + ' · <a href="#A" onclick="return false">' + i.link + '</a></div></span>' +
+          '<span class="rt"><span>' + i.t + '</span>' + (read ? '<span class="state-read">' + icon('check') + 'Прочитано</span>' : '<button class="btn small" data-markread="' + i.id + '">Отметить прочитанным</button>') + '</span></div>';
+      });
+      if (g.zeroDigest && !state.onlyUnread) {
+        h += '<div class="collapse"><span>◷ Напоминание о плане дня · ' + g.zeroDigest.count + ' напоминания без задач, встреч и контрольных точек (' + g.zeroDigest.range + ')</span>' +
+          '<button class="btn small ghost" id="expand" aria-expanded="' + state.expanded + '">' + (state.expanded ? 'Свернуть' : 'Показать') + '</button><span class="proposal">предложение: не создавать при нулях</span></div>';
+        if (state.expanded) ['15 нояб.', '14 нояб.', '13 нояб.'].forEach(function (d) {
+          h += '<div class="notif-row read"><span class="ud"></span><span class="ic sand">◷</span><span class="tx"><span class="h">Напоминание о плане дня</span><div class="s">задач со сроком — 0, встреч — 0, завтра контрольных точек — 0</div></span><span class="rt">' + d + ', 08:00<span class="state-read">' + icon('check') + 'Прочитано</span></span></div>';
+        });
+      }
+    });
+    return h + '</div></section>';
+  }
+
+  /* ---------- new conversation ---------- */
+  function renderNew() {
+    if (!state.newOpen) return '';
+    var q = state.newQ.toLowerCase();
+    var ppl = people.filter(function (p) { return !q || p.n.toLowerCase().indexOf(q) >= 0 || p.p.toLowerCase().indexOf(q) >= 0; });
+    var convs = all().filter(function (c) { return q && c.title.toLowerCase().indexOf(q) >= 0; });
+    if (state.mode === 'nosearch' && q) { ppl = []; convs = []; }
+    var h = '<div class="modal" role="dialog" aria-modal="true" aria-labelledby="newTitle"><div class="dialog"><header><h2 id="newTitle">Новый разговор</h2><button class="btn ghost small" id="closeNew" aria-label="Закрыть">' + icon('x') + '</button></header><div class="body">' +
+      '<div class="sections" role="tablist" style="grid-template-columns:1fr 1fr"><button role="tab" data-ntype="direct" aria-selected="' + (state.newType === 'direct') + '">Личный</button><button role="tab" data-ntype="group" aria-selected="' + (state.newType === 'group') + '">Группа</button></div>';
+    if (state.newType === 'group') h += '<div class="field"><label for="gname">Название группы</label><input id="gname" placeholder="Например: Закупки — ноябрь"></div>';
+    h += '<label class="search">' + icon('search') + '<span class="sr">Найти сотрудника или разговор</span><input id="newq" placeholder="Имя, должность или название разговора" value="' + esc(state.newQ) + '" autocomplete="off"></label>';
+    if (state.newPick.length) h += '<div class="selected">' + state.newPick.map(function (n) { return '<span class="pf"><span>' + esc(n) + '</span><button type="button" data-unpick="' + esc(n) + '" aria-label="Убрать ' + esc(n) + '">×</button></span>'; }).join('') + '</div>';
+    h += '<div class="res">';
+    if (convs.length) h += '<div class="lbl">Существующие разговоры</div>' + convs.map(function (c) { return '<button data-open="' + c.id + '" data-closeafter><span class="ava' + (c.kind === 'direct' ? '' : ' obj') + '">' + esc(c.ini) + '</span><span>' + esc(c.title) + '</span><span class="pill">Открыть</span></button>'; }).join('');
+    if (ppl.length) h += '<div class="lbl">Сотрудники</div>' + ppl.map(function (p) {
+      var picked = state.newPick.indexOf(p.n) >= 0;
+      return '<button data-pick="' + esc(p.n) + '" aria-pressed="' + picked + '"><span class="ava">' + p.ini + '</span><span>' + esc(p.n) + '<br><small style="color:var(--muted)">' + esc(p.p) + '</small></span>' +
+        (state.newType === 'direct' && p.existing ? '<span class="pill mint">Уже есть диалог</span>' : '<span></span>') + '</button>';
+    }).join('');
+    if (!ppl.length && !convs.length) h += '<div class="empty" style="padding:12px"><h3>Никого не нашли</h3><p>Проверьте написание. В поиске только сотрудники вашей компании.</p></div>';
+    h += '</div></div><footer><button class="btn" id="cancelNew">Отмена</button><button class="btn primary" id="startNew"' + (state.newPick.length ? '' : ' disabled') + '>' + (state.newType === 'direct' ? 'Открыть диалог' : 'Создать группу') + '</button></footer></div></div>';
+    return h;
+  }
+
+  /* ---------- screens ---------- */
+  function desktop() {
+    var notif = state.section === 'notif';
+    var narrow = window.innerWidth <= 900;
+    var showList = !narrow || state.phoneView === 'list';
+    var h = '<div class="center' + (notif ? ' notif' : '') + '" id="center">';
+    // Notifications use the full width: no conversation pane, no "select a conversation" hint, no empty list column.
+    if (notif) h += renderTop(false) + renderNotif();
+    else h += renderTop(narrow && !showList) + renderSide(narrow && !showList) + renderConv(narrow && showList) + renderDrawer();
+    return h + renderNew() + '</div>';
+  }
+  function phones() {
+    var saved = JSON.stringify(state);
+    var frames = [['list', 'Шаг 1 · Список (фильтр и позиция сохраняются)'], ['conv', 'Шаг 2 · Разговор, поле ввода над клавиатурой'], ['ctx', 'Шаг 3 · Подробности и участники']];
+    var h = '<div class="phones">';
+    frames.forEach(function (f) {
+      state.section = state.section === 'notif' ? 'disc' : state.section;
+      state.drawer = f[0] === 'ctx';
+      if (state.sel === 'd1' && state.section === 'disc') state.sel = 't1';
+      var inner = f[0] === 'list' ? '<div class="center">' + renderTop(false) + renderSide(false) + '</div>' : '<div class="center">' + renderConv(false) + renderDrawer() + '</div>';
+      h += '<div class="phone-wrap"><div class="cap">' + f[1] + '</div><div class="phone" aria-label="' + f[1] + '">' + inner + '</div></div>';
+    });
+    Object.assign(state, JSON.parse(saved));
+    return h + '</div><p class="legend">Телефон: колонки не сжимаются, а сменяют друг друга: список → разговор → подробности. Кнопка «Назад» возвращает к списку с тем же разделом, отбором и позицией прокрутки; панель подробностей закрывается кнопкой, жестом «Назад» и клавишей Esc. Проверено на 320, 375/390, 768 и 1440 px.</p>';
+  }
+  function render() {
+    document.querySelectorAll('[data-screen]').forEach(function (b) { b.setAttribute('aria-pressed', String(b.dataset.screen === state.screen)); });
+    document.getElementById('menuCnt').textContent = state.mode === 'allread' ? '' : unreadConvs();
+    document.getElementById('menuCnt').hidden = state.mode === 'allread';
+    var listEl = document.getElementById('list'); var top = listEl ? listEl.scrollTop : 0;
+    document.getElementById('screen').innerHTML = state.screen === 'E' ? phones() : desktop();
+    var l2 = document.getElementById('list'); if (l2) l2.scrollTop = top;
+    // Opening a conversation lands on the first unread message ("Новые сообщения"), otherwise on the latest one.
+    if (state.sel !== lastSel || state.screen !== lastScreen) {
+      document.querySelectorAll('.feed').forEach(function (f) {
+        var nl = f.querySelector('.newline');
+        f.scrollTop = nl ? Math.max(0, nl.offsetTop - f.offsetTop - 24) : f.scrollHeight;
+      });
+      lastSel = state.sel; lastScreen = state.screen;
+    }
+  }
+  var lastSel = null, lastScreen = null;
+  function setScreen(s) {
+    state.screen = s; state.drawer = false; state.newOpen = false; state.phoneView = 'list';
+    if (s === 'A') { state.section = 'conv'; state.sel = 'd1'; }
+    if (s === 'B') { state.section = 'disc'; state.sel = 't1'; state.drawer = false; state.phoneView = 'conv'; }
+    if (s === 'C') { state.section = 'notif'; }
+    if (s === 'D') { state.section = 'conv'; state.newOpen = true; state.newQ = state.mode === 'nosearch' ? 'Ивано' : ''; }
+    if (s === 'E') { state.section = 'disc'; state.sel = 't1'; }
+    try { if (location.hash !== '#' + s) history.replaceState(null, '', '#' + s); } catch (e) {}
+    render();
+  }
+
+  /* ---------- events ---------- */
+  document.addEventListener('click', function (e) {
+    var t = e.target.closest('button, a, [data-closedrawer]'); if (!t) return;
+    var d = t.dataset;
+    if (d.screen) return setScreen(d.screen);
+    if (d.sec) { state.section = d.sec; state.q = ''; state.filter = 'all'; if (d.sec === 'disc') state.sel = 't1'; if (d.sec === 'conv') state.sel = 'd1'; state.drawer = false; state.phoneView = 'list'; return render(); }
+    if (d.filter) { state.filter = d.filter; return render(); }
+    if (d.clearq !== undefined) { state.q = ''; return render(); }
+    if (d.open) { var c = find(d.open); state.sel = d.open; state.section = data.disc.indexOf(c) >= 0 ? 'disc' : 'conv'; state.drawer = false; state.reply = null; state.phoneView = 'conv'; if (d.closeafter !== undefined) state.newOpen = false; c.unread = 0; render(); var nl = document.getElementById('newline'); if (nl) nl.scrollIntoView({ block: 'center' }); return; }
+    if (d.back !== undefined) { state.phoneView = 'list'; return render(); }
+    if (t.id === 'ctxBtn') { state.drawer = !state.drawer; render(); var dr = document.getElementById('drawer'); if (dr) dr.querySelector('button').focus(); return; }
+    if (d.closedrawer !== undefined) { state.drawer = false; render(); var cb = document.getElementById('ctxBtn'); if (cb) cb.focus(); return; }
+    if (d.reply) { state.reply = d.reply; render(); document.getElementById('msg').focus(); return; }
+    if (d.cancelreply !== undefined) { state.reply = null; return render(); }
+    if (d.edit) { state.editing = d.edit; render(); var ta = document.getElementById('edit-' + d.edit); if (ta) ta.focus(); return; }
+    if (d.canceledit !== undefined) { state.editing = null; return render(); }
+    if (d.saveedit) { var m = msgById(d.saveedit); m.body = document.getElementById('edit-' + d.saveedit).value; m.edited = true; state.editing = null; return render(); }
+    if (d.del) { state.confirmDel = d.del; return render(); }
+    if (d.canceldel !== undefined) { state.confirmDel = null; return render(); }
+    if (d.dodel) { var md = msgById(d.dodel); md.withdrawn = true; md.files = null; state.confirmDel = null; return render(); }
+    if (d.rmfile) { state.files.splice(+d.rmfile, 1); return render(); }
+    if (d.retry !== undefined) { state.sendError = false; return send(); }
+    if (d.markread) { data.notif.forEach(function (g) { g.items.forEach(function (i) { if (i.id === d.markread) i.read = true; }); }); return render(); }
+    if (t.id === 'markAll') { data.notif.forEach(function (g) { g.items.forEach(function (i) { i.read = true; }); }); return render(); }
+    if (t.id === 'onlyUnread') { state.onlyUnread = !state.onlyUnread; return render(); }
+    if (t.id === 'expand') { state.expanded = !state.expanded; return render(); }
+    if (t.id === 'newBtn' || t.id === 'newBtn2') { state.newOpen = true; state.newQ = ''; state.newPick = []; render(); document.getElementById('newq').focus(); return; }
+    if (t.id === 'closeNew' || t.id === 'cancelNew') { state.newOpen = false; render(); var nb = document.getElementById('newBtn'); if (nb) nb.focus(); return; }
+    if (d.ntype) { state.newType = d.ntype; state.newPick = []; return render(); }
+    if (d.pick) { var p = people.filter(function (x) { return x.n === d.pick; })[0];
+      if (state.newType === 'direct') { if (p.existing) { state.newOpen = false; state.sel = p.existing; state.section = 'conv'; state.phoneView = 'conv'; return render(); } state.newPick = [p.n]; }
+      else { var i = state.newPick.indexOf(p.n); if (i >= 0) state.newPick.splice(i, 1); else state.newPick.push(p.n); }
+      return render(); }
+    if (d.unpick) { state.newPick = state.newPick.filter(function (n) { return n !== d.unpick; }); return render(); }
+    if (t.id === 'startNew') { var id = 'n' + Date.now(), ttl = state.newType === 'group' ? ((document.getElementById('gname') || {}).value || 'Новая группа') : state.newPick[0];
+      data.conv.unshift({ id: id, kind: state.newType, title: ttl, ini: ttl.split(' ').map(function (w) { return w[0]; }).join('').slice(0, 2), unread: 0, mention: false, time: 'сейчас', members: state.newPick.length + 1, msgs: [] });
+      state.newOpen = false; state.sel = id; state.section = 'conv'; state.phoneView = 'conv'; render(); document.getElementById('msg').focus(); return; }
+  });
+  document.addEventListener('input', function (e) {
+    if (e.target.id === 'q') { state.q = e.target.value; var l = document.getElementById('list'); if (l) l.innerHTML = renderList(); }
+    if (e.target.id === 'newq') { state.newQ = e.target.value; render(); var n = document.getElementById('newq'); n.focus(); n.setSelectionRange(n.value.length, n.value.length); }
+    if (e.target.id === 'msg') state.draft = e.target.value;
+  });
+  document.addEventListener('change', function (e) {
+    if (e.target.id === 'stateSel') { state.mode = e.target.value; state.sendError = state.mode === 'senderr'; if (state.mode === 'nosearch') state.q = 'Иванов'; else state.q = ''; return setScreen(state.screen); }
+    if (e.target.id === 'futureChk') { state.future = e.target.checked; return render(); }
+    if (e.target.id === 'filein') { Array.prototype.forEach.call(e.target.files, function (f) { state.files.push(f.name); }); render(); }
+  });
+  document.addEventListener('submit', function (e) { if (e.target.id === 'compose') { e.preventDefault(); send(); } });
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape') { if (state.newOpen) { state.newOpen = false; return render(); } if (state.drawer) { state.drawer = false; render(); var cb = document.getElementById('ctxBtn'); if (cb) cb.focus(); } }
+    if (e.key === 'Enter' && (e.ctrlKey || e.metaKey) && e.target.id === 'msg') { e.preventDefault(); send(); }
+  });
+  function msgById(id) { var r = null; all().forEach(function (c) { c.msgs.forEach(function (m) { if (m.id === id) r = m; }); }); return r; }
+  function send() {
+    var c = find(state.sel); if (!c) return;
+    var text = state.draft.trim(); if (!text && !state.files.length) { var ta = document.getElementById('msg'); if (ta) ta.focus(); return; }
+    if (state.mode === 'senderr') { state.sendError = true; return render(); }
+    var m = { id: 'x' + Date.now(), who: ME, own: true, t: 'сейчас', body: text, pending: true,
+      files: state.files.length ? state.files.map(function (f) { return { n: f, s: '—' }; }) : null };
+    if (state.reply) { var r = msgById(state.reply); if (r) m.reply = { who: r.who, text: r.body.slice(0, 120) }; }
+    c.msgs.push(m); state.sending = true; state.reply = null; render();
+    setTimeout(function () { m.pending = false; state.sending = false; state.draft = ''; state.files = []; render(); var f = document.getElementById('feed'); if (f) f.scrollTop = f.scrollHeight; var ta = document.getElementById('msg'); if (ta) ta.focus(); }, 700);
+  }
+  window.addEventListener('resize', function () { render(); });
+  window.addEventListener('hashchange', function () { var s = location.hash.slice(1); if ('ABCDE'.indexOf(s) >= 0 && s.length === 1) setScreen(s); });
+  // Optional review parameters: ?state=senderr|noaccess|long|...&drawer=1&future=1&expand=1 (prototype only).
+  var qp = {}; try { location.search.slice(1).split('&').forEach(function (kv) { var p = kv.split('='); if (p[0]) qp[p[0]] = decodeURIComponent(p[1] || ''); }); } catch (e) {}
+  if (qp.state) { state.mode = qp.state; state.sendError = qp.state === 'senderr'; document.getElementById('stateSel').value = qp.state; if (qp.state === 'nosearch') state.q = 'Иванов'; }
+  if (qp.future === '1') { state.future = true; document.getElementById('futureChk').checked = true; }
+  var start = location.hash.slice(1);
+  setScreen(start.length === 1 && 'ABCDE'.indexOf(start) >= 0 ? start : 'A');
+  if (qp.drawer === '1') { state.drawer = true; render(); }
+  if (qp.expand === '1') { state.expanded = true; render(); }
+  if (qp.reply) { state.reply = qp.reply; state.files = ['Цены_итог.xlsx', LONGNAME]; state.draft = 'Подтверждаю цены, @Анна Смирнова'; render(); }
+})();
+</script>
+
+</body>
+</html>
