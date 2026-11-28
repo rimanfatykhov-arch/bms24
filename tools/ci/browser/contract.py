@@ -2741,6 +2741,132 @@ def office_workspace_checks(obs, exitcode=None):
             'office_revocation_closes_workspace': revocation, 'office_layout_and_browser_errors': layout}
 
 
+FINANCE_CASES = [('owned', 1440, 'en'), ('owned', 375, 'ru'), ('legacy', 1440, 'en'), ('legacy', 375, 'ru')]
+FINANCE_TITLES = {'en': 'Finance', 'ru': 'Финансы'}
+FINANCE_PLANNED = ['weekly', 'requests', 'council', 'calendar', 'treasury', 'reporting']
+FINANCE_ACTIVE = ['finance.php', 'financial_model.php', 'financial_model.php', 'financial_statements.php',
+                  'budgeting.php', 'budgeting.php', 'resource_gate.php']
+FINANCE_COUNTS = ['budgetsapproved', 'budgetssubmitted', 'centers', 'gatesblocked', 'gatesready', 'scenarios', 'statements']
+
+
+def finance_workspace_checks(obs, exitcode=None):
+    """FIN-W2 Finance workspace (finance_workspace.py): default-off switch, counters / per-currency plan / fact markers
+    equal to the service ground truth, menu and planned sections, canonical section pages, the existing financial gate,
+    company isolation, revocation, layout/errors."""
+    def run():
+        require(exitcode == 0, 'finance workspace browser process failed or was not run')
+        require(isinstance(obs, dict) and obs.get('status') == 'PASS' and not obs.get('error'), 'finance workspace run incomplete')
+        require(isinstance(obs.get('company'), str) and len(obs['company']) >= 8, 'company reference not recorded')
+        rows = obs.get('cases')
+        require(isinstance(rows, list) and [(r.get('shell'), r.get('width'), r.get('lang')) for r in rows] == FINANCE_CASES,
+                'owned/legacy x 1440 EN / 375 RU cases required')
+        model = obs.get('model') or {}
+        for who in ('MA', 'MB'):
+            m = model.get(who) or {}
+            c = m.get('counts')
+            require(isinstance(c, dict) and sorted(c) == FINANCE_COUNTS and all(isinstance(v, int) and v >= 0 for v in c.values()),
+                    'service ground truth for %s not recorded: %r' % (who, c))
+            require(isinstance(m.get('plan'), dict) and isinstance(m.get('facts'), dict), 'plan/fact ground truth for %s missing' % who)
+        ma, mb = model['MA'], model['MB']
+        require(ma['counts']['budgetsapproved'] >= 2 and ma['counts']['budgetssubmitted'] >= 1 and ma['counts']['statements'] >= 1
+                and ma['facts'].get('confirmed', 0) >= 1 and ma['facts'].get('none', 0) >= 1 and len(ma['plan']) >= 2,
+                'seeded company A finance data not visible to MA in the service: %r' % (ma,))
+        require('EUR' in mb['plan'] and 'EUR' not in ma['plan'], 'company B plan not separated from company A: %r / %r'
+                % (ma['plan'], mb['plan']))
+        for r in rows:
+            require(r.get('language_installed') is True, 'page language %s not active' % r.get('lang'))
+            require((r.get('page') or {}).get('owned_shell') is (r['shell'] == 'owned'), 'shell mode %s not active' % r['shell'])
+        return rows, model
+
+    def denied(x, what):
+        require(isinstance(x.get('http'), int) and x['http'] < 500 and x.get('workspace') is False and x.get('counts') == {}
+                and x.get('plan') == {} and x.get('leaked') == [], '%s reached finance data: %r'
+                % (what, {k: x.get(k) for k in ('http', 'workspace', 'counts', 'leaked')}))
+
+    def same(pg, m):
+        return (pg.get('counts') == m['counts'] and pg.get('plan') == m['plan'] and pg.get('facts') == m['facts']
+                and pg.get('attention') == m.get('attention'))
+
+    def switch_off():
+        run()
+        require((obs.get('switch_off') or {}).get('enabled') is False and (obs.get('switch_on') or {}).get('enabled') is True,
+                'site switch not toggled off/on')
+        off = obs.get('off') or {}
+        require(isinstance(off.get('http'), int) and off['http'] < 500, 'switched-off route answered %r' % off.get('http'))
+        require(off.get('workspace') is False and off.get('counts') == {}, 'workspace or counters shown while switched off')
+        require(off.get('menu') == [] and off.get('menu_on_model') == [], 'Finance menu item present while switched off')
+
+    def figures():
+        rows, model = run()
+        for r in rows:
+            pg = r.get('page') or {}
+            require(pg.get('http') == 200 and pg.get('workspace') is True, 'workspace not served at %s/%s' % (r['shell'], r['width']))
+            require(same(pg, model['MA']), 'figures differ from the service at %s/%s: %r vs %r' % (
+                r['shell'], r['width'], {k: pg.get(k) for k in ('counts', 'plan', 'facts', 'attention')}, model['MA']))
+            require(FINANCE_TITLES[r['lang']] in (pg.get('h1') or []), 'page heading must say %s' % FINANCE_TITLES[r['lang']])
+            require(pg.get('leaked') == [], 'company B titles visible: %r' % pg.get('leaked'))
+            require(len(pg.get('shown') or []) == 4, 'seeded company A objects not listed: %r' % pg.get('shown'))
+
+    def navigation():
+        rows, _ = run()
+        for r in rows:
+            pg = r.get('page') or {}
+            planned = pg.get('planned') or []
+            require([x.get('key') for x in planned] == FINANCE_PLANNED, 'planned sections missing: %r' % planned)
+            require(all(x.get('tag') == 'span' and x.get('inlink') is False and x.get('href') is None
+                        and x.get('disabled') == 'true' for x in planned), 'a planned section is a link or not disabled')
+            active = pg.get('active') or []
+            require([x.get('path') for x in active] == FINANCE_ACTIVE and all(x.get('uuid') == obs['company'] for x in active),
+                    'active sections must be the canonical pages of company A: %r' % active)
+            require([x.get('current') for x in active] == ['page'] + [None] * (len(FINANCE_ACTIVE) - 1),
+                    'only Overview may be current in the section menu')
+            if r['shell'] == 'owned':
+                menu = [x for x in pg.get('menu') or [] if x.get('visible')]
+                require(len(menu) == 1 and menu[0].get('uuid') == obs['company'] and menu[0].get('current') == 'page',
+                        'exactly one current Finance item expected in the %s px owned menu: %r' % (r['width'], pg.get('menu')))
+
+    def sections():
+        rows, _ = run()
+        landing = rows[0].get('landing')
+        require(isinstance(landing, list) and [x.get('path') for x in landing] == FINANCE_ACTIVE,
+                'section links not followed: %r' % landing)
+        require(all(x.get('http') == 200 and not x.get('workspace_error') for x in landing),
+                'a section page failed for MA: %r' % landing)
+
+    def gate_and_isolation():
+        _, model = run()
+        e = obs.get('employee') or {}
+        denied(e, 'employee without the financial gate')
+        require(e.get('menu') == [] and e.get('menu_on_tasks') == [], 'Finance menu item shown to an employee')
+        denied(obs.get('foreign') or {}, 'company B manager on company A')
+        b = obs.get('own_b') or {}
+        require(b.get('http') == 200 and b.get('workspace') is True and same(b, model['MB']) and b.get('leaked') == [],
+                'company B workspace must show B figures only: %r' % ({k: b.get(k) for k in ('counts', 'plan', 'leaked')},))
+
+    def revocation():
+        run()
+        rv = obs.get('revocation') or {}
+        before, after = rv.get('before') or {}, rv.get('after') or {}
+        require(before.get('workspace') is True and obs.get('revoked_flag') is True, 'revocation not applied after a baseline visit')
+        denied(after, 'revoked member')
+        require(obs.get('reopened_flag') is True, 'membership not reopened after the check')
+
+    def layout():
+        rows, _ = run()
+        for r in rows:
+            box = (r.get('page') or {}).get('hscroll')
+            require(isinstance(box, dict) and isinstance(box.get('scroll'), int) and box.get('inner') == r['width']
+                    and box['scroll'] <= box['inner'], 'finance page scrolls horizontally at %s px: %r' % (r['width'], box))
+            violations = browser_event_violations(r.get('browser_events'))
+            require(not violations, 'browser errors: %r' % violations[:3])
+            require(r.get('server_errors') == [], 'HTTP 5xx: %r' % (r.get('server_errors'),))
+
+    return {'finance_switch_off_hides_route_and_menu': switch_off, 'finance_figures_equal_service_ground_truth': figures,
+            'finance_menu_and_planned_sections': navigation, 'finance_sections_open_canonical_pages': sections,
+            'finance_gate_and_company_isolation': gate_and_isolation,
+            'finance_revocation_closes_workspace': revocation, 'finance_layout_and_browser_errors': layout}
+
+
 OFFICEIN_CASES = [('owned', 1440, 'en'), ('owned', 375, 'ru'), ('legacy', 1440, 'en'), ('legacy', 375, 'ru')]
 OFFICEIN_TITLES = {'en': 'Incoming', 'ru': 'Входящие'}
 OFFICEIN_RACE = 6
@@ -2934,6 +3060,7 @@ def required_check_names():
             + list(notification_bell_checks({}))
             + list(adaptive_nav_checks({}))
             + list(office_workspace_checks({}))
+            + list(finance_workspace_checks({}))
             + list(office_incoming_checks({})))
 
 

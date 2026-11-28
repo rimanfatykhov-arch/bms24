@@ -146,10 +146,14 @@ def check(root=ROOT):
     # See docs/reconcile/terminology-cascade-std-source-preservation.json (line-by-line before/after).
     reviewed_followup['local/kbacompany/lang/en/local_kbacompany.php'] = 'e0d49c73c41b137f6d6927eda8afc128c30a0b30ac5917c24a443f201ca9bf47'
     reviewed_followup['local/kbacompany/lang/ru/local_kbacompany.php'] = '07df4610a4549fe8a08b92107cdefb480796e15fe40ee371a4e36c2286cfa0e4'
-    # DOC-W3 incoming register (owner decisions 27.11.2026, #196): officein_* RU/EN block after the #187 terminology update.
+    # FIN-W2 Finance workspace (owner task 2026-11-24): financews_* RU/EN block after the terminology update (#187); read-only, default off.
+    # See docs/finance/FIN_W2_FINANCE_WORKSPACE.md.
+    reviewed_followup['local/kbacompany/lang/en/local_kbacompany.php'] = '2d98947bc7704184d2a31887380d087f6266449f9ef3c8d813b6234096ad804e'
+    reviewed_followup['local/kbacompany/lang/ru/local_kbacompany.php'] = '6b60dd6f8a4b278fe9027d05790304ba708e7addbd3ea8a35ce403910b6cda19'
+    # DOC-W3 incoming register (owner decisions 27.11.2026, #196): officein_* RU/EN block after the FIN-W2 #186 block.
     # See docs/reconcile/office-incoming-doc-w3-source-preservation.json.
-    reviewed_followup['local/kbacompany/lang/en/local_kbacompany.php'] = 'f01c2a213fc3428979980c53e0cc7e506eb833fa033355216179ac7e79676ff2'
-    reviewed_followup['local/kbacompany/lang/ru/local_kbacompany.php'] = '340a03ab3bb067106e039239adfa80f20b80391dab3c137eff25f2518208bf48'
+    reviewed_followup['local/kbacompany/lang/en/local_kbacompany.php'] = '751a7100efb3c6943526ff8e32f04aa0357ea8df102e8b7f0a25fedd7357fbf9'
+    reviewed_followup['local/kbacompany/lang/ru/local_kbacompany.php'] = 'd47d59258a28dd94aaae6c02c4daadc4667f8940d1a6698a902f199a541148f0'
     for row in plan['rows']:
         path=root/row['path']
         if not path.is_file() or path.is_symlink():

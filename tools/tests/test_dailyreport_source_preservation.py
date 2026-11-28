@@ -90,6 +90,10 @@ R5A_MARKER=b'\n// Daily reports R5a (2026-11-24): reporting calendar and absence
 _R5A=json.loads((ROOT/'docs/reconcile/daily-reports-r5a-source-preservation.json').read_text(encoding='utf-8'))
 R5A_BEFORE={lang:next(r['before_sha256_lf'] for r in _R5A['files'] if r['path']==f'local/kbacompany/lang/{lang}/local_kbacompany.php')
             for lang in ('en','ru')}
+FINANCE_MARKER=b'\n// FIN-W2 Finance workspace (2026-11-24): read-only overview over existing financial model, budgets and resource gates.\n'
+_FINANCE=json.loads((ROOT/'docs/reconcile/finance-workspace-fin-w2-source-preservation.json').read_text(encoding='utf-8'))
+FINANCE_BEFORE={lang:next(r['before_sha256_lf'] for r in _FINANCE['files'] if r['path']==f'local/kbacompany/lang/{lang}/local_kbacompany.php')
+                for lang in ('en','ru')}
 _R2=json.loads((ROOT/'docs/reconcile/daily-reports-r2-source-preservation.json').read_text(encoding='utf-8'))
 R2_AFTER={lang:next(r['after_sha256_lf'] for r in _R2['files'] if r['path']==f'local/kbacompany/lang/{lang}/local_kbacompany.php')
           for lang in ('en','ru')}
@@ -123,10 +127,10 @@ def lang_bytes(lang):
     name=f'local/kbacompany/lang/{lang}/local_kbacompany.php'
     data=(ROOT/name).read_bytes().replace(b'\r\n',b'\n')
     row=next(r for r in _TER['files'] if r['path']==name)
-    # Blocks appended after #187 (DOC-W3) are not part of the terminology file: bind #187 to the prefix before them.
+    # Blocks appended after #187 (FIN-W2, then DOC-W3) are not part of the terminology file: bind #187 to the prefix before them.
     tail=b''
-    if OFFICEIN_MARKER in data:
-        data,tail=data.split(OFFICEIN_MARKER,1); tail=OFFICEIN_MARKER+tail
+    if FINANCE_MARKER in data:
+        data,tail=data.split(FINANCE_MARKER,1); tail=FINANCE_MARKER+tail
     assert hashlib.sha256(data).hexdigest()==row['after_sha256_lf'],name
     current=data.split(b'\n')
     for rep in row['line_replacements']:
@@ -200,16 +204,24 @@ class Preservation(unittest.TestCase):
                                             if R5A_MARKER in office:
                                                 # R5a follows the Office block: the published file is byte-identical up to the R5a marker.
                                                 office,r5a=office.split(R5A_MARKER)
-                                                if OFFICEIN_MARKER in r5a:
-                                                    # Everything up to the DOC-W3 marker is the file ending with the R5a block; the incoming keys are new.
-                                                    r5a,officein=r5a.split(OFFICEIN_MARKER)
+                                                if FINANCE_MARKER in r5a:
+                                                    # Everything up to the FIN-W2 Finance marker is the published file ending with the daily reports R5a block; its keys are new.
+                                                    r5a,finance=r5a.split(FINANCE_MARKER)
                                                     raw=(ROOT/f'local/kbacompany/lang/{lang}/local_kbacompany.php').read_bytes().replace(b'\r\n',b'\n')
-                                                    # DOC-W3 is appended to the #187 file as installed (terminology applied).
-                                                    self.assertEqual(OFFICEIN_BEFORE[lang],hashlib.sha256(raw.split(OFFICEIN_MARKER)[0]).hexdigest())
-                                                    inkeys=keys(officein)
-                                                    self.assertEqual(112,len(inkeys));self.assertEqual(len(inkeys),len(set(inkeys)))
-                                                    self.assertTrue(all(k.startswith((b'officein_',b'privacy:metadata:officeincoming')) for k in inkeys))
-                                                    self.assertFalse(set(inkeys)&set(keys(data.split(OFFICEIN_MARKER)[0])))
+                                                    # FIN-W2 is appended to the #187 file as installed (terminology applied).
+                                                    self.assertEqual(FINANCE_BEFORE[lang],hashlib.sha256(raw.split(FINANCE_MARKER)[0]).hexdigest())
+                                                    if OFFICEIN_MARKER in finance:
+                                                        # DOC-W3 is appended after the FIN-W2 block: everything up to its marker is the file as merged with FIN-W2.
+                                                        finance,officein=finance.split(OFFICEIN_MARKER)
+                                                        self.assertEqual(OFFICEIN_BEFORE[lang],hashlib.sha256(raw.split(OFFICEIN_MARKER)[0]).hexdigest())
+                                                        inkeys=keys(officein)
+                                                        self.assertEqual(112,len(inkeys));self.assertEqual(len(inkeys),len(set(inkeys)))
+                                                        self.assertTrue(all(k.startswith((b'officein_',b'privacy:metadata:officeincoming')) for k in inkeys))
+                                                        self.assertFalse(set(inkeys)&set(keys(raw.split(OFFICEIN_MARKER)[0])))
+                                                    financekeys=keys(finance)
+                                                    self.assertEqual(83,len(financekeys));self.assertEqual(len(financekeys),len(set(financekeys)))
+                                                    self.assertTrue(all(k.startswith(b'financews_') for k in financekeys))
+                                                    self.assertFalse(set(financekeys)&set(keys(data.split(FINANCE_MARKER)[0])))
                                             # The R3 file is byte-identical up to the R5a marker.
                                             self.assertEqual(R5A_BEFORE[lang],hashlib.sha256(data.split(R5A_MARKER)[0]+b'\n').hexdigest())
                                             r5akeys=keys(r5a)

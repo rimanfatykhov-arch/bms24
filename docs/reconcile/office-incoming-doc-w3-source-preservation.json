@@ -1,20 +1,20 @@
 {
  "scope": "exact intentional source updates; not runtime or release acceptance",
- "base_sha": "cfc4cf6ab1a979ccfa75b9593c4c539f58c90eaf (main with the #187 terminology update over R5a #172)",
+ "base_sha": "39ac960 (main with FIN-W2 #186 over the #187 terminology update and R5a #172)",
  "normalization": "CRLF to LF only",
- "previous_evidence": "docs/reconcile/terminology-cascade-std-source-preservation.json (#187 terminology, in-place RU/EN replacements)",
+ "previous_evidence": "docs/reconcile/finance-workspace-fin-w2-source-preservation.json (FIN-W2 #186 block appended after #187 terminology)",
  "decision": "docs/office/DOC_W3_INCOMING_DECISIONS.md (owner decisions 27.11.2026, #196: DOC-W3 incoming register, BMS-12)",
- "change": "Append the DOC-W3 incoming register block (112 officein_* keys and privacy:metadata:officeincoming) after the #187 terminology file (R5a block last). Retain all preceding keys byte-for-byte. Schema step 2026112700 adds three tables; the register is behind local_kbacompany/office_incoming_enabled (default off).",
+ "change": "Append the DOC-W3 incoming register block (112 officein_* keys and privacy:metadata:officeincoming) after the FIN-W2 #186 block (which follows the #187 terminology file). Retain all preceding keys byte-for-byte. Schema step 2026112700 adds three tables; the register is behind local_kbacompany/office_incoming_enabled (default off).",
  "files": [
   {
    "path": "local/kbacompany/lang/en/local_kbacompany.php",
-   "before_sha256_lf": "e0d49c73c41b137f6d6927eda8afc128c30a0b30ac5917c24a443f201ca9bf47",
-   "after_sha256_lf": "f01c2a213fc3428979980c53e0cc7e506eb833fa033355216179ac7e79676ff2"
+   "before_sha256_lf": "2d98947bc7704184d2a31887380d087f6266449f9ef3c8d813b6234096ad804e",
+   "after_sha256_lf": "751a7100efb3c6943526ff8e32f04aa0357ea8df102e8b7f0a25fedd7357fbf9"
   },
   {
    "path": "local/kbacompany/lang/ru/local_kbacompany.php",
-   "before_sha256_lf": "07df4610a4549fe8a08b92107cdefb480796e15fe40ee371a4e36c2286cfa0e4",
-   "after_sha256_lf": "340a03ab3bb067106e039239adfa80f20b80391dab3c137eff25f2518208bf48"
+   "before_sha256_lf": "6b60dd6f8a4b278fe9027d05790304ba708e7addbd3ea8a35ce403910b6cda19",
+   "after_sha256_lf": "d47d59258a28dd94aaae6c02c4daadc4667f8940d1a6698a902f199a541148f0"
   }
  ]
 }

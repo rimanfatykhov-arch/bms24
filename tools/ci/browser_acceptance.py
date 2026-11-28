@@ -188,6 +188,9 @@ try:
     # DOC-W2 Office workspace: default-off switch, counters = service, menu/planned sections, A/B isolation, revocation.
     office_exit = timed('office_workspace', lambda: browser('office_workspace.py', 'verify'))
     record(contract.evaluate(contract.office_workspace_checks(load('office-workspace-result.json'), office_exit)))
+    # FIN-W2 Finance workspace: default-off switch, figures = service, menu/planned sections, financial gate, A/B, revocation.
+    finance_exit = timed('finance_workspace', lambda: browser('finance_workspace.py', 'verify'))
+    record(contract.evaluate(contract.finance_workspace_checks(load('finance-workspace-result.json'), finance_exit)))
     # DOC-W3 incoming register: switch/rights, create once, number + repeat, correction, A/B isolation, parallel race.
     officein_exit = timed('office_incoming', lambda: browser('office_incoming.py', 'verify'))
     record(contract.evaluate(contract.office_incoming_checks(load('office-incoming-result.json'), officein_exit)))
