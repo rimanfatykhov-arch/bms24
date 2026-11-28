@@ -449,6 +449,8 @@ jobs:
           pattern: ci-tiers-*
           path: ${{ runner.temp }}/gate
       - name: Gate verdict (job outcomes + identity + reports; waits for FULL only when the profile is FULL)
+        id: verdict
+        if: ${{ !cancelled() && success() && !contains(needs.*.result, 'cancelled') }}
         env:
           GITHUB_TOKEN: ${{ github.token }}
           PLANNED: ${{ needs.plan.outputs.targets }}
@@ -460,9 +462,15 @@ jobs:
             --wait-full 4200 | tee -a $GITHUB_STEP_SUMMARY
           exit ${PIPESTATUS[0]}
       - uses: actions/upload-artifact@v4
-        if: always()
+        if: ${{ !cancelled() }}
         with:
           name: ci-tiers-merge-gate-a${{ github.run_attempt }}
           path: ${{ runner.temp }}/merge-gate.json
           retention-days: 30
           if-no-files-found: warn
+      # Keep the required job fail-closed even if the verdict step did not run.
+      - name: Require successful verdict
+        if: ${{ always() && (cancelled() || steps.verdict.outcome != 'success') }}
+        run: |
+          echo '::error::Merge gate verdict did not complete successfully.'
+          exit 1

@@ -265,6 +265,19 @@ class ReviewFindings(unittest.TestCase):
         for path in g.FULL_WORKFLOWS:
             self.assertTrue((Path(__file__).resolve().parents[2] / path).is_file(), path)
 
+    def test_workflow_cancellation_stops_verdict_wait_without_skipping_required_job(self):
+        path = Path(__file__).resolve().parents[2] / '.github/workflows/ci-tiers.yml'
+        gate = path.read_text(encoding='utf-8').split('\n  merge-gate:\n', 1)[1]
+        job, steps = gate.split('\n    steps:\n', 1)
+        self.assertIn('\n    if: always()\n', job)
+        verdict = steps.split('\n      - name: Gate verdict', 1)[1].split('\n      - ', 1)[0]
+        self.assertIn('\n        id: verdict\n', verdict)
+        self.assertIn("\n        if: ${{ !cancelled() && success() && !contains(needs.*.result, 'cancelled') }}\n", verdict)
+        self.assertIn('--wait-full 4200', verdict)
+        guard = steps.split('\n      - name: Require successful verdict\n', 1)[1]
+        self.assertIn("if: ${{ always() && (cancelled() || steps.verdict.outcome != 'success') }}", guard)
+        self.assertIn('\n          exit 1\n', guard)
+
     # ---- Codex review P2 (Issue #82 comment 6872634357): attempt/job provenance of each report
     def test_identity_attempt_and_job_must_match_the_execution(self):
         c = cls('STANDARD', ['local/kbacompany/tasks.php'])
