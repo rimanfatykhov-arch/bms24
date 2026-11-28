@@ -1,6 +1,6 @@
 # CLOUD-0 — SaaS Architecture & Audit
 
-**Статус: PROPOSED, ревизия 2 (закрытие handoff #204).** Ожидает независимой проверки Codex (OD-9) по exact head. Только аудит и проект. Документ не разрешает CLOUD-1a, DDL, DNS, provisioning, подключение платных сервисов, оплату, merge, TEST/staging/production или deployment.
+**Статус: PROPOSED, ревизия 2.1 (закрытие handoff #204, замечания Codex 7237057682).** Ожидает независимой проверки Codex (OD-9) по exact head. Только аудит и проект. Документ не разрешает CLOUD-1a, DDL, DNS, provisioning, подключение платных сервисов, оплату, merge, TEST/staging/production или deployment.
 
 | Поле | Значение |
 | --- | --- |
@@ -35,7 +35,7 @@
 | [BMS-ARC-CLOUD-001](https://docs.google.com/document/d/1fGSKD4tDUzzjumYwxAgAZl3u3hZD78ebNAPLTo7zqZc/edit) v0.1 PROPOSED | Google Drive, 28.11.2026 | Прочитано полностью |
 | [BMS-ARC-REG-001](https://docs.google.com/document/d/1mC6aEAWzMnBuE2ovZpfumG-T5LHj2Y8XDcZadQpaLsk/edit) v0.1 PROPOSED | то же | Прочитано полностью |
 | [BMS-ARC-REG-002](https://docs.google.com/document/d/12DvSqybN58QFcxWFziJfmwCCENZW9Fo5zQ7f_7rIYig/edit) v0.1 PROPOSED | то же | Прочитано полностью |
-| [REG-002 Schema Package v0.1.zip](https://drive.google.com/file/d/1y0CAa4nHhnSRxMRJHSIpWACRdC8C2cX6/view) | Drive id `1y0CAa4nHhnSRxMRJHSIpWACRdC8C2cX6`, 151 666 байт, `modifiedTime` 2026-09-20T04:17:24Z | **SHA-256 ZIP `093fa2936bc9f32c2828f9acfb2459de37fc221701319d1b9a6e91a699da28f3` совпадает с §18** — подтвердил владелец, скачав байты ([#204, комментарий 7236624093](https://github.com/rimanfatykhov-arch/bms24/issues/204#issuecomment-7236624093)). Claude независимо проверил метаданные Drive: размер 151 666 байт и дата изменения (не менялся с 20.09.2026) совпадают. Повторный хеш байтов Claude: NOT RUN (содержимое не скачивалось в сессию). Внутренние файлы (YAML/JSON/Mermaid/PNG) и их SHA-256: NOT RUN; импорт: не выполнялся (CLOUD-1a HOLD) |
+| [REG-002 Schema Package v0.1.zip](https://drive.google.com/file/d/1y0CAa4nHhnSRxMRJHSIpWACRdC8C2cX6/view) | Drive id `1y0CAa4nHhnSRxMRJHSIpWACRdC8C2cX6`, 151 666 байт, `modifiedTime` 2026-09-20T04:17:24Z | **SHA-256 ZIP `093fa2936bc9f32c2828f9acfb2459de37fc221701319d1b9a6e91a699da28f3` совпадает с §18** — байты скачал и проверил Codex ([#204, комментарий 7236624093](https://github.com/rimanfatykhov-arch/bms24/issues/204#issuecomment-7236624093); комментарий опубликован с аккаунта владельца, атрибуция подтверждена в [ревью Codex 7237057682](https://github.com/rimanfatykhov-arch/bms24/pull/207#issuecomment-7237057682)). Claude независимо проверил метаданные Drive: размер 151 666 байт и дата изменения (не менялся с 20.09.2026) совпадают. Повторный хеш байтов Claude: NOT RUN (содержимое не скачивалось в сессию). Внутренние файлы (YAML/JSON/Mermaid/PNG) и их SHA-256: NOT RUN; импорт: не выполнялся (CLOUD-1a HOLD) |
 | [BMS-ARC-ENT-001](https://docs.google.com/document/d/1D6BBA1_12rkRiXu2sM6y5A6gJQR_ggUCWHe1ujg1hx4/edit) v0.1 PROPOSED | то же | Прочитано полностью |
 | [BMS-ARC-MIG-001](https://docs.google.com/document/d/19-a39u5U4yI73svjBVyQTafAxWtmTxbNe47D-peIThQ/edit) v0.1 PROPOSED | то же | Прочитано полностью |
 | [RELEASE ROADMAP 3.1](https://docs.google.com/document/d/1pHuELJWEXaynqZqI0uzm8brzoLnq2lNnW6u9CCPY85s/edit) | изменён 28.11.2026 07:38 UTC | Прочитано (RR31-D01–D07, CLOUD-0…5, G0–G5) |
@@ -132,9 +132,13 @@
 
 G3 = PASS только если все пункты выполнены на двух пространствах A и B с синтетическими данными, в согласованной среде, с evidence (exact SHA/ZIP, журнал команд, контрольные суммы):
 
-1. **Исходное состояние B зафиксировано:** контрольные суммы данных B (записи БД в границах B, файлы B, конфигурация B, entitlements/проекция B) и доступность B до операции.
+1. **Исходное состояние B зафиксировано:** контрольный набор B₀ — контрольные суммы данных B на момент начала операции (записи БД в границах B, файлы B, конфигурация B, entitlements/проекция B) — и доступность B до операции.
 2. **Восстановление A:** A восстанавливается на точку T; после восстановления состояние A совпадает с эталоном T.
-3. **Отсутствие воздействия на B:** после операции контрольные суммы B идентичны п. 1, записи B, сделанные во время восстановления A, не потеряны, B оставался доступным (без простоя сверх согласованного), сессии и кеш B не сброшены и не смешаны.
+3. **Отсутствие воздействия на B** — три раздельно проверяемых условия:
+   - 3a. **Неизменность контрольного набора.** Объекты, входящие в B₀, после операции имеют те же контрольные суммы, что в п. 1. Во время восстановления A контрольный трафик эти объекты не изменяет.
+   - 3b. **Сохранность новых записей B.** Во время восстановления A в B выполняется заранее описанный контрольный трафик; каждая запись, подтверждённая B (ответ об успехе), фиксируется в журнале W_B с идентификатором и контрольной суммой. После операции все записи W_B присутствуют в B и совпадают с журналом; записей сверх W_B (кроме служебных, перечисленных заранее) нет.
+   - 3c. **Итоговый эталон.** Итоговое состояние B равно эталону «B₀ + W_B»; это сравнение заменяет сравнение полного хеша B с п. 1, который не может проверить 3a и 3b одновременно.
+   - 3d. **Доступность и изоляция сессий.** B оставался доступным без простоя сверх согласованного порога; сессии и кеш B не сброшены и не смешаны с A.
 4. **Отрицательные tenant-сценарии:** одинаковые локальные ID в A и B не открывают чужие объекты; прямые URL/API/файлы/экспорт/поиск/кеш/cron A недоступны из B и наоборот; отзыв доступа действует в открытой сессии.
 5. **Восстановление общей платформы плюс экспорт компании не засчитывается** как выполнение п. 2–3.
 
@@ -333,7 +337,7 @@ BMS Cloud Control Plane — отдельный сервис, модульный 
 | Повторный `git grep` вызовов `entitlement_service::has/explain` вне тестов | RUN: только `platform_boundary_service.php:55` (`explain`, диагностика) |
 | Сверка L1–L7 с кодом | RUN (чтение кода), результаты в §6 |
 | Метаданные ZIP REG-002 в Drive (размер, дата) | RUN, совпадают с подтверждением владельца |
-| SHA-256 байтов ZIP REG-002 | Подтверждено владельцем; повторный хеш Claude NOT RUN |
+| SHA-256 байтов ZIP REG-002 | PASS — проверил Codex ([#204](https://github.com/rimanfatykhov-arch/bms24/issues/204#issuecomment-7236624093)); повторный хеш Claude NOT RUN |
 | SHA-256 внутренних файлов REG-002, импорт | NOT RUN (CLOUD-1a HOLD) |
 | `git diff --check`, `python tools/check_reconcile_1879.py`, `python scripts/qa_local.py`, разбор JSON | Результаты — в handoff-комментарии #207 |
 | Moodle PHPUnit, upgrade, cron, browser, security acceptance | NOT RUN (docs-only) |
@@ -353,5 +357,7 @@ BMS Cloud Control Plane — отдельный сервис, модульный 
 | 28.11.2026 | Ревизия 1, head `4575a1e4`, base `0884643` | Аудит, рекомендация H, OD-1…OD-9 как открытые вопросы. В §5 и §11 допускалась бета на общей платформе с трактовкой G3 «restore платформы + экспорт компании» |
 | 28.11.2026 | [Решение владельца 7236311964](https://github.com/rimanfatykhov-arch/bms24/pull/207#issuecomment-7236311964) | Приняты OD-1, OD-3, OD-6, OD-7, OD-8, OD-9; OD-2/4/5, Hire, механизм восстановления, коммерческие условия — открыты |
 | 28.11.2026 | [Предварительная сверка 7236606204](https://github.com/rimanfatykhov-arch/bms24/pull/207#issuecomment-7236606204) | Строка OD-1 в §11 противоречила решению; требуется проверяемый критерий G3 |
-| 28.11.2026 | [Контрольная сумма REG-002 7236624093](https://github.com/rimanfatykhov-arch/bms24/issues/204#issuecomment-7236624093) | SHA-256 ZIP подтверждён |
+| 28.11.2026 | [Контрольная сумма REG-002 7236624093](https://github.com/rimanfatykhov-arch/bms24/issues/204#issuecomment-7236624093) | SHA-256 ZIP подтверждён Codex |
 | 28.11.2026 | Ревизия 2, base `74e00c4` | Трактовка G3 ревизии 1 отменена; §5 переписан, добавлен критерий 5.2; §11 — матрица закрытия OD; mapping кодов 6.1 и статусов 6.2; ADR-SAAS-002; обновлён evidence inventory |
+| 28.11.2026 | [Ревью Codex 7237057682](https://github.com/rimanfatykhov-arch/bms24/pull/207#issuecomment-7237057682) на `e33def05` | Техническая сверка пройдена, итог HOLD: исправить provenance REG-002 и проверяемость §5.2 п. 3 |
+| 28.11.2026 | Ревизия 2.1 | Проверка байтов ZIP REG-002 атрибутирована Codex (Markdown и JSON); §5.2 п. 3 разделён на 3a–3d: неизменность B₀, журнал подтверждённых записей W_B, итоговый эталон «B₀ + W_B», доступность; ADR-SAAS-002 ссылается на эти условия |

@@ -1,6 +1,6 @@
 {
   "schema": "bms24.cloud0.evidence_inventory",
-  "version": "0.2",
+  "version": "0.2.1",
   "status": "PROPOSED",
   "captured_at": "2026-11-28",
   "baseline": {
@@ -241,8 +241,10 @@
         "sha256_expected_reg002_s18": "093fa2936bc9f32c2828f9acfb2459de37fc221701319d1b9a6e91a699da28f3",
         "sha256_zip_bytes": {
           "state": "PASS",
-          "verified_by": "owner",
-          "evidence": "https://github.com/rimanfatykhov-arch/bms24/issues/204#issuecomment-7236624093"
+          "verified_by": "codex",
+          "evidence": "https://github.com/rimanfatykhov-arch/bms24/issues/204#issuecomment-7236624093",
+          "posted_from_account": "owner",
+          "attribution_evidence": "https://github.com/rimanfatykhov-arch/bms24/pull/207#issuecomment-7237057682"
         },
         "metadata_check_by_claude": {
           "state": "PASS",
@@ -414,7 +416,13 @@
     "G3": {
       "state": "HOLD",
       "criterion": "docs/cloud/CLOUD-0_SAAS_ARCHITECTURE_AUDIT.md §5.2",
-      "shared_restore_plus_export_counts": false
+      "shared_restore_plus_export_counts": false,
+      "b_checks": {
+        "3a": "control set B0 unchanged: objects in B0 keep their checksums",
+        "3b": "journal W_B of writes confirmed by B during restore of A: all present and matching, no unexpected extra records",
+        "3c": "final state of B equals reference B0 + W_B (replaces full-hash comparison)",
+        "3d": "B availability within agreed threshold; sessions and cache of B not reset or mixed"
+      }
     },
     "CLOUD-1a": {
       "state": "HOLD",
