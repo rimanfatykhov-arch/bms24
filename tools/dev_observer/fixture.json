@@ -1,0 +1,241 @@
+{
+  "schema_version": 1,
+  "snapshot": {
+    "collected_at": "2026-11-28T06:00:00+00:00",
+    "main": "cccccccccccccccccccccccccccccccccccccccc",
+    "complete": true,
+    "errors": [],
+    "tasks": [
+      {
+        "kind": "issue",
+        "number": 10,
+        "executor": null,
+        "registry_status": null,
+        "state": "open"
+      },
+      {
+        "kind": "issue",
+        "number": 11,
+        "executor": "Claude",
+        "registry_status": "HOLD",
+        "state": "open"
+      },
+      {
+        "kind": "issue",
+        "number": 12,
+        "executor": "Codex",
+        "registry_status": null,
+        "state": "open"
+      },
+      {
+        "kind": "issue",
+        "number": 13,
+        "executor": "Codex",
+        "registry_status": null,
+        "state": "open"
+      },
+      {
+        "kind": "issue",
+        "number": 14,
+        "executor": "Codex",
+        "registry_status": null,
+        "state": "open"
+      },
+      {
+        "kind": "issue",
+        "number": 15,
+        "executor": "Codex",
+        "registry_status": null,
+        "state": "open"
+      },
+      {
+        "head": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "tree": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "base": "cccccccccccccccccccccccccccccccccccccccc",
+        "kind": "pr",
+        "number": 17,
+        "executor": "Claude",
+        "state": "open",
+        "draft": false,
+        "merged": false,
+        "mergeable": true,
+        "comments": [
+          71,
+          72
+        ],
+        "reviews": [
+          {
+            "id": 80,
+            "head": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "state": "APPROVED"
+          }
+        ],
+        "runs": [
+          {
+            "id": 110,
+            "attempt": 1,
+            "workflow": ".github/workflows/ci-tiers.yml",
+            "head": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "base": "cccccccccccccccccccccccccccccccccccccccc",
+            "pr": 17,
+            "conclusion": "success",
+            "jobs": [
+              {
+                "id": 120,
+                "name": "Plan targets",
+                "conclusion": "success"
+              },
+              {
+                "id": 121,
+                "name": "FAST / this-pr",
+                "conclusion": "success"
+              },
+              {
+                "id": 122,
+                "name": "Merge gate",
+                "conclusion": "success"
+              }
+            ]
+          },
+          {
+            "id": 111,
+            "attempt": 1,
+            "workflow": ".github/workflows/pr90-disposable.yml",
+            "head": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "base": "cccccccccccccccccccccccccccccccccccccccc",
+            "pr": 17,
+            "conclusion": "success",
+            "jobs": [
+              {
+                "id": 130,
+                "name": "package",
+                "conclusion": "success"
+              }
+            ],
+            "artifacts": [
+              {
+                "id": 140,
+                "expired": false,
+                "package": true
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "kind": "issue",
+        "number": 18,
+        "executor": "Codex",
+        "registry_status": null,
+        "state": "open"
+      }
+    ]
+  },
+  "evidence": {
+    "tasks": {
+      "11": {
+        "head": "cccccccccccccccccccccccccccccccccccccccc",
+        "checked_at": "2026-11-28T06:00:00+00:00",
+        "requires_docs": false,
+        "dependencies": []
+      },
+      "12": {
+        "head": "cccccccccccccccccccccccccccccccccccccccc",
+        "checked_at": "2026-11-28T06:00:00+00:00",
+        "requires_docs": false,
+        "dependencies": [
+          11
+        ]
+      },
+      "13": {
+        "head": "cccccccccccccccccccccccccccccccccccccccc",
+        "checked_at": "2026-11-28T06:00:00+00:00",
+        "requires_docs": false,
+        "dependencies": []
+      },
+      "14": {
+        "head": "cccccccccccccccccccccccccccccccccccccccc",
+        "checked_at": "2026-11-28T06:00:00+00:00",
+        "requires_docs": true,
+        "dependencies": [],
+        "docs": {
+          "document_ref": 1,
+          "drive_digest": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+          "github_digest": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"
+        }
+      },
+      "15": {
+        "head": "cccccccccccccccccccccccccccccccccccccccc",
+        "checked_at": "2026-11-28T06:00:00+00:00",
+        "requires_docs": true,
+        "dependencies": []
+      },
+      "17": {
+        "head": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "tree": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "base": "cccccccccccccccccccccccccccccccccccccccc",
+        "checked_at": "2026-11-28T06:00:00+00:00",
+        "requires_docs": false,
+        "dependencies": [],
+        "gate": {
+          "head": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "tree": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+          "base": "cccccccccccccccccccccccccccccccccccccccc",
+          "run": 110,
+          "attempt": 1,
+          "profile": "FAST",
+          "decision": "PASS"
+        },
+        "review": {
+          "head": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "tree": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+          "base": "cccccccccccccccccccccccccccccccccccccccc",
+          "review": 80,
+          "verdict": "PASS",
+          "reviewer": "Codex",
+          "appointed": true,
+          "independent": true
+        },
+        "release": {
+          "package": {
+            "head": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "tree": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+            "base": "cccccccccccccccccccccccccccccccccccccccc",
+            "run": 111,
+            "attempt": 1,
+            "artifact": 140,
+            "baseline": "cccccccccccccccccccccccccccccccccccccccc",
+            "zip_sha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+            "manifest_sha256": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+            "manifest": {
+              "head": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+              "tree": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+              "base": "cccccccccccccccccccccccccccccccccccccccc",
+              "baseline": "cccccccccccccccccccccccccccccccccccccccc",
+              "zip_sha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
+            }
+          },
+          "owner": {
+            "head": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "tree": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+            "base": "cccccccccccccccccccccccccccccccccccccccc",
+            "comment": 71,
+            "zip_sha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+            "decision": "APPROVED"
+          },
+          "release_checks": "PASS",
+          "receipt": {
+            "head": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "tree": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+            "base": "cccccccccccccccccccccccccccccccccccccccc",
+            "comment": 72,
+            "zip_sha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+            "server_confirmed": true,
+            "result": "PASS",
+            "smoke": "PASS"
+          }
+        }
+      }
+    }
+  }
+}
