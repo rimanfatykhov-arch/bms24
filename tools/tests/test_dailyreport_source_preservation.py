@@ -113,12 +113,35 @@ _DAY=json.loads((ROOT/'docs/reconcile/daily-summary-after110-source-preservation
 DAY_AFTER={lang:next(r['after_sha256_lf'] for r in _DAY['files'] if r['path']==f'local/kbacompany/lang/{lang}/local_kbacompany.php')
            for lang in PUBLISHED}
 
+_TER=json.loads((ROOT/'docs/reconcile/terminology-cascade-std-source-preservation.json').read_text(encoding='utf-8'))
+def lang_bytes(lang):
+    """Current LF bytes with the reviewed in-place terminology replacements (#187) reverted line by line.
+
+    The append-only chain below is checked on the pre-terminology content. The terminology change itself is bound
+    exactly: the current file must hash to after_sha256_lf and the reverted file to before_sha256_lf.
+    """
+    name=f'local/kbacompany/lang/{lang}/local_kbacompany.php'
+    data=(ROOT/name).read_bytes().replace(b'\r\n',b'\n')
+    row=next(r for r in _TER['files'] if r['path']==name)
+    # Blocks appended after #187 (DOC-W3) are not part of the terminology file: bind #187 to the prefix before them.
+    tail=b''
+    if OFFICEIN_MARKER in data:
+        data,tail=data.split(OFFICEIN_MARKER,1); tail=OFFICEIN_MARKER+tail
+    assert hashlib.sha256(data).hexdigest()==row['after_sha256_lf'],name
+    current=data.split(b'\n')
+    for rep in row['line_replacements']:
+        assert current[rep['line']-1]==rep['after'].encode('utf-8'),rep['line']
+        current[rep['line']-1]=rep['before'].encode('utf-8')
+    reverted=b'\n'.join(current)
+    assert hashlib.sha256(reverted).hexdigest()==row['before_sha256_lf'],name
+    return reverted+tail
+
 def keys(blob): return re.findall(rb"^\$string\['([^']+)'\]",blob,re.M)
 
 class Preservation(unittest.TestCase):
     def test_published_prefix_unchanged_and_new_keys_do_not_override_old(self):
         for lang,expected in PUBLISHED.items():
-            data=(ROOT/f'local/kbacompany/lang/{lang}/local_kbacompany.php').read_bytes().replace(b'\r\n',b'\n')
+            data=lang_bytes(lang)
             prefix,tail=data.split(DAY_MARKER)
             self.assertEqual(expected,hashlib.sha256(prefix).hexdigest())
             day,comm=tail.split(COMM_MARKER) if COMM_MARKER in tail else (tail,None)
@@ -180,7 +203,9 @@ class Preservation(unittest.TestCase):
                                                 if OFFICEIN_MARKER in r5a:
                                                     # Everything up to the DOC-W3 marker is the file ending with the R5a block; the incoming keys are new.
                                                     r5a,officein=r5a.split(OFFICEIN_MARKER)
-                                                    self.assertEqual(OFFICEIN_BEFORE[lang],hashlib.sha256(data.split(OFFICEIN_MARKER)[0]).hexdigest())
+                                                    raw=(ROOT/f'local/kbacompany/lang/{lang}/local_kbacompany.php').read_bytes().replace(b'\r\n',b'\n')
+                                                    # DOC-W3 is appended to the #187 file as installed (terminology applied).
+                                                    self.assertEqual(OFFICEIN_BEFORE[lang],hashlib.sha256(raw.split(OFFICEIN_MARKER)[0]).hexdigest())
                                                     inkeys=keys(officein)
                                                     self.assertEqual(112,len(inkeys));self.assertEqual(len(inkeys),len(set(inkeys)))
                                                     self.assertTrue(all(k.startswith((b'officein_',b'privacy:metadata:officeincoming')) for k in inkeys))
@@ -285,7 +310,7 @@ class Preservation(unittest.TestCase):
     def test_block_order_and_override_mutations_fail_the_structure_check(self):
         """A later block inserted before the day summary, or a later key overriding an earlier one, is detected."""
         for lang in PUBLISHED:
-            data=(ROOT/f'local/kbacompany/lang/{lang}/local_kbacompany.php').read_bytes().replace(b'\r\n',b'\n')
+            data=lang_bytes(lang)
             prefix,tail=data.split(DAY_MARKER)
             day,comm=tail.split(COMM_MARKER)
             comm=comm.split(R0_MARKER)[0]
