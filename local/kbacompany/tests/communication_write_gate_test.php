@@ -3,11 +3,15 @@ namespace local_kbacompany;
 
 defined('MOODLE_INTERNAL') || die();
 
+use local_kbacompany\local\battle_plan_discussion_service;
+use local_kbacompany\local\battle_plan_service;
 use local_kbacompany\local\communication_service;
 use local_kbacompany\local\communication_write_gate;
 use local_kbacompany\local\employee_service;
 use local_kbacompany\local\identity_registry;
+use local_kbacompany\local\meeting_service;
 use local_kbacompany\local\membership_access_service;
+use local_kbacompany\local\task_service;
 use local_kbacorporate\local\repository;
 
 /**
@@ -40,12 +44,186 @@ final class communication_write_gate_test extends \advanced_testcase {
             'threadtype' => 'group', 'title' => 'Gate group',
             'participants' => [(int)$peer->id, (int)$third->id],
         ]);
-        return compact('admin', 'company', 'other', 'author', 'peer', 'third', 'thread');
+        return compact('admin', 'company', 'other', 'otherid', 'author', 'peer', 'third', 'thread');
     }
 
     private function notifications(string $messageuuid, int $userid): int {
         global $DB;
         return $DB->count_records('local_kbacompany_commnotif', ['messageuuid' => $messageuuid, 'userid' => $userid]);
+    }
+
+    /** N28 (COORD-D05): a task with the peer as assignee and the third user as observer, discussed once. */
+    private function task_fixture(array $f): array {
+        global $DB;
+        $this->setAdminUser();
+        $task = task_service::create($f['company'], $f['admin'], [
+            'title' => 'Gate task', 'description' => 'N28', 'product' => 'Agreed result',
+            'assigneeid' => (int)$f['peer']->id, 'reviewerid' => (int)$f['author']->id,
+            'priority' => 'normal', 'stream' => 'operate', 'startdate' => '', 'duedate' => '',
+            'planminutes' => 0, 'parentuuid' => '',
+        ]);
+        task_service::set_observer($f['company'], $f['admin'], $task, $this->revision($f['company'], $task),
+            (int)$f['third']->id);
+        $this->assertFalse(communication_write_gate::is_held($f['company']));
+        $this->setUser($f['third']);
+        task_service::post_discussion_message($f['company'], (int)$f['third']->id, $task, 'Observer question');
+        $thread = (string)$DB->get_field('local_kbacompany_commthread', 'uuid', ['companyuuid' => $f['company'],
+            'threadtype' => 'object', 'contextkind' => 'task', 'contextuuid' => $task], MUST_EXIST);
+        return [$task, $thread];
+    }
+
+    private function revision(string $company, string $task): int {
+        global $DB;
+        return (int)$DB->get_field('local_kbacompany_task', 'revision', ['companyuuid' => $company, 'uuid' => $task]);
+    }
+
+    private function messages_by(string $thread, int $userid): int {
+        global $DB;
+        return $DB->count_records('local_kbacompany_commmsg', ['threaduuid' => $thread, 'authorid' => $userid]);
+    }
+
+    /** Both write paths refuse; nothing is written and the gate is free afterwards. */
+    private function assert_cannot_post(string $company, int $userid, string $thread, callable $objectpost): void {
+        $before = $this->messages_by($thread, $userid);
+        $generic = static function() use ($company, $userid, $thread): void {
+            communication_service::send_message($company, $userid, $thread, 'After revocation');
+        };
+        foreach ([$objectpost, $generic] as $call) {
+            try {
+                $call();
+                $this->fail('A post landed after the write right was revoked');
+            } catch (\moodle_exception $e) {
+                $this->assertMatchesRegularExpression('/_(permission|state|reference)$/', $e->errorcode);
+            }
+            $this->assertFalse(communication_write_gate::is_held($company));
+        }
+        $this->assertSame($before, $this->messages_by($thread, $userid));
+    }
+
+    public function test_n28_removed_task_observer_cannot_post_on_any_path(): void {
+        $f = $this->fixture();
+        [$task, $thread] = $this->task_fixture($f);
+        $third = (int)$f['third']->id;
+        $this->assertTrue(task_service::can_post_discussion_for($f['company'], $third, $task));
+        $this->setAdminUser();
+        task_service::set_observer($f['company'], $f['admin'], $task, $this->revision($f['company'], $task), 0);
+        $this->assertFalse(communication_write_gate::is_held($f['company']));
+        $this->assertFalse(task_service::can_post_discussion_for($f['company'], $third, $task));
+        $this->setUser($f['third']);
+        $company = $f['company'];
+        $this->assert_cannot_post($company, $third, $thread, static function() use ($company, $third, $task): void {
+            task_service::post_discussion_message($company, $third, $task, 'After removal');
+        });
+        // The remaining task people still write; the right is company-scoped.
+        $this->setUser($f['peer']);
+        $this->assertNotEmpty(task_service::post_discussion_message($f['company'], (int)$f['peer']->id, $task, 'Assignee'));
+        $this->assertFalse(task_service::can_post_discussion_for($f['other'], (int)$f['peer']->id, $task));
+    }
+
+    public function test_n28_deleted_task_closes_its_discussion_for_writers(): void {
+        $f = $this->fixture();
+        [$task, $thread] = $this->task_fixture($f);
+        $peer = (int)$f['peer']->id;
+        $this->setAdminUser();
+        task_service::delete_task($f['company'], $f['admin'], $task, $this->revision($f['company'], $task));
+        $this->assertFalse(communication_write_gate::is_held($f['company']));
+        $this->assertFalse(task_service::can_post_discussion_for($f['company'], $peer, $task));
+        $this->setUser($f['peer']);
+        $company = $f['company'];
+        $this->assert_cannot_post($company, $peer, $thread, static function() use ($company, $peer, $task): void {
+            task_service::post_discussion_message($company, $peer, $task, 'After delete');
+        });
+    }
+
+    public function test_n28_failed_acl_writer_releases_the_gate_and_changes_nothing(): void {
+        global $DB;
+        $f = $this->fixture();
+        [$task] = $this->task_fixture($f);
+        $this->setAdminUser();
+        $stale = $this->revision($f['company'], $task) - 1;
+        try {
+            task_service::set_observer($f['company'], $f['admin'], $task, $stale, 0);
+            $this->fail('A stale revision must not change the observer');
+        } catch (\moodle_exception $e) {
+            $this->assertSame('taskcenter_conflict', $e->errorcode);
+        }
+        $this->assertFalse(communication_write_gate::is_held($f['company']));
+        $this->assertSame((int)$f['third']->id, (int)$DB->get_field('local_kbacompany_task', 'observerid',
+            ['companyuuid' => $f['company'], 'uuid' => $task]));
+        $this->assertTrue(task_service::can_post_discussion_for($f['company'], (int)$f['third']->id, $task));
+    }
+
+    public function test_n28_removed_plan_observer_cannot_post_on_any_path(): void {
+        global $DB;
+        $f = $this->fixture();
+        $now = time();
+        $position = '20000000-0000-4000-8000-0000000000a1';
+        $DB->insert_record('local_kbacompany_position', (object)[
+            'companyuuid' => $f['company'], 'branchuuid' => '20000000-0000-4000-8000-0000000000a2',
+            'orgnodeuuid' => '20000000-0000-4000-8000-0000000000a3', 'uuid' => $position,
+            'code' => 'P-GATE', 'name' => 'Gate position', 'purpose' => 'Produce results', 'ismanager' => 0,
+            'plannedcount' => 1, 'sortorder' => 0, 'active' => 1, 'timecreated' => $now, 'timemodified' => $now,
+        ]);
+        $DB->insert_record('local_kbacompany_posassign', (object)[
+            'companyuuid' => $f['company'], 'positionuuid' => $position, 'slotuuid' => '',
+            'userid' => (int)$f['author']->id, 'assignmenttype' => 'primary', 'effectivefrom' => $now - 60,
+            'effectiveto' => 0, 'active' => 1, 'timecreated' => $now, 'timemodified' => $now,
+        ]);
+        $this->setAdminUser();
+        $plan = battle_plan_service::create_plan($f['company'], $f['admin'], (int)$f['author']->id, $position,
+            '2026-11-16', (int)$f['peer']->id);
+        $third = (int)$f['third']->id;
+        battle_plan_service::set_observer($f['company'], $f['admin'], $plan, $third);
+        $this->assertFalse(communication_write_gate::is_held($f['company']));
+        $this->setUser($f['third']);
+        battle_plan_discussion_service::post($f['company'], $third, $plan, 'Observer question');
+        $thread = (string)battle_plan_discussion_service::thread($f['company'], $plan)->uuid;
+        $this->assertTrue(battle_plan_service::can_post_discussion_for($f['company'], $third, $plan));
+
+        $this->setAdminUser();
+        battle_plan_service::set_observer($f['company'], $f['admin'], $plan, 0);
+        $this->assertFalse(communication_write_gate::is_held($f['company']));
+        $this->assertFalse(battle_plan_service::can_post_discussion_for($f['company'], $third, $plan));
+        $this->setUser($f['third']);
+        $company = $f['company'];
+        $this->assert_cannot_post($company, $third, $thread, static function() use ($company, $third, $plan): void {
+            battle_plan_discussion_service::post($company, $third, $plan, 'After removal');
+        });
+        $this->setUser($f['author']);
+        $this->assertNotEmpty(battle_plan_discussion_service::post($f['company'], (int)$f['author']->id, $plan, 'Owner'));
+        $this->assertFalse(battle_plan_service::can_post_discussion_for($f['other'], (int)$f['author']->id, $plan));
+    }
+
+    public function test_n28_meeting_participant_is_added_atomically_under_the_gate(): void {
+        global $DB;
+        $f = $this->fixture();
+        $outsider = $this->getDataGenerator()->create_user(['firstname' => 'Oleg', 'lastname' => 'Outside']);
+        repository::add_member($f['otherid'], (int)$outsider->id, 'employee');
+        employee_service::ensure_membership($f['other'], (int)$outsider->id, [], 'bms');
+        $author = (int)$f['author']->id;
+        $this->setUser($f['author']);
+        $meeting = meeting_service::create($f['company'], $author, [
+            'title' => 'Gate meeting', 'purpose' => 'N28', 'participants' => [(int)$f['peer']->id],
+        ]);
+        $this->assertFalse(communication_write_gate::is_held($f['company']));
+        meeting_service::add_participant($f['company'], $author, $meeting, (int)$f['third']->id);
+        $this->assertFalse(communication_write_gate::is_held($f['company']));
+        $this->assertTrue($DB->record_exists('local_kbacompany_meetpart', ['companyuuid' => $f['company'],
+            'meetinguuid' => $meeting, 'userid' => (int)$f['third']->id, 'active' => 1]));
+        $where = ['companyuuid' => $f['company'], 'meetinguuid' => $meeting];
+        $count = $DB->count_records('local_kbacompany_meetpart', $where);
+        // A user of the other company only, added by the organizer or by a non-organizer, is refused; nothing is written.
+        foreach ([$author, (int)$f['peer']->id] as $actor) {
+            try {
+                meeting_service::add_participant($f['company'], $actor, $meeting, (int)$outsider->id);
+                $this->fail('A meeting participant was added without the right');
+            } catch (\moodle_exception $e) {
+                $this->assertStringStartsWith('meeting_', $e->errorcode);
+            }
+            $this->assertFalse(communication_write_gate::is_held($f['company']));
+        }
+        $this->assertSame($count, $DB->count_records('local_kbacompany_meetpart', $where));
+        $this->assertFalse($DB->record_exists('local_kbacompany_meetpart', ['userid' => (int)$outsider->id]));
     }
 
     public function test_gate_is_reentrant_and_released_once(): void {

@@ -143,12 +143,13 @@ def check(root=ROOT):
     reviewed_followup['local/kbacompany/lang/en/local_kbacompany.php'] = '62af4834f4441502e5ebc4b535b508d3369f46b35f61aca9a2f6edf8e77e76e6'
     reviewed_followup['local/kbacompany/lang/ru/local_kbacompany.php'] = '02c53ab3bafd6aa9fab2c2f8fd4475456a32cb2d96f17b7d9c7fc01179bc730f'
     # RC33 PR-1 (owner D3 2026-11-24): shared communication write gate and notification eligibility; no lang,
-    # schema or version change. See docs/reconcile/RC33_PR1_COMMUNICATION_WRITE_GATE.md.
-    reviewed_followup['local/kbacompany/classes/local/communication_service.php'] = 'c312947922c1c1af07f64f2fc6f45ab1270b7f08e2d3c76a348ae7b90cb15193'
+    # schema or version change; N28 (COORD-D05, #205 option A) re-checks the task and Battle Plan write right under the gate.
+    # See docs/reconcile/RC33_PR1_COMMUNICATION_WRITE_GATE.md.
+    reviewed_followup['local/kbacompany/classes/local/communication_service.php'] = '610d395738b1f39c8daa5ca0f37ff729299521839caa2dbeba15a75584e3cc38'
     reviewed_followup['local/kbacompany/classes/local/employee_service.php'] = '80a5502f410dd618dc1b64988a7824343960145d3276a7d8e89e8cd0db5f48be'
     # RC33 PR-2 (owner D1-D4 2026-11-24, ADR-0012): fixed import audience in add_participant and the append-only
     # inbound lang block. See docs/reconcile/RC33_PR2_MAX_INBOUND_SERVER.md.
-    reviewed_followup['local/kbacompany/classes/local/communication_service.php'] = '4de9260667db86b3505fda15a64b779cbd30797b06876fa7cf3b01b29a5ea6ad'
+    reviewed_followup['local/kbacompany/classes/local/communication_service.php'] = 'b002d918e9dcdb6ad39244e0bef04f74b8914d2e756b4766d4e78098235da64e'
     reviewed_followup['local/kbacompany/lang/en/local_kbacompany.php'] = 'e94c4bd0b6a900b2fb38a66c94787c00ee937a8bcf8968c51c0be053d573e715'
     reviewed_followup['local/kbacompany/lang/ru/local_kbacompany.php'] = '6b6cb319832980c9394a8457b1f5402b737e2372a3279914a814e823b2f8b21f'
     for row in plan['rows']:
