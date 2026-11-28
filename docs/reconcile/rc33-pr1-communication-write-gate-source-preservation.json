@@ -1,6 +1,6 @@
 {
  "scope": "exact intentional source updates; not runtime, concurrency or release acceptance",
- "base_sha": "0884643590541fdd9b75b1414fd93d6120ded017 (main 0884643; R3 #169/#180 first merged at 48968103f7ec4b089a04ec6082b0b6f5510555e2; PR-1 first written on 62fdc4934b8b8a87fb8c7f21a52c56b64229e836)",
+ "base_sha": "74e00c4a63cbd5d37759e604753ebaa4b4fc7947 (main 74e00c4, R5a #172; previously synced on main 0884643; R3 #169/#180 first merged at 48968103f7ec4b089a04ec6082b0b6f5510555e2; PR-1 first written on 62fdc4934b8b8a87fb8c7f21a52c56b64229e836)",
  "normalization": "CRLF to LF only",
  "previous_evidence": "docs/reconcile/daily-reports-r3-source-preservation.json (merged from main; PR-1 originally chained from docs/reconcile/topbar-notification-bell-source-preservation.json)",
  "decision": "docs/reconcile/RC33_PR1_COMMUNICATION_WRITE_GATE.md (owner D3 2026-11-24, PR #88 / issue #75; split approved 2026-11-24)",
