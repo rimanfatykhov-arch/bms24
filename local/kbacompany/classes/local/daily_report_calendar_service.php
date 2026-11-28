@@ -21,6 +21,8 @@ final class daily_report_calendar_service {
     /** Longest single absence period, days (inclusive). */
     public const MAX_ABSENCE_DAYS = 366;
     public const PAGE_SIZE = 50;
+    /** R5b due states, in display order (owner decisions K3, K5; docs/daily-reports/R5B_DUE.md). */
+    public const DUE = ['neutral', 'notrequired', 'expected', 'missed', 'ontime', 'late'];
 
     private static function fail(string $key = 'notavailable'): void {
         throw new \moodle_exception('dailyreports_' . $key, 'local_kbacompany');
@@ -318,23 +320,8 @@ final class daily_report_calendar_service {
      * caller has authorised the actor). Reasons: disabled, beforestart, dayoff, absence, workday.
      */
     public static function requirement(string $companyuuid, int $userid, string $day): array {
-        global $DB;
-        $cal = self::settings($companyuuid);
-        if (empty($cal->enabled) || !self::valid_day($day)) {
-            return ['required' => false, 'reason' => 'disabled'];
-        }
-        if ((string)$cal->enabledfrom === '' || strcmp($day, (string)$cal->enabledfrom) < 0) {
-            return ['required' => false, 'reason' => 'beforestart'];
-        }
-        if (!self::working_day($companyuuid, $day, $cal)) {
-            return ['required' => false, 'reason' => 'dayoff'];
-        }
-        if ($DB->record_exists_select('local_kbacompany_dreportabs',
-                "companyuuid = :c AND userid = :u AND status = 'active' AND startday <= :d1 AND endday >= :d2",
-                ['c' => $companyuuid, 'u' => $userid, 'd1' => $day, 'd2' => $day])) {
-            return ['required' => false, 'reason' => 'absence'];
-        }
-        return ['required' => true, 'reason' => 'workday'];
+        $reason = self::requirements($companyuuid, [$userid], $day)[$userid] ?? 'disabled';
+        return ['required' => $reason === 'workday', 'reason' => $reason];
     }
 
     /** Working day of the company calendar: an exception wins over the weekday pattern. */
@@ -363,5 +350,57 @@ final class daily_report_calendar_service {
         }
         $minutes = (int)$cal->deadlineminutes;
         return $next->setTime(intdiv($minutes, 60), $minutes % 60)->getTimestamp();
+    }
+
+    /**
+     * R5b: requirement reasons of many employees for one company day — one calendar read, one exception read and one
+     * absence query (company and day in SQL). Same reasons as requirement(): disabled, beforestart, dayoff, absence,
+     * workday. Computed on read, so a later change of the calendar or of an absence re-evaluates past days (K5).
+     * @return array [userid => reason]
+     */
+    public static function requirements(string $companyuuid, array $userids, string $day): array {
+        global $DB;
+        $userids = array_values(array_unique(array_filter(array_map('intval', $userids), static function(int $id): bool {
+            return $id > 0;
+        })));
+        $cal = self::settings($companyuuid);
+        if (empty($cal->enabled) || !self::valid_day($day)) {
+            $reason = 'disabled';
+        } else if ((string)$cal->enabledfrom === '' || strcmp($day, (string)$cal->enabledfrom) < 0) {
+            $reason = 'beforestart';
+        } else if (!self::working_day($companyuuid, $day, $cal)) {
+            $reason = 'dayoff';
+        } else {
+            $reason = 'workday';
+        }
+        $out = array_fill_keys($userids, $reason);
+        if ($reason === 'workday' && $userids) {
+            [$insql, $params] = $DB->get_in_or_equal($userids, SQL_PARAMS_NAMED, 'ru');
+            $absent = $DB->get_fieldset_select('local_kbacompany_dreportabs', 'userid',
+                "companyuuid = :c AND status = 'active' AND startday <= :d1 AND endday >= :d2 AND userid {$insql}",
+                ['c' => $companyuuid, 'd1' => $day, 'd2' => $day] + $params);
+            foreach ($absent as $userid) {
+                $out[(int)$userid] = 'absence';
+            }
+        }
+        return $out;
+    }
+
+    /**
+     * R5b due state of one employee day. neutral: calendar off or the day is before it was switched on — the R4 view
+     * stays unchanged; notrequired: day off or absence; for a required day: ontime / late by the first submission
+     * (a resubmission after a return is not lateness), otherwise expected until the deadline and missed after it.
+     */
+    public static function due(string $reason, int $firstsubmitted, int $deadline, int $now): string {
+        if ($reason === 'disabled' || $reason === 'beforestart') {
+            return 'neutral';
+        }
+        if ($reason !== 'workday') {
+            return 'notrequired';
+        }
+        if ($firstsubmitted > 0) {
+            return $firstsubmitted > $deadline ? 'late' : 'ontime';
+        }
+        return $now >= $deadline ? 'missed' : 'expected';
     }
 }

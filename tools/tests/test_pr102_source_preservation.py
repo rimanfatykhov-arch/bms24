@@ -31,7 +31,9 @@ FOLLOWUPS = ['docs/reconcile/task-open-source-preservation.json',
              'docs/reconcile/daily-reports-r3-source-preservation.json',
              'docs/reconcile/information-centre-divisions-source-preservation.json',
              'docs/reconcile/office-workspace-doc-w2-source-preservation.json',
-             'docs/reconcile/daily-reports-r5a-source-preservation.json']
+             'docs/reconcile/daily-reports-r5a-source-preservation.json',
+             'docs/reconcile/daily-reports-r5b-source-preservation.json',
+             'docs/reconcile/daily-reports-r5c-source-preservation.json']
 
 
 class SourcePreservationTest(unittest.TestCase):

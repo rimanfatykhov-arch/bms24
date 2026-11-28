@@ -505,6 +505,10 @@ class communication_center_ui_service {
         if ($kind === 'dailyreport_decision') {
             return [daily_report_ui_service::url($company, ['tab' => 'history']), 'dailyreports_tab_history'];
         }
+        if ($kind === 'dailyreport_reminder') {
+            // R5c: the reminder names the day in its title; the author opens "My report" and picks that day.
+            return [daily_report_ui_service::url($company), 'dailyreports_tab_my'];
+        }
         return null;
     }
 

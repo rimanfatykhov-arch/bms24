@@ -260,7 +260,7 @@ if ($tab === 'review') {
                 // R4: every current employee for one day (read-only); filters are typed GET parameters.
                 echo reportui::team($uuid, team::day($uuid, $actor, $day, optional_param('scope', '', PARAM_ALPHA),
                     optional_param('unit', '', PARAM_ALPHANUMEXT), optional_param('status', '', PARAM_ALPHA),
-                    optional_param('page', 0, PARAM_INT)), $queues);
+                    optional_param('page', 0, PARAM_INT), optional_param('due', '', PARAM_ALPHA)), $queues);
             } else {
                 echo reportui::queue($uuid, review::queue($uuid, $actor, $queue, optional_param('page', 0, PARAM_INT)),
                     $queues);
@@ -313,6 +313,25 @@ if ($enabled) {
         reportui::status_badge($report ? (string)$report->status : 'none'), 2, '', 'dailyreport-own');
     if ($error !== '') {
         echo html_writer::div(s($error), 'alert alert-danger', ['role' => 'alert']);
+    }
+    if (!$future) {
+        // R5b (K3): the author's own deadline for this day, only while the company reporting calendar is on. Lateness
+        // then follows the deadline and the first submitted version instead of the report day.
+        $companykey = company_context_service::normalise_uuid($uuid);
+        $reason = calendar::requirement($companykey, $actor, $day)['reason'];
+        $deadline = $reason === 'workday' ? calendar::deadline($companykey, $day, core_date::get_user_timezone()) : 0;
+        $firstsent = 0;
+        foreach ($view['versions'] ?? [] as $version) {
+            $sentat = (int)$version->submittedat;
+            if ($sentat > 0 && ($firstsent === 0 || $sentat < $firstsent)) {
+                $firstsent = $sentat;
+            }
+        }
+        $owndue = calendar::due($reason, $firstsent, $deadline, time());
+        echo reportui::own_due($owndue, $deadline);
+        if ($owndue === 'ontime' || $owndue === 'late') {
+            $view['late'] = $owndue === 'late';
+        }
     }
     $formopen = false;
     if ($future) {
