@@ -8,6 +8,7 @@ import sqlite3
 import subprocess
 import tempfile
 from threading import Event, Thread
+import time
 from types import SimpleNamespace
 import unittest
 from unittest.mock import patch
@@ -67,8 +68,8 @@ class RunnerTests(unittest.TestCase):
         go, identity, plan_hash = authorize(self.args, self.clock_mock.return_value)
         return start(self.args, go, identity, plan_hash, layout(self.args, go), adapter)
 
-    def positive(self, _cli, _profile, _scratch, started, seconds):
-        self.assertGreater(seconds, 0)
+    def positive(self, _cli, _profile, _scratch, started, cutoff):
+        self.assertGreater(cutoff, time.monotonic())
         started("12345678-1234-1234-1234-123456789abc")
         return "REVIEW_READY", "agent_completed", "12345678-1234-1234-1234-123456789abc", {
             "task": CARD["task"], "total": 37}
@@ -224,7 +225,7 @@ class RunnerTests(unittest.TestCase):
         scratch.mkdir()
         events = []
         with patch("runner.subprocess.Popen", return_value=process) as spawn, patch.dict(os.environ, {"GITHUB_TOKEN": "synthetic"}):
-            outcome = codex(Path(self.go["codex_cli"]), home, scratch, events.append, 10)
+            outcome = codex(Path(self.go["codex_cli"]), home, scratch, events.append, time.monotonic() + 10)
         self.assertEqual(("REVIEW_READY", "agent_completed", session, expected), outcome)
         self.assertEqual([session], events)
         self.assertIn("read-only", spawn.call_args.args[0])
@@ -238,7 +239,7 @@ class RunnerTests(unittest.TestCase):
         scratch.mkdir()
         with patch("runner.subprocess.Popen", return_value=process):
             outcome = codex(Path(self.go["codex_cli"]), Path(self.go["codex_home"]), scratch,
-                            self.never_launch, 10)
+                            self.never_launch, time.monotonic() + 10)
         self.assertEqual(("FAILED", "model_limit", None, None), outcome)
 
     def test_cli_timeout_stops_spawned_process(self):
@@ -247,11 +248,19 @@ class RunnerTests(unittest.TestCase):
                                   kill=stopped.set, wait=lambda timeout: 0)
         scratch = self.root / "scratch"
         scratch.mkdir()
-        with patch("runner.subprocess.Popen", return_value=process):
+        with patch("runner.subprocess.Popen", return_value=process), patch("runner.time.monotonic", side_effect=[0, 2, 2, 2]):
             outcome = codex(Path(self.go["codex_cli"]), Path(self.go["codex_home"]), scratch,
-                            self.never_launch, 0)
+                            self.never_launch, 1)
         self.assertEqual(("TIMED_OUT", "time_limit", None, None), outcome)
         self.assertTrue(stopped.is_set())
+
+    def test_cli_does_not_spawn_when_approval_expires_during_preparation(self):
+        scratch = self.root / "scratch"
+        scratch.mkdir()
+        with patch("runner.subprocess.Popen", side_effect=self.never_launch):
+            outcome = codex(Path(self.go["codex_cli"]), Path(self.go["codex_home"]), scratch,
+                            self.never_launch, time.monotonic() - 1)
+        self.assertEqual(("BLOCKED", "approval_outside_window", None, None), outcome)
 
 
 if __name__ == "__main__":

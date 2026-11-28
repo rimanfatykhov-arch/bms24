@@ -195,7 +195,7 @@ def failure_code(message):
     return "adapter_failed"
 
 
-def codex(cli, home, scratch, started, seconds):
+def codex(cli, home, scratch, started, cutoff):
     schema = scratch / "response.schema.json"
     put(schema, RESULT_SCHEMA)
     keep = ("PATH", "SYSTEMROOT", "WINDIR", "COMSPEC", "PATHEXT")
@@ -213,6 +213,8 @@ def codex(cli, home, scratch, started, seconds):
             "-c", 'approval_policy="never"', "-c", 'web_search="disabled"',
             "--output-schema", str(schema),
             "Return JSON with the task and the sum of values in this synthetic card: " + json.dumps(CARD)]
+    if time.monotonic() >= cutoff:
+        return "BLOCKED", "approval_outside_window", None, None
     try:
         proc = subprocess.Popen(argv, cwd=scratch, env=env, stdin=subprocess.DEVNULL,
                                 stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, shell=False)
@@ -221,7 +223,6 @@ def codex(cli, home, scratch, started, seconds):
     events = Queue(maxsize=16)
     reader = Thread(target=process_output, args=(proc.stdout, events), daemon=True)
     reader.start()
-    cutoff = time.monotonic() + seconds
     session, result, total, failure = None, None, 0, "invalid_result"
     idle = time.monotonic() + 90
     try:
@@ -353,16 +354,18 @@ def start(args, go, go_hash, plan_hash, paths, adapter=codex):
                 record(db, key, "RUNNING", "session_observed", session)
 
         try:
+            require(layout(args, go) == paths, "isolation_changed")
             current = now()
             require(authorize(args, current)[1] == go_hash, "approval_changed")
+            current = now()
             session_clear(args.session, workspace, current, go.get("session_sha256"))
-            require(layout(args, go) == paths, "isolation_changed")
             seconds = min(600, (timestamp(go["expires_at"]) - current).total_seconds())
             require(seconds > 0, "approval_outside_window")
+            cutoff = time.monotonic() + seconds
         except (KeyError, ValueError, OSError, RecursionError, subprocess.SubprocessError):
             return finish(db, key, output, workspace, go, plan_hash, ("BLOCKED", "prelaunch_recheck_failed", None, None))
         with tempfile.TemporaryDirectory(prefix="adapter-", dir=output) as temporary:
-            outcome = adapter(cli, home, Path(temporary), started, seconds)
+            outcome = adapter(cli, home, Path(temporary), started, cutoff)
         try:
             clean_checkout(workspace, go["base_sha"])
         except (Blocked, OSError, subprocess.SubprocessError):
