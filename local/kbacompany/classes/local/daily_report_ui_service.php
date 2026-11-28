@@ -26,6 +26,80 @@ final class daily_report_ui_service {
             ['data-dailyreport-status' => $status]);
     }
 
+    /** R6: the filter parameters of a team list, so that paging and report cards keep the same list. */
+    public static function team_params(array $team): array {
+        $params = ['tab' => 'review', 'queue' => 'team', 'day' => $team['day'], 'scope' => $team['scope']];
+        foreach (['unit', 'status', 'due'] as $name) {
+            if ((string)($team[$name] ?? '') !== '') {
+                $params[$name] = (string)$team[$name];
+            }
+        }
+        if (($team['dayto'] ?? $team['day']) !== $team['day']) {
+            $params['dayto'] = $team['dayto'];
+        }
+        if (!empty($team['employee'])) {
+            $params['employee'] = (int)$team['employee'];
+        }
+        return $params;
+    }
+
+    /**
+     * R6: reading the sent reports of a team list one after another — position, previous and next. The links only
+     * carry the list filters; every card is opened through the per-report access check (review::card).
+     */
+    public static function team_nav(string $uuid, array $team, string $current): string {
+        $sequence = array_values($team['sequence'] ?? []);
+        $index = array_search($current, $sequence, true);
+        $back = html_writer::link(self::url($uuid, self::team_params($team)), s(self::str('team_back')),
+            ['class' => 'mr-3']);
+        if ($index === false) {
+            return html_writer::div($back, 'mb-2', ['data-dailyreport-team-nav' => '0']);
+        }
+        $params = self::team_params($team);
+        $links = $back . html_writer::span(s(self::str('team_position', (object)['index' => $index + 1,
+            'total' => count($sequence)])), 'mr-3', ['data-dailyreport-team-position' => $index + 1]);
+        if ($index > 0) {
+            $links .= html_writer::link(self::url($uuid, $params + ['report' => $sequence[$index - 1]]),
+                s(self::str('team_previous')), ['class' => 'btn btn-secondary btn-sm mr-2', 'rel' => 'prev',
+                'data-dailyreport-team-prev' => $sequence[$index - 1]]);
+        }
+        if ($index < count($sequence) - 1) {
+            $links .= html_writer::link(self::url($uuid, $params + ['report' => $sequence[$index + 1]]),
+                s(self::str('team_next')), ['class' => 'btn btn-primary btn-sm', 'rel' => 'next',
+                'data-dailyreport-team-next' => $sequence[$index + 1]]);
+        }
+        return html_writer::tag('nav', $links, ['class' => 'd-flex flex-wrap align-items-center mb-3',
+            'aria-label' => self::str('team_nav'), 'data-dailyreport-team-nav' => '1']);
+    }
+
+    /** R5b due states that get a visible marker; "neutral" keeps the R4 view, "on time" needs no marker. */
+    public const DUE_SHOWN = ['notrequired', 'expected', 'missed', 'late'];
+
+    /** R5b: due state as text with a symbol (never colour alone). */
+    public static function due_badge(string $due): string {
+        $icons = ['notrequired' => '○', 'expected' => '…', 'missed' => '!', 'late' => '⏱'];
+        $due = isset($icons[$due]) ? $due : 'notrequired';
+        return html_writer::span(html_writer::span($icons[$due], '', ['aria-hidden' => 'true']) . ' ' .
+            s(self::str('due_' . $due)), 'badge badge-light border bms-dailyreport-due', ['data-dailyreport-due' => $due]);
+    }
+
+    /** R5b: the employee's own line in "My report" — "due by", "deadline passed" or "not required". */
+    public static function own_due(string $due, int $deadline): string {
+        if ($due === 'expected') {
+            return html_writer::tag('p', s(self::str('due_by', userdate($deadline))), ['class' => 'mb-3',
+                'data-dailyreport-owndue' => $due]);
+        }
+        if ($due === 'missed') {
+            return html_writer::div(s(self::str('due_own_missed', userdate($deadline))), 'alert alert-warning',
+                ['role' => 'status', 'data-dailyreport-owndue' => $due]);
+        }
+        if ($due === 'notrequired') {
+            return html_writer::tag('p', s(self::str('due_own_notrequired')), ['class' => 'text-muted mb-3',
+                'data-dailyreport-owndue' => $due]);
+        }
+        return '';
+    }
+
     /** ADR-0010: the self-review marker is always text, never colour alone. */
     public static function self_badge(): string {
         return html_writer::span(html_writer::span('↺', '', ['aria-hidden' => 'true']) . ' ' . s(self::str('selfreview_badge')),
@@ -338,7 +412,15 @@ final class daily_report_ui_service {
             html_writer::empty_tag('input', ['type' => 'hidden', 'name' => 'queue', 'value' => 'team']) .
             $field('dailyreport-team-day', self::str('team_day'), html_writer::empty_tag('input', ['type' => 'date',
                 'id' => 'dailyreport-team-day', 'name' => 'day', 'value' => $team['day'], 'required' => 'required',
-                'max' => business_date_service::day(), 'class' => 'form-control w-auto']));
+                'max' => business_date_service::day(), 'class' => 'form-control w-auto'])) .
+            // R6: optional end of a period (up to MAX_DAYS days); empty means the one day above.
+            $field('dailyreport-team-dayto', self::str('team_dayto'), html_writer::empty_tag('input', ['type' => 'date',
+                'id' => 'dailyreport-team-dayto', 'name' => 'dayto',
+                'value' => ($team['dayto'] ?? $team['day']) !== $team['day'] ? $team['dayto'] : '',
+                'max' => business_date_service::day(), 'class' => 'form-control w-auto',
+                'aria-describedby' => 'dailyreport-team-dayto-hint'])) .
+            html_writer::span(s(self::str('team_dayto_hint', daily_report_team_service::MAX_DAYS)), 'sr-only',
+                ['id' => 'dailyreport-team-dayto-hint']);
         if (count($team['scopes']) > 1) {
             $scopes = [];
             foreach ($team['scopes'] as $scope) {
@@ -347,6 +429,14 @@ final class daily_report_ui_service {
             $form .= $field('dailyreport-team-scope', self::str('team_scope'),
                 $select('scope', 'dailyreport-team-scope', $scopes, $team['scope']));
         }
+        // R6: one employee of the listed people (the service refuses anyone else).
+        $employees = ['' => self::str('team_employee_all')];
+        foreach ($team['people'] ?? [] as $userid => $name) {
+            $employees[(string)$userid] = $name;
+        }
+        $form .= $field('dailyreport-team-employee', self::str('employee'),
+            $select('employee', 'dailyreport-team-employee', $employees,
+                !empty($team['employee']) ? (string)$team['employee'] : ''));
         $units = ['' => self::str('team_unit_all')] + $team['units'] + ['none' => self::str('team_unit_none')];
         $form .= $field('dailyreport-team-unit', self::str('team_unit'),
             $select('unit', 'dailyreport-team-unit', $units, $team['unit']));
@@ -356,6 +446,15 @@ final class daily_report_ui_service {
         }
         $form .= $field('dailyreport-team-status', self::str('history_status'),
             $select('status', 'dailyreport-team-status', $statuses, $team['status']));
+        if (!empty($team['calendar']) || ($team['due'] ?? '') !== '') {
+            // R5b: filter by the reporting schedule (e.g. only "not submitted"), shown once the calendar is on.
+            $dues = ['' => self::str('due_all')];
+            foreach (self::DUE_SHOWN as $due) {
+                $dues[$due] = self::str('due_' . $due);
+            }
+            $form .= $field('dailyreport-team-due', self::str('due_filter'),
+                $select('due', 'dailyreport-team-due', $dues, (string)($team['due'] ?? '')));
+        }
         $form .= html_writer::div(html_writer::tag('button', s(self::str('team_show')),
             ['type' => 'submit', 'class' => 'btn btn-primary']), 'mb-2');
         $out .= html_writer::tag('form', $form, ['method' => 'get', 'class' => 'd-flex flex-wrap align-items-end mb-2',
@@ -370,13 +469,24 @@ final class daily_report_ui_service {
         }
         $out .= html_writer::tag('ul', $counts, ['class' => 'list-unstyled d-flex flex-wrap mb-3',
             'aria-label' => self::str('team_counts')]);
+        if (!empty($team['calendar'])) {
+            $duecounts = '';
+            foreach (self::DUE_SHOWN as $due) {
+                $duecounts .= html_writer::tag('li', self::due_badge($due) . ' ' . html_writer::span(
+                    (int)($team['duecounts'][$due] ?? 0), 'font-weight-bold', ['data-dailyreport-team-duecount' => $due]),
+                    ['class' => 'mr-3 mb-1']);
+            }
+            $out .= html_writer::tag('ul', $duecounts, ['class' => 'list-unstyled d-flex flex-wrap mb-3',
+                'aria-label' => self::str('due_counts')]);
+        }
         if (!$team['items']) {
             return $out . html_writer::tag('p', s(self::str('team_empty')));
         }
         $table = new \html_table();
         $table->attributes['class'] = 'generaltable bms-dailyreport-team';
-        $table->head = [self::str('employee'), self::str('team_unit'), self::str('history_status'),
-            self::str('history_submitted'), self::str('team_reviewer'), ''];
+        $period = ($team['days'] ?? 1) > 1;
+        $table->head = array_merge($period ? [self::str('team_day')] : [], [self::str('employee'), self::str('team_unit'),
+            self::str('history_status'), self::str('history_submitted'), self::str('team_reviewer'), '']);
         foreach ($team['items'] as $row) {
             $state = self::status_badge($row['state']);
             if ($row['state'] === 'accepted' && $row['rating'] !== '') {
@@ -385,24 +495,32 @@ final class daily_report_ui_service {
             if ($row['reviewersource'] === 'self_top') {
                 $state .= ' ' . self::self_badge();
             }
+            $due = (string)($row['due'] ?? 'neutral');
+            if (in_array($due, self::DUE_SHOWN, true)) {
+                $state .= ' ' . self::due_badge($due);
+            }
+            if ($due === 'expected' || $due === 'missed') {
+                $state .= ' ' . html_writer::span(s(self::str('due_by', userdate((int)$row['deadline']))), 'text-muted small');
+            }
             $reviewer = '—';
             if ($row['reportuuid'] !== '') {
                 $user = $row['reviewerid'] > 0 ? \core_user::get_user($row['reviewerid']) : null;
                 $reviewer = $user ? s(fullname($user)) : s(self::str('queue_unassigned'));
             }
-            $table->data[] = [
+            $table->data[] = array_merge($period ? [s(userdate((new \DateTimeImmutable($row['day'],
+                    \core_date::get_user_timezone_object()))->getTimestamp(), get_string('strftimedateshort', 'langconfig')))] : [], [
                 html_writer::span(s($row['name']), '', ['data-dailyreport-team-user' => (int)$row['userid'],
-                    'data-dailyreport-team-state' => $row['state']]),
+                    'data-dailyreport-team-state' => $row['state'], 'data-dailyreport-team-due' => $due]),
                 s($row['unit'] !== '' ? ($team['units'][$row['unit']] ?? '—') : self::str('team_unit_none')),
                 $state,
                 $row['submittedat'] ? s(userdate($row['submittedat'])) . ($row['late'] ? ' · ' . s(self::str('late')) : '') : '—',
                 $reviewer,
-                $row['reportuuid'] !== '' ? html_writer::link(self::url($uuid, ['tab' => 'review', 'report' => $row['reportuuid']]),
+                $row['reportuuid'] !== '' ? html_writer::link(self::url($uuid, self::team_params($team) +
+                    ['report' => $row['reportuuid']]),
                     s(self::str('team_open')), ['aria-label' => self::str('team_open_for', $row['name'])]) : '',
-            ];
+            ]);
         }
-        $params = ['tab' => 'review', 'queue' => 'team', 'day' => $team['day'], 'scope' => $team['scope']] +
-            ($team['unit'] !== '' ? ['unit' => $team['unit']] : []) + ($team['status'] !== '' ? ['status' => $team['status']] : []);
+        $params = self::team_params($team);
         return $out . html_writer::div(html_writer::table($table), 'table-responsive') .
             $OUTPUT->paging_bar($team['total'], $team['page'], daily_report_team_service::PAGE_SIZE,
                 self::url($uuid, $params), 'page');

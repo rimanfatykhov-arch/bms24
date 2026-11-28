@@ -1,0 +1,25 @@
+{
+  "scope": "exact intentional source updates; not runtime or release acceptance",
+  "base_sha": "b732d9def68be9635eddd53c392c4186836b42a6 (#175 over #172 R5a head 2e6545c, over main 4896810 / published #180; R5b language and communication_service bytes unchanged since 4b2f5b0)",
+  "normalization": "CRLF to LF only",
+  "previous_evidence": "docs/reconcile/daily-reports-r5b-source-preservation.json",
+  "decision": "docs/daily-reports/R5_REPORTING_CALENDAR_PROPOSAL.md (owner decision K4, 24.11.2026; PR #170)",
+  "change": "Append the daily reports R5c block (morning reminder: dailyreports_remind_task, dailyreports_remind_title, messageprovider:dailyreport_reminder) after the R5b block, and register the 'dailyreport_reminder' notification kind in communication_service. Retain all preceding keys and kinds.",
+  "files": [
+    {
+      "path": "local/kbacompany/lang/en/local_kbacompany.php",
+      "before_sha256_lf": "cd1c8d0f9dbfd8abb87d23c48ab266a28983c320829ecbf46fe0ef36a3afb56c",
+      "after_sha256_lf": "4ed320b2148b5cdac8b9d8b05291730b075339f94a6d2425b8e214bfe3caba98"
+    },
+    {
+      "path": "local/kbacompany/lang/ru/local_kbacompany.php",
+      "before_sha256_lf": "0d1f747918c95bb3a5eede5b58e5b2846cbf15b645045b93523d05570a408b70",
+      "after_sha256_lf": "66791413c6c14177d761cdce9ce340d4238d711e3a171aabaf49b25238ed2922"
+    },
+    {
+      "path": "local/kbacompany/classes/local/communication_service.php",
+      "before_sha256_lf": "870b471dba39c867b5b13f8b04f55fb82f67ce484ea44cf929b5b9c4f93dae92",
+      "after_sha256_lf": "c796f4eb579cebc002bfd073222ee3e284e2f7ca10d5d46acf9de717a7e3a7ff"
+    }
+  ]
+}
