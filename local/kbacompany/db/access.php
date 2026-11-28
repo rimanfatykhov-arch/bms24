@@ -54,4 +54,12 @@ $capabilities = [
             'manager' => CAP_ALLOW,
         ],
     ],
+    // BMOS-A1.1 OD-A11-1 (owner decision (a), 2026-11-28): issuing and renewing BMOS grants is a separate authority.
+    // No archetypes: assigned explicitly, and required together with manageorganization rights in the company.
+    'local/kbacompany:managebmosgrants' => [
+        'riskbitmask' => RISK_CONFIG | RISK_PERSONAL,
+        'captype' => 'write',
+        'contextlevel' => CONTEXT_SYSTEM,
+        'archetypes' => [],
+    ],
 ];

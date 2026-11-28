@@ -6278,5 +6278,18 @@ function xmldb_local_kbacompany_upgrade(int $oldversion): bool {
         upgrade_plugin_savepoint(true, 2026112400, 'local', 'kbacompany');
     }
 
+    // BMOS-A1.1 (A0 PASS 68b1dd0): six additive registry tables from install.xml (work principals, their audit,
+    // grants, reserved delegations, non-human position occupancy and its journal). Existing tables, posassign,
+    // tasks and history are untouched; no backfill. Everything stays off while local_kbacompany/bmos_enabled = 0.
+    if ($oldversion < 2026112800) {
+        foreach (['local_kbacompany_wprincipal', 'local_kbacompany_wpaudit', 'local_kbacompany_wpgrant',
+                'local_kbacompany_wpdeleg', 'local_kbacompany_posoccup', 'local_kbacompany_posoccuplog'] as $name) {
+            if (!$dbman->table_exists($name)) {
+                $dbman->install_one_table_from_xmldb_file(__DIR__ . '/install.xml', $name);
+            }
+        }
+        upgrade_plugin_savepoint(true, 2026112800, 'local', 'kbacompany');
+    }
+
     return true;
 }

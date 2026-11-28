@@ -10190,3 +10190,19 @@ $string['dailyreports_absence_empty'] = 'No absences.';
 $string['dailyreports_absence_invalid'] = 'Check the absence: type, dates in order, at most one year.';
 $string['dailyreports_absence_overlap'] = 'This person already has an absence on these dates.';
 $string['privacy:metadata:dailyreportabsences'] = 'Absence periods of an employee for daily reports: type (vacation, sick leave, other) and dates, who entered and changed them.';
+
+// BMOS-A1.1 (2026-11-28): work principal, grant and position occupancy registries behind local_kbacompany/bmos_enabled (default off).
+$string['bmos_enabled'] = 'Enable BMOS work principal registries';
+$string['bmos_enabled_help'] = 'When on, authorised organisation managers can register AI agent principals, issue time-limited grants and record position occupancy in the registries. Agents do not run: there are no agent commands, runtime, models, keys or network calls. When off, the registries are not used and the product behaves as before.';
+$string['bmos_error_disabled'] = 'BMOS registries are turned off.';
+$string['bmos_error_notavailable'] = 'The requested record is not available.';
+$string['bmos_error_denied'] = 'You do not have permission to change BMOS registries in this company.';
+$string['bmos_error_invalid'] = 'The registry request is invalid.';
+$string['bmos_error_conflict'] = 'The record was changed by someone else. Reload it and try again.';
+$string['bmos_error_state'] = 'This change is not allowed in the current status.';
+$string['bmos_error_lock'] = 'The record is being changed right now. Try again later.';
+$string['bmos_error_sponsor'] = 'The responsible person must be a current member of the company.';
+$string['bmos_error_twoperson'] = 'Occupancy in agent mode must be approved by a second person who is neither its creator nor the agent sponsor.';
+$string['bmos_privacy_registry'] = 'BMOS registries record the people who register, sponsor, approve, supervise, grant, revoke or delegate work principals and position occupancy, with the time of each action.';
+$string['bmos_error_grantauthority'] = 'Grants are issued and renewed by the separate grant authority, not by organisation management rights alone.';
+$string['kbacompany:managebmosgrants'] = 'Issue and renew BMOS work principal grants';

@@ -78,6 +78,11 @@ R3_KEYS=[b'communication_object_dailyreport',b'dailyreports_discussion_title',b'
          b'dailyreports_discussion_note',b'dailyreports_discussion_empty',b'dailyreports_discussion_readonly',
          b'dailyreports_discussion_empty_message',b'dailyreports_discussion_files']
 OFFICE_MARKER=b'\n// DOC-W2 Office workspace (2026-11-24): read-only overview over existing documents, approvals and decisions.\n'
+BMOS_MARKER=(b'\n// BMOS-A1.1 (2026-11-28): work principal, grant and position occupancy registries behind '
+             b'local_kbacompany/bmos_enabled (default off).\n')
+_BMOS=json.loads((ROOT/'docs/reconcile/bmos-a11-source-preservation.json').read_text(encoding='utf-8'))
+BMOS_BEFORE={lang:next(r['before_sha256_lf'] for r in _BMOS['files']
+                       if r['path']==f'local/kbacompany/lang/{lang}/local_kbacompany.php') for lang in ('en','ru')}
 _OFFICE=json.loads((ROOT/'docs/reconcile/office-workspace-doc-w2-source-preservation.json').read_text(encoding='utf-8'))
 OFFICE_BEFORE={lang:next(r['before_sha256_lf'] for r in _OFFICE['files'] if r['path']==f'local/kbacompany/lang/{lang}/local_kbacompany.php')
                for lang in ('en','ru')}
@@ -117,6 +122,12 @@ def lang_bytes(lang):
     """
     name=f'local/kbacompany/lang/{lang}/local_kbacompany.php'
     data=(ROOT/name).read_bytes().replace(b'\r\n',b'\n')
+    tail=b''
+    if BMOS_MARKER in data:
+        # BMOS-A1.1 appends its block over the reviewed #187 file: the prefix is exactly that file.
+        data,tail=data.split(BMOS_MARKER,1)
+        tail=BMOS_MARKER+tail
+        assert hashlib.sha256(data).hexdigest()==BMOS_BEFORE[lang],name
     row=next(r for r in _TER['files'] if r['path']==name)
     assert hashlib.sha256(data).hexdigest()==row['after_sha256_lf'],name
     current=data.split(b'\n')
@@ -125,7 +136,7 @@ def lang_bytes(lang):
         current[rep['line']-1]=rep['before'].encode('utf-8')
     reverted=b'\n'.join(current)
     assert hashlib.sha256(reverted).hexdigest()==row['before_sha256_lf'],name
-    return reverted
+    return reverted+tail
 
 def keys(blob): return re.findall(rb"^\$string\['([^']+)'\]",blob,re.M)
 
@@ -191,6 +202,17 @@ class Preservation(unittest.TestCase):
                                             if R5A_MARKER in office:
                                                 # R5a follows the Office block: the published file is byte-identical up to the R5a marker.
                                                 office,r5a=office.split(R5A_MARKER)
+                                                if BMOS_MARKER in r5a:
+                                                    # BMOS-A1.1 follows R5a: the published R5a file is byte-identical up to the BMOS marker.
+                                                    r5a,bmos=r5a.split(BMOS_MARKER)
+                                                    # With #187 reverted, the prefix is the published R5a file.
+                                                    self.assertEqual(next(r['before_sha256_lf'] for r in _TER['files']
+                                                                          if r['path']==f'local/kbacompany/lang/{lang}/local_kbacompany.php'),
+                                                                     hashlib.sha256(data.split(BMOS_MARKER)[0]).hexdigest())
+                                                    bmoskeys=keys(bmos)
+                                                    self.assertEqual(14,len(bmoskeys));self.assertEqual(len(bmoskeys),len(set(bmoskeys)))
+                                                    self.assertTrue(all(k.startswith(b'bmos_') or k == b'kbacompany:managebmosgrants' for k in bmoskeys))
+                                                    self.assertFalse(set(bmoskeys)&set(keys(data.split(BMOS_MARKER)[0])))
                                             # The R3 file is byte-identical up to the R5a marker.
                                             self.assertEqual(R5A_BEFORE[lang],hashlib.sha256(data.split(R5A_MARKER)[0]+b'\n').hexdigest())
                                             r5akeys=keys(r5a)

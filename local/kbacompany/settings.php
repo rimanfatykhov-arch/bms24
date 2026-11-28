@@ -43,5 +43,12 @@ if ($hassiteconfig) {
         get_string('officews_enabled_help', 'local_kbacompany'),
         0
     ));
+    // BMOS-A1.1: work principal registries are off until explicitly enabled; off keeps the product as before BMOS.
+    $settings->add(new admin_setting_configcheckbox(
+        'local_kbacompany/bmos_enabled',
+        get_string('bmos_enabled', 'local_kbacompany'),
+        get_string('bmos_enabled_help', 'local_kbacompany'),
+        0
+    ));
     $ADMIN->add('localplugins', $settings);
 }

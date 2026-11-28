@@ -6,6 +6,15 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 PLUGIN = ROOT / 'local/kbacompany'
+BMOS_GRANT_CAPABILITY = """    // BMOS-A1.1 OD-A11-1 (owner decision (a), 2026-11-28): issuing and renewing BMOS grants is a separate authority.
+    // No archetypes: assigned explicitly, and required together with manageorganization rights in the company.
+    'local/kbacompany:managebmosgrants' => [
+        'riskbitmask' => RISK_CONFIG | RISK_PERSONAL,
+        'captype' => 'write',
+        'contextlevel' => CONTEXT_SYSTEM,
+        'archetypes' => [],
+    ],
+"""
 
 
 def text(name):
@@ -95,9 +104,14 @@ class DailyReportsR0Entry(unittest.TestCase):
         base = '881aac2'
         if subprocess.run(['git', 'cat-file', '-e', base], cwd=ROOT, capture_output=True).returncode:
             self.skipTest('base commit not available in this checkout')
-        changed = subprocess.run(['git', 'diff', '--name-only', base, '--', 'local/kbacompany/db/access.php'],
-                                 cwd=ROOT, capture_output=True, text=True, check=True).stdout.split()
-        self.assertEqual([], changed)
+        # The only capability change since the base is the BMOS grant authority chosen by the owner (OD-A11-1 (a),
+        # docs/bmos/A1_1_REGISTRIES.md): one exact block without archetypes, appended at the end. Anything else fails.
+        before = subprocess.run(['git', 'show', base + ':local/kbacompany/db/access.php'], cwd=ROOT,
+                                capture_output=True, check=True).stdout.decode('utf-8').replace('\r\n', '\n')
+        after = (PLUGIN / 'db/access.php').read_bytes().decode('utf-8').replace('\r\n', '\n')
+        self.assertTrue(before.rstrip().endswith('];'))
+        expected = before.rstrip()[:-2] + BMOS_GRANT_CAPABILITY + '];\n'
+        self.assertEqual(expected, after)
 
 
 if __name__ == '__main__':

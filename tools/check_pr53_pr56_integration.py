@@ -74,7 +74,8 @@ def check(root=ROOT):
         # ADR-0009 R1 appends five additive daily report tables, ADR-0010 two more (dreportcc, dreportset);
         # every earlier table definition is unchanged.
         # R5a appends three more (rptcalendar, dreportoff, dreportabs); see daily-reports-r5a-source-preservation.json.
-        target = {'local/kbacompany/db/install.xml': '7ab700a0459af874deaa2bef392636bd07b5a788db59d3c50773e7a54ef9dedf'}.get(name, expected)
+        # BMOS-A1.1 appends six registries (wprincipal ... posoccuplog) after R5a; see bmos-a11-source-preservation.json.
+        target = {'local/kbacompany/db/install.xml': '10b00eeb1f6a441e71b9201cf6c019abf7df3d59925744680981cd1ca645b89c'}.get(name, expected)
         if digest(root/name)!=target:
             errors.append('shared schema/helper changed: '+name)
     # UX-1: exact append-only language/scoped CSS follow-up over E2.
@@ -145,6 +146,10 @@ def check(root=ROOT):
     # See docs/reconcile/terminology-cascade-std-source-preservation.json (line-by-line before/after).
     reviewed_followup['local/kbacompany/lang/en/local_kbacompany.php'] = 'e0d49c73c41b137f6d6927eda8afc128c30a0b30ac5917c24a443f201ca9bf47'
     reviewed_followup['local/kbacompany/lang/ru/local_kbacompany.php'] = '07df4610a4549fe8a08b92107cdefb480796e15fe40ee371a4e36c2286cfa0e4'
+    # BMOS-A1.1 (A0 PASS 68b1dd0): bmos_* RU/EN block after the R5a block, over the #187 terminology; registries default off.
+    # See docs/reconcile/bmos-a11-source-preservation.json.
+    reviewed_followup['local/kbacompany/lang/en/local_kbacompany.php'] = '144c747a7c6a5249e99ac19c0cc5a0d89d74549a0654e374a9d874427301165e'
+    reviewed_followup['local/kbacompany/lang/ru/local_kbacompany.php'] = '4c60cc583fbd2219f2e03c4c5f460305dde17d2af3ea379d113e8b1cd537abc5'
     for row in plan['rows']:
         path=root/row['path']
         if not path.is_file() or path.is_symlink():
@@ -157,7 +162,7 @@ def check(root=ROOT):
         errors.append('one historical0902 release note was lost')
     upgrade=(root/'local/kbacompany/db/upgrade.php').read_text(encoding='utf-8')
     versions=[int(v) for v in re.findall(r'upgrade_plugin_savepoint\(true,\s*(\d+)',upgrade)]
-    if len(versions)!=487 or versions!=sorted(set(versions)) or versions[-5:]!=[2026111100,2026111600,2026111601,2026112301,2026112400]:
+    if len(versions)!=488 or versions!=sorted(set(versions)) or versions[-6:]!=[2026111100,2026111600,2026111601,2026112301,2026112400,2026112800]:
         errors.append('merged upgrade chronology/identity changed')
     driver=(root/'tools/tests/moodle_acceptance.php').read_text(encoding='utf-8')
     for ref in [plan['pr53_sha'],plan['pr56_sha']]:

@@ -12,7 +12,7 @@ define('CLI_SCRIPT', true);
 require $core . '/config.php';
 require_once($CFG->dirroot . '/user/lib.php');
 if ($CFG->wwwroot !== 'http://127.0.0.1:8080' || !preg_match('/^bmsci_[a-f0-9]{10}_fresh$/D', $CFG->dbname) || $CFG->dbhost !== '127.0.0.1' ||
-        (string)get_config('local_kbacompany', 'version') !== '2026112400' ||
+        (string)get_config('local_kbacompany', 'version') !== '2026112800' ||
         (string)get_config('local_kbacorporate', 'version') !== '2026111100') {
     fwrite(STDERR, "Refused: clone identity/version mismatch.\n"); exit(2);
 }
