@@ -1,3 +1,5 @@
+> Операционная точка входа: [единый стандарт backup/restore/release](deploy/BACKUP_RELEASE_STANDARD.md). Исторические версии и окна ниже не являются текущим разрешением.
+
 # BMS24 release gates
 
 | Stage | Automated checks | Required human evidence |

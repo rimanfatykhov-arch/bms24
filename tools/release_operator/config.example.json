@@ -1,0 +1,147 @@
+{
+  "schema_version": 1,
+  "release_kind": "code_only",
+  "reviewed_policy": {
+    "path": "/private/bms24/private_work/policy.json",
+    "sha256": "a2c12abe3fc1ce87ef5edbc65408c97a4a81f4ab371678ce60cd2897a3c64dfa"
+  },
+  "paths": {
+    "allow_roots": [
+      "/private/bms24"
+    ],
+    "site": "/private/bms24/site",
+    "data": "/private/bms24/data",
+    "backup": "/private/bms24/backup",
+    "private_work": "/private/bms24/private_work",
+    "test": "/private/bms24/test"
+  },
+  "package": {
+    "zip": "/private/bms24/private_work/package.zip",
+    "manifest": "/private/bms24/private_work/manifest.json",
+    "zip_sha256": "a07c8481ee44e1cd27b4c3e4418e775007127ace13f8a1a301e8f17ccd715cac",
+    "manifest_sha256": "23b978e8cdce5d1cc123084165c005d39265177f4825009daa5fbac88467bc81",
+    "head": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "git_tree": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+    "content_tree_sha256": "37b1db62bae1f2c6ffee1f29f5c346565b98cc50f554afbc90d88cb1ade57777",
+    "entries": 2,
+    "max_unpacked_bytes": 1000
+  },
+  "baseline": {
+    "relative_path": "local/kbacompany",
+    "tree_sha256": "5c36b5b968bc07d3440f6b676aa517a48919faa2c0d30ed2c7cbaa0cc74ac8c3"
+  },
+  "corporate": {
+    "relative_path": "local/kbacorporate",
+    "tree_sha256": "5c36b5b968bc07d3440f6b676aa517a48919faa2c0d30ed2c7cbaa0cc74ac8c3"
+  },
+  "window": {
+    "start_utc": 0,
+    "end_utc": 0,
+    "operation_seconds": 100,
+    "rollback_reserve_seconds": 60
+  },
+  "capacity": {
+    "account": {
+      "volume_device": 0,
+      "expected_uid": 1000,
+      "require_linux_uid": true,
+      "quota_source": "hosting_panel",
+      "observed_utc": 0,
+      "ttl_seconds": 300,
+      "free_bytes": 100000000,
+      "free_inodes": 10000,
+      "reserve_bytes": 1024,
+      "reserve_inodes": 10,
+      "growth_bytes": 1024,
+      "growth_inodes": 10,
+      "phases": [
+        {
+          "name": "capture",
+          "peak_bytes": 2048,
+          "peak_inodes": 20
+        },
+        {
+          "name": "copy",
+          "peak_bytes": 2048,
+          "peak_inodes": 20
+        },
+        {
+          "name": "restore",
+          "peak_bytes": 2048,
+          "peak_inodes": 20
+        },
+        {
+          "name": "install",
+          "peak_bytes": 2048,
+          "peak_inodes": 20
+        },
+        {
+          "name": "rollback",
+          "peak_bytes": 2048,
+          "peak_inodes": 20
+        }
+      ]
+    },
+    "test": {
+      "volume_device": 0,
+      "expected_uid": 1000,
+      "require_linux_uid": true,
+      "quota_source": "hosting_panel",
+      "observed_utc": 0,
+      "ttl_seconds": 300,
+      "free_bytes": 100000000,
+      "free_inodes": 10000,
+      "reserve_bytes": 1024,
+      "reserve_inodes": 10,
+      "growth_bytes": 1024,
+      "growth_inodes": 10,
+      "phases": [
+        {
+          "name": "capture",
+          "peak_bytes": 2048,
+          "peak_inodes": 20
+        },
+        {
+          "name": "copy",
+          "peak_bytes": 2048,
+          "peak_inodes": 20
+        },
+        {
+          "name": "restore",
+          "peak_bytes": 2048,
+          "peak_inodes": 20
+        },
+        {
+          "name": "install",
+          "peak_bytes": 2048,
+          "peak_inodes": 20
+        },
+        {
+          "name": "rollback",
+          "peak_bytes": 2048,
+          "peak_inodes": 20
+        }
+      ]
+    }
+  },
+  "storage": {
+    "copies": [
+      "production",
+      "test"
+    ],
+    "encrypted": false,
+    "plaintext_owner_decision": "REPLACE_WITH_EXPLICIT_OWNER_DECISION",
+    "key_recovery_proof": null
+  },
+  "recovery": {
+    "observed_utc": 0,
+    "ttl_seconds": 300,
+    "private_access": true,
+    "outbound_deny": true,
+    "separate_credentials": true,
+    "separate_volumes": true,
+    "cron_disabled": true,
+    "queues_disabled": true,
+    "integrations_disabled": true
+  }
+}
