@@ -242,6 +242,16 @@ class RunnerTests(unittest.TestCase):
                             self.never_launch, time.monotonic() + 10)
         self.assertEqual(("FAILED", "model_limit", None, None), outcome)
 
+    def test_cli_rejects_excessive_json_nesting(self):
+        stdout = io.BytesIO(b"[" * 10000 + b"0" + b"]" * 10000 + b"\n")
+        process = SimpleNamespace(stdout=stdout, poll=lambda: 1)
+        scratch = self.root / "scratch"
+        scratch.mkdir()
+        with patch("runner.subprocess.Popen", return_value=process):
+            outcome = codex(Path(self.go["codex_cli"]), Path(self.go["codex_home"]), scratch,
+                            self.never_launch, time.monotonic() + 10)
+        self.assertEqual(("FAILED", "invalid_adapter_output", None, None), outcome)
+
     def test_cli_timeout_stops_spawned_process(self):
         stopped = Event()
         process = SimpleNamespace(stdout=io.BytesIO(), poll=lambda: 0 if stopped.is_set() else None,

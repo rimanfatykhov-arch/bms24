@@ -257,13 +257,18 @@ def codex(cli, home, scratch, started, cutoff):
             elif kind == "item.completed" and event.get("item", {}).get("type") == "agent_message":
                 result = event["item"].get("text")
             elif kind == "turn.completed" and session and isinstance(result, str):
-                if proc.wait(timeout=max(0.1, min(5, cutoff - time.monotonic()))) == 0:
+                remaining = cutoff - time.monotonic()
+                if remaining <= 0:
+                    raise Empty
+                if proc.wait(timeout=min(5, remaining)) == 0:
+                    if time.monotonic() >= cutoff:
+                        raise Empty
                     return "REVIEW_READY", "agent_completed", session, json.loads(result)
                 failure = "adapter_failed"
                 break
     except (Empty, subprocess.TimeoutExpired):
         failure = "time_limit" if time.monotonic() >= cutoff else "no_progress"
-    except (ValueError, AttributeError):
+    except (ValueError, AttributeError, RecursionError):
         failure = "invalid_adapter_output"
     finally:
         if proc.poll() is None:
