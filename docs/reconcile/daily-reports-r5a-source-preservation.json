@@ -1,0 +1,20 @@
+{
+  "scope": "exact intentional source updates; not runtime or release acceptance",
+  "base_sha": "0884643590541fdd9b75b1414fd93d6120ded017 (main: #169, #171, #181 Office, #190/#193 Information Centre over the published #173)",
+  "normalization": "CRLF to LF only",
+  "previous_evidence": "docs/reconcile/office-workspace-doc-w2-source-preservation.json",
+  "decision": "docs/daily-reports/R5_REPORTING_CALENDAR_PROPOSAL.md (owner decisions K1-K6, 24.11.2026; PR #170)",
+  "change": "Append the daily reports R5a block (reporting calendar and absences: dailyreports_queue_calendar, dailyreports_queue_absences, dailyreports_calendar_*, dailyreports_weekday_*, dailyreports_offday_*, dailyreports_absence_*, privacy:metadata:dailyreportabsences) after the R3 block. Retain all preceding keys and table definitions. The three additive install.xml tables are covered by the install.xml digest in tools/check_pr53_pr56_integration.py.",
+  "files": [
+    {
+      "path": "local/kbacompany/lang/en/local_kbacompany.php",
+      "before_sha256_lf": "32402ab956d141c1cbb1b45c495cf8ddc2c6c95d09518995dba2c1473dfbc5cf",
+      "after_sha256_lf": "62af4834f4441502e5ebc4b535b508d3369f46b35f61aca9a2f6edf8e77e76e6"
+    },
+    {
+      "path": "local/kbacompany/lang/ru/local_kbacompany.php",
+      "before_sha256_lf": "d5d534758b1c6c6cef4069d1dd6cbe233b9a6973a49f48c0ebc3f781ec51177f",
+      "after_sha256_lf": "02c53ab3bafd6aa9fab2c2f8fd4475456a32cb2d96f17b7d9c7fc01179bc730f"
+    }
+  ]
+}
