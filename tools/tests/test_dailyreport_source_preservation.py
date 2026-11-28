@@ -85,6 +85,16 @@ R5A_MARKER=b'\n// Daily reports R5a (2026-11-24): reporting calendar and absence
 _R5A=json.loads((ROOT/'docs/reconcile/daily-reports-r5a-source-preservation.json').read_text(encoding='utf-8'))
 R5A_BEFORE={lang:next(r['before_sha256_lf'] for r in _R5A['files'] if r['path']==f'local/kbacompany/lang/{lang}/local_kbacompany.php')
             for lang in ('en','ru')}
+R5B_MARKER=b'\n// Daily reports R5b (2026-11-24): due states and "due by", owner decisions K3 and K5.\n'
+R5B_KEYS=[b'dailyreports_due_neutral',b'dailyreports_due_notrequired',b'dailyreports_due_expected',b'dailyreports_due_missed',b'dailyreports_due_ontime',b'dailyreports_due_late',b'dailyreports_due_filter',b'dailyreports_due_all',b'dailyreports_due_counts',b'dailyreports_due_by',b'dailyreports_due_own_missed',b'dailyreports_due_own_notrequired']
+_R5B=json.loads((ROOT/'docs/reconcile/daily-reports-r5b-source-preservation.json').read_text(encoding='utf-8'))
+R5B_BEFORE={lang:next(r['before_sha256_lf'] for r in _R5B['files'] if r['path']==f'local/kbacompany/lang/{lang}/local_kbacompany.php')
+            for lang in ('en','ru')}
+R5C_MARKER=b'\n// Daily reports R5c (2026-11-24): morning reminder about an unsent report, owner decision K4.\n'
+R5C_KEYS=[b'dailyreports_remind_task',b'dailyreports_remind_title',b'messageprovider:dailyreport_reminder']
+_R5C=json.loads((ROOT/'docs/reconcile/daily-reports-r5c-source-preservation.json').read_text(encoding='utf-8'))
+R5C_BEFORE={lang:next(r['before_sha256_lf'] for r in _R5C['files'] if r['path']==f'local/kbacompany/lang/{lang}/local_kbacompany.php')
+            for lang in ('en','ru')}
 _R2=json.loads((ROOT/'docs/reconcile/daily-reports-r2-source-preservation.json').read_text(encoding='utf-8'))
 R2_AFTER={lang:next(r['after_sha256_lf'] for r in _R2['files'] if r['path']==f'local/kbacompany/lang/{lang}/local_kbacompany.php')
           for lang in ('en','ru')}
@@ -172,6 +182,18 @@ class Preservation(unittest.TestCase):
                                             if R5A_MARKER in office:
                                                 # R5a follows the Office block: the published file is byte-identical up to the R5a marker.
                                                 office,r5a=office.split(R5A_MARKER)
+                                                if R5B_MARKER in r5a:
+                                                    r5a,r5b=r5a.split(R5B_MARKER)
+                                                    if R5C_MARKER in r5b:
+                                                        r5b,r5c=r5b.split(R5C_MARKER)
+                                                        # The R5b file is byte-identical up to the R5c marker.
+                                                        self.assertEqual(R5C_BEFORE[lang],hashlib.sha256(data.split(R5C_MARKER)[0]+b'\n').hexdigest())
+                                                        self.assertEqual(R5C_KEYS,keys(r5c))
+                                                        self.assertFalse(set(R5C_KEYS)&set(keys(data.split(R5C_MARKER)[0])))
+                                                    # The R5a file is byte-identical up to the R5b marker.
+                                                    self.assertEqual(R5B_BEFORE[lang],hashlib.sha256(data.split(R5B_MARKER)[0]+b'\n').hexdigest())
+                                                    self.assertEqual(R5B_KEYS,keys(r5b))
+                                                    self.assertFalse(set(R5B_KEYS)&set(keys(data.split(R5B_MARKER)[0])))
                                             # The R3 file is byte-identical up to the R5a marker.
                                             self.assertEqual(R5A_BEFORE[lang],hashlib.sha256(data.split(R5A_MARKER)[0]+b'\n').hexdigest())
                                             r5akeys=keys(r5a)

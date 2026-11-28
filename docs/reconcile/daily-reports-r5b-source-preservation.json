@@ -1,0 +1,20 @@
+{
+  "scope": "exact intentional source updates; not runtime or release acceptance",
+  "base_sha": "74e00c4a63cbd5d37759e604753ebaa4b4fc7947 (main with R5a #172 published; R5B block after the R5a block)",
+  "normalization": "CRLF to LF only",
+  "previous_evidence": "docs/reconcile/daily-reports-r5a-source-preservation.json",
+  "decision": "docs/daily-reports/R5_REPORTING_CALENDAR_PROPOSAL.md (owner decisions K3, K5, 24.11.2026; PR #170)",
+  "change": "Append the daily reports R5b block (due states and \"due by\": dailyreports_due_*) after the R5a block. Retain all preceding keys.",
+  "files": [
+    {
+      "path": "local/kbacompany/lang/en/local_kbacompany.php",
+      "before_sha256_lf": "62af4834f4441502e5ebc4b535b508d3369f46b35f61aca9a2f6edf8e77e76e6",
+      "after_sha256_lf": "cd1c8d0f9dbfd8abb87d23c48ab266a28983c320829ecbf46fe0ef36a3afb56c"
+    },
+    {
+      "path": "local/kbacompany/lang/ru/local_kbacompany.php",
+      "before_sha256_lf": "02c53ab3bafd6aa9fab2c2f8fd4475456a32cb2d96f17b7d9c7fc01179bc730f",
+      "after_sha256_lf": "0d1f747918c95bb3a5eede5b58e5b2846cbf15b645045b93523d05570a408b70"
+    }
+  ]
+}

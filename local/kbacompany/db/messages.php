@@ -20,4 +20,8 @@ $messageproviders = [
     'dailyreport_copy' => [
         'capability' => 'local/kbacompany:viewowncompany',
     ],
+    // R5c (owner decision K4): morning reminder about an unsent report of a required working day.
+    'dailyreport_reminder' => [
+        'capability' => 'local/kbacompany:viewowncompany',
+    ],
 ];

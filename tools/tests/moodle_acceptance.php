@@ -278,7 +278,11 @@ $scenarios = ['fresh' => null, 'from1645' => $main, 'from1879' => $import,
         // Published source (#197 head 48eba88, ZIP SHA256 22c541a7…b4b9e, local_kbacompany 2026112301; Codex task in
         // #172, 27.11.2026): daily-report rows seeded there must survive the R5a upgrade unchanged, and the upgraded
         // schema must equal a fresh install.
-        'fromprod2026112301' => '48eba88dbccf37f826e57a35636e11bdade12b32'];
+        'fromprod2026112301' => '48eba88dbccf37f826e57a35636e11bdade12b32',
+        // Published production source after R5a (#172 head 6cd6c35 = main 74e00c4, local_kbacompany 2026112400):
+        // the R5c step 2026112400 -> 2026112401 registers only a task and a message provider; seeded rows and the
+        // schema must stay unchanged, the upgraded schema must equal a fresh install, and a repeat is a no-op.
+        'fromprod2026112400' => '6cd6c3553fb49958c14a73248b9cc6cbedd8b9f7'];
 if ($productionprofile) { $scenarios = ['fresh'=>null, 'fromprod1878'=>'a87252b642e5796c6d84105dd448d51d9a5b5241']; }
 if ($standard) {
     $report['not_covered'][] = 'historical upgrades and full PHPUnit suites (separate mandatory FULL)';
@@ -395,9 +399,23 @@ foreach ($scenarios as $name => $historical) {
             if (!$step('upgrade', [PHP_BINARY, $core . '/admin/cli/upgrade.php', '--non-interactive'])) {
                 throw new RuntimeException('Actual Moodle upgrade failed');
             }
-            if ($name === 'fromprod2026112301') {
+            if ($name === 'fromprod2026112301' || $name === 'fromprod2026112400') {
                 // Safe repeat: a second upgrade run over the upgraded site must be a clean no-op.
                 $step('upgrade-repeat', [PHP_BINARY, $core . '/admin/cli/upgrade.php', '--non-interactive']);
+                // R5c: the reminder task is registered by the upgrade and runs through the real Moodle scheduled-task
+                // runner, twice in a row. The CLI exits 0 even when a task throws, so the log must say it completed.
+                foreach ([1, 2] as $run) {
+                    $label = 'cron-dailyreport-reminder-' . $run;
+                    $log = $logs . '/' . $name . '-' . $label . '.log';
+                    $code = command([PHP_BINARY, $core . '/admin/cli/scheduled_task.php',
+                        '--execute=\local_kbacompany\task\send_daily_report_reminders'], $core, $log);
+                    $text = is_file($log) ? (string)file_get_contents($log) : '';
+                    $ok = $code === 0 && strpos($text, 'Scheduled task complete') !== false
+                        && strpos($text, 'Scheduled task failed') === false;
+                    $entry['steps'][$label] = ['status' => $ok ? 'PASS' : 'FAIL', 'exit_code' => $code];
+                    echo $name . '/' . $label . ': ' . ($ok ? 'PASS' : 'FAIL') . "
+";
+                }
             }
         }
         $step('candidate-schema', [PHP_BINARY, $core . '/admin/cli/check_database_schema.php']);
@@ -532,7 +550,11 @@ if ($fresh) {
             // ADR-0011 block 1: monthly summary for managers, read-only, company-scoped.
             'daily_report_summary_service_test',
             // R5a: reporting calendar, exceptions, absences (owner decisions K1-K6).
-            'daily_report_calendar_service_test'];
+            'daily_report_calendar_service_test',
+            // R5b: due states, "due by" and the schedule filter (owner decisions K3, K5).
+            'daily_report_due_test',
+            // R5c: morning reminder task (owner decision K4).
+            'daily_report_reminder_test'];
     }
     foreach ($focused as $test) {
         if ($code !== 0) { $report['phpunit'][$test] = 'NOT RUN'; continue; }

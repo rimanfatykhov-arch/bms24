@@ -26,6 +26,34 @@ final class daily_report_ui_service {
             ['data-dailyreport-status' => $status]);
     }
 
+    /** R5b due states that get a visible marker; "neutral" keeps the R4 view, "on time" needs no marker. */
+    public const DUE_SHOWN = ['notrequired', 'expected', 'missed', 'late'];
+
+    /** R5b: due state as text with a symbol (never colour alone). */
+    public static function due_badge(string $due): string {
+        $icons = ['notrequired' => '○', 'expected' => '…', 'missed' => '!', 'late' => '⏱'];
+        $due = isset($icons[$due]) ? $due : 'notrequired';
+        return html_writer::span(html_writer::span($icons[$due], '', ['aria-hidden' => 'true']) . ' ' .
+            s(self::str('due_' . $due)), 'badge badge-light border bms-dailyreport-due', ['data-dailyreport-due' => $due]);
+    }
+
+    /** R5b: the employee's own line in "My report" — "due by", "deadline passed" or "not required". */
+    public static function own_due(string $due, int $deadline): string {
+        if ($due === 'expected') {
+            return html_writer::tag('p', s(self::str('due_by', userdate($deadline))), ['class' => 'mb-3',
+                'data-dailyreport-owndue' => $due]);
+        }
+        if ($due === 'missed') {
+            return html_writer::div(s(self::str('due_own_missed', userdate($deadline))), 'alert alert-warning',
+                ['role' => 'status', 'data-dailyreport-owndue' => $due]);
+        }
+        if ($due === 'notrequired') {
+            return html_writer::tag('p', s(self::str('due_own_notrequired')), ['class' => 'text-muted mb-3',
+                'data-dailyreport-owndue' => $due]);
+        }
+        return '';
+    }
+
     /** ADR-0010: the self-review marker is always text, never colour alone. */
     public static function self_badge(): string {
         return html_writer::span(html_writer::span('↺', '', ['aria-hidden' => 'true']) . ' ' . s(self::str('selfreview_badge')),
@@ -356,6 +384,15 @@ final class daily_report_ui_service {
         }
         $form .= $field('dailyreport-team-status', self::str('history_status'),
             $select('status', 'dailyreport-team-status', $statuses, $team['status']));
+        if (!empty($team['calendar']) || ($team['due'] ?? '') !== '') {
+            // R5b: filter by the reporting schedule (e.g. only "not submitted"), shown once the calendar is on.
+            $dues = ['' => self::str('due_all')];
+            foreach (self::DUE_SHOWN as $due) {
+                $dues[$due] = self::str('due_' . $due);
+            }
+            $form .= $field('dailyreport-team-due', self::str('due_filter'),
+                $select('due', 'dailyreport-team-due', $dues, (string)($team['due'] ?? '')));
+        }
         $form .= html_writer::div(html_writer::tag('button', s(self::str('team_show')),
             ['type' => 'submit', 'class' => 'btn btn-primary']), 'mb-2');
         $out .= html_writer::tag('form', $form, ['method' => 'get', 'class' => 'd-flex flex-wrap align-items-end mb-2',
@@ -370,6 +407,16 @@ final class daily_report_ui_service {
         }
         $out .= html_writer::tag('ul', $counts, ['class' => 'list-unstyled d-flex flex-wrap mb-3',
             'aria-label' => self::str('team_counts')]);
+        if (!empty($team['calendar'])) {
+            $duecounts = '';
+            foreach (self::DUE_SHOWN as $due) {
+                $duecounts .= html_writer::tag('li', self::due_badge($due) . ' ' . html_writer::span(
+                    (int)($team['duecounts'][$due] ?? 0), 'font-weight-bold', ['data-dailyreport-team-duecount' => $due]),
+                    ['class' => 'mr-3 mb-1']);
+            }
+            $out .= html_writer::tag('ul', $duecounts, ['class' => 'list-unstyled d-flex flex-wrap mb-3',
+                'aria-label' => self::str('due_counts')]);
+        }
         if (!$team['items']) {
             return $out . html_writer::tag('p', s(self::str('team_empty')));
         }
@@ -385,6 +432,13 @@ final class daily_report_ui_service {
             if ($row['reviewersource'] === 'self_top') {
                 $state .= ' ' . self::self_badge();
             }
+            $due = (string)($row['due'] ?? 'neutral');
+            if (in_array($due, self::DUE_SHOWN, true)) {
+                $state .= ' ' . self::due_badge($due);
+            }
+            if ($due === 'expected' || $due === 'missed') {
+                $state .= ' ' . html_writer::span(s(self::str('due_by', userdate((int)$row['deadline']))), 'text-muted small');
+            }
             $reviewer = '—';
             if ($row['reportuuid'] !== '') {
                 $user = $row['reviewerid'] > 0 ? \core_user::get_user($row['reviewerid']) : null;
@@ -392,7 +446,7 @@ final class daily_report_ui_service {
             }
             $table->data[] = [
                 html_writer::span(s($row['name']), '', ['data-dailyreport-team-user' => (int)$row['userid'],
-                    'data-dailyreport-team-state' => $row['state']]),
+                    'data-dailyreport-team-state' => $row['state'], 'data-dailyreport-team-due' => $due]),
                 s($row['unit'] !== '' ? ($team['units'][$row['unit']] ?? '—') : self::str('team_unit_none')),
                 $state,
                 $row['submittedat'] ? s(userdate($row['submittedat'])) . ($row['late'] ? ' · ' . s(self::str('late')) : '') : '—',
@@ -402,7 +456,8 @@ final class daily_report_ui_service {
             ];
         }
         $params = ['tab' => 'review', 'queue' => 'team', 'day' => $team['day'], 'scope' => $team['scope']] +
-            ($team['unit'] !== '' ? ['unit' => $team['unit']] : []) + ($team['status'] !== '' ? ['status' => $team['status']] : []);
+            ($team['unit'] !== '' ? ['unit' => $team['unit']] : []) + ($team['status'] !== '' ? ['status' => $team['status']] : []) +
+            (($team['due'] ?? '') !== '' ? ['due' => $team['due']] : []);
         return $out . html_writer::div(html_writer::table($table), 'table-responsive') .
             $OUTPUT->paging_bar($team['total'], $team['page'], daily_report_team_service::PAGE_SIZE,
                 self::url($uuid, $params), 'page');

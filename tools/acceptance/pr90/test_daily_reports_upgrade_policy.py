@@ -25,6 +25,22 @@ class UpgradePolicyTest(unittest.TestCase):
     def test_additive_upgrade_and_fresh_schema(self):
         before,after=fixture();upgraded(before,after);fresh_equal(after,after);unchanged(after,after)
 
+    def test_r5c_adds_no_tables(self):
+        r0, r1r2 = fixture()
+        r1r2['rows']['local_kbacompany_dreport'] = {'count': 1, 'sha256': 'submitted'}
+        r5a = add_tables(r1r2, 2026112400, ADR0010_TABLES | R5A_TABLES)
+        r5c = copy.deepcopy(r5a); r5c['version'] = 2026112401
+        upgraded(r5a, r5c)
+        upgraded(r1r2, add_tables(r1r2, 2026112401, ADR0010_TABLES | R5A_TABLES))
+        fresh_equal(add_tables(r0, 2026112401, NEW | ADR0010_TABLES | R5A_TABLES), r5c)
+        extra = add_tables(r5a, 2026112401, {'local_kbacompany_dreportrem'})
+        with self.assertRaises(RuntimeError):
+            upgraded(r5a, extra)
+        missing = copy.deepcopy(r5a)
+        missing['tables'].remove('local_kbacompany_dreportabs')
+        with self.assertRaises(RuntimeError):
+            upgraded(missing, add_tables(missing, 2026112401, set()))
+
     def test_r5a_upgrade_from_every_supported_origin(self):
         r0, r1r2 = fixture()
         r1r2['rows']['local_kbacompany_dreport'] = {'count': 1, 'sha256': 'submitted'}

@@ -139,8 +139,17 @@ def check(root=ROOT):
     reviewed_followup['local/kbacompany/classes/local/communication_service.php'] = '870b471dba39c867b5b13f8b04f55fb82f67ce484ea44cf929b5b9c4f93dae92'
     # Daily reports R5a (owner decisions K1-K6, 24.11.2026): append the reporting calendar block after the DOC-W2 Office block (main).
     # See docs/reconcile/daily-reports-r5a-source-preservation.json.
-    reviewed_followup['local/kbacompany/lang/en/local_kbacompany.php'] = '62af4834f4441502e5ebc4b535b508d3369f46b35f61aca9a2f6edf8e77e76e6'
-    reviewed_followup['local/kbacompany/lang/ru/local_kbacompany.php'] = '02c53ab3bafd6aa9fab2c2f8fd4475456a32cb2d96f17b7d9c7fc01179bc730f'
+    reviewed_followup['local/kbacompany/lang/en/local_kbacompany.php'] = '37047b1f5dc9d06b7f37c0c4b5e5adcf104245a19de100dec400e67535ed4f14'
+    reviewed_followup['local/kbacompany/lang/ru/local_kbacompany.php'] = '1530583466fd865e18c39a5a67feeccfc1d0a854c09c1f57f58e72ebf23fa8d9'
+    # Daily reports R5b (owner decisions K3, K5, 24.11.2026): append the due-state block after R5a.
+    # See docs/reconcile/daily-reports-r5b-source-preservation.json.
+    reviewed_followup['local/kbacompany/lang/en/local_kbacompany.php'] = 'cd1c8d0f9dbfd8abb87d23c48ab266a28983c320829ecbf46fe0ef36a3afb56c'
+    reviewed_followup['local/kbacompany/lang/ru/local_kbacompany.php'] = '0d1f747918c95bb3a5eede5b58e5b2846cbf15b645045b93523d05570a408b70'
+    # Daily reports R5c (owner decision K4, 24.11.2026): append the reminder block after R5b and register the
+    # 'dailyreport_reminder' notification kind. See docs/reconcile/daily-reports-r5c-source-preservation.json.
+    reviewed_followup['local/kbacompany/lang/en/local_kbacompany.php'] = '4ed320b2148b5cdac8b9d8b05291730b075339f94a6d2425b8e214bfe3caba98'
+    reviewed_followup['local/kbacompany/lang/ru/local_kbacompany.php'] = '66791413c6c14177d761cdce9ce340d4238d711e3a171aabaf49b25238ed2922'
+    reviewed_followup['local/kbacompany/classes/local/communication_service.php'] = 'c796f4eb579cebc002bfd073222ee3e284e2f7ca10d5d46acf9de717a7e3a7ff'
     for row in plan['rows']:
         path=root/row['path']
         if not path.is_file() or path.is_symlink():
@@ -153,7 +162,7 @@ def check(root=ROOT):
         errors.append('one historical0902 release note was lost')
     upgrade=(root/'local/kbacompany/db/upgrade.php').read_text(encoding='utf-8')
     versions=[int(v) for v in re.findall(r'upgrade_plugin_savepoint\(true,\s*(\d+)',upgrade)]
-    if len(versions)!=487 or versions!=sorted(set(versions)) or versions[-5:]!=[2026111100,2026111600,2026111601,2026112301,2026112400]:
+    if len(versions)!=488 or versions!=sorted(set(versions)) or versions[-6:]!=[2026111100,2026111600,2026111601,2026112301,2026112400,2026112401]:
         errors.append('merged upgrade chronology/identity changed')
     driver=(root/'tools/tests/moodle_acceptance.php').read_text(encoding='utf-8')
     for ref in [plan['pr53_sha'],plan['pr56_sha']]:
