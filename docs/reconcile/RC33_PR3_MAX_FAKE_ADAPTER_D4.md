@@ -42,16 +42,26 @@ capability, lang or UI change.
     - edit after create;
     - kill switch while waiting;
   - **N21**: sender revocation during intake;
-  - **N28**: ADR-0006 membership revocation during intake.
-- In each race, the revocation runs in its own PHP process while 15 imports run in parallel, with 5 imports before and
-  5 after.
-- `contract.inbound_checks` makes the six verdicts from DB state that a separate PHP process reads after each step.
+  - **N28**: ADR-0006 membership revocation during intake;
+  - **N28 object ACL** (COORD-D05, owner option A in #205): posts into the discussion of a task, a Battle Plan and a
+    meeting of company A while its writer loses the right: `task_service::set_observer(0)` for the task observer,
+    `battle_plan_service::set_observer(0)` for the plan observer, and ADR-0006 closure for the meeting participant
+    (there is no participant removal API). Each post is its own PHP CLI process. Task and plan posts alternate the
+    object path (`post_discussion_message`, `battle_plan_discussion_service::post`) and the generic
+    `communication_service::send_message`; meeting posts use the generic path.
+- In each race, the revocation runs in its own PHP process while 15 imports or posts run in parallel, with 5 before
+  and 5 after.
+- `contract.inbound_checks` makes the nine verdicts from DB state that a separate PHP process reads after each step.
   The checks are required in `required_check_names()`, and the merge gate uses that list.
   - The race invariant: no import publishes a message by the revoked author with an id higher than the one read after
     the revocation committed.
   - Answers and receipts must agree.
   - Every receipt after the revocation is a refusal.
-  - `test_contract.py` covers a consistent observation and 23 single mutations.
+  - N28 object ACL: no post by the revoked writer has an id above the one read after the revocation committed. Every
+    answer is a commit or one of the exact refusal codes of that path. The committed messages equal the `ok`
+    answers. The write right is present before and absent after. A post by a remaining writer afterwards does not
+    notify the revoked writer. Task and plan races must exercise both write paths.
+  - `test_contract.py` covers a consistent observation and 43 single mutations (20 of them N28 object ACL).
 
 ## Not covered or still open
 
@@ -59,6 +69,8 @@ capability, lang or UI change.
   only `bms24-ci`. The D4 evidence (PHPUnit `max_inbound_service_test` plus this harness on MariaDB and Percona)
   appears only when the stack is targeted at `main`, which is an owner decision. Until then D4 is **NOT RUN**.
 - The concurrency limit is the 4 PHP built-in server workers and the CLI revoker, not a production web server.
-- Object-ACL writers (task, Battle Plan, meeting) are still outside the gate. The N28 object-ACL part is the open owner
-  question from PR-1.
+- N28 object ACL (PR-1 after COORD-D05) is serialized for the narrowing writers only. The residuals are listed in
+  `docs/reconcile/RC33_PR1_COMMUNICATION_WRITE_GATE.md`. The D4 races cover one writer per object type: task observer,
+  plan observer and meeting participant closure. Other gated writers (`save`, `transition`, `delete_task`, `review`,
+  coverage, roles) are covered by the static guard and PHPUnit, not by a parallel race.
 - N17/N18 (files), N23 (outbox consumer) and live MAX (D5–D8) remain out of scope.

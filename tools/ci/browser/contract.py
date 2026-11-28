@@ -2749,6 +2749,15 @@ INBOUND_ADAPTER_REVIEW = {'adp.bot': 'sender_bot', 'adp.attachment': 'unsupporte
                           'adp.forward': 'forward_held', 'adp.channel': 'unsupported_chat', 'adp.held': 'source_held'}
 INBOUND_RACES = {'race_sender': ('1', 'race.s.', ('sender_unverified',)),
                  'race_membership': ('2', 'race.m.', ('author_unavailable',))}
+# N28 (COORD-D05, #205 option A): object ACL revocation during posts into the object discussion. Refusals are the exact
+# Moodle error codes of the object path and of the generic send path.
+INBOUND_N28 = {
+    'task': ('inbound_n28_task_observer_revocation_linearized', ('taskcenter_permission', 'communication_permission')),
+    'plan': ('inbound_n28_battleplan_observer_revocation_linearized',
+             ('battleplan_reference', 'battleplan_permission', 'communication_permission')),
+    'meeting': ('inbound_n28_meeting_participant_revocation_linearized',
+                ('companynotavailable', 'communication_permission')),
+}
 
 
 def inbound_checks(obs, exitcode=None):
@@ -2869,6 +2878,48 @@ def inbound_checks(obs, exitcode=None):
             require(all(x['message_id'] == 0 for x in rs.values() if x['outcome'] != 'created'), 'review published')
         return check
 
+    def n28_check(kind):
+        def check():
+            o = run()
+            refused = INBOUND_N28[kind][1]
+            require(o.get('n28_setup_exit') == 0, 'N28 fixture not prepared')
+            r = (o.get('n28') or {}).get(kind) or {}
+            rev = r.get('revocation')
+            require(r.get('revoker_exit') == 0 and isinstance(rev, dict) and isinstance(rev.get('max_message_id'), int)
+                    and rev['max_message_id'] > 0, 'N28 revocation process failed')
+            top = rev['max_message_id']
+            pre, middle, post = r.get('pre') or [], r.get('middle') or [], r.get('post') or []
+            answers = pre + middle + post
+            require(len(pre) == 5 and len(middle) == 15 and len(post) == 5 and len({x[0] for x in answers}) == 25,
+                    'N28 answers missing')
+            require(all(x[2] == 'ok' and x[3] > 0 for x in pre), 'N28 posts before the revocation did not commit')
+            require(all(x[2] in refused and x[3] == 0 for x in post),
+                    'N28 post after the revocation not refused: %r' % (post,))
+            require(all((x[2] == 'ok' and x[3] > 0) or (x[2] in refused and x[3] == 0) for x in middle),
+                    'unexpected concurrent N28 answer: %r' % (middle,))
+            if kind != 'meeting':
+                require({x[1] for x in answers} == {'object', 'generic'}, 'N28 did not exercise both write paths')
+            ok = {x[3] for x in answers if x[2] == 'ok'}
+            require(all(i <= top for i in ok), 'a post committed after the revocation (linearization broken)')
+            st = (o.get('state_n28_ready') or {}).get('n28') or {}
+            fin = (o.get('state_final') or {}).get('n28') or {}
+            ready, final = st.get(kind) or {}, fin.get(kind) or {}
+            require(isinstance(ready.get('messages'), list) and isinstance(final.get('messages'), list),
+                    'N28 state missing')
+            require(ready.get('right') is True and final.get('right') is False,
+                    'N28 write right not present before and absent after the revocation')
+            writer = final.get('writer')
+            before = {m['id'] for m in ready['messages'] if m['author'] == writer}
+            mine = {m['id'] for m in final['messages'] if m['author'] == writer}
+            require(len(before) == 1 and mine == before | ok, 'N28 answers and committed messages disagree')
+            require(not [i for i in mine if i > top], 'a message by the revoked writer appeared after the revocation')
+            other = r.get('other') or []
+            require(len(other) == 2 and other[0] == 'ok' and other[1] > top, 'remaining writer could not post')
+            notified = final.get('notified') or {}
+            require(str(other[1]) in notified and writer not in notified[str(other[1])],
+                    'the revoked writer was notified after the revocation')
+        return check
+
     def isolation_and_audit():
         o = run()
         for tenant in ('B',):
@@ -2892,6 +2943,9 @@ def inbound_checks(obs, exitcode=None):
             'inbound_fake_adapter_end_to_end_states': adapter_end_to_end,
             'inbound_n21_sender_revocation_during_intake_linearized': race_check('race_sender'),
             'inbound_n28_membership_revocation_during_intake_linearized': race_check('race_membership'),
+            INBOUND_N28['task'][0]: n28_check('task'),
+            INBOUND_N28['plan'][0]: n28_check('plan'),
+            INBOUND_N28['meeting'][0]: n28_check('meeting'),
             'inbound_tenant_isolation_outbox_and_dual_actor_audit': isolation_and_audit}
 
 

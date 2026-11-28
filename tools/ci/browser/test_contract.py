@@ -2252,7 +2252,37 @@ def inbound_obs():
              {'state': 'rejected', 'deliveries': 1, 'has_body': 0, 'reason': 'unbound'}]
             + [{'state': 'review_required', 'deliveries': 1, 'has_body': 0, 'reason': ''} for _ in range(8)])
     hooks = {'wrong_secret': 401, 'twenty_identical': [200] * 20, 'adp.bot': 200, 'adp.held.create': 200}
-    return {'status': 'PASS', 'setup_exit': 0,
+
+    def n28(kind, writer, other, first_id):
+        refused = c.INBOUND_N28[kind][1][0]
+
+        def path(tag):
+            return 'generic' if kind == 'meeting' or int(tag.split('.')[1]) % 2 else 'object'
+        answers, nid = {'pre': [], 'middle': [], 'post': []}, first_id + 1
+        for phase, count, oks in (('pre', 5, 5), ('middle', 15, 6), ('post', 5, 0)):
+            for i in range(count):
+                tag = '%s.%d' % (phase, i)
+                if i < oks:
+                    answers[phase].append([tag, path(tag), 'ok', nid]); nid += 1
+                else:
+                    answers[phase].append([tag, path(tag), refused, 0])
+        ready_msgs = [{'id': first_id, 'author': writer}]
+        final_msgs = ready_msgs + [{'id': i, 'author': writer} for i in range(first_id + 1, nid)] + [
+            {'id': nid + 50, 'author': other}]
+        race = dict(answers, other=['ok', nid + 50], revoker_exit=0,
+                    revocation={'kind': kind, 'max_message_id': nid - 1})
+        ready = {'writer': writer, 'other': other, 'right': True, 'messages': ready_msgs,
+                 'notified': {str(first_id): [other]}}
+        final = {'writer': writer, 'other': other, 'right': False, 'messages': final_msgs,
+                 'notified': {str(m['id']): [other] if m['author'] == writer else [] for m in final_msgs}}
+        return race, ready, final
+
+    n28_obs = {k: n28(k, w, x, f) for k, w, x, f in (('task', 51, 52, 1000), ('plan', 53, 54, 2000),
+                                                       ('meeting', 55, 2, 3000))}
+    final['n28'] = {k: v[2] for k, v in n28_obs.items()}
+    return {'status': 'PASS', 'setup_exit': 0, 'n28_setup_exit': 0,
+            'n28': {k: v[0] for k, v in n28_obs.items()},
+            'state_n28_ready': {'n28': {k: v[1] for k, v in n28_obs.items()}},
             'n09': [[200, 'created', '']] + [[200, 'duplicate', '']] * 19, 'state_n09': s_n09,
             'envelopes': {k: [200, v, ''] for k, v in c.INBOUND_ENVELOPES.items()},
             'state_envelopes': copy.deepcopy(s_n09),
@@ -2268,7 +2298,7 @@ class InboundContractTest(unittest.TestCase):
         r = c.evaluate(c.inbound_checks(inbound_obs(), 0))
         self.assertEqual({'PASS'}, {x['status'] for x in r.values()}, r)
         self.assertTrue(set(r) <= set(c.required_check_names()))
-        self.assertEqual(6, len(r))
+        self.assertEqual(9, len(r))
 
     def test_incomplete_or_failed_producer_fails_everything(self):
         for mutate, code in ((lambda o: o.update(error='boom'), 0), (lambda o: o.update(status='INCOMPLETE'), 0),
@@ -2288,6 +2318,7 @@ class InboundContractTest(unittest.TestCase):
         s, m = ('inbound_n21_sender_revocation_during_intake_linearized',
                 'inbound_n28_membership_revocation_during_intake_linearized')
         iso = 'inbound_tenant_isolation_outbox_and_dual_actor_audit'
+        nt, np_, nm = (c.INBOUND_N28[k][0] for k in ('task', 'plan', 'meeting'))
 
         def a1(o, key):
             return o[key]['companies']['A']['bindings']['1']
@@ -2316,6 +2347,28 @@ class InboundContractTest(unittest.TestCase):
             (iso, lambda o: o['state_final']['companies']['B']['bindings']['1']['messages'].append({'id': 1})),
             (iso, lambda o: o['state_final'].__setitem__('gate_held', True)),
             (iso, lambda o: o['state_final']['companies']['A'].__setitem__('audit_create', 1)),
+            # N28 (COORD-D05): object ACL revocation of a task observer, a plan observer and a meeting participant.
+            (nt, lambda o: o.__setitem__('n28_setup_exit', 1)),
+            (nt, lambda o: o['n28']['task'].__setitem__('revoker_exit', 1)),
+            (nt, lambda o: o['n28']['task']['post'][0].__setitem__(2, 'ok')),
+            (nt, lambda o: o['n28']['task']['post'][1].__setitem__(2, 'taskcenter_lock')),
+            (nt, lambda o: o['n28']['task']['pre'][2].__setitem__(2, 'taskcenter_permission')),
+            (nt, lambda o: o['n28']['task']['middle'][3].__setitem__(3, 9999)),
+            (nt, lambda o: o['n28']['task']['middle'][9].__setitem__(2, 'class:dml_exception')),
+            (nt, lambda o: o['state_final']['n28']['task']['messages'].append({'id': 9999, 'author': 51})),
+            (nt, lambda o: o['state_final']['n28']['task'].__setitem__('right', True)),
+            (nt, lambda o: o['state_n28_ready']['n28']['task'].__setitem__('right', False)),
+            (nt, lambda o: [x.__setitem__(1, 'generic') for x in o['n28']['task']['pre'] + o['n28']['task']['middle']
+                            + o['n28']['task']['post']]),
+            (np_, lambda o: o['n28']['plan']['revocation'].__setitem__('max_message_id', 2003)),
+            (np_, lambda o: o['state_final']['n28']['plan']['messages'].pop(3)),
+            (np_, lambda o: o['state_final']['n28']['plan']['notified'][str(o['n28']['plan']['other'][1])].append(53)),
+            (np_, lambda o: o['n28']['plan'].__setitem__('other', ['battleplan_reference', 0])),
+            (np_, lambda o: o['n28']['plan']['post'][4].__setitem__(2, 'taskcenter_permission')),
+            (nm, lambda o: o['n28']['meeting']['post'][0].__setitem__(2, 'battleplan_reference')),
+            (nm, lambda o: o['n28']['meeting'].__setitem__('revocation', None)),
+            (nm, lambda o: o['state_final']['n28'].pop('meeting')),
+            (nm, lambda o: o['n28']['meeting']['middle'].pop()),
         ]
         for name, mutate in cases:
             with self.subTest(name=name):

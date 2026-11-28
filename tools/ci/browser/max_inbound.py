@@ -146,6 +146,53 @@ def race(company, n, prefix, revoke_phase):
     return out
 
 
+N28_KINDS = ('task', 'plan', 'meeting')
+
+
+def php_json(*args):
+    """Run one ci_inbound.php phase that prints one JSON line; a crash is an observation, never a pass."""
+    p = subprocess.run(['php', str(HERE / 'ci_inbound.php'), CORE, *args], stdout=subprocess.PIPE,
+                       stderr=subprocess.DEVNULL, timeout=300, text=True)
+    try:
+        return json.loads(p.stdout.strip().splitlines()[-1])
+    except Exception:  # noqa: BLE001
+        return {'outcome': 'exit:%d' % p.returncode, 'message_id': 0, 'path': ''}
+
+
+def n28_post(kind, tag):
+    r = php_json('n28_post', kind, tag)
+    return [tag, r.get('path', ''), r.get('outcome'), r.get('message_id', 0)]
+
+
+def n28_race(kind):
+    """N28 (COORD-D05): 5 posts before, 15 in parallel PHP processes with, and 5 after an object ACL revocation
+    running in its own PHP process; then one post by a remaining writer (the revoked writer must not be notified)."""
+    out = {'pre': [n28_post(kind, 'pre.%d' % i) for i in range(5)]}
+    revoker = {}
+
+    def revoke():
+        time.sleep(0.15)
+        revoker['exit'] = php('n28_revoke', kind)
+
+    t = threading.Thread(target=revoke)
+    t.start()
+
+    def one(i):
+        time.sleep(i * 0.03)
+        return n28_post(kind, 'mid.%d' % i)
+
+    with ThreadPoolExecutor(15) as pool:
+        out['middle'] = list(pool.map(one, range(15)))
+    t.join()
+    out['post'] = [n28_post(kind, 'post.%d' % i) for i in range(5)]
+    other = php_json('n28_post_other', kind)
+    out['other'] = [other.get('outcome'), other.get('message_id', 0)]
+    out['revoker_exit'] = revoker.get('exit')
+    path = EVIDENCE / ('inbound-n28_revoke_%s.json' % kind)
+    out['revocation'] = json.loads(path.read_text()) if path.exists() else None
+    return out
+
+
 def main():
     result['setup_exit'] = php('setup')
     fixture = json.loads((EVIDENCE / 'inbound.private.json').read_text())
@@ -221,6 +268,11 @@ def main():
     # N21/N28: revocations in their own PHP processes while imports run in parallel PHP workers.
     result['race_sender'] = race(a, '1', 'race.s.', 'revoke_sender')
     result['race_membership'] = race(a, '2', 'race.m.', 'close_membership')
+
+    # N28 (COORD-D05): object ACL revocations of a task, a Battle Plan and a meeting during posts in parallel processes.
+    result['n28_setup_exit'] = php('n28_setup')
+    result['state_n28_ready'] = state('n28_ready')
+    result['n28'] = {kind: n28_race(kind) for kind in N28_KINDS}
     result['state_final'] = state('final')
     result['status'] = 'PASS'
 
