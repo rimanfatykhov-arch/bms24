@@ -142,6 +142,10 @@ def check(root=ROOT):
     # See docs/reconcile/daily-reports-r5a-source-preservation.json.
     reviewed_followup['local/kbacompany/lang/en/local_kbacompany.php'] = '62af4834f4441502e5ebc4b535b508d3369f46b35f61aca9a2f6edf8e77e76e6'
     reviewed_followup['local/kbacompany/lang/ru/local_kbacompany.php'] = '02c53ab3bafd6aa9fab2c2f8fd4475456a32cb2d96f17b7d9c7fc01179bc730f'
+    # Terminology BMS-STD-TER-001 (#187, owner approval 2026-11-25): exact in-place RU/EN value replacements, same keys.
+    # See docs/reconcile/terminology-cascade-std-source-preservation.json (line-by-line before/after).
+    reviewed_followup['local/kbacompany/lang/en/local_kbacompany.php'] = 'e0d49c73c41b137f6d6927eda8afc128c30a0b30ac5917c24a443f201ca9bf47'
+    reviewed_followup['local/kbacompany/lang/ru/local_kbacompany.php'] = '07df4610a4549fe8a08b92107cdefb480796e15fe40ee371a4e36c2286cfa0e4'
     # RC33 PR-1 (owner D3 2026-11-24): shared communication write gate and notification eligibility; no lang,
     # schema or version change; N28 (COORD-D05, #205 option A) re-checks the task and Battle Plan write right under the gate.
     # See docs/reconcile/RC33_PR1_COMMUNICATION_WRITE_GATE.md.
@@ -150,8 +154,8 @@ def check(root=ROOT):
     # RC33 PR-2 (owner D1-D4 2026-11-24, ADR-0012): fixed import audience in add_participant and the append-only
     # inbound lang block. See docs/reconcile/RC33_PR2_MAX_INBOUND_SERVER.md.
     reviewed_followup['local/kbacompany/classes/local/communication_service.php'] = 'b002d918e9dcdb6ad39244e0bef04f74b8914d2e756b4766d4e78098235da64e'
-    reviewed_followup['local/kbacompany/lang/en/local_kbacompany.php'] = 'e94c4bd0b6a900b2fb38a66c94787c00ee937a8bcf8968c51c0be053d573e715'
-    reviewed_followup['local/kbacompany/lang/ru/local_kbacompany.php'] = '6b6cb319832980c9394a8457b1f5402b737e2372a3279914a814e823b2f8b21f'
+    reviewed_followup['local/kbacompany/lang/en/local_kbacompany.php'] = '0e041d944fac333a7b30b95d46a1c5bfe1c19dbb84a3e90f62ce973fde61abb2'
+    reviewed_followup['local/kbacompany/lang/ru/local_kbacompany.php'] = 'd3c348f38e230b569a7f014607f47426ad5c95913b58bc295b967ba0c89d85c7'
     for row in plan['rows']:
         path=root/row['path']
         if not path.is_file() or path.is_symlink():
