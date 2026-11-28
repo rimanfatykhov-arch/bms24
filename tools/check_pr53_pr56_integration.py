@@ -71,9 +71,11 @@ def check(root=ROOT):
     reviewed_followup['local/kbacorporate/db/upgrade.php'] = 'ef39434356106043292de20bf355165961ca07462e9ead6a79f19bbc4b6d5019'
     reviewed_metadata={'AGENTS.md','docs/00_MASTER_CONTEXT.md'}
     for name, expected in plan['unchanged_schema_hashes'].items():
-        # ADR-0009 R1 appends five additive daily report tables, ADR-0010 two more (dreportcc, dreportset),
-        # DOC-W3 three (offseries, offrec, offrev); every earlier table definition is unchanged.
-        target = {'local/kbacompany/db/install.xml': '61a3f185b0f63d39365e84bf7f9a7fd9aa59c979e41f7ccf3d4e9e663728e95b'}.get(name, expected)
+        # ADR-0009 R1 appends five additive daily report tables, ADR-0010 two more (dreportcc, dreportset);
+        # every earlier table definition is unchanged.
+        # R5a appends three more (rptcalendar, dreportoff, dreportabs); see daily-reports-r5a-source-preservation.json.
+        # DOC-W3 appends three more (offseries, offrec, offrev); see docs/office/DOC_W3_INCOMING_DECISIONS.md.
+        target = {'local/kbacompany/db/install.xml': 'f15d9bcb95e103d1eae5b4f2ed7147d753af9ad49cef46681b06d0301c3042c8'}.get(name, expected)
         if digest(root/name)!=target:
             errors.append('shared schema/helper changed: '+name)
     # UX-1: exact append-only language/scoped CSS follow-up over E2.
@@ -135,11 +137,15 @@ def check(root=ROOT):
     # See docs/office/DOC_W2_OFFICE_WORKSPACE.md.
     reviewed_followup['local/kbacompany/lang/en/local_kbacompany.php'] = '32402ab956d141c1cbb1b45c495cf8ddc2c6c95d09518995dba2c1473dfbc5cf'
     reviewed_followup['local/kbacompany/lang/ru/local_kbacompany.php'] = 'd5d534758b1c6c6cef4069d1dd6cbe233b9a6973a49f48c0ebc3f781ec51177f'
-    # DOC-W3 incoming register (owner decisions 27.11.2026, #196): officein_* RU/EN block after the DOC-W2 Office block.
-    # See docs/reconcile/office-incoming-doc-w3-source-preservation.json.
-    reviewed_followup['local/kbacompany/lang/en/local_kbacompany.php'] = '3ebfb7edd6c23d1ada06c775d353a8c777a9502711f16c0e964cbf92c786de65'
-    reviewed_followup['local/kbacompany/lang/ru/local_kbacompany.php'] = '00ec7447456046f0ac951b1483d9b4ee9d4ac840866acf91e76978eea50f7a97'
     reviewed_followup['local/kbacompany/classes/local/communication_service.php'] = '870b471dba39c867b5b13f8b04f55fb82f67ce484ea44cf929b5b9c4f93dae92'
+    # Daily reports R5a (owner decisions K1-K6, 24.11.2026): append the reporting calendar block after the DOC-W2 Office block (main).
+    # See docs/reconcile/daily-reports-r5a-source-preservation.json.
+    reviewed_followup['local/kbacompany/lang/en/local_kbacompany.php'] = '62af4834f4441502e5ebc4b535b508d3369f46b35f61aca9a2f6edf8e77e76e6'
+    reviewed_followup['local/kbacompany/lang/ru/local_kbacompany.php'] = '02c53ab3bafd6aa9fab2c2f8fd4475456a32cb2d96f17b7d9c7fc01179bc730f'
+    # DOC-W3 incoming register (owner decisions 27.11.2026, #196): officein_* RU/EN block after the daily reports R5a block.
+    # See docs/reconcile/office-incoming-doc-w3-source-preservation.json.
+    reviewed_followup['local/kbacompany/lang/en/local_kbacompany.php'] = '84e7835f505ae0e9cc7e21397279d3424741c9ae847c0e1e9918402887c6d4fc'
+    reviewed_followup['local/kbacompany/lang/ru/local_kbacompany.php'] = '3c48e639c7339bf4084625472750d656cde0d45991d2a6e71c8e8ea33d1b3876'
     for row in plan['rows']:
         path=root/row['path']
         if not path.is_file() or path.is_symlink():
@@ -152,7 +158,7 @@ def check(root=ROOT):
         errors.append('one historical0902 release note was lost')
     upgrade=(root/'local/kbacompany/db/upgrade.php').read_text(encoding='utf-8')
     versions=[int(v) for v in re.findall(r'upgrade_plugin_savepoint\(true,\s*(\d+)',upgrade)]
-    if len(versions)!=487 or versions!=sorted(set(versions)) or versions[-5:]!=[2026111100,2026111600,2026111601,2026112301,2026112700]:
+    if len(versions)!=488 or versions!=sorted(set(versions)) or versions[-6:]!=[2026111100,2026111600,2026111601,2026112301,2026112400,2026112700]:
         errors.append('merged upgrade chronology/identity changed')
     driver=(root/'tools/tests/moodle_acceptance.php').read_text(encoding='utf-8')
     for ref in [plan['pr53_sha'],plan['pr56_sha']]:

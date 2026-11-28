@@ -97,6 +97,12 @@ final class daily_report_review_service {
         }
         if (self::is_admin($companyuuid, $actor)) {
             $out[] = 'unassigned';
+            // R5a (K1, K6): the company reporting calendar, administrators only.
+            $out[] = 'calendar';
+        }
+        if (self::can_read_all($companyuuid, $actor)) {
+            // R5a (K2): absence periods; the screen lists only the people this actor may manage.
+            $out[] = 'absences';
         }
         return $out;
     }
