@@ -55,3 +55,7 @@ Own-shell UI lives in `local/kbacompany/templates/bms24_*` and `local/kbacompany
 - Never deploy or change production without explicit user confirmation and backup/rollback plan.
 - End with changed files, DB/ACL/privacy/integration impact, tests RUN and NOT RUN, known risks, exact next acceptance actions.
 - For material architecture revisions, record the decision in `docs/` and update MASTER/Roadmap/Changelog when permitted; don't claim cloud updates if not performed.
+
+## Documentation synchronization (owner-approved, 24.11.2026)
+
+Read [Document Register and synchronization DoD](docs/DOCUMENT_REGISTER.md) and [Master Roadmap 3.0](docs/product/MASTER_ROADMAP_3.md) before planning material changes. Update relevant GitHub/Drive documents with version, status and evidence; verify readback or record DOC-SYNC HOLD. Preserve history and do not treat an approved direction as accepted implementation. Coordinate with PR #161; this addition does not supersede its handoff rules or Release Conveyor v1.
