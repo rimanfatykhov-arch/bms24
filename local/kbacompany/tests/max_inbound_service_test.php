@@ -46,9 +46,13 @@ final class max_inbound_service_test extends \advanced_testcase {
         employee_service::ensure_membership($company, $userid, [], 'bms');
     }
 
+    /** @var int one source timestamp per fixture: a replay must be byte-identical, also across a second boundary */
+    private $sourcets = 0;
+
     private function fixture(): array {
         global $DB;
         $this->resetAfterTest();
+        $this->sourcets = time() * 1000;
         $this->setAdminUser();
         set_config(inbound::CONFIG, 1, 'local_kbacompany');
         $admin = (int)get_admin()->id;
@@ -95,7 +99,7 @@ final class max_inbound_service_test extends \advanced_testcase {
             'binding_revision' => 1, 'company_uuid' => $f['company'], 'thread_uuid' => $f['thread'],
             'event_type' => 'message_created', 'chat_type' => 'chat', 'sender_is_bot' => false, 'link_type' => 'none',
             'external_chat_id' => self::CHAT, 'external_sender_id' => self::SENDER,
-            'external_message_id' => 'mid.synthetic.0001', 'source_timestamp_ms' => time() * 1000,
+            'external_message_id' => 'mid.synthetic.0001', 'source_timestamp_ms' => $this->sourcets,
             'text' => 'Synthetic imported text', 'attachments' => [], 'reply_to_external_message_id' => null,
         ], $over);
     }
@@ -377,7 +381,7 @@ final class max_inbound_service_test extends \advanced_testcase {
         $created = $this->send($f);
         $before = $this->counts();
         foreach ([['text' => 'Changed synthetic text'], ['sender_is_bot' => true], ['link_type' => 'forward'],
-                ['source_timestamp_ms' => time() * 1000 - 1000]] as $change) {
+                ['source_timestamp_ms' => $this->sourcets - 1000]] as $change) {
             $this->refused('idempotency_conflict', function() use ($f, $change) { $this->send($f, $change); });
         }
         $this->assertSame($before, $this->counts());
