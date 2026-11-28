@@ -72,9 +72,10 @@ def check(root=ROOT):
     reviewed_metadata={'AGENTS.md','docs/00_MASTER_CONTEXT.md'}
     for name, expected in plan['unchanged_schema_hashes'].items():
         # ADR-0009 R1 appends five additive daily report tables, ADR-0010 two more (dreportcc, dreportset);
-        # RC33 PR-2 appends seven inbound tables (inb*), see rc33-pr2-max-inbound-source-preservation.json;
+        # R5a appends three more (rptcalendar, dreportoff, dreportabs), see daily-reports-r5a-source-preservation.json;
+        # RC33 PR-2 then appends seven inbound tables (inb*), see rc33-pr2-max-inbound-source-preservation.json;
         # every earlier table definition is unchanged.
-        target = {'local/kbacompany/db/install.xml': 'a3acab0aa3751ac50dd7cb01ef1294e26fa7f8678c393a3b5b4ae87da6054bd3'}.get(name, expected)
+        target = {'local/kbacompany/db/install.xml': 'b95413868095777b509d50d893f685655c7e66cad4351694b7c0d22177b1730b'}.get(name, expected)
         if digest(root/name)!=target:
             errors.append('shared schema/helper changed: '+name)
     # UX-1: exact append-only language/scoped CSS follow-up over E2.
@@ -137,6 +138,10 @@ def check(root=ROOT):
     reviewed_followup['local/kbacompany/lang/en/local_kbacompany.php'] = '32402ab956d141c1cbb1b45c495cf8ddc2c6c95d09518995dba2c1473dfbc5cf'
     reviewed_followup['local/kbacompany/lang/ru/local_kbacompany.php'] = 'd5d534758b1c6c6cef4069d1dd6cbe233b9a6973a49f48c0ebc3f781ec51177f'
     reviewed_followup['local/kbacompany/classes/local/communication_service.php'] = '870b471dba39c867b5b13f8b04f55fb82f67ce484ea44cf929b5b9c4f93dae92'
+    # Daily reports R5a (owner decisions K1-K6, 24.11.2026): append the reporting calendar block after the DOC-W2 Office block (main).
+    # See docs/reconcile/daily-reports-r5a-source-preservation.json.
+    reviewed_followup['local/kbacompany/lang/en/local_kbacompany.php'] = '62af4834f4441502e5ebc4b535b508d3369f46b35f61aca9a2f6edf8e77e76e6'
+    reviewed_followup['local/kbacompany/lang/ru/local_kbacompany.php'] = '02c53ab3bafd6aa9fab2c2f8fd4475456a32cb2d96f17b7d9c7fc01179bc730f'
     # RC33 PR-1 (owner D3 2026-11-24): shared communication write gate and notification eligibility; no lang,
     # schema or version change. See docs/reconcile/RC33_PR1_COMMUNICATION_WRITE_GATE.md.
     reviewed_followup['local/kbacompany/classes/local/communication_service.php'] = 'c312947922c1c1af07f64f2fc6f45ab1270b7f08e2d3c76a348ae7b90cb15193'
@@ -144,8 +149,8 @@ def check(root=ROOT):
     # RC33 PR-2 (owner D1-D4 2026-11-24, ADR-0012): fixed import audience in add_participant and the append-only
     # inbound lang block. See docs/reconcile/RC33_PR2_MAX_INBOUND_SERVER.md.
     reviewed_followup['local/kbacompany/classes/local/communication_service.php'] = '4de9260667db86b3505fda15a64b779cbd30797b06876fa7cf3b01b29a5ea6ad'
-    reviewed_followup['local/kbacompany/lang/en/local_kbacompany.php'] = '641a569531d40666336c4ccfc1f279d06743fa2fb217dc771d218d92b73459ed'
-    reviewed_followup['local/kbacompany/lang/ru/local_kbacompany.php'] = 'd8caf56f0fb082f9e2a2a33e8dfae983ee087e1d3fc386503d49d472abc7e5cd'
+    reviewed_followup['local/kbacompany/lang/en/local_kbacompany.php'] = 'e94c4bd0b6a900b2fb38a66c94787c00ee937a8bcf8968c51c0be053d573e715'
+    reviewed_followup['local/kbacompany/lang/ru/local_kbacompany.php'] = '6b6cb319832980c9394a8457b1f5402b737e2372a3279914a814e823b2f8b21f'
     for row in plan['rows']:
         path=root/row['path']
         if not path.is_file() or path.is_symlink():
@@ -158,7 +163,7 @@ def check(root=ROOT):
         errors.append('one historical0902 release note was lost')
     upgrade=(root/'local/kbacompany/db/upgrade.php').read_text(encoding='utf-8')
     versions=[int(v) for v in re.findall(r'upgrade_plugin_savepoint\(true,\s*(\d+)',upgrade)]
-    if len(versions)!=487 or versions!=sorted(set(versions)) or versions[-5:]!=[2026111100,2026111600,2026111601,2026112301,2026112500]:
+    if len(versions)!=488 or versions!=sorted(set(versions)) or versions[-5:]!=[2026111600,2026111601,2026112301,2026112400,2026112500]:
         errors.append('merged upgrade chronology/identity changed')
     driver=(root/'tools/tests/moodle_acceptance.php').read_text(encoding='utf-8')
     for ref in [plan['pr53_sha'],plan['pr56_sha']]:

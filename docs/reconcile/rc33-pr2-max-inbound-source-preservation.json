@@ -1,8 +1,8 @@
 {
  "scope": "exact intentional source updates; not runtime, concurrency or release acceptance",
- "base_sha": "0884643590541fdd9b75b1414fd93d6120ded017 (main 0884643 via PR-1 078b815; PR-2 first written on 9c9bc0cca8f9ed668c449180f43c16202503ec14)",
+ "base_sha": "74e00c4a63cbd5d37759e604753ebaa4b4fc7947 (main 74e00c4, R5a #172, via PR-1 cd1bcbb; previously synced on main 0884643; PR-2 first written on 9c9bc0cca8f9ed668c449180f43c16202503ec14)",
  "normalization": "CRLF to LF only",
- "previous_evidence": "docs/reconcile/rc33-pr1-communication-write-gate-source-preservation.json; lang chain after docs/reconcile/office-workspace-doc-w2-source-preservation.json (main DOC-W2)",
+ "previous_evidence": "docs/reconcile/rc33-pr1-communication-write-gate-source-preservation.json; lang chain after docs/reconcile/daily-reports-r5a-source-preservation.json (main R5a #172)",
  "decision": "docs/reconcile/RC33_PR2_MAX_INBOUND_SERVER.md and docs/adr/ADR-0012-temporary-narrow-inbound-delegation.md (owner D1-D4 2026-11-24, PR #88 / issue #75; split approved 2026-11-24)",
  "change": "add_participant refuses to widen the audience of a discussion bound to an inbound import (communication_importaudience); one append-only RU/EN block for the capability, inbound refusal categories, registry errors and privacy metadata. Schema, services and version are additive and outside this chain.",
  "files": [
@@ -13,13 +13,13 @@
   },
   {
    "path": "local/kbacompany/lang/en/local_kbacompany.php",
-   "before_sha256_lf": "32402ab956d141c1cbb1b45c495cf8ddc2c6c95d09518995dba2c1473dfbc5cf",
-   "after_sha256_lf": "641a569531d40666336c4ccfc1f279d06743fa2fb217dc771d218d92b73459ed"
+   "before_sha256_lf": "62af4834f4441502e5ebc4b535b508d3369f46b35f61aca9a2f6edf8e77e76e6",
+   "after_sha256_lf": "e94c4bd0b6a900b2fb38a66c94787c00ee937a8bcf8968c51c0be053d573e715"
   },
   {
    "path": "local/kbacompany/lang/ru/local_kbacompany.php",
-   "before_sha256_lf": "d5d534758b1c6c6cef4069d1dd6cbe233b9a6973a49f48c0ebc3f781ec51177f",
-   "after_sha256_lf": "d8caf56f0fb082f9e2a2a33e8dfae983ee087e1d3fc386503d49d472abc7e5cd"
+   "before_sha256_lf": "02c53ab3bafd6aa9fab2c2f8fd4475456a32cb2d96f17b7d9c7fc01179bc730f",
+   "after_sha256_lf": "6b6cb319832980c9394a8457b1f5402b737e2372a3279914a814e823b2f8b21f"
   }
  ]
 }
