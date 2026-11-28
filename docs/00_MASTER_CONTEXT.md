@@ -122,3 +122,19 @@ projection observed in tested native two-tenant/revocation cases; HTTP/browser/d
 stack NOT RUN. See [PR68 acceptance](reconcile/PR68_ACCEPTANCE.md) and evidence.
 RC30 HOLD with15 remaining failures. Next bounded priority: Word export/locale tests.
 No production/staging access, deployment or PR merge.
+
+## 2026-11-15 — Daily employee reports and manager review: audit and design (docs only)
+
+ACCEPTED owner requirements DR-D01–D05: a clear entry instead of the unclear «Сводка моего…»; employees
+can write a report every day; reports are saved per date; a manager reviews and rates them; reports and
+ratings stay in history. Audit of main d353509 and published #113 5924bc0: the day summary (#107) is a
+read-only projection of due tasks and `tasklog action='submit'` events; no report entity, review, rights or
+notifications exist. Its entry is a button above the Task Center list rendered under the «Задачи» section.
+PROPOSED: section «Отчёты за день» (tabs «Мой отчёт», «История отчётов», «Отчёты сотрудников»), a separate
+canonical report entity with immutable submitted versions, per-version review and rating, Communication
+Center discussion via the ADR-0008 descriptor, stages R0 (navigation, no schema) → R1 (report, schema) →
+R2 (review). [Audit](daily-reports/DAILY_REPORTS_AUDIT.md), [design](daily-reports/DAILY_REPORTS_DESIGN.md),
+[ADR-0009](adr/ADR-0009-daily-employee-reports.md), [clickable prototype](daily-reports/prototype/README.md).
+Details D02/S2 of the general plan in open PR #95; no competing roadmap. Owner ACCEPTED recommended
+decisions В1–В8, В10–В12 on 15.11.2026 (В9 awaits a screenshot); first stage R0 (navigation, no schema).
+No product code, schema, merge or deployment in this step.
