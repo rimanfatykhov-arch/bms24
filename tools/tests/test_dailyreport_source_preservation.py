@@ -81,6 +81,10 @@ OFFICE_MARKER=b'\n// DOC-W2 Office workspace (2026-11-24): read-only overview ov
 _OFFICE=json.loads((ROOT/'docs/reconcile/office-workspace-doc-w2-source-preservation.json').read_text(encoding='utf-8'))
 OFFICE_BEFORE={lang:next(r['before_sha256_lf'] for r in _OFFICE['files'] if r['path']==f'local/kbacompany/lang/{lang}/local_kbacompany.php')
                for lang in ('en','ru')}
+R5A_MARKER=b'\n// Daily reports R5a (2026-11-24): reporting calendar and absences, owner decisions K1-K6.\n'
+_R5A=json.loads((ROOT/'docs/reconcile/daily-reports-r5a-source-preservation.json').read_text(encoding='utf-8'))
+R5A_BEFORE={lang:next(r['before_sha256_lf'] for r in _R5A['files'] if r['path']==f'local/kbacompany/lang/{lang}/local_kbacompany.php')
+            for lang in ('en','ru')}
 FINANCE_MARKER=b'\n// FIN-W2 Finance workspace (2026-11-24): read-only overview over existing financial model, budgets and resource gates.\n'
 _FINANCE=json.loads((ROOT/'docs/reconcile/finance-workspace-fin-w2-source-preservation.json').read_text(encoding='utf-8'))
 FINANCE_BEFORE={lang:next(r['before_sha256_lf'] for r in _FINANCE['files'] if r['path']==f'local/kbacompany/lang/{lang}/local_kbacompany.php')
@@ -169,14 +173,24 @@ class Preservation(unittest.TestCase):
                                         if OFFICE_MARKER in ic:
                                             # Everything up to the DOC-W2 Office marker is the published file ending with the Information Centre by divisions block (#190); its keys are new.
                                             ic,office=ic.split(OFFICE_MARKER)
-                                            if FINANCE_MARKER in office:
-                                                # Everything up to the FIN-W2 Finance marker is the published file ending with the DOC-W2 Office workspace block; its keys are new.
-                                                office,finance=office.split(FINANCE_MARKER)
-                                                self.assertEqual(FINANCE_BEFORE[lang],hashlib.sha256(data.split(FINANCE_MARKER)[0]).hexdigest())
-                                                financekeys=keys(finance)
-                                                self.assertEqual(83,len(financekeys));self.assertEqual(len(financekeys),len(set(financekeys)))
-                                                self.assertTrue(all(k.startswith(b'financews_') for k in financekeys))
-                                                self.assertFalse(set(financekeys)&set(keys(data.split(FINANCE_MARKER)[0])))
+                                            if R5A_MARKER in office:
+                                                # R5a follows the Office block: the published file is byte-identical up to the R5a marker.
+                                                office,r5a=office.split(R5A_MARKER)
+                                                if FINANCE_MARKER in r5a:
+                                                    # Everything up to the FIN-W2 Finance marker is the published file ending with the daily reports R5a block; its keys are new.
+                                                    r5a,finance=r5a.split(FINANCE_MARKER)
+                                                    self.assertEqual(FINANCE_BEFORE[lang],hashlib.sha256(data.split(FINANCE_MARKER)[0]).hexdigest())
+                                                    financekeys=keys(finance)
+                                                    self.assertEqual(83,len(financekeys));self.assertEqual(len(financekeys),len(set(financekeys)))
+                                                    self.assertTrue(all(k.startswith(b'financews_') for k in financekeys))
+                                                    self.assertFalse(set(financekeys)&set(keys(data.split(FINANCE_MARKER)[0])))
+                                            # The R3 file is byte-identical up to the R5a marker.
+                                            self.assertEqual(R5A_BEFORE[lang],hashlib.sha256(data.split(R5A_MARKER)[0]+b'\n').hexdigest())
+                                            r5akeys=keys(r5a)
+                                            self.assertEqual(45,len(r5akeys));self.assertEqual(len(r5akeys),len(set(r5akeys)))
+                                            self.assertTrue(all(k.startswith((b'dailyreports_',b'privacy:metadata:dailyreportabsences'))
+                                                                for k in r5akeys))
+                                            self.assertFalse(set(r5akeys)&set(keys(data.split(R5A_MARKER)[0])))
                                             self.assertEqual(OFFICE_BEFORE[lang],hashlib.sha256(data.split(OFFICE_MARKER)[0]).hexdigest())
                                             officekeys=keys(office)
                                             self.assertEqual(59,len(officekeys));self.assertEqual(len(officekeys),len(set(officekeys)))

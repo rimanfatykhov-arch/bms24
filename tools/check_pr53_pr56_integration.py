@@ -73,7 +73,8 @@ def check(root=ROOT):
     for name, expected in plan['unchanged_schema_hashes'].items():
         # ADR-0009 R1 appends five additive daily report tables, ADR-0010 two more (dreportcc, dreportset);
         # every earlier table definition is unchanged.
-        target = {'local/kbacompany/db/install.xml': '5e18cb8713fc65590e91d8b2526735e14a23eafd866de7c555ca5dd24291640e'}.get(name, expected)
+        # R5a appends three more (rptcalendar, dreportoff, dreportabs); see daily-reports-r5a-source-preservation.json.
+        target = {'local/kbacompany/db/install.xml': '7ab700a0459af874deaa2bef392636bd07b5a788db59d3c50773e7a54ef9dedf'}.get(name, expected)
         if digest(root/name)!=target:
             errors.append('shared schema/helper changed: '+name)
     # UX-1: exact append-only language/scoped CSS follow-up over E2.
@@ -135,11 +136,15 @@ def check(root=ROOT):
     # See docs/office/DOC_W2_OFFICE_WORKSPACE.md.
     reviewed_followup['local/kbacompany/lang/en/local_kbacompany.php'] = '32402ab956d141c1cbb1b45c495cf8ddc2c6c95d09518995dba2c1473dfbc5cf'
     reviewed_followup['local/kbacompany/lang/ru/local_kbacompany.php'] = 'd5d534758b1c6c6cef4069d1dd6cbe233b9a6973a49f48c0ebc3f781ec51177f'
-    # FIN-W2 Finance workspace (owner task 2026-11-24): financews_* RU/EN block after the DOC-W2 Office workspace block; read-only, default off.
-    # See docs/finance/FIN_W2_FINANCE_WORKSPACE.md.
-    reviewed_followup['local/kbacompany/lang/en/local_kbacompany.php'] = '70233e2e9bae380d9e0b114f4e4ad768db3229b4dd45c561ce2804c400e85ae5'
-    reviewed_followup['local/kbacompany/lang/ru/local_kbacompany.php'] = 'e00fd2ad118046cbb651a1428f9c603e1e63ca113c06ac7464c1758d482b7505'
     reviewed_followup['local/kbacompany/classes/local/communication_service.php'] = '870b471dba39c867b5b13f8b04f55fb82f67ce484ea44cf929b5b9c4f93dae92'
+    # Daily reports R5a (owner decisions K1-K6, 24.11.2026): append the reporting calendar block after the DOC-W2 Office block (main).
+    # See docs/reconcile/daily-reports-r5a-source-preservation.json.
+    reviewed_followup['local/kbacompany/lang/en/local_kbacompany.php'] = '62af4834f4441502e5ebc4b535b508d3369f46b35f61aca9a2f6edf8e77e76e6'
+    reviewed_followup['local/kbacompany/lang/ru/local_kbacompany.php'] = '02c53ab3bafd6aa9fab2c2f8fd4475456a32cb2d96f17b7d9c7fc01179bc730f'
+    # FIN-W2 Finance workspace (owner task 2026-11-24): financews_* RU/EN block after the daily reports R5a block; read-only, default off.
+    # See docs/finance/FIN_W2_FINANCE_WORKSPACE.md.
+    reviewed_followup['local/kbacompany/lang/en/local_kbacompany.php'] = '84b326c48ffa4df20bed347e748e5cde6ee09a76a068894809cc3df11fbc28ad'
+    reviewed_followup['local/kbacompany/lang/ru/local_kbacompany.php'] = '8f0e2db23031459d81a86abebf2b9c5823b422b186b168eed1962553a4ed9c96'
     for row in plan['rows']:
         path=root/row['path']
         if not path.is_file() or path.is_symlink():
@@ -152,7 +157,7 @@ def check(root=ROOT):
         errors.append('one historical0902 release note was lost')
     upgrade=(root/'local/kbacompany/db/upgrade.php').read_text(encoding='utf-8')
     versions=[int(v) for v in re.findall(r'upgrade_plugin_savepoint\(true,\s*(\d+)',upgrade)]
-    if len(versions)!=486 or versions!=sorted(set(versions)) or versions[-4:]!=[2026111100,2026111600,2026111601,2026112301]:
+    if len(versions)!=487 or versions!=sorted(set(versions)) or versions[-5:]!=[2026111100,2026111600,2026111601,2026112301,2026112400]:
         errors.append('merged upgrade chronology/identity changed')
     driver=(root/'tools/tests/moodle_acceptance.php').read_text(encoding='utf-8')
     for ref in [plan['pr53_sha'],plan['pr56_sha']]:
