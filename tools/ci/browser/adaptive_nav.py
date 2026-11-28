@@ -5,10 +5,13 @@ and an employee with a shorter menu; legacy shell at 375/1440; no-JS owned at 37
 measure geometry, focus, scroll lock, groups, labels and tap targets, then close it with Escape, the close button and the
 backdrop. One narrow case also crosses the breakpoint in both directions and walks Tasks -> Communication Center ->
 Daily reports -> Battle Plan -> Tasks through the menu. A synthetic long label with a 9999 counter is cloned into the
-rendered menu inside the test browser only (never stored). Only observations are written to
+rendered menu inside the test browser only (never stored). Finally the owned page is loaded with the owned_shell.css a
+browser cached before the adaptive navigation release (the request is answered from a pinned fixture): the desktop must
+not show the mobile menu trigger next to the sidebar, and the phone must keep one (hotfix #163). Only observations are written to
 EVIDENCE/adaptive-nav-result.json; the verdict is computed by contract.adaptive_nav_checks. The producer tolerates the
 pre-fix markup (no menu button: it falls back to the old summary) so that "before" evidence is recorded, never PASSed.
 """
+import hashlib
 import json
 import os
 import subprocess
@@ -17,8 +20,8 @@ import urllib.parse
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from contract import (ADAPTIVE_NAV_CASES, ADAPTIVE_NAV_MARKER as MARKER, ADAPTIVE_NAV_ROUTES, ADAPTIVE_NAV_STRESS,  # noqa: E402
-                      local_url, require)
+from contract import (ADAPTIVE_NAV_CASES, ADAPTIVE_NAV_MARKER as MARKER, ADAPTIVE_NAV_ROUTES,  # noqa: E402
+                      ADAPTIVE_NAV_STALE_CASES, ADAPTIVE_NAV_STALE_CSS, ADAPTIVE_NAV_STRESS, local_url, require)
 from events import Recorder  # noqa: E402
 from playwright.sync_api import sync_playwright  # noqa: E402
 
@@ -84,6 +87,7 @@ LAYOUT = '() => {' + COMMON + r"""
       controls: ctl, controls_exists: !!(ctl && document.getElementById(ctl)), name: (btn.getAttribute('aria-label') || btn.innerText).replace(/\s+/g, ' ').trim(),
       hidden_attr: btn.hasAttribute('hidden')} : null,
     html_overflow: getComputedStyle(document.documentElement).overflowY, body_overflow: getComputedStyle(document.body).overflowY,
+    css_hrefs: [...document.querySelectorAll('link[rel="stylesheet"]')].map(l => l.href).filter(h => h.indexOf('/bms_ui/owned_shell.css') >= 0),
     main_inert: !!(main && main.closest('[inert]')),
     backdrop_visible: vis(document.querySelector('[data-bms24-drawer-backdrop]')),
     active: document.activeElement ? (document.activeElement === btn ? 'menubutton' : document.activeElement.tagName) : null,
@@ -134,6 +138,11 @@ LAST = '() => {' + COMMON + r"""
 }"""
 
 INSIDE = '() => {' + COMMON + r""" const d = drawerEl(); return inside(document.activeElement, d); }"""
+# Which owned_shell.css is in effect: the pre-release file has no rule for the menu button.
+SHEET = """() => { const s = [...document.styleSheets].filter(x => (x.href || '').indexOf('/bms_ui/owned_shell.css') >= 0);
+  let rules = 0, menubutton = 0;
+  s.forEach(x => { for (const r of x.cssRules) { rules++; if ((r.cssText || '').indexOf('bms24-menubutton') >= 0) menubutton++; } });
+  return {sheets: s.length, rules: rules, menubutton: menubutton}; }"""
 MAIN_FIELD = """() => { const i = document.querySelector('.bms24-main input[name="title"], #region-main input[name="title"], input[name="title"]');
   return i ? i.value : null; }"""
 
@@ -309,6 +318,39 @@ def nojs_flow(browser, case, width, height):
     ctx.close()
 
 
+def stale_flow(browser):
+    """The owned page with the stylesheet a browser cached before the release; JavaScript is the current one."""
+    body = (here / ADAPTIVE_NAV_STALE_CSS).read_bytes().replace(b'\r\n', b'\n')
+    out = {'fixture_sha256': hashlib.sha256(body).hexdigest(), 'cases': []}
+    result['stale_css'] = out
+    php('shell', 'owned')
+    php('lang', 'ru', str(f['actors']['MA']['userid']))
+    for width, height in ADAPTIVE_NAV_STALE_CASES:
+        row = {'width': width, 'height': height}
+        out['cases'].append(row)
+        try:
+            hits = []
+            ctx = browser.new_context(viewport={'width': width, 'height': height})
+            recorder = Recorder(); recorder.install(ctx)
+
+            # One-argument handler: Playwright passes the request as a second argument to two-parameter handlers.
+            ctx.route('**/local/kbacompany/bms_ui/owned_shell.css*',
+                      lambda route: (hits.append(route.request.url),
+                                     route.fulfill(status=200, content_type='text/css; charset=utf-8', body=body)))
+            page = login(ctx, 'MA')
+            resp = page.goto(url('/local/kbacompany/tasks.php', scope='my'), wait_until='networkidle')
+            settle(page)
+            row['http'] = resp.status if resp else None
+            row['hits'] = len(hits)
+            row['sheet'] = page.evaluate(SHEET)
+            row['layout'] = page.evaluate(LAYOUT)
+            page.screenshot(path=str(root / ('adaptive-nav-stale-css-%d.png' % width)))
+            row['browser_events'] = recorder.events
+            ctx.close()
+        except Exception as error:  # recorded per case; the contract fails closed on it
+            row['error'] = '%s: %s' % (type(error).__name__, str(error)[:300])
+
+
 try:
     with sync_playwright() as pw:
         browser = pw.chromium.launch(headless=True, args=['--disable-dev-shm-usage'])
@@ -346,6 +388,10 @@ try:
                 ctx.close()
             except Exception as error:  # recorded per case; the contract fails closed on it
                 case['error'] = '%s: %s' % (type(error).__name__, str(error)[:300])
+        try:
+            stale_flow(browser)
+        except Exception as error:
+            result['stale_css'] = dict(result.get('stale_css') or {}, error='%s: %s' % (type(error).__name__, str(error)[:300]))
         browser.close()
     result['status'] = 'PASS'
 except Exception as error:
@@ -360,5 +406,9 @@ finally:
     dest = root / 'adaptive-nav-result.json'
     dest.write_text(json.dumps(result, indent=1, ensure_ascii=False)); dest.chmod(0o644)
 print(json.dumps({'status': result['status'], 'cases': len(result['cases']),
-                  'case_errors': [c['id'] for c in result['cases'] if c.get('error')], 'error': result.get('error')}))
-sys.exit(0 if result['status'] == 'PASS' and not any(c.get('error') for c in result['cases']) else 1)
+                  'case_errors': [c['id'] for c in result['cases'] if c.get('error')], 'error': result.get('error'),
+                  'stale_css_errors': [r['width'] for r in (result.get('stale_css') or {}).get('cases', []) if r.get('error')]
+                  + (['run'] if (result.get('stale_css') or {}).get('error') else [])}))
+stale = result.get('stale_css') or {}
+sys.exit(0 if result['status'] == 'PASS' and not any(c.get('error') for c in result['cases'])
+         and stale.get('cases') and not stale.get('error') and not any(r.get('error') for r in stale['cases']) else 1)
