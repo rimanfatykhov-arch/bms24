@@ -10,6 +10,8 @@ BASELINE_VALIDATOR='f7b4c09e69b6fd10c293394b49c136c6dc200104'
 BASELINE_TREE='314bdd6bfecbe860168fc0d1875aeab429a1d787'
 PUBLISHED_R1R2='927a319c9d058cc9da8c1ddc94d45c97a6ef24fb'
 PUBLISHED_R1R2_PLUGIN_TREE='8b1d4d9ae9c22dc3f70ff4715ffd0863ab476bac'
+PUBLISHED_R5A_BASE='48eba88dbccf37f826e57a35636e11bdade12b32'
+PUBLISHED_R5A_BASE_PLUGIN_TREE='1bd7f4ad768973a6e883d128b0f2a55ed2762f18'
 BASELINE_CHECKS=json.loads((cand/'docs/reconcile/r1r2-baseline-browser-checkset.json').read_text())['checks']
 if origins.get('baseline_validator')!=BASELINE_VALIDATOR:raise RuntimeError('baseline validator pin changed; independent review required')
 if os.environ.get('GITHUB_ACTIONS')!='true' or runner not in root.parents or os.environ.get('DBHOST')!='127.0.0.1':
@@ -149,6 +151,27 @@ set_config('dailyreports_enabled', 0, 'local_kbacompany');
                                   'version': snapshot['version'], 'seeded_report': True}
     report['steps']['published_r1r2_baseline_with_report'] = 'PASS'
     return snapshot
+
+def reproduce_r5a_baseline(before):
+    from daily_reports_upgrade_policy import require, upgraded
+    require(git_ok('merge-base', '--is-ancestor', PUBLISHED_R5A_BASE, 'HEAD'),
+            'candidate does not contain the published R5a baseline')
+    require(git('rev-parse', PUBLISHED_R5A_BASE + ':local/kbacompany') == PUBLISHED_R5A_BASE_PLUGIN_TREE,
+            'published R5a baseline plugin tree mismatch')
+    plugin = core / 'local/kbacompany'
+    source = root / 'published-r5a-base'
+    cmd(['git', '-C', cand, 'worktree', 'add', '--detach', source, PUBLISHED_R5A_BASE], stdout=subprocess.DEVNULL)
+    shutil.rmtree(plugin)
+    shutil.copytree(source / 'local/kbacompany', plugin)
+    cmd(['php', core / 'admin/cli/upgrade.php', '--non-interactive'], stdout=subprocess.DEVNULL)
+    after = upgrade_probe('published197-before-r5a')
+    upgraded(before, after)
+    require(after['version'] == 2026112301, 'expected the published #197 version')
+    report['r5a_upgrade_baseline'] = {
+        'source': PUBLISHED_R5A_BASE, 'plugin_tree': PUBLISHED_R5A_BASE_PLUGIN_TREE, 'version': after['version'],
+    }
+    report['steps']['published197_upgrade_baseline_with_reports'] = 'PASS'
+    return after
 
 def fresh_upgrade_schema(upgrade):
     from daily_reports_upgrade_policy import fresh_equal
@@ -413,9 +436,13 @@ try:
     stop()
     elapsed('baseline_reproduction')
     upgrade_before=upgrade_probe('published120-before')
-    adr0010 = report['components']['local/kbacompany']['version'] == 2026112301
+    # ADR-0010 and later candidates (R5a 2026112400) upgrade over the reproduced published R1/R2 baseline.
+    adr0010 = report['components']['local/kbacompany']['version'] in (2026112301, 2026112400)
     if adr0010:
         upgrade_before = reproduce_r1r2_baseline(upgrade_before)
+    r5a = report['components']['local/kbacompany']['version'] == 2026112400
+    if r5a:
+        upgrade_before = reproduce_r5a_baseline(upgrade_before)
     before=state(); snapshot=root/'snapshot'; snapshot.mkdir()
     baseline_urls=(ev/'p02-urls.json').read_bytes()
     shutil.copytree(core,snapshot/'code'); shutil.copytree(root/'data',snapshot/'data')
@@ -430,7 +457,10 @@ try:
     cmd(['php',core/'admin/cli/upgrade.php','--non-interactive'],stdout=subprocess.DEVNULL)
     unchanged(upgrade_after,upgrade_probe('candidate-upgrade-repeat'))
     fresh_upgrade_schema(upgrade_after)
-    upgrade_step = 'published_r1r2_upgrade_repeat_fresh_schema' if adr0010 else 'published120_upgrade_repeat_fresh_schema'
+    if r5a:
+        upgrade_step = 'published197_upgrade_repeat_fresh_schema'
+    else:
+        upgrade_step = 'published_r1r2_upgrade_repeat_fresh_schema' if adr0010 else 'published120_upgrade_repeat_fresh_schema'
     report['steps'][upgrade_step] = 'PASS'
     try:smoke('candidate');report['steps']['candidate_install_smoke']='PASS'
     except Exception as e:report['steps']['candidate_install_smoke']='FAIL: '+str(e)[:160]
