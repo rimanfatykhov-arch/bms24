@@ -1,0 +1,183 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CAT-0 — прототип BMS Agent Catalog (PROPOSED, синтетические данные)</title>
+<style>
+  :root { --navy:#0B2B41; --emerald:#0C6C52; --sky:#E4F2FB; --mint:#ECF7F3; --sand:#FDF6ED; --blue:#1777B5; --violet:#6B43B5;
+          --line:#d5dde5; --muted:#5b6b78; }
+  * { box-sizing:border-box; }
+  body { margin:0; font:15px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; color:var(--navy); background:#f6f8fa; }
+  header { background:var(--navy); color:#fff; padding:14px 20px; }
+  header h1 { margin:0; font-size:20px; } header p { margin:4px 0 0; opacity:.85; font-size:13px; }
+  .banner { background:var(--sand); border-bottom:1px solid var(--line); padding:8px 20px; font-size:13px; }
+  main { padding:16px 20px 40px; max-width:1200px; margin:0 auto; }
+  section { background:#fff; border:1px solid var(--line); border-radius:8px; padding:16px; margin-bottom:24px; }
+  h2 { margin:0 0 4px; font-size:19px; } .sub { color:var(--muted); margin:0 0 14px; font-size:13px; }
+  .filters { display:flex; flex-wrap:wrap; gap:12px; margin-bottom:14px; }
+  label { font-size:13px; color:var(--muted); display:flex; flex-direction:column; gap:4px; }
+  select, input { font:inherit; padding:6px 8px; border:1px solid var(--line); border-radius:6px; color:var(--navy); }
+  .grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(240px, 1fr)); gap:12px; }
+  .card { border:1px solid var(--line); border-radius:8px; padding:12px; background:#fff; }
+  .card h3 { margin:6px 0 4px; font-size:16px; } .card p { margin:4px 0; font-size:13px; color:var(--muted); }
+  .code { font:12px ui-monospace, Consolas, monospace; color:var(--muted); }
+  .badge { display:inline-block; font-size:12px; font-weight:600; padding:2px 8px; border-radius:10px; }
+  .s-CONCEPT { background:#eef1f4; color:#44525e; } .s-DESIGNED { background:var(--sky); color:var(--blue); }
+  .s-VALIDATED { background:var(--mint); color:var(--emerald); } .s-COMPATIBLE { background:var(--navy); color:#fff; }
+  .s-DEPRECATED { background:var(--sand); color:#7a5a2a; text-decoration:line-through; }
+  .tabs { display:flex; flex-wrap:wrap; gap:4px; border-bottom:1px solid var(--line); margin-bottom:12px; }
+  .tabs button { font:inherit; font-size:14px; background:none; border:1px solid transparent; border-bottom:none; padding:8px 10px;
+                 border-radius:6px 6px 0 0; cursor:pointer; color:var(--navy); }
+  .tabs button[aria-selected="true"] { border-color:var(--line); background:var(--sky); font-weight:600; }
+  button:focus-visible, select:focus-visible, input:focus-visible { outline:3px solid var(--blue); outline-offset:2px; }
+  table { border-collapse:collapse; width:100%; font-size:13px; } .tw { overflow-x:auto; }
+  th, td { border:1px solid var(--line); padding:6px 8px; text-align:left; vertical-align:top; } th { background:#f2f5f8; }
+  .actions { display:flex; flex-wrap:wrap; gap:8px; margin-top:12px; }
+  .btn { font:inherit; padding:8px 12px; border-radius:6px; border:1px solid var(--line); background:#fff; color:var(--navy); }
+  .btn[disabled] { opacity:.55; cursor:not-allowed; }
+  .note { background:var(--mint); border-left:4px solid var(--emerald); padding:8px 10px; font-size:13px; margin:8px 0; }
+  .warn { background:var(--sand); border-left:4px solid #b7863b; padding:8px 10px; font-size:13px; margin:8px 0; }
+  ol.steps { padding-left:20px; } ol.steps li { margin:6px 0; } .locked { color:var(--muted); }
+  .ai { color:var(--violet); font-weight:600; }
+</style>
+</head>
+<body>
+<header>
+  <h1>BMS Agent Catalog <span class="ai">· прототип CAT-0</span></h1>
+  <p>Статический прототип. PROPOSED. Синтетические данные. Нет сети, нет сервера, нет активации.</p>
+</header>
+<div class="banner" role="note">Это не продукт. Ни одна кнопка не выдаёт права, не создаёт агента и не запускает его. Кнопки активации отключены: «Недоступно в CAT-0».</div>
+<main>
+
+<section aria-labelledby="h-catalog">
+  <h2 id="h-catalog">Каталог шаблонов</h2>
+  <p class="sub">Шаблон — версионное описание роли, а не работающий агент. Статус показан словом и цветом.</p>
+  <div class="filters">
+    <label>Статус
+      <select id="f-status"><option value="">Все</option><option>CONCEPT</option><option>DESIGNED</option><option>VALIDATED</option><option>COMPATIBLE</option><option>DEPRECATED</option></select>
+    </label>
+    <label>Категория
+      <select id="f-cat"><option value="">Все</option></select>
+    </label>
+    <label>Поиск
+      <input id="f-q" type="search" placeholder="Название или код">
+    </label>
+  </div>
+  <div class="grid" id="grid" aria-live="polite"></div>
+</section>
+
+<section aria-labelledby="h-card">
+  <h2 id="h-card">Карточка: BMS-AGENT-001 · ИИ-помощник руководителя</h2>
+  <p class="sub"><span class="badge s-DESIGNED">DESIGNED</span> · редакция 1 (draft) · минимальный этап BMOS: A3 · пакет: синтетический пример</p>
+  <div class="tabs" role="tablist" aria-label="Разделы карточки" id="tabs"></div>
+  <div id="panels"></div>
+  <div class="actions">
+    <button class="btn" type="button" disabled aria-disabled="true" title="Недоступно в CAT-0">Подготовить агента (мастер) — недоступно в CAT-0</button>
+    <button class="btn" type="button" disabled aria-disabled="true" title="Недоступно в CAT-0">Активировать — недоступно в CAT-0</button>
+    <button class="btn" type="button" disabled aria-disabled="true" title="Недоступно в CAT-0">Выдать права — недоступно в CAT-0</button>
+    <button class="btn" type="button" disabled aria-disabled="true" title="Недоступно в CAT-0">Запустить — недоступно в CAT-0</button>
+  </div>
+</section>
+
+<section aria-labelledby="h-wizard">
+  <h2 id="h-wizard">Мастер подготовки агента (12 шагов, только просмотр)</h2>
+  <p class="sub">Каждый шаг сохраняет черновик. Выбор шаблона, копирование и утверждение конфигурации прав не дают.</p>
+  <div class="note">Шаг 3 из 12. Этот шаг не выдаёт прав и не запускает агента.</div>
+  <ol class="steps">
+    <li>Выбор шаблона — <b>выполнено (пример)</b></li>
+    <li>Выбор существующего поста — <b>выполнено (пример): «Пост A (синтетический)»</b></li>
+    <li>Сопоставление Role DNA с функциями поста — <b>текущий шаг</b>
+      <div class="tw"><table>
+        <thead><tr><th>Результат шаблона</th><th>Функция поста (синтетика)</th><th>Исполнитель</th></tr></thead>
+        <tbody>
+          <tr><td>Р1 Сводка поручений</td><td>Ф-1 Контроль поручений</td><td>Агент (предложение)</td></tr>
+          <tr><td>Р2 План-факт</td><td>Ф-2 Анализ показателей</td><td>Агент (предложение)</td></tr>
+          <tr><td>—</td><td>Ф-3 Проведение планёрки</td><td>Человек</td></tr>
+          <tr><td>—</td><td>Ф-4 Постановка задач людям</td><td>Человек</td></tr>
+        </tbody>
+      </table></div>
+    </li>
+    <li class="locked">Настройка AI Execution Profile</li>
+    <li class="locked">Проверка доступности инструментов</li>
+    <li class="locked">Источники контекста</li>
+    <li class="locked">Recognition и safety checks — доступно с CAT-4</li>
+    <li class="locked">Утверждение конфигурации</li>
+    <li class="locked">Position Occupancy (proposed; занятость прав не даёт)</li>
+    <li class="locked">Отдельная выдача грантов — доступно с CAT-4; delegated_team — с A3</li>
+    <li class="locked">Лимиты и надзор</li>
+    <li class="locked">Допуск к разрешённому пилоту — требует ворот A3 и решения владельца</li>
+  </ol>
+  <div class="actions">
+    <button class="btn" type="button" disabled aria-disabled="true" title="Недоступно в CAT-0">Сохранить черновик — недоступно в CAT-0</button>
+    <button class="btn" type="button" disabled aria-disabled="true" title="Недоступно в CAT-0">Далее — недоступно в CAT-0</button>
+  </div>
+</section>
+</main>
+<script>
+(function () {
+  'use strict';
+  var items = [
+    ['BMS-AGENT-001','ИИ-помощник руководителя','management','DESIGNED','A3','Проверяемая управленческая сводка: факты, отклонения, риски, предложения'],
+    ['BMS-AGENT-002','ИИ-помощник собственника','owner','CONCEPT','—','Концепция'],
+    ['BMS-AGENT-003','ИИ-бизнес-аналитик','analytics','CONCEPT','—','Концепция'],
+    ['BMS-AGENT-004','ИИ-бизнес-архитектор','architecture','CONCEPT','—','Концепция'],
+    ['BMS-AGENT-005','ИИ-аудитор BMS','audit','CONCEPT','—','Концепция'],
+    ['BMS-AGENT-006','ИИ-экономист','economics','CONCEPT','—','Концепция'],
+    ['BMS-AGENT-007','ИИ-секретарь','office','CONCEPT','—','Концепция'],
+    ['BMS-AGENT-008','ИИ-помощник РОП','sales','CONCEPT','—','Концепция'],
+    ['BMS-AGENT-009','ИИ-помощник HR','hr','CONCEPT','—','Концепция'],
+    ['BMS-AGENT-010','ИИ-методолог','methodology','CONCEPT','—','Концепция'],
+    ['BMS-AGENT-011','ИИ-наставник','mentoring','CONCEPT','—','Концепция'],
+    ['BMS-AGENT-012','ИИ-аналитик бизнес-процессов','process','CONCEPT','—','Концепция']
+  ];
+  var grid = document.getElementById('grid'), fs = document.getElementById('f-status'),
+      fc = document.getElementById('f-cat'), fq = document.getElementById('f-q');
+  items.map(function (i) { return i[2]; }).forEach(function (c) {
+    var o = document.createElement('option'); o.textContent = c; fc.appendChild(o);
+  });
+  function el(tag, cls, text) { var e = document.createElement(tag); if (cls) { e.className = cls; } if (text) { e.textContent = text; } return e; }
+  function render() {
+    var s = fs.value, c = fc.value, q = fq.value.toLowerCase();
+    grid.textContent = '';
+    items.filter(function (i) {
+      return (!s || i[3] === s) && (!c || i[2] === c) && (!q || (i[0] + ' ' + i[1]).toLowerCase().indexOf(q) >= 0);
+    }).forEach(function (i) {
+      var d = el('article', 'card');
+      d.appendChild(el('span', 'badge s-' + i[3], i[3]));
+      d.appendChild(el('h3', '', i[1]));
+      d.appendChild(el('div', 'code', i[0] + ' · ' + i[2] + ' · этап ' + i[4]));
+      d.appendChild(el('p', '', i[5]));
+      grid.appendChild(d);
+    });
+    if (!grid.children.length) { grid.appendChild(el('p', 'sub', 'Нет шаблонов по выбранным фильтрам.')); }
+  }
+  [fs, fc, fq].forEach(function (x) { x.addEventListener('input', render); });
+  render();
+
+  var tabs = [
+    ['ЦКП и функции', '<p><b>ЦКП:</b> своевременная, достоверная и принятая руководителем сводка о работе подразделения.</p><div class="tw"><table><tr><th>Р</th><th>Результат</th><th>Этап</th></tr><tr><td>Р1</td><td>Сводка поручений</td><td>A1 position / A3 team</td></tr><tr><td>Р2</td><td>План-факт по метрикам</td><td>A1 / A3</td></tr><tr><td>Р3</td><td>Сводка отчётности команды</td><td>A3 (свой отчёт A2)</td></tr><tr><td>Р4</td><td>Проект повестки координации</td><td>A3, предложение</td></tr><tr><td>Р5</td><td>Сданный результат и свой отчёт</td><td>A1 / A2</td></tr></table></div><p>Планёрку, постановку задач людям и приёмку выполняет человек.</p>'],
+    ['Компетенции', '<p>Проект Role DNA: работа с доказательствами, проверка данных, план-факт, диагностика отклонений, структурирование повестки, эскалация, соблюдение ACL. Уровни не утверждены.</p>'],
+    ['AI Execution Profile', '<p>Требования к модели: структурированный ответ по JSON-схеме, русский язык. Конкретная модель не указана; её выбирает администратор компании из реестра <code>local_kbaai</code>. Ручной запуск, без внешней сети.</p>'],
+    ['Инструменты и зависимости', '<div class="tw"><table><tr><th>Команда</th><th>Риск</th><th>Этап</th><th>Доступно сейчас</th></tr><tr><td>task.read</td><td>R0</td><td>A1</td><td>Нет (A0 не принят)</td></tr><tr><td>metrics.read</td><td>R0</td><td>A1</td><td>Нет</td></tr><tr><td>daily_report.read</td><td>R0</td><td>A2/A3</td><td>Нет</td></tr><tr><td>work.list · agent_runs.read</td><td>R0</td><td>A1</td><td>Нет</td></tr><tr><td>work.propose</td><td>R1</td><td>A1</td><td>Нет</td></tr><tr><td>work.complete</td><td>R2 own</td><td>A1</td><td>Нет</td></tr><tr><td>daily_report.create/submit</td><td>R2 own</td><td>A2</td><td>Нет</td></tr></table></div>'],
+    ['Полномочия и риски', '<p>Разрешено: R0, R1, R2 над своими объектами. Исключено: R3, R4, task.comment, task.propose_update, task.create_draft.</p><div class="warn">Гранты в шаблоне — только запрос. Права выдаёт человек отдельно; delegated_team — не раньше A3.</div>'],
+    ['Recognition', '<p>Кейсы C01–C10 и negative cases B01–B12: <b>NOT RUN</b>. Заключение: NOT_CHECKED, допуск HOLD. Автоматического проходного балла нет.</p>'],
+    ['Версии', '<div class="tw"><table><tr><th>Редакция</th><th>Состояние</th><th>Digest</th><th>Совместимость</th></tr><tr><td>1</td><td>draft</td><td>—</td><td>не проверялась</td></tr></table></div>']
+  ];
+  var tl = document.getElementById('tabs'), panels = document.getElementById('panels');
+  tabs.forEach(function (t, n) {
+    var b = el('button', '', t[0]); b.type = 'button'; b.setAttribute('role', 'tab'); b.id = 'tab-' + n;
+    b.setAttribute('aria-controls', 'panel-' + n); b.setAttribute('aria-selected', n === 0 ? 'true' : 'false');
+    var p = el('div'); p.id = 'panel-' + n; p.setAttribute('role', 'tabpanel'); p.setAttribute('aria-labelledby', b.id);
+    p.innerHTML = t[1]; p.hidden = n !== 0;
+    b.addEventListener('click', function () {
+      Array.prototype.forEach.call(tl.children, function (x) { x.setAttribute('aria-selected', 'false'); });
+      Array.prototype.forEach.call(panels.children, function (x) { x.hidden = true; });
+      b.setAttribute('aria-selected', 'true'); p.hidden = false;
+    });
+    tl.appendChild(b); panels.appendChild(p);
+  });
+})();
+</script>
+</body>
+</html>
