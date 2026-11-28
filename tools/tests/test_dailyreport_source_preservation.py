@@ -86,6 +86,10 @@ BMOS_BEFORE={lang:next(r['before_sha256_lf'] for r in _BMOS['files']
 _OFFICE=json.loads((ROOT/'docs/reconcile/office-workspace-doc-w2-source-preservation.json').read_text(encoding='utf-8'))
 OFFICE_BEFORE={lang:next(r['before_sha256_lf'] for r in _OFFICE['files'] if r['path']==f'local/kbacompany/lang/{lang}/local_kbacompany.php')
                for lang in ('en','ru')}
+R5A_MARKER=b'\n// Daily reports R5a (2026-11-24): reporting calendar and absences, owner decisions K1-K6.\n'
+_R5A=json.loads((ROOT/'docs/reconcile/daily-reports-r5a-source-preservation.json').read_text(encoding='utf-8'))
+R5A_BEFORE={lang:next(r['before_sha256_lf'] for r in _R5A['files'] if r['path']==f'local/kbacompany/lang/{lang}/local_kbacompany.php')
+            for lang in ('en','ru')}
 _R2=json.loads((ROOT/'docs/reconcile/daily-reports-r2-source-preservation.json').read_text(encoding='utf-8'))
 R2_AFTER={lang:next(r['after_sha256_lf'] for r in _R2['files'] if r['path']==f'local/kbacompany/lang/{lang}/local_kbacompany.php')
           for lang in ('en','ru')}
@@ -170,15 +174,25 @@ class Preservation(unittest.TestCase):
                                         if OFFICE_MARKER in ic:
                                             # Everything up to the DOC-W2 Office marker is the published file ending with the Information Centre by divisions block (#190); its keys are new.
                                             ic,office=ic.split(OFFICE_MARKER)
+                                            if R5A_MARKER in office:
+                                                # R5a follows the Office block: the published file is byte-identical up to the R5a marker.
+                                                office,r5a=office.split(R5A_MARKER)
+                                                if BMOS_MARKER in r5a:
+                                                    # BMOS-A1.1 follows R5a: the published R5a file is byte-identical up to the BMOS marker.
+                                                    r5a,bmos=r5a.split(BMOS_MARKER)
+                                                    self.assertEqual(BMOS_BEFORE[lang],hashlib.sha256(data.split(BMOS_MARKER)[0]).hexdigest())
+                                                    bmoskeys=keys(bmos)
+                                                    self.assertEqual(14,len(bmoskeys));self.assertEqual(len(bmoskeys),len(set(bmoskeys)))
+                                                    self.assertTrue(all(k.startswith(b'bmos_') or k == b'kbacompany:managebmosgrants' for k in bmoskeys))
+                                                    self.assertFalse(set(bmoskeys)&set(keys(data.split(BMOS_MARKER)[0])))
+                                            # The R3 file is byte-identical up to the R5a marker.
+                                            self.assertEqual(R5A_BEFORE[lang],hashlib.sha256(data.split(R5A_MARKER)[0]+b'\n').hexdigest())
+                                            r5akeys=keys(r5a)
+                                            self.assertEqual(45,len(r5akeys));self.assertEqual(len(r5akeys),len(set(r5akeys)))
+                                            self.assertTrue(all(k.startswith((b'dailyreports_',b'privacy:metadata:dailyreportabsences'))
+                                                                for k in r5akeys))
+                                            self.assertFalse(set(r5akeys)&set(keys(data.split(R5A_MARKER)[0])))
                                             self.assertEqual(OFFICE_BEFORE[lang],hashlib.sha256(data.split(OFFICE_MARKER)[0]).hexdigest())
-                                            if BMOS_MARKER in office:
-                                                # Everything up to the BMOS-A1.1 marker is the published DOC-W2 file; the bmos_* keys are new.
-                                                office,bmos=office.split(BMOS_MARKER)
-                                                self.assertEqual(BMOS_BEFORE[lang],hashlib.sha256(data.split(BMOS_MARKER)[0]).hexdigest())
-                                                bmoskeys=keys(bmos)
-                                                self.assertEqual(14,len(bmoskeys));self.assertEqual(len(bmoskeys),len(set(bmoskeys)))
-                                                self.assertTrue(all(k.startswith(b'bmos_') or k == b'kbacompany:managebmosgrants' for k in bmoskeys))
-                                                self.assertFalse(set(bmoskeys)&set(keys(data.split(BMOS_MARKER)[0])))
                                             officekeys=keys(office)
                                             self.assertEqual(59,len(officekeys));self.assertEqual(len(officekeys),len(set(officekeys)))
                                             self.assertTrue(all(k.startswith(b'officews_') for k in officekeys))

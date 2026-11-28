@@ -71,9 +71,11 @@ def check(root=ROOT):
     reviewed_followup['local/kbacorporate/db/upgrade.php'] = 'ef39434356106043292de20bf355165961ca07462e9ead6a79f19bbc4b6d5019'
     reviewed_metadata={'AGENTS.md','docs/00_MASTER_CONTEXT.md'}
     for name, expected in plan['unchanged_schema_hashes'].items():
-        # ADR-0009 R1 appends five additive daily report tables, ADR-0010 two more (dreportcc, dreportset),
-        # BMOS-A1.1 six registries (wprincipal ... posoccuplog); every earlier table definition is unchanged.
-        target = {'local/kbacompany/db/install.xml': '396582b125682fe7f0e4169790d33f0076bf3c5b6a8fbf37c08e5713ca5a18b8'}.get(name, expected)
+        # ADR-0009 R1 appends five additive daily report tables, ADR-0010 two more (dreportcc, dreportset);
+        # every earlier table definition is unchanged.
+        # R5a appends three more (rptcalendar, dreportoff, dreportabs); see daily-reports-r5a-source-preservation.json.
+        # BMOS-A1.1 appends six registries (wprincipal ... posoccuplog) after R5a; see bmos-a11-source-preservation.json.
+        target = {'local/kbacompany/db/install.xml': '10b00eeb1f6a441e71b9201cf6c019abf7df3d59925744680981cd1ca645b89c'}.get(name, expected)
         if digest(root/name)!=target:
             errors.append('shared schema/helper changed: '+name)
     # UX-1: exact append-only language/scoped CSS follow-up over E2.
@@ -135,11 +137,15 @@ def check(root=ROOT):
     # See docs/office/DOC_W2_OFFICE_WORKSPACE.md.
     reviewed_followup['local/kbacompany/lang/en/local_kbacompany.php'] = '32402ab956d141c1cbb1b45c495cf8ddc2c6c95d09518995dba2c1473dfbc5cf'
     reviewed_followup['local/kbacompany/lang/ru/local_kbacompany.php'] = 'd5d534758b1c6c6cef4069d1dd6cbe233b9a6973a49f48c0ebc3f781ec51177f'
-    # BMOS-A1.1 (A0 PASS 68b1dd0): bmos_* RU/EN block after the DOC-W2 Office block; registries default off.
-    # See docs/reconcile/bmos-a11-source-preservation.json.
-    reviewed_followup['local/kbacompany/lang/en/local_kbacompany.php'] = 'da1b2f8ccf8dd00bc44ea7203f024e04f5e4fd363726f47eac3a1583195a48e4'
-    reviewed_followup['local/kbacompany/lang/ru/local_kbacompany.php'] = 'b248c1b072ec51879cef1b010f7ce20a9b395c6b2047ca0fba0aa2cc2c037b34'
     reviewed_followup['local/kbacompany/classes/local/communication_service.php'] = '870b471dba39c867b5b13f8b04f55fb82f67ce484ea44cf929b5b9c4f93dae92'
+    # Daily reports R5a (owner decisions K1-K6, 24.11.2026): append the reporting calendar block after the DOC-W2 Office block (main).
+    # See docs/reconcile/daily-reports-r5a-source-preservation.json.
+    reviewed_followup['local/kbacompany/lang/en/local_kbacompany.php'] = '62af4834f4441502e5ebc4b535b508d3369f46b35f61aca9a2f6edf8e77e76e6'
+    reviewed_followup['local/kbacompany/lang/ru/local_kbacompany.php'] = '02c53ab3bafd6aa9fab2c2f8fd4475456a32cb2d96f17b7d9c7fc01179bc730f'
+    # BMOS-A1.1 (A0 PASS 68b1dd0): bmos_* RU/EN block after the R5a block; registries default off.
+    # See docs/reconcile/bmos-a11-source-preservation.json.
+    reviewed_followup['local/kbacompany/lang/en/local_kbacompany.php'] = '18cb43be8f42e87a65c0e8a8ca4698164ce9344802d2e23056a0c9b31c935ed3'
+    reviewed_followup['local/kbacompany/lang/ru/local_kbacompany.php'] = 'aaf5432c779433f01f394ff73460530a64b0c7697c61f77a5dcfd0bc9afa78a2'
     for row in plan['rows']:
         path=root/row['path']
         if not path.is_file() or path.is_symlink():
@@ -152,7 +158,7 @@ def check(root=ROOT):
         errors.append('one historical0902 release note was lost')
     upgrade=(root/'local/kbacompany/db/upgrade.php').read_text(encoding='utf-8')
     versions=[int(v) for v in re.findall(r'upgrade_plugin_savepoint\(true,\s*(\d+)',upgrade)]
-    if len(versions)!=487 or versions!=sorted(set(versions)) or versions[-5:]!=[2026111100,2026111600,2026111601,2026112301,2026112800]:
+    if len(versions)!=488 or versions!=sorted(set(versions)) or versions[-6:]!=[2026111100,2026111600,2026111601,2026112301,2026112400,2026112800]:
         errors.append('merged upgrade chronology/identity changed')
     driver=(root/'tools/tests/moodle_acceptance.php').read_text(encoding='utf-8')
     for ref in [plan['pr53_sha'],plan['pr56_sha']]:

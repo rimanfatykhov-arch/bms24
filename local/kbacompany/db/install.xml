@@ -3757,6 +3757,61 @@
         <KEYS><KEY NAME="primary" TYPE="primary" FIELDS="id" /></KEYS>
         <INDEXES><INDEX NAME="company_uix" UNIQUE="true" FIELDS="companyuuid" /></INDEXES>
       </TABLE>
+        <TABLE NAME="local_kbacompany_rptcalendar" COMMENT="R5 per-company reporting calendar: switch, start day, working weekdays, deadline">
+        <FIELDS>
+          <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true" />
+          <FIELD NAME="companyuuid" TYPE="char" LENGTH="36" NOTNULL="true" />
+          <FIELD NAME="enabled" TYPE="int" LENGTH="1" NOTNULL="true" DEFAULT="0" />
+          <FIELD NAME="enabledfrom" TYPE="char" LENGTH="10" NOTNULL="true" DEFAULT="" />
+          <FIELD NAME="workdays" TYPE="char" LENGTH="7" NOTNULL="true" DEFAULT="1111100" />
+          <FIELD NAME="deadlineminutes" TYPE="int" LENGTH="4" NOTNULL="true" DEFAULT="720" />
+          <FIELD NAME="revision" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="1" />
+          <FIELD NAME="modifiedby" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" />
+          <FIELD NAME="timecreated" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" />
+          <FIELD NAME="timemodified" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" />
+        </FIELDS>
+        <KEYS><KEY NAME="primary" TYPE="primary" FIELDS="id" /></KEYS>
+        <INDEXES><INDEX NAME="company_uix" UNIQUE="true" FIELDS="companyuuid" /></INDEXES>
+      </TABLE>
+        <TABLE NAME="local_kbacompany_dreportoff" COMMENT="R5 company calendar exceptions: non-working dates and working weekend dates">
+        <FIELDS>
+          <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true" />
+          <FIELD NAME="companyuuid" TYPE="char" LENGTH="36" NOTNULL="true" />
+          <FIELD NAME="uuid" TYPE="char" LENGTH="36" NOTNULL="true" />
+          <FIELD NAME="offday" TYPE="char" LENGTH="10" NOTNULL="true" />
+          <FIELD NAME="kind" TYPE="char" LENGTH="20" NOTNULL="true" DEFAULT="holiday" />
+          <FIELD NAME="name" TYPE="char" LENGTH="255" NOTNULL="true" DEFAULT="" />
+          <FIELD NAME="createdby" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" />
+          <FIELD NAME="timecreated" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" />
+        </FIELDS>
+        <KEYS><KEY NAME="primary" TYPE="primary" FIELDS="id" /></KEYS>
+        <INDEXES>
+          <INDEX NAME="company_day_uix" UNIQUE="true" FIELDS="companyuuid,offday" />
+          <INDEX NAME="company_uuid_uix" UNIQUE="true" FIELDS="companyuuid,uuid" />
+        </INDEXES>
+      </TABLE>
+        <TABLE NAME="local_kbacompany_dreportabs" COMMENT="R5 employee absence periods (kind and dates only, no medical details)">
+        <FIELDS>
+          <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true" />
+          <FIELD NAME="companyuuid" TYPE="char" LENGTH="36" NOTNULL="true" />
+          <FIELD NAME="uuid" TYPE="char" LENGTH="36" NOTNULL="true" />
+          <FIELD NAME="userid" TYPE="int" LENGTH="10" NOTNULL="true" />
+          <FIELD NAME="kind" TYPE="char" LENGTH="20" NOTNULL="true" DEFAULT="vacation" />
+          <FIELD NAME="startday" TYPE="char" LENGTH="10" NOTNULL="true" />
+          <FIELD NAME="endday" TYPE="char" LENGTH="10" NOTNULL="true" />
+          <FIELD NAME="status" TYPE="char" LENGTH="20" NOTNULL="true" DEFAULT="active" />
+          <FIELD NAME="revision" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="1" />
+          <FIELD NAME="createdby" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" />
+          <FIELD NAME="modifiedby" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" />
+          <FIELD NAME="timecreated" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" />
+          <FIELD NAME="timemodified" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" />
+        </FIELDS>
+        <KEYS><KEY NAME="primary" TYPE="primary" FIELDS="id" /></KEYS>
+        <INDEXES>
+          <INDEX NAME="company_uuid_uix" UNIQUE="true" FIELDS="companyuuid,uuid" />
+          <INDEX NAME="company_user_start_ix" UNIQUE="false" FIELDS="companyuuid,userid,startday" />
+        </INDEXES>
+      </TABLE>
         <TABLE NAME="local_kbacompany_wprincipal" COMMENT="BMOS-A1 work principal registry (human, ai_agent, service_integration); no secrets">
         <FIELDS>
           <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true" />

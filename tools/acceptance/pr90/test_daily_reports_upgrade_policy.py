@@ -1,6 +1,6 @@
 import copy
 import unittest
-from daily_reports_upgrade_policy import ADR0010_TABLES, BMOS_TABLES, NEW, upgraded, fresh_equal, unchanged, switch_preserves
+from daily_reports_upgrade_policy import ADR0010_TABLES, BMOS_TABLES, NEW, R5A_TABLES, upgraded, fresh_equal, unchanged, switch_preserves
 
 
 def add_tables(before, version, tables):
@@ -24,6 +24,26 @@ def fixture():
 class UpgradePolicyTest(unittest.TestCase):
     def test_additive_upgrade_and_fresh_schema(self):
         before,after=fixture();upgraded(before,after);fresh_equal(after,after);unchanged(after,after)
+
+    def test_r5a_upgrade_from_every_supported_origin(self):
+        r0, r1r2 = fixture()
+        r1r2['rows']['local_kbacompany_dreport'] = {'count': 1, 'sha256': 'submitted'}
+        candidate = add_tables(r1r2, 2026112400, ADR0010_TABLES | R5A_TABLES)
+        upgraded(r1r2, candidate)
+        fresh = add_tables(r0, 2026112400, NEW | ADR0010_TABLES | R5A_TABLES)
+        upgraded(r0, fresh)
+        fresh_equal(fresh, candidate)
+        adr0010 = add_tables(r1r2, 2026112301, ADR0010_TABLES)
+        upgraded(adr0010, add_tables(adr0010, 2026112400, R5A_TABLES))
+        for name in sorted(R5A_TABLES):
+            bad = copy.deepcopy(candidate)
+            bad['rows'][name]['count'] = 1
+            with self.subTest(table=name), self.assertRaises(RuntimeError):
+                upgraded(r1r2, bad)
+        missing = copy.deepcopy(adr0010)
+        missing['tables'].remove('local_kbacompany_dreportcc')
+        with self.assertRaises(RuntimeError):
+            upgraded(missing, add_tables(missing, 2026112400, R5A_TABLES))
 
     def test_adr0010_upgrade_from_both_supported_origins(self):
         r0, r1r2 = fixture()
@@ -51,30 +71,33 @@ class UpgradePolicyTest(unittest.TestCase):
         with self.assertRaises(RuntimeError):
             upgraded(missing, candidate)
 
-    def test_bmos_a11_upgrade_from_published_adr0010_and_older_origins(self):
+    def test_bmos_a11_upgrade_from_published_r5a_and_older_origins(self):
         r0, r1r2 = fixture()
         r1r2['rows']['local_kbacompany_dreport'] = {'count': 1, 'sha256': 'submitted'}
         published = add_tables(r1r2, 2026112301, ADR0010_TABLES)
         upgraded(r1r2, published)
-        candidate = add_tables(published, 2026112800, BMOS_TABLES)
-        upgraded(published, candidate)
-        upgraded(r1r2, add_tables(r1r2, 2026112800, ADR0010_TABLES | BMOS_TABLES))
-        fresh = add_tables(r0, 2026112800, NEW | ADR0010_TABLES | BMOS_TABLES)
+        r5a = add_tables(published, 2026112400, R5A_TABLES)
+        upgraded(published, r5a)
+        candidate = add_tables(r5a, 2026112800, BMOS_TABLES)
+        upgraded(r5a, candidate)
+        upgraded(published, add_tables(published, 2026112800, R5A_TABLES | BMOS_TABLES))
+        upgraded(r1r2, add_tables(r1r2, 2026112800, ADR0010_TABLES | R5A_TABLES | BMOS_TABLES))
+        fresh = add_tables(r0, 2026112800, NEW | ADR0010_TABLES | R5A_TABLES | BMOS_TABLES)
         upgraded(r0, fresh)
         fresh_equal(fresh, candidate)
         for name in sorted(BMOS_TABLES):
             bad = copy.deepcopy(candidate)
             bad['rows'][name]['count'] = 1
             with self.subTest(table=name), self.assertRaises(RuntimeError):
-                upgraded(published, bad)
-        missing = copy.deepcopy(published)
-        missing['tables'].remove('local_kbacompany_dreportcc')
+                upgraded(r5a, bad)
+        missing = copy.deepcopy(r5a)
+        missing['tables'].remove('local_kbacompany_dreportabs')
         with self.assertRaises(RuntimeError):
             upgraded(missing, candidate)
         bad = copy.deepcopy(candidate)
         bad['tables'].remove('local_kbacompany_posoccuplog')
         with self.assertRaises(RuntimeError):
-            upgraded(published, bad)
+            upgraded(r5a, bad)
 
     def test_missing_extra_table_wrong_version_or_old_data_change_fail(self):
         for what in ['missing','extra','version','data','schema','backfill','empty']:

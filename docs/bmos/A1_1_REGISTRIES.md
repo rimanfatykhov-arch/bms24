@@ -77,7 +77,7 @@
 | `test_s19_registries_have_no_secret_fields` | S19.1 (часть P; сканер секретов CI — отдельно) |
 | `test_s29_privacy_export_and_erasure_by_person` | S29.1 |
 
-Upgrade-часть S28.1 на реальных движках — upgrade-репетиция CI с опубликованной `2026112301` и
+Upgrade-часть S28.1 на реальных движках — upgrade-репетиция CI с опубликованного #197 (`2026112301`) через шаг R5a `2026112400` (main `74e00c4`) и
 `local/kbacompany/cli/test_schema_parity_2026110890.php`. Статус каждого сценария — только по фактическому прогону на
 точном head; локальный lint не PASS.
 

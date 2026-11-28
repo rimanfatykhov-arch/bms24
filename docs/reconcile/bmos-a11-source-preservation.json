@@ -1,20 +1,20 @@
 {
  "scope": "exact intentional source updates; not runtime or release acceptance",
- "base_sha": "0884643590541fdd9b75b1414fd93d6120ded017 (main with the DOC-W2 Office workspace block, published plugin 2026112301)",
+ "base_sha": "74e00c4a63cbd5d37759e604753ebaa4b4fc7947 (main with the published daily reports R5a block, plugin 2026112400; #172)",
  "normalization": "CRLF to LF only",
- "previous_evidence": "docs/reconcile/office-workspace-doc-w2-source-preservation.json (DOC-W2 Office workspace block)",
+ "previous_evidence": "docs/reconcile/daily-reports-r5a-source-preservation.json (daily reports R5a block)",
  "decision": "BMOS-A0 PASS by Codex on 68b1dd07b1b75f1af94e6442e629d127f947b95b (#183, issue #84); owner order 28.11.2026 for BMOS-A1.1 (A1-01, A1-02), acceptance A0_09 section 3",
- "change": "Append the BMOS-A1.1 block (13 bmos_* keys: switch, registry errors including the separate grant authority, privacy description; plus the capability name kbacompany:managebmosgrants, owner decision OD-A11-1 (a)) after the DOC-W2 Office workspace block. Retain all preceding keys byte-for-byte. Schema step 2026112800 adds six registry tables; everything is behind local_kbacompany/bmos_enabled (default off).",
+ "change": "Append the BMOS-A1.1 block (13 bmos_* keys: switch, registry errors including the separate grant authority, privacy description; plus the capability name kbacompany:managebmosgrants, owner decision OD-A11-1 (a)) after the daily reports R5a block. Retain all preceding keys byte-for-byte. Schema step 2026112800 adds six registry tables; everything is behind local_kbacompany/bmos_enabled (default off).",
  "files": [
   {
    "path": "local/kbacompany/lang/en/local_kbacompany.php",
-   "before_sha256_lf": "32402ab956d141c1cbb1b45c495cf8ddc2c6c95d09518995dba2c1473dfbc5cf",
-   "after_sha256_lf": "da1b2f8ccf8dd00bc44ea7203f024e04f5e4fd363726f47eac3a1583195a48e4"
+   "before_sha256_lf": "62af4834f4441502e5ebc4b535b508d3369f46b35f61aca9a2f6edf8e77e76e6",
+   "after_sha256_lf": "18cb43be8f42e87a65c0e8a8ca4698164ce9344802d2e23056a0c9b31c935ed3"
   },
   {
    "path": "local/kbacompany/lang/ru/local_kbacompany.php",
-   "before_sha256_lf": "d5d534758b1c6c6cef4069d1dd6cbe233b9a6973a49f48c0ebc3f781ec51177f",
-   "after_sha256_lf": "b248c1b072ec51879cef1b010f7ce20a9b395c6b2047ca0fba0aa2cc2c037b34"
+   "before_sha256_lf": "02c53ab3bafd6aa9fab2c2f8fd4475456a32cb2d96f17b7d9c7fc01179bc730f",
+   "after_sha256_lf": "aaf5432c779433f01f394ff73460530a64b0c7697c61f77a5dcfd0bc9afa78a2"
   }
  ]
 }
