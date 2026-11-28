@@ -6278,5 +6278,19 @@ function xmldb_local_kbacompany_upgrade(int $oldversion): bool {
         upgrade_plugin_savepoint(true, 2026112400, 'local', 'kbacompany');
     }
 
+    // RC33 PR-2 (owner D1-D4, 24.11.2026): seven additive BMS-owned inbound tables for the disabled fake-provider MAX
+    // slice (namespace, connection, group/sender bindings, receipts, holds, audit). Created from install.xml; existing
+    // tables and rows are untouched, nothing is backfilled and the import stays disabled.
+    if ($oldversion < 2026112500) {
+        foreach (['local_kbacompany_inbns', 'local_kbacompany_inbconn', 'local_kbacompany_inbgroup',
+                'local_kbacompany_inbsender', 'local_kbacompany_inbreceipt', 'local_kbacompany_inbhold',
+                'local_kbacompany_inbaudit'] as $name) {
+            if (!$dbman->table_exists($name)) {
+                $dbman->install_one_table_from_xmldb_file(__DIR__ . '/install.xml', $name);
+            }
+        }
+        upgrade_plugin_savepoint(true, 2026112500, 'local', 'kbacompany');
+    }
+
     return true;
 }

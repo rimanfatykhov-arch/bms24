@@ -11,6 +11,7 @@ defined('MOODLE_INTERNAL') || die();
  * serialized: a message whose checks ran before the revocation may commit, a later one fails.
  *
  * Fixed lock order; never acquire an earlier lock while holding a later one:
+ *   0. inbsrc:{source key}                      max_inbound_service (RC33 import and control of one source event)
  *   1. object locks: taskdiscussion:*, bplandiscussion:*, dreportdiscussion:* (object discussion posts) and the
  *      object ACL writers (N28, COORD-D05): taskcenter:{company} -> task:{company}:{task} (task_service classify_duty,
  *      save, set_observer, transition, delete_task), battleplan:{company}:{plan} (battle_plan_service set_observer,

@@ -10190,3 +10190,21 @@ $string['dailyreports_absence_empty'] = 'No absences.';
 $string['dailyreports_absence_invalid'] = 'Check the absence: type, dates in order, at most one year.';
 $string['dailyreports_absence_overlap'] = 'This person already has an absence on these dates.';
 $string['privacy:metadata:dailyreportabsences'] = 'Absence periods of an employee for daily reports: type (vacation, sick leave, other) and dates, who entered and changed them.';
+
+// RC33 MAX fake-provider inbound slice (2026-11-24): restricted import, registry and refusals.
+$string['kbacompany:importinbound'] = 'Import inbound messages as the company integration account (fake MAX slice)';
+$string['inbound_unauthenticated'] = 'The inbound integration account is not authorised.';
+$string['inbound_scope_denied'] = 'The inbound request is outside the scope of this integration.';
+$string['inbound_payload_invalid'] = 'The inbound message is not valid.';
+$string['inbound_idempotency_conflict'] = 'This source message was already received with different content.';
+$string['inbound_retryable_unavailable'] = 'The inbound import is temporarily unavailable. Try again later.';
+$string['inbound_registry_reference'] = 'The integration record was not found in this company.';
+$string['inbound_registry_principal'] = 'Choose a dedicated active integration account that is not a site administrator.';
+$string['inbound_registry_invalid'] = 'The integration settings are not valid.';
+$string['inbound_registry_exists'] = 'This company already has a MAX connection.';
+$string['inbound_registry_namespace'] = 'This bot or chat is already connected to a source and cannot be connected again.';
+$string['inbound_registry_state'] = 'This integration record has been revoked and cannot be changed.';
+$string['inbound_registry_thread'] = 'Choose an active group conversation that you own and that has no other import.';
+$string['inbound_registry_user'] = 'The employee must have an active account and access to this company.';
+$string['communication_importaudience'] = 'Members cannot be added while this conversation receives imported messages.';
+$string['privacy:metadata:inbound'] = 'Inbound integration: the account mapping of an external sender, the integration account and the audit of imports (no message text).';

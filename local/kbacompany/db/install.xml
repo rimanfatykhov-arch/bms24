@@ -3812,5 +3812,167 @@
           <INDEX NAME="company_user_start_ix" UNIQUE="false" FIELDS="companyuuid,userid,startday" />
         </INDEXES>
       </TABLE>
+        <TABLE NAME="local_kbacompany_inbns" COMMENT="RC33 inbound source namespace: BMS-assigned identity of one provider bot, stable across credential rotation">
+        <FIELDS>
+          <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true" />
+          <FIELD NAME="uuid" TYPE="char" LENGTH="36" NOTNULL="true" />
+          <FIELD NAME="provider" TYPE="char" LENGTH="16" NOTNULL="true" />
+          <FIELD NAME="identityhash" TYPE="char" LENGTH="64" NOTNULL="true" />
+          <FIELD NAME="createdby" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" />
+          <FIELD NAME="timecreated" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" />
+        </FIELDS>
+        <KEYS><KEY NAME="primary" TYPE="primary" FIELDS="id" /></KEYS>
+        <INDEXES>
+          <INDEX NAME="uuid_uix" UNIQUE="true" FIELDS="uuid" />
+          <INDEX NAME="provider_identity_uix" UNIQUE="true" FIELDS="provider,identityhash" />
+        </INDEXES>
+      </TABLE>
+        <TABLE NAME="local_kbacompany_inbconn" COMMENT="RC33 inbound connection: one company, one provider, one restricted service_integration principal">
+        <FIELDS>
+          <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true" />
+          <FIELD NAME="uuid" TYPE="char" LENGTH="36" NOTNULL="true" />
+          <FIELD NAME="companyuuid" TYPE="char" LENGTH="36" NOTNULL="true" />
+          <FIELD NAME="provider" TYPE="char" LENGTH="16" NOTNULL="true" />
+          <FIELD NAME="namespaceuuid" TYPE="char" LENGTH="36" NOTNULL="true" />
+          <FIELD NAME="principaluserid" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" />
+          <FIELD NAME="status" TYPE="char" LENGTH="16" NOTNULL="true" DEFAULT="disabled" />
+          <FIELD NAME="createdby" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" />
+          <FIELD NAME="timecreated" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" />
+          <FIELD NAME="timemodified" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" />
+        </FIELDS>
+        <KEYS><KEY NAME="primary" TYPE="primary" FIELDS="id" /></KEYS>
+        <INDEXES>
+          <INDEX NAME="uuid_uix" UNIQUE="true" FIELDS="uuid" />
+          <INDEX NAME="company_provider_uix" UNIQUE="true" FIELDS="companyuuid,provider" />
+          <INDEX NAME="namespace_uix" UNIQUE="true" FIELDS="namespaceuuid" />
+          <INDEX NAME="principal_ix" UNIQUE="false" FIELDS="principaluserid" />
+        </INDEXES>
+      </TABLE>
+        <TABLE NAME="local_kbacompany_inbgroup" COMMENT="RC33 inbound group binding: one external chat of a namespace to one fixed-audience BMS group thread">
+        <FIELDS>
+          <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true" />
+          <FIELD NAME="uuid" TYPE="char" LENGTH="36" NOTNULL="true" />
+          <FIELD NAME="connectionuuid" TYPE="char" LENGTH="36" NOTNULL="true" />
+          <FIELD NAME="namespaceuuid" TYPE="char" LENGTH="36" NOTNULL="true" />
+          <FIELD NAME="companyuuid" TYPE="char" LENGTH="36" NOTNULL="true" />
+          <FIELD NAME="externalchatid" TYPE="char" LENGTH="24" NOTNULL="true" />
+          <FIELD NAME="threaduuid" TYPE="char" LENGTH="36" NOTNULL="true" />
+          <FIELD NAME="revision" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="1" />
+          <FIELD NAME="status" TYPE="char" LENGTH="16" NOTNULL="true" DEFAULT="active" />
+          <FIELD NAME="policyversion" TYPE="char" LENGTH="32" NOTNULL="true" />
+          <FIELD NAME="effectivefrom" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" />
+          <FIELD NAME="approvedby" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" />
+          <FIELD NAME="timeapproved" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" />
+          <FIELD NAME="timecreated" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" />
+          <FIELD NAME="timemodified" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" />
+        </FIELDS>
+        <KEYS><KEY NAME="primary" TYPE="primary" FIELDS="id" /></KEYS>
+        <INDEXES>
+          <INDEX NAME="uuid_uix" UNIQUE="true" FIELDS="uuid" />
+          <INDEX NAME="namespace_chat_uix" UNIQUE="true" FIELDS="namespaceuuid,externalchatid" />
+          <INDEX NAME="company_thread_ix" UNIQUE="false" FIELDS="companyuuid,threaduuid" />
+        </INDEXES>
+      </TABLE>
+        <TABLE NAME="local_kbacompany_inbsender" COMMENT="RC33 inbound sender binding: verified external sender to one Moodle user, with consent for one group binding">
+        <FIELDS>
+          <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true" />
+          <FIELD NAME="uuid" TYPE="char" LENGTH="36" NOTNULL="true" />
+          <FIELD NAME="connectionuuid" TYPE="char" LENGTH="36" NOTNULL="true" />
+          <FIELD NAME="companyuuid" TYPE="char" LENGTH="36" NOTNULL="true" />
+          <FIELD NAME="externalsenderid" TYPE="char" LENGTH="24" NOTNULL="true" />
+          <FIELD NAME="userid" TYPE="int" LENGTH="10" NOTNULL="true" />
+          <FIELD NAME="membershipuuid" TYPE="char" LENGTH="36" NOTNULL="true" DEFAULT="" />
+          <FIELD NAME="bindinguuid" TYPE="char" LENGTH="36" NOTNULL="true" />
+          <FIELD NAME="consentversion" TYPE="char" LENGTH="32" NOTNULL="true" />
+          <FIELD NAME="evidenceref" TYPE="char" LENGTH="64" NOTNULL="true" DEFAULT="" />
+          <FIELD NAME="verifiedby" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" />
+          <FIELD NAME="effectivefrom" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" />
+          <FIELD NAME="expiresat" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" />
+          <FIELD NAME="revokedat" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" />
+          <FIELD NAME="timecreated" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" />
+          <FIELD NAME="timemodified" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" />
+        </FIELDS>
+        <KEYS><KEY NAME="primary" TYPE="primary" FIELDS="id" /></KEYS>
+        <INDEXES>
+          <INDEX NAME="uuid_uix" UNIQUE="true" FIELDS="uuid" />
+          <INDEX NAME="connection_sender_uix" UNIQUE="true" FIELDS="connectionuuid,externalsenderid" />
+          <INDEX NAME="userid_ix" UNIQUE="false" FIELDS="userid" />
+        </INDEXES>
+      </TABLE>
+        <TABLE NAME="local_kbacompany_inbreceipt" COMMENT="RC33 inbound receipt and provenance; the unique source key makes every source event publish at most once">
+        <FIELDS>
+          <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true" />
+          <FIELD NAME="uuid" TYPE="char" LENGTH="36" NOTNULL="true" />
+          <FIELD NAME="sourcekey" TYPE="char" LENGTH="64" NOTNULL="true" />
+          <FIELD NAME="companyuuid" TYPE="char" LENGTH="36" NOTNULL="true" />
+          <FIELD NAME="connectionuuid" TYPE="char" LENGTH="36" NOTNULL="true" />
+          <FIELD NAME="namespaceuuid" TYPE="char" LENGTH="36" NOTNULL="true" />
+          <FIELD NAME="bindinguuid" TYPE="char" LENGTH="36" NOTNULL="true" />
+          <FIELD NAME="bindingrevision" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" />
+          <FIELD NAME="senderbindinguuid" TYPE="char" LENGTH="36" NOTNULL="true" DEFAULT="" />
+          <FIELD NAME="principaluserid" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" />
+          <FIELD NAME="fingerprint" TYPE="char" LENGTH="64" NOTNULL="true" />
+          <FIELD NAME="externalchatid" TYPE="char" LENGTH="24" NOTNULL="true" />
+          <FIELD NAME="externalmessageid" TYPE="char" LENGTH="128" NOTNULL="true" />
+          <FIELD NAME="messageuuid" TYPE="char" LENGTH="36" NOTNULL="true" DEFAULT="" />
+          <FIELD NAME="outcome" TYPE="char" LENGTH="20" NOTNULL="true" />
+          <FIELD NAME="reason" TYPE="char" LENGTH="32" NOTNULL="true" DEFAULT="" />
+          <FIELD NAME="correlationid" TYPE="char" LENGTH="36" NOTNULL="true" />
+          <FIELD NAME="sourcetimems" TYPE="int" LENGTH="20" NOTNULL="true" DEFAULT="0" />
+          <FIELD NAME="timereceived" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" />
+          <FIELD NAME="timecommitted" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" />
+        </FIELDS>
+        <KEYS><KEY NAME="primary" TYPE="primary" FIELDS="id" /></KEYS>
+        <INDEXES>
+          <INDEX NAME="uuid_uix" UNIQUE="true" FIELDS="uuid" />
+          <INDEX NAME="sourcekey_uix" UNIQUE="true" FIELDS="sourcekey" />
+          <INDEX NAME="company_message_ix" UNIQUE="false" FIELDS="companyuuid,messageuuid" />
+        </INDEXES>
+      </TABLE>
+        <TABLE NAME="local_kbacompany_inbhold" COMMENT="RC33 inbound hold/tombstone: an edit or removal seen for a source event blocks its automatic import">
+        <FIELDS>
+          <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true" />
+          <FIELD NAME="sourcekey" TYPE="char" LENGTH="64" NOTNULL="true" />
+          <FIELD NAME="companyuuid" TYPE="char" LENGTH="36" NOTNULL="true" />
+          <FIELD NAME="connectionuuid" TYPE="char" LENGTH="36" NOTNULL="true" />
+          <FIELD NAME="bindinguuid" TYPE="char" LENGTH="36" NOTNULL="true" />
+          <FIELD NAME="edited" TYPE="int" LENGTH="1" NOTNULL="true" DEFAULT="0" />
+          <FIELD NAME="removed" TYPE="int" LENGTH="1" NOTNULL="true" DEFAULT="0" />
+          <FIELD NAME="eventcount" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" />
+          <FIELD NAME="timecreated" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" />
+          <FIELD NAME="timemodified" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" />
+        </FIELDS>
+        <KEYS><KEY NAME="primary" TYPE="primary" FIELDS="id" /></KEYS>
+        <INDEXES>
+          <INDEX NAME="sourcekey_uix" UNIQUE="true" FIELDS="sourcekey" />
+          <INDEX NAME="company_ix" UNIQUE="false" FIELDS="companyuuid" />
+        </INDEXES>
+      </TABLE>
+        <TABLE NAME="local_kbacompany_inbaudit" COMMENT="RC33 inbound append-only audit: executing principal, human author, decision and reason; no message bodies">
+        <FIELDS>
+          <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true" />
+          <FIELD NAME="uuid" TYPE="char" LENGTH="36" NOTNULL="true" />
+          <FIELD NAME="companyuuid" TYPE="char" LENGTH="36" NOTNULL="true" DEFAULT="" />
+          <FIELD NAME="connectionuuid" TYPE="char" LENGTH="36" NOTNULL="true" DEFAULT="" />
+          <FIELD NAME="channel" TYPE="char" LENGTH="16" NOTNULL="true" />
+          <FIELD NAME="principaluserid" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" />
+          <FIELD NAME="actoruserid" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" />
+          <FIELD NAME="action" TYPE="char" LENGTH="32" NOTNULL="true" />
+          <FIELD NAME="outcome" TYPE="char" LENGTH="32" NOTNULL="true" />
+          <FIELD NAME="reason" TYPE="char" LENGTH="32" NOTNULL="true" DEFAULT="" />
+          <FIELD NAME="receiptuuid" TYPE="char" LENGTH="36" NOTNULL="true" DEFAULT="" />
+          <FIELD NAME="objectuuid" TYPE="char" LENGTH="36" NOTNULL="true" DEFAULT="" />
+          <FIELD NAME="correlationid" TYPE="char" LENGTH="36" NOTNULL="true" DEFAULT="" />
+          <FIELD NAME="bindingrevision" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" />
+          <FIELD NAME="fingerprint" TYPE="char" LENGTH="64" NOTNULL="true" DEFAULT="" />
+          <FIELD NAME="timecreated" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" />
+        </FIELDS>
+        <KEYS><KEY NAME="primary" TYPE="primary" FIELDS="id" /></KEYS>
+        <INDEXES>
+          <INDEX NAME="uuid_uix" UNIQUE="true" FIELDS="uuid" />
+          <INDEX NAME="company_time_ix" UNIQUE="false" FIELDS="companyuuid,timecreated" />
+          <INDEX NAME="actor_ix" UNIQUE="false" FIELDS="actoruserid" />
+        </INDEXES>
+      </TABLE>
   </TABLES>
 </XMLDB>

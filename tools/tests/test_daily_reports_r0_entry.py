@@ -97,7 +97,22 @@ class DailyReportsR0Entry(unittest.TestCase):
             self.skipTest('base commit not available in this checkout')
         changed = subprocess.run(['git', 'diff', '--name-only', base, '--', 'local/kbacompany/db/access.php'],
                                  cwd=ROOT, capture_output=True, text=True, check=True).stdout.split()
-        self.assertEqual([], changed)
+        if changed:
+            # RC33 PR-2 (owner D1-D4 24.11.2026, ADR-0012) adds exactly one capability granted to nobody; any other
+            # access.php change still fails here.
+            before = subprocess.run(['git', 'show', base + ':local/kbacompany/db/access.php'], cwd=ROOT,
+                                    capture_output=True, text=True, check=True).stdout.replace('\r\n', '\n')
+            current = (PLUGIN / 'db/access.php').read_text(encoding='utf-8').replace('\r\n', '\n')
+            block = ("    // RC33 (owner D2, 24.11.2026): restricted inbound import by one company service_integration principal.\n"
+                     "    // Granted to nobody by default; the account still needs its own enabled connection and the disabled service.\n"
+                     "    'local/kbacompany:importinbound' => [\n"
+                     "        'riskbitmask' => RISK_SPAM | RISK_PERSONAL,\n"
+                     "        'captype' => 'write',\n"
+                     "        'contextlevel' => CONTEXT_SYSTEM,\n"
+                     "        'archetypes' => [],\n"
+                     "    ],\n")
+            self.assertEqual(1, current.count(block))
+            self.assertEqual(before, current.replace(block, ''))
 
 
 if __name__ == '__main__':

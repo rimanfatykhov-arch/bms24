@@ -4,6 +4,10 @@ NEW = {'local_kbacompany_dreport', 'local_kbacompany_dreportver', 'local_kbacomp
 ADR0010_TABLES = {'local_kbacompany_dreportcc', 'local_kbacompany_dreportset'}
 # R5a (owner decisions K1-K6): reporting calendar, calendar exceptions, absence periods.
 R5A_TABLES = {'local_kbacompany_rptcalendar', 'local_kbacompany_dreportoff', 'local_kbacompany_dreportabs'}
+# RC33 PR-2 (owner D1-D4, 24.11.2026): seven additive inbound tables of the disabled fake MAX slice.
+INBOUND_TABLES = {'local_kbacompany_inbns', 'local_kbacompany_inbconn', 'local_kbacompany_inbgroup',
+                  'local_kbacompany_inbsender', 'local_kbacompany_inbreceipt', 'local_kbacompany_inbhold',
+                  'local_kbacompany_inbaudit'}
 ADDITIONS = {
     (2026111100, 2026111601): NEW,
     (2026111100, 2026112301): NEW | ADR0010_TABLES,
@@ -11,6 +15,10 @@ ADDITIONS = {
     (2026111100, 2026112400): NEW | ADR0010_TABLES | R5A_TABLES,
     (2026111601, 2026112400): ADR0010_TABLES | R5A_TABLES,
     (2026112301, 2026112400): R5A_TABLES,
+    (2026111100, 2026112500): NEW | ADR0010_TABLES | R5A_TABLES | INBOUND_TABLES,
+    (2026111601, 2026112500): ADR0010_TABLES | R5A_TABLES | INBOUND_TABLES,
+    (2026112301, 2026112500): R5A_TABLES | INBOUND_TABLES,
+    (2026112400, 2026112500): INBOUND_TABLES,
 }
 
 
@@ -28,6 +36,8 @@ def upgraded(before, after):
         require(NEW <= old, 'R1/R2 baseline tables missing')
     if transition[0] == 2026112301:
         require(NEW | ADR0010_TABLES <= old, 'ADR-0010 baseline tables missing')
+    if transition[0] == 2026112400:
+        require(NEW | ADR0010_TABLES | R5A_TABLES <= old, 'R5a baseline tables missing')
     require(old and not old & added and current == old | added, 'unexpected upgrade table inventory')
     require(isinstance(before.get('enabled'), bool) and before['enabled'] is after.get('enabled'),
             'feature switch changed during the upgrade')
@@ -42,7 +52,7 @@ def upgraded(before, after):
 
 def fresh_equal(fresh, upgrade):
     version = upgrade.get('version')
-    require(version in (2026111601, 2026112301, 2026112400) and fresh.get('version') == version, 'fresh/upgrade version mismatch')
+    require(version in (2026111601, 2026112301, 2026112400, 2026112500) and fresh.get('version') == version, 'fresh/upgrade version mismatch')
     require(fresh.get('schemas') and fresh['schemas'] == upgrade.get('schemas'), 'fresh/upgrade full domain schema differs')
 
 

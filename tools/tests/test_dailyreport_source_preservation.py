@@ -85,6 +85,15 @@ R5A_MARKER=b'\n// Daily reports R5a (2026-11-24): reporting calendar and absence
 _R5A=json.loads((ROOT/'docs/reconcile/daily-reports-r5a-source-preservation.json').read_text(encoding='utf-8'))
 R5A_BEFORE={lang:next(r['before_sha256_lf'] for r in _R5A['files'] if r['path']==f'local/kbacompany/lang/{lang}/local_kbacompany.php')
             for lang in ('en','ru')}
+MX_MARKER=b'\n// RC33 MAX fake-provider inbound slice (2026-11-24): restricted import, registry and refusals.\n'
+MX_KEYS=[b'kbacompany:importinbound',b'inbound_unauthenticated',b'inbound_scope_denied',b'inbound_payload_invalid',
+         b'inbound_idempotency_conflict',b'inbound_retryable_unavailable',b'inbound_registry_reference',
+         b'inbound_registry_principal',b'inbound_registry_invalid',b'inbound_registry_exists',
+         b'inbound_registry_namespace',b'inbound_registry_state',b'inbound_registry_thread',b'inbound_registry_user',
+         b'communication_importaudience',b'privacy:metadata:inbound']
+_MX=json.loads((ROOT/'docs/reconcile/rc33-pr2-max-inbound-source-preservation.json').read_text(encoding='utf-8'))
+MX_BEFORE={lang:next(r['before_sha256_lf'] for r in _MX['files'] if r['path']==f'local/kbacompany/lang/{lang}/local_kbacompany.php')
+           for lang in ('en','ru')}
 _R2=json.loads((ROOT/'docs/reconcile/daily-reports-r2-source-preservation.json').read_text(encoding='utf-8'))
 R2_AFTER={lang:next(r['after_sha256_lf'] for r in _R2['files'] if r['path']==f'local/kbacompany/lang/{lang}/local_kbacompany.php')
           for lang in ('en','ru')}
@@ -116,7 +125,13 @@ def lang_bytes(lang):
     exactly: the current file must hash to after_sha256_lf and the reverted file to before_sha256_lf.
     """
     name=f'local/kbacompany/lang/{lang}/local_kbacompany.php'
-    data=(ROOT/name).read_bytes().replace(b'\r\n',b'\n')
+    data=current_lang(lang)
+    # RC33 PR-2 appends the inbound block after #187: the terminology change is bound on the bytes before its marker,
+    # and the appended block is carried over unchanged (its own chain is checked in the R5a branch below).
+    mx=b''
+    if MX_MARKER in data:
+        data,mx=data.split(MX_MARKER,1)
+        mx=MX_MARKER+mx
     row=next(r for r in _TER['files'] if r['path']==name)
     assert hashlib.sha256(data).hexdigest()==row['after_sha256_lf'],name
     current=data.split(b'\n')
@@ -125,7 +140,10 @@ def lang_bytes(lang):
         current[rep['line']-1]=rep['before'].encode('utf-8')
     reverted=b'\n'.join(current)
     assert hashlib.sha256(reverted).hexdigest()==row['before_sha256_lf'],name
-    return reverted
+    return reverted+mx
+
+def current_lang(lang):
+    return (ROOT/f'local/kbacompany/lang/{lang}/local_kbacompany.php').read_bytes().replace(b'\r\n',b'\n')
 
 def keys(blob): return re.findall(rb"^\$string\['([^']+)'\]",blob,re.M)
 
@@ -191,6 +209,13 @@ class Preservation(unittest.TestCase):
                                             if R5A_MARKER in office:
                                                 # R5a follows the Office block: the published file is byte-identical up to the R5a marker.
                                                 office,r5a=office.split(R5A_MARKER)
+                                                if MX_MARKER in r5a:
+                                                    # RC33 PR-2: everything up to the inbound marker is the published R5a
+                                                    # file; the inbound keys are new.
+                                                    r5a,mxb=r5a.split(MX_MARKER)
+                                                    self.assertEqual(MX_BEFORE[lang],hashlib.sha256(current_lang(lang).split(MX_MARKER)[0]).hexdigest())
+                                                    self.assertEqual(MX_KEYS,keys(mxb))
+                                                    self.assertFalse(set(MX_KEYS)&set(keys(data.split(MX_MARKER)[0])))
                                             # The R3 file is byte-identical up to the R5a marker.
                                             self.assertEqual(R5A_BEFORE[lang],hashlib.sha256(data.split(R5A_MARKER)[0]+b'\n').hexdigest())
                                             r5akeys=keys(r5a)

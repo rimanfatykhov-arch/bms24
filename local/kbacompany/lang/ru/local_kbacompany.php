@@ -10192,3 +10192,21 @@ $string['dailyreports_absence_empty'] = 'Отсутствий нет.';
 $string['dailyreports_absence_invalid'] = 'Проверьте отсутствие: вид, даты по порядку, не больше года.';
 $string['dailyreports_absence_overlap'] = 'У сотрудника уже есть отсутствие на эти даты.';
 $string['privacy:metadata:dailyreportabsences'] = 'Периоды отсутствия сотрудника для ежедневных отчётов: вид (отпуск, больничный, другое) и даты, кто внёс и изменил.';
+
+// RC33 MAX fake-provider inbound slice (2026-11-24): restricted import, registry and refusals.
+$string['kbacompany:importinbound'] = 'Импорт входящих сообщений от имени интеграции компании (фейковый срез MAX)';
+$string['inbound_unauthenticated'] = 'Учётная запись интеграции не авторизована.';
+$string['inbound_scope_denied'] = 'Запрос вне области этой интеграции.';
+$string['inbound_payload_invalid'] = 'Входящее сообщение некорректно.';
+$string['inbound_idempotency_conflict'] = 'Это исходное сообщение уже получено с другим содержимым.';
+$string['inbound_retryable_unavailable'] = 'Импорт временно недоступен. Повторите позже.';
+$string['inbound_registry_reference'] = 'Запись интеграции в этой компании не найдена.';
+$string['inbound_registry_principal'] = 'Выберите отдельную активную учётную запись интеграции, не администратора сайта.';
+$string['inbound_registry_invalid'] = 'Настройки интеграции некорректны.';
+$string['inbound_registry_exists'] = 'У этой компании уже есть подключение MAX.';
+$string['inbound_registry_namespace'] = 'Этот бот или чат уже подключён к источнику, повторно подключить нельзя.';
+$string['inbound_registry_state'] = 'Эта запись интеграции отозвана и не изменяется.';
+$string['inbound_registry_thread'] = 'Выберите активное групповое обсуждение, владельцем которого вы являетесь и к которому не подключён другой импорт.';
+$string['inbound_registry_user'] = 'У сотрудника должна быть активная учётная запись и доступ к этой компании.';
+$string['communication_importaudience'] = 'Нельзя добавлять участников, пока в это обсуждение импортируются сообщения.';
+$string['privacy:metadata:inbound'] = 'Входящая интеграция: сопоставление внешнего отправителя с учётной записью, учётная запись интеграции и журнал импорта (без текста сообщений).';

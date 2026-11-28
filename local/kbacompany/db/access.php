@@ -54,4 +54,12 @@ $capabilities = [
             'manager' => CAP_ALLOW,
         ],
     ],
+    // RC33 (owner D2, 24.11.2026): restricted inbound import by one company service_integration principal.
+    // Granted to nobody by default; the account still needs its own enabled connection and the disabled service.
+    'local/kbacompany:importinbound' => [
+        'riskbitmask' => RISK_SPAM | RISK_PERSONAL,
+        'captype' => 'write',
+        'contextlevel' => CONTEXT_SYSTEM,
+        'archetypes' => [],
+    ],
 ];

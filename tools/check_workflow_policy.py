@@ -59,7 +59,7 @@ def validate(text: str, package: str | None = None) -> None:
     for expression in forbidden:
         if re.search(expression, text) or re.search(expression, package):
             raise WorkflowHold('privileged or deployment workflow content is not allowed')
-    if not re.search(r'--expected-version 2026112400', text):
+    if not re.search(r'--expected-version 2026112500', text):
         raise WorkflowHold('wrong expected package version')
     if not re.search(r'tools/test_business_dates_1876.py', text):
         raise WorkflowHold('missing regression for calendar dates')
