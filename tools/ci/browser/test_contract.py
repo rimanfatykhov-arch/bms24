@@ -2198,5 +2198,182 @@ class ContractTest(unittest.TestCase):
         fails(iso, lambda o: o['cases'][2].update(server_errors=[{'url': 'u', 'status': 500}]))
 
 
+def inbound_obs():
+    """A complete, consistent RC33 inbound observation (owner D4); every mutation below must FAIL."""
+    owner, author1, author2, peer = 2, 31, 32, 40
+
+    def msg(i, author):
+        return {'id': i, 'uuid': 'm-%d' % i, 'author': author}
+
+    def rec(mid, outcome, reason='', mid_id=0, author=0):
+        return {'mid': mid, 'outcome': outcome, 'reason': reason, 'message_id': mid_id, 'message_author': author}
+
+    def binding(author, receipts, messages, holds=0):
+        created = [r for r in receipts if r['outcome'] == 'created']
+        return {'receipts': receipts, 'messages': messages, 'author': author, 'peer': peer, 'owner': owner,
+                'holds': holds, 'notified': {m['uuid']: sorted([owner, peer]) for m in messages},
+                'events': [{'entity': 'm-%d' % r['message_id'], 'leaks_external_id': False} for r in created]}
+
+    def state(b1, b2, created):
+        empty = binding(0, [], [])
+        return {'companies': {'A': {'bindings': {'1': b1, '2': b2}, 'audit_create': created,
+                                    'audit_create_dual_actor': created},
+                              'B': {'bindings': {'1': empty, '2': copy.deepcopy(empty)}, 'audit_create': 0,
+                                    'audit_create_dual_actor': 0}}, 'gate_held': False}
+
+    n09 = [rec('n09.same', 'created', '', 1, author1)]
+    m1 = [msg(1, author1)]
+    s_n09 = state(binding(author1, n09, m1), binding(author2, [], []), 1)
+    adp = n09 + [rec('adp.create', 'created', '', 2, author1), rec('adp.switch', 'created', '', 3, author1)] + [
+        rec(mid, 'review_required', reason) for mid, reason in c.INBOUND_ADAPTER_REVIEW.items()]
+    m3 = m1 + [msg(2, author1), msg(3, author1)]
+    s_adapter = state(binding(author1, adp, m3, 2), binding(author2, [], []), 3)
+
+    def race(prefix, reason, first_id, author):
+        pre = [[prefix + 'pre.%d' % i, 200, 'created', ''] for i in range(5)]
+        middle = [[prefix + 'mid.%d' % i, 200, 'created' if i < 7 else 'review_required', '' if i < 7 else reason]
+                  for i in range(15)]
+        post = [[prefix + 'post.%d' % i, 200, 'review_required', reason] for i in range(5)]
+        receipts, messages, nid = [], [], first_id
+        for x in pre + middle + post:
+            if x[2] == 'created':
+                receipts.append(rec(x[0], 'created', '', nid, author)); messages.append(msg(nid, author)); nid += 1
+            else:
+                receipts.append(rec(x[0], 'review_required', reason))
+        return ({'pre': pre, 'middle': middle, 'post': post, 'revoker_exit': 0,
+                 'revocation': {'binding': '', 'max_message_id': nid - 1}}, receipts, messages)
+
+    rs, rs_rec, rs_msg = race('race.s.', 'sender_unverified', 10, author1)
+    rm, rm_rec, rm_msg = race('race.m.', 'author_unavailable', 100, author2)
+    final = state(binding(author1, adp + rs_rec, m3 + rs_msg, 2), binding(author2, rm_rec, rm_msg),
+                  3 + len(rs_msg) + len(rm_msg))
+    rows = ([{'state': 'committed', 'deliveries': 20, 'has_body': 0, 'reason': ''},
+             {'state': 'committed', 'deliveries': 1, 'has_body': 0, 'reason': ''},
+             {'state': 'rejected', 'deliveries': 1, 'has_body': 0, 'reason': 'unbound'}]
+            + [{'state': 'review_required', 'deliveries': 1, 'has_body': 0, 'reason': ''} for _ in range(8)])
+    hooks = {'wrong_secret': 401, 'twenty_identical': [200] * 20, 'adp.bot': 200, 'adp.held.create': 200}
+
+    def n28(kind, writer, other, first_id):
+        refused = c.INBOUND_N28[kind][1][0]
+
+        def path(tag):
+            return 'generic' if kind == 'meeting' or int(tag.split('.')[1]) % 2 else 'object'
+        answers, nid = {'pre': [], 'middle': [], 'post': []}, first_id + 1
+        for phase, count, oks in (('pre', 5, 5), ('middle', 15, 6), ('post', 5, 0)):
+            for i in range(count):
+                tag = '%s.%d' % (phase, i)
+                if i < oks:
+                    answers[phase].append([tag, path(tag), 'ok', nid]); nid += 1
+                else:
+                    answers[phase].append([tag, path(tag), refused, 0])
+        ready_msgs = [{'id': first_id, 'author': writer}]
+        final_msgs = ready_msgs + [{'id': i, 'author': writer} for i in range(first_id + 1, nid)] + [
+            {'id': nid + 50, 'author': other}]
+        race = dict(answers, other=['ok', nid + 50], revoker_exit=0,
+                    revocation={'kind': kind, 'max_message_id': nid - 1})
+        ready = {'writer': writer, 'other': other, 'right': True, 'messages': ready_msgs,
+                 'notified': {str(first_id): [other]}}
+        final = {'writer': writer, 'other': other, 'right': False, 'messages': final_msgs,
+                 'notified': {str(m['id']): [other] if m['author'] == writer else [] for m in final_msgs}}
+        return race, ready, final
+
+    n28_obs = {k: n28(k, w, x, f) for k, w, x, f in (('task', 51, 52, 1000), ('plan', 53, 54, 2000),
+                                                       ('meeting', 55, 2, 3000))}
+    final['n28'] = {k: v[2] for k, v in n28_obs.items()}
+    return {'status': 'PASS', 'setup_exit': 0, 'n28_setup_exit': 0,
+            'n28': {k: v[0] for k, v in n28_obs.items()},
+            'state_n28_ready': {'n28': {k: v[1] for k, v in n28_obs.items()}},
+            'n09': [[200, 'created', '']] + [[200, 'duplicate', '']] * 19, 'state_n09': s_n09,
+            'envelopes': {k: [200, v, ''] for k, v in c.INBOUND_ENVELOPES.items()},
+            'state_envelopes': copy.deepcopy(s_n09),
+            'adapter': {'hooks': hooks, 'rows': rows, 'paused': False,
+                        'switch_off_rows': [{'state': 'retry_wait', 'reason': 'inbound_retryable_unavailable'}]},
+            'state_adapter': s_adapter, 'race_sender': rs, 'race_membership': rm, 'state_final': final}
+
+
+class InboundContractTest(unittest.TestCase):
+    """RC33 PR-3: the D4 inbound verdicts must fail closed on every lost invariant."""
+
+    def test_consistent_observation_passes_and_names_are_required(self):
+        r = c.evaluate(c.inbound_checks(inbound_obs(), 0))
+        self.assertEqual({'PASS'}, {x['status'] for x in r.values()}, r)
+        self.assertTrue(set(r) <= set(c.required_check_names()))
+        self.assertEqual(9, len(r))
+
+    def test_incomplete_or_failed_producer_fails_everything(self):
+        for mutate, code in ((lambda o: o.update(error='boom'), 0), (lambda o: o.update(status='INCOMPLETE'), 0),
+                             (lambda o: o.update(setup_exit=1), 0), (lambda o: None, 1), (lambda o: None, None)):
+            o = inbound_obs(); mutate(o)
+            r = c.evaluate(c.inbound_checks(o, code))
+            self.assertTrue(all(x['status'] == 'FAIL' for x in r.values()), r)
+        self.assertTrue(all(x['status'] == 'FAIL' for x in c.evaluate(c.inbound_checks(None, 0)).values()))
+
+    def assert_fails(self, name, mutate):
+        o = inbound_obs(); mutate(o)
+        self.assertIn(name, failed(c.evaluate(c.inbound_checks(o, 0))))
+
+    def test_each_lost_invariant_is_detected(self):
+        n09, env, adp = ('inbound_n09_twenty_parallel_identical_one_message',
+                         'inbound_n20_refusals_are_http200_envelopes_without_writes', 'inbound_fake_adapter_end_to_end_states')
+        s, m = ('inbound_n21_sender_revocation_during_intake_linearized',
+                'inbound_n28_membership_revocation_during_intake_linearized')
+        iso = 'inbound_tenant_isolation_outbox_and_dual_actor_audit'
+        nt, np_, nm = (c.INBOUND_N28[k][0] for k in ('task', 'plan', 'meeting'))
+
+        def a1(o, key):
+            return o[key]['companies']['A']['bindings']['1']
+        cases = [
+            (n09, lambda o: o['n09'].__setitem__(1, [200, 'created', ''])),
+            (n09, lambda o: a1(o, 'state_n09')['messages'].append({'id': 9, 'uuid': 'm-9', 'author': 31})),
+            (n09, lambda o: a1(o, 'state_n09')['notified'].__setitem__('m-1', [2, 2, 40])),
+            (n09, lambda o: a1(o, 'state_n09')['events'][0].__setitem__('leaks_external_id', True)),
+            (n09, lambda o: o['state_n09']['companies']['A'].__setitem__('audit_create_dual_actor', 0)),
+            (env, lambda o: o['envelopes'].__setitem__('switch_off', [500, 'http_error', ''])),
+            (env, lambda o: o['envelopes'].__setitem__('changed_content', [200, 'duplicate', ''])),
+            (env, lambda o: a1(o, 'state_envelopes')['receipts'].append({'mid': 'n20.foreign', 'outcome': 'created'})),
+            (adp, lambda o: o['adapter']['hooks'].__setitem__('wrong_secret', 200)),
+            (adp, lambda o: o['adapter']['rows'][0].__setitem__('has_body', 1)),
+            (adp, lambda o: o['adapter']['rows'][2].__setitem__('state', 'committed')),
+            (adp, lambda o: o['adapter'].__setitem__('switch_off_rows', [])),
+            (adp, lambda o: next(r for r in a1(o, 'state_adapter')['receipts'] if r['mid'] == 'adp.bot').update(
+                outcome='created', message_id=5)),
+            (adp, lambda o: a1(o, 'state_adapter').__setitem__('holds', 1)),
+            (s, lambda o: o['race_sender']['post'][0].__setitem__(2, 'created')),
+            (s, lambda o: o['race_sender'].__setitem__('revoker_exit', 1)),
+            (s, lambda o: o['race_sender']['revocation'].__setitem__('max_message_id', 12)),
+            (s, lambda o: a1(o, 'state_final')['messages'].append({'id': 999, 'uuid': 'm-999', 'author': 31})),
+            (m, lambda o: o['race_membership']['middle'][9].__setitem__(3, 'sender_bot')),
+            (m, lambda o: o['state_final']['companies']['A']['bindings']['2']['receipts'].pop()),
+            (iso, lambda o: o['state_final']['companies']['B']['bindings']['1']['messages'].append({'id': 1})),
+            (iso, lambda o: o['state_final'].__setitem__('gate_held', True)),
+            (iso, lambda o: o['state_final']['companies']['A'].__setitem__('audit_create', 1)),
+            # N28 (COORD-D05): object ACL revocation of a task observer, a plan observer and a meeting participant.
+            (nt, lambda o: o.__setitem__('n28_setup_exit', 1)),
+            (nt, lambda o: o['n28']['task'].__setitem__('revoker_exit', 1)),
+            (nt, lambda o: o['n28']['task']['post'][0].__setitem__(2, 'ok')),
+            (nt, lambda o: o['n28']['task']['post'][1].__setitem__(2, 'taskcenter_lock')),
+            (nt, lambda o: o['n28']['task']['pre'][2].__setitem__(2, 'taskcenter_permission')),
+            (nt, lambda o: o['n28']['task']['middle'][3].__setitem__(3, 9999)),
+            (nt, lambda o: o['n28']['task']['middle'][9].__setitem__(2, 'class:dml_exception')),
+            (nt, lambda o: o['state_final']['n28']['task']['messages'].append({'id': 9999, 'author': 51})),
+            (nt, lambda o: o['state_final']['n28']['task'].__setitem__('right', True)),
+            (nt, lambda o: o['state_n28_ready']['n28']['task'].__setitem__('right', False)),
+            (nt, lambda o: [x.__setitem__(1, 'generic') for x in o['n28']['task']['pre'] + o['n28']['task']['middle']
+                            + o['n28']['task']['post']]),
+            (np_, lambda o: o['n28']['plan']['revocation'].__setitem__('max_message_id', 2003)),
+            (np_, lambda o: o['state_final']['n28']['plan']['messages'].pop(3)),
+            (np_, lambda o: o['state_final']['n28']['plan']['notified'][str(o['n28']['plan']['other'][1])].append(53)),
+            (np_, lambda o: o['n28']['plan'].__setitem__('other', ['battleplan_reference', 0])),
+            (np_, lambda o: o['n28']['plan']['post'][4].__setitem__(2, 'taskcenter_permission')),
+            (nm, lambda o: o['n28']['meeting']['post'][0].__setitem__(2, 'battleplan_reference')),
+            (nm, lambda o: o['n28']['meeting'].__setitem__('revocation', None)),
+            (nm, lambda o: o['state_final']['n28'].pop('meeting')),
+            (nm, lambda o: o['n28']['meeting']['middle'].pop()),
+        ]
+        for name, mutate in cases:
+            with self.subTest(name=name):
+                self.assert_fails(name, mutate)
+
+
 if __name__ == '__main__':
     unittest.main(verbosity=1)

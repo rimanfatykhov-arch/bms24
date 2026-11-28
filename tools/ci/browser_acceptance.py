@@ -188,6 +188,9 @@ try:
     # DOC-W2 Office workspace: default-off switch, counters = service, menu/planned sections, A/B isolation, revocation.
     office_exit = timed('office_workspace', lambda: browser('office_workspace.py', 'verify'))
     record(contract.evaluate(contract.office_workspace_checks(load('office-workspace-result.json'), office_exit)))
+    # RC33 fake MAX inbound (owner D4): REST refusals, fake adapter, 20 parallel duplicates, revocation during intake.
+    inbound_exit = timed('max_inbound', lambda: browser('max_inbound.py', 'verify'))
+    record(contract.evaluate(contract.inbound_checks(load('inbound-result.json'), inbound_exit)))
     timed('server_restart_64k', lambda: start_server(['-d', 'upload_max_filesize=64K', '-d', 'post_max_size=8M']))
     timed('oversize', lambda: browser('attachments.py', 'oversize'))
     timed('db_state_oversize', lambda: php_state('oversize'))
