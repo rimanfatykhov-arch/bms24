@@ -44,6 +44,9 @@ Own-shell UI lives in `local/kbacompany/templates/bms24_*` and `local/kbacompany
 
 ## Release and work discipline
 
+- Follow the [development process decision for #160](docs/deploy/BMS24_DEVELOPMENT_PROCESS_160.md). Use one PR for one outcome that can be reviewed in one scenario. Keep decisions and audits separate from product implementation.
+- Start each PR description with `Исполнитель: Claude`, `Исполнитель: Codex` or `Исполнитель: DeepSeek`. Only that executor pushes. To hand off, record the exact SHA, worktree status, completed work and outstanding checks in the PR. The new executor confirms receipt in the PR before pushing.
+- Before pushing UI changes, check the real templates and plugin CSS with synthetic data at 320, 375, 768 and 1440 px. Record the result separately from the mandatory CI and test acceptance.
 - Reconcile authorization covers isolated source/CI changes only. Do not merge or deploy.
 - Run `python tools/check_reconcile_1879.py` and imported workflow gates in addition to main static QA. Independent QA/security and human review remain required before acceptance; never invent review approvals.
 
