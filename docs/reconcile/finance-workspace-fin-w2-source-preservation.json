@@ -1,0 +1,20 @@
+{
+ "scope": "exact intentional source updates; not runtime or release acceptance",
+ "base_sha": "7282ffc469c72a7754f1e971ab77fd74826288ce (#187 terminology over main 74e00c4 with R5a #172; TEST candidate only)",
+ "normalization": "CRLF to LF only",
+ "previous_evidence": "docs/reconcile/terminology-cascade-std-source-preservation.json (#187 terminology, in-place RU/EN replacements)",
+ "decision": "docs/finance/FIN_W2_FINANCE_WORKSPACE.md (owner task 2026-11-24: FIN-W2 Finance workspace, BMS-05)",
+ "change": "Append the FIN-W2 Finance workspace block (financews_* keys) after the #187 terminology file (R5a block last). Retain all preceding keys byte-for-byte. No schema, version, capability, formula or notification change; the workspace is behind local_kbacompany/finance_workspace_enabled (default off).",
+ "files": [
+  {
+   "path": "local/kbacompany/lang/en/local_kbacompany.php",
+   "before_sha256_lf": "e0d49c73c41b137f6d6927eda8afc128c30a0b30ac5917c24a443f201ca9bf47",
+   "after_sha256_lf": "2d98947bc7704184d2a31887380d087f6266449f9ef3c8d813b6234096ad804e"
+  },
+  {
+   "path": "local/kbacompany/lang/ru/local_kbacompany.php",
+   "before_sha256_lf": "07df4610a4549fe8a08b92107cdefb480796e15fe40ee371a4e36c2286cfa0e4",
+   "after_sha256_lf": "6b60dd6f8a4b278fe9027d05790304ba708e7addbd3ea8a35ce403910b6cda19"
+  }
+ ]
+}

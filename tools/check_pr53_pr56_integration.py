@@ -141,6 +141,14 @@ def check(root=ROOT):
     # See docs/reconcile/daily-reports-r5a-source-preservation.json.
     reviewed_followup['local/kbacompany/lang/en/local_kbacompany.php'] = '62af4834f4441502e5ebc4b535b508d3369f46b35f61aca9a2f6edf8e77e76e6'
     reviewed_followup['local/kbacompany/lang/ru/local_kbacompany.php'] = '02c53ab3bafd6aa9fab2c2f8fd4475456a32cb2d96f17b7d9c7fc01179bc730f'
+    # Terminology BMS-STD-TER-001 (#187, owner approval 2026-11-25): exact in-place RU/EN value replacements, same keys.
+    # See docs/reconcile/terminology-cascade-std-source-preservation.json (line-by-line before/after).
+    reviewed_followup['local/kbacompany/lang/en/local_kbacompany.php'] = 'e0d49c73c41b137f6d6927eda8afc128c30a0b30ac5917c24a443f201ca9bf47'
+    reviewed_followup['local/kbacompany/lang/ru/local_kbacompany.php'] = '07df4610a4549fe8a08b92107cdefb480796e15fe40ee371a4e36c2286cfa0e4'
+    # FIN-W2 Finance workspace (owner task 2026-11-24): financews_* RU/EN block after the terminology update (#187); read-only, default off.
+    # See docs/finance/FIN_W2_FINANCE_WORKSPACE.md.
+    reviewed_followup['local/kbacompany/lang/en/local_kbacompany.php'] = '2d98947bc7704184d2a31887380d087f6266449f9ef3c8d813b6234096ad804e'
+    reviewed_followup['local/kbacompany/lang/ru/local_kbacompany.php'] = '6b60dd6f8a4b278fe9027d05790304ba708e7addbd3ea8a35ce403910b6cda19'
     for row in plan['rows']:
         path=root/row['path']
         if not path.is_file() or path.is_symlink():
