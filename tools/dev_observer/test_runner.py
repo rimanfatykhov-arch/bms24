@@ -231,6 +231,10 @@ class RunnerTests(unittest.TestCase):
         self.assertIn("read-only", spawn.call_args.args[0])
         self.assertIn("shell_tool", spawn.call_args.args[0])
         self.assertNotIn("GITHUB_TOKEN", spawn.call_args.kwargs["env"])
+        working_dir = spawn.call_args.kwargs["cwd"]
+        profile_dir = Path(spawn.call_args.kwargs["env"]["CODEX_HOME"])
+        self.assertEqual(working_dir.parent, profile_dir.parent)
+        self.assertNotEqual(working_dir, profile_dir)
 
     def test_cli_limit_reports_reason_without_raw_message(self):
         stdout = io.BytesIO(encoded({"type": "error", "message": "rate limit: private details"}))

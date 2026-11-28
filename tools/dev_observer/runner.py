@@ -196,7 +196,9 @@ def failure_code(message):
 
 
 def codex(cli, home, scratch, started, cutoff):
-    schema = scratch / "response.schema.json"
+    workdir = scratch / "work"
+    workdir.mkdir(mode=0o700)
+    schema = workdir / "response.schema.json"
     put(schema, RESULT_SCHEMA)
     keep = ("PATH", "SYSTEMROOT", "WINDIR", "COMSPEC", "PATHEXT")
     env = {k: v for k, v in os.environ.items() if k.upper() in keep}
@@ -205,7 +207,7 @@ def codex(cli, home, scratch, started, cutoff):
     if (home / "auth.json").is_file():
         shutil.copyfile(home / "auth.json", profile / "auth.json")
         (profile / "auth.json").chmod(0o600)
-    env.update(CODEX_HOME=str(profile), TMP=str(scratch), TEMP=str(scratch), TMPDIR=str(scratch))
+    env.update(CODEX_HOME=str(profile), TMP=str(workdir), TEMP=str(workdir), TMPDIR=str(workdir))
     argv = [str(cli), "exec", "--ignore-user-config", "--strict-config", "--ephemeral", "--skip-git-repo-check", "--json",
             "--sandbox", "read-only", "--disable", "shell_tool", "--disable", "hooks",
             "--disable", "enable_mcp_apps", "--disable", "skill_search", "--disable", "multi_agent",
@@ -216,7 +218,7 @@ def codex(cli, home, scratch, started, cutoff):
     if time.monotonic() >= cutoff:
         return "BLOCKED", "approval_outside_window", None, None
     try:
-        proc = subprocess.Popen(argv, cwd=scratch, env=env, stdin=subprocess.DEVNULL,
+        proc = subprocess.Popen(argv, cwd=workdir, env=env, stdin=subprocess.DEVNULL,
                                 stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, shell=False)
     except OSError:
         return "FAILED", "adapter_unavailable", None, None
