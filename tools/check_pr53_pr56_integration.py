@@ -145,6 +145,11 @@ def check(root=ROOT):
     # See docs/reconcile/terminology-cascade-std-source-preservation.json (line-by-line before/after).
     reviewed_followup['local/kbacompany/lang/en/local_kbacompany.php'] = 'e0d49c73c41b137f6d6927eda8afc128c30a0b30ac5917c24a443f201ca9bf47'
     reviewed_followup['local/kbacompany/lang/ru/local_kbacompany.php'] = '07df4610a4549fe8a08b92107cdefb480796e15fe40ee371a4e36c2286cfa0e4'
+    # RC33 PR-1 (owner D3 2026-11-24): shared communication write gate and notification eligibility; no lang,
+    # schema or version change; N28 (COORD-D05, #205 option A) re-checks the task and Battle Plan write right under the gate.
+    # See docs/reconcile/RC33_PR1_COMMUNICATION_WRITE_GATE.md.
+    reviewed_followup['local/kbacompany/classes/local/communication_service.php'] = '610d395738b1f39c8daa5ca0f37ff729299521839caa2dbeba15a75584e3cc38'
+    reviewed_followup['local/kbacompany/classes/local/employee_service.php'] = '80a5502f410dd618dc1b64988a7824343960145d3276a7d8e89e8cd0db5f48be'
     for row in plan['rows']:
         path=root/row['path']
         if not path.is_file() or path.is_symlink():

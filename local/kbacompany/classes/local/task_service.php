@@ -392,6 +392,8 @@ class task_service {
             ->get_lock('task:' . $companyuuid . ':' . $taskuuid, 10);
         if (!$lock) { self::fail('lock'); }
         try {
+            // N28 (COORD-D05): hold the communication gate through this commit (lock order: object lock -> gate).
+            $gate = communication_write_gate::acquire($companyuuid);
             $tx = $DB->start_delegated_transaction();
             $row = self::task($companyuuid, $taskuuid);
             if ((int)$row->revision !== $expectedrevision) { self::fail('conflict'); }
@@ -411,7 +413,7 @@ class task_service {
         } catch (\Throwable $e) {
             if (isset($tx)) { $tx->rollback($e); }
             throw $e;
-        } finally { $lock->release(); }
+        } finally { if (isset($gate)) { $gate->release(); } $lock->release(); }
     }
 
     /** A single SQL expression for scoped list/count projections, including temporary coverage. */
@@ -988,6 +990,8 @@ class task_service {
         $lock = \core\lock\lock_config::get_lock_factory('local_kbacompany')->get_lock('task:' . $companyuuid . ':' . $taskuuid, 10);
         if (!$lock) { self::fail('lock'); }
         try {
+            // N28 (COORD-D05): hold the communication gate through this commit (lock order: object lock -> gate).
+            $gate = communication_write_gate::acquire($companyuuid);
             $tx = $DB->start_delegated_transaction();
             $row = self::task($companyuuid, $taskuuid);
             if (!self::can_edit_definition($row, $actor, $canmanage)) { self::fail('permission'); }
@@ -1037,7 +1041,7 @@ class task_service {
         } catch (\Throwable $e) {
             if (isset($tx)) { $tx->rollback($e); }
             throw $e;
-        } finally { $lock->release(); }
+        } finally { if (isset($gate)) { $gate->release(); } $lock->release(); }
     }
 
     /** Change the task observer without changing execution responsibility. */
@@ -1050,6 +1054,8 @@ class task_service {
         $lock = \core\lock\lock_config::get_lock_factory('local_kbacompany')->get_lock('task:' . $companyuuid . ':' . $taskuuid, 10);
         if (!$lock) { self::fail('lock'); }
         try {
+            // N28 (COORD-D05): hold the communication gate through this commit (lock order: object lock -> gate).
+            $gate = communication_write_gate::acquire($companyuuid);
             $tx = $DB->start_delegated_transaction();
             $row = self::task($companyuuid, $taskuuid);
             if (!$canmanage && (int)$row->creatorid !== $actor) { self::fail('permission'); }
@@ -1066,7 +1072,7 @@ class task_service {
         } catch (\Throwable $e) {
             if (isset($tx)) { $tx->rollback($e); }
             throw $e;
-        } finally { $lock->release(); }
+        } finally { if (isset($gate)) { $gate->release(); } $lock->release(); }
     }
 
     /**
@@ -1102,6 +1108,8 @@ class task_service {
             self::fail('lock');
         }
         try {
+            // N28 (COORD-D05): hold the communication gate through this commit (lock order: object lock -> gate).
+            $gate = communication_write_gate::acquire($companyuuid);
             $tx = $DB->start_delegated_transaction();
             $row = self::task($companyuuid, $taskuuid);
             if (!self::can_view_row($row, $actor, $canmanage)) { self::fail('permission'); }
@@ -1159,6 +1167,7 @@ class task_service {
             if (isset($tx)) { $tx->rollback($e); }
             throw $e;
         } finally {
+            if (isset($gate)) { $gate->release(); }
             $lock->release();
             if ($hierarchylock) { $hierarchylock->release(); }
         }
@@ -1172,6 +1181,8 @@ class task_service {
         $lock = \core\lock\lock_config::get_lock_factory('local_kbacompany')->get_lock('task:' . $companyuuid . ':' . $taskuuid, 10);
         if (!$lock) { self::fail('lock'); }
         try {
+            // N28 (COORD-D05): hold the communication gate through this commit (lock order: object lock -> gate).
+            $gate = communication_write_gate::acquire($companyuuid);
             $tx = $DB->start_delegated_transaction();
             $row = self::task($companyuuid, $taskuuid);
             if (!$canmanage && (int)$row->creatorid !== $actor) { self::fail('permission'); }
@@ -1205,7 +1216,7 @@ class task_service {
         } catch (\Throwable $e) {
             if (isset($tx)) { $tx->rollback($e); }
             throw $e;
-        } finally { $lock->release(); }
+        } finally { if (isset($gate)) { $gate->release(); } $lock->release(); }
     }
 
     /** Task-scoped discussion projected from the Communication Center. */
@@ -1324,6 +1335,8 @@ class task_service {
             // Thread creation owns its company lock and commits before the message transaction.
             // A rejected upload may leave an empty discussion, but never a partial message/file set.
             $threaduuid = self::ensure_discussion($companyuuid, $actor, $row);
+            // Hold the communication gate through this outer commit (lock order: taskdiscussion -> gate).
+            $gate = communication_write_gate::acquire($companyuuid);
             $tx = $DB->start_delegated_transaction();
             // One canonical message and all protected attachments commit together.
             $messageuuid = communication_service::send_message_with_attachments(
@@ -1336,6 +1349,7 @@ class task_service {
             if (isset($tx)) { $tx->rollback($e); }
             throw $e;
         } finally {
+            if (isset($gate)) { $gate->release(); }
             $lock->release();
         }
     }

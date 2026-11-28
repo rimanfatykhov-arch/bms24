@@ -90,6 +90,8 @@ final class battle_plan_discussion_service {
                 'threadtype' => 'object', 'title' => '', 'contextkind' => self::KIND, 'contextuuid' => $planuuid,
                 'contextrevision' => 0, 'participants' => self::initial_participants($companyuuid, $actor, $target),
             ]);
+            // Hold the communication gate through this outer commit (lock order: bplandiscussion -> gate).
+            $gate = communication_write_gate::acquire($companyuuid);
             $tx = $DB->start_delegated_transaction();
             $messageuuid = communication_service::send_message_with_attachments($companyuuid, $actor, $threaduuid,
                 $body, $uploads, [], trim($replytouuid));
@@ -99,6 +101,7 @@ final class battle_plan_discussion_service {
             if (isset($tx)) { $tx->rollback($e); }
             throw $e;
         } finally {
+            if (isset($gate)) { $gate->release(); }
             $lock->release();
         }
     }

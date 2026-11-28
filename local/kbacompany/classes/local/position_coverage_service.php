@@ -197,6 +197,8 @@ final class position_coverage_service {
         $lock = $factory->get_lock('position_coverage:' . $companyuuid, 10);
         if (!$lock) { throw new \moodle_exception('coverage_busy', 'local_kbacompany'); }
         try {
+            // N28 (COORD-D05): hold the communication gate through this commit (lock order: object lock -> gate).
+            $gate = communication_write_gate::acquire($companyuuid);
             $tx = $DB->start_delegated_transaction();
             $row = self::require_record($companyuuid, $uuid);
             if ((int)$row->revision !== $revision) {
@@ -236,6 +238,7 @@ final class position_coverage_service {
             if (isset($tx)) { $tx->rollback($e); }
             throw $e;
         } finally {
+            if (isset($gate)) { $gate->release(); }
             $lock->release();
         }
     }
