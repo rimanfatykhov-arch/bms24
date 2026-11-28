@@ -68,6 +68,12 @@ Base: PR-1 `feature/communication-write-gate` 5aeb26ac1fd158ed45004e76c9d32c4d10
 - external API capability;
 - privacy erasure of the principal.
 
+The first run on Percona 8.0.46 (isolated `rc31-standard` dispatch on the stack top, 28.11.2026) found a test defect,
+not a product defect. The fixture built `source_timestamp_ms` from `time()` on every send, and the timestamp is part
+of the canonical fingerprint. A replay that crossed a second boundary was therefore not identical and was correctly
+refused as `idempotency_conflict`. The fixture now uses one source timestamp per test, and the N11 timestamp change is
+relative to it. The service code is unchanged.
+
 ## Not covered here (PR-3 or later)
 
 - N01: webhook secret, in the adapter.
