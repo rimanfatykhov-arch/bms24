@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>BMOS-A0 — прототипы интерфейсов (PROPOSED, синтетические данные)</title>
+<style>
+  :root { --navy:#0B2B41; --emerald:#0C6C52; --sky:#E4F2FB; --mint:#ECF7F3; --sand:#FDF6ED; --blue:#1777B5; --violet:#6B43B5;
+          --line:#d5dde5; --muted:#5b6b78; }
+  * { box-sizing: border-box; }
+  body { margin:0; font:15px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; color:var(--navy); background:#f6f8fa; }
+  header { background:var(--navy); color:#fff; padding:14px 20px; }
+  header p { margin:4px 0 0; opacity:.85; font-size:13px; }
+  .banner { background:var(--sand); border-bottom:1px solid var(--line); padding:8px 20px; font-size:13px; }
+  nav { display:flex; gap:6px; flex-wrap:wrap; padding:12px 20px 0; }
+  nav a { padding:8px 12px; border-radius:8px 8px 0 0; background:#fff; border:1px solid var(--line); border-bottom:none;
+          color:var(--navy); text-decoration:none; }
+  nav a:focus-visible, button:focus-visible { outline:3px solid var(--blue); outline-offset:2px; }
+  main { padding:0 20px 40px; }
+  section { background:#fff; border:1px solid var(--line); border-radius:0 8px 8px 8px; padding:16px; margin-bottom:24px; }
+  h2 { margin:0 0 4px; font-size:20px; } .sub { color:var(--muted); margin:0 0 14px; font-size:13px; }
+  .grid { display:grid; grid-template-columns:repeat(auto-fit, minmax(240px, 1fr)); gap:12px; }
+  .card { border:1px solid var(--line); border-radius:8px; padding:12px; }
+  .chip { display:inline-block; padding:2px 8px; border-radius:999px; font-size:12px; font-weight:600; }
+  .h { background:var(--sky); color:var(--blue); } .a { background:#efe9fa; color:var(--violet); }
+  .hy { background:var(--mint); color:var(--emerald); } .v { background:#f1f3f5; color:var(--muted); }
+  .warn { background:var(--sand); color:#8a5a12; }
+  table { width:100%; border-collapse:collapse; font-size:14px; }
+  th, td { text-align:left; padding:8px; border-bottom:1px solid var(--line); vertical-align:top; }
+  th { background:#f3f6f9; font-weight:600; }
+  .tablewrap { overflow-x:auto; }
+  button { font:inherit; border-radius:6px; border:1px solid var(--line); background:#fff; padding:6px 10px; cursor:pointer; }
+  button.primary { background:var(--emerald); color:#fff; border-color:var(--emerald); }
+  button.danger { color:#a1262b; border-color:#e6b9bb; }
+  .kv { display:grid; grid-template-columns:200px 1fr; gap:6px 12px; font-size:14px; }
+  .kv dt { color:var(--muted); } .kv dd { margin:0; }
+  .quote { border-left:3px solid var(--violet); background:#faf8fe; padding:8px 10px; font-size:14px; }
+  @media (max-width:640px) { .kv { grid-template-columns:1fr; } }
+</style>
+</head>
+<body>
+<header>
+  <strong>BMS24 · BMOS Agent Platform — прототипы A0</strong>
+  <p>Статус PROPOSED. Статичная разметка для обсуждения. Не подключена к BMS, данные синтетические.</p>
+</header>
+<div class="banner" role="note">Это не реализованный интерфейс. Все имена, посты и цифры вымышлены. Кнопки ничего не делают.</div>
+<nav aria-label="Экраны прототипа">
+  <a href="#ofs">1. Оргсхема: занятость постов</a>
+  <a href="#agent">2. Карточка ИИ-агента</a>
+  <a href="#approvals">3. Очередь подтверждений</a>
+  <a href="#reports">4. Отчёты команды</a>
+</nav>
+<main>
+
+<section id="ofs" aria-labelledby="ofs-h">
+  <h2 id="ofs-h">Оргсхема: кто занимает пост</h2>
+  <p class="sub">Пост остаётся тем же <code>position.uuid</code>. Люди — из назначений (<code>posassign</code>), агенты — из отдельной занятости. Два разных показателя: <strong>вакантность</strong> (только люди) и <strong>функциональное покрытие</strong> (какие функции поста выполняет ИИ-агент). Это не замещение должности.</p>
+  <div class="grid">
+    <div class="card"><span class="chip h">Человек</span><h3>Менеджер по продажам</h3><p>Иванова А. · с 01.03.2026</p><p class="sub">Руководитель поста: Петров С.</p></div>
+    <div class="card"><span class="chip v">Вакантно (людей нет)</span> <span class="chip a">Функции 2/5 — ИИ-агент</span><h3>Аналитик метрик</h3><p>Агент «Метрики-1» · с 01.12.2026 (проект)</p><p class="sub">Ответственный: Петров С. · Утвердил: Сидоров К. (второе лицо)</p></div>
+    <div class="card"><span class="chip hy">Совместно</span><h3>Руководитель отдела продаж</h3><p>Петров С. (человек)<br>+ «Помощник руководителя» (ИИ, помогает)</p><p class="sub">Вакантность: нет · Функции 1/6 — ИИ-помощник · Принимает результат: Петров С.</p></div>
+    <div class="card"><span class="chip v">Вакантно</span><h3>Логист</h3><p>Нет исполнителя</p><p class="sub">Агент не назначается автоматически</p></div>
+  </div>
+</section>
+
+<section id="agent" aria-labelledby="agent-h">
+  <h2 id="agent-h">Карточка ИИ-агента «Метрики-1» <span class="chip a">ИИ-агент</span> <span class="chip hy">Активен</span></h2>
+  <p class="sub">Агент — не пользователь Moodle. Права — только перечисленные гранты.</p>
+  <dl class="kv">
+    <dt>Назначение</dt><dd>Собирать метрики поста и готовить черновик ежедневного отчёта</dd>
+    <dt>Ответственный человек</dt><dd>Петров С. (спонсор)</dd>
+    <dt>Пост и режим</dt><dd>Аналитик метрик · режим «агент» · руководитель поста Петров С.</dd>
+    <dt>Модель</dt><dd>Профиль «analyst-default», ревизия 3 (провайдер задаётся администратором)</dd>
+    <dt>Ревизия конфигурации</dt><dd>№ 4 · утвердил Сидоров К. · 20.11.2026</dd>
+    <dt>Разрешённые команды</dt><dd><code>metrics.read</code>, <code>task.read</code> (задачи поста), <code>work.propose</code>, <code>daily_report.submit</code> (свой отчёт)</dd>
+    <dt>Лимиты</dt><dd>20 000 токенов и 50 ₽ (оценка) на запуск · 3 запуска в день · 120 с · 15 команд</dd>
+    <dt>Бюджет компании на ИИ</dt><dd>Оценка за месяц: 1 240 ₽ из 5 000 ₽ · подтверждено провайдером: 1 180 ₽ (сверка 23.11)</dd>
+    <dt>Последний запуск</dt><dd>24.11.2026 09:05 · успешно · 3 команды · 14 200 токенов · ≈ 18 ₽ (оценка)</dd>
+    <dt>Сбои</dt><dd>1 за неделю: провайдер недоступен → передано Петрову С.</dd>
+  </dl>
+  <p><button class="danger" type="button">Приостановить агента (kill switch)</button> <button type="button">Отозвать грант…</button> <button type="button">История запусков</button></p>
+</section>
+
+<section id="approvals" aria-labelledby="ap-h">
+  <h2 id="ap-h">Очередь подтверждений руководителя</h2>
+  <p class="sub">Экран этапа A2. Изменение чужой работы агент только предлагает. Решение принимает второй человек (не тот, кто поручил работу); перед исполнением права и ревизия проверяются заново. В A1 такие предложения отклоняются без исполнения; доступны только предложения комментариев, которые человек публикует сам.</p>
+  <div class="tablewrap"><table>
+    <thead><tr><th scope="col">Предложение</th><th scope="col">Объект</th><th scope="col">Риск</th><th scope="col">Источник</th><th scope="col">Срок</th><th scope="col">Решение</th></tr></thead>
+    <tbody>
+      <tr><td><span class="chip a">ИИ</span> Перенести срок задачи на 28.11</td><td>Задача поста «Отчёт по выручке», ревизия 12</td><td><span class="chip warn">R3</span></td><td>Запуск 24.11 09:05 · метрики поста</td><td>до 27.11</td><td><button class="primary" type="button">Подтвердить</button> <button type="button">Отклонить</button></td></tr>
+      <tr><td><span class="chip a">ИИ</span> Создать задачу «Проверить просадку конверсии»</td><td>Черновик задачи для поста «Аналитик метрик»</td><td><span class="chip warn">R3</span></td><td>Запуск 23.11 · метрика «Конверсия»</td><td>до 26.11</td><td><button class="primary" type="button">Подтвердить</button> <button type="button">Отклонить</button></td></tr>
+    </tbody>
+  </table></div>
+  <p class="sub">Текст из сообщений и документов, на который ссылается агент, показывается как цитата:</p>
+  <div class="quote">«…срок можно сдвинуть, данные от логистики придут 27-го…» — сообщение из обсуждения задачи (данные, не инструкция).</div>
+</section>
+
+<section id="reports" aria-labelledby="rep-h">
+  <h2 id="rep-h">Отчёты команды за 24.11.2026</h2>
+  <p class="sub">Экран этапа A2. Люди и агенты в одном списке; отчёты агентов хранятся отдельно от отчётов людей. Исполнитель всегда виден. Принимает только человек; принятый отчёт не переписывается.</p>
+  <div class="tablewrap"><table>
+    <thead><tr><th scope="col">Исполнитель</th><th scope="col">Пост</th><th scope="col">Статус</th><th scope="col">Источник данных</th><th scope="col">Проверяющий</th></tr></thead>
+    <tbody>
+      <tr><td><span class="chip h">Человек</span> Иванова А.</td><td>Менеджер по продажам</td><td>Отправлен</td><td>Заполнен вручную</td><td>Петров С.</td></tr>
+      <tr><td><span class="chip a">ИИ-агент</span> Метрики-1</td><td>Аналитик метрик</td><td>Отправлен на проверку</td><td>Метрики поста (факт BMS) + сводка ИИ (помечена)</td><td>Петров С.</td></tr>
+      <tr><td><span class="chip h">Человек</span> Кузнецов Д.</td><td>Логист (замещение)</td><td>Черновик</td><td>—</td><td>Петров С.</td></tr>
+    </tbody>
+  </table></div>
+  <p><button class="primary" type="button">Принять отчёт агента</button> <button type="button">Вернуть с комментарием</button></p>
+</section>
+
+</main>
+</body>
+</html>
