@@ -12,7 +12,7 @@ NOT RUN ≠ PASS.
 | CA-04 | Владение данными обосновано, без второго реестра | CATALOG_OWNERSHIP_MATRIX | PASS (док.) |
 | CA-05 | Переиспользованы Role DNA, Role Intelligence (PR #38/#39), функции, компетенции, процессы | ARCHITECTURE §2, OWNERSHIP §1 | PASS (док.) |
 | CA-06 | AGENT-001…012 классифицированы, DESIGNED только 001 | CATALOG_ROADMAP §3 | PASS (док.) |
-| CA-07 | Команды AGENT-001 совпадают с A0_04 ревизии 5 (команды не менялись с ревизии 4) | AGENT-001/README §3, template.json | PASS (док.), сверка вручную |
+| CA-07 | Команды AGENT-001 совпадают с A0_04 ревизии 7 (команды не менялись с ревизии 4); `delegated_team` — только `view` в A3 (A0_02 ревизий 6–7) | AGENT-001/README §3, template.json | PASS (док.), сверка вручную |
 | CA-08 | Мастер из 12 шагов, ни один шаг не выдаёт права автоматически | CATALOG_LIFECYCLE §3 | PASS (док.) |
 | CA-09 | Обновление шаблона не меняет экземпляры | CATALOG_LIFECYCLE §2 | PASS (док.) |
 | CA-10 | Инварианты безопасности (core, провайдер, не Moodle user, без имперсонации, человеческий контур, секреты, HTTP/SQL, модели, DDL) | CATALOG_SECURITY §1 | PASS (док.) |
@@ -23,7 +23,7 @@ NOT RUN ≠ PASS.
 | CA-15 | Реестр документов и ссылки MASTER обновлены | Предложение в CATALOG_ROADMAP §5; файлы принадлежат PR #184 | NOT RUN |
 | CA-16 | Независимая проверка Codex | — | NOT RUN |
 | CA-17 | Решение владельца по OD-01…OD-08 | — | NOT RUN |
-| CA-18 | Зависимость A0 принята | PR #183 ревизия 5 (`204e12e`) ожидает проверки | NOT RUN (A0 не PASS) |
+| CA-18 | Зависимость A0 принята | PR #183 ревизия 7 (`68b1dd0`): независимый PASS Codex, #84 | PASS (вердикт Codex); PR #183 не смержен |
 
 Технические проверки, которые к CAT-0 не применимы и не выполнялись: Moodle PHPUnit, upgrade БД, импорт пакета,
 мастер, Recognition-прогоны, safety cases C01–C10/B01–B12 — NOT RUN.

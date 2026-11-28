@@ -6,7 +6,7 @@
 [01](https://docs.google.com/document/d/1w8ZUhSfGFHXxAkZyEKTZ7biu3n2-kMILOhscJ7WXZaY/edit),
 [02](https://docs.google.com/document/d/1-z0TjBuu5hQJAarmwioLzronZQC4w9onQ9vA4bAFxNs/edit),
 [03](https://docs.google.com/document/d/1-V_QyJU_atIm2fevUiEYJnRtlG0cdP1Dnc_5lreJ9nE/edit).
-Drive-документы ссылаются на A0 head `2376c03` (ревизия 2); команды ниже сверены с A0_04 **ревизии 5** (`204e12e`; таблица команд не менялась с ревизии 4 `01c5529`).
+Drive-документы ссылаются на A0 head `2376c03` (ревизия 2); команды ниже сверены с A0_04 **ревизии 7** (`68b1dd0`, A0 PASS Codex; таблица команд не менялась с ревизии 4 `01c5529`).
 
 ## 1. Назначение и ЦКП
 
@@ -31,7 +31,7 @@ Drive-документы ссылаются на A0 head `2376c03` (ревизи
 принятый результат с отдельным учётом неопределённых расходов, экономия времени руководителя после baseline) —
 нормы **не утверждены** (AG-D05).
 
-## 3. Команды (allowlist, по A0_04 ревизии 5)
+## 3. Команды (allowlist, по A0_04 ревизии 7)
 
 | Команда | Риск | Scope | Этап | Для чего |
 |---|---|---|---|---|
@@ -47,7 +47,10 @@ Drive-документы ссылаются на A0 head `2376c03` (ревизи
 **Только человек:** `work.assign`, `work.accept`, `work.return`, `daily_report.accept`, `daily_report.return`.
 
 **Исключено из пилота:** `task.comment`, `task.propose_update`, `task.create_draft`, любые R3 (даже при наличии
-механизма approval с A2) и R4. `delegated_team` — **не раньше A3**, по отдельному гранту двумя людьми.
+механизма approval с A2) и R4. `delegated_team` — **не раньше A3**, по отдельному гранту двумя людьми. По A0_02 ревизий 6–7 в A3 для
+`delegated_team` разрешено только `view`, а право руководителя проверяется делегируемым предикатом в той же
+SQL-выборке, включая базовую capability ядра `viewowncompany`. Права из ролей ядра Moodle не делегируются. Все
+команды AGENT-001 над командой — только чтение, поэтому карточка этому соответствует.
 
 ## 4. Ограничения пилота
 

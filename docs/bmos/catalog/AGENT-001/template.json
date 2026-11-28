@@ -55,5 +55,5 @@
     "https://docs.google.com/document/d/1-V_QyJU_atIm2fevUiEYJnRtlG0cdP1Dnc_5lreJ9nE/edit"
   ],
   "package_digest": null,
-  "change_log": [{"revision": 1, "state": "draft", "date": "2026-11-28", "note": "CAT-0 draft, commands aligned with A0_04 revision 5 (204e12e)"}]
+  "change_log": [{"revision": 1, "state": "draft", "date": "2026-11-28", "note": "CAT-0 draft, commands aligned with A0_04 revision 7 (68b1dd0, A0 PASS); delegated_team is view-only in A3"}]
 }
