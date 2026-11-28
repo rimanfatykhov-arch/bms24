@@ -1737,6 +1737,93 @@ class ContractTest(unittest.TestCase):
             self.assertTrue(all(x['status'] == 'FAIL' for x in r.values()), r)
         self.assertTrue(all(x['status'] == 'FAIL' for x in c.evaluate(c.notification_bell_checks(None, None)).values()))
 
+    def office_obs(self):
+        company = 'a1b2c3d4-0000-4000-8000-00000000000a'
+        ea = {'acknowledge': 1, 'decisions': 0, 'directives': 0, 'documents': 3, 'execution': 2, 'overdue': 1, 'review': 1}
+        ma = {'acknowledge': 0, 'decisions': 0, 'directives': 0, 'documents': 6, 'execution': 0, 'overdue': 0, 'review': 2}
+        eb = {'acknowledge': 0, 'decisions': 0, 'directives': 0, 'documents': 1, 'execution': 1, 'overdue': 1, 'review': 1}
+        shown = lambda m: {k: v for k, v in m.items() if k != 'decisions'}
+        planned = [{'key': k, 'tag': 'span', 'inlink': False, 'href': None, 'disabled': 'true'} for k in c.OFFICE_PLANNED]
+        active = [{'path': p, 'uuid': company, 'href': 'http://127.0.0.1:8080/local/kbacompany/' + p, 'current': None}
+                  for p in c.OFFICE_ACTIVE]
+        active[0]['current'] = 'page'
+        cases = []
+        for shell, width, lang in c.OFFICE_CASES:
+            page = {'workspace': True, 'http': 200, 'counts': shown(ea), 'planned': copy.deepcopy(planned),
+                    'active': copy.deepcopy(active), 'h1': [c.OFFICE_TITLES[lang]], 'empty': [], 'create': 0,
+                    'owned_shell': shell == 'owned', 'leaked': [], 'hscroll': {'scroll': width, 'inner': width},
+                    'menu': [{'uuid': company, 'current': 'page', 'visible': True}] if shell == 'owned' else []}
+            case = {'shell': shell, 'width': width, 'lang': lang, 'language_installed': True, 'page': page,
+                    'browser_events': [], 'server_errors': []}
+            if shell == 'owned' and width == 1440:
+                case['landing'] = [{'path': p, 'http': 200, 'workspace_error': False} for p in c.OFFICE_ACTIVE]
+            cases.append(case)
+        denied = {'workspace': False, 'http': 404, 'counts': {}, 'leaked': [], 'menu': []}
+        return {'status': 'PASS', 'company': company, 'cases': cases,
+                'switch_off': {'enabled': False}, 'switch_on': {'enabled': True},
+                'off': dict(denied, menu_on_documents=[]), 'model': {'EA': ea, 'MA': ma, 'EB': eb},
+                'manager': {'workspace': True, 'http': 200, 'counts': shown(ma), 'create': 1, 'leaked': [], 'browser_events': []},
+                'foreign': dict(denied), 'own_b': {'workspace': True, 'http': 200, 'counts': shown(eb), 'leaked': []},
+                'revoked_flag': True, 'reopened_flag': True,
+                'revocation': {'before': {'workspace': True, 'http': 200, 'counts': shown(ea)}, 'after': dict(denied)}}
+
+    def test_office_workspace_genuine_run_passes(self):
+        res = c.evaluate(c.office_workspace_checks(self.office_obs(), 0))
+        self.assertEqual({k: 'PASS' for k in res}, {k: v['status'] for k, v in res.items()})
+        self.assertEqual(7, len(res))
+        for k in res:
+            self.assertIn(k, c.required_check_names())
+
+    def test_office_workspace_regressions_fail(self):
+        mutations = [
+            ('office_switch_off_hides_route_and_menu', lambda o: o['off'].update(workspace=True)),
+            ('office_switch_off_hides_route_and_menu', lambda o: o['off'].update(menu_on_documents=[{'uuid': 'x'}])),
+            ('office_switch_off_hides_route_and_menu', lambda o: o['switch_off'].update(enabled=True)),
+            ('office_switch_off_hides_route_and_menu', lambda o: o['off'].update(http=500)),
+            ('office_counters_equal_service_ground_truth', lambda o: o['cases'][1]['page']['counts'].update(review=5)),
+            ('office_counters_equal_service_ground_truth', lambda o: o['cases'][2]['page']['counts'].pop('acknowledge')),
+            ('office_counters_equal_service_ground_truth', lambda o: o['cases'][0]['page'].update(leaked=['OFFICE CI REVIEW B'])),
+            ('office_counters_equal_service_ground_truth', lambda o: o['cases'][3]['page'].update(create=1)),
+            ('office_counters_equal_service_ground_truth', lambda o: o['cases'][1]['page'].update(h1=['Office'])),
+            ('office_menu_and_planned_sections', lambda o: o['cases'][0]['page']['planned'][2].update(tag='a')),
+            ('office_menu_and_planned_sections', lambda o: o['cases'][0]['page']['planned'][0].update(inlink=True)),
+            ('office_menu_and_planned_sections', lambda o: o['cases'][1]['page']['planned'].pop()),
+            ('office_menu_and_planned_sections', lambda o: o['cases'][0]['page']['active'][3].update(uuid='other')),
+            ('office_menu_and_planned_sections', lambda o: o['cases'][0]['page']['active'][2].update(current='page')),
+            ('office_menu_and_planned_sections', lambda o: o['cases'][1]['page'].update(menu=[])),
+            ('office_menu_and_planned_sections', lambda o: o['cases'][0]['page']['menu'][0].update(current=None)),
+            ('office_sections_open_canonical_pages', lambda o: o['cases'][0]['landing'][3].update(http=403)),
+            ('office_sections_open_canonical_pages', lambda o: o['cases'][0].pop('landing')),
+            ('office_manager_view_and_company_isolation', lambda o: o['manager']['counts'].update(documents=1)),
+            ('office_manager_view_and_company_isolation', lambda o: o['manager'].update(create=0)),
+            ('office_manager_view_and_company_isolation', lambda o: o['foreign'].update(workspace=True)),
+            ('office_manager_view_and_company_isolation', lambda o: o['foreign'].update(leaked=['OFFICE CI EFFECTIVE A'])),
+            ('office_manager_view_and_company_isolation', lambda o: o['foreign'].update(counts={'review': 1})),
+            ('office_manager_view_and_company_isolation', lambda o: o['own_b']['counts'].update(overdue=2)),
+            ('office_revocation_closes_workspace', lambda o: o['revocation']['after'].update(workspace=True)),
+            ('office_revocation_closes_workspace', lambda o: o.update(revoked_flag=False)),
+            ('office_revocation_closes_workspace', lambda o: o.update(reopened_flag=False)),
+            ('office_layout_and_browser_errors', lambda o: o['cases'][1]['page'].update(hscroll={'scroll': 420, 'inner': 375})),
+            ('office_layout_and_browser_errors', lambda o: o['cases'][2].update(server_errors=[{'url': 'x', 'status': 500}])),
+            ('office_layout_and_browser_errors',
+             lambda o: o['cases'][3].update(browser_events=[{'source': 'pageerror', 'name': 'Error', 'message': 'boom'}])),
+        ]
+        for name, mutate in mutations:
+            with self.subTest(check=name):
+                o = self.office_obs(); mutate(o)
+                res = c.evaluate(c.office_workspace_checks(o, 0))
+                self.assertEqual('FAIL', res[name]['status'], res[name])
+
+    def test_office_workspace_incomplete_runs_fail_every_check(self):
+        obs = self.office_obs()
+        for mutate, code in ((lambda o: o.update(error='boom'), 0), (lambda o: o.update(status='FAIL'), 0),
+                             (lambda o: o['cases'].pop(), 0), (lambda o: o['model'].pop('EB'), 0),
+                             (lambda o: o['model']['EA'].update(acknowledge=0), 0), (lambda o: None, 1)):
+            o = copy.deepcopy(obs); mutate(o)
+            r = c.evaluate(c.office_workspace_checks(o, code))
+            self.assertTrue(all(x['status'] == 'FAIL' for x in r.values()), r)
+        self.assertTrue(all(x['status'] == 'FAIL' for x in c.evaluate(c.office_workspace_checks(None, None)).values()))
+
     def test_required_check_names_complete(self):
         names = c.required_check_names()
         self.assertEqual(len(names), len(set(names)))
@@ -1772,6 +1859,296 @@ class ContractTest(unittest.TestCase):
         with self.assertRaises(RuntimeError):
             c.require(False, 'negative control')
         self.assertEqual('optimized' if not __debug__ else 'normal', 'optimized' if sys.flags.optimize else 'normal')
+
+    @staticmethod
+    def infocenter_obs():
+        import datetime
+        week = lambda i: (datetime.date(2026, 1, 5) + datetime.timedelta(days=7 * i)).isoformat()  # noqa: E731
+        p = [week(i) for i in range(21) if i != 15]
+        facts = [100 + 5 * i for i in range(21) if i != 15]
+        metrics = {code: {'uuid': 'u-' + code, 'company': 'B' if code == 'CIIC-B' else 'A', 'periods': [], 'facts': []}
+                   for code in c.INFOCENTER_CODES}
+        metrics['CIIC-M'].update(periods=p, facts=facts)
+        for code, values in (('CIIC-POS', [50, 48, 47, 45, 43, 41, 40, 38]), ('CIIC-DEP', [7]), ('CIIC-NEG', [-6, -3, 0, 2, -1, 4]),
+                             ('CIIC-FLAT', [1000] * 6), ('CIIC-LOOSE', [3, 4, 6]), ('CIIC-B', [3, 4, 6])):
+            metrics[code].update(periods=[week(i) for i in range(len(values))], facts=values)
+
+        def tile(code, name, symbol, better, dots, lines, **extra):
+            t = {'name': '%s — %s' % (code, name), 'value': '200 RUB · ' + p[-1], 'trend': symbol + 'Rising · better',
+                 'symbol': symbol, 'better': better, 'worse': False, 'nodata': '', 'single': 0, 'dots': dots, 'lines': lines,
+                 'grid': 3 if dots else 0, 'range': p[0] + p[-1] if dots else '', 'tag': 'BUTTON', 'type': 'button',
+                 'aria': 'Open %s — %s' % (code, name), 'haspopup': 'dialog', 'points': dots, 'gaps': 0,
+                 'mini': {'engine': 'echarts', 'instance': True, 'dots': dots, 'lines': lines, 'grid': 3, 'gaps': 0,
+                          'datazoom': 0, 'connect': False, 'symbols': True, 'silent': True, 'svg': 1, 'paths': dots + lines + 5,
+                          'svg_w': 300, 'box_w': 300, 'height': 72, 'pointer': 'none',
+                          'attr': {'dots': dots, 'lines': lines, 'grid': 3}} if dots else
+                 {'engine': None, 'dots': 0, 'lines': 0, 'grid': 0, 'datazoom': 0, 'svg': 0, 'paths': 0, 'height': 0, 'attr': None}}
+            t.update(extra)
+            return t
+        main = tile('CIIC-M', 'CI revenue', '↑', True, 13, 2, points=21, gaps=1)
+        main['mini']['height'] = 140
+        groups1 = [{'kind': 'Unit', 'title': 'CIIC 1.1 CI department',
+                    'tiles': [tile('CIIC-DEP', 'CI single', '·', False, 1, 0, single=1)]},
+                   {'kind': 'Position', 'title': 'CIIC-P CI quality lead', 'tiles': [tile('CIIC-POS', 'CI defects', '↓', True, 8, 1)]}]
+        groups2 = [{'kind': 'Division', 'title': 'CIIC 2 CI second division',
+                    'tiles': [tile('CIIC-NEG', 'CI balance', '≈', False, 6, 1), tile('CIIC-FLAT', 'CI flat', '→', False, 6, 1),
+                              tile('CIIC-EMPTY', 'CI empty', '·', False, 0, 0, nodata='No data')]}]
+
+        def snap(start, end, span, selected, **extra):
+            s = {'open': True, 'title': 'CIIC-M — CI revenue', 'meta': 'Unit: RUB · ↑ Rising · better', 'window': '26',
+                 'visible': '20 periods', 'readout': selected + ' — Fact: 200 RUB', 'legend': 4, 'start': start, 'end': end,
+                 'span': span, 'selected': selected, 'lo': 100, 'hi': 220, 'empty': False, 'gaps': 1, 'factlines': 2,
+                 'planlines': 2, 'trendlines': 1, 'trend_dash': 'dashed', 'dots': 20, 'texts': [p[0], p[-1]],
+                 'focus_in_chart': True, 'focus_tile': '', 'box': {'x': 8, 'r': 360}, 'engine': 'echarts', 'instance': True,
+                 'empty_text': '', 'paths': 80, 'svg_w': 1000, 'canvas_w': 1000}
+            s.update(extra)
+            s['opt'] = dict({k: s[k] for k in c.INFOCENTER_VIEW_KEYS}, fact_connect=False, plan_connect=False, symbols=True,
+                            inside=True, trend_type='dashed', series=['fact', 'plan', 'trend'], zero_line=False)
+            return s
+
+        def closed(s, **extra):
+            out = dict(s, open=False, instance=False, engine=None, svg_w=0, canvas_w=0, paths=0, texts=[], opt=None)
+            out.update(extra)
+            return out
+        full = (p[0], p[-1], 20)
+        main_chart = {'open': snap(p[-13], p[-1], 13, p[-1], window='13', dots=13, lo=130, hi=210),
+                      'window26': snap(*full, p[-1]), 'zoomin': snap(p[3], p[18], 15, p[-1]),
+                      'panleft': snap(p[0], p[15], 15, p[-1]), 'panright': snap(p[4], p[19], 15, p[-1]),
+                      'zoomout': snap(p[2], p[-1], 18, p[-1]), 'reset': snap(*full, p[-1]),
+                      'key_plus': snap(p[4], p[18], 15, p[-6]), 'key_shift_left': snap(p[0], p[14], 15, p[-6]),
+                      'key_reset': snap(*full, p[-1]), 'key_home': snap(*full, p[0]), 'key_end': snap(*full, p[-1]),
+                      'wheel_in': snap(p[3], p[18], 15, p[-1]), 'drag_right': snap(p[0], p[15], 15, p[-1]),
+                      'reset2': snap(*full, p[-1]), 'pinch_out': snap(p[5], p[15], 10, p[-1]),
+                      'click': snap(*full, p[-4]), 'resized': snap(*full, p[-1], svg_w=700, canvas_w=700),
+                      'restored': snap(*full, p[-1])}
+        main_chart['closed'] = closed(main_chart['restored'], focus_tile='CIIC-M — CI revenue')
+        for k in range(1, 6):
+            main_chart['left%d' % k] = snap(*full, p[-1 - k])
+
+        def other(meta, **extra):
+            s = snap(p[14], p[19], 5, p[19], meta=meta, window='13', **extra)
+            s['closed'] = closed(s)
+            return s
+        charts = {'CIIC-FLAT': other('→', lo=900, hi=1100, dots=6), 'CIIC-NEG': other('≈', lo=-8, hi=6, dots=6, texts=['-5', '0', '5']),
+                  'CIIC-DEP': other('·', dots=1, factlines=0, trendlines=0),
+                  'CIIC-EMPTY': other('·', dots=0, empty=True, readout='No data', lo=None, hi=None, instance=False,
+                                      empty_text='No data', texts=[]),
+                  'CIIC-POS': other('↓ Falling · better', dots=8)}
+        charts['CIIC-NEG']['opt']['zero_line'] = True
+        charts['CIIC-EMPTY']['opt'] = None
+        reopen = snap(p[-13], p[-1], 13, p[-1], window='13', dots=13, lo=130, hi=210)
+        reopen['closed'] = closed(reopen, focus_tile='CIIC-M — CI revenue')
+        rows = []
+        for cid, shell, width in c.INFOCENTER_CASES:
+            phone = width < c.INFOCENTER_MOBILE
+            boxes = [{'x': 8, 'y': 100 + 400 * i, 'r': width - 8, 'w': width - 16} if phone else
+                     {'x': 20 + 400 * i, 'y': 300, 'r': 400 + 400 * i, 'w': 380} for i in range(3)]
+            cols = [{'title': 'CIIC 1 CI first division', 'role': 'listitem', 'box': boxes[0], 'empty': 0, 'groups': groups1},
+                    {'title': 'CIIC 2 CI second division', 'role': 'listitem', 'box': boxes[1], 'empty': 0, 'groups': groups2},
+                    {'title': 'CIIC 3 CI third division', 'role': 'listitem', 'box': boxes[2], 'empty': 1, 'groups': []}]
+            ov = {'main': [main], 'columns': cols, 'unbound': [tile('CIIC-LOOSE', 'CI unbound', '↑', True, 3, 1)],
+                  'board_role': 'list', 'page_scroll': width, 'page_client': width, 'inner': width, 'dialog_open': False,
+                  'all_tiles': 8}
+            mc = copy.deepcopy(main_chart)
+            mc['pinch_out']['pinch_mode'] = 'touch' if phone else 'pointer'
+            rows.append({'id': cid, 'shell': shell, 'width': width, 'http': 200, 'owned': shell == 'owned',
+                         'overview': copy.deepcopy(ov), 'main_chart': mc, 'charts': copy.deepcopy(charts),
+                         'reopen': copy.deepcopy(reopen), 'lazy_initial': {'total': 6, 'ready': 3 if phone else 6},
+                         'lazy_final': {'total': 6, 'ready': 6},
+                         'module_requests': ['http://127.0.0.1:8080/lib/requirejs.php/1764000000/local_kbacompany/echarts-lazy.js'],
+                         'resize': {'mini_before': {'svg_w': 400, 'box_w': 400}, 'mini_after': {'svg_w': 300, 'box_w': 300}},
+                         'browser_events': list(ABORTED), 'server_errors': []})
+        return {'status': 'PASS', 'fixture': {'metrics': metrics, 'divisions': ['CIIC 1', 'CIIC 2', 'CIIC 3']}, 'cases': rows,
+                'foreign': {'company_a': {'http': 200, 'tiles': 0, 'names': [], 'a_codes_in_body': [], 'a_divisions_in_body': []},
+                            'company_b': {'http': 200, 'tiles': 1, 'names': ['CIIC-B — CI company B only'],
+                                          'a_codes_in_body': [], 'a_divisions_in_body': []}},
+                'cleanup': {'phase': 'cleanup', 'clean': True}}
+
+    def test_infocenter_valid_passes_and_mutations_fail(self):
+        obs = self.infocenter_obs()
+        res = c.evaluate(c.infocenter_checks(obs, 0))
+        self.assertEqual({k: 'PASS' for k in res}, {k: v['status'] for k, v in res.items()}, res)
+        self.assertTrue(set(res) <= set(c.required_check_names()))
+        self.assertEqual(7, len(res))
+
+        def fails(check, mutate):
+            o = copy.deepcopy(obs); mutate(o)
+            r = c.evaluate(c.infocenter_checks(o, 0))
+            self.assertEqual('FAIL', r[check]['status'], (check, r[check]))
+        board, mini, layout, axes, controls, shapes, iso = ('infocenter_board_order_and_registry_bindings',
+                                                             'infocenter_mini_charts_and_trend_text', 'infocenter_layout_1440_and_375',
+                                                             'infocenter_chart_axes_gap_plan_trend',
+                                                             'infocenter_chart_window_zoom_pan_keyboard_touch',
+                                                             'infocenter_chart_flat_negative_single_empty',
+                                                             'infocenter_company_isolation_and_browser_errors')
+        cols = lambda o, i=0: o['cases'][i]['overview']['columns']  # noqa: E731
+        # Run integrity.
+        for name in res:
+            fails(name, lambda o: o.update(status='FAIL'))
+            fails(name, lambda o: o['cases'].pop())
+            fails(name, lambda o: o['cases'][1].update(http=500))
+            fails(name, lambda o: o['cases'][2].update(owned=True))
+        self.assertTrue(all(v['status'] == 'FAIL' for v in c.evaluate(c.infocenter_checks(obs, 1)).values()))
+        self.assertTrue(all(v['status'] == 'FAIL' for v in c.evaluate(c.infocenter_checks(None, None)).values()))
+        # Board: order, groups, bindings, empty division, main, unbound, company B.
+        fails(board, lambda o: cols(o).reverse())
+        fails(board, lambda o: cols(o, 1)[0]['groups'].reverse())
+        fails(board, lambda o: cols(o, 2)[1]['groups'][0]['tiles'].pop())
+        fails(board, lambda o: cols(o)[1]['groups'][0]['tiles'].append(o['cases'][0]['overview']['unbound'][0]))
+        fails(board, lambda o: cols(o)[0]['groups'][1].update(kind='Unit'))
+        fails(board, lambda o: cols(o)[1]['groups'][0].update(kind='Unit'))
+        fails(board, lambda o: cols(o)[1]['groups'][0].update(kind=''))
+        fails(board, lambda o: cols(o)[2].update(empty=0))
+        fails(board, lambda o: o['cases'][0]['overview'].update(main=[]))
+        fails(board, lambda o: o['cases'][1]['overview'].update(unbound=[]))
+        fails(board, lambda o: o['cases'][2]['overview']['unbound'].append({'name': 'CIIC-B — CI company B only'}))
+        fails(board, lambda o: o['cases'][0]['overview'].update(board_role=None))
+        # Mini charts and trend text.
+        fails(mini, lambda o: o['cases'][0]['overview']['main'][0].update(symbol='↓'))
+        fails(mini, lambda o: o['cases'][1]['overview']['main'][0].update(better=False))
+        fails(mini, lambda o: cols(o)[0]['groups'][1]['tiles'][0].update(better=False, worse=True))
+        fails(mini, lambda o: cols(o, 2)[0]['groups'][0]['tiles'][0].update(trend='↑'))
+        fails(mini, lambda o: cols(o)[1]['groups'][0]['tiles'][1].update(better=True))
+        fails(mini, lambda o: cols(o)[1]['groups'][0]['tiles'][2].update(nodata=''))
+        fails(mini, lambda o: cols(o)[0]['groups'][0]['tiles'][0].update(lines=1))
+        fails(mini, lambda o: cols(o)[0]['groups'][0]['tiles'][0].update(single=0))
+        fails(mini, lambda o: o['cases'][0]['overview']['main'][0].update(lines=1))
+        fails(mini, lambda o: o['cases'][0]['overview']['main'][0].update(gaps=0))
+        fails(mini, lambda o: o['cases'][1]['overview']['main'][0].update(range=''))
+        fails(mini, lambda o: o['cases'][2]['overview']['main'][0].update(tag='DIV'))
+        fails(mini, lambda o: o['cases'][0]['overview']['unbound'][0].update(aria=''))
+        # Mini charts on ECharts (#192): engine, option vs published state, no zoom, not interactive, sized, heights,
+        # lazy initialisation, one module request from Moodle.
+        mm = lambda o, i=0: o['cases'][i]['overview']['main'][0]['mini']  # noqa: E731
+        cm = lambda o, i=0: cols(o, i)[0]['groups'][1]['tiles'][0]['mini']  # noqa: E731
+        fails(mini, lambda o: mm(o).update(engine=None))
+        fails(mini, lambda o: mm(o, 1).update(instance=False))
+        fails(mini, lambda o: cm(o, 2).update(svg=0))
+        fails(mini, lambda o: cm(o).update(paths=3))
+        fails(mini, lambda o: cm(o).update(attr={'dots': 7, 'lines': 1, 'grid': 3}))
+        fails(mini, lambda o: mm(o).update(datazoom=1))
+        fails(mini, lambda o: cm(o, 1).update(silent=False))
+        fails(mini, lambda o: cm(o).update(pointer='auto'))
+        fails(mini, lambda o: mm(o, 2).update(connect=True))
+        fails(mini, lambda o: cm(o).update(symbols=False))
+        fails(mini, lambda o: cm(o).update(svg_w=280))
+        fails(mini, lambda o: mm(o).update(height=72))
+        fails(mini, lambda o: cm(o, 1).update(height=20))
+        fails(mini, lambda o: cols(o)[1]['groups'][0]['tiles'][2]['mini'].update(engine='echarts'))
+        fails(mini, lambda o: o['cases'][1].update(lazy_initial={'total': 6, 'ready': 6}))
+        fails(mini, lambda o: o['cases'][0].update(lazy_initial={'total': 6, 'ready': 0}))
+        fails(mini, lambda o: o['cases'][2].update(lazy_final={'total': 6, 'ready': 5}))
+        fails(mini, lambda o: o['cases'][0]['module_requests'].append(o['cases'][0]['module_requests'][0]))
+        fails(mini, lambda o: o['cases'][1].update(module_requests=[]))
+        fails(mini, lambda o: o['cases'][2].update(module_requests=['https://cdn.example.org/local_kbacompany/echarts-lazy.js']))
+        # Layout.
+        fails(layout, lambda o: o['cases'][1]['overview'].update(page_scroll=420))
+        fails(layout, lambda o: cols(o, 1)[1]['box'].update(r=420))
+        fails(layout, lambda o: cols(o, 2)[1]['box'].update(y=cols(o, 2)[0]['box']['y']))
+        fails(layout, lambda o: cols(o)[1]['box'].update(y=900))
+        fails(layout, lambda o: o['cases'][0]['resize'].update(mini_after={'svg_w': 400, 'box_w': 400}))
+        fails(layout, lambda o: o['cases'][1]['resize'].update(mini_after={'svg_w': 300, 'box_w': 260}))
+        fails(layout, lambda o: o['cases'][2].pop('resize'))
+        # Large chart: window, gap, plan, trend, legend, axis fit, readout, focus.
+        fails(axes, lambda o: o['cases'][0]['main_chart']['open'].update(window='26'))
+        fails(axes, lambda o: o['cases'][1]['main_chart']['open'].update(start=o['fixture']['metrics']['CIIC-M']['periods'][0]))
+        fails(axes, lambda o: o['cases'][0]['main_chart']['open'].update(factlines=1))
+        fails(axes, lambda o: o['cases'][2]['main_chart']['open'].update(gaps=0))
+        fails(axes, lambda o: o['cases'][0]['main_chart']['open'].update(trendlines=0))
+        fails(axes, lambda o: o['cases'][0]['main_chart']['open'].update(trend_dash=None))
+        fails(axes, lambda o: o['cases'][1]['main_chart']['open'].update(planlines=0))
+        fails(axes, lambda o: o['cases'][0]['main_chart']['open'].update(lo=0))
+        fails(axes, lambda o: o['cases'][0]['main_chart']['open'].update(hi=150))
+        fails(axes, lambda o: o['cases'][2]['main_chart']['open'].update(readout=''))
+        fails(axes, lambda o: o['cases'][0]['main_chart']['open'].update(focus_in_chart=False))
+        fails(axes, lambda o: o['cases'][0]['main_chart']['open'].update(meta='Unit: RUB'))
+        # ECharts drawing: instance, option agrees with the published state, breaks, dashed trend, inside zoom, SVG.
+        op = lambda o, i=0: o['cases'][i]['main_chart']['open']['opt']  # noqa: E731
+        fails(axes, lambda o: o['cases'][0]['main_chart']['open'].update(engine=None))
+        fails(axes, lambda o: o['cases'][1]['main_chart']['open'].update(instance=False))
+        fails(axes, lambda o: o['cases'][2]['main_chart']['open'].update(opt=None))
+        fails(axes, lambda o: op(o).update(start=o['fixture']['metrics']['CIIC-M']['periods'][0]))
+        fails(axes, lambda o: op(o, 1).update(lo=0))
+        fails(axes, lambda o: op(o).update(factlines=1))
+        fails(axes, lambda o: op(o, 2).update(gaps=0))
+        fails(axes, lambda o: op(o).update(selected=None))
+        fails(axes, lambda o: op(o).update(fact_connect=True))
+        fails(axes, lambda o: op(o, 1).update(plan_connect=True))
+        fails(axes, lambda o: op(o).update(trend_type='solid'))
+        fails(axes, lambda o: op(o).update(series=['fact', 'trend']))
+        fails(axes, lambda o: op(o).update(inside=False))
+        fails(axes, lambda o: op(o).update(symbols=False))
+        fails(axes, lambda o: o['cases'][0]['main_chart']['open'].update(paths=4))
+        fails(axes, lambda o: o['cases'][1]['main_chart']['open'].update(svg_w=900))
+        fails(axes, lambda o: o['cases'][2]['main_chart']['open'].update(texts=[]))
+        # Controls: window, buttons, keyboard over the gap, wheel, drag, pinch, reset, Escape and focus.
+        fails(controls, lambda o: o['cases'][0]['main_chart']['window26'].update(span=13))
+        fails(controls, lambda o: o['cases'][0]['main_chart']['zoomin'].update(span=20))
+        fails(controls, lambda o: o['cases'][1]['main_chart'].update(panleft=o['cases'][1]['main_chart']['zoomin']))
+        fails(controls, lambda o: o['cases'][2]['main_chart'].update(panright=o['cases'][2]['main_chart']['panleft']))
+        fails(controls, lambda o: o['cases'][0]['main_chart']['reset'].update(span=15))
+        fails(controls, lambda o: o['cases'][1]['main_chart']['key_reset'].update(start='2026-02-02'))
+        fails(controls, lambda o: o['cases'][0]['main_chart']['left5'].update(
+            selected='2026-04-20', readout='2026-04-20 — gap'))
+        fails(controls, lambda o: o['cases'][0]['main_chart']['left2'].update(readout='no date'))
+        fails(controls, lambda o: o['cases'][2]['main_chart']['key_plus'].update(span=20))
+        fails(controls, lambda o: o['cases'][0]['main_chart'].update(key_shift_left=o['cases'][0]['main_chart']['key_plus']))
+        fails(controls, lambda o: o['cases'][1]['main_chart']['key_home'].update(selected=o['fixture']['metrics']['CIIC-M']['periods'][1]))
+        fails(controls, lambda o: o['cases'][0]['main_chart']['wheel_in'].update(span=20))
+        fails(controls, lambda o: o['cases'][1]['main_chart'].update(drag_right=o['cases'][1]['main_chart']['wheel_in']))
+        fails(controls, lambda o: o['cases'][2]['main_chart']['pinch_out'].update(span=20))
+        fails(controls, lambda o: o['cases'][0]['main_chart']['closed'].update(open=True))
+        fails(controls, lambda o: o['cases'][1]['main_chart']['closed'].update(focus_tile=''))
+        # Click, pinch input, option agreement after every step, resize, disposal and re-opening (#192).
+        mc = lambda o, i=0: o['cases'][i]['main_chart']  # noqa: E731
+        fails(controls, lambda o: mc(o)['click'].update(selected=o['fixture']['metrics']['CIIC-M']['periods'][-1]))
+        fails(controls, lambda o: mc(o, 1)['click'].update(readout='nothing'))
+        fails(controls, lambda o: mc(o, 1)['pinch_out'].update(pinch_mode='pointer'))
+        fails(controls, lambda o: mc(o)['pinch_out'].update(pinch_mode=None))
+        fails(controls, lambda o: mc(o)['wheel_in']['opt'].update(span=20))
+        fails(controls, lambda o: mc(o, 2)['drag_right']['opt'].update(start=o['fixture']['metrics']['CIIC-M']['periods'][3]))
+        fails(controls, lambda o: mc(o, 1)['pinch_out'].update(instance=False))
+        fails(controls, lambda o: mc(o)['key_plus']['opt'].update(lo=1))
+        fails(controls, lambda o: mc(o)['left5']['opt'].update(selected=None))
+        fails(controls, lambda o: mc(o, 2)['resized'].update(svg_w=1000, canvas_w=1000))
+        fails(controls, lambda o: mc(o)['resized'].update(canvas_w=650))
+        fails(controls, lambda o: mc(o)['closed'].update(instance=True))
+        fails(controls, lambda o: mc(o, 1)['closed'].update(svg_w=1000))
+        fails(controls, lambda o: o['cases'][0]['reopen'].update(window='26'))
+        fails(controls, lambda o: o['cases'][1]['reopen'].update(start=o['fixture']['metrics']['CIIC-M']['periods'][0]))
+        fails(controls, lambda o: o['cases'][2]['reopen'].update(instance=False))
+        fails(controls, lambda o: o['cases'][0]['reopen']['closed'].update(instance=True))
+        fails(controls, lambda o: o['cases'][1]['reopen']['closed'].update(focus_tile=''))
+        fails(controls, lambda o: o['cases'][2].pop('reopen'))
+        # Shapes: flat padding, negatives with zero, single point, empty, falling metric, dialog width.
+        fails(shapes, lambda o: o['cases'][0]['charts']['CIIC-FLAT'].update(lo=0))
+        fails(shapes, lambda o: o['cases'][1]['charts']['CIIC-NEG'].update(lo=0))
+        fails(shapes, lambda o: o['cases'][2]['charts']['CIIC-NEG'].update(texts=['-5', '5']))
+        fails(shapes, lambda o: o['cases'][0]['charts']['CIIC-DEP'].update(factlines=1))
+        fails(shapes, lambda o: o['cases'][0]['charts']['CIIC-EMPTY'].update(empty=False))
+        fails(shapes, lambda o: o['cases'][1]['charts']['CIIC-EMPTY'].update(readout=''))
+        fails(shapes, lambda o: o['cases'][0]['charts']['CIIC-POS'].update(meta='↑'))
+        fails(shapes, lambda o: o['cases'][2]['charts']['CIIC-FLAT']['closed'].update(open=True))
+        fails(shapes, lambda o: o['cases'][1]['charts'].pop('CIIC-NEG'))
+        fails(shapes, lambda o: o['cases'][1]['main_chart']['open'].update(box={'x': 0, 'r': 500}))
+        fails(shapes, lambda o: o['cases'][0]['charts']['CIIC-NEG']['opt'].update(zero_line=False))
+        fails(shapes, lambda o: o['cases'][1]['charts']['CIIC-FLAT']['opt'].update(lo=0))
+        fails(shapes, lambda o: o['cases'][2]['charts']['CIIC-DEP'].update(instance=False))
+        fails(shapes, lambda o: o['cases'][0]['charts']['CIIC-POS']['opt'].update(dots=7))
+        fails(shapes, lambda o: o['cases'][1]['charts']['CIIC-EMPTY'].update(instance=True))
+        fails(shapes, lambda o: o['cases'][2]['charts']['CIIC-EMPTY'].update(empty_text=''))
+        fails(shapes, lambda o: o['cases'][0]['charts']['CIIC-EMPTY'].update(texts=['0']))
+        fails(shapes, lambda o: o['cases'][0]['charts']['CIIC-FLAT']['closed'].update(instance=True))
+        fails(shapes, lambda o: o['cases'][1]['charts']['CIIC-EMPTY']['closed'].update(engine='echarts'))
+        # Isolation, cleanup, browser errors.
+        fails(iso, lambda o: o['foreign']['company_a'].update(tiles=1))
+        fails(iso, lambda o: o['foreign']['company_a'].update(a_codes_in_body=['CIIC-M']))
+        fails(iso, lambda o: o['foreign']['company_a'].update(a_divisions_in_body=['CIIC 1']))
+        fails(iso, lambda o: o['foreign']['company_b']['names'].append('CIIC-M — CI revenue'))
+        fails(iso, lambda o: o['foreign']['company_b'].update(names=[]))
+        fails(iso, lambda o: o.update(cleanup={'clean': False}))
+        fails(iso, lambda o: o['cases'][0]['browser_events'].append({'source': 'pageerror', 'name': 'Error', 'message': 'x'}))
+        fails(iso, lambda o: o['cases'][2].update(server_errors=[{'url': 'u', 'status': 500}]))
 
 
 if __name__ == '__main__':
