@@ -6267,6 +6267,17 @@ function xmldb_local_kbacompany_upgrade(int $oldversion): bool {
         upgrade_plugin_savepoint(true, 2026112301, 'local', 'kbacompany');
     }
 
+    // R5a (owner decisions K1-K6, 24.11.2026): reporting calendar, calendar exceptions and absence periods. Three additive
+    // tables from install.xml; existing tables and rows are untouched; no backfill (the calendar starts switched off).
+    if ($oldversion < 2026112400) {
+        foreach (['local_kbacompany_rptcalendar', 'local_kbacompany_dreportoff', 'local_kbacompany_dreportabs'] as $name) {
+            if (!$dbman->table_exists($name)) {
+                $dbman->install_one_table_from_xmldb_file(__DIR__ . '/install.xml', $name);
+            }
+        }
+        upgrade_plugin_savepoint(true, 2026112400, 'local', 'kbacompany');
+    }
+
     // RC33 PR-2 (owner D1-D4, 24.11.2026): seven additive BMS-owned inbound tables for the disabled fake-provider MAX
     // slice (namespace, connection, group/sender bindings, receipts, holds, audit). Created from install.xml; existing
     // tables and rows are untouched, nothing is backfilled and the import stays disabled.

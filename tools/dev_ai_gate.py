@@ -120,6 +120,7 @@ def validate_repo(root: Path) -> list[str]:
         "local/kbacompany/release/RELEASE_NOTES_RC29_build2026111600.md",
         "local/kbacompany/release/RELEASE_NOTES_RC29_build2026111601.md",
         "local/kbacompany/release/RELEASE_NOTES_RC29_build2026112301.md",
+        "local/kbacompany/release/RELEASE_NOTES_RC29_build2026112400.md",
         "local/kbacompany/release/RELEASE_NOTES_RC29_build2026112500.md",
     ]
     for name in expected:
@@ -151,6 +152,8 @@ def validate_repo(root: Path) -> list[str]:
         problems.append("ADR-0009 review checkpoint missing or duplicated")
     if upgrade.count("if ($oldversion < 2026112301)") != 1 or upgrade.count("upgrade_plugin_savepoint(true, 2026112301") != 1:
         problems.append("ADR-0010 reviewer/copy checkpoint missing or duplicated")
+    if upgrade.count("if ($oldversion < 2026112400)") != 1 or upgrade.count("upgrade_plugin_savepoint(true, 2026112400") != 1:
+        problems.append("R5a reporting calendar checkpoint missing or duplicated")
     if upgrade.count("if ($oldversion < 2026112500)") != 1 or upgrade.count("upgrade_plugin_savepoint(true, 2026112500") != 1:
         problems.append("RC33 inbound tables checkpoint missing or duplicated")
     # Never allow local runtime state or credentials inside installable code.
